@@ -28,9 +28,7 @@ func writeDockerFiles(root string, opts Options) error {
 }
 
 func dockerCompose(opts Options) string {
-	return fmt.Sprintf(`version: "3.8"
-
-services:
+	return fmt.Sprintf(`services:
   postgres:
     image: postgres:16-alpine
     container_name: %s-postgres
@@ -93,9 +91,7 @@ volumes:
 }
 
 func dockerComposeProd(opts Options) string {
-	return fmt.Sprintf(`version: "3.8"
-
-services:
+	return fmt.Sprintf(`services:
   api:
     build:
       context: ./apps/api
