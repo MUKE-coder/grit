@@ -9,6 +9,7 @@ import { ColumnHeader } from "./column-header";
 import { renderCell } from "./cell-renderers";
 import { TableSkeleton } from "./table-skeleton";
 import { TableEmptyState } from "./table-empty-state";
+import { Eye } from "@/lib/icons";
 
 interface DataTableProps {
   columns: ColumnDefinition[];
@@ -19,6 +20,7 @@ interface DataTableProps {
   onSort?: (key: string) => void;
   selectedRows?: number[];
   onSelectRows?: (rows: number[]) => void;
+  onView?: (item: Record<string, unknown>) => void;
   onEdit?: (item: Record<string, unknown>) => void;
   onDelete?: (id: number) => void;
 }
@@ -32,11 +34,12 @@ export function DataTable({
   onSort,
   selectedRows = [],
   onSelectRows,
+  onView,
   onEdit,
   onDelete,
 }: DataTableProps) {
   if (isLoading) {
-    return <TableSkeleton columns={columns.length + (onSelectRows ? 1 : 0) + (onEdit || onDelete ? 1 : 0)} />;
+    return <TableSkeleton columns={columns.length + (onSelectRows ? 1 : 0) + (onView || onEdit || onDelete ? 1 : 0)} />;
   }
 
   if (data.length === 0) {
@@ -84,8 +87,8 @@ export function DataTable({
                 onSort={onSort}
               />
             ))}
-            {(onEdit || onDelete) && (
-              <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider w-[100px]">
+            {(onView || onEdit || onDelete) && (
+              <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider w-[140px]">
                 Actions
               </th>
             )}
@@ -122,9 +125,18 @@ export function DataTable({
                     {renderCell(col, row[col.key], row)}
                   </td>
                 ))}
-                {(onEdit || onDelete) && (
+                {(onView || onEdit || onDelete) && (
                   <td className="px-4 py-3 text-right text-sm">
                     <div className="flex items-center justify-end gap-2">
+                      {onView && (
+                        <button
+                          onClick={() => onView(row)}
+                          className="rounded-md p-1.5 text-text-secondary hover:text-info hover:bg-info/10 transition-colors"
+                          title="View"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                       {onEdit && (
                         <button
                           onClick={() => onEdit(row)}

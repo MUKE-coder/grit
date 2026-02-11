@@ -40,6 +40,10 @@ grit generate resource Category -i   # Interactive mode
 
 # Sync Go types to TypeScript
 grit sync
+
+# Upgrade existing project to latest templates
+grit upgrade                          # Updates admin, web, configs
+grit upgrade --force                  # Overwrite without prompting
 %[1]s
 
 ---
@@ -99,27 +103,31 @@ After running %[1]s new %[2]s%[1]s, you get:
 │   │       ├── cache/cache.go         # Redis cache service
 │   │       └── ai/ai.go              # AI service (Claude/OpenAI)
 │   │
-│   ├── web/                      # Next.js main frontend
+│   ├── web/                      # SaaS landing page (Next.js)
 │   │   ├── app/
-│   │   │   ├── layout.tsx             # Root layout + providers
-│   │   │   ├── (auth)/               # Auth pages (login, register)
-│   │   │   └── (dashboard)/          # Protected pages with sidebar
-│   │   ├── hooks/                    # React Query hooks
+│   │   │   ├── layout.tsx             # Root layout
+│   │   │   └── page.tsx               # Landing page with hero, features, CTA
 │   │   └── lib/
-│   │       ├── api-client.ts          # Axios instance with JWT interceptor
-│   │       └── query-client.ts        # React Query setup
+│   │       └── utils.ts               # Utility functions
 │   │
 │   └── admin/                    # Admin panel (Filament-like)
 │       ├── app/
-│       │   ├── layout.tsx             # Admin shell (sidebar + navbar)
-│       │   ├── page.tsx               # Dashboard with widgets
-│       │   ├── resources/             # Resource pages
-│       │   │   └── users/page.tsx
-│       │   └── system/               # System pages
-│       │       ├── jobs/page.tsx       # Job queue dashboard
-│       │       ├── files/page.tsx      # File browser
-│       │       ├── cron/page.tsx       # Cron tasks viewer
-│       │       └── mail/page.tsx       # Email template preview
+│       │   ├── layout.tsx             # Root layout (Providers, no sidebar)
+│       │   ├── page.tsx               # Redirect to /dashboard or /login
+│       │   ├── (auth)/               # Auth pages (no sidebar)
+│       │   │   ├── login/page.tsx
+│       │   │   ├── sign-up/page.tsx
+│       │   │   └── forgot-password/page.tsx
+│       │   └── (dashboard)/          # Protected pages (with sidebar)
+│       │       ├── layout.tsx         # AdminLayout wrapper
+│       │       ├── dashboard/page.tsx # Dashboard with widgets
+│       │       ├── resources/         # Resource pages
+│       │       │   └── users/page.tsx
+│       │       └── system/           # System pages
+│       │           ├── jobs/page.tsx
+│       │           ├── files/page.tsx
+│       │           ├── cron/page.tsx
+│       │           └── mail/page.tsx
 │       ├── components/
 │       │   ├── layout/                # Sidebar, Navbar
 │       │   ├── tables/                # DataTable, filters, pagination
@@ -162,7 +170,7 @@ This creates **8 files** and injects into **10 existing files**:
 | %[1]spackages/shared/types/post.ts%[1]s | TypeScript interface: Post |
 | %[1]sapps/web/hooks/use-posts.ts%[1]s | React Query hooks: usePosts, useCreatePost, etc. |
 | %[1]sapps/admin/resources/posts.ts%[1]s | Resource definition: table columns, form fields, widgets |
-| %[1]sapps/admin/app/resources/posts/page.tsx%[1]s | Admin page that renders the resource |
+| %[1]sapps/admin/app/(dashboard)/resources/posts/page.tsx%[1]s | Admin page that renders the resource |
 
 **Existing files modified (via marker injection):**
 | File | What's injected |

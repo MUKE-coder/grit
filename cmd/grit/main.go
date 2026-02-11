@@ -11,7 +11,7 @@ import (
 	"github.com/MUKE-coder/grit/internal/scaffold"
 )
 
-var version = "0.5.0"
+var version = "0.6.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -23,6 +23,7 @@ func main() {
 	rootCmd.AddCommand(newCmd())
 	rootCmd.AddCommand(generateCmd())
 	rootCmd.AddCommand(syncCmd())
+	rootCmd.AddCommand(upgradeCmd())
 	rootCmd.AddCommand(versionCmd())
 
 	if err := rootCmd.Execute(); err != nil {
@@ -171,6 +172,30 @@ func generateResourceCmd() *cobra.Command {
 	cmd.Flags().StringVar(&fromFile, "from", "", "YAML file defining the resource fields")
 	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Interactively define fields")
 	cmd.Flags().StringVar(&fields, "fields", "", "Inline field definitions (e.g., \"title:string,content:text,published:bool\")")
+
+	return cmd
+}
+
+func upgradeCmd() *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "upgrade",
+		Short: "Upgrade an existing Grit project to the latest scaffold templates",
+		Long:  "Regenerates framework components (admin panel, web app, configs) while preserving your resource definitions and API code.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			purple.Printf("\n  Upgrading project to Grit v%s\n\n", version)
+
+			return scaffold.Upgrade(scaffold.UpgradeOptions{
+				Force: force,
+			})
+		},
+	}
+
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite all files without prompting")
 
 	return cmd
 }

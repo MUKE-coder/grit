@@ -99,7 +99,7 @@ func (g *Generator) Run() error {
 		if err := g.writeResourcePage(names); err != nil {
 			return fmt.Errorf("writing resource page: %w", err)
 		}
-		fmt.Printf("  ✓ apps/admin/app/resources/%s/page.tsx\n", names.PluralKebab)
+		fmt.Printf("  ✓ apps/admin/app/(dashboard)/resources/%s/page.tsx\n", names.PluralKebab)
 	}
 
 	fmt.Println()

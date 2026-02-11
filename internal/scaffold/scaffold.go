@@ -176,33 +176,32 @@ func createDirectories(root string, opts Options) error {
 
 	if opts.ShouldIncludeWeb() {
 		dirs = append(dirs,
-			filepath.Join(root, "apps", "web", "app", "(auth)", "login"),
-			filepath.Join(root, "apps", "web", "app", "(auth)", "register"),
-			filepath.Join(root, "apps", "web", "app", "(auth)", "forgot-password"),
-			filepath.Join(root, "apps", "web", "app", "(dashboard)", "dashboard"),
-			filepath.Join(root, "apps", "web", "components", "ui"),
-			filepath.Join(root, "apps", "web", "components", "shared"),
-			filepath.Join(root, "apps", "web", "hooks"),
+			filepath.Join(root, "apps", "web", "app"),
 			filepath.Join(root, "apps", "web", "lib"),
 		)
 	}
 
 	if opts.ShouldIncludeAdmin() {
 		dirs = append(dirs,
-			filepath.Join(root, "apps", "admin", "app", "resources", "users"),
+			filepath.Join(root, "apps", "admin", "app", "(auth)", "login"),
+			filepath.Join(root, "apps", "admin", "app", "(auth)", "sign-up"),
+			filepath.Join(root, "apps", "admin", "app", "(auth)", "forgot-password"),
+			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "dashboard"),
+			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "resources", "users"),
+			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "jobs"),
+			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "files"),
+			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "cron"),
+			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "mail"),
 			filepath.Join(root, "apps", "admin", "components", "layout"),
 			filepath.Join(root, "apps", "admin", "components", "tables"),
 			filepath.Join(root, "apps", "admin", "components", "forms", "fields"),
 			filepath.Join(root, "apps", "admin", "components", "widgets"),
 			filepath.Join(root, "apps", "admin", "components", "resource"),
 			filepath.Join(root, "apps", "admin", "components", "shared"),
+			filepath.Join(root, "apps", "admin", "components", "ui"),
 			filepath.Join(root, "apps", "admin", "hooks"),
 			filepath.Join(root, "apps", "admin", "lib"),
 			filepath.Join(root, "apps", "admin", "resources"),
-			filepath.Join(root, "apps", "admin", "app", "system", "jobs"),
-			filepath.Join(root, "apps", "admin", "app", "system", "files"),
-			filepath.Join(root, "apps", "admin", "app", "system", "cron"),
-			filepath.Join(root, "apps", "admin", "app", "system", "mail"),
 		)
 	}
 

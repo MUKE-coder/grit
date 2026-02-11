@@ -126,8 +126,10 @@ export function Dropzone({
             type: data.data?.mime_type || file.type,
             thumbnail_url: data.data?.thumbnail_url,
           });
-        } catch {
-          setUploadError(` + "`" + `Failed to upload ${file.name}` + "`" + `);
+        } catch (err: unknown) {
+          const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
+          const msg = axiosErr?.response?.data?.error?.message || ` + "`" + `Failed to upload ${file.name}` + "`" + `;
+          setUploadError(msg);
         }
       }
 

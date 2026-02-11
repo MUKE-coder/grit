@@ -9,22 +9,43 @@ func writeDocsFiles(root string, opts Options) error {
 	docsRoot := filepath.Join(root, "apps", "docs")
 
 	files := map[string]string{
-		filepath.Join(docsRoot, "package.json"):                           docsPackageJSON(opts),
-		filepath.Join(docsRoot, "tsconfig.json"):                         docsTSConfig(),
-		filepath.Join(docsRoot, "next.config.mjs"):                       docsNextConfig(),
-		filepath.Join(docsRoot, "tailwind.config.js"):                    docsTailwindConfig(),
-		filepath.Join(docsRoot, "postcss.config.mjs"):                    docsPostCSSConfig(),
-		filepath.Join(docsRoot, "source.config.ts"):                      docsSourceConfig(),
-		filepath.Join(docsRoot, "app", "source.ts"):                      docsAppSource(),
-		filepath.Join(docsRoot, "app", "global.css"):                     docsGlobalCSS(),
-		filepath.Join(docsRoot, "app", "layout.tsx"):                     docsRootLayout(opts),
-		filepath.Join(docsRoot, "app", "page.tsx"):                       docsHomePage(),
-		filepath.Join(docsRoot, "app", "docs", "layout.tsx"):             docsDocsLayout(),
+		// Config
+		filepath.Join(docsRoot, "package.json"):      docsPackageJSON(opts),
+		filepath.Join(docsRoot, "tsconfig.json"):      docsTSConfig(),
+		filepath.Join(docsRoot, "next.config.mjs"):    docsNextConfig(),
+		filepath.Join(docsRoot, "tailwind.config.js"): docsTailwindConfig(),
+		filepath.Join(docsRoot, "postcss.config.mjs"): docsPostCSSConfig(),
+		filepath.Join(docsRoot, "source.config.ts"):   docsSourceConfig(),
+
+		// App
+		filepath.Join(docsRoot, "app", "source.ts"):                       docsAppSource(),
+		filepath.Join(docsRoot, "app", "global.css"):                      docsGlobalCSS(),
+		filepath.Join(docsRoot, "app", "layout.tsx"):                      docsRootLayout(opts),
+		filepath.Join(docsRoot, "app", "page.tsx"):                        docsHomePage(),
+		filepath.Join(docsRoot, "app", "docs", "layout.tsx"):              docsDocsLayout(),
 		filepath.Join(docsRoot, "app", "docs", "[[...slug]]", "page.tsx"): docsSlugPage(),
-		filepath.Join(docsRoot, "content", "docs", "index.mdx"):          docsContentIndex(opts),
+
+		// Content — Core
+		filepath.Join(docsRoot, "content", "docs", "index.mdx"):           docsContentIndex(opts),
 		filepath.Join(docsRoot, "content", "docs", "getting-started.mdx"): docsContentGettingStarted(opts),
+		filepath.Join(docsRoot, "content", "docs", "meta.json"):           docsContentMeta(),
+
+		// Content — CLI
+		filepath.Join(docsRoot, "content", "docs", "cli", "commands.mdx"): docsContentCLI(),
+		filepath.Join(docsRoot, "content", "docs", "cli", "meta.json"):    docsContentCLIMeta(),
+
+		// Content — API
 		filepath.Join(docsRoot, "content", "docs", "api", "authentication.mdx"): docsContentAuth(),
-		filepath.Join(docsRoot, "content", "docs", "meta.json"):          docsContentMeta(),
+		filepath.Join(docsRoot, "content", "docs", "api", "meta.json"):          docsContentAPIMeta(),
+
+		// Content — Admin
+		filepath.Join(docsRoot, "content", "docs", "admin", "overview.mdx"):  docsContentAdminOverview(),
+		filepath.Join(docsRoot, "content", "docs", "admin", "resources.mdx"): docsContentAdminResources(),
+		filepath.Join(docsRoot, "content", "docs", "admin", "meta.json"):     docsContentAdminMeta(),
+
+		// Content — Batteries
+		filepath.Join(docsRoot, "content", "docs", "batteries", "overview.mdx"): docsContentBatteries(),
+		filepath.Join(docsRoot, "content", "docs", "batteries", "meta.json"):    docsContentBatteriesMeta(),
 	}
 
 	for path, content := range files {
@@ -322,11 +343,14 @@ Grit is a full-stack meta-framework that fuses **Go** (Gin + GORM) with **Next.j
 ## Features
 
 - **JWT Authentication** — Register, login, refresh tokens, role-based access
-- **User Management** — CRUD with pagination, search, sorting
-- **GORM Studio** — Visual database browser at ` + "`/studio`" + `
-- **Admin Panel** — Data tables, stats cards, user management
+- **Admin Panel** — Full auth (login, sign-up, forgot-password), resource CRUD with DataTable, FormBuilder, ViewModal, toast notifications
+- **Code Generator** — `+"`grit generate resource`"+` creates Go model, handler, service, Zod schemas, TypeScript types, React hooks, and admin page
+- **Landing Page** — SaaS marketing page with Framer Motion animations
+- **GORM Studio** — Visual database browser at `+"`/studio`"+`
+- **Batteries Included** — Redis cache, S3 storage, email (Resend), background jobs (asynq), cron scheduler, AI integration (Claude + OpenAI)
 - **Shared Types** — Zod schemas + TypeScript types shared between apps
 - **Docker Ready** — Dev and production Docker Compose setups
+- **Upgrade Command** — `+"`grit upgrade`"+` updates existing projects to the latest scaffold templates
 
 ## Tech Stack
 
@@ -337,6 +361,9 @@ Grit is a full-stack meta-framework that fuses **Go** (Gin + GORM) with **Next.j
 | Styling | Tailwind CSS + shadcn/ui |
 | Database | PostgreSQL |
 | Cache | Redis |
+| Queue | asynq (Redis-based) |
+| Storage | S3-compatible (MinIO, R2, B2) |
+| Email | Resend |
 | Validation | Zod |
 | Data Fetching | React Query (TanStack Query) |
 | Monorepo | Turborepo + pnpm |
@@ -344,7 +371,10 @@ Grit is a full-stack meta-framework that fuses **Go** (Gin + GORM) with **Next.j
 ## Next Steps
 
 - [Getting Started](/docs/getting-started) — Install Grit and create your first project
-- [Authentication](/docs/api/authentication) — Learn how the auth system works
+- [CLI Commands](/docs/cli/commands) — All available CLI commands
+- [Admin Panel](/docs/admin/overview) — Dashboard, auth, and resource management
+- [Authentication](/docs/api/authentication) — How the JWT auth system works
+- [Batteries](/docs/batteries/overview) — Cache, storage, email, jobs, cron, and AI
 `, opts.ProjectName)
 }
 
@@ -358,27 +388,27 @@ description: Install Grit and create your first full-stack project in minutes.
 
 Install the Grit CLI globally:
 
-` + "```bash" + `
+`+"```bash"+`
 go install github.com/MUKE-coder/grit/cmd/grit@latest
-` + "```" + `
+`+"```"+`
 
 ## Create a New Project
 
-` + "```bash" + `
+`+"```bash"+`
 grit new %s
-` + "```" + `
+`+"```"+`
 
 This creates a full monorepo with:
 
-- **Go API** with JWT auth, user management, and GORM Studio
-- **Next.js web app** with login, register, and dashboard
-- **Admin panel** with data tables and user management
-- **Shared package** with Zod schemas and TypeScript types
-- **Docker Compose** with PostgreSQL, Redis, MinIO, and Mailhog
+- **Go API** — JWT auth, user management, GORM Studio, and batteries (cache, storage, email, jobs, cron, AI)
+- **Web app** — SaaS marketing landing page with Framer Motion animations, linking to the admin panel for login/sign-up
+- **Admin panel** — Full authentication (login, sign-up, forgot-password), dashboard, resource management with DataTable, FormBuilder, ViewModal, toast notifications
+- **Shared package** — Zod schemas and TypeScript types shared between apps
+- **Docker Compose** — PostgreSQL, Redis, MinIO, and Mailhog
 
 ## Start Development
 
-` + "```bash" + `
+`+"```bash"+`
 # Start infrastructure
 cd %s
 docker compose up -d
@@ -388,39 +418,74 @@ pnpm install
 
 # Start all services
 pnpm dev
-` + "```" + `
+`+"```"+`
 
 ## Available Services
 
 | Service | URL |
 |---------|-----|
-| Web App | http://localhost:3000 |
+| Web (Landing Page) | http://localhost:3000 |
 | Admin Panel | http://localhost:3001 |
 | Go API | http://localhost:8080 |
 | GORM Studio | http://localhost:8080/studio |
 | Mailhog | http://localhost:8025 |
 | MinIO Console | http://localhost:9001 |
 
+## Project Structure
+
+`+"```"+`
+%s/
+├── apps/
+│   ├── api/          # Go backend (Gin + GORM)
+│   ├── web/          # Landing page (Next.js)
+│   └── admin/        # Admin panel (Next.js)
+├── packages/
+│   └── shared/       # Zod schemas, TS types, constants
+├── docker-compose.yml
+├── turbo.json
+└── pnpm-workspace.yaml
+`+"```"+`
+
 ## CLI Flags
 
-` + "```bash" + `
+`+"```bash"+`
 grit new myapp            # Full monorepo (api + web + admin + shared)
 grit new myapp --api      # Go API only
 grit new myapp --expo     # Full monorepo + Expo mobile app
 grit new myapp --mobile   # API + Expo mobile app only
 grit new myapp --full     # Everything + documentation site
-` + "```" + `
+`+"```"+`
+
+## Generate a Resource
+
+Once your project is set up, generate full-stack CRUD resources:
+
+`+"```bash"+`
+grit generate resource Post --fields "title:string,content:text,published:bool"
+`+"```"+`
+
+This creates: Go model, handler, service, Zod schemas, TypeScript types, React Query hooks, and an admin resource page — all wired up automatically.
+
+## Upgrade an Existing Project
+
+Update framework files to the latest version:
+
+`+"```bash"+`
+grit upgrade
+`+"```"+`
+
+This regenerates admin components, web landing page, and configs while preserving your resource definitions and API code.
 
 ## No Docker?
 
 If you can't run Docker, use cloud services:
 
-` + "```bash" + `
+`+"```bash"+`
 cp .env.cloud.example .env
-` + "```" + `
+`+"```"+`
 
 Fill in your keys for [Neon](https://neon.tech) (Postgres), [Upstash](https://upstash.com) (Redis), [Cloudflare R2](https://dash.cloudflare.com) (storage), and [Resend](https://resend.com) (email).
-`, opts.ProjectName, opts.ProjectName)
+`, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 
 func docsContentAuth() string {
@@ -530,7 +595,550 @@ admin.Use(middleware.RequireRole("admin"))
 func docsContentMeta() string {
 	return `{
   "title": "Documentation",
-  "pages": ["index", "getting-started", "---API---", "api/authentication"]
+  "pages": [
+    "index",
+    "getting-started",
+    "...cli",
+    "...admin",
+    "...api",
+    "...batteries"
+  ]
 }
+`
+}
+
+func docsContentCLIMeta() string {
+	return `{
+  "title": "CLI",
+  "pages": ["commands"]
+}
+`
+}
+
+func docsContentAPIMeta() string {
+	return `{
+  "title": "API",
+  "pages": ["authentication"]
+}
+`
+}
+
+func docsContentAdminMeta() string {
+	return `{
+  "title": "Admin Panel",
+  "pages": ["overview", "resources"]
+}
+`
+}
+
+func docsContentBatteriesMeta() string {
+	return `{
+  "title": "Batteries",
+  "pages": ["overview"]
+}
+`
+}
+
+func docsContentCLI() string {
+	return `---
+title: CLI Commands
+description: Complete reference for all Grit CLI commands.
+---
+
+## grit new
+
+Scaffold a new Grit project.
+
+` + "```bash" + `
+grit new <project-name> [flags]
+` + "```" + `
+
+**Flags:**
+
+| Flag | Description |
+|------|-------------|
+| --api | Scaffold Go API only (no frontend) |
+| --expo | Include Expo React Native app |
+| --mobile | API + Expo app only |
+| --full | Everything including docs site |
+
+**Examples:**
+
+` + "```bash" + `
+grit new my-saas              # Full monorepo
+grit new my-saas --api        # Backend only
+grit new my-saas --full       # With docs site
+` + "```" + `
+
+## grit generate resource
+
+Generate a full-stack CRUD resource with a single command.
+
+` + "```bash" + `
+grit generate resource <Name> [flags]
+` + "```" + `
+
+**Aliases:** grit g resource
+
+**Flags:**
+
+| Flag | Description |
+|------|-------------|
+| --fields | Inline field definitions |
+| --from | YAML file with field definitions |
+| -i, --interactive | Interactive field builder |
+
+**Generated files:**
+
+- Go model (internal/models/name.go)
+- Go service (internal/services/name_service.go)
+- Go handler (internal/handlers/name_handler.go)
+- Zod schemas (packages/shared/schemas/name.ts)
+- TypeScript types (packages/shared/types/name.ts)
+- React Query hooks (apps/admin/hooks/use-plural.ts)
+- Admin resource definition (apps/admin/resources/plural.ts)
+- Admin resource page (apps/admin/app/(dashboard)/resources/plural/page.tsx)
+
+**Field types:**
+
+| Type | Go Type | Example |
+|------|---------|---------|
+| string | string | title:string |
+| text | string | content:text |
+| int | int | views:int |
+| float | float64 | price:float |
+| bool | bool | published:bool |
+| date | time.Time | due_date:date |
+| email | string | contact:email |
+| url | string | website:url |
+| image | string | avatar:image |
+| select | string | status:select:draft,published,archived |
+
+**Field modifiers:**
+
+Append modifiers after the type with a colon:
+
+` + "```bash" + `
+grit g resource Post --fields "title:string:required,slug:string:unique,views:int:default=0"
+` + "```" + `
+
+| Modifier | Description |
+|----------|-------------|
+| required | NOT NULL constraint |
+| unique | UNIQUE constraint |
+| optional | Nullable field |
+| default=X | Default value |
+
+## grit sync
+
+Sync Go model types to TypeScript types and Zod schemas.
+
+` + "```bash" + `
+grit sync
+` + "```" + `
+
+Parses all Go model files in apps/api/internal/models/ and regenerates the corresponding TypeScript types and Zod schemas in packages/shared/.
+
+## grit upgrade
+
+Upgrade an existing Grit project to the latest scaffold templates.
+
+` + "```bash" + `
+grit upgrade [flags]
+` + "```" + `
+
+**Flags:**
+
+| Flag | Description |
+|------|-------------|
+| -f, --force | Overwrite all files without prompting |
+
+**What gets updated:**
+
+- Admin panel components (layout, tables, forms, widgets, resource UI)
+- Web landing page
+- Docker and root configuration files
+- Documentation (if present)
+- Expo app (if present)
+
+**What is preserved:**
+
+- Your resource definitions (resources/*.ts)
+- API handlers, services, and models
+- Environment variables (.env)
+- Custom code you've written
+
+Run grit sync after upgrading to regenerate TypeScript types.
+
+## grit version
+
+Print the installed Grit CLI version.
+
+` + "```bash" + `
+grit version
+` + "```" + `
+`
+}
+
+func docsContentAdminOverview() string {
+	return `---
+title: Admin Panel Overview
+description: A complete admin dashboard with authentication, resource management, and system pages.
+---
+
+## Overview
+
+The Grit admin panel is a full-featured Next.js application at apps/admin/. It includes authentication, a dashboard, resource CRUD management, and system administration pages.
+
+## Architecture
+
+The admin panel uses **Next.js App Router** with route groups to separate authenticated and public pages:
+
+` + "```" + `
+apps/admin/app/
++-- layout.tsx                        # Root layout (Providers, no sidebar)
++-- page.tsx                          # Redirect: /dashboard or /login
++-- (auth)/
+|   +-- login/page.tsx                # Login page
+|   +-- sign-up/page.tsx              # Registration page
+|   +-- forgot-password/page.tsx      # Password reset
++-- (dashboard)/
+    +-- layout.tsx                    # AdminLayout (sidebar + navbar)
+    +-- dashboard/page.tsx            # Dashboard home
+    +-- resources/users/page.tsx      # Users resource page
+    +-- system/
+        +-- jobs/page.tsx             # Background jobs
+        +-- files/page.tsx            # File browser
+        +-- cron/page.tsx             # Cron scheduler
+        +-- mail/page.tsx             # Mail preview
+` + "```" + `
+
+## Authentication Pages
+
+The admin panel includes split-screen auth pages with a branded left panel and form on the right:
+
+- **Login** (/login) — Email/password with password visibility toggle
+- **Sign Up** (/sign-up) — Name, email, password, confirm password
+- **Forgot Password** (/forgot-password) — Email-based password reset
+
+Auth pages use the (auth) route group and do NOT include the sidebar/navbar layout.
+
+## Dashboard
+
+The dashboard page (/dashboard) displays:
+
+- Welcome greeting with the logged-in user's name
+- Resource cards showing all registered resources with icons and record counts
+- Quick links to system pages and GORM Studio
+
+## Layout
+
+The admin layout includes:
+
+- **Sidebar** — Collapsible with Lucide icons, dashboard link, dynamic resource navigation (read from the resource registry), system pages section
+- **Navbar** — Breadcrumbs, theme toggle (dark/light), user menu with logout
+- **Theme** — Dark mode by default with a premium design system
+
+## Toast Notifications
+
+All CRUD operations display toast notifications via Sonner:
+
+- **Create** — "Created successfully"
+- **Update** — "Updated successfully"
+- **Delete** — "Deleted successfully"
+- **Error** — "Something went wrong"
+
+## System Pages
+
+Under /system/*, the admin includes:
+
+- **Jobs** — Background job dashboard (asynq)
+- **Files** — S3/MinIO file browser
+- **Cron** — Scheduled task viewer
+- **Mail** — Email template preview
+`
+}
+
+func docsContentAdminResources() string {
+	return `---
+title: Resource Management
+description: How resources work in the Grit admin panel — DataTable, FormBuilder, ViewModal, and more.
+---
+
+## Overview
+
+Resources are the core building block of the admin panel. Each resource represents a database entity (e.g., Users, Posts, Products) and is defined using defineResource().
+
+## Defining a Resource
+
+Create a resource definition in resources/plural.ts:
+
+` + "```typescript" + `
+import { defineResource } from "@/lib/resource";
+
+export const postsResource = defineResource({
+  name: "Post",
+  plural: "posts",
+  apiRoute: "/api/posts",
+  icon: "FileText",
+  columns: [
+    { key: "title", label: "Title", sortable: true, searchable: true },
+    { key: "status", label: "Status", format: "badge", sortable: true },
+    { key: "createdAt", label: "Created", format: "date", sortable: true },
+  ],
+  fields: [
+    { key: "title", label: "Title", type: "text", required: true },
+    { key: "content", label: "Content", type: "textarea" },
+    { key: "status", label: "Status", type: "select", options: [
+      { label: "Draft", value: "draft" },
+      { label: "Published", value: "published" },
+    ]},
+  ],
+  defaultSort: { key: "createdAt", direction: "desc" },
+  actions: ["create", "edit", "delete", "view"],
+});
+` + "```" + `
+
+## Resource Page
+
+Each resource gets a thin page wrapper in app/(dashboard)/resources/plural/page.tsx:
+
+` + "```typescript" + `
+"use client";
+import { ResourcePage } from "@/components/resource/ResourcePage";
+import { postsResource } from "@/resources/posts";
+
+export default function PostsPage() {
+  return <ResourcePage resource={postsResource} />;
+}
+` + "```" + `
+
+The ResourcePage component handles everything: DataTable, search, filters, pagination, create/edit modals, view modal, and delete confirmation.
+
+## DataTable
+
+The DataTable component supports:
+
+- **Sorting** — Click column headers to sort
+- **Search** — Full-text search across searchable columns
+- **Filters** — Column-specific filters
+- **Selection** — Checkbox selection with bulk actions (bulk delete)
+- **Pagination** — Page size selector and page navigation
+- **Actions** — View (eye icon), Edit (pencil icon), Delete (trash icon) per row
+
+## FormBuilder and FormModal
+
+The FormBuilder renders forms dynamically based on the resource fields definition:
+
+| Field Type | Component | Description |
+|-----------|-----------|-------------|
+| text | TextField | Single-line text input |
+| textarea | TextAreaField | Multi-line text input |
+| number | NumberField | Numeric input |
+| select | SelectField | Dropdown selection |
+| date | DateField | Date picker |
+| toggle | ToggleField | Boolean toggle switch |
+| checkbox | CheckboxField | Checkbox input |
+| radio | RadioField | Radio button group |
+| image | Dropzone | Image upload with drag-and-drop |
+
+The FormModal wraps FormBuilder in a slide-over modal for create/edit operations.
+
+## ViewModal
+
+The ViewModal displays a read-only view of a resource record:
+
+- Two-column layout for field labels and values
+- Formatted values based on column format (badge, date, boolean, image)
+- "Edit" button to switch to edit mode
+- Clean, professional design
+
+## Confirm Modal
+
+Delete operations use a custom confirmation modal instead of the browser confirm() dialog:
+
+- Danger variant with red confirm button
+- Custom title and description
+- Loading state during deletion
+- Works for both single-item and bulk delete
+
+## Column Formats
+
+Available column formats for the DataTable:
+
+| Format | Description |
+|--------|-------------|
+| text | Plain text (default) |
+| badge | Colored badge |
+| date | Formatted date |
+| boolean | Check/X icon |
+| image | Thumbnail image |
+| email | Email link |
+| url | External link |
+| number | Formatted number |
+| currency | Currency value |
+
+## Generating Resources
+
+Use the CLI to generate a complete resource:
+
+` + "```bash" + `
+grit generate resource Post --fields "title:string,content:text,status:select:draft,published"
+` + "```" + `
+
+This creates all Go backend code, shared types, React hooks, resource definition, and admin page — fully wired up and ready to use.
+`
+}
+
+func docsContentBatteries() string {
+	return `---
+title: Batteries Overview
+description: Built-in services for cache, storage, email, background jobs, cron, and AI.
+---
+
+## Overview
+
+Grit comes with "batteries included" — production-ready services that are scaffolded with every project. All services follow a graceful degradation pattern: if the backing service (Redis, MinIO, etc.) is unavailable, the app logs a warning but continues running.
+
+## Redis Cache
+
+**Files:** internal/cache/, internal/middleware/cache.go
+
+A Redis-based caching service with HTTP middleware:
+
+` + "```go" + `
+// Cache a value
+cache.Set(ctx, "key", value, 5*time.Minute)
+
+// Get a cached value
+val, err := cache.Get(ctx, "key")
+
+// Delete a cached value
+cache.Delete(ctx, "key")
+` + "```" + `
+
+The cache middleware automatically caches GET responses:
+
+` + "```go" + `
+r.GET("/api/posts", middleware.Cache(cacheService, 5*time.Minute), handler.GetPosts)
+` + "```" + `
+
+## S3 File Storage
+
+**Files:** internal/storage/, internal/handlers/upload_handler.go
+
+S3-compatible file storage with image processing:
+
+- Upload files to MinIO (dev) or S3/R2/B2 (production)
+- Automatic image resizing with configurable dimensions
+- Secure pre-signed URLs for downloads
+- Admin file browser at /system/files
+
+Upload endpoint: POST /api/uploads (multipart form data)
+
+## Email (Resend)
+
+**Files:** internal/mail/
+
+Email service powered by Resend with 4 HTML templates:
+
+- **Welcome** — New user registration
+- **Password Reset** — Reset link email
+- **Notification** — Generic notifications
+- **Invoice** — Payment/billing emails
+
+` + "```go" + `
+mailer.Send(ctx, mail.Message{
+    To:       "user@example.com",
+    Subject:  "Welcome!",
+    Template: "welcome",
+    Data:     map[string]string{"name": "John"},
+})
+` + "```" + `
+
+Preview emails at /system/mail in the admin panel.
+
+## Background Jobs (asynq)
+
+**Files:** internal/jobs/
+
+Redis-based background job processing:
+
+- **Email jobs** — Send emails asynchronously
+- **Image jobs** — Process uploaded images
+- **Cleanup jobs** — Remove expired data
+
+` + "```go" + `
+// Enqueue a job
+client.Enqueue(jobs.NewEmailJob("user@example.com", "welcome"))
+` + "```" + `
+
+Monitor jobs at /system/jobs in the admin panel.
+
+## Cron Scheduler
+
+**Files:** internal/cron/
+
+Scheduled task execution built on asynq:
+
+- Define cron tasks with standard cron expressions
+- View scheduled tasks at /system/cron in the admin panel
+
+## AI Integration
+
+**Files:** internal/ai/
+
+Dual AI provider support:
+
+- **Claude** (Anthropic) — via the Anthropic API
+- **OpenAI** — via the OpenAI API
+
+Features:
+- Text generation with streaming support
+- Configurable via environment variables
+- Admin handler for AI operations
+
+` + "```bash" + `
+# .env configuration
+ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
+AI_PROVIDER=claude  # or "openai"
+` + "```" + `
+
+## Configuration
+
+All batteries are configured via environment variables in .env:
+
+` + "```bash" + `
+# Redis
+REDIS_URL=localhost:6379
+
+# S3 Storage
+S3_ENDPOINT=localhost:9000
+S3_ACCESS_KEY=minioadmin
+S3_SECRET_KEY=minioadmin
+S3_BUCKET=uploads
+S3_REGION=us-east-1
+
+# Email
+RESEND_API_KEY=re_...
+MAIL_FROM=noreply@example.com
+
+# AI
+ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
+AI_PROVIDER=claude
+` + "```" + `
+
+## Docker Services
+
+All backing services are included in docker-compose.yml:
+
+| Service | Port | Purpose |
+|---------|------|---------|
+| PostgreSQL | 5432 | Database |
+| Redis | 6379 | Cache + Queue |
+| MinIO | 9000/9001 | File storage |
+| Mailhog | 8025 | Email testing |
 `
 }

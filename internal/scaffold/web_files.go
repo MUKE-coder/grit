@@ -9,24 +9,15 @@ func writeWebFiles(root string, opts Options) error {
 	webRoot := filepath.Join(root, "apps", "web")
 
 	files := map[string]string{
-		filepath.Join(webRoot, "package.json"):            webPackageJSON(opts),
-		filepath.Join(webRoot, "next.config.ts"):          webNextConfig(),
-		filepath.Join(webRoot, "tailwind.config.ts"):      webTailwindConfig(),
-		filepath.Join(webRoot, "postcss.config.js"):       webPostCSSConfig(),
-		filepath.Join(webRoot, "tsconfig.json"):           webTSConfig(),
-		filepath.Join(webRoot, "app", "globals.css"):      webGlobalCSS(),
-		filepath.Join(webRoot, "app", "layout.tsx"):       webRootLayout(opts),
-		filepath.Join(webRoot, "app", "page.tsx"):         webHomePage(opts),
-		filepath.Join(webRoot, "app", "(auth)", "login", "page.tsx"):           webLoginPage(),
-		filepath.Join(webRoot, "app", "(auth)", "register", "page.tsx"):        webRegisterPage(),
-		filepath.Join(webRoot, "app", "(auth)", "forgot-password", "page.tsx"): webForgotPasswordPage(),
-		filepath.Join(webRoot, "app", "(dashboard)", "layout.tsx"):             webDashboardLayout(),
-		filepath.Join(webRoot, "app", "(dashboard)", "dashboard", "page.tsx"):  webDashboardPage(),
-		filepath.Join(webRoot, "lib", "api-client.ts"):   webAPIClient(),
-		filepath.Join(webRoot, "lib", "query-client.ts"): webQueryClient(),
-		filepath.Join(webRoot, "lib", "utils.ts"):        webUtils(),
-		filepath.Join(webRoot, "hooks", "use-auth.ts"):   webUseAuth(),
-		filepath.Join(webRoot, "components", "shared", "providers.tsx"): webProviders(),
+		filepath.Join(webRoot, "package.json"):       webPackageJSON(opts),
+		filepath.Join(webRoot, "next.config.ts"):     webNextConfig(),
+		filepath.Join(webRoot, "tailwind.config.ts"): webTailwindConfig(),
+		filepath.Join(webRoot, "postcss.config.js"):  webPostCSSConfig(),
+		filepath.Join(webRoot, "tsconfig.json"):      webTSConfig(),
+		filepath.Join(webRoot, "app", "globals.css"): webGlobalCSS(),
+		filepath.Join(webRoot, "app", "layout.tsx"):  webRootLayout(opts),
+		filepath.Join(webRoot, "app", "page.tsx"):    webLandingPage(opts),
+		filepath.Join(webRoot, "lib", "utils.ts"):    webUtils(),
 	}
 
 	for path, content := range files {
@@ -50,22 +41,17 @@ func webPackageJSON(opts Options) string {
     "lint": "next lint"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.17.0",
-    "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
-    "js-cookie": "^3.0.5",
+    "framer-motion": "^11.0.0",
     "lucide-react": "^0.303.0",
     "next": "^16.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "sonner": "^1.3.0",
     "tailwind-merge": "^2.2.0",
-    "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.22.0"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@types/js-cookie": "^3.0.6",
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -204,7 +190,6 @@ body {
   border-color: var(--border);
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -229,7 +214,6 @@ func webRootLayout(opts Options) string {
 	return fmt.Sprintf(`import type { Metadata } from "next";
 import { DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { Providers } from "@/components/shared/providers";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -244,8 +228,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "%s",
-  description: "Built with Grit — Go + React framework",
+  title: "%s — Go + React. Built with Grit.",
+  description: "A full-stack framework that combines Go backend with Next.js frontend. Build fast, ship faster.",
 };
 
 export default function RootLayout({
@@ -256,7 +240,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={` + "`" + `${dmSans.variable} ${jetbrainsMono.variable} min-h-screen bg-background font-sans antialiased` + "`" + `}>
-        <Providers>{children}</Providers>
+        {children}
       </body>
     </html>
   );
@@ -264,737 +248,411 @@ export default function RootLayout({
 `, opts.ProjectName)
 }
 
-func webHomePage(opts Options) string {
-	return fmt.Sprintf(`import Link from "next/link";
+func webLandingPage(opts Options) string {
+	return fmt.Sprintf(`"use client";
 
-export default function HomePage() {
+import { motion } from "framer-motion";
+import {
+  Zap,
+  Database,
+  Layout,
+  Terminal,
+  Layers,
+  ArrowRight,
+  Code2,
+  Server,
+  Palette,
+  Github,
+} from "lucide-react";
+
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.1, duration: 0.5 },
+  }),
+};
+
+const features = [
+  {
+    icon: Server,
+    title: "Go Backend",
+    description: "Gin web framework + GORM ORM with auto-migrations, JWT auth, and middleware.",
+    color: "text-info",
+    bg: "bg-info/10",
+  },
+  {
+    icon: Layout,
+    title: "Next.js Frontend",
+    description: "React 19 with App Router, TypeScript, Tailwind CSS, and shadcn-style components.",
+    color: "text-accent",
+    bg: "bg-accent/10",
+  },
+  {
+    icon: Palette,
+    title: "Admin Panel",
+    description: "Resource-based admin dashboard with CRUD, data tables, forms, and widgets.",
+    color: "text-warning",
+    bg: "bg-warning/10",
+  },
+  {
+    icon: Database,
+    title: "GORM Studio",
+    description: "Built-in visual database browser. Inspect tables, run queries, explore data.",
+    color: "text-success",
+    bg: "bg-success/10",
+  },
+  {
+    icon: Terminal,
+    title: "CLI Generator",
+    description: "Generate full-stack resources with one command. Models, APIs, types, and UI.",
+    color: "text-danger",
+    bg: "bg-danger/10",
+  },
+  {
+    icon: Layers,
+    title: "Batteries Included",
+    description: "Redis caching, S3 storage, email, background jobs, cron, and AI integration.",
+    color: "text-info",
+    bg: "bg-info/10",
+  },
+];
+
+const steps = [
+  {
+    step: "01",
+    title: "Scaffold",
+    description: "Run grit new my-app to scaffold a full monorepo with Go API, Next.js web, and admin panel.",
+    code: "grit new my-project",
+  },
+  {
+    step: "02",
+    title: "Generate",
+    description: "Generate full-stack resources with models, handlers, schemas, hooks, and admin pages.",
+    code: "grit generate resource Post",
+  },
+  {
+    step: "03",
+    title: "Ship",
+    description: "Docker Compose for local dev, standalone builds for production. Deploy anywhere.",
+    code: "docker compose up -d",
+  },
+];
+
+export default function LandingPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center">
-      <div className="text-center space-y-6">
-        <h1 className="text-5xl font-bold text-foreground">
-          <span className="text-accent">%s</span>
-        </h1>
-        <p className="text-text-secondary text-lg">
-          Built with Grit — Go + React. Built with Grit.
-        </p>
-        <div className="flex gap-4 justify-center">
-          <Link
-            href="/login"
-            className="px-6 py-3 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/register"
-            className="px-6 py-3 bg-bg-elevated hover:bg-bg-hover text-foreground rounded-lg font-medium transition-colors border border-border"
-          >
-            Get Started
-          </Link>
+    <div className="min-h-screen">
+      {/* ─── Navbar ─────────────────────────────────────────── */}
+      <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-bold text-accent">G</span>
+            <span className="text-xl font-bold text-accent">rit</span>
+          </div>
+          <div className="hidden md:flex items-center gap-8 text-sm">
+            <a href="#features" className="text-text-secondary hover:text-foreground transition-colors">Features</a>
+            <a href="#how-it-works" className="text-text-secondary hover:text-foreground transition-colors">How it works</a>
+            <a href="#stack" className="text-text-secondary hover:text-foreground transition-colors">Stack</a>
+          </div>
+          <div className="flex items-center gap-3">
+            <a
+              href={` + "`" + `${ADMIN_URL}/login` + "`" + `}
+              className="text-sm font-medium text-text-secondary hover:text-foreground transition-colors"
+            >
+              Log In
+            </a>
+            <a
+              href={` + "`" + `${ADMIN_URL}/sign-up` + "`" + `}
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+            >
+              Sign Up
+            </a>
+          </div>
         </div>
-      </div>
+      </nav>
+
+      {/* ─── Hero ───────────────────────────────────────────── */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent" />
+        <div className="relative mx-auto max-w-6xl px-6 py-24 sm:py-32 lg:py-40">
+          <motion.div
+            className="mx-auto max-w-3xl text-center"
+            initial="hidden"
+            animate="visible"
+            variants={fadeUp}
+            custom={0}
+          >
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-bg-secondary px-4 py-1.5 text-sm text-text-secondary">
+              <Zap className="h-4 w-4 text-accent" />
+              <span>Go + React Meta-Framework</span>
+            </div>
+            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+              Build full-stack apps{" "}
+              <span className="text-accent">with Grit.</span>
+            </h1>
+            <p className="mt-6 text-lg text-text-secondary leading-relaxed sm:text-xl">
+              A production-ready framework combining Go backend, Next.js frontend, and an admin panel.
+              Scaffold, generate, and ship — all from the CLI.
+            </p>
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <a
+                href={` + "`" + `${ADMIN_URL}/sign-up` + "`" + `}
+                className="flex items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-hover transition-colors"
+              >
+                Get Started <ArrowRight className="h-4 w-4" />
+              </a>
+              <a
+                href="https://github.com/MUKE-coder/grit"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-lg border border-border bg-bg-secondary px-6 py-3 text-sm font-semibold text-foreground hover:bg-bg-hover transition-colors"
+              >
+                <Github className="h-4 w-4" /> View on GitHub
+              </a>
+            </div>
+          </motion.div>
+
+          {/* Terminal preview */}
+          <motion.div
+            className="mx-auto mt-16 max-w-2xl"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            <div className="rounded-xl border border-border bg-bg-secondary shadow-2xl overflow-hidden">
+              <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+                <div className="h-3 w-3 rounded-full bg-danger/60" />
+                <div className="h-3 w-3 rounded-full bg-warning/60" />
+                <div className="h-3 w-3 rounded-full bg-success/60" />
+                <span className="ml-2 text-xs text-text-muted font-mono">terminal</span>
+              </div>
+              <div className="p-6 font-mono text-sm space-y-2">
+                <p><span className="text-success">$</span> <span className="text-foreground">grit new my-saas</span></p>
+                <p className="text-text-muted">
+                  Creating project structure...<br />
+                  Scaffolding Go API...<br />
+                  Scaffolding Next.js web app...<br />
+                  Scaffolding admin panel...<br />
+                  Setting up shared types...<br />
+                  Writing Docker Compose...
+                </p>
+                <p className="text-success">Done! Project created at ./my-saas</p>
+                <p className="mt-2"><span className="text-success">$</span> <span className="text-foreground">cd my-saas && docker compose up -d</span></p>
+                <p className="text-text-muted">Starting PostgreSQL, Redis, MinIO...</p>
+                <p className="text-success">All services running.</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ─── Features ───────────────────────────────────────── */}
+      <section id="features" className="border-t border-border/50 bg-bg-secondary/30">
+        <div className="mx-auto max-w-6xl px-6 py-24">
+          <motion.div
+            className="text-center mb-16"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            custom={0}
+          >
+            <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
+              Everything you need
+            </h2>
+            <p className="mt-4 text-text-secondary text-lg max-w-2xl mx-auto">
+              A complete toolkit for building production-ready full-stack applications.
+            </p>
+          </motion.div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((feature, i) => (
+              <motion.div
+                key={feature.title}
+                className="rounded-xl border border-border bg-bg-secondary p-6 hover:border-accent/30 transition-colors"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeUp}
+                custom={i}
+              >
+                <div className={` + "`" + `flex h-10 w-10 items-center justify-center rounded-lg ${feature.bg} mb-4` + "`" + `}>
+                  <feature.icon className={` + "`" + `h-5 w-5 ${feature.color}` + "`" + `} />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground">{feature.title}</h3>
+                <p className="mt-2 text-sm text-text-secondary leading-relaxed">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── How It Works ───────────────────────────────────── */}
+      <section id="how-it-works" className="border-t border-border/50">
+        <div className="mx-auto max-w-6xl px-6 py-24">
+          <motion.div
+            className="text-center mb-16"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            custom={0}
+          >
+            <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
+              Three steps to ship
+            </h2>
+            <p className="mt-4 text-text-secondary text-lg max-w-2xl mx-auto">
+              From zero to production-ready in minutes, not weeks.
+            </p>
+          </motion.div>
+
+          <div className="grid gap-8 lg:grid-cols-3">
+            {steps.map((step, i) => (
+              <motion.div
+                key={step.step}
+                className="relative rounded-xl border border-border bg-bg-secondary p-6"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeUp}
+                custom={i}
+              >
+                <span className="text-5xl font-black text-accent/10">{step.step}</span>
+                <h3 className="mt-2 text-xl font-semibold text-foreground">{step.title}</h3>
+                <p className="mt-2 text-sm text-text-secondary leading-relaxed">{step.description}</p>
+                <div className="mt-4 rounded-lg bg-bg-tertiary px-4 py-2.5 font-mono text-sm">
+                  <span className="text-success">$</span>{" "}
+                  <span className="text-foreground">{step.code}</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Tech Stack ─────────────────────────────────────── */}
+      <section id="stack" className="border-t border-border/50 bg-bg-secondary/30">
+        <div className="mx-auto max-w-6xl px-6 py-24">
+          <motion.div
+            className="text-center mb-16"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            custom={0}
+          >
+            <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
+              Built on proven tech
+            </h2>
+            <p className="mt-4 text-text-secondary text-lg max-w-2xl mx-auto">
+              Every layer uses battle-tested, industry-standard technologies.
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            custom={1}
+          >
+            {[
+              { name: "Go", desc: "Backend language" },
+              { name: "Gin", desc: "Web framework" },
+              { name: "GORM", desc: "ORM" },
+              { name: "PostgreSQL", desc: "Database" },
+              { name: "Next.js", desc: "React framework" },
+              { name: "TypeScript", desc: "Type safety" },
+              { name: "Tailwind CSS", desc: "Styling" },
+              { name: "React Query", desc: "Data fetching" },
+              { name: "Redis", desc: "Cache + queues" },
+              { name: "Docker", desc: "Containerization" },
+              { name: "Turborepo", desc: "Monorepo" },
+              { name: "Zod", desc: "Validation" },
+            ].map((tech) => (
+              <div
+                key={tech.name}
+                className="rounded-lg border border-border bg-bg-secondary p-4 text-center hover:border-accent/30 transition-colors"
+              >
+                <p className="font-semibold text-foreground">{tech.name}</p>
+                <p className="text-xs text-text-muted mt-1">{tech.desc}</p>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ─── CTA ────────────────────────────────────────────── */}
+      <section className="border-t border-border/50">
+        <div className="mx-auto max-w-6xl px-6 py-24">
+          <motion.div
+            className="rounded-2xl border border-border bg-gradient-to-r from-accent/10 via-bg-secondary to-accent/5 p-12 text-center"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            custom={0}
+          >
+            <Code2 className="h-10 w-10 text-accent mx-auto mb-4" />
+            <h2 className="text-3xl font-bold text-foreground">
+              Ready to build?
+            </h2>
+            <p className="mt-4 text-text-secondary text-lg max-w-xl mx-auto">
+              Get started with Grit and ship your next full-stack app in record time.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <a
+                href={` + "`" + `${ADMIN_URL}/sign-up` + "`" + `}
+                className="flex items-center gap-2 rounded-lg bg-accent px-8 py-3 text-sm font-semibold text-white hover:bg-accent-hover transition-colors"
+              >
+                Get Started Free <ArrowRight className="h-4 w-4" />
+              </a>
+              <a
+                href="https://gritframework.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-accent hover:text-accent-hover transition-colors"
+              >
+                Read the docs →
+              </a>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ─── Footer ─────────────────────────────────────────── */}
+      <footer className="border-t border-border/50">
+        <div className="mx-auto max-w-6xl px-6 py-12">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-accent">Grit</span>
+              <span className="text-text-muted text-sm">— Go + React. Built with Grit.</span>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-text-secondary">
+              <a href="https://gritframework.dev" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+                Docs
+              </a>
+              <a href="https://github.com/MUKE-coder/grit" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+                GitHub
+              </a>
+              <a href={` + "`" + `${ADMIN_URL}/login` + "`" + `} className="hover:text-foreground transition-colors">
+                Admin
+              </a>
+            </div>
+          </div>
+          <div className="mt-8 pt-8 border-t border-border/50 text-center text-xs text-text-muted">
+            Built with Grit by MUKE-coder. Open source under MIT License.
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
 `, opts.ProjectName)
-}
-
-func webLoginPage() string {
-	return `"use client";
-
-import { useState } from "react";
-import Link from "next/link";
-import { Eye, EyeOff } from "lucide-react";
-import { useLogin } from "@/hooks/use-auth";
-
-export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const { mutate: login, isPending, error } = useLogin();
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    login({ email, password });
-  };
-
-  return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-8">
-        {/* Logo */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-accent">Grit</h1>
-          <p className="mt-2 text-text-secondary">Sign in to your account</p>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="rounded-xl bg-bg-secondary border border-border p-8 space-y-5">
-            {error && (
-              <div className="rounded-lg bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger">
-                {(error as any)?.response?.data?.error?.message || "Login failed"}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-text-secondary">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
-                placeholder="you@example.com"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="password" className="block text-sm font-medium text-text-secondary">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 pr-12 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
-                  placeholder="••••••••"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm text-text-secondary">
-                <input type="checkbox" className="rounded border-border bg-bg-tertiary" />
-                Remember me
-              </label>
-              <Link href="/forgot-password" className="text-sm text-accent hover:text-accent-hover">
-                Forgot password?
-              </Link>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isPending}
-              className="w-full rounded-lg bg-accent py-3 font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
-            >
-              {isPending ? "Signing in..." : "Sign In"}
-            </button>
-          </div>
-        </form>
-
-        <p className="text-center text-sm text-text-secondary">
-          Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-accent hover:text-accent-hover font-medium">
-            Create one
-          </Link>
-        </p>
-      </div>
-    </div>
-  );
-}
-`
-}
-
-func webRegisterPage() string {
-	return `"use client";
-
-import { useState } from "react";
-import Link from "next/link";
-import { Eye, EyeOff } from "lucide-react";
-import { useRegister } from "@/hooks/use-auth";
-
-export default function RegisterPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { mutate: register, isPending, error } = useRegister();
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password !== confirmPassword) return;
-    register({ name, email, password });
-  };
-
-  return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-accent">Grit</h1>
-          <p className="mt-2 text-text-secondary">Create your account</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="rounded-xl bg-bg-secondary border border-border p-8 space-y-5">
-            {error && (
-              <div className="rounded-lg bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger">
-                {(error as any)?.response?.data?.error?.message || "Registration failed"}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <label htmlFor="name" className="block text-sm font-medium text-text-secondary">
-                Name
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
-                placeholder="John Doe"
-                required
-                minLength={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-text-secondary">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
-                placeholder="you@example.com"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="password" className="block text-sm font-medium text-text-secondary">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 pr-12 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
-                  placeholder="••••••••"
-                  required
-                  minLength={8}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-text-secondary">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 pr-12 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
-                  placeholder="••••••••"
-                  required
-                  minLength={8}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
-                >
-                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-              {password !== confirmPassword && confirmPassword && (
-                <p className="text-sm text-danger">Passwords do not match</p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              disabled={isPending || password !== confirmPassword}
-              className="w-full rounded-lg bg-accent py-3 font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
-            >
-              {isPending ? "Creating account..." : "Create Account"}
-            </button>
-          </div>
-        </form>
-
-        <p className="text-center text-sm text-text-secondary">
-          Already have an account?{" "}
-          <Link href="/login" className="text-accent hover:text-accent-hover font-medium">
-            Sign in
-          </Link>
-        </p>
-      </div>
-    </div>
-  );
-}
-`
-}
-
-func webForgotPasswordPage() string {
-	return `"use client";
-
-import { useState } from "react";
-import Link from "next/link";
-import { apiClient } from "@/lib/api-client";
-
-export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await apiClient.post("/api/auth/forgot-password", { email });
-      setSent(true);
-    } catch {
-      setSent(true); // Always show success for security
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-accent">Grit</h1>
-          <p className="mt-2 text-text-secondary">Reset your password</p>
-        </div>
-
-        {sent ? (
-          <div className="rounded-xl bg-bg-secondary border border-border p-8 text-center space-y-4">
-            <div className="text-4xl">✉️</div>
-            <h2 className="text-lg font-medium text-foreground">Check your email</h2>
-            <p className="text-text-secondary text-sm">
-              If an account with that email exists, we&apos;ve sent a password reset link.
-            </p>
-            <Link
-              href="/login"
-              className="inline-block text-accent hover:text-accent-hover font-medium text-sm"
-            >
-              Back to login
-            </Link>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="rounded-xl bg-bg-secondary border border-border p-8 space-y-5">
-              <div className="space-y-2">
-                <label htmlFor="email" className="block text-sm font-medium text-text-secondary">
-                  Email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
-                  placeholder="you@example.com"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-lg bg-accent py-3 font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
-              >
-                {loading ? "Sending..." : "Send Reset Link"}
-              </button>
-            </div>
-          </form>
-        )}
-
-        <p className="text-center text-sm text-text-secondary">
-          <Link href="/login" className="text-accent hover:text-accent-hover font-medium">
-            Back to login
-          </Link>
-        </p>
-      </div>
-    </div>
-  );
-}
-`
-}
-
-func webDashboardLayout() string {
-	return `"use client";
-
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useMe, useLogout } from "@/hooks/use-auth";
-
-const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
-  { label: "Users", href: "/dashboard/users", icon: "Users", adminOnly: true },
-  { label: "Settings", href: "/dashboard/settings", icon: "Settings" },
-];
-
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { data: user, isLoading, isError } = useMe();
-  const { mutate: logout } = useLogout();
-  const pathname = usePathname();
-  const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  useEffect(() => {
-    if (isError) {
-      router.push("/login");
-    }
-  }, [isError, router]);
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!user) return null;
-
-  const filteredNav = navItems.filter(
-    (item) => !item.adminOnly || user.role === "admin"
-  );
-
-  return (
-    <div className="flex min-h-screen">
-      {/* Sidebar overlay for mobile */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={` + "`" + `fixed inset-y-0 left-0 z-50 w-64 bg-bg-secondary border-r border-border transform transition-transform duration-200 lg:translate-x-0 lg:static ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }` + "`" + `}
-      >
-        <div className="flex h-16 items-center gap-2 border-b border-border px-6">
-          <span className="text-xl font-bold text-accent">Grit</span>
-        </div>
-
-        <nav className="p-4 space-y-1">
-          {filteredNav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setSidebarOpen(false)}
-              className={` + "`" + `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                pathname === item.href
-                  ? "bg-accent/10 text-accent"
-                  : "text-text-secondary hover:bg-bg-hover hover:text-foreground"
-              }` + "`" + `}
-            >
-              <span className="text-base">{getIcon(item.icon)}</span>
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-
-      {/* Main content */}
-      <div className="flex flex-1 flex-col">
-        {/* Top navbar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-bg-primary px-6">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden text-text-secondary hover:text-foreground"
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-
-          <div className="flex-1" />
-
-          <div className="relative">
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-bg-hover transition-colors"
-            >
-              <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
-                <span className="text-sm font-medium text-accent">
-                  {user.name?.charAt(0)?.toUpperCase()}
-                </span>
-              </div>
-              <span className="text-sm font-medium text-foreground hidden sm:block">
-                {user.name}
-              </span>
-            </button>
-
-            {dropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
-                <div className="absolute right-0 top-full mt-2 w-48 rounded-lg border border-border bg-bg-elevated shadow-lg z-50">
-                  <div className="px-4 py-3 border-b border-border">
-                    <p className="text-sm font-medium text-foreground">{user.name}</p>
-                    <p className="text-xs text-text-muted">{user.email}</p>
-                  </div>
-                  <button
-                    onClick={() => logout()}
-                    className="w-full px-4 py-2.5 text-left text-sm text-danger hover:bg-bg-hover transition-colors"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </header>
-
-        {/* Page content */}
-        <main className="flex-1 p-6">{children}</main>
-      </div>
-    </div>
-  );
-}
-
-function getIcon(name: string): string {
-  const icons: Record<string, string> = {
-    LayoutDashboard: "📊",
-    Users: "👥",
-    Settings: "⚙️",
-  };
-  return icons[name] || "📄";
-}
-`
-}
-
-func webDashboardPage() string {
-	return `"use client";
-
-import { useMe } from "@/hooks/use-auth";
-
-const stats = [
-  { label: "Total Users", value: "128", icon: "👥", gradient: "from-accent/20 to-accent/5" },
-  { label: "Active Users", value: "96", icon: "✅", gradient: "from-success/20 to-success/5" },
-  { label: "New This Month", value: "24", icon: "📈", gradient: "from-info/20 to-info/5" },
-  { label: "Total Posts", value: "342", icon: "📝", gradient: "from-warning/20 to-warning/5" },
-];
-
-export default function DashboardPage() {
-  const { data: user } = useMe();
-
-  return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">
-          Welcome back, {user?.name || "User"}
-        </h1>
-        <p className="text-text-secondary mt-1">
-          Here&apos;s what&apos;s happening with your project.
-        </p>
-      </div>
-
-      {/* Stats cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className={` + "`" + `rounded-xl border border-border bg-gradient-to-br ${stat.gradient} p-6` + "`" + `}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-2xl">{stat.icon}</span>
-            </div>
-            <div className="mt-4">
-              <p className="text-3xl font-bold text-foreground">{stat.value}</p>
-              <p className="text-sm text-text-secondary mt-1">{stat.label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Getting Started */}
-      <div className="rounded-xl border border-border bg-bg-secondary p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Getting Started</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <a
-            href="http://localhost:8080/studio"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-lg border border-border bg-bg-tertiary p-4 hover:bg-bg-hover transition-colors group"
-          >
-            <h3 className="font-medium text-foreground group-hover:text-accent transition-colors">
-              GORM Studio
-            </h3>
-            <p className="text-sm text-text-secondary mt-1">
-              Browse your database visually
-            </p>
-          </a>
-          <a
-            href="http://localhost:8080/api/health"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-lg border border-border bg-bg-tertiary p-4 hover:bg-bg-hover transition-colors group"
-          >
-            <h3 className="font-medium text-foreground group-hover:text-accent transition-colors">
-              API Health Check
-            </h3>
-            <p className="text-sm text-text-secondary mt-1">
-              Check the API status
-            </p>
-          </a>
-          <a
-            href="https://gritframework.dev"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-lg border border-border bg-bg-tertiary p-4 hover:bg-bg-hover transition-colors group"
-          >
-            <h3 className="font-medium text-foreground group-hover:text-accent transition-colors">
-              Documentation
-            </h3>
-            <p className="text-sm text-text-secondary mt-1">
-              Learn more about Grit
-            </p>
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
-`
-}
-
-func webAPIClient() string {
-	return `import axios from "axios";
-import Cookies from "js-cookie";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-
-export const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// Request interceptor: attach access token
-apiClient.interceptors.request.use((config) => {
-  const token = Cookies.get("access_token");
-  if (token) {
-    config.headers.Authorization = ` + "`" + `Bearer ${token}` + "`" + `;
-  }
-  return config;
-});
-
-// Response interceptor: handle 401 and refresh
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (value: unknown) => void;
-  reject: (reason: unknown) => void;
-}> = [];
-
-const processQueue = (error: unknown) => {
-  failedQueue.forEach((promise) => {
-    if (error) {
-      promise.reject(error);
-    } else {
-      promise.resolve(undefined);
-    }
-  });
-  failedQueue = [];
-};
-
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        }).then(() => apiClient(originalRequest));
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        const refreshToken = Cookies.get("refresh_token");
-        if (!refreshToken) {
-          throw new Error("No refresh token");
-        }
-
-        const { data } = await axios.post(` + "`" + `${API_URL}/api/auth/refresh` + "`" + `, {
-          refresh_token: refreshToken,
-        });
-
-        const { access_token, refresh_token: newRefreshToken } = data.data.tokens;
-        Cookies.set("access_token", access_token, { expires: 1 });
-        Cookies.set("refresh_token", newRefreshToken, { expires: 7 });
-
-        processQueue(null);
-        return apiClient(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError);
-        Cookies.remove("access_token");
-        Cookies.remove("refresh_token");
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
-        }
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
-    }
-
-    return Promise.reject(error);
-  }
-);
-`
-}
-
-func webQueryClient() string {
-	return `import { QueryClient } from "@tanstack/react-query";
-
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-    mutations: {
-      retry: 0,
-    },
-  },
-});
-`
 }
 
 func webUtils() string {
@@ -1003,136 +661,6 @@ import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-}
-`
-}
-
-func webUseAuth() string {
-	return `import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
-import { apiClient } from "@/lib/api-client";
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  avatar: string;
-  active: boolean;
-}
-
-interface AuthResponse {
-  data: {
-    user: User;
-    tokens: {
-      access_token: string;
-      refresh_token: string;
-      expires_at: number;
-    };
-  };
-}
-
-function storeTokens(tokens: { access_token: string; refresh_token: string }) {
-  Cookies.set("access_token", tokens.access_token, { expires: 1 });
-  Cookies.set("refresh_token", tokens.refresh_token, { expires: 7 });
-}
-
-function clearTokens() {
-  Cookies.remove("access_token");
-  Cookies.remove("refresh_token");
-}
-
-export function useLogin() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (credentials: { email: string; password: string }) => {
-      const { data } = await apiClient.post<AuthResponse>(
-        "/api/auth/login",
-        credentials
-      );
-      return data;
-    },
-    onSuccess: (data) => {
-      storeTokens(data.data.tokens);
-      queryClient.setQueryData(["me"], data.data.user);
-      router.push("/dashboard");
-    },
-  });
-}
-
-export function useRegister() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: {
-      name: string;
-      email: string;
-      password: string;
-    }) => {
-      const { data: response } = await apiClient.post<AuthResponse>(
-        "/api/auth/register",
-        data
-      );
-      return response;
-    },
-    onSuccess: (data) => {
-      storeTokens(data.data.tokens);
-      queryClient.setQueryData(["me"], data.data.user);
-      router.push("/dashboard");
-    },
-  });
-}
-
-export function useLogout() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      try {
-        await apiClient.post("/api/auth/logout");
-      } catch {
-        // Ignore errors on logout
-      }
-    },
-    onSettled: () => {
-      clearTokens();
-      queryClient.clear();
-      router.push("/login");
-    },
-  });
-}
-
-export function useMe() {
-  return useQuery<User>({
-    queryKey: ["me"],
-    queryFn: async () => {
-      const { data } = await apiClient.get("/api/auth/me");
-      return data.data;
-    },
-    retry: false,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-  });
-}
-`
-}
-
-func webProviders() string {
-	return `"use client";
-
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "@/lib/query-client";
-
-export function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
-  );
 }
 `
 }

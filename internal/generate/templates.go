@@ -829,7 +829,7 @@ export default function %sPage() {
 		names.Camel,
 	)
 
-	path := filepath.Join(g.Root, "apps", "admin", "app", "resources", names.PluralKebab, "page.tsx")
+	path := filepath.Join(g.Root, "apps", "admin", "app", "(dashboard)", "resources", names.PluralKebab, "page.tsx")
 	return writeFileWithDirs(path, content)
 }
 

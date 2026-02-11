@@ -46,7 +46,7 @@ export interface FilterDefinition {
 
 // ─── Table Definitions ──────────────────────────────────────────────
 
-export type TableAction = "create" | "edit" | "delete" | "export";
+export type TableAction = "create" | "view" | "edit" | "delete" | "export";
 export type BulkAction = "delete" | "export";
 
 export interface TableDefinition {
@@ -136,7 +136,7 @@ export function defineResource(config: ResourceDefinition): ResourceDefinition {
     table: {
       ...config.table,
       pageSize: config.table.pageSize ?? 20,
-      actions: config.table.actions ?? ["create", "edit", "delete"],
+      actions: config.table.actions ?? ["create", "view", "edit", "delete"],
       searchable: config.table.searchable ?? true,
     },
     form: {
@@ -215,7 +215,7 @@ export const usersResource = defineResource({
     ],
     searchable: true,
     searchPlaceholder: "Search by name or email...",
-    actions: ["create", "edit", "delete"],
+    actions: ["create", "view", "edit", "delete"],
     bulkActions: ["delete"],
     defaultSort: { key: "created_at", direction: "desc" },
     pageSize: 20,
@@ -309,6 +309,8 @@ import { TableToolbar } from "@/components/tables/table-toolbar";
 import { TablePagination } from "@/components/tables/table-pagination";
 import { TableFilters } from "@/components/tables/table-filters";
 import { FormModal } from "@/components/forms/form-modal";
+import { ViewModal } from "@/components/resource/view-modal";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 interface ResourcePageProps {
   resource: ResourceDefinition;
@@ -330,6 +332,14 @@ export function ResourcePage({ resource }: ResourcePageProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Record<string, unknown> | null>(null);
 
+  // View modal state
+  const [viewingItem, setViewingItem] = useState<Record<string, unknown> | null>(null);
+
+  // Confirm modal state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+
   // Data fetching
   const { data, isLoading } = useResource(resource.endpoint, {
     page,
@@ -340,8 +350,8 @@ export function ResourcePage({ resource }: ResourcePageProps) {
     filters,
   });
 
-  const { mutate: deleteItem } = useDeleteResource(resource.endpoint);
-  const { mutate: bulkDelete } = useBulkDeleteResource(resource.endpoint);
+  const { mutate: deleteItem, isPending: isDeleting } = useDeleteResource(resource.endpoint);
+  const { mutate: bulkDelete, isPending: isBulkDeleting } = useBulkDeleteResource(resource.endpoint);
 
   // Visible columns
   const visibleColumns = useMemo(
@@ -380,6 +390,10 @@ export function ResourcePage({ resource }: ResourcePageProps) {
     setPage(1);
   }, []);
 
+  const handleView = useCallback((item: Record<string, unknown>) => {
+    setViewingItem(item);
+  }, []);
+
   const handleEdit = useCallback((item: Record<string, unknown>) => {
     setEditingItem(item);
     setFormOpen(true);
@@ -390,40 +404,52 @@ export function ResourcePage({ resource }: ResourcePageProps) {
     setFormOpen(true);
   }, []);
 
-  const handleDelete = useCallback(
-    (id: number) => {
-      if (confirm(` + "`" + `Delete this ${resource.label?.singular ?? resource.name}?` + "`" + `)) {
-        deleteItem(id);
-      }
-    },
-    [deleteItem, resource]
-  );
+  const handleDelete = useCallback((id: number) => {
+    setDeletingId(id);
+    setConfirmOpen(true);
+  }, []);
+
+  const confirmDelete = useCallback(() => {
+    if (deletingId !== null) {
+      deleteItem(deletingId, {
+        onSuccess: () => {
+          setConfirmOpen(false);
+          setDeletingId(null);
+        },
+      });
+    }
+  }, [deleteItem, deletingId]);
 
   const handleBulkDelete = useCallback(() => {
-    if (
-      selectedRows.length > 0 &&
-      confirm(` + "`" + `Delete ${selectedRows.length} ${resource.label?.plural ?? resource.slug}?` + "`" + `)
-    ) {
-      bulkDelete(selectedRows);
-      setSelectedRows([]);
+    if (selectedRows.length > 0) {
+      setBulkConfirmOpen(true);
     }
-  }, [bulkDelete, selectedRows, resource]);
+  }, [selectedRows]);
+
+  const confirmBulkDelete = useCallback(() => {
+    bulkDelete(selectedRows, {
+      onSuccess: () => {
+        setBulkConfirmOpen(false);
+        setSelectedRows([]);
+      },
+    });
+  }, [bulkDelete, selectedRows]);
 
   const handleFormClose = useCallback(() => {
     setFormOpen(false);
     setEditingItem(null);
   }, []);
 
-  const actions = resource.table.actions ?? ["create", "edit", "delete"];
+  const actions = resource.table.actions ?? ["create", "view", "edit", "delete"];
+  const singularName = resource.label?.singular ?? resource.name;
+  const pluralName = resource.label?.plural ?? resource.slug;
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">
-          {resource.label?.plural ?? resource.slug}
-        </h1>
+        <h1 className="text-2xl font-bold text-foreground">{pluralName}</h1>
         <p className="text-text-secondary mt-1">
-          Manage {(resource.label?.plural ?? resource.slug).toLowerCase()}
+          Manage {pluralName.toLowerCase()}
         </p>
       </div>
 
@@ -462,6 +488,7 @@ export function ResourcePage({ resource }: ResourcePageProps) {
           onSort={handleSort}
           selectedRows={selectedRows}
           onSelectRows={setSelectedRows}
+          onView={actions.includes("view") ? handleView : undefined}
           onEdit={actions.includes("edit") ? handleEdit : undefined}
           onDelete={actions.includes("delete") ? handleDelete : undefined}
         />
@@ -486,6 +513,37 @@ export function ResourcePage({ resource }: ResourcePageProps) {
           onClose={handleFormClose}
         />
       )}
+
+      {viewingItem && (
+        <ViewModal
+          resource={resource}
+          item={viewingItem}
+          onClose={() => setViewingItem(null)}
+          onEdit={actions.includes("edit") ? handleEdit : undefined}
+        />
+      )}
+
+      <ConfirmModal
+        open={confirmOpen}
+        onConfirm={confirmDelete}
+        onCancel={() => { setConfirmOpen(false); setDeletingId(null); }}
+        title={` + "`" + `Delete ${singularName}` + "`" + `}
+        description={` + "`" + `Are you sure you want to delete this ${singularName.toLowerCase()}? This action cannot be undone.` + "`" + `}
+        confirmLabel="Delete"
+        variant="danger"
+        loading={isDeleting}
+      />
+
+      <ConfirmModal
+        open={bulkConfirmOpen}
+        onConfirm={confirmBulkDelete}
+        onCancel={() => setBulkConfirmOpen(false)}
+        title={` + "`" + `Delete ${selectedRows.length} ${pluralName.toLowerCase()}` + "`" + `}
+        description={` + "`" + `Are you sure you want to delete ${selectedRows.length} ${pluralName.toLowerCase()}? This action cannot be undone.` + "`" + `}
+        confirmLabel="Delete All"
+        variant="danger"
+        loading={isBulkDeleting}
+      />
     </div>
   );
 }
@@ -508,6 +566,7 @@ export default function UsersPage() {
 // adminUseResource returns the generic resource data hooks.
 func adminUseResource() string {
 	return `import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 
 interface ResourceQueryParams {
@@ -581,6 +640,11 @@ export function useCreateResource(endpoint: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoint] });
+      toast.success("Created successfully");
+    },
+    onError: (err: unknown) => {
+      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
+      toast.error(axiosErr?.response?.data?.error?.message || "Failed to create");
     },
   });
 }
@@ -595,6 +659,11 @@ export function useUpdateResource(endpoint: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoint] });
+      toast.success("Updated successfully");
+    },
+    onError: (err: unknown) => {
+      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
+      toast.error(axiosErr?.response?.data?.error?.message || "Failed to update");
     },
   });
 }
@@ -608,6 +677,11 @@ export function useDeleteResource(endpoint: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoint] });
+      toast.success("Deleted successfully");
+    },
+    onError: (err: unknown) => {
+      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
+      toast.error(axiosErr?.response?.data?.error?.message || "Failed to delete");
     },
   });
 }
@@ -621,6 +695,10 @@ export function useBulkDeleteResource(endpoint: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoint] });
+      toast.success("Deleted successfully");
+    },
+    onError: () => {
+      toast.error("Failed to delete some items");
     },
   });
 }
@@ -631,21 +709,36 @@ export function useBulkDeleteResource(endpoint: string) {
 func adminDashboardPage() string {
 	return fmt.Sprintf(`"use client";
 
+import { useMe } from "@/hooks/use-auth";
 import { resources } from "@/resources";
 import { StatsCard } from "@/components/widgets/stats-card";
 import { WidgetGrid } from "@/components/widgets/widget-grid";
+import { getIcon } from "@/lib/icons";
 
 export default function AdminDashboard() {
-  // Collect all dashboard widgets from registered resources
+  const { data: user } = useMe();
   const allWidgets = resources.flatMap((r) => r.dashboard?.widgets ?? []);
+
+  const greeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  };
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-text-secondary mt-1">Overview of your application</p>
+      {/* Welcome header */}
+      <div className="rounded-xl border border-border bg-gradient-to-r from-accent/10 via-bg-secondary to-bg-secondary p-6 sm:p-8">
+        <h1 className="text-2xl font-bold text-foreground">
+          {greeting()}, {user?.name?.split(" ")[0] || "Admin"}
+        </h1>
+        <p className="text-text-secondary mt-1">
+          Here&apos;s an overview of your application.
+        </p>
       </div>
 
+      {/* Stats widgets */}
       {allWidgets.length > 0 ? (
         <WidgetGrid widgets={allWidgets} />
       ) : (
@@ -655,44 +748,93 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-border bg-bg-secondary p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h2>
+      {/* Quick Actions + System */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Resources */}
+        <div className="lg:col-span-2 rounded-xl border border-border bg-bg-secondary p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Resources</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            {resources.map((r) => (
-              <a
-                key={r.slug}
-                href={%s/resources/${r.slug}%s}
-                className="rounded-lg border border-border bg-bg-tertiary p-4 hover:bg-bg-hover transition-colors"
-              >
-                <h3 className="font-medium text-foreground">{r.label?.plural ?? r.name}</h3>
-                <p className="text-xs text-text-muted mt-1">
-                  Manage {(r.label?.plural ?? r.slug).toLowerCase()}
-                </p>
-              </a>
-            ))}
+            {resources.map((r) => {
+              const Icon = getIcon(r.icon);
+              return (
+                <a
+                  key={r.slug}
+                  href={%s/resources/${r.slug}%s}
+                  className="flex items-center gap-4 rounded-lg border border-border bg-bg-tertiary p-4 hover:border-accent/30 hover:bg-bg-hover transition-all group"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                    <Icon className="h-5 w-5 text-accent" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-foreground group-hover:text-accent transition-colors">
+                      {r.label?.plural ?? r.name}
+                    </h3>
+                    <p className="text-xs text-text-muted">
+                      Manage {(r.label?.plural ?? r.slug).toLowerCase()}
+                    </p>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Quick Links */}
+        <div className="rounded-xl border border-border bg-bg-secondary p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Quick Links</h2>
+          <div className="space-y-2">
             <a
               href="http://localhost:8080/studio"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg border border-border bg-bg-tertiary p-4 hover:bg-bg-hover transition-colors"
+              className="flex items-center gap-3 rounded-lg border border-border bg-bg-tertiary px-4 py-3 hover:border-accent/30 hover:bg-bg-hover transition-all group"
             >
-              <h3 className="font-medium text-foreground">GORM Studio</h3>
-              <p className="text-xs text-text-muted mt-1">Browse database</p>
-            </a>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-border bg-bg-secondary p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Recent Activity</h2>
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center gap-3 text-sm">
-                <div className="h-2 w-2 rounded-full bg-accent" />
-                <span className="text-text-secondary">Activity placeholder #{i}</span>
-                <span className="ml-auto text-text-muted text-xs">Just now</span>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-info/10">
+                <span className="text-info text-sm font-bold">DB</span>
               </div>
-            ))}
+              <div>
+                <p className="text-sm font-medium text-foreground group-hover:text-accent transition-colors">GORM Studio</p>
+                <p className="text-xs text-text-muted">Browse database</p>
+              </div>
+            </a>
+            <a
+              href="http://localhost:8080/api/health"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-lg border border-border bg-bg-tertiary px-4 py-3 hover:border-accent/30 hover:bg-bg-hover transition-all group"
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-success/10">
+                <span className="text-success text-sm font-bold">OK</span>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground group-hover:text-accent transition-colors">API Health</p>
+                <p className="text-xs text-text-muted">Check status</p>
+              </div>
+            </a>
+            <a
+              href="/system/jobs"
+              className="flex items-center gap-3 rounded-lg border border-border bg-bg-tertiary px-4 py-3 hover:border-accent/30 hover:bg-bg-hover transition-all group"
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-warning/10">
+                <span className="text-warning text-sm font-bold">Q</span>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground group-hover:text-accent transition-colors">Job Queue</p>
+                <p className="text-xs text-text-muted">Background jobs</p>
+              </div>
+            </a>
+            <a
+              href="/system/files"
+              className="flex items-center gap-3 rounded-lg border border-border bg-bg-tertiary px-4 py-3 hover:border-accent/30 hover:bg-bg-hover transition-all group"
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent/10">
+                <span className="text-accent text-sm font-bold">S3</span>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground group-hover:text-accent transition-colors">File Storage</p>
+                <p className="text-xs text-text-muted">Manage uploads</p>
+              </div>
+            </a>
           </div>
         </div>
       </div>
@@ -700,4 +842,163 @@ export default function AdminDashboard() {
   );
 }
 `, "`", "`")
+}
+
+// adminConfirmModal returns the reusable confirm modal component.
+func adminConfirmModal() string {
+	return `"use client";
+
+import { AlertCircle, Loader2 } from "@/lib/icons";
+
+interface ConfirmModalProps {
+  open: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+  title?: string;
+  description?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: "danger" | "default";
+  loading?: boolean;
+}
+
+export function ConfirmModal({
+  open,
+  onConfirm,
+  onCancel,
+  title = "Are you sure?",
+  description = "This action cannot be undone.",
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  variant = "default",
+  loading = false,
+}: ConfirmModalProps) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/50" onClick={onCancel} />
+      <div className="relative z-10 w-full max-w-sm rounded-xl border border-border bg-bg-secondary p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-start gap-4">
+          <div className={` + "`" + `flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+            variant === "danger" ? "bg-danger/10" : "bg-accent/10"
+          }` + "`" + `}>
+            <AlertCircle className={` + "`" + `h-5 w-5 ${
+              variant === "danger" ? "text-danger" : "text-accent"
+            }` + "`" + `} />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+            <p className="text-sm text-text-secondary">{description}</p>
+          </div>
+        </div>
+
+        <div className="mt-6 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-bg-hover transition-colors disabled:opacity-50"
+          >
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            className={` + "`" + `flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50 ${
+              variant === "danger"
+                ? "bg-danger hover:bg-danger/90"
+                : "bg-accent hover:bg-accent-hover"
+            }` + "`" + `}
+          >
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+`
+}
+
+// adminViewModal returns the resource view modal component.
+func adminViewModal() string {
+	return `"use client";
+
+import type { ResourceDefinition } from "@/lib/resource";
+import { renderCell } from "@/components/tables/cell-renderers";
+import { X, Pencil } from "@/lib/icons";
+
+interface ViewModalProps {
+  resource: ResourceDefinition;
+  item: Record<string, unknown>;
+  onClose: () => void;
+  onEdit?: (item: Record<string, unknown>) => void;
+}
+
+export function ViewModal({ resource, item, onClose, onEdit }: ViewModalProps) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl border border-border bg-bg-secondary shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <h2 className="text-lg font-semibold text-foreground">
+            {resource.label?.singular ?? resource.name} Details
+          </h2>
+          <div className="flex items-center gap-2">
+            {onEdit && (
+              <button
+                onClick={() => { onClose(); onEdit(item); }}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-accent hover:bg-accent/10 transition-colors"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="rounded-lg p-1 text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {resource.table.columns.map((col) => {
+              const value = item[col.key];
+
+              return (
+                <div key={col.key} className="space-y-1.5">
+                  <p className="text-xs font-medium text-text-muted uppercase tracking-wider">
+                    {col.label}
+                  </p>
+                  <div className="text-sm text-foreground">
+                    {value !== null && value !== undefined
+                      ? renderCell(col, value, item)
+                      : <span className="text-text-muted">—</span>
+                    }
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4">
+          <button
+            onClick={onClose}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-bg-hover transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+`
 }

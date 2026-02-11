@@ -18,6 +18,17 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "app", "globals.css"): adminGlobalCSS(),
 		filepath.Join(adminRoot, "app", "layout.tsx"): adminRootLayout(opts),
 
+		// Root redirect page
+		filepath.Join(adminRoot, "app", "page.tsx"): adminRedirectPage(),
+
+		// Auth pages — (auth) route group
+		filepath.Join(adminRoot, "app", "(auth)", "login", "page.tsx"):           adminLoginPage(),
+		filepath.Join(adminRoot, "app", "(auth)", "sign-up", "page.tsx"):         adminSignUpPage(),
+		filepath.Join(adminRoot, "app", "(auth)", "forgot-password", "page.tsx"): adminForgotPasswordPage(),
+
+		// Dashboard route group layout
+		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"): adminDashboardLayout(),
+
 		// Lib
 		filepath.Join(adminRoot, "lib", "api-client.ts"):  adminAPIClient(),
 		filepath.Join(adminRoot, "lib", "query-client.ts"): adminQueryClient(),
@@ -59,7 +70,8 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "forms", "fields", "image-field.tsx"):    adminImageField(),
 
 		// UI components
-		filepath.Join(adminRoot, "components", "ui", "dropzone.tsx"): adminDropzone(),
+		filepath.Join(adminRoot, "components", "ui", "dropzone.tsx"):      adminDropzone(),
+		filepath.Join(adminRoot, "components", "ui", "confirm-modal.tsx"): adminConfirmModal(),
 
 		// Widget components
 		filepath.Join(adminRoot, "components", "widgets", "stats-card.tsx"):      adminStatsCard(),
@@ -69,6 +81,7 @@ func writeAdminFiles(root string, opts Options) error {
 
 		// Resource components
 		filepath.Join(adminRoot, "components", "resource", "resource-page.tsx"): adminResourcePage(),
+		filepath.Join(adminRoot, "components", "resource", "view-modal.tsx"):    adminViewModal(),
 
 		// Resource definitions
 		filepath.Join(adminRoot, "resources", "index.ts"): adminResourceRegistry(),
@@ -79,15 +92,15 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "hooks", "use-resource.ts"): adminUseResource(),
 		filepath.Join(adminRoot, "hooks", "use-system.ts"):   adminUseSystem(),
 
-		// Pages
-		filepath.Join(adminRoot, "app", "page.tsx"):                       adminDashboardPage(),
-		filepath.Join(adminRoot, "app", "resources", "users", "page.tsx"): adminUsersPage(),
+		// Dashboard pages — (dashboard) route group
+		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):          adminDashboardPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"): adminUsersPage(),
 
-		// System pages
-		filepath.Join(adminRoot, "app", "system", "jobs", "page.tsx"):  adminJobsPage(),
-		filepath.Join(adminRoot, "app", "system", "files", "page.tsx"): adminFilesPage(),
-		filepath.Join(adminRoot, "app", "system", "cron", "page.tsx"):  adminCronPage(),
-		filepath.Join(adminRoot, "app", "system", "mail", "page.tsx"):  adminMailPage(),
+		// System pages — under (dashboard) route group
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "jobs", "page.tsx"):  adminJobsPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "files", "page.tsx"): adminFilesPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "cron", "page.tsx"):  adminCronPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "mail", "page.tsx"):  adminMailPage(),
 	}
 
 	for path, content := range files {
@@ -310,7 +323,6 @@ func adminRootLayout(opts Options) string {
 import { DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/shared/providers";
-import { AdminLayout } from "@/components/layout/admin-layout";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -337,9 +349,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={` + "`" + `${dmSans.variable} ${jetbrainsMono.variable} min-h-screen bg-background font-sans antialiased` + "`" + `}>
-        <Providers>
-          <AdminLayout>{children}</AdminLayout>
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
@@ -351,6 +361,7 @@ func adminProviders() string {
 	return `"use client";
 
 import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "sonner";
 import { queryClient } from "@/lib/query-client";
 import { ThemeProvider } from "./theme-provider";
 
@@ -359,6 +370,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         {children}
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border)",
+              color: "var(--text-primary)",
+            },
+          }}
+        />
       </QueryClientProvider>
     </ThemeProvider>
   );
@@ -368,6 +389,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 func adminUseAuth() string {
 	return `import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { apiClient } from "@/lib/api-client";
 
@@ -378,6 +400,22 @@ interface User {
   role: string;
   avatar: string;
   active: boolean;
+}
+
+interface AuthResponse {
+  data: {
+    user: User;
+    tokens: {
+      access_token: string;
+      refresh_token: string;
+      expires_at: number;
+    };
+  };
+}
+
+function storeTokens(tokens: { access_token: string; refresh_token: string }) {
+  Cookies.set("access_token", tokens.access_token, { expires: 1 });
+  Cookies.set("refresh_token", tokens.refresh_token, { expires: 7 });
 }
 
 function clearTokens() {
@@ -394,6 +432,50 @@ export function useMe() {
     },
     retry: false,
     staleTime: 10 * 60 * 1000,
+  });
+}
+
+export function useLogin() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (credentials: { email: string; password: string }) => {
+      const { data } = await apiClient.post<AuthResponse>(
+        "/api/auth/login",
+        credentials
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      storeTokens(data.data.tokens);
+      queryClient.setQueryData(["me"], data.data.user);
+      router.push("/dashboard");
+    },
+  });
+}
+
+export function useRegister() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      name: string;
+      email: string;
+      password: string;
+    }) => {
+      const { data: response } = await apiClient.post<AuthResponse>(
+        "/api/auth/register",
+        data
+      );
+      return response;
+    },
+    onSuccess: (data) => {
+      storeTokens(data.data.tokens);
+      queryClient.setQueryData(["me"], data.data.user);
+      router.push("/dashboard");
+    },
   });
 }
 
@@ -530,6 +612,485 @@ import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+`
+}
+
+// adminRedirectPage returns the root page that redirects to /dashboard or /login.
+func adminRedirectPage() string {
+	return `"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
+
+export default function RootPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = Cookies.get("access_token");
+    if (token) {
+      router.replace("/dashboard");
+    } else {
+      router.replace("/login");
+    }
+  }, [router]);
+
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+    </div>
+  );
+}
+`
+}
+
+// adminDashboardLayout returns the (dashboard) route group layout with AdminLayout.
+func adminDashboardLayout() string {
+	return `"use client";
+
+import { AdminLayout } from "@/components/layout/admin-layout";
+
+export default function DashboardGroupLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <AdminLayout>{children}</AdminLayout>;
+}
+`
+}
+
+// adminLoginPage returns the split-screen login page.
+func adminLoginPage() string {
+	return `"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { Eye, EyeOff } from "@/lib/icons";
+import { useLogin } from "@/hooks/use-auth";
+
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const { mutate: login, isPending, error } = useLogin();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    login({ email, password });
+  };
+
+  return (
+    <div className="flex min-h-screen">
+      {/* Left panel — branding */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-gradient-to-br from-accent/20 via-bg-secondary to-bg-primary p-12">
+        <div>
+          <span className="text-2xl font-bold text-accent">G</span>
+          <span className="text-2xl font-bold text-accent">rit</span>
+          <span className="ml-2 rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+            Admin
+          </span>
+        </div>
+        <div className="space-y-4">
+          <h1 className="text-4xl font-bold text-foreground leading-tight">
+            Manage everything<br />in one place.
+          </h1>
+          <p className="text-text-secondary text-lg max-w-md">
+            The admin dashboard for your Grit application. Monitor, manage, and control your entire platform.
+          </p>
+        </div>
+        <p className="text-text-muted text-sm">Built with Grit — Go + React framework</p>
+      </div>
+
+      {/* Right panel — form */}
+      <div className="flex flex-1 items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md space-y-8">
+          <div className="lg:hidden text-center mb-8">
+            <span className="text-2xl font-bold text-accent">Grit</span>
+            <span className="ml-2 rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+              Admin
+            </span>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Welcome back</h2>
+            <p className="mt-2 text-text-secondary">Sign in to your admin account</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="rounded-lg bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger">
+                {(error as unknown as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || "Invalid credentials"}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label htmlFor="email" className="block text-sm font-medium text-text-secondary">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                placeholder="you@example.com"
+                required
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-sm font-medium text-text-secondary">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 pr-12 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                  placeholder="Enter your password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                <input type="checkbox" className="h-4 w-4 rounded border-border bg-bg-tertiary accent-accent" />
+                Remember me
+              </label>
+              <Link href="/forgot-password" className="text-sm text-accent hover:text-accent-hover transition-colors">
+                Forgot password?
+              </Link>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isPending}
+              className="w-full rounded-lg bg-accent py-3 font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
+            >
+              {isPending ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
+
+          <p className="text-center text-sm text-text-secondary">
+            Don&apos;t have an account?{" "}
+            <Link href="/sign-up" className="text-accent hover:text-accent-hover font-medium transition-colors">
+              Create one
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+`
+}
+
+// adminSignUpPage returns the split-screen sign-up page.
+func adminSignUpPage() string {
+	return `"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { Eye, EyeOff } from "@/lib/icons";
+import { useRegister } from "@/hooks/use-auth";
+
+export default function SignUpPage() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { mutate: register, isPending, error } = useRegister();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) return;
+    register({ name, email, password });
+  };
+
+  return (
+    <div className="flex min-h-screen">
+      {/* Left panel — branding */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-gradient-to-br from-accent/20 via-bg-secondary to-bg-primary p-12">
+        <div>
+          <span className="text-2xl font-bold text-accent">G</span>
+          <span className="text-2xl font-bold text-accent">rit</span>
+          <span className="ml-2 rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+            Admin
+          </span>
+        </div>
+        <div className="space-y-4">
+          <h1 className="text-4xl font-bold text-foreground leading-tight">
+            Get started with<br />your admin panel.
+          </h1>
+          <p className="text-text-secondary text-lg max-w-md">
+            Create your account and start managing your application in minutes.
+          </p>
+        </div>
+        <p className="text-text-muted text-sm">Built with Grit — Go + React framework</p>
+      </div>
+
+      {/* Right panel — form */}
+      <div className="flex flex-1 items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md space-y-8">
+          <div className="lg:hidden text-center mb-8">
+            <span className="text-2xl font-bold text-accent">Grit</span>
+            <span className="ml-2 rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+              Admin
+            </span>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Create account</h2>
+            <p className="mt-2 text-text-secondary">Sign up to get started</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="rounded-lg bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger">
+                {(error as unknown as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || "Registration failed"}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label htmlFor="name" className="block text-sm font-medium text-text-secondary">
+                Full name
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                placeholder="John Doe"
+                required
+                minLength={2}
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="email" className="block text-sm font-medium text-text-secondary">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-sm font-medium text-text-secondary">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 pr-12 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                  placeholder="Min. 8 characters"
+                  required
+                  minLength={8}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-text-secondary">
+                Confirm password
+              </label>
+              <div className="relative">
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 pr-12 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                  placeholder="Repeat your password"
+                  required
+                  minLength={8}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+              {password !== confirmPassword && confirmPassword && (
+                <p className="text-sm text-danger">Passwords do not match</p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isPending || (!!confirmPassword && password !== confirmPassword)}
+              className="w-full rounded-lg bg-accent py-3 font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
+            >
+              {isPending ? "Creating account..." : "Create Account"}
+            </button>
+          </form>
+
+          <p className="text-center text-sm text-text-secondary">
+            Already have an account?{" "}
+            <Link href="/login" className="text-accent hover:text-accent-hover font-medium transition-colors">
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+`
+}
+
+// adminForgotPasswordPage returns the split-screen forgot password page.
+func adminForgotPasswordPage() string {
+	return `"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { apiClient } from "@/lib/api-client";
+
+export default function ForgotPasswordPage() {
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await apiClient.post("/api/auth/forgot-password", { email });
+      setSent(true);
+    } catch {
+      setSent(true); // Always show success for security
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen">
+      {/* Left panel — branding */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-gradient-to-br from-accent/20 via-bg-secondary to-bg-primary p-12">
+        <div>
+          <span className="text-2xl font-bold text-accent">G</span>
+          <span className="text-2xl font-bold text-accent">rit</span>
+          <span className="ml-2 rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+            Admin
+          </span>
+        </div>
+        <div className="space-y-4">
+          <h1 className="text-4xl font-bold text-foreground leading-tight">
+            Reset your<br />password.
+          </h1>
+          <p className="text-text-secondary text-lg max-w-md">
+            Enter your email and we&apos;ll send you a link to get back into your account.
+          </p>
+        </div>
+        <p className="text-text-muted text-sm">Built with Grit — Go + React framework</p>
+      </div>
+
+      {/* Right panel — form */}
+      <div className="flex flex-1 items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md space-y-8">
+          <div className="lg:hidden text-center mb-8">
+            <span className="text-2xl font-bold text-accent">Grit</span>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Forgot password?</h2>
+            <p className="mt-2 text-text-secondary">No worries, we&apos;ll send you reset instructions.</p>
+          </div>
+
+          {sent ? (
+            <div className="rounded-xl bg-bg-secondary border border-border p-8 text-center space-y-4">
+              <div className="flex justify-center">
+                <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center">
+                  <svg className="h-6 w-6 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              </div>
+              <h3 className="text-lg font-medium text-foreground">Check your email</h3>
+              <p className="text-text-secondary text-sm">
+                If an account with that email exists, we&apos;ve sent a password reset link.
+              </p>
+              <Link
+                href="/login"
+                className="inline-block text-accent hover:text-accent-hover font-medium text-sm transition-colors"
+              >
+                Back to login
+              </Link>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <label htmlFor="email" className="block text-sm font-medium text-text-secondary">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                  placeholder="you@example.com"
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-lg bg-accent py-3 font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
+              >
+                {loading ? "Sending..." : "Send Reset Link"}
+              </button>
+            </form>
+          )}
+
+          <p className="text-center text-sm text-text-secondary">
+            <Link href="/login" className="text-accent hover:text-accent-hover font-medium transition-colors">
+              Back to login
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 `
 }

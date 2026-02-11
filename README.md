@@ -4,6 +4,12 @@
 
 Grit is a full-stack meta-framework that fuses Go (Gin + GORM) with Next.js (React + TypeScript) in a monorepo. One command to scaffold a complete project with authentication, admin panel, database browser, and Docker setup.
 
+## Remove grit Old version
+
+```bash
+rm $(which grit)
+```
+
 ## Install
 
 ```bash
@@ -36,13 +42,13 @@ Open http://localhost:3000 — register a user, log in, and see the dashboard.
 ## What You Get
 
 | Service       | URL                          |
-|---------------|------------------------------|
-| Web App       | http://localhost:3000         |
-| Admin Panel   | http://localhost:3001         |
-| Go API        | http://localhost:8080         |
-| GORM Studio   | http://localhost:8080/studio  |
-| Mailhog       | http://localhost:8025         |
-| MinIO Console | http://localhost:9001         |
+| ------------- | ---------------------------- |
+| Web App       | http://localhost:3000        |
+| Admin Panel   | http://localhost:3001        |
+| Go API        | http://localhost:8080        |
+| GORM Studio   | http://localhost:8080/studio |
+| Mailhog       | http://localhost:8025        |
+| MinIO Console | http://localhost:9001        |
 
 ## Project Structure (Generated)
 
@@ -73,17 +79,17 @@ myapp/
 
 ## Tech Stack
 
-| Layer       | Technology                     |
-|-------------|--------------------------------|
-| Backend     | Go + Gin + GORM                |
-| Frontend    | Next.js 14 (App Router) + React |
-| Styling     | Tailwind CSS + shadcn/ui       |
-| Database    | PostgreSQL                     |
-| Cache       | Redis                          |
-| Validation  | Zod                            |
-| Data Fetching | React Query (TanStack Query) |
-| Monorepo    | Turborepo + pnpm               |
-| DB Browser  | GORM Studio                    |
+| Layer         | Technology                      |
+| ------------- | ------------------------------- |
+| Backend       | Go + Gin + GORM                 |
+| Frontend      | Next.js 14 (App Router) + React |
+| Styling       | Tailwind CSS + shadcn/ui        |
+| Database      | PostgreSQL                      |
+| Cache         | Redis                           |
+| Validation    | Zod                             |
+| Data Fetching | React Query (TanStack Query)    |
+| Monorepo      | Turborepo + pnpm                |
+| DB Browser    | GORM Studio                     |
 
 ## CLI Commands
 

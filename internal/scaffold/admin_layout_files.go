@@ -276,7 +276,7 @@ export function Sidebar({ user, collapsed, onToggle, mobileOpen, onMobileClose }
   const { theme, toggleTheme } = useTheme();
 
   const navItems = [
-    { label: "Dashboard", href: "/", icon: "LayoutDashboard" },
+    { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
     ...resources.map((r) => ({
       label: r.label?.plural ?? r.name,
       href: ` + "`" + `/resources/${r.slug}` + "`" + `,
@@ -310,8 +310,8 @@ export function Sidebar({ user, collapsed, onToggle, mobileOpen, onMobileClose }
       <nav className="flex-1 overflow-y-auto p-3 space-y-1">
         {navItems.map((item) => {
           const Icon = getIcon(item.icon);
-          const isActive = item.href === "/"
-            ? pathname === "/"
+          const isActive = item.href === "/dashboard"
+            ? pathname === "/dashboard"
             : pathname.startsWith(item.href);
 
           return (
@@ -464,7 +464,7 @@ export function Navbar({ user, onMenuToggle }: { user: User; onMenuToggle: () =>
 
   // Build breadcrumbs from pathname
   const segments = pathname.split("/").filter(Boolean);
-  const breadcrumbs: { label: string; href: string }[] = [{ label: "Home", href: "/" }];
+  const breadcrumbs: { label: string; href: string }[] = [{ label: "Home", href: "/dashboard" }];
 
   for (let i = 0; i < segments.length; i++) {
     const href = "/" + segments.slice(0, i + 1).join("/");
