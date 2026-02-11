@@ -22,6 +22,7 @@ func writeDocsFiles(root string, opts Options) error {
 		filepath.Join(docsRoot, "app", "global.css"):                      docsGlobalCSS(),
 		filepath.Join(docsRoot, "app", "layout.tsx"):                      docsRootLayout(opts),
 		filepath.Join(docsRoot, "app", "page.tsx"):                        docsHomePage(),
+		filepath.Join(docsRoot, "app", "api", "search", "route.ts"):       docsSearchRoute(),
 		filepath.Join(docsRoot, "app", "docs", "layout.tsx"):              docsDocsLayout(),
 		filepath.Join(docsRoot, "app", "docs", "[[...slug]]", "page.tsx"): docsSlugPage(),
 
@@ -191,6 +192,14 @@ export const source = loader({
   baseUrl: "/docs",
   source: createMDXSource(docs, meta),
 });
+`
+}
+
+func docsSearchRoute() string {
+	return `import { source } from "@/app/source";
+import { createFromSource } from "fumadocs-core/search/server";
+
+export const { GET } = createFromSource(source);
 `
 }
 
@@ -393,6 +402,18 @@ Install the Grit CLI globally:
 go install github.com/MUKE-coder/grit/cmd/grit@latest
 `+"```"+`
 
+To update to the latest version, run the same command:
+
+`+"```bash"+`
+go install github.com/MUKE-coder/grit/cmd/grit@latest
+`+"```"+`
+
+Check your installed version:
+
+`+"```bash"+`
+grit version
+`+"```"+`
+
 ## Create a New Project
 
 `+"```bash"+`
@@ -469,13 +490,26 @@ This creates: Go model, handler, service, Zod schemas, TypeScript types, React Q
 
 ## Upgrade an Existing Project
 
-Update framework files to the latest version:
+After updating the CLI, upgrade your project's scaffold files to match:
 
 `+"```bash"+`
+# Update the CLI first
+go install github.com/MUKE-coder/grit/cmd/grit@latest
+
+# Then upgrade your project
+cd %s
 grit upgrade
 `+"```"+`
 
-This regenerates admin components, web landing page, and configs while preserving your resource definitions and API code.
+This regenerates admin components, web landing page, Docker configs, and documentation while preserving your resource definitions, API code, and environment variables.
+
+Use `+"`--force`"+` to overwrite all files without prompting:
+
+`+"```bash"+`
+grit upgrade --force
+`+"```"+`
+
+After upgrading, run `+"`grit sync`"+` to regenerate TypeScript types from your Go models.
 
 ## No Docker?
 
@@ -486,7 +520,7 @@ cp .env.cloud.example .env
 `+"```"+`
 
 Fill in your keys for [Neon](https://neon.tech) (Postgres), [Upstash](https://upstash.com) (Redis), [Cloudflare R2](https://dash.cloudflare.com) (storage), and [Resend](https://resend.com) (email).
-`, opts.ProjectName, opts.ProjectName, opts.ProjectName)
+`, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 
 func docsContentAuth() string {

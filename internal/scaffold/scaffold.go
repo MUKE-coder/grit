@@ -233,6 +233,7 @@ func createDirectories(root string, opts Options) error {
 
 	if opts.ShouldIncludeDocs() {
 		dirs = append(dirs,
+			filepath.Join(root, "apps", "docs", "app", "api", "search"),
 			filepath.Join(root, "apps", "docs", "app", "docs", "[[...slug]]"),
 			filepath.Join(root, "apps", "docs", "content", "docs", "api"),
 			filepath.Join(root, "apps", "docs", "public"),
