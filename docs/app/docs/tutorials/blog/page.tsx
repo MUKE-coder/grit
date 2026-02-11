@@ -1,8 +1,8 @@
-import Link from 'next/link'
-import { ArrowRight, ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import Link from "next/link";
+import { ArrowRight, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SiteHeader } from "@/components/site-header";
+import { DocsSidebar } from "@/components/docs-sidebar";
 
 export default function TutorialBlogPage() {
   return (
@@ -15,15 +15,18 @@ export default function TutorialBlogPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Tutorial</span>
+              <span className="tag-mono text-primary/80 mb-3 block">
+                Tutorial
+              </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Build a Blog
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Build a complete blogging platform with posts, categories, a published filter,
-                and a custom frontend &mdash; all in under 30 minutes. You will use Grit&apos;s
-                code generator, customize Go handlers, define admin resources, and wire up a
-                Next.js page to display published articles.
+                Build a complete blogging platform with posts, categories, a
+                published filter, and a custom frontend &mdash; all in under 30
+                minutes. You will use Grit&apos;s code generator, customize Go
+                handlers, define admin resources, and wire up a Next.js page to
+                display published articles.
               </p>
             </div>
 
@@ -34,12 +37,15 @@ export default function TutorialBlogPage() {
               </h2>
               <ul className="space-y-2.5">
                 {[
-                  'Go 1.21+ installed',
-                  'Node.js 18+ and pnpm installed',
-                  'Docker and Docker Compose installed',
-                  'Grit CLI installed globally (go install github.com/MUKE-coder/grit@latest)',
+                  "Go 1.21+ installed",
+                  "Node.js 18+ and pnpm installed",
+                  "Docker and Docker Compose installed",
+                  "Grit CLI installed globally (go install github.com/MUKE-coder/grit/cmd/grit@latest)",
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
+                  <li
+                    key={item}
+                    className="flex items-start gap-2.5 text-[14px] text-muted-foreground"
+                  >
                     <span className="text-primary mt-1">&#10003;</span>
                     {item}
                   </li>
@@ -55,10 +61,13 @@ export default function TutorialBlogPage() {
                 1
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Create the project</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Create the project
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Scaffold a new Grit monorepo called <code>myblog</code>. This creates the Go API,
-                  Next.js web app, admin panel, shared package, and Docker configuration in one shot.
+                  Scaffold a new Grit monorepo called <code>myblog</code>. This
+                  creates the Go API, Next.js web app, admin panel, shared
+                  package, and Docker configuration in one shot.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
@@ -68,18 +77,29 @@ export default function TutorialBlogPage() {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit new myblog</span></div>
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">cd myblog</span></div>
+                    <div>
+                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-foreground/80">
+                        grit new myblog
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-foreground/80">cd myblog</span>
+                    </div>
                   </div>
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
-                  Grit prints an ASCII art logo, creates the folder structure, initializes
-                  <code> go.mod</code>, runs <code>pnpm install</code>, and prints the next steps.
-                  Your project is ready.
+                  Grit prints an ASCII art logo, creates the folder structure,
+                  initializes
+                  <code> go.mod</code>, runs <code>pnpm install</code>, and
+                  prints the next steps. Your project is ready.
                 </p>
               </div>
             </div>
@@ -92,10 +112,12 @@ export default function TutorialBlogPage() {
                 2
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Start Docker services</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Start Docker services
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Spin up PostgreSQL, Redis, MinIO (local S3), and Mailhog. These run in the
-                  background and persist data across restarts.
+                  Spin up PostgreSQL, Redis, MinIO (local S3), and Mailhog.
+                  These run in the background and persist data across restarts.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
@@ -105,10 +127,15 @@ export default function TutorialBlogPage() {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">docker compose up -d</span>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">
+                      docker compose up -d
+                    </span>
                   </div>
                 </div>
               </div>
@@ -122,11 +149,14 @@ export default function TutorialBlogPage() {
                 3
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Generate the Post resource</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Generate the Post resource
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Use the code generator to create a full-stack Post resource. This generates the
-                  Go model, handler, service, Zod schema, TypeScript types, React Query hooks,
-                  and admin page &mdash; all wired together.
+                  Use the code generator to create a full-stack Post resource.
+                  This generates the Go model, handler, service, Zod schema,
+                  TypeScript types, React Query hooks, and admin page &mdash;
+                  all wired together.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
@@ -136,10 +166,16 @@ export default function TutorialBlogPage() {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Post --fields &quot;title:string,slug:string:unique,content:text,excerpt:text,published:bool,views:int&quot;</span>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">
+                      grit generate resource Post --fields
+                      &quot;title:string,slug:string:unique,content:text,excerpt:text,published:bool,views:int&quot;
+                    </span>
                   </div>
                 </div>
 
@@ -149,7 +185,9 @@ export default function TutorialBlogPage() {
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">generated files</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      generated files
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`apps/api/internal/models/post.go        # GORM model
 apps/api/internal/handlers/post.go      # CRUD handler
@@ -168,7 +206,9 @@ apps/admin/resources/posts.ts           # Resource definition`}</pre>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/post.go</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/models/post.go
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
 
@@ -201,10 +241,12 @@ type Post struct {
                 4
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Generate the Category resource</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Generate the Category resource
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Every blog needs categories. Generate a Category resource with a name, slug,
-                  and description.
+                  Every blog needs categories. Generate a Category resource with
+                  a name, slug, and description.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
@@ -214,10 +256,16 @@ type Post struct {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Category --fields &quot;name:string:unique,slug:string:unique,description:text&quot;</span>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">
+                      grit generate resource Category --fields
+                      &quot;name:string:unique,slug:string:unique,description:text&quot;
+                    </span>
                   </div>
                 </div>
 
@@ -227,7 +275,9 @@ type Post struct {
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/category.go</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/models/category.go
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
 
@@ -257,16 +307,22 @@ type Category struct {
                 5
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Add a relationship &mdash; Post belongs to Category</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Add a relationship &mdash; Post belongs to Category
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  A post should belong to a category. Open the Post model and add a
-                  <code> CategoryID</code> foreign key and a <code>Category</code> relation field.
-                  Also add a <code>Posts</code> slice to the Category model for the inverse relationship.
+                  A post should belong to a category. Open the Post model and
+                  add a<code> CategoryID</code> foreign key and a{" "}
+                  <code>Category</code> relation field. Also add a{" "}
+                  <code>Posts</code> slice to the Category model for the inverse
+                  relationship.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/post.go</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/models/post.go
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
 
@@ -293,7 +349,9 @@ type Post struct {
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/category.go</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/models/category.go
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
 
@@ -315,7 +373,8 @@ type Category struct {
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
-                  Now sync the types to TypeScript so the frontend knows about the relationship:
+                  Now sync the types to TypeScript so the frontend knows about
+                  the relationship:
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
@@ -325,18 +384,23 @@ type Category struct {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit sync</span>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">grit sync</span>
                   </div>
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
-                  The <code>grit sync</code> command reads every Go model in <code>internal/models/</code>,
-                  parses the structs with Go AST, and regenerates the TypeScript types and Zod schemas
-                  in <code>packages/shared/</code>. The Post type now includes <code>category_id</code> and
-                  an optional <code>category</code> object.
+                  The <code>grit sync</code> command reads every Go model in{" "}
+                  <code>internal/models/</code>, parses the structs with Go AST,
+                  and regenerates the TypeScript types and Zod schemas in{" "}
+                  <code>packages/shared/</code>. The Post type now includes{" "}
+                  <code>category_id</code> and an optional <code>category</code>{" "}
+                  object.
                 </p>
               </div>
             </div>
@@ -349,16 +413,21 @@ type Category struct {
                 6
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Customize the Post handler to preload Category</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Customize the Post handler to preload Category
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  By default, the generated handler does not preload relationships. Open the Post
-                  handler and add a <code>Preload(&quot;Category&quot;)</code> call so that every post
-                  response includes its category data.
+                  By default, the generated handler does not preload
+                  relationships. Open the Post handler and add a{" "}
+                  <code>Preload(&quot;Category&quot;)</code> call so that every
+                  post response includes its category data.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/services/post.go &mdash; GetAll method</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/services/post.go &mdash; GetAll method
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func (s *PostService) GetAll(page, pageSize int, sort, order, search string) ([]models.Post, int64, error) {
     var posts []models.Post
@@ -408,8 +477,9 @@ func (s *PostService) GetByID(id uint) (*models.Post, error) {
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
-                  Now every API response for posts includes the nested <code>category</code> object
-                  with its <code>name</code>, <code>slug</code>, and <code>description</code>.
+                  Now every API response for posts includes the nested{" "}
+                  <code>category</code> object with its <code>name</code>,{" "}
+                  <code>slug</code>, and <code>description</code>.
                 </p>
               </div>
             </div>
@@ -422,15 +492,20 @@ func (s *PostService) GetByID(id uint) (*models.Post, error) {
                 7
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Add a custom endpoint &mdash; published posts only</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Add a custom endpoint &mdash; published posts only
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  The public frontend should only show published posts. Add a new handler method and
-                  register it as a public route (no auth required).
+                  The public frontend should only show published posts. Add a
+                  new handler method and register it as a public route (no auth
+                  required).
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/handlers/post.go &mdash; add this method</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/handlers/post.go &mdash; add this method
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// GetPublished returns only published posts for the public frontend.
 func (h *PostHandler) GetPublished(c *gin.Context) {
@@ -467,13 +542,15 @@ func (h *PostHandler) GetPublished(c *gin.Context) {
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
-                  Register the new route in <code>routes.go</code>. Place it outside the auth
-                  middleware group so anyone can access it:
+                  Register the new route in <code>routes.go</code>. Place it
+                  outside the auth middleware group so anyone can access it:
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/routes/routes.go &mdash; add this route</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/routes/routes.go &mdash; add this route
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Public routes (no authentication required)
 public := router.Group("/api")
@@ -495,16 +572,21 @@ public := router.Group("/api")
                 8
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Customize the admin resource definition</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Customize the admin resource definition
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  The generated admin resource is functional but generic. Let&apos;s make it blog-specific
-                  by adding a category filter, a published badge, relative dates, a view count column,
-                  and a category selector in the form.
+                  The generated admin resource is functional but generic.
+                  Let&apos;s make it blog-specific by adding a category filter,
+                  a published badge, relative dates, a view count column, and a
+                  category selector in the form.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/admin/resources/posts.ts</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/admin/resources/posts.ts
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { defineResource } from '@grit/admin'
 
@@ -563,11 +645,14 @@ export default defineResource({
                 9
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Update the web frontend to display posts</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Update the web frontend to display posts
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Now build the public-facing blog page. Create a custom React Query hook that calls
-                  the <code>/api/posts/published</code> endpoint, then build a page component that
-                  lists the posts with their categories.
+                  Now build the public-facing blog page. Create a custom React
+                  Query hook that calls the <code>/api/posts/published</code>{" "}
+                  endpoint, then build a page component that lists the posts
+                  with their categories.
                 </p>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
@@ -576,7 +661,9 @@ export default defineResource({
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/hooks/use-published-posts.ts</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/web/hooks/use-published-posts.ts
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
@@ -607,7 +694,9 @@ export function usePublishedPosts({ page = 1, pageSize = 10 }: UsePublishedPosts
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/app/(dashboard)/blog/page.tsx</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/web/app/(dashboard)/blog/page.tsx
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`'use client'
 
@@ -700,12 +789,15 @@ export default function BlogPage() {
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
-                  Finally, create the single post page to display a full article:
+                  Finally, create the single post page to display a full
+                  article:
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/app/(dashboard)/blog/[slug]/page.tsx</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/web/app/(dashboard)/blog/[slug]/page.tsx
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`'use client'
 
@@ -790,10 +882,13 @@ export default function BlogPostPage() {
                 10
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Run and test everything</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Run and test everything
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Start the Go API, the web app, and the admin panel in development mode.
-                  Grit uses Turborepo to run all services concurrently.
+                  Start the Go API, the web app, and the admin panel in
+                  development mode. Grit uses Turborepo to run all services
+                  concurrently.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
@@ -803,10 +898,13 @@ export default function BlogPostPage() {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit dev</span>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">grit dev</span>
                   </div>
                 </div>
 
@@ -816,13 +914,30 @@ export default function BlogPostPage() {
 
                 <ul className="space-y-2">
                   {[
-                    { url: 'http://localhost:3000', desc: 'Web frontend — register and see the blog' },
-                    { url: 'http://localhost:3001', desc: 'Admin panel — manage posts and categories' },
-                    { url: 'http://localhost:8080/studio', desc: 'GORM Studio — browse your database' },
-                    { url: 'http://localhost:8080/api/posts/published', desc: 'Published posts API' },
+                    {
+                      url: "http://localhost:3000",
+                      desc: "Web frontend — register and see the blog",
+                    },
+                    {
+                      url: "http://localhost:3001",
+                      desc: "Admin panel — manage posts and categories",
+                    },
+                    {
+                      url: "http://localhost:8080/studio",
+                      desc: "GORM Studio — browse your database",
+                    },
+                    {
+                      url: "http://localhost:8080/api/posts/published",
+                      desc: "Published posts API",
+                    },
                   ].map((item) => (
-                    <li key={item.url} className="flex items-start gap-2.5 text-[13px] text-muted-foreground/70">
-                      <code className="text-primary/70 text-xs whitespace-nowrap">{item.url}</code>
+                    <li
+                      key={item.url}
+                      className="flex items-start gap-2.5 text-[13px] text-muted-foreground/70"
+                    >
+                      <code className="text-primary/70 text-xs whitespace-nowrap">
+                        {item.url}
+                      </code>
                       <span>&mdash; {item.desc}</span>
                     </li>
                   ))}
@@ -839,17 +954,20 @@ export default function BlogPostPage() {
               </h2>
               <ul className="space-y-2.5">
                 {[
-                  'A full-stack blog with Go API and Next.js frontend',
-                  'Post and Category resources generated with a single CLI command each',
-                  'A BelongsTo relationship between Posts and Categories',
-                  'A custom public endpoint that returns only published posts',
-                  'An admin panel with sortable tables, category filters, and status badges',
-                  'A blog listing page with pagination and article detail pages',
-                  'Type-safe data fetching with React Query and shared Zod schemas',
-                  'Docker-based PostgreSQL, Redis, MinIO, and Mailhog running locally',
-                  'GORM Studio for visual database browsing',
+                  "A full-stack blog with Go API and Next.js frontend",
+                  "Post and Category resources generated with a single CLI command each",
+                  "A BelongsTo relationship between Posts and Categories",
+                  "A custom public endpoint that returns only published posts",
+                  "An admin panel with sortable tables, category filters, and status badges",
+                  "A blog listing page with pagination and article detail pages",
+                  "Type-safe data fetching with React Query and shared Zod schemas",
+                  "Docker-based PostgreSQL, Redis, MinIO, and Mailhog running locally",
+                  "GORM Studio for visual database browsing",
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
+                  <li
+                    key={item}
+                    className="flex items-start gap-2.5 text-[14px] text-muted-foreground"
+                  >
                     <span className="text-primary mt-0.5">&#10003;</span>
                     {item}
                   </li>
@@ -860,26 +978,55 @@ export default function BlogPostPage() {
             <div className="prose-grit mb-8">
               <h2>Next steps</h2>
               <p>
-                Now that you have a working blog, here are some ideas to extend it:
+                Now that you have a working blog, here are some ideas to extend
+                it:
               </p>
               <ul>
-                <li><strong>Add tags</strong> &mdash; generate a <code>Tag</code> resource and create a many-to-many relationship with posts using a join table.</li>
-                <li><strong>Markdown rendering</strong> &mdash; store content as Markdown and render it on the frontend with <code>react-markdown</code>.</li>
-                <li><strong>Image uploads</strong> &mdash; use the Grit storage service to upload cover images for each post.</li>
-                <li><strong>RSS feed</strong> &mdash; add a custom Go handler that returns an XML RSS feed of published posts.</li>
-                <li><strong>SEO metadata</strong> &mdash; use Next.js <code>generateMetadata</code> to set page titles and descriptions dynamically.</li>
+                <li>
+                  <strong>Add tags</strong> &mdash; generate a <code>Tag</code>{" "}
+                  resource and create a many-to-many relationship with posts
+                  using a join table.
+                </li>
+                <li>
+                  <strong>Markdown rendering</strong> &mdash; store content as
+                  Markdown and render it on the frontend with{" "}
+                  <code>react-markdown</code>.
+                </li>
+                <li>
+                  <strong>Image uploads</strong> &mdash; use the Grit storage
+                  service to upload cover images for each post.
+                </li>
+                <li>
+                  <strong>RSS feed</strong> &mdash; add a custom Go handler that
+                  returns an XML RSS feed of published posts.
+                </li>
+                <li>
+                  <strong>SEO metadata</strong> &mdash; use Next.js{" "}
+                  <code>generateMetadata</code> to set page titles and
+                  descriptions dynamically.
+                </li>
               </ul>
             </div>
 
             {/* Nav */}
             <div className="flex items-center justify-between pt-6 border-t border-border/30">
-              <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="text-muted-foreground/60 hover:text-foreground"
+              >
                 <Link href="/docs/design/theme" className="gap-1.5">
                   <ArrowLeft className="h-3.5 w-3.5" />
                   Theme &amp; Colors
                 </Link>
               </Button>
-              <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="text-muted-foreground/60 hover:text-foreground"
+              >
                 <Link href="/docs/tutorials/saas" className="gap-1.5">
                   Build a SaaS
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -890,5 +1037,5 @@ export default function BlogPostPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }

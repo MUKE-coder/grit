@@ -1,8 +1,8 @@
-import Link from 'next/link'
-import { ArrowRight, ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import Link from "next/link";
+import { ArrowRight, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SiteHeader } from "@/components/site-header";
+import { DocsSidebar } from "@/components/docs-sidebar";
 
 export default function TutorialSaaSPage() {
   return (
@@ -15,15 +15,18 @@ export default function TutorialSaaSPage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Tutorial</span>
+              <span className="tag-mono text-primary/80 mb-3 block">
+                Tutorial
+              </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Build a Project Management SaaS
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Build a complete project management tool with projects, tasks, comments,
-                status workflows, email notifications, role-based access, and a dashboard
-                with live task stats. This tutorial covers relationships, background jobs,
-                the mailer, middleware customization, and admin panel badges.
+                Build a complete project management tool with projects, tasks,
+                comments, status workflows, email notifications, role-based
+                access, and a dashboard with live task stats. This tutorial
+                covers relationships, background jobs, the mailer, middleware
+                customization, and admin panel badges.
               </p>
             </div>
 
@@ -34,12 +37,15 @@ export default function TutorialSaaSPage() {
               </h2>
               <ul className="space-y-2.5">
                 {[
-                  'Go 1.21+ installed',
-                  'Node.js 18+ and pnpm installed',
-                  'Docker and Docker Compose installed',
-                  'Grit CLI installed globally (go install github.com/MUKE-coder/grit@latest)',
+                  "Go 1.21+ installed",
+                  "Node.js 18+ and pnpm installed",
+                  "Docker and Docker Compose installed",
+                  "Grit CLI installed globally (go install github.com/MUKE-coder/grit/cmd/grit@latest)",
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
+                  <li
+                    key={item}
+                    className="flex items-start gap-2.5 text-[14px] text-muted-foreground"
+                  >
                     <span className="text-primary mt-1">&#10003;</span>
                     {item}
                   </li>
@@ -55,11 +61,13 @@ export default function TutorialSaaSPage() {
                 1
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Create the project</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Create the project
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Scaffold a new Grit project called <code>taskflow</code>. This generates the
-                  complete monorepo with Go API, Next.js web app, admin panel, shared packages,
-                  and Docker configuration.
+                  Scaffold a new Grit project called <code>taskflow</code>. This
+                  generates the complete monorepo with Go API, Next.js web app,
+                  admin panel, shared packages, and Docker configuration.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
@@ -69,11 +77,21 @@ export default function TutorialSaaSPage() {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit new taskflow</span></div>
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">cd taskflow</span></div>
+                    <div>
+                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-foreground/80">
+                        grit new taskflow
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-foreground/80">cd taskflow</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -87,11 +105,13 @@ export default function TutorialSaaSPage() {
                 2
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Start Docker services</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Start Docker services
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Launch PostgreSQL, Redis, MinIO, and Mailhog. Redis is especially important for
-                  this project because we will use it for the background job queue that sends email
-                  notifications.
+                  Launch PostgreSQL, Redis, MinIO, and Mailhog. Redis is
+                  especially important for this project because we will use it
+                  for the background job queue that sends email notifications.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
@@ -101,10 +121,15 @@ export default function TutorialSaaSPage() {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">docker compose up -d</span>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">
+                      docker compose up -d
+                    </span>
                   </div>
                 </div>
               </div>
@@ -118,10 +143,12 @@ export default function TutorialSaaSPage() {
                 3
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Generate the Project resource</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Generate the Project resource
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Every task belongs to a project. Generate a Project resource with name,
-                  description, and status fields.
+                  Every task belongs to a project. Generate a Project resource
+                  with name, description, and status fields.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
@@ -131,16 +158,24 @@ export default function TutorialSaaSPage() {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Project --fields &quot;name:string,description:text,status:string&quot;</span>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">
+                      grit generate resource Project --fields
+                      &quot;name:string,description:text,status:string&quot;
+                    </span>
                   </div>
                 </div>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/project.go</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/models/project.go
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
 
@@ -170,10 +205,13 @@ type Project struct {
                 4
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Generate the Task resource</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Generate the Task resource
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Tasks are the core of the application. Generate a Task resource with title,
-                  description, status, priority, and a due date.
+                  Tasks are the core of the application. Generate a Task
+                  resource with title, description, status, priority, and a due
+                  date.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
@@ -183,16 +221,24 @@ type Project struct {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Task --fields &quot;title:string,description:text,status:string,priority:string,dueDate:date&quot;</span>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">
+                      grit generate resource Task --fields
+                      &quot;title:string,description:text,status:string,priority:string,dueDate:date&quot;
+                    </span>
                   </div>
                 </div>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/task.go</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/models/task.go
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
 
@@ -224,10 +270,13 @@ type Task struct {
                 5
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Generate the Comment resource</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Generate the Comment resource
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Team members need to discuss tasks. Generate a Comment resource with a content field.
-                  We will wire up relationships to Task and User in the next step.
+                  Team members need to discuss tasks. Generate a Comment
+                  resource with a content field. We will wire up relationships
+                  to Task and User in the next step.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
@@ -237,10 +286,16 @@ type Task struct {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Comment --fields &quot;content:text&quot;</span>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">
+                      grit generate resource Comment --fields
+                      &quot;content:text&quot;
+                    </span>
                   </div>
                 </div>
               </div>
@@ -254,15 +309,20 @@ type Task struct {
                 6
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Set up relationships</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Set up relationships
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Now wire the models together. A Task belongs to a Project and is assigned to a User.
-                  A Comment belongs to a Task and is authored by a User. A Project has many Tasks.
+                  Now wire the models together. A Task belongs to a Project and
+                  is assigned to a User. A Comment belongs to a Task and is
+                  authored by a User. A Project has many Tasks.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/task.go</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/models/task.go
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
 
@@ -298,7 +358,9 @@ type Task struct {
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/comment.go</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/models/comment.go
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
 
@@ -327,7 +389,10 @@ type Comment struct {
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/project.go &mdash; add Tasks relation</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/models/project.go &mdash; add Tasks
+                      relation
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type Project struct {
     ID          uint           \`gorm:"primarykey" json:"id"\`
@@ -342,7 +407,8 @@ type Comment struct {
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
-                  Run <code>grit sync</code> to regenerate the TypeScript types with the new relationships.
+                  Run <code>grit sync</code> to regenerate the TypeScript types
+                  with the new relationships.
                 </p>
               </div>
             </div>
@@ -355,15 +421,22 @@ type Comment struct {
                 7
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Add a status workflow</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Add a status workflow
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Tasks follow a workflow: <strong>Todo</strong> &rarr; <strong>In Progress</strong> &rarr; <strong>Review</strong> &rarr; <strong>Done</strong>.
-                  Define status constants and add a validation method that enforces valid transitions.
+                  Tasks follow a workflow: <strong>Todo</strong> &rarr;{" "}
+                  <strong>In Progress</strong> &rarr; <strong>Review</strong>{" "}
+                  &rarr; <strong>Done</strong>. Define status constants and add
+                  a validation method that enforces valid transitions.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/task.go &mdash; add status constants and validation</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/models/task.go &mdash; add status
+                      constants and validation
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Task status constants
 const (
@@ -413,12 +486,15 @@ func (t *Task) CanTransitionTo(newStatus string) bool {
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
-                  Now enforce the workflow in the Task service&apos;s update method:
+                  Now enforce the workflow in the Task service&apos;s update
+                  method:
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/services/task.go &mdash; Update method</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/services/task.go &mdash; Update method
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func (s *TaskService) Update(id uint, input map[string]interface{}) (*models.Task, error) {
     task, err := s.GetByID(id)
@@ -456,15 +532,21 @@ func (t *Task) CanTransitionTo(newStatus string) bool {
                 8
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Create a project dashboard widget</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Create a project dashboard widget
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Add a custom API endpoint that returns task statistics per project, then
-                  display it as a dashboard widget in the admin panel.
+                  Add a custom API endpoint that returns task statistics per
+                  project, then display it as a dashboard widget in the admin
+                  panel.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/handlers/project.go &mdash; add stats endpoint</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/handlers/project.go &mdash; add stats
+                      endpoint
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// GetStats returns task statistics grouped by status.
 func (h *ProjectHandler) GetStats(c *gin.Context) {
@@ -517,20 +599,24 @@ func (h *ProjectHandler) GetStats(c *gin.Context) {
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/routes/routes.go</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/routes/routes.go
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Inside the authenticated group
 projects.GET("/stats", projectHandler.GetStats)`}</pre>
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
-                  Now create a React component that fetches and displays these stats on the
-                  admin dashboard:
+                  Now create a React component that fetches and displays these
+                  stats on the admin dashboard:
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/admin/components/widgets/project-stats.tsx</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/admin/components/widgets/project-stats.tsx
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`'use client'
 
@@ -615,10 +701,14 @@ export function ProjectStatsWidget() {
                 9
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Add email notifications when tasks are assigned</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Add email notifications when tasks are assigned
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  When a task is assigned to a user, send them an email notification. This uses Grit&apos;s
-                  background job queue (Redis + asynq) so the API response is not blocked by email sending.
+                  When a task is assigned to a user, send them an email
+                  notification. This uses Grit&apos;s background job queue
+                  (Redis + asynq) so the API response is not blocked by email
+                  sending.
                 </p>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
@@ -627,7 +717,9 @@ export function ProjectStatsWidget() {
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/jobs/task_assigned.go</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/jobs/task_assigned.go
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package jobs
 
@@ -684,12 +776,16 @@ func HandleTaskAssigned(mailer *mail.Mailer) asynq.HandlerFunc {
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
-                  Now dispatch the job from the Task service whenever a task is assigned:
+                  Now dispatch the job from the Task service whenever a task is
+                  assigned:
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/services/task.go &mdash; add to Update method</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/services/task.go &mdash; add to Update
+                      method
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// After the task is updated, check if assignee changed
 if newAssigneeID, ok := input["assignee_id"]; ok && newAssigneeID != nil {
@@ -716,7 +812,9 @@ if newAssigneeID, ok := input["assignee_id"]; ok && newAssigneeID != nil {
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/mail/templates/task-assigned.html</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/mail/templates/task-assigned.html
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`<!DOCTYPE html>
 <html>
@@ -746,16 +844,20 @@ if newAssigneeID, ok := input["assignee_id"]; ok && newAssigneeID != nil {
                 10
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Customize the admin panel with badges and colors</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Customize the admin panel with badges and colors
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Update the Task resource definition to show status badges with workflow colors,
-                  priority badges, assignee names, and project names. Add filters for status,
-                  priority, and project.
+                  Update the Task resource definition to show status badges with
+                  workflow colors, priority badges, assignee names, and project
+                  names. Add filters for status, priority, and project.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/admin/resources/tasks.ts</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/admin/resources/tasks.ts
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { defineResource } from '@grit/admin'
 
@@ -834,16 +936,21 @@ export default defineResource({
                 11
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Role-based access control</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Role-based access control
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Admins should see all tasks across all projects. Regular users should only see
-                  tasks assigned to them or tasks in projects they own. Add a middleware-based
-                  scope and apply it in the task handler.
+                  Admins should see all tasks across all projects. Regular users
+                  should only see tasks assigned to them or tasks in projects
+                  they own. Add a middleware-based scope and apply it in the
+                  task handler.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/services/task.go &mdash; scoped query</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/services/task.go &mdash; scoped query
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// GetAllScoped returns tasks scoped to the current user's role.
 func (s *TaskService) GetAllScoped(
@@ -890,13 +997,15 @@ func (s *TaskService) GetAllScoped(
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
-                  Use the scoped query in the handler by extracting the current user from the
-                  Gin context (set by the auth middleware):
+                  Use the scoped query in the handler by extracting the current
+                  user from the Gin context (set by the auth middleware):
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/handlers/task.go &mdash; GetAll handler</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/handlers/task.go &mdash; GetAll handler
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func (h *TaskHandler) GetAll(c *gin.Context) {
     // Extract the authenticated user from context
@@ -945,7 +1054,9 @@ func (s *TaskService) GetAllScoped(
                 12
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Run and test everything</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Run and test everything
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
                   Start all services and verify the complete workflow.
                 </p>
@@ -957,10 +1068,13 @@ func (s *TaskService) GetAllScoped(
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit dev</span>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">grit dev</span>
                   </div>
                 </div>
 
@@ -969,15 +1083,41 @@ func (s *TaskService) GetAllScoped(
                 </p>
 
                 <ol className="space-y-2 text-[13px] text-muted-foreground/70 list-decimal pl-5">
-                  <li>Open the admin panel at <code>http://localhost:3001</code> and register an admin user.</li>
-                  <li>Create a project called &quot;Website Redesign&quot; with status &quot;active&quot;.</li>
-                  <li>Create a task titled &quot;Design homepage&quot;, assign it to your user, set priority to &quot;high&quot;.</li>
-                  <li>Check Mailhog at <code>http://localhost:8025</code> &mdash; you should see the assignment notification email.</li>
-                  <li>Update the task status from &quot;todo&quot; to &quot;in_progress&quot; &mdash; it should succeed.</li>
-                  <li>Try changing it directly to &quot;done&quot; &mdash; the API should reject the invalid transition.</li>
-                  <li>Add a comment on the task to test the commenting system.</li>
-                  <li>Check the dashboard stats widget &mdash; it should show 1 project, 1 task, and the correct status breakdown.</li>
-                  <li>Browse the database in GORM Studio at <code>http://localhost:8080/studio</code>.</li>
+                  <li>
+                    Open the admin panel at <code>http://localhost:3001</code>{" "}
+                    and register an admin user.
+                  </li>
+                  <li>
+                    Create a project called &quot;Website Redesign&quot; with
+                    status &quot;active&quot;.
+                  </li>
+                  <li>
+                    Create a task titled &quot;Design homepage&quot;, assign it
+                    to your user, set priority to &quot;high&quot;.
+                  </li>
+                  <li>
+                    Check Mailhog at <code>http://localhost:8025</code> &mdash;
+                    you should see the assignment notification email.
+                  </li>
+                  <li>
+                    Update the task status from &quot;todo&quot; to
+                    &quot;in_progress&quot; &mdash; it should succeed.
+                  </li>
+                  <li>
+                    Try changing it directly to &quot;done&quot; &mdash; the API
+                    should reject the invalid transition.
+                  </li>
+                  <li>
+                    Add a comment on the task to test the commenting system.
+                  </li>
+                  <li>
+                    Check the dashboard stats widget &mdash; it should show 1
+                    project, 1 task, and the correct status breakdown.
+                  </li>
+                  <li>
+                    Browse the database in GORM Studio at{" "}
+                    <code>http://localhost:8080/studio</code>.
+                  </li>
                 </ol>
               </div>
             </div>
@@ -991,18 +1131,21 @@ func (s *TaskService) GetAllScoped(
               </h2>
               <ul className="space-y-2.5">
                 {[
-                  'A project management SaaS with Projects, Tasks, and Comments',
-                  'Three-level relationships: Project → Task → Comment, Task → User (assignee)',
-                  'A status workflow with enforced transitions (Todo → In Progress → Review → Done)',
-                  'Background job queue that sends email notifications on task assignment',
-                  'HTML email templates styled to match the Grit dark theme',
-                  'An admin dashboard with live task statistics (total, completed, overdue)',
-                  'Admin panel with status and priority badges in color-coded columns',
-                  'Role-based access: admins see all tasks, users see only their own',
-                  'Server-side pagination, sorting, and filtering across all resources',
-                  'Docker-based infrastructure with PostgreSQL, Redis, MinIO, and Mailhog',
+                  "A project management SaaS with Projects, Tasks, and Comments",
+                  "Three-level relationships: Project → Task → Comment, Task → User (assignee)",
+                  "A status workflow with enforced transitions (Todo → In Progress → Review → Done)",
+                  "Background job queue that sends email notifications on task assignment",
+                  "HTML email templates styled to match the Grit dark theme",
+                  "An admin dashboard with live task statistics (total, completed, overdue)",
+                  "Admin panel with status and priority badges in color-coded columns",
+                  "Role-based access: admins see all tasks, users see only their own",
+                  "Server-side pagination, sorting, and filtering across all resources",
+                  "Docker-based infrastructure with PostgreSQL, Redis, MinIO, and Mailhog",
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
+                  <li
+                    key={item}
+                    className="flex items-start gap-2.5 text-[14px] text-muted-foreground"
+                  >
                     <span className="text-primary mt-0.5">&#10003;</span>
                     {item}
                   </li>
@@ -1013,27 +1156,58 @@ func (s *TaskService) GetAllScoped(
             <div className="prose-grit mb-8">
               <h2>Next steps</h2>
               <p>
-                You now have a solid project management foundation. Here are ideas to extend it:
+                You now have a solid project management foundation. Here are
+                ideas to extend it:
               </p>
               <ul>
-                <li><strong>Kanban board</strong> &mdash; use the Grit Pro tier&apos;s kanban widget to display tasks in a drag-and-drop board view.</li>
-                <li><strong>Activity timeline</strong> &mdash; log every status change and assignment as an &quot;Activity&quot; model and display it on the task detail page.</li>
-                <li><strong>File attachments</strong> &mdash; use the Grit storage service to attach files to tasks and comments.</li>
-                <li><strong>Recurring tasks</strong> &mdash; use the cron scheduler to auto-create tasks on a schedule.</li>
-                <li><strong>WebSocket updates</strong> &mdash; push real-time task status changes to all connected team members.</li>
-                <li><strong>Time tracking</strong> &mdash; add a TimeEntry resource linked to tasks to log hours worked.</li>
+                <li>
+                  <strong>Kanban board</strong> &mdash; use the Grit Pro
+                  tier&apos;s kanban widget to display tasks in a drag-and-drop
+                  board view.
+                </li>
+                <li>
+                  <strong>Activity timeline</strong> &mdash; log every status
+                  change and assignment as an &quot;Activity&quot; model and
+                  display it on the task detail page.
+                </li>
+                <li>
+                  <strong>File attachments</strong> &mdash; use the Grit storage
+                  service to attach files to tasks and comments.
+                </li>
+                <li>
+                  <strong>Recurring tasks</strong> &mdash; use the cron
+                  scheduler to auto-create tasks on a schedule.
+                </li>
+                <li>
+                  <strong>WebSocket updates</strong> &mdash; push real-time task
+                  status changes to all connected team members.
+                </li>
+                <li>
+                  <strong>Time tracking</strong> &mdash; add a TimeEntry
+                  resource linked to tasks to log hours worked.
+                </li>
               </ul>
             </div>
 
             {/* Nav */}
             <div className="flex items-center justify-between pt-6 border-t border-border/30">
-              <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="text-muted-foreground/60 hover:text-foreground"
+              >
                 <Link href="/docs/tutorials/blog" className="gap-1.5">
                   <ArrowLeft className="h-3.5 w-3.5" />
                   Build a Blog
                 </Link>
               </Button>
-              <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="text-muted-foreground/60 hover:text-foreground"
+              >
                 <Link href="/docs/tutorials/ecommerce" className="gap-1.5">
                   Build an E-Commerce Store
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -1044,5 +1218,5 @@ func (s *TaskService) GetAllScoped(
         </div>
       </main>
     </div>
-  )
+  );
 }

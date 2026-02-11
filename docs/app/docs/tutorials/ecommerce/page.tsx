@@ -1,8 +1,8 @@
-import Link from 'next/link'
-import { ArrowRight, ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { SiteHeader } from '@/components/site-header'
-import { DocsSidebar } from '@/components/docs-sidebar'
+import Link from "next/link";
+import { ArrowRight, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SiteHeader } from "@/components/site-header";
+import { DocsSidebar } from "@/components/docs-sidebar";
 
 export default function TutorialEcommercePage() {
   return (
@@ -15,15 +15,19 @@ export default function TutorialEcommercePage() {
           <div className="max-w-3xl">
             {/* Header */}
             <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">Tutorial</span>
+              <span className="tag-mono text-primary/80 mb-3 block">
+                Tutorial
+              </span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Build an E-Commerce Store
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Build a fully functional e-commerce platform with products, categories, orders,
-                order items, image uploads, stock validation, order confirmation emails,
-                a revenue dashboard, and Redis caching for popular products. This is the most
-                comprehensive Grit tutorial and covers nearly every feature of the framework.
+                Build a fully functional e-commerce platform with products,
+                categories, orders, order items, image uploads, stock
+                validation, order confirmation emails, a revenue dashboard, and
+                Redis caching for popular products. This is the most
+                comprehensive Grit tutorial and covers nearly every feature of
+                the framework.
               </p>
             </div>
 
@@ -34,12 +38,15 @@ export default function TutorialEcommercePage() {
               </h2>
               <ul className="space-y-2.5">
                 {[
-                  'Go 1.21+ installed',
-                  'Node.js 18+ and pnpm installed',
-                  'Docker and Docker Compose installed',
-                  'Grit CLI installed globally (go install github.com/MUKE-coder/grit@latest)',
+                  "Go 1.21+ installed",
+                  "Node.js 18+ and pnpm installed",
+                  "Docker and Docker Compose installed",
+                  "Grit CLI installed globally (go install github.com/MUKE-coder/grit/cmd/grit@latest)",
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
+                  <li
+                    key={item}
+                    className="flex items-start gap-2.5 text-[14px] text-muted-foreground"
+                  >
                     <span className="text-primary mt-1">&#10003;</span>
                     {item}
                   </li>
@@ -55,7 +62,9 @@ export default function TutorialEcommercePage() {
                 1
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Create the project</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Create the project
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
                   Scaffold a new Grit project called <code>shopgrit</code>.
                 </p>
@@ -67,11 +76,21 @@ export default function TutorialEcommercePage() {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit new shopgrit</span></div>
-                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">cd shopgrit</span></div>
+                    <div>
+                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-foreground/80">
+                        grit new shopgrit
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-foreground/80">cd shopgrit</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -85,10 +104,13 @@ export default function TutorialEcommercePage() {
                 2
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Start Docker services</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Start Docker services
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Start PostgreSQL, Redis, MinIO, and Mailhog. MinIO is especially important
-                  for this project because we will use it for product image uploads.
+                  Start PostgreSQL, Redis, MinIO, and Mailhog. MinIO is
+                  especially important for this project because we will use it
+                  for product image uploads.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
@@ -98,10 +120,15 @@ export default function TutorialEcommercePage() {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">docker compose up -d</span>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">
+                      docker compose up -d
+                    </span>
                   </div>
                 </div>
               </div>
@@ -115,10 +142,13 @@ export default function TutorialEcommercePage() {
                 3
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Generate the Product resource</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Generate the Product resource
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Products are the core of the store. Generate a resource with name, description,
-                  price, SKU (unique stock-keeping unit), stock count, and a published flag.
+                  Products are the core of the store. Generate a resource with
+                  name, description, price, SKU (unique stock-keeping unit),
+                  stock count, and a published flag.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
@@ -128,16 +158,24 @@ export default function TutorialEcommercePage() {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Product --fields &quot;name:string,description:text,price:float,sku:string:unique,stock:int,published:bool&quot;</span>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">
+                      grit generate resource Product --fields
+                      &quot;name:string,description:text,price:float,sku:string:unique,stock:int,published:bool&quot;
+                    </span>
                   </div>
                 </div>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/product.go</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/models/product.go
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
 
@@ -170,10 +208,12 @@ type Product struct {
                 4
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Generate the Category resource</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Generate the Category resource
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Products are organized into categories. Generate a Category resource and add
-                  the relationship to Product.
+                  Products are organized into categories. Generate a Category
+                  resource and add the relationship to Product.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
@@ -183,21 +223,31 @@ type Product struct {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Category --fields &quot;name:string:unique,slug:string:unique,description:text&quot;</span>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">
+                      grit generate resource Category --fields
+                      &quot;name:string:unique,slug:string:unique,description:text&quot;
+                    </span>
                   </div>
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
-                  Now add the category relationship to the Product model. Also add an
-                  <code> ImageURL</code> field for product images (we will handle uploads in Step 8):
+                  Now add the category relationship to the Product model. Also
+                  add an
+                  <code> ImageURL</code> field for product images (we will
+                  handle uploads in Step 8):
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/product.go &mdash; updated</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/models/product.go &mdash; updated
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
 
@@ -236,10 +286,13 @@ type Product struct {
                 5
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Generate the Order resource</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Generate the Order resource
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Orders track customer purchases. Generate an Order resource with status, total,
-                  and notes fields. An order belongs to the authenticated user.
+                  Orders track customer purchases. Generate an Order resource
+                  with status, total, and notes fields. An order belongs to the
+                  authenticated user.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
@@ -249,16 +302,25 @@ type Product struct {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Order --fields &quot;status:string,total:float,notes:text&quot;</span>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">
+                      grit generate resource Order --fields
+                      &quot;status:string,total:float,notes:text&quot;
+                    </span>
                   </div>
                 </div>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/order.go &mdash; with User relationship</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/models/order.go &mdash; with User
+                      relationship
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
 
@@ -305,10 +367,13 @@ type Order struct {
                 6
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Generate the OrderItem resource</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Generate the OrderItem resource
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Each order contains one or more items. An OrderItem records the quantity and
-                  the price at the time of purchase (so price changes do not affect past orders).
+                  Each order contains one or more items. An OrderItem records
+                  the quantity and the price at the time of purchase (so price
+                  changes do not affect past orders).
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
@@ -318,16 +383,25 @@ type Order struct {
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource OrderItem --fields &quot;quantity:int,price:float&quot;</span>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">
+                      grit generate resource OrderItem --fields
+                      &quot;quantity:int,price:float&quot;
+                    </span>
                   </div>
                 </div>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/order_item.go &mdash; with relationships</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/models/order_item.go &mdash; with
+                      relationships
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
 
@@ -356,8 +430,8 @@ type OrderItem struct {
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
-                  Run <code>grit sync</code> to regenerate all TypeScript types with the new
-                  relationships across all four resources.
+                  Run <code>grit sync</code> to regenerate all TypeScript types
+                  with the new relationships across all four resources.
                 </p>
               </div>
             </div>
@@ -370,15 +444,19 @@ type OrderItem struct {
                 7
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Set up all relationships</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Set up all relationships
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Let&apos;s review the complete relationship diagram. Add the inverse relationships
-                  to the Category model:
+                  Let&apos;s review the complete relationship diagram. Add the
+                  inverse relationships to the Category model:
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">relationship diagram</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      relationship diagram
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`Category
   └── has many Products
@@ -400,7 +478,9 @@ User (built-in)
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/category.go</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/models/category.go
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
 
@@ -431,16 +511,22 @@ type Category struct {
                 8
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">File uploads for product images</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  File uploads for product images
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Use Grit&apos;s built-in storage service to upload product images to MinIO
-                  (S3-compatible). The storage service is already configured &mdash; you just need to
-                  add an upload handler that saves the file URL to the product.
+                  Use Grit&apos;s built-in storage service to upload product
+                  images to MinIO (S3-compatible). The storage service is
+                  already configured &mdash; you just need to add an upload
+                  handler that saves the file URL to the product.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/handlers/product.go &mdash; add upload method</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/handlers/product.go &mdash; add upload
+                      method
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// UploadImage handles product image upload.
 func (h *ProductHandler) UploadImage(c *gin.Context) {
@@ -506,20 +592,24 @@ func (h *ProductHandler) UploadImage(c *gin.Context) {
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/routes/routes.go</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/routes/routes.go
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Inside the authenticated products group
 products.POST("/:id/upload-image", productHandler.UploadImage)`}</pre>
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
-                  Update the admin resource definition to include the file upload field
-                  and display the product image in the table:
+                  Update the admin resource definition to include the file
+                  upload field and display the product image in the table:
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/admin/resources/products.ts</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/admin/resources/products.ts
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { defineResource } from '@grit/admin'
 
@@ -582,16 +672,21 @@ export default defineResource({
                 9
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Custom order creation with stock validation</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Custom order creation with stock validation
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  The default CRUD handler is not sufficient for order creation. We need to
-                  validate stock availability, calculate totals, decrement stock, and create
-                  order items &mdash; all within a database transaction.
+                  The default CRUD handler is not sufficient for order creation.
+                  We need to validate stock availability, calculate totals,
+                  decrement stock, and create order items &mdash; all within a
+                  database transaction.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/handlers/order.go &mdash; CreateOrder</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/handlers/order.go &mdash; CreateOrder
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type CreateOrderInput struct {
     Notes string \`json:"notes"\`
@@ -723,7 +818,9 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/routes/routes.go</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/routes/routes.go
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Replace the default POST /api/orders with the custom handler
 orders := auth.Group("/orders")
@@ -745,15 +842,19 @@ orders := auth.Group("/orders")
                 10
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Background job for order confirmation emails</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Background job for order confirmation emails
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  When an order is placed, queue a background job that sends a confirmation email.
-                  This keeps the API response fast.
+                  When an order is placed, queue a background job that sends a
+                  confirmation email. This keeps the API response fast.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/jobs/order_confirmation.go</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/jobs/order_confirmation.go
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package jobs
 
@@ -813,7 +914,9 @@ func HandleOrderConfirmation(mailer *mail.Mailer) asynq.HandlerFunc {
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/mail/templates/order-confirmation.html</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/mail/templates/order-confirmation.html
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`<!DOCTYPE html>
 <html>
@@ -849,15 +952,21 @@ func HandleOrderConfirmation(mailer *mail.Mailer) asynq.HandlerFunc {
                 11
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Admin dashboard with revenue stats</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Admin dashboard with revenue stats
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Create a stats endpoint that returns revenue totals, order counts, and
-                  product inventory stats. Then build a dashboard widget for the admin panel.
+                  Create a stats endpoint that returns revenue totals, order
+                  counts, and product inventory stats. Then build a dashboard
+                  widget for the admin panel.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/handlers/order.go &mdash; revenue stats endpoint</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/handlers/order.go &mdash; revenue stats
+                      endpoint
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// GetRevenueStats returns store-wide revenue and order statistics.
 func (h *OrderHandler) GetRevenueStats(c *gin.Context) {
@@ -917,7 +1026,9 @@ func (h *OrderHandler) GetRevenueStats(c *gin.Context) {
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/admin/components/widgets/revenue-stats.tsx</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/admin/components/widgets/revenue-stats.tsx
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`'use client'
 
@@ -1020,16 +1131,22 @@ export function RevenueStatsWidget() {
                 12
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Cache popular products with Redis</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Cache popular products with Redis
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  High-traffic product pages should not hit the database on every request. Use
-                  Grit&apos;s built-in Redis cache service to cache popular products and invalidate the
-                  cache when a product is updated.
+                  High-traffic product pages should not hit the database on
+                  every request. Use Grit&apos;s built-in Redis cache service to
+                  cache popular products and invalidate the cache when a product
+                  is updated.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/services/product.go &mdash; cached GetByID</span>
+                    <span className="text-[11px] font-mono text-muted-foreground/40">
+                      apps/api/internal/services/product.go &mdash; cached
+                      GetByID
+                    </span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package services
 
@@ -1137,10 +1254,11 @@ func (s *ProductService) GetPublished(page, pageSize int) ([]models.Product, int
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
-                  The cache is automatically invalidated when a product is updated through the
-                  admin panel or API. Published product listings are cached for 2 minutes,
-                  and individual product pages are cached for 5 minutes. This dramatically
-                  reduces database load under high traffic.
+                  The cache is automatically invalidated when a product is
+                  updated through the admin panel or API. Published product
+                  listings are cached for 2 minutes, and individual product
+                  pages are cached for 5 minutes. This dramatically reduces
+                  database load under high traffic.
                 </p>
               </div>
             </div>
@@ -1153,7 +1271,9 @@ func (s *ProductService) GetPublished(page, pageSize int) ([]models.Product, int
                 13
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Run and test everything</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  Run and test everything
+                </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
                   Start all services and test the complete e-commerce workflow.
                 </p>
@@ -1165,10 +1285,13 @@ func (s *ProductService) GetPublished(page, pageSize int) ([]models.Product, int
                       <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                       <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                     </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      terminal
+                    </span>
                   </div>
                   <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit dev</span>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">grit dev</span>
                   </div>
                 </div>
 
@@ -1177,16 +1300,34 @@ func (s *ProductService) GetPublished(page, pageSize int) ([]models.Product, int
                 </p>
 
                 <ol className="space-y-2 text-[13px] text-muted-foreground/70 list-decimal pl-5">
-                  <li>Open the admin panel at <code>http://localhost:3001</code> and register an admin account.</li>
-                  <li>Create a category: &quot;Electronics&quot; with slug &quot;electronics&quot;.</li>
-                  <li>Create a product: &quot;Wireless Keyboard&quot;, SKU &quot;WK-001&quot;, price $49.99, stock 50, category &quot;Electronics&quot;, published.</li>
-                  <li>Upload an image for the product using the image upload field.</li>
-                  <li>Verify the image appears in the product table and in MinIO at <code>http://localhost:9001</code>.</li>
+                  <li>
+                    Open the admin panel at <code>http://localhost:3001</code>{" "}
+                    and register an admin account.
+                  </li>
+                  <li>
+                    Create a category: &quot;Electronics&quot; with slug
+                    &quot;electronics&quot;.
+                  </li>
+                  <li>
+                    Create a product: &quot;Wireless Keyboard&quot;, SKU
+                    &quot;WK-001&quot;, price $49.99, stock 50, category
+                    &quot;Electronics&quot;, published.
+                  </li>
+                  <li>
+                    Upload an image for the product using the image upload
+                    field.
+                  </li>
+                  <li>
+                    Verify the image appears in the product table and in MinIO
+                    at <code>http://localhost:9001</code>.
+                  </li>
                   <li>
                     Place an order via the API:
                     <div className="mt-2 rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                        <span className="text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                        <span className="text-[11px] font-mono text-muted-foreground/40">
+                          terminal
+                        </span>
                       </div>
                       <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`curl -X POST http://localhost:8080/api/orders \\
   -H "Authorization: Bearer <your-token>" \\
@@ -1199,12 +1340,31 @@ func (s *ProductService) GetPublished(page, pageSize int) ([]models.Product, int
   }'`}</pre>
                     </div>
                   </li>
-                  <li>Check that the product stock decreased from 50 to 48 in the admin panel.</li>
-                  <li>Check Mailhog at <code>http://localhost:8025</code> for the order confirmation email.</li>
-                  <li>Try ordering more than the available stock &mdash; the API should return an <code>INSUFFICIENT_STOCK</code> error.</li>
-                  <li>View the revenue dashboard in the admin panel &mdash; it should show $99.98 in revenue.</li>
-                  <li>Request the same product twice via API and verify the second request is served from the Redis cache (check response times).</li>
-                  <li>Browse all tables in GORM Studio at <code>http://localhost:8080/studio</code>.</li>
+                  <li>
+                    Check that the product stock decreased from 50 to 48 in the
+                    admin panel.
+                  </li>
+                  <li>
+                    Check Mailhog at <code>http://localhost:8025</code> for the
+                    order confirmation email.
+                  </li>
+                  <li>
+                    Try ordering more than the available stock &mdash; the API
+                    should return an <code>INSUFFICIENT_STOCK</code> error.
+                  </li>
+                  <li>
+                    View the revenue dashboard in the admin panel &mdash; it
+                    should show $99.98 in revenue.
+                  </li>
+                  <li>
+                    Request the same product twice via API and verify the second
+                    request is served from the Redis cache (check response
+                    times).
+                  </li>
+                  <li>
+                    Browse all tables in GORM Studio at{" "}
+                    <code>http://localhost:8080/studio</code>.
+                  </li>
                 </ol>
               </div>
             </div>
@@ -1218,20 +1378,23 @@ func (s *ProductService) GetPublished(page, pageSize int) ([]models.Product, int
               </h2>
               <ul className="space-y-2.5">
                 {[
-                  'A complete e-commerce store with Go API and Next.js frontend',
-                  'Product catalog with categories, pricing, SKU tracking, and stock management',
-                  'Product image uploads to S3-compatible storage (MinIO in development)',
-                  'Transactional order creation with stock validation and atomic database operations',
-                  'Order items that snapshot product prices at time of purchase',
-                  'Background job queue for order confirmation emails',
-                  'HTML email templates styled to match the Grit dark theme',
-                  'Revenue dashboard with daily revenue chart, order counts, and low-stock alerts',
-                  'Redis caching for product pages and published product listings',
-                  'Cache invalidation on product updates to keep data fresh',
-                  'Admin panel with product image previews, currency formatting, and status badges',
-                  'Five resources total: Product, Category, Order, OrderItem, and the built-in User',
+                  "A complete e-commerce store with Go API and Next.js frontend",
+                  "Product catalog with categories, pricing, SKU tracking, and stock management",
+                  "Product image uploads to S3-compatible storage (MinIO in development)",
+                  "Transactional order creation with stock validation and atomic database operations",
+                  "Order items that snapshot product prices at time of purchase",
+                  "Background job queue for order confirmation emails",
+                  "HTML email templates styled to match the Grit dark theme",
+                  "Revenue dashboard with daily revenue chart, order counts, and low-stock alerts",
+                  "Redis caching for product pages and published product listings",
+                  "Cache invalidation on product updates to keep data fresh",
+                  "Admin panel with product image previews, currency formatting, and status badges",
+                  "Five resources total: Product, Category, Order, OrderItem, and the built-in User",
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
+                  <li
+                    key={item}
+                    className="flex items-start gap-2.5 text-[14px] text-muted-foreground"
+                  >
                     <span className="text-primary mt-0.5">&#10003;</span>
                     {item}
                   </li>
@@ -1242,29 +1405,71 @@ func (s *ProductService) GetPublished(page, pageSize int) ([]models.Product, int
             <div className="prose-grit mb-8">
               <h2>Next steps</h2>
               <p>
-                You have a solid e-commerce foundation. Here are ideas to take it further:
+                You have a solid e-commerce foundation. Here are ideas to take
+                it further:
               </p>
               <ul>
-                <li><strong>Stripe integration</strong> &mdash; add a payment processing step to the order creation flow using the Stripe Go SDK.</li>
-                <li><strong>Product variants</strong> &mdash; generate a <code>Variant</code> resource (size, color) linked to products with separate stock tracking.</li>
-                <li><strong>Wishlist</strong> &mdash; generate a <code>Wishlist</code> resource linked to User and Product for saved items.</li>
-                <li><strong>Search</strong> &mdash; add full-text search on product names and descriptions using PostgreSQL&apos;s <code>tsvector</code>.</li>
-                <li><strong>Reviews</strong> &mdash; generate a <code>Review</code> resource with a rating field and link it to Product and User.</li>
-                <li><strong>Discount codes</strong> &mdash; add a <code>Coupon</code> resource and apply discounts during order creation.</li>
-                <li><strong>Shipping tracking</strong> &mdash; update order status through the workflow and send shipping notification emails.</li>
-                <li><strong>Analytics</strong> &mdash; use the Grit admin chart widgets to show sales by category, top-selling products, and customer retention.</li>
+                <li>
+                  <strong>Stripe integration</strong> &mdash; add a payment
+                  processing step to the order creation flow using the Stripe Go
+                  SDK.
+                </li>
+                <li>
+                  <strong>Product variants</strong> &mdash; generate a{" "}
+                  <code>Variant</code> resource (size, color) linked to products
+                  with separate stock tracking.
+                </li>
+                <li>
+                  <strong>Wishlist</strong> &mdash; generate a{" "}
+                  <code>Wishlist</code> resource linked to User and Product for
+                  saved items.
+                </li>
+                <li>
+                  <strong>Search</strong> &mdash; add full-text search on
+                  product names and descriptions using PostgreSQL&apos;s{" "}
+                  <code>tsvector</code>.
+                </li>
+                <li>
+                  <strong>Reviews</strong> &mdash; generate a{" "}
+                  <code>Review</code> resource with a rating field and link it
+                  to Product and User.
+                </li>
+                <li>
+                  <strong>Discount codes</strong> &mdash; add a{" "}
+                  <code>Coupon</code> resource and apply discounts during order
+                  creation.
+                </li>
+                <li>
+                  <strong>Shipping tracking</strong> &mdash; update order status
+                  through the workflow and send shipping notification emails.
+                </li>
+                <li>
+                  <strong>Analytics</strong> &mdash; use the Grit admin chart
+                  widgets to show sales by category, top-selling products, and
+                  customer retention.
+                </li>
               </ul>
             </div>
 
             {/* Nav */}
             <div className="flex items-center justify-between pt-6 border-t border-border/30">
-              <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="text-muted-foreground/60 hover:text-foreground"
+              >
                 <Link href="/docs/tutorials/saas" className="gap-1.5">
                   <ArrowLeft className="h-3.5 w-3.5" />
                   Build a SaaS
                 </Link>
               </Button>
-              <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="text-muted-foreground/60 hover:text-foreground"
+              >
                 <Link href="/docs/ai-skill" className="gap-1.5">
                   LLM Skill Guide
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -1275,5 +1480,5 @@ func (s *ProductService) GetPublished(page, pageSize int) ([]models.Product, int
         </div>
       </main>
     </div>
-  )
+  );
 }
