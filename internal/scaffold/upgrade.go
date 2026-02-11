@@ -20,7 +20,7 @@ type UpgradeOptions struct {
 // It preserves user-generated code (resource definitions, API handlers, .env)
 // while updating framework components to the latest version.
 func Upgrade(uOpts UpgradeOptions) error {
-	root, err := findProjectRoot()
+	root, err := FindProjectRoot()
 	if err != nil {
 		return err
 	}
@@ -68,6 +68,17 @@ func Upgrade(uOpts UpgradeOptions) error {
 		return fmt.Errorf("updating Docker files: %w", err)
 	}
 	updated += n
+
+	// --- API migrate/seed tools ---
+	hasAPI := dirExists(filepath.Join(root, "apps", "api"))
+	if hasAPI {
+		spinner.Printf("  → Updating migration and seed tools...\n")
+		if err := writeMigrateSeedFiles(root, opts); err != nil {
+			return fmt.Errorf("updating migrate/seed files: %w", err)
+		}
+		green.Printf("  ✓ Migration and seed tools updated\n")
+		updated += 4
+	}
 
 	// --- Shared package ---
 	if hasShared {
@@ -257,8 +268,8 @@ func writeUpgradeFiles(files map[string]string, force bool) (int, error) {
 	return count, nil
 }
 
-// findProjectRoot walks up from the current directory looking for a Grit project.
-func findProjectRoot() (string, error) {
+// FindProjectRoot walks up from the current directory looking for a Grit project.
+func FindProjectRoot() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return "", fmt.Errorf("getting working directory: %w", err)

@@ -35,8 +35,9 @@ func writeDocsFiles(root string, opts Options) error {
 		filepath.Join(docsRoot, "content", "docs", "cli", "meta.json"):    docsContentCLIMeta(),
 
 		// Content — API
-		filepath.Join(docsRoot, "content", "docs", "api", "authentication.mdx"): docsContentAuth(),
-		filepath.Join(docsRoot, "content", "docs", "api", "meta.json"):          docsContentAPIMeta(),
+		filepath.Join(docsRoot, "content", "docs", "api", "authentication.mdx"):        docsContentAuth(),
+		filepath.Join(docsRoot, "content", "docs", "api", "migrations-and-seeding.mdx"): docsContentMigrationsSeeding(),
+		filepath.Join(docsRoot, "content", "docs", "api", "meta.json"):                  docsContentAPIMeta(),
 
 		// Content — Admin
 		filepath.Join(docsRoot, "content", "docs", "admin", "overview.mdx"):  docsContentAdminOverview(),
@@ -618,7 +619,7 @@ func docsContentCLIMeta() string {
 func docsContentAPIMeta() string {
 	return `{
   "title": "API",
-  "pages": ["authentication"]
+  "pages": ["authentication", "migrations-and-seeding"]
 }
 `
 }
@@ -770,12 +771,228 @@ grit upgrade [flags]
 
 Run grit sync after upgrading to regenerate TypeScript types.
 
+## grit migrate
+
+Run database migrations using GORM AutoMigrate.
+
+` + "```bash" + `
+grit migrate [flags]
+` + "```" + `
+
+**Flags:**
+
+| Flag | Description |
+|------|-------------|
+| --fresh | Drop all tables before migrating |
+
+**Examples:**
+
+` + "```bash" + `
+grit migrate            # Run migrations
+grit migrate --fresh    # Drop all tables and re-migrate
+` + "```" + `
+
+The migrate command connects to the database (using DATABASE_URL from .env) and runs GORM AutoMigrate for all registered models. Use --fresh to drop all tables first — useful for resetting during development.
+
+## grit seed
+
+Populate the database with initial data.
+
+` + "```bash" + `
+grit seed
+` + "```" + `
+
+Seeds the database with:
+
+- **Admin user** — admin@example.com / password (role: admin)
+- **Demo users** — Sample accounts for testing
+
+The seeder is idempotent — it skips records that already exist. Add your own seeders in apps/api/internal/database/seed.go.
+
 ## grit version
 
 Print the installed Grit CLI version.
 
 ` + "```bash" + `
 grit version
+` + "```" + `
+`
+}
+
+func docsContentMigrationsSeeding() string {
+	return `---
+title: Migrations & Seeding
+description: Database migrations with GORM AutoMigrate and seeding with initial data.
+---
+
+## Overview
+
+Grit uses **GORM AutoMigrate** for database schema management. Migrations run automatically on API startup and can also be triggered manually via the CLI. Seeding populates the database with initial data for development and production.
+
+## Migrations
+
+### How It Works
+
+GORM AutoMigrate creates tables, adds missing columns, and creates indexes based on your Go model definitions. It does **not** delete columns or drop tables — it's additive only.
+
+All models are registered in apps/api/internal/models/user.go via the AutoMigrate function:
+
+` + "```go" + `
+func AutoMigrate(db *gorm.DB) error {
+    models := []interface{}{
+        &User{},
+        &Upload{},
+        // grit:models  <-- new models injected here by grit generate
+    }
+
+    for _, model := range models {
+        if err := db.AutoMigrate(model); err != nil {
+            log.Printf("Warning: migration error for %T: %v (skipping)", model, err)
+        }
+    }
+
+    return nil
+}
+` + "```" + `
+
+### Running Migrations
+
+Migrations run automatically when the API starts. You can also run them manually:
+
+` + "```bash" + `
+# Run migrations
+grit migrate
+
+# Drop all tables and re-migrate (development only!)
+grit migrate --fresh
+` + "```" + `
+
+### Fresh Migrations
+
+The --fresh flag drops **all tables** in the database and re-creates them from scratch. This is useful during development when you've made breaking schema changes.
+
+**Warning:** This destroys all data. Never use --fresh in production.
+
+` + "```bash" + `
+# Reset everything and re-seed
+grit migrate --fresh
+grit seed
+` + "```" + `
+
+### Adding New Models
+
+When you run grit generate resource, it automatically:
+
+1. Creates a new Go model file
+2. Injects the model into AutoMigrate via the // grit:models marker
+3. Migrations run on next API startup or grit migrate
+
+To add a model manually:
+
+` + "```go" + `
+// apps/api/internal/models/post.go
+type Post struct {
+    ID        uint           ` + "`" + `gorm:"primarykey" json:"id"` + "`" + `
+    Title     string         ` + "`" + `gorm:"size:255;not null" json:"title"` + "`" + `
+    Content   string         ` + "`" + `gorm:"type:text" json:"content"` + "`" + `
+    Published bool           ` + "`" + `gorm:"default:false" json:"published"` + "`" + `
+    CreatedAt time.Time      ` + "`" + `json:"created_at"` + "`" + `
+    UpdatedAt time.Time      ` + "`" + `json:"updated_at"` + "`" + `
+    DeletedAt gorm.DeletedAt ` + "`" + `gorm:"index" json:"-"` + "`" + `
+}
+` + "```" + `
+
+Then add it to AutoMigrate in models/user.go above the // grit:models marker.
+
+## Seeding
+
+### Running Seeders
+
+` + "```bash" + `
+grit seed
+` + "```" + `
+
+This creates:
+
+| Account | Email | Password | Role |
+|---------|-------|----------|------|
+| Admin | admin@example.com | password | admin |
+| Jane Cooper | jane@example.com | password | editor |
+| Robert Fox | robert@example.com | password | user |
+| Emily Davis | emily@example.com | password | user |
+| Michael Chen | michael@example.com | password | user (inactive) |
+
+### How Seeders Work
+
+Seeders live in apps/api/internal/database/seed.go. The main Seed function calls individual seeder functions:
+
+` + "```go" + `
+func Seed(db *gorm.DB) error {
+    if err := seedAdminUser(db); err != nil {
+        return err
+    }
+    if err := seedDemoUsers(db); err != nil {
+        return err
+    }
+    // grit:seeders  <-- add your own seeders above this marker
+    return nil
+}
+` + "```" + `
+
+### Adding Custom Seeders
+
+Add new seeder functions in seed.go:
+
+` + "```go" + `
+func seedCategories(db *gorm.DB) error {
+    categories := []models.Category{
+        {Name: "Technology", Slug: "technology"},
+        {Name: "Business", Slug: "business"},
+        {Name: "Design", Slug: "design"},
+    }
+
+    for _, c := range categories {
+        var count int64
+        db.Model(&models.Category{}).Where("slug = ?", c.Slug).Count(&count)
+        if count > 0 {
+            continue
+        }
+        if err := db.Create(&c).Error; err != nil {
+            return err
+        }
+    }
+
+    return nil
+}
+` + "```" + `
+
+Then call it from the Seed function:
+
+` + "```go" + `
+if err := seedCategories(db); err != nil {
+    return fmt.Errorf("seeding categories: %w", err)
+}
+` + "```" + `
+
+### Idempotent Seeders
+
+Seeders check if records already exist before creating them. This means you can run grit seed multiple times without creating duplicates.
+
+## Common Workflow
+
+` + "```bash" + `
+# Initial setup
+docker compose up -d          # Start PostgreSQL
+grit migrate                  # Create tables
+grit seed                     # Populate with test data
+
+# After adding a new resource
+grit generate resource Post --fields "title:string,content:text"
+grit migrate                  # Apply new table
+
+# Reset during development
+grit migrate --fresh          # Drop everything
+grit seed                     # Re-populate
 ` + "```" + `
 `
 }

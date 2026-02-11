@@ -41,6 +41,13 @@ grit generate resource Category -i   # Interactive mode
 # Sync Go types to TypeScript
 grit sync
 
+# Database migrations
+grit migrate                          # Run GORM AutoMigrate
+grit migrate --fresh                  # Drop all tables + re-migrate
+
+# Seed the database
+grit seed                             # Create admin + demo users
+
 # Upgrade existing project to latest templates
 grit upgrade                          # Updates admin, web, configs
 grit upgrade --force                  # Overwrite without prompting

@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -23,6 +25,8 @@ func main() {
 	rootCmd.AddCommand(newCmd())
 	rootCmd.AddCommand(generateCmd())
 	rootCmd.AddCommand(syncCmd())
+	rootCmd.AddCommand(migrateCmd())
+	rootCmd.AddCommand(seedCmd())
 	rootCmd.AddCommand(upgradeCmd())
 	rootCmd.AddCommand(versionCmd())
 
@@ -174,6 +178,88 @@ func generateResourceCmd() *cobra.Command {
 	cmd.Flags().StringVar(&fields, "fields", "", "Inline field definitions (e.g., \"title:string,content:text,published:bool\")")
 
 	return cmd
+}
+
+func migrateCmd() *cobra.Command {
+	var fresh bool
+
+	cmd := &cobra.Command{
+		Use:   "migrate",
+		Short: "Run database migrations",
+		Long:  "Connect to the database and run GORM AutoMigrate for all models. Use --fresh to drop all tables first.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+
+			apiDir, err := findAPIDir()
+			if err != nil {
+				return err
+			}
+
+			goArgs := []string{"run", "cmd/migrate/main.go"}
+			if fresh {
+				goArgs = append(goArgs, "--fresh")
+			}
+
+			c := exec.Command("go", goArgs...)
+			c.Dir = apiDir
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			c.Stdin = os.Stdin
+
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			if fresh {
+				purple.Println("\n  Running fresh migration (drop + re-migrate)...\n")
+			} else {
+				purple.Println("\n  Running database migrations...\n")
+			}
+
+			return c.Run()
+		},
+	}
+
+	cmd.Flags().BoolVar(&fresh, "fresh", false, "Drop all tables before migrating (migrate:fresh)")
+
+	return cmd
+}
+
+func seedCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "seed",
+		Short: "Run database seeders",
+		Long:  "Populate the database with initial data (admin user, demo users).",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+
+			apiDir, err := findAPIDir()
+			if err != nil {
+				return err
+			}
+
+			c := exec.Command("go", "run", "cmd/seed/main.go")
+			c.Dir = apiDir
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			c.Stdin = os.Stdin
+
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			purple.Println("\n  Seeding database...\n")
+
+			return c.Run()
+		},
+	}
+}
+
+// findAPIDir locates the apps/api directory from the project root.
+func findAPIDir() (string, error) {
+	root, err := scaffold.FindProjectRoot()
+	if err != nil {
+		return "", err
+	}
+	apiDir := filepath.Join(root, "apps", "api")
+	if _, err := os.Stat(apiDir); os.IsNotExist(err) {
+		return "", fmt.Errorf("apps/api directory not found in %s", root)
+	}
+	return apiDir, nil
 }
 
 func upgradeCmd() *cobra.Command {

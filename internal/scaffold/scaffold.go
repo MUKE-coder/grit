@@ -84,6 +84,12 @@ func Run(opts Options) error {
 		return fmt.Errorf("writing API files: %w", err)
 	}
 
+	// Write migrate and seed entrypoints
+	spinner.Printf("  → Adding migration and seed tools...\n")
+	if err := writeMigrateSeedFiles(root, opts); err != nil {
+		return fmt.Errorf("writing migrate/seed files: %w", err)
+	}
+
 	// Write Phase 4 service files (cache, storage, mail, jobs, cron, AI)
 	spinner.Printf("  → Adding batteries (cache, storage, mail, jobs, cron, AI)...\n")
 	if err := writeCacheFiles(root, opts); err != nil {
@@ -159,6 +165,8 @@ func createDirectories(root string, opts Options) error {
 	dirs := []string{
 		// Go API
 		filepath.Join(root, "apps", "api", "cmd", "server"),
+		filepath.Join(root, "apps", "api", "cmd", "migrate"),
+		filepath.Join(root, "apps", "api", "cmd", "seed"),
 		filepath.Join(root, "apps", "api", "internal", "config"),
 		filepath.Join(root, "apps", "api", "internal", "database"),
 		filepath.Join(root, "apps", "api", "internal", "models"),
