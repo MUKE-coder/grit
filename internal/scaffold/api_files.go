@@ -162,6 +162,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// StorageConfig holds credentials for a single S3-compatible provider.
+type StorageConfig struct {
+	Endpoint  string
+	AccessKey string
+	SecretKey string
+	Bucket    string
+	Region    string
+	UseSSL    bool
+}
+
 // Config holds all application configuration.
 type Config struct {
 	AppName     string
@@ -176,12 +186,9 @@ type Config struct {
 
 	RedisURL string
 
-	S3Endpoint  string
-	S3AccessKey string
-	S3SecretKey string
-	S3Bucket    string
-	S3Region    string
-	S3UseSSL    bool
+	// Storage
+	StorageDriver string        // "minio", "r2", or "b2"
+	Storage       StorageConfig // Resolved config for the active driver
 
 	ResendAPIKey string
 	MailFrom     string
@@ -197,6 +204,8 @@ func Load() (*Config, error) {
 	_ = godotenv.Load()
 	_ = godotenv.Load("../../.env") // Load from project root when running from apps/api
 
+	storageDriver := getEnv("STORAGE_DRIVER", "minio")
+
 	cfg := &Config{
 		AppName:     getEnv("APP_NAME", "grit-app"),
 		AppEnv:      getEnv("APP_ENV", "development"),
@@ -206,12 +215,8 @@ func Load() (*Config, error) {
 		JWTSecret:   getEnv("JWT_SECRET", ""),
 		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379"),
 
-		S3Endpoint:  getEnv("S3_ENDPOINT", "http://localhost:9000"),
-		S3AccessKey: getEnv("S3_ACCESS_KEY", "minioadmin"),
-		S3SecretKey: getEnv("S3_SECRET_KEY", "minioadmin"),
-		S3Bucket:    getEnv("S3_BUCKET", "uploads"),
-		S3Region:    getEnv("S3_REGION", "us-east-1"),
-		S3UseSSL:    getEnv("S3_USE_SSL", "false") == "true",
+		StorageDriver: storageDriver,
+		Storage:       resolveStorage(storageDriver),
 
 		ResendAPIKey: getEnv("RESEND_API_KEY", ""),
 		MailFrom:     getEnv("MAIL_FROM", "noreply@localhost"),
@@ -248,6 +253,39 @@ func Load() (*Config, error) {
 // IsDevelopment returns true if the app is running in development mode.
 func (c *Config) IsDevelopment() bool {
 	return c.AppEnv == "development"
+}
+
+// resolveStorage returns the StorageConfig for the active driver.
+func resolveStorage(driver string) StorageConfig {
+	switch driver {
+	case "r2":
+		return StorageConfig{
+			Endpoint:  getEnv("R2_ENDPOINT", ""),
+			AccessKey: getEnv("R2_ACCESS_KEY", ""),
+			SecretKey: getEnv("R2_SECRET_KEY", ""),
+			Bucket:    getEnv("R2_BUCKET", "uploads"),
+			Region:    getEnv("R2_REGION", "auto"),
+			UseSSL:    true,
+		}
+	case "b2":
+		return StorageConfig{
+			Endpoint:  getEnv("B2_ENDPOINT", ""),
+			AccessKey: getEnv("B2_ACCESS_KEY", ""),
+			SecretKey: getEnv("B2_SECRET_KEY", ""),
+			Bucket:    getEnv("B2_BUCKET", "uploads"),
+			Region:    getEnv("B2_REGION", "us-west-004"),
+			UseSSL:    true,
+		}
+	default: // minio
+		return StorageConfig{
+			Endpoint:  getEnv("MINIO_ENDPOINT", "http://localhost:9000"),
+			AccessKey: getEnv("MINIO_ACCESS_KEY", "minioadmin"),
+			SecretKey: getEnv("MINIO_SECRET_KEY", "minioadmin"),
+			Bucket:    getEnv("MINIO_BUCKET", "uploads"),
+			Region:    getEnv("MINIO_REGION", "us-east-1"),
+			UseSSL:    getEnv("MINIO_USE_SSL", "false") == "true",
+		}
+	}
 }
 
 func getEnv(key, fallback string) string {

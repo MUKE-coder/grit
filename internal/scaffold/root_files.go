@@ -50,13 +50,30 @@ JWT_REFRESH_EXPIRY=168h
 # Redis
 REDIS_URL=redis://localhost:6379
 
-# S3 / MinIO
-S3_ENDPOINT=http://localhost:9000
-S3_ACCESS_KEY=minioadmin
-S3_SECRET_KEY=minioadmin
-S3_BUCKET=%s-uploads
-S3_REGION=us-east-1
-S3_USE_SSL=false
+# Storage — Which provider to use: minio, r2, b2
+STORAGE_DRIVER=minio
+
+# MinIO (local development — used when STORAGE_DRIVER=minio)
+MINIO_ENDPOINT=http://localhost:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=%s-uploads
+MINIO_REGION=us-east-1
+MINIO_USE_SSL=false
+
+# Cloudflare R2 (used when STORAGE_DRIVER=r2)
+R2_ENDPOINT=
+R2_ACCESS_KEY=
+R2_SECRET_KEY=
+R2_BUCKET=
+R2_REGION=auto
+
+# Backblaze B2 (used when STORAGE_DRIVER=b2)
+B2_ENDPOINT=
+B2_ACCESS_KEY=
+B2_SECRET_KEY=
+B2_BUCKET=
+B2_REGION=us-west-004
 
 # Email (Resend)
 RESEND_API_KEY=re_your_api_key
@@ -88,13 +105,32 @@ JWT_REFRESH_EXPIRY=168h              # Refresh token lifetime (7 days)
 # Redis — Cache and job queue
 REDIS_URL=redis://localhost:6379
 
-# S3 / MinIO — File storage
-S3_ENDPOINT=http://localhost:9000    # MinIO for local dev
-S3_ACCESS_KEY=minioadmin
-S3_SECRET_KEY=minioadmin
-S3_BUCKET=myapp-uploads
-S3_REGION=us-east-1
-S3_USE_SSL=false
+# Storage — Active driver: minio, r2, or b2
+STORAGE_DRIVER=minio                 # Change to "r2" or "b2" to switch providers
+
+# MinIO — Local S3-compatible storage (default for development)
+MINIO_ENDPOINT=http://localhost:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=myapp-uploads
+MINIO_REGION=us-east-1
+MINIO_USE_SSL=false
+
+# Cloudflare R2 — S3-compatible object storage
+# Get credentials: Cloudflare Dashboard → R2 → Manage R2 API Tokens
+R2_ENDPOINT=https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com
+R2_ACCESS_KEY=                       # R2 Access Key ID
+R2_SECRET_KEY=                       # R2 Secret Access Key
+R2_BUCKET=myapp-uploads
+R2_REGION=auto                       # Always "auto" for R2
+
+# Backblaze B2 — S3-compatible object storage
+# Get credentials: B2 Cloud Storage → App Keys
+B2_ENDPOINT=https://s3.us-west-004.backblazeb2.com
+B2_ACCESS_KEY=                       # B2 keyID
+B2_SECRET_KEY=                       # B2 applicationKey
+B2_BUCKET=myapp-uploads
+B2_REGION=us-west-004               # Must match your bucket region
 
 # Email — Resend integration
 RESEND_API_KEY=re_your_api_key
@@ -137,14 +173,25 @@ JWT_REFRESH_EXPIRY=168h
 # Create a free Redis database at upstash.com, copy the Redis URL
 REDIS_URL=rediss://default:your-password@your-endpoint.upstash.io:6379
 
-# ─── File Storage (Cloudflare R2 — https://dash.cloudflare.com) ─
-# Create an R2 bucket in Cloudflare dashboard, generate an API token
-S3_ENDPOINT=https://your-account-id.r2.cloudflarestorage.com
-S3_ACCESS_KEY=your-r2-access-key-id
-S3_SECRET_KEY=your-r2-secret-access-key
-S3_BUCKET=%s-uploads
-S3_REGION=auto
-S3_USE_SSL=true
+# ─── Storage ──────────────────────────────────────────
+# Active driver: r2 or b2 (no minio in cloud mode)
+STORAGE_DRIVER=r2
+
+# ─── Cloudflare R2 (https://dash.cloudflare.com) ─────
+# Dashboard → R2 → Create Bucket → Manage R2 API Tokens
+R2_ENDPOINT=https://your-account-id.r2.cloudflarestorage.com
+R2_ACCESS_KEY=your-r2-access-key-id
+R2_SECRET_KEY=your-r2-secret-access-key
+R2_BUCKET=%s-uploads
+R2_REGION=auto
+
+# ─── Backblaze B2 (https://backblaze.com/cloud-storage) ─
+# B2 Cloud Storage → Buckets → Create → App Keys → Add Key
+B2_ENDPOINT=https://s3.us-west-004.backblazeb2.com
+B2_ACCESS_KEY=your-b2-key-id
+B2_SECRET_KEY=your-b2-application-key
+B2_BUCKET=%s-uploads
+B2_REGION=us-west-004
 
 # ─── Email (Resend — https://resend.com) ───────────────
 # Sign up at resend.com, verify your domain, grab your API key
@@ -156,7 +203,7 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 
 # ─── GORM Studio ──────────────────────────────────────
 GORM_STUDIO_ENABLED=true
-`, opts.ProjectName, opts.ProjectName, opts.ProjectName)
+`, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 
 func rootGitignore() string {
