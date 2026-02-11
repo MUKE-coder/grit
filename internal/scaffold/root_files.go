@@ -7,10 +7,11 @@ import (
 
 func writeRootFiles(root string, opts Options) error {
 	files := map[string]string{
-		filepath.Join(root, ".env"):         envFile(opts),
-		filepath.Join(root, ".env.example"): envExampleFile(opts),
-		filepath.Join(root, ".gitignore"):   rootGitignore(),
-		filepath.Join(root, "README.md"):    readmeFile(opts),
+		filepath.Join(root, ".env"):               envFile(opts),
+		filepath.Join(root, ".env.example"):       envExampleFile(opts),
+		filepath.Join(root, ".env.cloud.example"): envCloudExampleFile(opts),
+		filepath.Join(root, ".gitignore"):         rootGitignore(),
+		filepath.Join(root, "README.md"):          readmeFile(opts),
 	}
 
 	if !opts.APIOnly {
@@ -105,6 +106,57 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 # GORM Studio — Visual database browser
 GORM_STUDIO_ENABLED=true
 `
+}
+
+func envCloudExampleFile(opts Options) string {
+	return fmt.Sprintf(`# %s — Cloud Environment Variables
+#
+# Use this file if you DON'T have Docker and want to use cloud services instead.
+# Copy this to .env and fill in your keys:
+#
+#   cp .env.cloud.example .env
+#
+# No Docker required — just your API keys.
+
+# ─── App ───────────────────────────────────────────────
+APP_NAME=%s
+APP_ENV=development
+APP_PORT=8080
+APP_URL=http://localhost:8080
+
+# ─── Database (Neon — https://neon.tech) ───────────────
+# Create a free project at neon.tech, copy the connection string
+DATABASE_URL=postgres://user:password@ep-xxx-xxx-123456.us-east-2.aws.neon.tech/neondb?sslmode=require
+
+# ─── JWT ───────────────────────────────────────────────
+JWT_SECRET=change-me-to-a-random-string-at-least-32-chars
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=168h
+
+# ─── Redis (Upstash — https://upstash.com) ─────────────
+# Create a free Redis database at upstash.com, copy the Redis URL
+REDIS_URL=rediss://default:your-password@your-endpoint.upstash.io:6379
+
+# ─── File Storage (Cloudflare R2 — https://dash.cloudflare.com) ─
+# Create an R2 bucket in Cloudflare dashboard, generate an API token
+S3_ENDPOINT=https://your-account-id.r2.cloudflarestorage.com
+S3_ACCESS_KEY=your-r2-access-key-id
+S3_SECRET_KEY=your-r2-secret-access-key
+S3_BUCKET=%s-uploads
+S3_REGION=auto
+S3_USE_SSL=true
+
+# ─── Email (Resend — https://resend.com) ───────────────
+# Sign up at resend.com, verify your domain, grab your API key
+RESEND_API_KEY=re_your_api_key_here
+MAIL_FROM=noreply@yourdomain.com
+
+# ─── CORS ──────────────────────────────────────────────
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+
+# ─── GORM Studio ──────────────────────────────────────
+GORM_STUDIO_ENABLED=true
+`, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 
 func rootGitignore() string {
@@ -291,6 +343,22 @@ cd apps/admin && pnpm dev
 # Run all services via Turborepo
 pnpm dev
 `+"```"+`
+
+## No Docker? No Problem
+
+If you can't run Docker, use cloud services instead:
+
+`+"```bash"+`
+cp .env.cloud.example .env
+`+"```"+`
+
+Then fill in your keys for:
+- **[Neon](https://neon.tech)** — PostgreSQL (free tier)
+- **[Upstash](https://upstash.com)** — Redis (free tier)
+- **[Cloudflare R2](https://dash.cloudflare.com)** — File storage (free tier)
+- **[Resend](https://resend.com)** — Email (free tier)
+
+No Docker needed — just your API keys and `+"``"+`go run`+"``"+`.
 
 ## Tech Stack
 
