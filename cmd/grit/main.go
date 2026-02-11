@@ -340,6 +340,7 @@ func printSuccess(name string, opts scaffold.Options) {
 	fmt.Println()
 	gray.Println("  ─────────────────────────────────────")
 	gray.Printf("  API:         http://localhost:8080\n")
+	gray.Printf("  API Docs:    http://localhost:8080/docs\n")
 	gray.Printf("  GORM Studio: http://localhost:8080/studio\n")
 
 	if opts.ShouldIncludeWeb() {

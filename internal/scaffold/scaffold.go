@@ -180,6 +180,7 @@ func createDirectories(root string, opts Options) error {
 		filepath.Join(root, "apps", "api", "internal", "cron"),
 		filepath.Join(root, "apps", "api", "internal", "cache"),
 		filepath.Join(root, "apps", "api", "internal", "ai"),
+		filepath.Join(root, "apps", "api", "internal", "docs"),
 	}
 
 	if opts.ShouldIncludeWeb() {

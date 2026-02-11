@@ -25,6 +25,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "cors.go"):  apiCorsMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "logger.go"): apiLoggerMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "routes", "routes.go"):    apiRoutesGo(),
+		filepath.Join(apiRoot, "internal", "docs", "docs.go"):       apiScalarHandlerGo(opts),
+		filepath.Join(apiRoot, "internal", "docs", "openapi.go"):    apiOpenAPISpecGo(opts),
 	}
 
 	for path, content := range files {
@@ -44,6 +46,7 @@ func apiGoMod(opts Options) string {
 go 1.21
 
 require (
+	github.com/MarceloPetrucio/go-scalar-api-reference v1.0.7
 	github.com/MUKE-coder/gorm-studio v0.0.0-20260210080608-2fb07b651336
 	github.com/aws/aws-sdk-go-v2 v1.25.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.0
@@ -1423,6 +1426,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/ai"
 	"` + "{{MODULE}}" + `/internal/cache"
 	"` + "{{MODULE}}" + `/internal/config"
+	"` + "{{MODULE}}" + `/internal/docs"
 	"` + "{{MODULE}}" + `/internal/handlers"
 	"` + "{{MODULE}}" + `/internal/mail"
 	"` + "{{MODULE}}" + `/internal/middleware"
@@ -1461,6 +1465,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		})
 		log.Println("GORM Studio mounted at /studio")
 	}
+
+	// API Documentation (Scalar)
+	docs.RegisterRoutes(r)
+	log.Println("API docs available at /docs")
 
 	// Auth service
 	authService := &services.AuthService{
