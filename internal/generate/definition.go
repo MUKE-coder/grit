@@ -56,8 +56,9 @@ func PromptInteractive(name string) (*ResourceDefinition, error) {
 
 	fmt.Println()
 	fmt.Printf("  Defining fields for %s\n", name)
-	fmt.Println("  Enter fields as name:type (e.g., title:string)")
+	fmt.Println("  Enter fields as name:type[:modifiers] (e.g., title:string, slug:string:unique)")
 	fmt.Printf("  Valid types: %s\n", strings.Join(ValidFieldTypes(), ", "))
+	fmt.Println("  Valid modifiers: unique, required, optional")
 	fmt.Println("  Press Enter with no input when done.")
 	fmt.Println()
 
@@ -116,10 +117,13 @@ func ParseInlineFields(name string, fieldStr string) (*ResourceDefinition, error
 	return def, nil
 }
 
+// parseFieldInput parses a field definition string.
+// Format: "name:type" or "name:type:modifier1:modifier2"
+// Valid modifiers: unique, required, optional
 func parseFieldInput(input string) (Field, error) {
-	parts := strings.SplitN(input, ":", 2)
-	if len(parts) != 2 {
-		return Field{}, fmt.Errorf("expected format name:type, got %q", input)
+	parts := strings.Split(input, ":")
+	if len(parts) < 2 {
+		return Field{}, fmt.Errorf("expected format name:type[:modifiers], got %q", input)
 	}
 
 	name := strings.TrimSpace(parts[0])
@@ -132,13 +136,32 @@ func parseFieldInput(input string) (Field, error) {
 		return Field{}, fmt.Errorf("invalid type %q for field %q (valid: %s)", typ, name, strings.Join(ValidFieldTypes(), ", "))
 	}
 
-	// Default: string and text fields with non-empty names are required
+	// Default: string fields are required
 	required := typ == "string"
+	unique := false
+
+	// Parse optional modifiers (parts[2], parts[3], etc.)
+	for _, mod := range parts[2:] {
+		mod = strings.TrimSpace(strings.ToLower(mod))
+		switch mod {
+		case "unique":
+			unique = true
+		case "required":
+			required = true
+		case "optional":
+			required = false
+		case "":
+			// ignore empty modifiers
+		default:
+			return Field{}, fmt.Errorf("invalid modifier %q for field %q (valid: unique, required, optional)", mod, name)
+		}
+	}
 
 	return Field{
 		Name:     name,
 		Type:     typ,
 		Required: required,
+		Unique:   unique,
 	}, nil
 }
 

@@ -37,6 +37,7 @@ const navItems: NavItem[] = [
       { title: 'Installation', href: '/docs/getting-started/installation' },
       { title: 'Project Structure', href: '/docs/getting-started/project-structure' },
       { title: 'Configuration', href: '/docs/getting-started/configuration' },
+      { title: 'Troubleshooting', href: '/docs/getting-started/troubleshooting' },
     ],
   },
   {
@@ -99,6 +100,7 @@ const navItems: NavItem[] = [
     icon: <Settings className="h-3.5 w-3.5" />,
     items: [
       { title: 'Docker Setup', href: '/docs/infrastructure/docker' },
+      { title: 'Docker Cheat Sheet', href: '/docs/infrastructure/docker-cheatsheet' },
       { title: 'Database & Migrations', href: '/docs/infrastructure/database' },
       { title: 'Deployment', href: '/docs/infrastructure/deployment' },
     ],

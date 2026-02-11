@@ -156,7 +156,7 @@ func generateResourceCmd() *cobra.Command {
 					return err
 				}
 			default:
-				return fmt.Errorf("specify fields with --fields, --from, or use -i for interactive mode\n\nExamples:\n  grit generate resource Post --fields \"title:string,content:text,published:bool\"\n  grit generate resource Post --from post.yaml\n  grit generate resource Post -i")
+				return fmt.Errorf("specify fields with --fields, --from, or use -i for interactive mode\n\nExamples:\n  grit generate resource Post --fields \"title:string,content:text,published:bool\"\n  grit generate resource Post --fields \"title:string,slug:string:unique,views:int\"\n  grit generate resource Post --from post.yaml\n  grit generate resource Post -i")
 			}
 
 			gen, err := generate.NewGenerator(def)

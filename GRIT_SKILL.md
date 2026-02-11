@@ -29,6 +29,7 @@ grit new myapp --full             # Everything + Expo mobile + docs site
 
 # Generate a resource (full-stack CRUD)
 grit generate resource Post --fields "title:string,content:text,published:bool"
+grit generate resource Post --fields "title:string,slug:string:unique,views:int"
 grit generate resource Invoice --from invoice.yaml
 grit generate resource Category -i   # Interactive mode
 
@@ -186,6 +187,20 @@ This creates **8 files** and injects into **10 existing files**:
 | `bool` | `bool` | `boolean` | `z.boolean()` | Toggle switch |
 | `datetime` | `*time.Time` | `string \| null` | `z.string().nullable()` | Datetime picker |
 | `date` | `*time.Time` | `string \| null` | `z.string().nullable()` | Date picker |
+
+### Field Modifiers
+
+Append modifiers after the type with colons:
+
+```bash
+grit generate resource Post --fields "title:string,slug:string:unique,email:string:required,bio:text:optional"
+```
+
+| Modifier | Effect |
+|----------|--------|
+| `unique` | Adds `gorm:"uniqueIndex"` to the Go model |
+| `required` | Marks the field as required (string fields are required by default) |
+| `optional` | Marks the field as optional (overrides default required for strings) |
 
 ### Understanding Markers
 
@@ -396,6 +411,34 @@ export const postsResource = defineResource({
 | `toggle` | On/off switch |
 | `checkbox` | Checkbox |
 | `radio` | Radio group |
+| `image` | Image upload (drag & drop via Dropzone) |
+
+### Dropzone Component
+
+A reusable file upload component with 5 variants:
+
+```tsx
+import { Dropzone } from "@/components/ui/dropzone";
+
+<Dropzone
+  variant="default"     // "default" | "compact" | "minimal" | "avatar" | "inline"
+  maxFiles={5}
+  maxSize={1024 * 1024 * 10} // 10MB
+  onFilesChange={setFiles}
+  accept={{
+    "image/*": [],
+    "application/pdf": [],
+  }}
+/>
+```
+
+| Variant | Description |
+|---------|------------|
+| `default` | Full drop zone with icon, text, and file preview cards |
+| `compact` | Single-line drop area with file chips |
+| `minimal` | Small button-style upload trigger |
+| `avatar` | Circular avatar upload with preview |
+| `inline` | Card-style with browse button |
 
 ### Adding Resources to the Registry
 

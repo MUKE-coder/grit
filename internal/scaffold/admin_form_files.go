@@ -14,6 +14,7 @@ import { DateField } from "./fields/date-field";
 import { ToggleField } from "./fields/toggle-field";
 import { CheckboxField } from "./fields/checkbox-field";
 import { RadioField } from "./fields/radio-field";
+import { ImageField } from "./fields/image-field";
 import { Loader2 } from "@/lib/icons";
 
 interface FormBuilderProps {
@@ -180,6 +181,17 @@ function FieldRenderer({
           rules={field.required ? { required: ` + "`" + `${field.label} is required` + "`" + ` } : undefined}
           render={({ field: formField }) => (
             <RadioField field={field} value={formField.value ?? ""} onChange={formField.onChange} error={error} />
+          )}
+        />
+      );
+    case "image":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          rules={field.required ? { required: ` + "`" + `${field.label} is required` + "`" + ` } : undefined}
+          render={({ field: formField }) => (
+            <ImageField field={field} value={formField.value ?? ""} onChange={formField.onChange} error={error} />
           )}
         />
       );
@@ -596,6 +608,44 @@ export function RadioField({ field, value, onChange, error }: RadioFieldProps) {
       )}
       {error && <p className="text-xs text-danger">{error}</p>}
     </div>
+  );
+}
+`
+}
+
+// adminImageField returns the image upload field component wrapping the Dropzone.
+func adminImageField() string {
+	return `"use client";
+
+import type { FieldDefinition } from "@/lib/resource";
+import { Dropzone, type UploadedFile } from "@/components/ui/dropzone";
+
+interface ImageFieldProps {
+  field: FieldDefinition;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+}
+
+export function ImageField({ field, value, onChange, error }: ImageFieldProps) {
+  const existingFiles: UploadedFile[] = value
+    ? [{ url: value, name: "Current image", size: 0, type: "image/jpeg" }]
+    : [];
+
+  return (
+    <Dropzone
+      variant="avatar"
+      maxFiles={1}
+      maxSize={field.maxSize ?? 5 * 1024 * 1024}
+      accept={{ "image/*": [".jpeg", ".jpg", ".png", ".gif", ".webp"] }}
+      value={existingFiles}
+      onFilesChange={(files) => {
+        onChange(files[0]?.url || "");
+      }}
+      label={field.label}
+      description={field.description}
+      error={error}
+    />
   );
 }
 `

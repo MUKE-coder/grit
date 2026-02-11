@@ -56,6 +56,10 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "forms", "fields", "toggle-field.tsx"):   adminToggleField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "checkbox-field.tsx"): adminCheckboxField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "radio-field.tsx"):    adminRadioField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "image-field.tsx"):    adminImageField(),
+
+		// UI components
+		filepath.Join(adminRoot, "components", "ui", "dropzone.tsx"): adminDropzone(),
 
 		// Widget components
 		filepath.Join(adminRoot, "components", "widgets", "stats-card.tsx"):      adminStatsCard(),
@@ -117,6 +121,7 @@ func adminPackageJSON(opts Options) string {
     "next": "^16.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-dropzone": "^14.2.0",
     "react-hook-form": "^7.49.0",
     "recharts": "^2.12.0",
     "sonner": "^1.3.0",

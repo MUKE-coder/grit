@@ -27,7 +27,7 @@ func Sync() error {
 		return fmt.Errorf("shared package not found at %s — sync requires a monorepo project", sharedRoot)
 	}
 
-	fmt.Println("\n  Syncing Go types → TypeScript...\n")
+	fmt.Print("\n  Syncing Go types → TypeScript...\n\n")
 
 	entries, err := os.ReadDir(modelsDir)
 	if err != nil {

@@ -451,7 +451,10 @@ import (
 
 // Connect establishes a database connection using the provided DSN.
 func Connect(dsn string) (*gorm.DB, error) {
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  dsn,
+		PreferSimpleProtocol: true, // Avoids prepared statement issues with schema changes
+	}), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
@@ -477,6 +480,7 @@ func apiUserModelGo() string {
 	return `package models
 
 import (
+	"log"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -524,12 +528,21 @@ func (u *User) CheckPassword(password string) bool {
 }
 
 // AutoMigrate runs database migrations for all models.
+// It migrates each model individually so that one failure doesn't block others.
 func AutoMigrate(db *gorm.DB) error {
-	return db.AutoMigrate(
+	models := []interface{}{
 		&User{},
 		&Upload{},
 		// grit:models
-	)
+	}
+
+	for _, model := range models {
+		if err := db.AutoMigrate(model); err != nil {
+			log.Printf("Warning: migration error for %T: %v (skipping)", model, err)
+		}
+	}
+
+	return nil
 }
 `
 }

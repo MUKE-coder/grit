@@ -62,7 +62,7 @@ export interface TableDefinition {
 
 // ─── Form Field Definitions ─────────────────────────────────────────
 
-export type FieldType = "text" | "textarea" | "number" | "select" | "date" | "datetime" | "toggle" | "checkbox" | "radio";
+export type FieldType = "text" | "textarea" | "number" | "select" | "date" | "datetime" | "toggle" | "checkbox" | "radio" | "image";
 
 export interface FieldDefinition {
   key: string;
@@ -80,6 +80,8 @@ export interface FieldDefinition {
   suffix?: string;
   rows?: number;
   colSpan?: 1 | 2;
+  accept?: string;
+  maxSize?: number;
 }
 
 export interface FormDefinition {
@@ -250,6 +252,13 @@ export const usersResource = defineResource({
         ],
         defaultValue: "user",
         colSpan: 1,
+      },
+      {
+        key: "avatar",
+        label: "Avatar",
+        type: "image",
+        description: "Profile picture",
+        colSpan: 2,
       },
       {
         key: "active",

@@ -12,6 +12,7 @@ func writeRootFiles(root string, opts Options) error {
 		filepath.Join(root, ".env.cloud.example"): envCloudExampleFile(opts),
 		filepath.Join(root, ".gitignore"):         rootGitignore(),
 		filepath.Join(root, "README.md"):          readmeFile(opts),
+		filepath.Join(root, "GRIT_SKILL.md"):      gritSkillFile(opts),
 	}
 
 	if !opts.APIOnly {

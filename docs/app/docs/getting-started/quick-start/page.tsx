@@ -216,12 +216,13 @@ export default function QuickStartPage() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
                   4
                 </div>
-                <h2 className="text-xl font-semibold tracking-tight">Run the Dev Server</h2>
+                <h2 className="text-xl font-semibold tracking-tight">Start the Go API</h2>
               </div>
               <div className="prose-grit mb-4">
                 <p>
-                  Install frontend dependencies and start all applications in development mode
-                  with hot reload.
+                  Navigate into the Go API directory, install dependencies with <code>go mod tidy</code>,
+                  then start the server. This runs the Go backend on port 8080 with auto-migration
+                  enabled.
                 </p>
               </div>
               <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
@@ -236,8 +237,104 @@ export default function QuickStartPage() {
                 <div className="p-5 font-mono text-sm space-y-2">
                   <div>
                     <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">cd apps/api</span>
+                  </div>
+                  <div>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">go mod tidy</span>
+                  </div>
+                  <div>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">go run cmd/server/main.go</span>
+                  </div>
+                </div>
+              </div>
+              <div className="prose-grit mt-4">
+                <p>
+                  You should see the Gin router start up and log all registered routes. The API
+                  is now running at <code>http://localhost:8080</code> and GORM Studio is
+                  available at <code>http://localhost:8080/studio</code>.
+                </p>
+                <blockquote>
+                  The first run of <code>go mod tidy</code> may take a minute as Go downloads
+                  all dependencies. Subsequent runs will be instant.
+                </blockquote>
+              </div>
+            </div>
+
+            {/* Step 5 */}
+            <div className="mb-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
+                  5
+                </div>
+                <h2 className="text-xl font-semibold tracking-tight">Start the Frontend</h2>
+              </div>
+              <div className="prose-grit mb-4">
+                <p>
+                  Open a <strong>new terminal</strong> (keep the API running), navigate back to the
+                  project root, install Node.js dependencies, then start the Next.js web app.
+                </p>
+              </div>
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                  </div>
+                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal (new tab)</span>
+                </div>
+                <div className="p-5 font-mono text-sm space-y-2">
+                  <div>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">cd myapp</span>
+                  </div>
+                  <div>
+                    <span className="text-primary/50 select-none">$ </span>
                     <span className="text-foreground/80">pnpm install</span>
                   </div>
+                  <div>
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">cd apps/web &amp;&amp; pnpm dev</span>
+                  </div>
+                </div>
+              </div>
+              <div className="prose-grit mt-4">
+                <p>
+                  To also run the admin panel, open <strong>another terminal</strong> and run:
+                </p>
+              </div>
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mt-4">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                  </div>
+                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal (another tab)</span>
+                </div>
+                <div className="p-5 font-mono text-sm">
+                  <span className="text-primary/50 select-none">$ </span>
+                  <span className="text-foreground/80">cd myapp/apps/admin &amp;&amp; pnpm dev</span>
+                </div>
+              </div>
+              <div className="prose-grit mt-4">
+                <p>
+                  Alternatively, you can run everything at once with Turborepo from the project root:
+                </p>
+              </div>
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mt-4">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                  </div>
+                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                </div>
+                <div className="p-5 font-mono text-sm space-y-2">
+                  <div className="text-muted-foreground/40 text-xs">{`# From the project root (myapp/)`}</div>
                   <div>
                     <span className="text-primary/50 select-none">$ </span>
                     <span className="text-foreground/80">turbo dev</span>
@@ -275,11 +372,11 @@ export default function QuickStartPage() {
               </div>
             </div>
 
-            {/* Step 5 */}
+            {/* Step 6 */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  5
+                  6
                 </div>
                 <h2 className="text-xl font-semibold tracking-tight">Generate a Resource</h2>
               </div>
@@ -337,6 +434,7 @@ export default function QuickStartPage() {
                   { title: 'Configuration', desc: 'All .env variables explained', href: '/docs/getting-started/configuration' },
                   { title: 'CLI Commands', desc: 'Every command the Grit CLI offers', href: '/docs/concepts/cli' },
                   { title: 'Code Generation', desc: 'Deep dive into resource generation', href: '/docs/concepts/code-generation' },
+                  { title: 'Troubleshooting', desc: 'Common errors and how to fix them', href: '/docs/getting-started/troubleshooting' },
                 ].map((item) => (
                   <Link key={item.href} href={item.href}>
                     <div className="group rounded-lg border border-border/40 bg-card/50 p-4 hover:border-primary/20 hover:bg-card/80 transition-all duration-200">
