@@ -9,26 +9,81 @@ func writeAdminFiles(root string, opts Options) error {
 	adminRoot := filepath.Join(root, "apps", "admin")
 
 	files := map[string]string{
-		filepath.Join(adminRoot, "package.json"):                                  adminPackageJSON(opts),
-		filepath.Join(adminRoot, "next.config.ts"):                                adminNextConfig(),
-		filepath.Join(adminRoot, "tailwind.config.ts"):                            adminTailwindConfig(),
-		filepath.Join(adminRoot, "postcss.config.js"):                             adminPostCSSConfig(),
-		filepath.Join(adminRoot, "tsconfig.json"):                                 adminTSConfig(),
-		filepath.Join(adminRoot, "app", "globals.css"):                            adminGlobalCSS(),
-		filepath.Join(adminRoot, "app", "layout.tsx"):                             adminRootLayout(opts),
-		filepath.Join(adminRoot, "app", "page.tsx"):                               adminDashboardPage(),
-		filepath.Join(adminRoot, "app", "resources", "users", "page.tsx"):         adminUsersPage(),
-		filepath.Join(adminRoot, "components", "layout", "admin-layout.tsx"):      adminLayoutComponent(),
-		filepath.Join(adminRoot, "components", "layout", "sidebar.tsx"):           adminSidebar(),
-		filepath.Join(adminRoot, "components", "layout", "navbar.tsx"):            adminNavbar(),
-		filepath.Join(adminRoot, "components", "widgets", "stats-card.tsx"):       adminStatsCard(),
-		filepath.Join(adminRoot, "components", "tables", "data-table.tsx"):        adminDataTable(),
-		filepath.Join(adminRoot, "hooks", "use-auth.ts"):                          adminUseAuth(),
-		filepath.Join(adminRoot, "hooks", "use-users.ts"):                         adminUseUsers(),
-		filepath.Join(adminRoot, "lib", "api-client.ts"):                          adminAPIClient(),
-		filepath.Join(adminRoot, "lib", "query-client.ts"):                        adminQueryClient(),
-		filepath.Join(adminRoot, "lib", "utils.ts"):                               adminUtils(),
-		filepath.Join(adminRoot, "components", "shared", "providers.tsx"):         adminProviders(),
+		// Config files
+		filepath.Join(adminRoot, "package.json"):     adminPackageJSON(opts),
+		filepath.Join(adminRoot, "next.config.ts"):   adminNextConfig(),
+		filepath.Join(adminRoot, "tailwind.config.ts"): adminTailwindConfig(),
+		filepath.Join(adminRoot, "postcss.config.js"): adminPostCSSConfig(),
+		filepath.Join(adminRoot, "tsconfig.json"):    adminTSConfig(),
+		filepath.Join(adminRoot, "app", "globals.css"): adminGlobalCSS(),
+		filepath.Join(adminRoot, "app", "layout.tsx"): adminRootLayout(opts),
+
+		// Lib
+		filepath.Join(adminRoot, "lib", "api-client.ts"):  adminAPIClient(),
+		filepath.Join(adminRoot, "lib", "query-client.ts"): adminQueryClient(),
+		filepath.Join(adminRoot, "lib", "utils.ts"):        adminUtils(),
+		filepath.Join(adminRoot, "lib", "resource.ts"):     adminResourceTypes(),
+		filepath.Join(adminRoot, "lib", "icons.ts"):        adminIconMap(),
+		filepath.Join(adminRoot, "lib", "formatters.ts"):   adminFormatters(),
+
+		// Shared components
+		filepath.Join(adminRoot, "components", "shared", "providers.tsx"):      adminProviders(),
+		filepath.Join(adminRoot, "components", "shared", "theme-provider.tsx"): adminThemeProvider(),
+
+		// Layout components
+		filepath.Join(adminRoot, "components", "layout", "admin-layout.tsx"): adminLayoutComponent(),
+		filepath.Join(adminRoot, "components", "layout", "sidebar.tsx"):      adminSidebar(),
+		filepath.Join(adminRoot, "components", "layout", "navbar.tsx"):       adminNavbar(),
+
+		// Table components
+		filepath.Join(adminRoot, "components", "tables", "data-table.tsx"):       adminDataTable(),
+		filepath.Join(adminRoot, "components", "tables", "column-header.tsx"):    adminColumnHeader(),
+		filepath.Join(adminRoot, "components", "tables", "cell-renderers.tsx"):   adminCellRenderers(),
+		filepath.Join(adminRoot, "components", "tables", "table-filters.tsx"):    adminTableFilters(),
+		filepath.Join(adminRoot, "components", "tables", "table-toolbar.tsx"):    adminTableToolbar(),
+		filepath.Join(adminRoot, "components", "tables", "table-pagination.tsx"): adminTablePagination(),
+		filepath.Join(adminRoot, "components", "tables", "table-skeleton.tsx"):   adminTableSkeleton(),
+		filepath.Join(adminRoot, "components", "tables", "table-empty-state.tsx"): adminTableEmptyState(),
+
+		// Form components
+		filepath.Join(adminRoot, "components", "forms", "form-builder.tsx"): adminFormBuilder(),
+		filepath.Join(adminRoot, "components", "forms", "form-modal.tsx"):   adminFormModal(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "text-field.tsx"):     adminTextField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "textarea-field.tsx"): adminTextareaField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "number-field.tsx"):   adminNumberField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "select-field.tsx"):   adminSelectField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "date-field.tsx"):     adminDateField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "toggle-field.tsx"):   adminToggleField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "checkbox-field.tsx"): adminCheckboxField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "radio-field.tsx"):    adminRadioField(),
+
+		// Widget components
+		filepath.Join(adminRoot, "components", "widgets", "stats-card.tsx"):      adminStatsCard(),
+		filepath.Join(adminRoot, "components", "widgets", "chart-widget.tsx"):    adminChartWidget(),
+		filepath.Join(adminRoot, "components", "widgets", "activity-widget.tsx"): adminActivityWidget(),
+		filepath.Join(adminRoot, "components", "widgets", "widget-grid.tsx"):     adminWidgetGrid(),
+
+		// Resource components
+		filepath.Join(adminRoot, "components", "resource", "resource-page.tsx"): adminResourcePage(),
+
+		// Resource definitions
+		filepath.Join(adminRoot, "resources", "index.ts"): adminResourceRegistry(),
+		filepath.Join(adminRoot, "resources", "users.ts"): adminUsersResource(),
+
+		// Hooks
+		filepath.Join(adminRoot, "hooks", "use-auth.ts"):     adminUseAuth(),
+		filepath.Join(adminRoot, "hooks", "use-resource.ts"): adminUseResource(),
+		filepath.Join(adminRoot, "hooks", "use-system.ts"):   adminUseSystem(),
+
+		// Pages
+		filepath.Join(adminRoot, "app", "page.tsx"):                       adminDashboardPage(),
+		filepath.Join(adminRoot, "app", "resources", "users", "page.tsx"): adminUsersPage(),
+
+		// System pages
+		filepath.Join(adminRoot, "app", "system", "jobs", "page.tsx"):  adminJobsPage(),
+		filepath.Join(adminRoot, "app", "system", "files", "page.tsx"): adminFilesPage(),
+		filepath.Join(adminRoot, "app", "system", "cron", "page.tsx"):  adminCronPage(),
+		filepath.Join(adminRoot, "app", "system", "mail", "page.tsx"):  adminMailPage(),
 	}
 
 	for path, content := range files {
@@ -52,6 +107,7 @@ func adminPackageJSON(opts Options) string {
     "lint": "next lint"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.3.0",
     "@tanstack/react-query": "^5.17.0",
     "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",
@@ -61,6 +117,8 @@ func adminPackageJSON(opts Options) string {
     "next": "^16.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hook-form": "^7.49.0",
+    "recharts": "^2.12.0",
     "sonner": "^1.3.0",
     "tailwind-merge": "^2.2.0",
     "tailwindcss-animate": "^1.0.7",
@@ -180,6 +238,7 @@ func adminGlobalCSS() string {
 
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
 
+/* Dark theme (default) */
 :root {
   --bg-primary: #0a0a0f;
   --bg-secondary: #111118;
@@ -196,6 +255,25 @@ func adminGlobalCSS() string {
   --danger: #ff6b6b;
   --warning: #fdcb6e;
   --info: #74b9ff;
+}
+
+/* Light theme */
+:root.light {
+  --bg-primary: #f8f9fc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f3f8;
+  --bg-elevated: #ffffff;
+  --bg-hover: #e8eaf0;
+  --border: #d8dbe5;
+  --text-primary: #1a1a2e;
+  --text-secondary: #555570;
+  --text-muted: #8888a0;
+  --accent: #6c5ce7;
+  --accent-hover: #5a4bd6;
+  --success: #00b894;
+  --danger: #ff6b6b;
+  --warning: #e5a800;
+  --info: #3b8beb;
 }
 
 body {
@@ -253,473 +331,20 @@ export default function RootLayout({
 `, opts.ProjectName)
 }
 
-func adminDashboardPage() string {
+func adminProviders() string {
 	return `"use client";
 
-import { StatsCard } from "@/components/widgets/stats-card";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/query-client";
+import { ThemeProvider } from "./theme-provider";
 
-const stats = [
-  { label: "Total Users", value: "128", change: "+12%", icon: "👥", gradient: "from-accent/20 to-accent/5" },
-  { label: "Active Users", value: "96", change: "+8%", icon: "✅", gradient: "from-success/20 to-success/5" },
-  { label: "New This Month", value: "24", change: "+24%", icon: "📈", gradient: "from-info/20 to-info/5" },
-  { label: "Revenue", value: "$12,450", change: "+18%", icon: "💰", gradient: "from-warning/20 to-warning/5" },
-];
-
-export default function AdminDashboard() {
+export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-text-secondary mt-1">Overview of your application</p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <StatsCard key={stat.label} {...stat} />
-        ))}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-border bg-bg-secondary p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Recent Activity</h2>
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center gap-3 text-sm">
-                <div className="h-2 w-2 rounded-full bg-accent" />
-                <span className="text-text-secondary">User activity placeholder #{i}</span>
-                <span className="ml-auto text-text-muted text-xs">Just now</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-border bg-bg-secondary p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <a
-              href="/resources/users"
-              className="rounded-lg border border-border bg-bg-tertiary p-4 hover:bg-bg-hover transition-colors"
-            >
-              <h3 className="font-medium text-foreground">Manage Users</h3>
-              <p className="text-xs text-text-muted mt-1">View and manage users</p>
-            </a>
-            <a
-              href="http://localhost:8080/studio"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-lg border border-border bg-bg-tertiary p-4 hover:bg-bg-hover transition-colors"
-            >
-              <h3 className="font-medium text-foreground">GORM Studio</h3>
-              <p className="text-xs text-text-muted mt-1">Browse database</p>
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-`
-}
-
-func adminUsersPage() string {
-	return `"use client";
-
-import { useState } from "react";
-import { DataTable } from "@/components/tables/data-table";
-import { useUsers, useDeleteUser } from "@/hooks/use-users";
-
-export default function UsersPage() {
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const { data, isLoading } = useUsers({ page, search, pageSize: 20 });
-  const { mutate: deleteUser } = useDeleteUser();
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Users</h1>
-          <p className="text-text-secondary mt-1">Manage user accounts</p>
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-border bg-bg-secondary">
-        <div className="p-4 border-b border-border">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search users..."
-            className="w-full max-w-sm rounded-lg border border-border bg-bg-tertiary px-4 py-2 text-sm text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-          />
-        </div>
-
-        <DataTable
-          data={data?.data || []}
-          isLoading={isLoading}
-          columns={[
-            { key: "id", label: "ID", width: "80px" },
-            { key: "name", label: "Name" },
-            { key: "email", label: "Email" },
-            {
-              key: "role",
-              label: "Role",
-              render: (value: string) => (
-                <span
-                  className={` + "`" + `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    value === "admin"
-                      ? "bg-accent/10 text-accent"
-                      : value === "editor"
-                      ? "bg-info/10 text-info"
-                      : "bg-bg-hover text-text-secondary"
-                  }` + "`" + `}
-                >
-                  {value}
-                </span>
-              ),
-            },
-            {
-              key: "active",
-              label: "Active",
-              render: (value: boolean) => (
-                <span
-                  className={` + "`" + `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    value
-                      ? "bg-success/10 text-success"
-                      : "bg-danger/10 text-danger"
-                  }` + "`" + `}
-                >
-                  {value ? "Active" : "Inactive"}
-                </span>
-              ),
-            },
-            {
-              key: "created_at",
-              label: "Created At",
-              render: (value: string) =>
-                new Date(value).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                }),
-            },
-          ]}
-          actions={(row) => (
-            <div className="flex gap-2">
-              <button
-                onClick={() => deleteUser(row.id)}
-                className="text-xs text-danger hover:text-danger/80"
-              >
-                Delete
-              </button>
-            </div>
-          )}
-        />
-
-        {data?.meta && (
-          <div className="flex items-center justify-between border-t border-border p-4">
-            <p className="text-sm text-text-muted">
-              Showing {data.data.length} of {data.meta.total} users
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={page <= 1}
-                className="rounded-lg border border-border bg-bg-tertiary px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-hover disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <span className="flex items-center px-3 text-sm text-text-muted">
-                Page {page} of {data.meta.pages}
-              </span>
-              <button
-                onClick={() => setPage(Math.min(data.meta.pages, page + 1))}
-                disabled={page >= data.meta.pages}
-                className="rounded-lg border border-border bg-bg-tertiary px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-hover disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-`
-}
-
-func adminLayoutComponent() string {
-	return `"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useMe } from "@/hooks/use-auth";
-import { Sidebar } from "./sidebar";
-import { Navbar } from "./navbar";
-
-export function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { data: user, isLoading, isError } = useMe();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (isError) {
-      router.push("/login");
-    }
-  }, [isError, router]);
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!user) return null;
-
-  return (
-    <div className="flex min-h-screen">
-      <Sidebar user={user} />
-      <div className="flex flex-1 flex-col lg:ml-64">
-        <Navbar user={user} />
-        <main className="flex-1 p-6">{children}</main>
-      </div>
-    </div>
-  );
-}
-`
-}
-
-func adminSidebar() string {
-	return `"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-
-interface User {
-  name: string;
-  email: string;
-  role: string;
-}
-
-const navItems = [
-  { label: "Dashboard", href: "/", icon: "📊" },
-  { label: "Users", href: "/resources/users", icon: "👥" },
-];
-
-export function Sidebar({ user }: { user: User }) {
-  const pathname = usePathname();
-
-  return (
-    <aside className="fixed inset-y-0 left-0 z-50 hidden w-64 bg-bg-secondary border-r border-border lg:block">
-      <div className="flex h-16 items-center gap-2 border-b border-border px-6">
-        <span className="text-xl font-bold text-accent">Grit</span>
-        <span className="rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-          Admin
-        </span>
-      </div>
-
-      <nav className="p-4 space-y-1">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={` + "`" + `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-              pathname === item.href
-                ? "bg-accent/10 text-accent"
-                : "text-text-secondary hover:bg-bg-hover hover:text-foreground"
-            }` + "`" + `}
-          >
-            <span>{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-
-      <div className="absolute bottom-0 left-0 right-0 border-t border-border p-4">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
-            <span className="text-sm font-medium text-accent">
-              {user.name?.charAt(0)?.toUpperCase()}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
-            <p className="text-xs text-text-muted truncate">{user.role}</p>
-          </div>
-        </div>
-      </div>
-    </aside>
-  );
-}
-`
-}
-
-func adminNavbar() string {
-	return `"use client";
-
-import { useState } from "react";
-import { useLogout } from "@/hooks/use-auth";
-
-interface User {
-  name: string;
-  email: string;
-}
-
-export function Navbar({ user }: { user: User }) {
-  const { mutate: logout } = useLogout();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-bg-primary px-6">
-      <div className="flex-1" />
-
-      <div className="relative">
-        <button
-          onClick={() => setDropdownOpen(!dropdownOpen)}
-          className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-bg-hover transition-colors"
-        >
-          <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
-            <span className="text-sm font-medium text-accent">
-              {user.name?.charAt(0)?.toUpperCase()}
-            </span>
-          </div>
-          <span className="text-sm font-medium text-foreground hidden sm:block">
-            {user.name}
-          </span>
-        </button>
-
-        {dropdownOpen && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
-            <div className="absolute right-0 top-full mt-2 w-48 rounded-lg border border-border bg-bg-elevated shadow-lg z-50">
-              <div className="px-4 py-3 border-b border-border">
-                <p className="text-sm font-medium text-foreground">{user.name}</p>
-                <p className="text-xs text-text-muted">{user.email}</p>
-              </div>
-              <button
-                onClick={() => logout()}
-                className="w-full px-4 py-2.5 text-left text-sm text-danger hover:bg-bg-hover transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </header>
-  );
-}
-`
-}
-
-func adminStatsCard() string {
-	return `interface StatsCardProps {
-  label: string;
-  value: string;
-  change?: string;
-  icon: string;
-  gradient: string;
-}
-
-export function StatsCard({ label, value, change, icon, gradient }: StatsCardProps) {
-  return (
-    <div className={` + "`" + `rounded-xl border border-border bg-gradient-to-br ${gradient} p-6` + "`" + `}>
-      <div className="flex items-center justify-between">
-        <span className="text-2xl">{icon}</span>
-        {change && (
-          <span className="text-xs font-medium text-success">{change}</span>
-        )}
-      </div>
-      <div className="mt-4">
-        <p className="text-3xl font-bold text-foreground">{value}</p>
-        <p className="text-sm text-text-secondary mt-1">{label}</p>
-      </div>
-    </div>
-  );
-}
-`
-}
-
-func adminDataTable() string {
-	return `interface Column {
-  key: string;
-  label: string;
-  width?: string;
-  render?: (value: any, row: any) => React.ReactNode;
-}
-
-interface DataTableProps {
-  data: any[];
-  columns: Column[];
-  isLoading?: boolean;
-  actions?: (row: any) => React.ReactNode;
-}
-
-export function DataTable({ data, columns, isLoading, actions }: DataTableProps) {
-  if (isLoading) {
-    return (
-      <div className="p-8 text-center">
-        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-        <p className="mt-2 text-sm text-text-muted">Loading...</p>
-      </div>
-    );
-  }
-
-  if (data.length === 0) {
-    return (
-      <div className="p-8 text-center">
-        <p className="text-text-muted">No data found</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-border">
-            {columns.map((col) => (
-              <th
-                key={col.key}
-                className="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider"
-                style={col.width ? { width: col.width } : undefined}
-              >
-                {col.label}
-              </th>
-            ))}
-            {actions && (
-              <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider w-[100px]">
-                Actions
-              </th>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((row, idx) => (
-            <tr
-              key={row.id || idx}
-              className="border-b border-border/50 hover:bg-bg-hover/50 transition-colors"
-            >
-              {columns.map((col) => (
-                <td key={col.key} className="px-4 py-3 text-sm text-foreground">
-                  {col.render ? col.render(row[col.key], row) : row[col.key]}
-                </td>
-              ))}
-              {actions && (
-                <td className="px-4 py-3 text-right text-sm">
-                  {actions(row)}
-                </td>
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 `
@@ -773,67 +398,6 @@ export function useLogout() {
       if (typeof window !== "undefined") {
         window.location.href = "/login";
       }
-    },
-  });
-}
-`
-}
-
-func adminUseUsers() string {
-	return `import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  active: boolean;
-  created_at: string;
-}
-
-interface UsersResponse {
-  data: User[];
-  meta: {
-    total: number;
-    page: number;
-    page_size: number;
-    pages: number;
-  };
-}
-
-interface UseUsersParams {
-  page?: number;
-  pageSize?: number;
-  search?: string;
-}
-
-export function useUsers({ page = 1, pageSize = 20, search = "" }: UseUsersParams = {}) {
-  return useQuery<UsersResponse>({
-    queryKey: ["users", { page, pageSize, search }],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        page: String(page),
-        page_size: String(pageSize),
-      });
-      if (search) {
-        params.set("search", search);
-      }
-      const { data } = await apiClient.get(` + "`" + `/api/users?${params}` + "`" + `);
-      return data;
-    },
-  });
-}
-
-export function useDeleteUser() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await apiClient.delete(` + "`" + `/api/users/${id}` + "`" + `);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
 }
@@ -950,22 +514,6 @@ import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-}
-`
-}
-
-func adminProviders() string {
-	return `"use client";
-
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "@/lib/query-client";
-
-export function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
-  );
 }
 `
 }

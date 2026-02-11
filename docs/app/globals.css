@@ -1,0 +1,222 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 4%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 4%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 4%;
+    --primary: 262 52% 63%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 6% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 262 52% 63%;
+    --chart-1: 262 52% 63%;
+    --chart-2: 160 52% 36%;
+    --chart-3: 36 100% 50%;
+    --chart-4: 340 75% 55%;
+    --chart-5: 217 91% 60%;
+    --radius: 0.625rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 6% 10%;
+    --sidebar-primary: 262 52% 63%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 5% 96%;
+    --sidebar-accent-foreground: 240 6% 10%;
+    --sidebar-border: 240 6% 90%;
+    --sidebar-ring: 262 52% 63%;
+  }
+
+  .dark {
+    --background: 240 20% 4%;
+    --foreground: 240 10% 94%;
+    --card: 240 17% 5%;
+    --card-foreground: 240 10% 94%;
+    --popover: 240 17% 5%;
+    --popover-foreground: 240 10% 94%;
+    --primary: 262 52% 63%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 12% 8%;
+    --secondary-foreground: 240 10% 94%;
+    --muted: 240 12% 8%;
+    --muted-foreground: 240 5% 55%;
+    --accent: 240 12% 10%;
+    --accent-foreground: 240 10% 94%;
+    --destructive: 0 63% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 10% 14%;
+    --input: 240 10% 14%;
+    --ring: 262 52% 63%;
+    --chart-1: 262 52% 63%;
+    --chart-2: 160 52% 36%;
+    --chart-3: 36 100% 50%;
+    --chart-4: 340 75% 55%;
+    --chart-5: 217 91% 60%;
+    --sidebar-background: 240 17% 3%;
+    --sidebar-foreground: 240 10% 94%;
+    --sidebar-primary: 262 52% 63%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 12% 8%;
+    --sidebar-accent-foreground: 240 10% 94%;
+    --sidebar-border: 240 10% 12%;
+    --sidebar-ring: 262 52% 63%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Grit gradient text (purple) */
+.gradient-text {
+  background: linear-gradient(135deg, #6c5ce7 0%, #a855f7 40%, #7c6cf7 60%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-purple {
+  background: linear-gradient(135deg, #6c5ce7 0%, #a855f7 50%, #c084fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow effects */
+.glow-purple {
+  box-shadow: 0 0 60px -12px rgba(108, 92, 231, 0.3);
+}
+
+.glow-purple-sm {
+  box-shadow: 0 0 30px -8px rgba(108, 92, 231, 0.25);
+}
+
+/* Monospace style tags */
+.tag-mono {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(240 10% 20%);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(240 10% 30%);
+}
+
+/* Animated gradient border */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animated-border {
+  background: linear-gradient(90deg, #6c5ce7, #a855f7, #818cf8, #6366f1, #6c5ce7);
+  background-size: 200% 100%;
+  animation: gradient-shift 4s ease infinite;
+}
+
+/* Dot pattern background */
+.dot-pattern {
+  background-image: radial-gradient(circle, hsl(240 10% 20%) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Prose styling for docs content */
+.prose-grit h2 {
+  @apply text-2xl font-semibold tracking-tight mb-4 mt-10 text-foreground scroll-mt-20;
+}
+
+.prose-grit h3 {
+  @apply text-xl font-semibold tracking-tight mb-3 mt-8 text-foreground scroll-mt-20;
+}
+
+.prose-grit p {
+  @apply text-[15px] leading-relaxed text-muted-foreground mb-4;
+}
+
+.prose-grit ul {
+  @apply list-disc pl-6 mb-4 space-y-1.5;
+}
+
+.prose-grit ol {
+  @apply list-decimal pl-6 mb-4 space-y-1.5;
+}
+
+.prose-grit li {
+  @apply text-[15px] text-muted-foreground leading-relaxed;
+}
+
+.prose-grit code {
+  @apply text-sm font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary;
+}
+
+.prose-grit pre {
+  @apply mb-4;
+}
+
+.prose-grit pre code {
+  @apply bg-transparent px-0 py-0 text-foreground/80;
+}
+
+.prose-grit a {
+  @apply text-primary hover:underline;
+}
+
+.prose-grit blockquote {
+  @apply border-l-2 border-primary/40 pl-4 italic text-muted-foreground my-4;
+}
+
+.prose-grit table {
+  @apply w-full border-collapse mb-6;
+}
+
+.prose-grit th {
+  @apply text-left text-sm font-semibold text-foreground pb-2 border-b border-border px-3;
+}
+
+.prose-grit td {
+  @apply text-sm text-muted-foreground py-2 border-b border-border/50 px-3;
+}
+
+.prose-grit strong {
+  @apply font-semibold text-foreground;
+}

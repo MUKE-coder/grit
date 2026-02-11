@@ -36,25 +36,29 @@
 
 <!-- UPDATE THIS SECTION AS PHASES ARE COMPLETED -->
 
-**Current Phase:** Phase 1 — Foundation
+**Current Phase:** Phase 4 — Batteries
 **Status:** Complete
 **Last Updated:** 2026-02-11
 
 ### What's Been Built
 - [x] CLI Scaffolder (`grit new <project-name>` with `--api` flag, name validation, ASCII art)
-- [x] Go API: config, database, models (User), auth handlers, JWT service, middleware (auth, CORS, logger), routes
+- [x] Go API: config, database, models (User, Upload), auth handlers, JWT service, middleware (auth, CORS, logger, cache), routes with Services struct
 - [x] GORM Studio integrated at `/studio`
 - [x] Next.js Web App: auth pages (login, register, forgot-password), dashboard layout with sidebar, stats cards
 - [x] Admin Panel: layout with sidebar, navbar, dashboard with stats, users management page with data table
-- [x] Shared Package: Zod schemas, TypeScript types, constants
+- [x] Shared Package: Zod schemas, TypeScript types (User, Upload, API), constants (routes for uploads, AI, admin)
 - [x] Docker Setup: docker-compose.yml (PostgreSQL, Redis, MinIO, Mailhog), docker-compose.prod.yml, Dockerfiles
 - [x] Dev Experience: README, .env.example, turbo.json, pnpm-workspace.yaml, root package.json
 
+- [x] Phase 2 — Code Generator: `grit generate resource` (Go model, service, handler, Zod schemas, TS types, React hooks, admin resource definition + page), `grit sync` (Go types → TypeScript)
+- [x] Phase 3 — Admin Panel: runtime resource definitions via `defineResource()`, advanced DataTable (sort, filter, select, pagination), FormBuilder (8 field types), dashboard widgets (stats, charts, activity), collapsible sidebar with Lucide icons, dark/light theme toggle, resource registry
+- [x] Phase 4 — Batteries: Redis cache service + middleware, S3 file storage (MinIO/R2/B2) + image processing + upload handler, Resend email service + 4 HTML templates, asynq background jobs (email/image/cleanup workers) + admin dashboard, asynq cron scheduler, AI integration (Claude + OpenAI with streaming), admin System pages (Jobs, Files, Cron, Mail Preview)
+
 ### What's In Progress
-- Nothing — Phase 1 complete
+- Nothing — Phase 4 complete
 
 ### What's Next
-- [ ] Phase 2: Code Generator (`grit generate resource`)
+- [ ] Phase 5: Polish & Launch (docs, tests, performance)
 
 ---
 
@@ -279,4 +283,4 @@ When starting a new session:
 
 ---
 
-*Last context update: 2026-02-11 — Phase 1 complete. CLI scaffolder, Go API with auth, Next.js web + admin, shared package, Docker, GORM Studio all built.*
+*Last context update: 2026-02-11 — Phase 3 complete. Admin panel with runtime resource definitions, advanced DataTable, FormBuilder, dashboard widgets, theme toggle, Lucide icons, resource registry.*

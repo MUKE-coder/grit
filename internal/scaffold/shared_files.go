@@ -17,6 +17,7 @@ func writeSharedFiles(root string, opts Options) error {
 		filepath.Join(sharedRoot, "types", "api.ts"):     sharedAPITypes(),
 		filepath.Join(sharedRoot, "types", "index.ts"):   sharedTypesIndex(),
 		filepath.Join(sharedRoot, "constants", "index.ts"): sharedConstants(),
+		filepath.Join(sharedRoot, "types", "upload.ts"):    sharedUploadTypes(),
 	}
 
 	for path, content := range files {
@@ -125,6 +126,7 @@ func sharedSchemasIndex() string {
   type ForgotPasswordInput,
   type ResetPasswordInput,
 } from "./user";
+// grit:schemas
 `
 }
 
@@ -202,6 +204,9 @@ export type {
   PaginatedResponse,
   ApiError,
 } from "./api";
+
+export type { Upload } from "./upload";
+// grit:types
 `
 }
 
@@ -228,7 +233,43 @@ export const API_ROUTES = {
     UPDATE: (id: number) => ` + "`" + `/api/users/${id}` + "`" + `,
     DELETE: (id: number) => ` + "`" + `/api/users/${id}` + "`" + `,
   },
+  UPLOADS: {
+    CREATE: "/api/uploads",
+    LIST: "/api/uploads",
+    GET: (id: number) => ` + "`" + `/api/uploads/${id}` + "`" + `,
+    DELETE: (id: number) => ` + "`" + `/api/uploads/${id}` + "`" + `,
+  },
+  AI: {
+    COMPLETE: "/api/ai/complete",
+    CHAT: "/api/ai/chat",
+    STREAM: "/api/ai/stream",
+  },
+  ADMIN: {
+    JOBS_STATS: "/api/admin/jobs/stats",
+    JOBS_LIST: (status: string) => ` + "`" + `/api/admin/jobs/${status}` + "`" + `,
+    JOBS_RETRY: (id: string) => ` + "`" + `/api/admin/jobs/${id}/retry` + "`" + `,
+    JOBS_CLEAR: (queue: string) => ` + "`" + `/api/admin/jobs/queue/${queue}` + "`" + `,
+    CRON_TASKS: "/api/admin/cron/tasks",
+  },
   HEALTH: "/api/health",
+  // grit:api-routes
 } as const;
+`
+}
+
+func sharedUploadTypes() string {
+	return `export interface Upload {
+  id: number;
+  filename: string;
+  original_name: string;
+  mime_type: string;
+  size: number;
+  path: string;
+  url: string;
+  thumbnail_url?: string;
+  user_id: number;
+  created_at: string;
+  updated_at: string;
+}
 `
 }

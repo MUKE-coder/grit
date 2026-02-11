@@ -12,9 +12,17 @@ func writeDockerFiles(root string, opts Options) error {
 		filepath.Join(root, "apps", "api", "Dockerfile"): dockerfileAPI(),
 	}
 
-	if !opts.APIOnly {
+	if opts.ShouldIncludeWeb() {
 		files[filepath.Join(root, "apps", "web", "Dockerfile")] = dockerfileNextJS("web")
+	}
+	if opts.ShouldIncludeAdmin() {
 		files[filepath.Join(root, "apps", "admin", "Dockerfile")] = dockerfileNextJS("admin")
+	}
+	if opts.ShouldIncludeDocs() {
+		files[filepath.Join(root, "apps", "docs", "Dockerfile")] = dockerfileNextJS("docs")
+	}
+
+	if !opts.APIOnly {
 		files[filepath.Join(root, ".dockerignore")] = dockerIgnore()
 	}
 
@@ -91,7 +99,9 @@ volumes:
 }
 
 func dockerComposeProd(opts Options) string {
-	return fmt.Sprintf(`services:
+	name := opts.ProjectName
+
+	result := fmt.Sprintf(`services:
   api:
     build:
       context: ./apps/api
@@ -110,7 +120,10 @@ func dockerComposeProd(opts Options) string {
         condition: service_healthy
       redis:
         condition: service_healthy
+`, name, name)
 
+	if opts.ShouldIncludeWeb() {
+		result += fmt.Sprintf(`
   web:
     build:
       context: .
@@ -121,7 +134,11 @@ func dockerComposeProd(opts Options) string {
       - "3000:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://api:8080
+`, name)
+	}
 
+	if opts.ShouldIncludeAdmin() {
+		result += fmt.Sprintf(`
   admin:
     build:
       context: .
@@ -132,7 +149,23 @@ func dockerComposeProd(opts Options) string {
       - "3001:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://api:8080
+`, name)
+	}
 
+	if opts.ShouldIncludeDocs() {
+		result += fmt.Sprintf(`
+  docs:
+    build:
+      context: .
+      dockerfile: apps/docs/Dockerfile
+    container_name: %s-docs
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+`, name)
+	}
+
+	result += fmt.Sprintf(`
   postgres:
     image: postgres:16-alpine
     container_name: %s-postgres
@@ -164,7 +197,9 @@ func dockerComposeProd(opts Options) string {
 volumes:
   postgres-data:
   redis-data:
-`, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
+`, name, name, name)
+
+	return result
 }
 
 func dockerfileAPI() string {

@@ -19,6 +19,7 @@ func writeRootFiles(root string, opts Options) error {
 		files[filepath.Join(root, "turbo.json")] = turboJSON()
 		files[filepath.Join(root, "package.json")] = rootPackageJSON(opts)
 		files[filepath.Join(root, "grit.config.ts")] = gritConfig(opts)
+		files[filepath.Join(root, "postcss.config.mjs")] = rootPostCSSConfig()
 	}
 
 	for path, content := range files {
@@ -84,6 +85,11 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 
 # GORM Studio
 GORM_STUDIO_ENABLED=true
+
+# AI — Provider: claude or openai
+AI_PROVIDER=claude
+AI_API_KEY=
+AI_MODEL=claude-sonnet-4-5-20250929
 `, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 
@@ -141,6 +147,11 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 
 # GORM Studio — Visual database browser
 GORM_STUDIO_ENABLED=true
+
+# AI — Text generation (Claude or OpenAI)
+AI_PROVIDER=claude                   # "claude" or "openai"
+AI_API_KEY=                          # Your API key (sk-ant-... or sk-...)
+AI_MODEL=claude-sonnet-4-5-20250929  # Model to use
 `
 }
 
@@ -203,6 +214,11 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 
 # ─── GORM Studio ──────────────────────────────────────
 GORM_STUDIO_ENABLED=true
+
+# ─── AI (Claude or OpenAI) ────────────────────────────
+AI_PROVIDER=claude
+AI_API_KEY=your-api-key-here
+AI_MODEL=claude-sonnet-4-5-20250929
 `, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 
@@ -288,46 +304,97 @@ func turboJSON() string {
 `
 }
 
+func rootPostCSSConfig() string {
+	return `export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+`
+}
+
 func rootPackageJSON(opts Options) string {
+	scripts := fmt.Sprintf(`    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "dev:api": "cd apps/api && go run cmd/server/main.go",`)
+
+	if opts.ShouldIncludeWeb() {
+		scripts += `
+    "dev:web": "cd apps/web && pnpm dev",`
+	}
+	if opts.ShouldIncludeAdmin() {
+		scripts += `
+    "dev:admin": "cd apps/admin && pnpm dev",`
+	}
+	if opts.ShouldIncludeExpo() {
+		scripts += `
+    "dev:expo": "cd apps/expo && npx expo start",`
+	}
+	if opts.ShouldIncludeDocs() {
+		scripts += `
+    "dev:docs": "cd apps/docs && pnpm dev",`
+	}
+
+	scripts += `
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"`
+
 	return fmt.Sprintf(`{
   "name": "%s",
   "private": true,
   "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "lint": "turbo lint",
-    "type-check": "turbo type-check",
-    "dev:web": "cd apps/web && pnpm dev",
-    "dev:admin": "cd apps/admin && pnpm dev",
-    "dev:api": "cd apps/api && go run cmd/server/main.go",
-    "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down",
-    "docker:logs": "docker compose logs -f"
+%s
   },
   "devDependencies": {
     "turbo": "^2.0.0"
   },
   "packageManager": "pnpm@10.0.0"
 }
-`, opts.ProjectName)
+`, opts.ProjectName, scripts)
 }
 
 func gritConfig(opts Options) string {
-	return fmt.Sprintf(`// Grit Framework Configuration
+	config := fmt.Sprintf(`// Grit Framework Configuration
 export default {
   name: "%s",
   api: {
     port: 8080,
     prefix: "/api",
-  },
+  },`, opts.ProjectName)
+
+	if opts.ShouldIncludeWeb() {
+		config += `
   web: {
     port: 3000,
-  },
+  },`
+	}
+	if opts.ShouldIncludeAdmin() {
+		config += `
   admin: {
     port: 3001,
-  },
+  },`
+	}
+	if opts.ShouldIncludeExpo() {
+		config += `
+  expo: {
+    scheme: "` + opts.ProjectName + `",
+  },`
+	}
+	if opts.ShouldIncludeDocs() {
+		config += `
+  docs: {
+    port: 3002,
+  },`
+	}
+
+	config += `
 };
-`, opts.ProjectName)
+`
+	return config
 }
 
 func readmeFile(opts Options) string {

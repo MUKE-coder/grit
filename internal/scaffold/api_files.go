@@ -17,6 +17,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "config", "config.go"):    apiConfigGo(),
 		filepath.Join(apiRoot, "internal", "database", "database.go"): apiDatabaseGo(),
 		filepath.Join(apiRoot, "internal", "models", "user.go"):      apiUserModelGo(),
+		filepath.Join(apiRoot, "internal", "models", "upload.go"):    apiUploadModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "auth.go"):    apiAuthServiceGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "auth.go"):    apiAuthHandlerGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user.go"):    apiUserHandlerGo(),
@@ -44,9 +45,17 @@ go 1.21
 
 require (
 	github.com/MUKE-coder/gorm-studio v0.0.0-20260210080608-2fb07b651336
+	github.com/aws/aws-sdk-go-v2 v1.25.0
+	github.com/aws/aws-sdk-go-v2/config v1.27.0
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.0
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.16.0
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.51.0
+	github.com/disintegration/imaging v1.6.2
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang-jwt/jwt/v5 v5.2.0
+	github.com/hibiken/asynq v0.24.1
 	github.com/joho/godotenv v1.5.1
+	github.com/redis/go-redis/v9 v9.4.0
 	golang.org/x/crypto v0.18.0
 	gorm.io/driver/postgres v1.5.4
 	gorm.io/gorm v1.25.5
@@ -74,7 +83,7 @@ tmp/
 }
 
 func apiMainGo(opts Options) string {
-	return fmt.Sprintf(`package main
+	return `package main
 
 import (
 	"context"
@@ -86,36 +95,138 @@ import (
 	"syscall"
 	"time"
 
-	"%s/apps/api/internal/config"
-	"%s/apps/api/internal/database"
-	"%s/apps/api/internal/models"
-	"%s/apps/api/internal/routes"
+	"` + "{{MODULE}}" + `/internal/ai"
+	"` + "{{MODULE}}" + `/internal/cache"
+	"` + "{{MODULE}}" + `/internal/config"
+	"` + "{{MODULE}}" + `/internal/cron"
+	"` + "{{MODULE}}" + `/internal/database"
+	"` + "{{MODULE}}" + `/internal/jobs"
+	"` + "{{MODULE}}" + `/internal/mail"
+	"` + "{{MODULE}}" + `/internal/models"
+	"` + "{{MODULE}}" + `/internal/routes"
+	"` + "{{MODULE}}" + `/internal/storage"
 )
 
 func main() {
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("Failed to load config: %%v", err)
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
 	// Connect to database
 	db, err := database.Connect(cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %%v", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
 	// Auto-migrate models
 	if err := models.AutoMigrate(db); err != nil {
-		log.Fatalf("Failed to run migrations: %%v", err)
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
+
+	// ── Phase 4 Services ─────────────────────────────────────────
+
+	// Redis cache
+	var cacheService *cache.Cache
+	if cfg.RedisURL != "" {
+		c, err := cache.New(cfg.RedisURL)
+		if err != nil {
+			log.Printf("Warning: Redis unavailable: %v (caching disabled)", err)
+		} else {
+			cacheService = c
+			log.Println("Redis cache connected")
+		}
+	}
+
+	// File storage (S3-compatible)
+	var storageService *storage.Storage
+	if cfg.Storage.Endpoint != "" && cfg.Storage.AccessKey != "" {
+		s, err := storage.New(cfg.Storage)
+		if err != nil {
+			log.Printf("Warning: Storage unavailable: %v (uploads disabled)", err)
+		} else {
+			storageService = s
+			log.Println("File storage connected")
+		}
+	}
+
+	// Email (Resend)
+	var mailer *mail.Mailer
+	if cfg.ResendAPIKey != "" && cfg.ResendAPIKey != "re_your_api_key" {
+		mailer = mail.New(cfg.ResendAPIKey, cfg.MailFrom)
+		log.Println("Email service configured")
+	} else {
+		log.Println("Warning: Resend API key not set (emails disabled)")
+	}
+
+	// AI service
+	var aiService *ai.AI
+	if cfg.AIAPIKey != "" {
+		aiService = ai.New(cfg.AIProvider, cfg.AIAPIKey, cfg.AIModel)
+		log.Printf("AI service configured (%s)", cfg.AIProvider)
+	}
+
+	// Background jobs (asynq)
+	var jobClient *jobs.Client
+	if cfg.RedisURL != "" {
+		jc, err := jobs.NewClient(cfg.RedisURL)
+		if err != nil {
+			log.Printf("Warning: Job queue unavailable: %v", err)
+		} else {
+			jobClient = jc
+			log.Println("Job queue connected")
+		}
+	}
+
+	// Build services
+	svc := &routes.Services{
+		Cache:   cacheService,
+		Storage: storageService,
+		Mailer:  mailer,
+		AI:      aiService,
+		Jobs:    jobClient,
 	}
 
 	// Setup router
-	router := routes.Setup(db, cfg)
+	router := routes.Setup(db, cfg, svc)
+
+	// Start background worker
+	var workerStop func()
+	if cfg.RedisURL != "" {
+		stop, err := jobs.StartWorker(cfg.RedisURL, jobs.WorkerDeps{
+			DB:      db,
+			Mailer:  mailer,
+			Storage: storageService,
+			Cache:   cacheService,
+		})
+		if err != nil {
+			log.Printf("Warning: Background worker failed to start: %v", err)
+		} else {
+			workerStop = stop
+			log.Println("Background worker started")
+		}
+	}
+
+	// Start cron scheduler
+	var cronScheduler *cron.Scheduler
+	if cfg.RedisURL != "" {
+		cs, err := cron.New(cfg.RedisURL)
+		if err != nil {
+			log.Printf("Warning: Cron scheduler failed to start: %v", err)
+		} else {
+			cronScheduler = cs
+			if err := cs.Start(); err != nil {
+				log.Printf("Warning: Cron scheduler failed to start: %v", err)
+			} else {
+				log.Println("Cron scheduler started")
+			}
+		}
+	}
 
 	// Create server
 	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%%s", cfg.Port),
+		Addr:         fmt.Sprintf(":%s", cfg.Port),
 		Handler:      router,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
@@ -124,10 +235,10 @@ func main() {
 
 	// Start server in goroutine
 	go func() {
-		log.Printf("Server starting on port %%s", cfg.Port)
-		log.Printf("GORM Studio available at http://localhost:%%s/studio", cfg.Port)
+		log.Printf("Server starting on port %s", cfg.Port)
+		log.Printf("GORM Studio available at http://localhost:%s/studio", cfg.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server failed: %%v", err)
+			log.Fatalf("Server failed: %v", err)
 		}
 	}()
 
@@ -138,16 +249,36 @@ func main() {
 
 	log.Println("Shutting down server...")
 
+	// Stop cron scheduler
+	if cronScheduler != nil {
+		cronScheduler.Stop()
+	}
+
+	// Stop background worker
+	if workerStop != nil {
+		workerStop()
+	}
+
+	// Close job client
+	if jobClient != nil {
+		jobClient.Close()
+	}
+
+	// Close cache connection
+	if cacheService != nil {
+		cacheService.Close()
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Server forced to shutdown: %%v", err)
+		log.Fatalf("Server forced to shutdown: %v", err)
 	}
 
 	log.Println("Server exited")
 }
-`, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
+`
 }
 
 func apiConfigGo() string {
@@ -196,6 +327,11 @@ type Config struct {
 	CORSOrigins []string
 
 	GORMStudioEnabled bool
+
+	// AI
+	AIProvider string // "claude" or "openai"
+	AIAPIKey   string
+	AIModel    string
 }
 
 // Load reads configuration from environment variables.
@@ -224,6 +360,10 @@ func Load() (*Config, error) {
 		CORSOrigins: strings.Split(getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"), ","),
 
 		GORMStudioEnabled: getEnv("GORM_STUDIO_ENABLED", "true") == "true",
+
+		AIProvider: getEnv("AI_PROVIDER", "claude"),
+		AIAPIKey:   getEnv("AI_API_KEY", ""),
+		AIModel:    getEnv("AI_MODEL", "claude-sonnet-4-5-20250929"),
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -387,7 +527,37 @@ func (u *User) CheckPassword(password string) bool {
 func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&User{},
+		&Upload{},
+		// grit:models
 	)
+}
+`
+}
+
+func apiUploadModelGo() string {
+	return `package models
+
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
+
+// Upload represents a file uploaded to storage.
+type Upload struct {
+	ID           uint           ` + "`" + `gorm:"primarykey" json:"id"` + "`" + `
+	Filename     string         ` + "`" + `gorm:"size:255;not null" json:"filename"` + "`" + `
+	OriginalName string         ` + "`" + `gorm:"size:255;not null" json:"original_name"` + "`" + `
+	MimeType     string         ` + "`" + `gorm:"size:100;not null" json:"mime_type"` + "`" + `
+	Size         int64          ` + "`" + `gorm:"not null" json:"size"` + "`" + `
+	Path         string         ` + "`" + `gorm:"size:500;not null" json:"path"` + "`" + `
+	URL          string         ` + "`" + `gorm:"size:500" json:"url"` + "`" + `
+	ThumbnailURL string         ` + "`" + `gorm:"size:500" json:"thumbnail_url"` + "`" + `
+	UserID       uint           ` + "`" + `gorm:"index;not null" json:"user_id"` + "`" + `
+	User         User           ` + "`" + `gorm:"foreignKey:UserID" json:"-"` + "`" + `
+	CreatedAt    time.Time      ` + "`" + `json:"created_at"` + "`" + `
+	UpdatedAt    time.Time      ` + "`" + `json:"updated_at"` + "`" + `
+	DeletedAt    gorm.DeletedAt ` + "`" + `gorm:"index" json:"-"` + "`" + `
 }
 `
 }
@@ -1237,15 +1407,29 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"` + "{{MODULE}}" + `/internal/ai"
+	"` + "{{MODULE}}" + `/internal/cache"
 	"` + "{{MODULE}}" + `/internal/config"
 	"` + "{{MODULE}}" + `/internal/handlers"
+	"` + "{{MODULE}}" + `/internal/mail"
 	"` + "{{MODULE}}" + `/internal/middleware"
 	"` + "{{MODULE}}" + `/internal/models"
+	"` + "{{MODULE}}" + `/internal/jobs"
 	"` + "{{MODULE}}" + `/internal/services"
+	"` + "{{MODULE}}" + `/internal/storage"
 )
 
+// Services holds all Phase 4 services for dependency injection.
+type Services struct {
+	Cache   *cache.Cache
+	Storage *storage.Storage
+	Mailer  *mail.Mailer
+	AI      *ai.AI
+	Jobs    *jobs.Client
+}
+
 // Setup configures all routes and returns the Gin engine.
-func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
+func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	if cfg.AppEnv == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -1259,7 +1443,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 
 	// Mount GORM Studio
 	if cfg.GORMStudioEnabled {
-		studio.Mount(r, db, []interface{}{&models.User{}}, studio.Config{
+		studio.Mount(r, db, []interface{}{&models.User{}, &models.Upload{}, /* grit:studio */}, studio.Config{
 			Prefix: "/studio",
 		})
 		log.Println("GORM Studio mounted at /studio")
@@ -1280,6 +1464,19 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	userHandler := &handlers.UserHandler{
 		DB: db,
 	}
+	uploadHandler := &handlers.UploadHandler{
+		DB:      db,
+		Storage: svc.Storage,
+		Jobs:    svc.Jobs,
+	}
+	aiHandler := &handlers.AIHandler{
+		AI: svc.AI,
+	}
+	jobsHandler := &handlers.JobsHandler{
+		RedisURL: cfg.RedisURL,
+	}
+	cronHandler := &handlers.CronHandler{}
+	// grit:handlers
 
 	// Health check
 	r.GET("/api/health", func(c *gin.Context) {
@@ -1309,6 +1506,19 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		// User routes (authenticated)
 		protected.GET("/users/:id", userHandler.GetByID)
 		protected.PUT("/users/:id", userHandler.Update)
+
+		// File uploads
+		protected.POST("/uploads", uploadHandler.Create)
+		protected.GET("/uploads", uploadHandler.List)
+		protected.GET("/uploads/:id", uploadHandler.GetByID)
+		protected.DELETE("/uploads/:id", uploadHandler.Delete)
+
+		// AI
+		protected.POST("/ai/complete", aiHandler.Complete)
+		protected.POST("/ai/chat", aiHandler.Chat)
+		protected.POST("/ai/stream", aiHandler.Stream)
+
+		// grit:routes:protected
 	}
 
 	// Admin routes
@@ -1318,6 +1528,15 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	{
 		admin.GET("/users", userHandler.List)
 		admin.DELETE("/users/:id", userHandler.Delete)
+
+		// Admin system routes
+		admin.GET("/admin/jobs/stats", jobsHandler.Stats)
+		admin.GET("/admin/jobs/:status", jobsHandler.ListByStatus)
+		admin.POST("/admin/jobs/:id/retry", jobsHandler.Retry)
+		admin.DELETE("/admin/jobs/queue/:queue", jobsHandler.ClearQueue)
+		admin.GET("/admin/cron/tasks", cronHandler.ListTasks)
+
+		// grit:routes:admin
 	}
 
 	return r

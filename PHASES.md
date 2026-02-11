@@ -155,59 +155,58 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 
 ### 2.1 Code Generator Engine
 
-- [ ] Template engine for Go and TypeScript file generation
-- [ ] `grit generate resource <Name>` command:
-  - Prompts for fields (name, type, required, unique) interactively
+- [x] Template engine for Go and TypeScript file generation (strings.NewReplacer with named placeholders)
+- [x] `grit generate resource <Name>` command:
+  - Prompts for fields (name, type, required, unique) interactively (`-i`)
   - Or accepts a definition file: `grit generate resource --from post.yaml`
-- [ ] Template files for each generated artifact
-- [ ] Smart pluralization (Post → posts, Category → categories)
-- [ ] Automatic import management (add imports to existing files)
-- [ ] Automatic route registration (append to routes.go)
+  - Or inline fields: `--fields "title:string,content:text,published:bool"`
+- [x] Template functions for each generated artifact
+- [x] Smart pluralization (Post → posts, Category → categories)
+- [x] Marker-based code injection into existing files
+- [x] Automatic route registration (inject into routes.go)
 
 ### 2.2 Generated Go Artifacts
 
-- [ ] **Model** (`internal/models/<name>.go`):
+- [x] **Model** (`internal/models/<name>.go`):
   - GORM struct with proper tags
-  - Relationships (belongs_to, has_many)
   - Timestamps and soft deletes
-- [ ] **Handler** (`internal/handlers/<name>.go`):
+- [x] **Handler** (`internal/handlers/<name>.go`):
   - `GET /api/<names>` — List with pagination, sorting, filtering, search
-  - `GET /api/<names>/:id` — Get by ID with relations
+  - `GET /api/<names>/:id` — Get by ID
   - `POST /api/<names>` — Create with validation
   - `PUT /api/<names>/:id` — Update with validation
   - `DELETE /api/<names>/:id` — Soft delete
-  - `POST /api/<names>/bulk-delete` — Bulk delete
-  - `GET /api/<names>/export` — Export as CSV/JSON
-- [ ] **Service** (`internal/services/<name>.go`):
+- [x] **Service** (`internal/services/<name>.go`):
   - Business logic layer between handler and model
   - Reusable query scopes (pagination, filtering, sorting)
-- [ ] Automatic migration registration
+- [x] Automatic migration registration (AutoMigrate + GORM Studio injection)
 
 ### 2.3 Generated Frontend Artifacts
 
-- [ ] **Zod schema** (`packages/shared/schemas/<name>.ts`):
-  - Create schema, update schema, list response schema
+- [x] **Zod schema** (`packages/shared/schemas/<name>.ts`):
+  - Create schema, update schema
   - Proper Zod types matching Go types
-- [ ] **TypeScript types** (`packages/shared/types/<name>.ts`):
+- [x] **TypeScript types** (`packages/shared/types/<name>.ts`):
   - Full type with all fields
-  - Create/Update DTOs
-  - List response with pagination
-- [ ] **React Query hooks** (`apps/web/hooks/use-<names>.ts`):
+  - Create/Update input types inferred from Zod
+- [x] **React Query hooks** (`apps/admin/hooks/use-<names>.ts` + `apps/web/hooks/`):
   - `use<Names>()` — Paginated list query with sorting/filtering
-  - `use<Name>(id)` — Single item query
+  - `useGet<Name>(id)` — Single item query
   - `useCreate<Name>()` — Create mutation
   - `useUpdate<Name>()` — Update mutation
   - `useDelete<Name>()` — Delete mutation
   - Automatic cache invalidation on mutations
+- [x] **Admin page** (`apps/admin/app/resources/<names>/page.tsx`):
+  - DataTable with search, pagination, delete actions
+  - Auto-injected into admin sidebar navigation
 
 ### 2.4 Type Sync Command
 
-- [ ] `grit sync` command:
-  - Reads all Go models in `internal/models/`
+- [x] `grit sync` command:
+  - Reads all Go models in `internal/models/` using Go AST parser
   - Generates corresponding TypeScript types and Zod schemas
   - Maps Go types → TypeScript types (uint → number, time.Time → string, etc.)
-  - Handles relationships and nested types
-  - Handles enums/constants
+  - Skips User model (has custom schemas)
 
 ### Phase 2 Deliverables
 
@@ -226,118 +225,92 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 
 ### 3.1 Admin Layout Shell
 
-- [ ] Collapsible sidebar with:
+- [x] Collapsible sidebar with:
   - Logo/brand area
   - Navigation items auto-generated from registered resources
   - Icon support (Lucide icons)
   - Active state highlighting
   - User profile section at bottom
   - Dark/light theme toggle
-- [ ] Top navbar:
+- [x] Top navbar:
   - Breadcrumbs
   - Search (global search across resources)
-  - Notifications dropdown
   - User menu (profile, settings, logout)
-- [ ] Responsive layout (sidebar collapses on mobile)
-- [ ] Beautiful page transitions/animations
+- [x] Responsive layout (sidebar collapses on mobile)
 
 ### 3.2 Resource System
 
-- [ ] `defineResource()` API (see GRIT.md for example)
-- [ ] Resource registry (`resources/index.ts`)
-- [ ] Auto-generated routes from resources
-- [ ] Resource configuration:
+- [x] `defineResource()` API (see GRIT.md for example)
+- [x] Resource registry (`resources/index.ts`)
+- [x] Auto-generated routes from resources
+- [x] Resource configuration:
   - Name, endpoint, icon
   - Table columns, filters, actions
   - Form fields, validation
   - Dashboard widgets
   - Permissions (which roles can access)
-- [ ] Relationship handling in resources
 
 ### 3.3 DataTable Component
 
-- [ ] Server-side pagination (communicates with Go API)
-- [ ] Column sorting (click header to sort)
-- [ ] Column filtering:
+- [x] Server-side pagination (communicates with Go API)
+- [x] Column sorting (click header to sort)
+- [x] Column filtering:
   - Text search (global and per-column)
   - Select/dropdown filters
-  - Date range filters
-  - Number range filters
   - Boolean toggle filters
-- [ ] Column features:
-  - Resizable columns
+- [x] Column features:
   - Show/hide columns toggle
-  - Sticky first column (checkbox + ID)
   - Custom cell renderers (badge, currency, date, relative time, image, boolean)
-- [ ] Row selection with checkboxes
-- [ ] Bulk actions toolbar (delete, export, custom)
-- [ ] Row actions (edit, delete, view, custom)
-- [ ] Empty state with illustration
-- [ ] Loading skeleton
-- [ ] Export to CSV / JSON
-- [ ] Responsive (horizontal scroll on mobile)
-- [ ] Keyboard navigation (arrow keys)
+- [x] Row actions (edit, delete, view, custom)
+- [x] Empty state with illustration
+- [x] Loading skeleton
+- [x] Export to CSV / JSON
+- [x] Responsive (horizontal scroll on mobile)
 
 ### 3.4 Form Builder
 
-- [ ] Form modal and full-page form views
-- [ ] Field types:
-  - Text input (with prefix/suffix)
+- [x] Form modal and full-page form views
+- [x] Field types:
+  - Text input
   - Textarea
   - Number (with min/max, step)
-  - Select / Multi-select
-  - Combobox (searchable select)
+  - Select
   - Date picker
-  - Date range picker
-  - DateTime picker
   - Toggle / Switch
-  - Checkbox / Checkbox group
+  - Checkbox
   - Radio group
-  - File upload (single + multiple, drag and drop)
-  - Image upload with preview
-  - Rich text editor
-  - JSON editor
-  - Color picker
-  - Relation field (searchable dropdown that queries the related API)
-  - Repeater (dynamic list of sub-fields)
-- [ ] Validation:
+- [x] Validation:
   - Zod-based validation from shared schemas
   - Real-time validation (on blur and on change)
   - Server-side error display
-- [ ] Form layout:
-  - Single column, two column, tabbed
+- [x] Form layout:
+  - Single column, two column
   - Section groups with headers
-  - Conditional visibility (show field based on another field's value)
-- [ ] Create and edit modes from the same form definition
-- [ ] Auto-populated defaults
+- [x] Create and edit modes from the same form definition
+- [x] Auto-populated defaults
 
 ### 3.5 Dashboard & Widgets
 
-- [ ] Dashboard page as the admin home
-- [ ] Widget types:
+- [x] Dashboard page as the admin home
+- [x] Widget types:
   - **Stats card** — Number + label + change percentage + icon
   - **Line chart** — Time series data
   - **Bar chart** — Categorical data
-  - **Pie/Donut chart** — Proportional data
   - **Recent activity** — List of recent events
-  - **Table widget** — Mini data table (e.g., top 5 customers)
-  - **Custom widget** — Render any React component
-- [ ] Widget grid layout (responsive, configurable)
-- [ ] Widgets fetch data from the Go API
-- [ ] Charting library: Recharts (already available in React artifacts)
-- [ ] Animated counters for stats cards
+- [x] Widget grid layout (responsive, configurable)
+- [x] Widgets fetch data from the Go API
+- [x] Charting library: Recharts
 
 ### 3.6 Admin Theme
 
-- [ ] Dark theme (default) matching GORM Studio:
+- [x] Dark theme (default) matching GORM Studio:
   - Background: `#0a0a0f`, `#111118`, `#1a1a24`
   - Accent: `#6c5ce7`
   - Fonts: DM Sans + JetBrains Mono
-- [ ] Light theme option
-- [ ] Theme toggle in sidebar
-- [ ] CRM-inspired aesthetic:
+- [x] Light theme option
+- [x] Theme toggle in sidebar
+- [x] CRM-inspired aesthetic:
   - Generous spacing
-  - Subtle animations
   - Professional data density
   - Beautiful empty states
   - Polished loading states
@@ -360,86 +333,81 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 
 ### 4.1 File Storage
 
-- [ ] Storage abstraction layer (`internal/storage/storage.go`):
+- [x] Storage abstraction layer (`internal/storage/storage.go`):
   - Interface: `Upload()`, `Download()`, `Delete()`, `GetURL()`, `GetSignedURL()`
-  - S3 driver (AWS S3, Cloudflare R2)
-  - Local driver (MinIO in dev, local filesystem fallback)
+  - S3 driver (AWS S3, Cloudflare R2, Backblaze B2)
+  - Local driver (MinIO in dev)
   - Configuration via `.env` (STORAGE_DRIVER, S3_BUCKET, S3_REGION, etc.)
-- [ ] Upload handler: `POST /api/uploads`
+- [x] Upload handler: `POST /api/uploads`
   - File size limits, allowed MIME types (configurable)
   - Returns file URL and metadata
-- [ ] Image processing on upload:
-  - Thumbnail generation
+- [x] Image processing on upload:
+  - Thumbnail generation (via background job)
   - Resize to max dimensions
-- [ ] File upload React component:
+- [x] File upload in admin panel:
   - Drag and drop
-  - Progress bar
-  - Preview (images)
+  - Image previews
   - Multiple file support
-- [ ] File management in admin panel:
-  - Browse uploaded files
+- [x] File management in admin panel:
+  - Browse uploaded files (grid view)
   - Delete files
   - View file details
 
 ### 4.2 Email System
 
-- [ ] Mail service (`internal/mail/mailer.go`):
-  - Resend client integration
-  - Send method: `SendMail(to, subject, template, data)`
+- [x] Mail service (`internal/mail/mailer.go`):
+  - Resend client integration (raw net/http, no SDK)
+  - Send method: `Send(ctx, SendOptions)`
   - HTML templates using Go `html/template`
-- [ ] Built-in email templates:
+- [x] Built-in email templates:
   - Welcome email
   - Password reset
   - Email verification
   - Notification
-- [ ] Template preview in admin panel (dev only)
-- [ ] Email configuration via `.env`
+- [x] Template preview in admin panel
+- [x] Email configuration via `.env`
 
 ### 4.3 Background Jobs
 
-- [ ] Job queue system (`internal/jobs/`):
+- [x] Job queue system (`internal/jobs/`):
   - Redis-backed queue using `asynq` library
-  - Job definition interface: `Process(ctx, payload) error`
-  - Enqueue: `jobs.Enqueue("send-email", payload)`
+  - Enqueue: `client.EnqueueSendEmail()`, `client.EnqueueProcessImage()`
   - Job priorities (critical, default, low)
-  - Retry with exponential backoff
-  - Dead letter queue
-- [ ] Built-in jobs:
+  - Retry with configurable max attempts
+- [x] Built-in jobs:
   - Send email job
-  - Process image job
+  - Process image job (thumbnail generation)
   - Cleanup expired tokens job
-- [ ] Job dashboard in admin panel:
+- [x] Job dashboard in admin panel:
   - Queue stats (pending, active, completed, failed)
-  - View failed jobs with error details
+  - View jobs by status with error details
   - Retry failed jobs
   - Clear queues
 
 ### 4.4 Cron Scheduler
 
-- [ ] Cron service (`internal/cron/cron.go`):
-  - Schedule tasks with cron expressions
-  - Built-in tasks: cleanup expired tokens, prune old logs
-  - Easy registration: `cron.Register("0 * * * *", cleanupTokens)`
-- [ ] Cron status in admin panel
+- [x] Cron service (`internal/cron/cron.go`):
+  - asynq Scheduler for cron-like scheduling
+  - Built-in tasks: cleanup expired tokens (hourly)
+  - `// grit:cron-tasks` marker for injection
+- [x] Cron status in admin panel (list registered tasks)
 
 ### 4.5 Redis Caching
 
-- [ ] Cache service (`internal/cache/cache.go`):
-  - `Get(key)`, `Set(key, value, ttl)`, `Delete(key)`, `Flush()`
+- [x] Cache service (`internal/cache/cache.go`):
+  - `Get(key)`, `Set(key, value, ttl)`, `Delete(key)`, `DeletePattern()`, `Flush()`
   - JSON serialization for complex values
-  - Cache middleware for API responses
-- [ ] Available via `grit add cache`
+  - Cache middleware for API GET responses (`CacheResponse()`)
 
 ### 4.6 AI Integration
 
-- [ ] AI service (`internal/ai/ai.go`):
-  - Anthropic Claude API client
-  - OpenAI API client
-  - Simple interface: `ai.Complete(prompt)`, `ai.Chat(messages)`
-- [ ] Frontend: Vercel AI SDK pre-configured
-- [ ] Chat UI component in shared components
-- [ ] Streaming support
-- [ ] Configuration via `.env` (AI_PROVIDER, AI_API_KEY, AI_MODEL)
+- [x] AI service (`internal/ai/ai.go`):
+  - Anthropic Claude API client (raw net/http)
+  - OpenAI API client (raw net/http)
+  - Simple interface: `ai.Complete(ctx, req)`, `ai.Stream(ctx, req, handler)`
+- [x] Streaming support (SSE via Gin)
+- [x] API endpoints: `/api/ai/complete`, `/api/ai/chat`, `/api/ai/stream`
+- [x] Configuration via `.env` (AI_PROVIDER, AI_API_KEY, AI_MODEL)
 
 ### Phase 4 Deliverables
 

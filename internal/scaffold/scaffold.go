@@ -14,6 +14,34 @@ import (
 type Options struct {
 	ProjectName string
 	APIOnly     bool
+	IncludeExpo bool
+	MobileOnly  bool
+	Full        bool
+}
+
+// ShouldIncludeWeb returns true if the web app should be scaffolded.
+func (o Options) ShouldIncludeWeb() bool {
+	return !o.APIOnly && !o.MobileOnly
+}
+
+// ShouldIncludeAdmin returns true if the admin panel should be scaffolded.
+func (o Options) ShouldIncludeAdmin() bool {
+	return !o.APIOnly && !o.MobileOnly
+}
+
+// ShouldIncludeShared returns true if the shared package should be scaffolded.
+func (o Options) ShouldIncludeShared() bool {
+	return !o.APIOnly
+}
+
+// ShouldIncludeExpo returns true if the Expo app should be scaffolded.
+func (o Options) ShouldIncludeExpo() bool {
+	return o.IncludeExpo || o.MobileOnly || o.Full
+}
+
+// ShouldIncludeDocs returns true if the docs site should be scaffolded.
+func (o Options) ShouldIncludeDocs() bool {
+	return o.Full
 }
 
 // ValidateProjectName ensures the project name is lowercase, alphanumeric, and hyphens only.
@@ -40,7 +68,7 @@ func Run(opts Options) error {
 
 	// Create directory structure
 	spinner.Printf("  → Creating directory structure...\n")
-	if err := createDirectories(root, opts.APIOnly); err != nil {
+	if err := createDirectories(root, opts); err != nil {
 		return fmt.Errorf("creating directories: %w", err)
 	}
 
@@ -56,25 +84,50 @@ func Run(opts Options) error {
 		return fmt.Errorf("writing API files: %w", err)
 	}
 
+	// Write Phase 4 service files (cache, storage, mail, jobs, cron, AI)
+	spinner.Printf("  → Adding batteries (cache, storage, mail, jobs, cron, AI)...\n")
+	if err := writeCacheFiles(root, opts); err != nil {
+		return fmt.Errorf("writing cache files: %w", err)
+	}
+	if err := writeStorageFiles(root, opts); err != nil {
+		return fmt.Errorf("writing storage files: %w", err)
+	}
+	if err := writeMailFiles(root, opts); err != nil {
+		return fmt.Errorf("writing mail files: %w", err)
+	}
+	if err := writeJobsFiles(root, opts); err != nil {
+		return fmt.Errorf("writing jobs files: %w", err)
+	}
+	if err := writeCronFiles(root, opts); err != nil {
+		return fmt.Errorf("writing cron files: %w", err)
+	}
+	if err := writeAIFiles(root, opts); err != nil {
+		return fmt.Errorf("writing AI files: %w", err)
+	}
+
 	// Write Docker files
 	spinner.Printf("  → Creating Docker setup...\n")
 	if err := writeDockerFiles(root, opts); err != nil {
 		return fmt.Errorf("writing Docker files: %w", err)
 	}
 
-	if !opts.APIOnly {
+	if opts.ShouldIncludeShared() {
 		// Write shared package
 		spinner.Printf("  → Creating shared package...\n")
 		if err := writeSharedFiles(root, opts); err != nil {
 			return fmt.Errorf("writing shared files: %w", err)
 		}
+	}
 
+	if opts.ShouldIncludeWeb() {
 		// Write Next.js web app
 		spinner.Printf("  → Scaffolding Next.js web app...\n")
 		if err := writeWebFiles(root, opts); err != nil {
 			return fmt.Errorf("writing web files: %w", err)
 		}
+	}
 
+	if opts.ShouldIncludeAdmin() {
 		// Write admin panel
 		spinner.Printf("  → Scaffolding admin panel...\n")
 		if err := writeAdminFiles(root, opts); err != nil {
@@ -82,11 +135,27 @@ func Run(opts Options) error {
 		}
 	}
 
+	if opts.ShouldIncludeExpo() {
+		// Write Expo mobile app
+		spinner.Printf("  → Scaffolding Expo mobile app...\n")
+		if err := writeExpoFiles(root, opts); err != nil {
+			return fmt.Errorf("writing Expo files: %w", err)
+		}
+	}
+
+	if opts.ShouldIncludeDocs() {
+		// Write docs site
+		spinner.Printf("  → Scaffolding documentation site...\n")
+		if err := writeDocsFiles(root, opts); err != nil {
+			return fmt.Errorf("writing docs files: %w", err)
+		}
+	}
+
 	return nil
 }
 
 // createDirectories creates the full monorepo folder structure.
-func createDirectories(root string, apiOnly bool) error {
+func createDirectories(root string, opts Options) error {
 	dirs := []string{
 		// Go API
 		filepath.Join(root, "apps", "api", "cmd", "server"),
@@ -101,11 +170,12 @@ func createDirectories(root string, apiOnly bool) error {
 		filepath.Join(root, "apps", "api", "internal", "storage"),
 		filepath.Join(root, "apps", "api", "internal", "jobs"),
 		filepath.Join(root, "apps", "api", "internal", "cron"),
+		filepath.Join(root, "apps", "api", "internal", "cache"),
+		filepath.Join(root, "apps", "api", "internal", "ai"),
 	}
 
-	if !apiOnly {
+	if opts.ShouldIncludeWeb() {
 		dirs = append(dirs,
-			// Next.js web app
 			filepath.Join(root, "apps", "web", "app", "(auth)", "login"),
 			filepath.Join(root, "apps", "web", "app", "(auth)", "register"),
 			filepath.Join(root, "apps", "web", "app", "(auth)", "forgot-password"),
@@ -114,21 +184,51 @@ func createDirectories(root string, apiOnly bool) error {
 			filepath.Join(root, "apps", "web", "components", "shared"),
 			filepath.Join(root, "apps", "web", "hooks"),
 			filepath.Join(root, "apps", "web", "lib"),
+		)
+	}
 
-			// Admin panel
+	if opts.ShouldIncludeAdmin() {
+		dirs = append(dirs,
 			filepath.Join(root, "apps", "admin", "app", "resources", "users"),
 			filepath.Join(root, "apps", "admin", "components", "layout"),
 			filepath.Join(root, "apps", "admin", "components", "tables"),
 			filepath.Join(root, "apps", "admin", "components", "forms", "fields"),
 			filepath.Join(root, "apps", "admin", "components", "widgets"),
+			filepath.Join(root, "apps", "admin", "components", "resource"),
+			filepath.Join(root, "apps", "admin", "components", "shared"),
 			filepath.Join(root, "apps", "admin", "hooks"),
 			filepath.Join(root, "apps", "admin", "lib"),
 			filepath.Join(root, "apps", "admin", "resources"),
+			filepath.Join(root, "apps", "admin", "app", "system", "jobs"),
+			filepath.Join(root, "apps", "admin", "app", "system", "files"),
+			filepath.Join(root, "apps", "admin", "app", "system", "cron"),
+			filepath.Join(root, "apps", "admin", "app", "system", "mail"),
+		)
+	}
 
-			// Shared package
+	if opts.ShouldIncludeShared() {
+		dirs = append(dirs,
 			filepath.Join(root, "packages", "shared", "schemas"),
 			filepath.Join(root, "packages", "shared", "types"),
 			filepath.Join(root, "packages", "shared", "constants"),
+		)
+	}
+
+	if opts.ShouldIncludeExpo() {
+		dirs = append(dirs,
+			filepath.Join(root, "apps", "expo", "app", "(auth)"),
+			filepath.Join(root, "apps", "expo", "app", "(tabs)"),
+			filepath.Join(root, "apps", "expo", "lib"),
+			filepath.Join(root, "apps", "expo", "components"),
+			filepath.Join(root, "apps", "expo", "assets"),
+		)
+	}
+
+	if opts.ShouldIncludeDocs() {
+		dirs = append(dirs,
+			filepath.Join(root, "apps", "docs", "app", "docs", "[[...slug]]"),
+			filepath.Join(root, "apps", "docs", "content", "docs", "api"),
+			filepath.Join(root, "apps", "docs", "public"),
 		)
 	}
 
