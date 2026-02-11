@@ -11,7 +11,7 @@ import (
 	"github.com/MUKE-coder/grit/internal/scaffold"
 )
 
-var version = "0.1.0"
+var version = "0.5.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -197,7 +197,7 @@ func printLogo() {
   ╚██████╔╝██║  ██║██║   ██║
    ╚═════╝ ╚═╝  ╚═╝╚═╝   ╚═╝`)
 	gray := color.New(color.FgHiBlack)
-	gray.Println("  Go + React. Built with Grit.")
+	gray.Printf("  Go + React. Built with Grit. v%s\n", version)
 }
 
 func printSuccess(name string, opts scaffold.Options) {
