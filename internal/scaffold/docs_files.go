@@ -48,6 +48,9 @@ func writeDocsFiles(root string, opts Options) error {
 		// Content — Batteries
 		filepath.Join(docsRoot, "content", "docs", "batteries", "overview.mdx"): docsContentBatteries(),
 		filepath.Join(docsRoot, "content", "docs", "batteries", "meta.json"):    docsContentBatteriesMeta(),
+
+		// Content — About
+		filepath.Join(docsRoot, "content", "docs", "about.mdx"): docsContentAbout(),
 	}
 
 	for path, content := range files {
@@ -636,7 +639,8 @@ func docsContentMeta() string {
     "...cli",
     "...admin",
     "...api",
-    "...batteries"
+    "...batteries",
+    "about"
   ]
 }
 `
@@ -1391,5 +1395,59 @@ All backing services are included in docker-compose.yml:
 | Redis | 6379 | Cache + Queue |
 | MinIO | 9000/9001 | File storage |
 | Mailhog | 8025 | Email testing |
+`
+}
+
+func docsContentAbout() string {
+	return `---
+title: About the Creator
+description: Meet the developer behind Grit.
+---
+
+## Muke Johnbaptist (JB)
+
+**Fullstack Developer | Tech Entrepreneur | Educator**
+
+Grit is created by **Muke Johnbaptist** (JB), a self-taught tech entrepreneur, educator, and founder based in **Kampala, Uganda**. JB is passionate about building digital solutions and empowering others to succeed in tech.
+
+## Background
+
+JB is entirely self-taught with no formal computer science degree. He transitioned from learning to code independently into building a thriving business that serves clients globally. His philosophy: **you don't need a computer science degree to build a successful tech career** — anyone can learn, anyone can build, and anyone can succeed.
+
+## What He Does
+
+- **Founder & CEO** of [Desishub Technologies](https://desishub.com) — a company that develops websites, mobile applications, and AI-powered business solutions across Africa and beyond
+- **Founder** of Nextjs Academy — an online learning platform with 9+ courses
+- **YouTube Creator** — 14,600+ subscribers on the [JB Web Developer](https://youtube.com/@JBWEBDEVELOPER) channel
+- **Educator** — Trained 100+ students through in-person coding bootcamps
+
+## Achievements
+
+- Generated **$15,000+** in revenue through online courses and digital products
+- Created **9+ online courses** through Nextjs Academy
+- Built multiple **enterprise-level systems** including school management platforms and member management systems
+- Currently maintaining **13 active projects**
+
+## Tech Stack
+
+| Layer | Technologies |
+|-------|-------------|
+| Frontend | React, Next.js, TypeScript, Tailwind CSS, shadcn/ui |
+| Backend | Node.js, Hono.js, Go, Express.js, Laravel |
+| Databases | PostgreSQL, MongoDB, Redis |
+| Tools | Docker, Git, Prisma ORM, GORM, Resend, React Query |
+
+## Connect
+
+- [GitHub](https://github.com/MUKE-coder) — @MUKE-coder
+- [YouTube](https://youtube.com/@JBWEBDEVELOPER) — @JBWEBDEVELOPER
+- [X (Twitter)](https://x.com/MJohnbaptist) — @MJohnbaptist
+- [LinkedIn](https://linkedin.com/in/muke-johnbaptist) — muke-johnbaptist
+- [TikTok](https://tiktok.com/@jbdesishub) — @jbdesishub
+- [Website](https://jb.desishub.com) — jb.desishub.com
+
+---
+
+*Grit is built with the belief that developers deserve better tools — tools that are fast to set up, production-ready, and don't compromise on quality.*
 `
 }
