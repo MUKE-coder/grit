@@ -49,29 +49,29 @@ func expoPackageJSON(opts Options) string {
     "web": "expo start --web"
   },
   "dependencies": {
-    "expo": "~52.0.0",
-    "expo-router": "~4.0.0",
-    "expo-linking": "~7.0.0",
-    "expo-constants": "~17.0.0",
-    "expo-status-bar": "~2.0.0",
-    "expo-secure-store": "~14.0.0",
-    "expo-splash-screen": "~0.29.0",
-    "react": "18.3.1",
-    "react-native": "0.76.6",
-    "react-native-safe-area-context": "~4.14.0",
-    "react-native-screens": "~4.4.0",
+    "expo": "~54.0.0",
+    "expo-router": "~6.0.0",
+    "expo-linking": "~8.0.0",
+    "expo-constants": "~18.0.0",
+    "expo-status-bar": "~3.0.0",
+    "expo-secure-store": "~15.0.0",
+    "expo-splash-screen": "~31.0.0",
+    "react": "19.1.0",
+    "react-native": "0.81.0",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-screens": "~4.16.0",
     "@react-navigation/bottom-tabs": "^7.0.0",
-    "@expo/vector-icons": "^14.0.0",
-    "nativewind": "^4.1.0",
+    "@expo/vector-icons": "^15.0.0",
+    "nativewind": "^4.2.0",
     "@tanstack/react-query": "^5.0.0",
-    "react-native-reanimated": "~3.16.0",
-    "react-native-gesture-handler": "~2.20.0"
+    "react-native-reanimated": "~4.1.0",
+    "react-native-gesture-handler": "~2.28.0"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
-    "@types/react": "~18.3.0",
+    "@types/react": "~19.1.0",
     "tailwindcss": "^3.4.0",
-    "typescript": "~5.3.0"
+    "typescript": "~5.6.0"
   },
   "private": true
 }
@@ -831,11 +831,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider
-      value={{ user, isAuthenticated: !!user, isLoading, login, register, logout }}
-    >
+    <AuthContext value={{ user, isAuthenticated: !!user, isLoading, login, register, logout }}>
       {children}
-    </AuthContext.Provider>
+    </AuthContext>
   );
 }
 
