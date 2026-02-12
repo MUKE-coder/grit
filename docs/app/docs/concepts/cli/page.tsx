@@ -574,6 +574,45 @@ fields:
                 </p>
               </div>
 
+              {/* grit update */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  grit update
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Update the Grit CLI itself to the latest version. This removes the current binary
+                  and installs the newest release from GitHub using <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">go install</code>.
+                </p>
+                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    </div>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                  </div>
+                  <div className="p-5 font-mono text-sm">
+                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit update</span></div>
+                    <div className="mt-1 text-muted-foreground/40 text-xs space-y-0.5">
+                      <div>  → Removing old binary: /home/user/go/bin/grit</div>
+                      <div>  → Installing latest version...</div>
+                      <div className="text-primary/60">  ✓ Grit CLI updated successfully!</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 rounded-lg border border-border/20 bg-accent/20 p-3">
+                  <p className="text-sm text-muted-foreground/70">
+                    <strong className="text-foreground/80">Note:</strong>{" "}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit update</code> updates
+                    the <strong className="text-foreground/80">CLI tool</strong> itself.
+                    To update your <strong className="text-foreground/80">project&apos;s scaffold files</strong> (admin
+                    panel, configs, web app), use{" "}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit upgrade</code> instead.
+                  </p>
+                </div>
+              </div>
+
               {/* grit version */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
@@ -593,7 +632,7 @@ fields:
                   </div>
                   <div className="p-5 font-mono text-sm">
                     <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit version</span></div>
-                    <div className="mt-1"><span className="text-muted-foreground/60">grit version 0.1.0</span></div>
+                    <div className="mt-1"><span className="text-muted-foreground/60">grit version 0.6.0</span></div>
                   </div>
                 </div>
               </div>
@@ -635,6 +674,26 @@ fields:
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit sync</td>
                         <td className="px-4 py-2.5">Sync Go models to TypeScript + Zod</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit migrate</td>
+                        <td className="px-4 py-2.5">Run GORM AutoMigrate for all models</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit migrate --fresh</td>
+                        <td className="px-4 py-2.5">Drop all tables then re-migrate</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit seed</td>
+                        <td className="px-4 py-2.5">Populate database with initial data</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit upgrade</td>
+                        <td className="px-4 py-2.5">Update project scaffold files to latest</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit update</td>
+                        <td className="px-4 py-2.5">Remove old CLI and install latest version</td>
                       </tr>
                       <tr>
                         <td className="px-4 py-2.5 font-mono text-xs">grit version</td>

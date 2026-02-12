@@ -28,6 +28,7 @@ func main() {
 	rootCmd.AddCommand(migrateCmd())
 	rootCmd.AddCommand(seedCmd())
 	rootCmd.AddCommand(upgradeCmd())
+	rootCmd.AddCommand(updateCmd())
 	rootCmd.AddCommand(versionCmd())
 
 	if err := rootCmd.Execute(); err != nil {
@@ -284,6 +285,53 @@ func upgradeCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite all files without prompting")
 
 	return cmd
+}
+
+func updateCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "update",
+		Short: "Update the Grit CLI to the latest version",
+		Long:  "Removes the current Grit binary and installs the latest version from GitHub using go install.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			green := color.New(color.FgHiGreen, color.Bold)
+			spinner := color.New(color.FgHiBlack)
+
+			purple.Printf("\n  Updating Grit CLI (current: v%s)...\n\n", version)
+
+			// Find the current binary path
+			binPath, err := os.Executable()
+			if err != nil {
+				return fmt.Errorf("finding current binary: %w", err)
+			}
+			binPath, err = filepath.EvalSymlinks(binPath)
+			if err != nil {
+				return fmt.Errorf("resolving binary path: %w", err)
+			}
+
+			spinner.Printf("  → Removing old binary: %s\n", binPath)
+			if err := os.Remove(binPath); err != nil {
+				return fmt.Errorf("removing old binary: %w", err)
+			}
+
+			spinner.Println("  → Installing latest version...")
+			c := exec.Command("go", "install", "github.com/MUKE-coder/grit/cmd/grit@latest")
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			if err := c.Run(); err != nil {
+				return fmt.Errorf("installing latest version: %w", err)
+			}
+
+			fmt.Println()
+			green.Println("  ✓ Grit CLI updated successfully!")
+			spinner.Println("  Run 'grit version' to verify the new version.")
+			fmt.Println()
+
+			return nil
+		},
+	}
 }
 
 func syncCmd() *cobra.Command {

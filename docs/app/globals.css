@@ -170,23 +170,23 @@
 }
 
 .prose-grit p {
-  @apply text-[15px] leading-relaxed text-muted-foreground mb-4;
+  @apply text-base leading-relaxed text-muted-foreground mb-4;
 }
 
 .prose-grit ul {
-  @apply list-disc pl-6 mb-4 space-y-1.5;
+  @apply list-disc pl-6 mb-4 space-y-2;
 }
 
 .prose-grit ol {
-  @apply list-decimal pl-6 mb-4 space-y-1.5;
+  @apply list-decimal pl-6 mb-4 space-y-2;
 }
 
 .prose-grit li {
-  @apply text-[15px] text-muted-foreground leading-relaxed;
+  @apply text-base text-muted-foreground leading-relaxed;
 }
 
 .prose-grit code {
-  @apply text-sm font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary;
+  @apply text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary;
 }
 
 .prose-grit pre {
@@ -198,11 +198,11 @@
 }
 
 .prose-grit a {
-  @apply text-primary hover:underline;
+  @apply text-base text-primary hover:underline;
 }
 
 .prose-grit blockquote {
-  @apply border-l-2 border-primary/40 pl-4 italic text-muted-foreground my-4;
+  @apply border-l-2 border-primary/40 pl-4 italic text-base text-muted-foreground my-4;
 }
 
 .prose-grit table {
@@ -210,11 +210,11 @@
 }
 
 .prose-grit th {
-  @apply text-left text-sm font-semibold text-foreground pb-2 border-b border-border px-3;
+  @apply text-left text-[15px] font-semibold text-foreground pb-2 border-b border-border px-3;
 }
 
 .prose-grit td {
-  @apply text-sm text-muted-foreground py-2 border-b border-border/50 px-3;
+  @apply text-[15px] text-muted-foreground py-2 border-b border-border/50 px-3;
 }
 
 .prose-grit strong {

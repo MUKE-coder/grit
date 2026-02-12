@@ -373,6 +373,7 @@ Grit is a full-stack meta-framework that fuses **Go** (Gin + GORM) with **Next.j
 - **Shared Types** — Zod schemas + TypeScript types shared between apps
 - **Docker Ready** — Dev and production Docker Compose setups
 - **Upgrade Command** — `+"`grit upgrade`"+` updates existing projects to the latest scaffold templates
+- **Self-Update** — `+"`grit update`"+` updates the CLI itself to the latest release
 
 ## Tech Stack
 
@@ -863,6 +864,18 @@ Seeds the database with:
 - **Demo users** — Sample accounts for testing
 
 The seeder is idempotent — it skips records that already exist. Add your own seeders in apps/api/internal/database/seed.go.
+
+## grit update
+
+Update the Grit CLI itself to the latest version. This removes the current binary and installs the newest release from GitHub.
+
+` + "```bash" + `
+grit update
+` + "```" + `
+
+This runs ` + "`go install github.com/MUKE-coder/grit/cmd/grit@latest`" + ` under the hood, replacing the old binary with the latest version. Run ` + "`grit version`" + ` afterwards to verify.
+
+> **Note:** ` + "`grit update`" + ` updates the **CLI tool**. To update your **project's scaffold files**, use ` + "`grit upgrade`" + ` instead.
 
 ## grit version
 

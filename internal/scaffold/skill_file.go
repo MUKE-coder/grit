@@ -51,6 +51,9 @@ grit seed                             # Create admin + demo users
 # Upgrade existing project to latest templates
 grit upgrade                          # Updates admin, web, configs
 grit upgrade --force                  # Overwrite without prompting
+
+# Update the Grit CLI itself
+grit update                           # Remove old binary + install latest
 %[1]s
 
 ---
