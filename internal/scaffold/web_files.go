@@ -249,7 +249,7 @@ export default function RootLayout({
 }
 
 func webLandingPage(opts Options) string {
-	return fmt.Sprintf(`"use client";
+	return `"use client";
 
 import { motion } from "framer-motion";
 import {
@@ -652,7 +652,7 @@ export default function LandingPage() {
     </div>
   );
 }
-`, opts.ProjectName)
+`
 }
 
 func webUtils() string {
