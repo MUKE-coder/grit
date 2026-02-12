@@ -3,6 +3,7 @@ package scaffold
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -109,6 +110,15 @@ func Run(opts Options) error {
 	}
 	if err := writeAIFiles(root, opts); err != nil {
 		return fmt.Errorf("writing AI files: %w", err)
+	}
+
+	// Run go mod tidy to resolve dependencies and generate go.sum
+	spinner.Printf("  → Resolving Go dependencies...\n")
+	apiDir := filepath.Join(root, "apps", "api")
+	tidyCmd := exec.Command("go", "mod", "tidy")
+	tidyCmd.Dir = apiDir
+	if out, err := tidyCmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("running go mod tidy: %w\n%s", err, string(out))
 	}
 
 	// Write Docker files

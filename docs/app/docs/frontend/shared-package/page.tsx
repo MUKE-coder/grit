@@ -64,7 +64,7 @@ export default function SharedPackagePage() {
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
   "name": "@myapp/shared",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "main": "./index.ts",
   "types": "./index.ts",

@@ -289,7 +289,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           <span className="flex items-center gap-2 font-bold">
             Grit Docs
             <span className="rounded-md bg-fd-primary/10 px-1.5 py-0.5 text-xs font-medium text-fd-primary">
-              v0.6.0
+              v0.7.0
             </span>
           </span>
         ),
@@ -407,7 +407,7 @@ title: Getting Started
 description: Install Grit and create your first full-stack project in minutes.
 ---
 
-**Current version: v0.6.0**
+**Current version: v0.7.0**
 
 ## Installation
 
@@ -421,7 +421,7 @@ Verify the installation:
 
 `+"```bash"+`
 grit version
-# grit version 0.6.0
+# grit version 0.7.0
 `+"```"+`
 
 ## Quick Start
