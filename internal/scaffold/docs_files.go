@@ -284,7 +284,16 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <DocsLayout
       tree={source.pageTree}
-      nav={{ title: "Grit Docs" }}
+      nav={{
+        title: (
+          <span className="flex items-center gap-2 font-bold">
+            Grit Docs
+            <span className="rounded-md bg-fd-primary/10 px-1.5 py-0.5 text-xs font-medium text-fd-primary">
+              v0.6.0
+            </span>
+          </span>
+        ),
+      }}
     >
       {children}
     </DocsLayout>
@@ -397,6 +406,8 @@ title: Getting Started
 description: Install Grit and create your first full-stack project in minutes.
 ---
 
+**Current version: v0.6.0**
+
 ## Installation
 
 Install the Grit CLI globally:
@@ -405,16 +416,21 @@ Install the Grit CLI globally:
 go install github.com/MUKE-coder/grit/cmd/grit@latest
 `+"```"+`
 
-To update to the latest version, run the same command:
-
-`+"```bash"+`
-go install github.com/MUKE-coder/grit/cmd/grit@latest
-`+"```"+`
-
-Check your installed version:
+Verify the installation:
 
 `+"```bash"+`
 grit version
+# grit version 0.6.0
+`+"```"+`
+
+## Quick Start
+
+`+"```bash"+`
+grit new %s            # Scaffold a new project
+cd %s
+docker compose up -d   # Start PostgreSQL, Redis, MinIO, Mailhog
+pnpm install           # Install frontend dependencies
+pnpm dev               # Start all services
 `+"```"+`
 
 ## Create a New Project
@@ -452,6 +468,7 @@ pnpm dev
 | Web (Landing Page) | http://localhost:3000 |
 | Admin Panel | http://localhost:3001 |
 | Go API | http://localhost:8080 |
+| API Docs (Scalar) | http://localhost:8080/docs |
 | GORM Studio | http://localhost:8080/studio |
 | Mailhog | http://localhost:8025 |
 | MinIO Console | http://localhost:9001 |
@@ -523,7 +540,7 @@ cp .env.cloud.example .env
 `+"```"+`
 
 Fill in your keys for [Neon](https://neon.tech) (Postgres), [Upstash](https://upstash.com) (Redis), [Cloudflare R2](https://dash.cloudflare.com) (storage), and [Resend](https://resend.com) (email).
-`, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
+`, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 
 func docsContentAuth() string {
