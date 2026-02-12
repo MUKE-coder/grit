@@ -281,6 +281,138 @@ export default defineResource({
             </div>
 
             <div className="prose-grit">
+              <h3>Image Upload</h3>
+              <p>
+                A single image upload field powered by the Dropzone component. The file is
+                uploaded to <code>/api/uploads</code> automatically and the form stores the
+                resulting URL string. Accepts <code>image/*</code> MIME types.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">Image field</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+  key: 'avatar',
+  label: 'Avatar',
+  type: 'image',
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <h3>Multiple Images</h3>
+              <p>
+                An image gallery upload that stores an array of URL strings. Uses the Dropzone
+                with multiple file support. Use the <code>max</code> property to limit the
+                number of images (default: 10).
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">Images field</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+  key: 'gallery',
+  label: 'Product Gallery',
+  type: 'images',
+  max: 8,
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <h3>Video Upload</h3>
+              <p>
+                A single video upload field. Accepts <code>video/mp4</code>, <code>video/webm</code>,
+                and <code>video/quicktime</code> formats. Max file size is 100MB by default.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">Video field</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+  key: 'intro_video',
+  label: 'Intro Video',
+  type: 'video',
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <h3>Multiple Videos</h3>
+              <p>
+                A multi-video upload that stores an array of URL strings. Use the <code>max</code> property
+                to limit the number of videos (default: 5).
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">Videos field</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+  key: 'media',
+  label: 'Course Videos',
+  type: 'videos',
+  max: 10,
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <h3>File Upload</h3>
+              <p>
+                A single file upload for documents like PDFs, CSVs, Word files, etc.
+                No MIME type restriction &mdash; accepts all allowed file types configured
+                on the server.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">File field</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+  key: 'resume',
+  label: 'Resume (PDF)',
+  type: 'file',
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <h3>Multiple Files</h3>
+              <p>
+                A multi-file upload for document collections. Stores an array of URL strings.
+                Use the <code>max</code> property to limit the number of files (default: 10).
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">Files field</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+  key: 'attachments',
+  label: 'Attachments',
+  type: 'files',
+  max: 5,
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
               {/* Validation */}
               <h2>Validation</h2>
               <p>

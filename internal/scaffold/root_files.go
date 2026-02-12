@@ -87,10 +87,10 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 # GORM Studio
 GORM_STUDIO_ENABLED=true
 
-# AI — Provider: claude or openai
+# AI — Provider: claude, openai, or gemini
 AI_PROVIDER=claude
-AI_API_KEY=
-AI_MODEL=claude-sonnet-4-5-20250929
+AI_API_KEY=                          # sk-ant-... (Claude), sk-... (OpenAI), or AIza... (Gemini)
+AI_MODEL=claude-sonnet-4-5-20250929  # Model to use
 `, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 
@@ -149,9 +149,9 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 # GORM Studio — Visual database browser
 GORM_STUDIO_ENABLED=true
 
-# AI — Text generation (Claude or OpenAI)
-AI_PROVIDER=claude                   # "claude" or "openai"
-AI_API_KEY=                          # Your API key (sk-ant-... or sk-...)
+# AI — Text generation (Claude, OpenAI, or Gemini)
+AI_PROVIDER=claude                   # "claude", "openai", or "gemini"
+AI_API_KEY=                          # sk-ant-... (Claude), sk-... (OpenAI), or AIza... (Gemini)
 AI_MODEL=claude-sonnet-4-5-20250929  # Model to use
 `
 }
@@ -216,10 +216,10 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 # ─── GORM Studio ──────────────────────────────────────
 GORM_STUDIO_ENABLED=true
 
-# ─── AI (Claude or OpenAI) ────────────────────────────
-AI_PROVIDER=claude
-AI_API_KEY=your-api-key-here
-AI_MODEL=claude-sonnet-4-5-20250929
+# ─── AI (Claude, OpenAI, or Gemini) ──────────────────
+AI_PROVIDER=claude                   # "claude", "openai", or "gemini"
+AI_API_KEY=your-api-key-here         # sk-ant-... (Claude), sk-... (OpenAI), or AIza... (Gemini)
+AI_MODEL=claude-sonnet-4-5-20250929  # Model to use
 `, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 

@@ -62,7 +62,7 @@ export interface TableDefinition {
 
 // ─── Form Field Definitions ─────────────────────────────────────────
 
-export type FieldType = "text" | "textarea" | "number" | "select" | "date" | "datetime" | "toggle" | "checkbox" | "radio" | "image";
+export type FieldType = "text" | "textarea" | "number" | "select" | "date" | "datetime" | "toggle" | "checkbox" | "radio" | "image" | "images" | "video" | "videos" | "file" | "files";
 
 export interface FieldDefinition {
   key: string;
@@ -238,6 +238,14 @@ export const usersResource = defineResource({
         type: "text",
         required: true,
         placeholder: "user@example.com",
+        colSpan: 1,
+      },
+      {
+        key: "password",
+        label: "Password",
+        type: "text",
+        placeholder: "Enter password",
+        description: "Required when creating a new user",
         colSpan: 1,
       },
       {

@@ -272,6 +272,9 @@ var AllowedMimeTypes = map[string]bool{
 	"image/png":       true,
 	"image/gif":       true,
 	"image/webp":      true,
+	"video/mp4":       true,
+	"video/webm":      true,
+	"video/quicktime": true,
 	"application/pdf": true,
 	"text/plain":      true,
 	"text/csv":        true,
@@ -280,8 +283,8 @@ var AllowedMimeTypes = map[string]bool{
 	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": true,
 }
 
-// MaxUploadSize is the maximum file size (10 MB).
-const MaxUploadSize = 10 << 20
+// MaxUploadSize is the maximum file size (50 MB).
+const MaxUploadSize = 50 << 20
 
 // UploadHandler handles file upload endpoints.
 type UploadHandler struct {

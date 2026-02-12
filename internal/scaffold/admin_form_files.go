@@ -15,6 +15,11 @@ import { ToggleField } from "./fields/toggle-field";
 import { CheckboxField } from "./fields/checkbox-field";
 import { RadioField } from "./fields/radio-field";
 import { ImageField } from "./fields/image-field";
+import { ImagesField } from "./fields/images-field";
+import { VideoField } from "./fields/video-field";
+import { VideosField } from "./fields/videos-field";
+import { FileField } from "./fields/file-field";
+import { FilesField } from "./fields/files-field";
 import { Loader2 } from "@/lib/icons";
 
 interface FormBuilderProps {
@@ -192,6 +197,61 @@ function FieldRenderer({
           rules={field.required ? { required: ` + "`" + `${field.label} is required` + "`" + ` } : undefined}
           render={({ field: formField }) => (
             <ImageField field={field} value={formField.value ?? ""} onChange={formField.onChange} error={error} />
+          )}
+        />
+      );
+    case "images":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          rules={field.required ? { required: ` + "`" + `${field.label} is required` + "`" + ` } : undefined}
+          render={({ field: formField }) => (
+            <ImagesField field={field} value={formField.value ?? []} onChange={formField.onChange} error={error} />
+          )}
+        />
+      );
+    case "video":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          rules={field.required ? { required: ` + "`" + `${field.label} is required` + "`" + ` } : undefined}
+          render={({ field: formField }) => (
+            <VideoField field={field} value={formField.value ?? ""} onChange={formField.onChange} error={error} />
+          )}
+        />
+      );
+    case "videos":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          rules={field.required ? { required: ` + "`" + `${field.label} is required` + "`" + ` } : undefined}
+          render={({ field: formField }) => (
+            <VideosField field={field} value={formField.value ?? []} onChange={formField.onChange} error={error} />
+          )}
+        />
+      );
+    case "file":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          rules={field.required ? { required: ` + "`" + `${field.label} is required` + "`" + ` } : undefined}
+          render={({ field: formField }) => (
+            <FileField field={field} value={formField.value ?? ""} onChange={formField.onChange} error={error} />
+          )}
+        />
+      );
+    case "files":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          rules={field.required ? { required: ` + "`" + `${field.label} is required` + "`" + ` } : undefined}
+          render={({ field: formField }) => (
+            <FilesField field={field} value={formField.value ?? []} onChange={formField.onChange} error={error} />
           )}
         />
       );
@@ -644,6 +704,203 @@ export function ImageField({ field, value, onChange, error }: ImageFieldProps) {
       }}
       label={field.label}
       description={field.description}
+      error={error}
+    />
+  );
+}
+`
+}
+
+// adminImagesField returns the multiple images upload field component.
+func adminImagesField() string {
+	return `"use client";
+
+import type { FieldDefinition } from "@/lib/resource";
+import { Dropzone, type UploadedFile } from "@/components/ui/dropzone";
+
+interface ImagesFieldProps {
+  field: FieldDefinition;
+  value: string[];
+  onChange: (value: string[]) => void;
+  error?: string;
+}
+
+export function ImagesField({ field, value, onChange, error }: ImagesFieldProps) {
+  const existingFiles: UploadedFile[] = (value || []).map((url, i) => ({
+    url,
+    name: ` + "`" + `Image ${i + 1}` + "`" + `,
+    size: 0,
+    type: "image/jpeg",
+  }));
+
+  return (
+    <Dropzone
+      variant="default"
+      maxFiles={field.max ?? 10}
+      maxSize={field.maxSize ?? 5 * 1024 * 1024}
+      accept={{ "image/*": [".jpeg", ".jpg", ".png", ".gif", ".webp"] }}
+      value={existingFiles}
+      onFilesChange={(files) => {
+        onChange(files.map((f) => f.url));
+      }}
+      label={field.label}
+      description={field.description ?? "Upload up to " + String(field.max ?? 10) + " images"}
+      error={error}
+    />
+  );
+}
+`
+}
+
+// adminVideoField returns the single video upload field component.
+func adminVideoField() string {
+	return `"use client";
+
+import type { FieldDefinition } from "@/lib/resource";
+import { Dropzone, type UploadedFile } from "@/components/ui/dropzone";
+
+interface VideoFieldProps {
+  field: FieldDefinition;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+}
+
+export function VideoField({ field, value, onChange, error }: VideoFieldProps) {
+  const existingFiles: UploadedFile[] = value
+    ? [{ url: value, name: "Current video", size: 0, type: "video/mp4" }]
+    : [];
+
+  return (
+    <Dropzone
+      variant="compact"
+      maxFiles={1}
+      maxSize={field.maxSize ?? 100 * 1024 * 1024}
+      accept={{ "video/*": [".mp4", ".webm", ".mov"] }}
+      value={existingFiles}
+      onFilesChange={(files) => {
+        onChange(files[0]?.url || "");
+      }}
+      label={field.label}
+      description={field.description ?? "MP4, WebM, or MOV up to 100MB"}
+      error={error}
+    />
+  );
+}
+`
+}
+
+// adminVideosField returns the multiple videos upload field component.
+func adminVideosField() string {
+	return `"use client";
+
+import type { FieldDefinition } from "@/lib/resource";
+import { Dropzone, type UploadedFile } from "@/components/ui/dropzone";
+
+interface VideosFieldProps {
+  field: FieldDefinition;
+  value: string[];
+  onChange: (value: string[]) => void;
+  error?: string;
+}
+
+export function VideosField({ field, value, onChange, error }: VideosFieldProps) {
+  const existingFiles: UploadedFile[] = (value || []).map((url, i) => ({
+    url,
+    name: ` + "`" + `Video ${i + 1}` + "`" + `,
+    size: 0,
+    type: "video/mp4",
+  }));
+
+  return (
+    <Dropzone
+      variant="default"
+      maxFiles={field.max ?? 5}
+      maxSize={field.maxSize ?? 100 * 1024 * 1024}
+      accept={{ "video/*": [".mp4", ".webm", ".mov"] }}
+      value={existingFiles}
+      onFilesChange={(files) => {
+        onChange(files.map((f) => f.url));
+      }}
+      label={field.label}
+      description={field.description ?? "Upload up to " + String(field.max ?? 5) + " videos"}
+      error={error}
+    />
+  );
+}
+`
+}
+
+// adminFileField returns the single file upload field component.
+func adminFileField() string {
+	return `"use client";
+
+import type { FieldDefinition } from "@/lib/resource";
+import { Dropzone, type UploadedFile } from "@/components/ui/dropzone";
+
+interface FileFieldProps {
+  field: FieldDefinition;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+}
+
+export function FileField({ field, value, onChange, error }: FileFieldProps) {
+  const existingFiles: UploadedFile[] = value
+    ? [{ url: value, name: "Current file", size: 0, type: "application/octet-stream" }]
+    : [];
+
+  return (
+    <Dropzone
+      variant="compact"
+      maxFiles={1}
+      maxSize={field.maxSize ?? 10 * 1024 * 1024}
+      value={existingFiles}
+      onFilesChange={(files) => {
+        onChange(files[0]?.url || "");
+      }}
+      label={field.label}
+      description={field.description ?? "PDF, CSV, Excel, Word, and more"}
+      error={error}
+    />
+  );
+}
+`
+}
+
+// adminFilesField returns the multiple files upload field component.
+func adminFilesField() string {
+	return `"use client";
+
+import type { FieldDefinition } from "@/lib/resource";
+import { Dropzone, type UploadedFile } from "@/components/ui/dropzone";
+
+interface FilesFieldProps {
+  field: FieldDefinition;
+  value: string[];
+  onChange: (value: string[]) => void;
+  error?: string;
+}
+
+export function FilesField({ field, value, onChange, error }: FilesFieldProps) {
+  const existingFiles: UploadedFile[] = (value || []).map((url, i) => ({
+    url,
+    name: ` + "`" + `File ${i + 1}` + "`" + `,
+    size: 0,
+    type: "application/octet-stream",
+  }));
+
+  return (
+    <Dropzone
+      variant="default"
+      maxFiles={field.max ?? 10}
+      maxSize={field.maxSize ?? 10 * 1024 * 1024}
+      value={existingFiles}
+      onFilesChange={(files) => {
+        onChange(files.map((f) => f.url));
+      }}
+      label={field.label}
+      description={field.description ?? "Upload up to " + String(field.max ?? 10) + " files"}
       error={error}
     />
   );

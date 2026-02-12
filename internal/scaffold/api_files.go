@@ -332,7 +332,7 @@ type Config struct {
 	GORMStudioEnabled bool
 
 	// AI
-	AIProvider string // "claude" or "openai"
+	AIProvider string // "claude", "openai", or "gemini"
 	AIAPIKey   string
 	AIModel    string
 }
@@ -1011,6 +1011,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
 	"` + "{{MODULE}}" + `/internal/models"
@@ -1019,6 +1020,71 @@ import (
 // UserHandler handles user management endpoints.
 type UserHandler struct {
 	DB *gorm.DB
+}
+
+// Create creates a new user (admin only).
+func (h *UserHandler) Create(c *gin.Context) {
+	var req struct {
+		Name     string ` + "`" + `json:"name" binding:"required"` + "`" + `
+		Email    string ` + "`" + `json:"email" binding:"required,email"` + "`" + `
+		Password string ` + "`" + `json:"password" binding:"required,min=6"` + "`" + `
+		Role     string ` + "`" + `json:"role"` + "`" + `
+		Avatar   string ` + "`" + `json:"avatar"` + "`" + `
+		Active   *bool  ` + "`" + `json:"active"` + "`" + `
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"error": gin.H{
+				"code":    "VALIDATION_ERROR",
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+
+	// Check email uniqueness
+	var existing models.User
+	if err := h.DB.Where("email = ?", req.Email).First(&existing).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{
+			"error": gin.H{
+				"code":    "EMAIL_EXISTS",
+				"message": "A user with this email already exists",
+			},
+		})
+		return
+	}
+
+	user := models.User{
+		Name:     req.Name,
+		Email:    req.Email,
+		Password: req.Password,
+		Role:     req.Role,
+		Avatar:   req.Avatar,
+		Active:   true,
+	}
+
+	if req.Active != nil {
+		user.Active = *req.Active
+	}
+	if user.Role == "" {
+		user.Role = models.RoleUser
+	}
+
+	if err := h.DB.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "INTERNAL_ERROR",
+				"message": "Failed to create user",
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"data":    user,
+		"message": "User created successfully",
+	})
 }
 
 // List returns a paginated list of users.
@@ -1122,10 +1188,12 @@ func (h *UserHandler) Update(c *gin.Context) {
 	}
 
 	var req struct {
-		Name   string ` + "`" + `json:"name"` + "`" + `
-		Email  string ` + "`" + `json:"email"` + "`" + `
-		Role   string ` + "`" + `json:"role"` + "`" + `
-		Active *bool  ` + "`" + `json:"active"` + "`" + `
+		Name     string ` + "`" + `json:"name"` + "`" + `
+		Email    string ` + "`" + `json:"email"` + "`" + `
+		Password string ` + "`" + `json:"password"` + "`" + `
+		Role     string ` + "`" + `json:"role"` + "`" + `
+		Avatar   string ` + "`" + `json:"avatar"` + "`" + `
+		Active   *bool  ` + "`" + `json:"active"` + "`" + `
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -1145,8 +1213,24 @@ func (h *UserHandler) Update(c *gin.Context) {
 	if req.Email != "" {
 		updates["email"] = req.Email
 	}
+	if req.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": gin.H{
+					"code":    "INTERNAL_ERROR",
+					"message": "Failed to hash password",
+				},
+			})
+			return
+		}
+		updates["password"] = string(hashedPassword)
+	}
 	if req.Role != "" {
 		updates["role"] = req.Role
+	}
+	if req.Avatar != "" {
+		updates["avatar"] = req.Avatar
 	}
 	if req.Active != nil {
 		updates["active"] = *req.Active
@@ -1548,6 +1632,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	admin.Use(middleware.RequireRole("admin"))
 	{
 		admin.GET("/users", userHandler.List)
+		admin.POST("/users", userHandler.Create)
+		admin.PUT("/users/:id", userHandler.Update)
 		admin.DELETE("/users/:id", userHandler.Delete)
 
 		// Admin system routes

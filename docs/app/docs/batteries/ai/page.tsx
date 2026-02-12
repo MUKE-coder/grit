@@ -20,9 +20,9 @@ export default function AIPage() {
                 AI Integration
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Grit ships with dual-provider AI support for Claude (Anthropic) and OpenAI. Generate completions,
-                run multi-turn conversations, and stream responses via SSE -- all through a unified Go service
-                with raw <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">net/http</code> calls (no SDK dependencies).
+                Grit ships with multi-provider AI support for Claude (Anthropic), OpenAI, and Gemini (Google).
+                Generate completions, run multi-turn conversations, and stream responses via SSE -- all through
+                a unified Go service with raw <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">net/http</code> calls (no SDK dependencies).
               </p>
             </div>
 
@@ -33,8 +33,8 @@ export default function AIPage() {
                   Configuration
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  AI is configured via three environment variables. Switch between Claude and OpenAI
-                  by changing the provider and model -- no code changes required.
+                  AI is configured via three environment variables. Switch between Claude, OpenAI,
+                  and Gemini by changing the provider and model -- no code changes required.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
@@ -42,9 +42,9 @@ export default function AIPage() {
                     <span className="text-[11px] font-mono text-muted-foreground/40">.env</span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# AI Configuration
-AI_PROVIDER=claude                  # "claude" or "openai"
-AI_API_KEY=sk-ant-xxxxxxxxxxxxx     # API key for the selected provider
-AI_MODEL=claude-sonnet-4-20250514           # Model identifier`}</pre>
+AI_PROVIDER=claude                   # "claude", "openai", or "gemini"
+AI_API_KEY=sk-ant-xxxxxxxxxxxxx      # API key for the selected provider
+AI_MODEL=claude-sonnet-4-5-20250929  # Model identifier`}</pre>
                 </div>
 
                 <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden">
@@ -62,10 +62,15 @@ AI_MODEL=claude-sonnet-4-20250514           # Model identifier`}</pre>
                         <td className="px-4 py-2.5 font-mono text-xs">claude</td>
                         <td className="px-4 py-2.5 font-mono text-xs">claude-sonnet-4-20250514, claude-opus-4-20250514</td>
                       </tr>
-                      <tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-medium">OpenAI</td>
                         <td className="px-4 py-2.5 font-mono text-xs">openai</td>
                         <td className="px-4 py-2.5 font-mono text-xs">gpt-4o, gpt-4o-mini</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2.5 font-medium">Google Gemini</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">gemini</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">gemini-2.0-flash, gemini-1.5-pro</td>
                       </tr>
                     </tbody>
                   </table>
@@ -79,7 +84,7 @@ AI_MODEL=claude-sonnet-4-20250514           # Model identifier`}</pre>
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   The AI service at <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">internal/ai/ai.go</code> provides
-                  a unified interface that works with both Claude and OpenAI. It handles the differences
+                  a unified interface that works with Claude, OpenAI, and Gemini. It handles the differences
                   in API formats, authentication headers, and response structures internally.
                 </p>
 
@@ -126,7 +131,7 @@ type StreamHandler func(chunk string) error`}</pre>
 func New(provider, apiKey, model string) *AI
 
 // Complete generates a response from a single prompt or message history.
-// Automatically routes to Claude or OpenAI based on provider config.
+// Automatically routes to Claude, OpenAI, or Gemini based on provider config.
 func (a *AI) Complete(ctx context.Context, req CompletionRequest) (*CompletionResponse, error)
 
 // Stream generates a streaming response, calling handler for each text chunk.
@@ -400,7 +405,7 @@ err := aiService.Stream(ctx, ai.CompletionRequest{
                   Switching Providers
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Switching between Claude and OpenAI requires only environment variable changes.
+                  Switching between Claude, OpenAI, and Gemini requires only environment variable changes.
                   The AI service abstracts away the differences in request/response formats,
                   authentication headers, and streaming protocols.
                 </p>
@@ -423,6 +428,15 @@ AI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
 AI_MODEL=gpt-4o`}</pre>
                 </div>
 
+                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                    <span className="text-[11px] font-mono text-muted-foreground/40">.env (Gemini)</span>
+                  </div>
+                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`AI_PROVIDER=gemini
+AI_API_KEY=AIzaSyxxxxxxxxxxxxxxxxxxxxxxx
+AI_MODEL=gemini-2.0-flash`}</pre>
+                </div>
+
                 <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>
@@ -430,6 +444,7 @@ AI_MODEL=gpt-4o`}</pre>
                         <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Difference</th>
                         <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Claude</th>
                         <th className="text-left px-4 py-2.5 font-medium text-foreground/80">OpenAI</th>
+                        <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Gemini</th>
                       </tr>
                     </thead>
                     <tbody className="text-muted-foreground">
@@ -437,21 +452,25 @@ AI_MODEL=gpt-4o`}</pre>
                         <td className="px-4 py-2.5">API URL</td>
                         <td className="px-4 py-2.5 font-mono text-xs">api.anthropic.com/v1/messages</td>
                         <td className="px-4 py-2.5 font-mono text-xs">api.openai.com/v1/chat/completions</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">generativelanguage.googleapis.com</td>
                       </tr>
                       <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5">Auth header</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">x-api-key</td>
+                        <td className="px-4 py-2.5">Auth</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">x-api-key header</td>
                         <td className="px-4 py-2.5 font-mono text-xs">Authorization: Bearer</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">?key= query param</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5">Response format</td>
                         <td className="px-4 py-2.5 font-mono text-xs">content[0].text</td>
                         <td className="px-4 py-2.5 font-mono text-xs">choices[0].message.content</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">candidates[0].content.parts[0].text</td>
                       </tr>
                       <tr>
                         <td className="px-4 py-2.5">Stream event</td>
                         <td className="px-4 py-2.5 font-mono text-xs">content_block_delta</td>
                         <td className="px-4 py-2.5 font-mono text-xs">choices[0].delta.content</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">candidates[0].content.parts[0].text</td>
                       </tr>
                     </tbody>
                   </table>

@@ -234,7 +234,8 @@ func IsImageMimeType(mimeType string) bool`}</pre>
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3">Allowed MIME Types</h3>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  By default, the following file types are allowed. You can customize the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">AllowedMimeTypes</code> map
+                  By default, the following file types are allowed, including images, videos, and documents.
+                  You can customize the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">AllowedMimeTypes</code> map
                   in <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">internal/handlers/upload.go</code>.
                 </p>
 
@@ -242,14 +243,17 @@ func IsImageMimeType(mimeType string) bool`}</pre>
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
                     <span className="text-[11px] font-mono text-muted-foreground/40">internal/handlers/upload.go</span>
                   </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// MaxUploadSize is the maximum file size (10 MB).
-const MaxUploadSize = 10 << 20
+                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// MaxUploadSize is the maximum file size (50 MB).
+const MaxUploadSize = 50 << 20
 
 var AllowedMimeTypes = map[string]bool{
     "image/jpeg":      true,
     "image/png":       true,
     "image/gif":       true,
     "image/webp":      true,
+    "video/mp4":       true,
+    "video/webm":      true,
+    "video/quicktime": true,
     "application/pdf": true,
     "text/plain":      true,
     "text/csv":        true,
@@ -306,7 +310,7 @@ var AllowedMimeTypes = map[string]bool{
                     <span className="text-[11px] font-mono text-muted-foreground/40">upload-flow.txt</span>
                   </div>
                   <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`POST /api/uploads (multipart/form-data)
-  1. Validate file size (max 10 MB)
+  1. Validate file size (max 50 MB)
   2. Validate MIME type (AllowedMimeTypes)
   3. Generate unique filename: {timestamp}-{original_name}.{ext}
   4. Upload to S3 at key: uploads/{year}/{month}/{filename}

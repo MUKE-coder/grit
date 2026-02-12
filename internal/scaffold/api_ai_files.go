@@ -102,6 +102,8 @@ func (a *AI) Complete(ctx context.Context, req CompletionRequest) (*CompletionRe
 	switch a.provider {
 	case "openai":
 		return a.openaiComplete(ctx, messages, req.MaxTokens, req.Temperature)
+	case "gemini":
+		return a.geminiComplete(ctx, messages, req.MaxTokens, req.Temperature)
 	default:
 		return a.claudeComplete(ctx, messages, req.MaxTokens, req.Temperature)
 	}
@@ -121,6 +123,8 @@ func (a *AI) Stream(ctx context.Context, req CompletionRequest, handler StreamHa
 	switch a.provider {
 	case "openai":
 		return a.openaiStream(ctx, messages, req.MaxTokens, req.Temperature, handler)
+	case "gemini":
+		return a.geminiStream(ctx, messages, req.MaxTokens, req.Temperature, handler)
 	default:
 		return a.claudeStream(ctx, messages, req.MaxTokens, req.Temperature, handler)
 	}
@@ -392,6 +396,176 @@ func (a *AI) openaiStream(ctx context.Context, messages []Message, maxTokens int
 		if len(event.Choices) > 0 && event.Choices[0].Delta.Content != "" {
 			if err := handler(event.Choices[0].Delta.Content); err != nil {
 				return err
+			}
+		}
+	}
+
+	return scanner.Err()
+}
+
+// ── Gemini (Google) ──────────────────────────────────────────
+
+func (a *AI) geminiComplete(ctx context.Context, messages []Message, maxTokens int, temperature float64) (*CompletionResponse, error) {
+	// Convert messages to Gemini format
+	contents := make([]map[string]interface{}, 0, len(messages))
+	for _, msg := range messages {
+		role := msg.Role
+		if role == "assistant" {
+			role = "model"
+		}
+		contents = append(contents, map[string]interface{}{
+			"role":  role,
+			"parts": []map[string]string{{"text": msg.Content}},
+		})
+	}
+
+	body := map[string]interface{}{
+		"contents": contents,
+		"generationConfig": map[string]interface{}{
+			"maxOutputTokens": maxTokens,
+		},
+	}
+	if temperature > 0 {
+		body["generationConfig"].(map[string]interface{})["temperature"] = temperature
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling request: %w", err)
+	}
+
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", a.model, a.apiKey)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := a.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("calling Gemini API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("Gemini API error (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	var result struct {
+		Candidates []struct {
+			Content struct {
+				Parts []struct {
+					Text string ` + "`" + `json:"text"` + "`" + `
+				} ` + "`" + `json:"parts"` + "`" + `
+			} ` + "`" + `json:"content"` + "`" + `
+		} ` + "`" + `json:"candidates"` + "`" + `
+		UsageMetadata struct {
+			PromptTokenCount     int ` + "`" + `json:"promptTokenCount"` + "`" + `
+			CandidatesTokenCount int ` + "`" + `json:"candidatesTokenCount"` + "`" + `
+		} ` + "`" + `json:"usageMetadata"` + "`" + `
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding response: %w", err)
+	}
+
+	content := ""
+	if len(result.Candidates) > 0 && len(result.Candidates[0].Content.Parts) > 0 {
+		content = result.Candidates[0].Content.Parts[0].Text
+	}
+
+	return &CompletionResponse{
+		Content: content,
+		Model:   a.model,
+		Usage: &Usage{
+			InputTokens:  result.UsageMetadata.PromptTokenCount,
+			OutputTokens: result.UsageMetadata.CandidatesTokenCount,
+		},
+	}, nil
+}
+
+func (a *AI) geminiStream(ctx context.Context, messages []Message, maxTokens int, temperature float64, handler StreamHandler) error {
+	// Convert messages to Gemini format
+	contents := make([]map[string]interface{}, 0, len(messages))
+	for _, msg := range messages {
+		role := msg.Role
+		if role == "assistant" {
+			role = "model"
+		}
+		contents = append(contents, map[string]interface{}{
+			"role":  role,
+			"parts": []map[string]string{{"text": msg.Content}},
+		})
+	}
+
+	body := map[string]interface{}{
+		"contents": contents,
+		"generationConfig": map[string]interface{}{
+			"maxOutputTokens": maxTokens,
+		},
+	}
+	if temperature > 0 {
+		body["generationConfig"].(map[string]interface{})["temperature"] = temperature
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("marshaling request: %w", err)
+	}
+
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:streamGenerateContent?alt=sse&key=%s", a.model, a.apiKey)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := a.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("calling Gemini API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("Gemini API error (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.HasPrefix(line, "data: ") {
+			continue
+		}
+
+		data := strings.TrimPrefix(line, "data: ")
+		if data == "[DONE]" {
+			break
+		}
+
+		var event struct {
+			Candidates []struct {
+				Content struct {
+					Parts []struct {
+						Text string ` + "`" + `json:"text"` + "`" + `
+					} ` + "`" + `json:"parts"` + "`" + `
+				} ` + "`" + `json:"content"` + "`" + `
+			} ` + "`" + `json:"candidates"` + "`" + `
+		}
+
+		if err := json.Unmarshal([]byte(data), &event); err != nil {
+			continue
+		}
+
+		if len(event.Candidates) > 0 && len(event.Candidates[0].Content.Parts) > 0 {
+			text := event.Candidates[0].Content.Parts[0].Text
+			if text != "" {
+				if err := handler(text); err != nil {
+					return err
+				}
 			}
 		}
 	}
