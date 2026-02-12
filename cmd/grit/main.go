@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -311,9 +312,20 @@ func updateCmd() *cobra.Command {
 				return fmt.Errorf("resolving binary path: %w", err)
 			}
 
-			spinner.Printf("  → Removing old binary: %s\n", binPath)
-			if err := os.Remove(binPath); err != nil {
-				return fmt.Errorf("removing old binary: %w", err)
+			// On Windows, a running binary can't be deleted but can be renamed
+			if runtime.GOOS == "windows" {
+				oldPath := binPath + ".old"
+				// Clean up any previous .old file
+				os.Remove(oldPath)
+				spinner.Printf("  → Renaming old binary: %s\n", binPath)
+				if err := os.Rename(binPath, oldPath); err != nil {
+					return fmt.Errorf("renaming old binary: %w", err)
+				}
+			} else {
+				spinner.Printf("  → Removing old binary: %s\n", binPath)
+				if err := os.Remove(binPath); err != nil {
+					return fmt.Errorf("removing old binary: %w", err)
+				}
 			}
 
 			spinner.Println("  → Installing latest version...")
@@ -322,6 +334,11 @@ func updateCmd() *cobra.Command {
 			c.Stderr = os.Stderr
 			if err := c.Run(); err != nil {
 				return fmt.Errorf("installing latest version: %w", err)
+			}
+
+			// Clean up renamed binary on Windows
+			if runtime.GOOS == "windows" {
+				os.Remove(binPath + ".old")
 			}
 
 			fmt.Println()
