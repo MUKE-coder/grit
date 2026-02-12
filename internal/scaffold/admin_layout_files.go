@@ -55,6 +55,7 @@ func adminIconMap() string {
   Users,
   UserCheck,
   FileText,
+  File,
   Newspaper,
   BookOpen,
   MessageSquare,
@@ -165,6 +166,8 @@ export {
   Mail,
   RefreshCw,
   Upload,
+  File,
+  Image,
 };
 `
 }
