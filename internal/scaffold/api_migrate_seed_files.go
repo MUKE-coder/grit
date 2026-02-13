@@ -190,11 +190,12 @@ func seedAdminUser(db *gorm.DB) error {
 	}
 
 	admin := models.User{
-		Name:   "Admin",
-		Email:  "admin@example.com",
-		Password: "password",
-		Role:   "admin",
-		Active: true,
+		FirstName: "Admin",
+		LastName:  "User",
+		Email:     "admin@example.com",
+		Password:  "password",
+		Role:      "ADMIN",
+		Active:    true,
 	}
 
 	if err := db.Create(&admin).Error; err != nil {
@@ -208,10 +209,10 @@ func seedAdminUser(db *gorm.DB) error {
 // seedDemoUsers creates sample user accounts for development.
 func seedDemoUsers(db *gorm.DB) error {
 	users := []models.User{
-		{Name: "Jane Cooper", Email: "jane@example.com", Password: "password", Role: "editor", Active: true},
-		{Name: "Robert Fox", Email: "robert@example.com", Password: "password", Role: "user", Active: true},
-		{Name: "Emily Davis", Email: "emily@example.com", Password: "password", Role: "user", Active: true},
-		{Name: "Michael Chen", Email: "michael@example.com", Password: "password", Role: "user", Active: false},
+		{FirstName: "Jane", LastName: "Cooper", Email: "jane@example.com", Password: "password", Role: "EDITOR", Active: true},
+		{FirstName: "Robert", LastName: "Fox", Email: "robert@example.com", Password: "password", Role: "USER", Active: true},
+		{FirstName: "Emily", LastName: "Davis", Email: "emily@example.com", Password: "password", Role: "USER", Active: true},
+		{FirstName: "Michael", LastName: "Chen", Email: "michael@example.com", Password: "password", Role: "USER", Active: false},
 	}
 
 	for _, u := range users {

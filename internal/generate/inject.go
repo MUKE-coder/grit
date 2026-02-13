@@ -44,30 +44,59 @@ func (g *Generator) injectAll(names Names) error {
 		fmt.Println("  ✓ Injected handler initialization")
 	}
 
-	// 4. Inject protected routes (CRUD: create, get, update)
+	// 4. Inject routes (role-restricted or default split)
 	if fileExists(routesFile) {
-		protectedRoutes := fmt.Sprintf(`		protected.GET("/%s", %sHandler.List)
+		if len(g.Roles) > 0 {
+			// Role-restricted: inject all routes into // grit:routes:custom as a group
+			roleArgs := make([]string, len(g.Roles))
+			for i, r := range g.Roles {
+				roleArgs[i] = fmt.Sprintf("%q", r)
+			}
+			rolesStr := strings.Join(roleArgs, ", ")
+			customRoutes := fmt.Sprintf(`	// %s routes (restricted to %s)
+	%sGroup := protected.Group("/%s")
+	%sGroup.Use(middleware.RequireRole(%s))
+	{
+		%sGroup.GET("", %sHandler.List)
+		%sGroup.GET("/:id", %sHandler.GetByID)
+		%sGroup.POST("", %sHandler.Create)
+		%sGroup.PUT("/:id", %sHandler.Update)
+		%sGroup.DELETE("/:id", %sHandler.Delete)
+	}`,
+				names.PluralPascal, strings.Join(g.Roles, ", "),
+				names.Camel, names.Plural,
+				names.Camel, rolesStr,
+				names.Camel, names.Camel,
+				names.Camel, names.Camel,
+				names.Camel, names.Camel,
+				names.Camel, names.Camel,
+				names.Camel, names.Camel)
+			if err := injectBefore(routesFile, "// grit:routes:custom", customRoutes); err != nil {
+				return fmt.Errorf("injecting role-restricted routes: %w", err)
+			}
+			fmt.Printf("  ✓ Injected role-restricted routes (%s)\n", strings.Join(g.Roles, ", "))
+		} else {
+			// Default: CRUD in protected, DELETE in admin
+			protectedRoutes := fmt.Sprintf(`		protected.GET("/%s", %sHandler.List)
 		protected.GET("/%s/:id", %sHandler.GetByID)
 		protected.POST("/%s", %sHandler.Create)
 		protected.PUT("/%s/:id", %sHandler.Update)`,
-			names.Plural, names.Camel,
-			names.Plural, names.Camel,
-			names.Plural, names.Camel,
-			names.Plural, names.Camel)
-		if err := injectBefore(routesFile, "// grit:routes:protected", protectedRoutes); err != nil {
-			return fmt.Errorf("injecting protected routes: %w", err)
-		}
-		fmt.Println("  ✓ Injected protected routes")
-	}
+				names.Plural, names.Camel,
+				names.Plural, names.Camel,
+				names.Plural, names.Camel,
+				names.Plural, names.Camel)
+			if err := injectBefore(routesFile, "// grit:routes:protected", protectedRoutes); err != nil {
+				return fmt.Errorf("injecting protected routes: %w", err)
+			}
+			fmt.Println("  ✓ Injected protected routes")
 
-	// 5. Inject admin routes (delete)
-	if fileExists(routesFile) {
-		adminRoutes := fmt.Sprintf(`		admin.DELETE("/%s/:id", %sHandler.Delete)`,
-			names.Plural, names.Camel)
-		if err := injectBefore(routesFile, "// grit:routes:admin", adminRoutes); err != nil {
-			return fmt.Errorf("injecting admin routes: %w", err)
+			adminRoutes := fmt.Sprintf(`		admin.DELETE("/%s/:id", %sHandler.Delete)`,
+				names.Plural, names.Camel)
+			if err := injectBefore(routesFile, "// grit:routes:admin", adminRoutes); err != nil {
+				return fmt.Errorf("injecting admin routes: %w", err)
+			}
+			fmt.Println("  ✓ Injected admin routes")
 		}
-		fmt.Println("  ✓ Injected admin routes")
 	}
 
 	// 6. Inject schema export

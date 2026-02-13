@@ -92,13 +92,18 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "resources", "index.ts"): adminResourceRegistry(),
 		filepath.Join(adminRoot, "resources", "users.ts"): adminUsersResource(),
 
+		// Profile components
+		filepath.Join(adminRoot, "components", "profile", "delete-account-dialog.tsx"): adminDeleteAccountDialog(),
+
 		// Hooks
 		filepath.Join(adminRoot, "hooks", "use-auth.ts"):     adminUseAuth(),
 		filepath.Join(adminRoot, "hooks", "use-resource.ts"): adminUseResource(),
 		filepath.Join(adminRoot, "hooks", "use-system.ts"):   adminUseSystem(),
+		filepath.Join(adminRoot, "hooks", "use-profile.ts"):  adminUseProfile(),
 
 		// Dashboard pages — (dashboard) route group
 		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):          adminDashboardPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "profile", "page.tsx"):            adminProfilePage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"): adminUsersPage(),
 
 		// System pages — under (dashboard) route group
@@ -400,10 +405,13 @@ import { apiClient } from "@/lib/api-client";
 
 interface User {
   id: number;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   role: string;
   avatar: string;
+  job_title: string;
+  bio: string;
   active: boolean;
 }
 
@@ -455,7 +463,7 @@ export function useLogin() {
     onSuccess: (data) => {
       storeTokens(data.data.tokens);
       queryClient.setQueryData(["me"], data.data.user);
-      router.push("/dashboard");
+      router.push(data.data.user.role === "USER" ? "/profile" : "/dashboard");
     },
   });
 }
@@ -466,7 +474,8 @@ export function useRegister() {
 
   return useMutation({
     mutationFn: async (data: {
-      name: string;
+      first_name: string;
+      last_name: string;
       email: string;
       password: string;
     }) => {
@@ -479,7 +488,7 @@ export function useRegister() {
     onSuccess: (data) => {
       storeTokens(data.data.tokens);
       queryClient.setQueryData(["me"], data.data.user);
-      router.push("/dashboard");
+      router.push(data.data.user.role === "USER" ? "/profile" : "/dashboard");
     },
   });
 }
@@ -813,7 +822,8 @@ import { Eye, EyeOff } from "@/lib/icons";
 import { useRegister } from "@/hooks/use-auth";
 
 export default function SignUpPage() {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -824,7 +834,7 @@ export default function SignUpPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) return;
-    register({ name, email, password });
+    register({ first_name: firstName, last_name: lastName, email, password });
   };
 
   return (
@@ -871,21 +881,38 @@ export default function SignUpPage() {
               </div>
             )}
 
-            <div className="space-y-2">
-              <label htmlFor="name" className="block text-sm font-medium text-text-secondary">
-                Full name
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
-                placeholder="John Doe"
-                required
-                minLength={2}
-                autoFocus
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="firstName" className="block text-sm font-medium text-text-secondary">
+                  First name
+                </label>
+                <input
+                  id="firstName"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                  placeholder="John"
+                  required
+                  minLength={2}
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="lastName" className="block text-sm font-medium text-text-secondary">
+                  Last name
+                </label>
+                <input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                  placeholder="Doe"
+                  required
+                  minLength={2}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">

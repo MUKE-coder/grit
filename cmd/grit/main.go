@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -128,6 +129,7 @@ func generateResourceCmd() *cobra.Command {
 	var fromFile string
 	var interactive bool
 	var fields string
+	var roles string
 
 	cmd := &cobra.Command{
 		Use:   "resource <Name>",
@@ -171,6 +173,17 @@ func generateResourceCmd() *cobra.Command {
 				return err
 			}
 
+			// Parse --roles flag
+			if roles != "" {
+				parts := strings.Split(roles, ",")
+				for _, r := range parts {
+					r = strings.TrimSpace(strings.ToUpper(r))
+					if r != "" {
+						gen.Roles = append(gen.Roles, r)
+					}
+				}
+			}
+
 			return gen.Run()
 		},
 	}
@@ -178,6 +191,7 @@ func generateResourceCmd() *cobra.Command {
 	cmd.Flags().StringVar(&fromFile, "from", "", "YAML file defining the resource fields")
 	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Interactively define fields")
 	cmd.Flags().StringVar(&fields, "fields", "", "Inline field definitions (e.g., \"title:string,content:text,published:bool\")")
+	cmd.Flags().StringVar(&roles, "roles", "", "Restrict routes to specific roles (comma-separated, e.g., \"ADMIN,EDITOR\")")
 
 	return cmd
 }

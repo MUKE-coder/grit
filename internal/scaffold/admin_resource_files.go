@@ -184,7 +184,8 @@ export const usersResource = defineResource({
   table: {
     columns: [
       { key: "id", label: "ID", sortable: true, width: "80px" },
-      { key: "name", label: "Name", sortable: true, searchable: true },
+      { key: "first_name", label: "First Name", sortable: true, searchable: true },
+      { key: "last_name", label: "Last Name", sortable: true, searchable: true },
       { key: "email", label: "Email", sortable: true, searchable: true },
       {
         key: "role",
@@ -192,11 +193,12 @@ export const usersResource = defineResource({
         sortable: true,
         format: "badge",
         badge: {
-          admin: { color: "accent", label: "Admin" },
-          editor: { color: "info", label: "Editor" },
-          user: { color: "muted", label: "User" },
+          ADMIN: { color: "accent", label: "Admin" },
+          EDITOR: { color: "info", label: "Editor" },
+          USER: { color: "muted", label: "User" },
         },
       },
+      { key: "job_title", label: "Job Title" },
       { key: "active", label: "Status", format: "boolean" },
       { key: "created_at", label: "Created", format: "relative", sortable: true },
     ],
@@ -206,9 +208,9 @@ export const usersResource = defineResource({
         label: "Role",
         type: "select",
         options: [
-          { label: "Admin", value: "admin" },
-          { label: "Editor", value: "editor" },
-          { label: "User", value: "user" },
+          { label: "Admin", value: "ADMIN" },
+          { label: "Editor", value: "EDITOR" },
+          { label: "User", value: "USER" },
         ],
       },
       { key: "active", label: "Status", type: "boolean" },
@@ -225,11 +227,19 @@ export const usersResource = defineResource({
     layout: "two-column",
     fields: [
       {
-        key: "name",
-        label: "Full Name",
+        key: "first_name",
+        label: "First Name",
         type: "text",
         required: true,
-        placeholder: "Enter full name",
+        placeholder: "Enter first name",
+        colSpan: 1,
+      },
+      {
+        key: "last_name",
+        label: "Last Name",
+        type: "text",
+        required: true,
+        placeholder: "Enter last name",
         colSpan: 1,
       },
       {
@@ -254,11 +264,18 @@ export const usersResource = defineResource({
         type: "select",
         required: true,
         options: [
-          { label: "Admin", value: "admin" },
-          { label: "Editor", value: "editor" },
-          { label: "User", value: "user" },
+          { label: "Admin", value: "ADMIN" },
+          { label: "Editor", value: "EDITOR" },
+          { label: "User", value: "USER" },
         ],
-        defaultValue: "user",
+        defaultValue: "USER",
+        colSpan: 1,
+      },
+      {
+        key: "job_title",
+        label: "Job Title",
+        type: "text",
+        placeholder: "e.g. Software Engineer",
         colSpan: 1,
       },
       {
@@ -739,7 +756,7 @@ export default function AdminDashboard() {
       {/* Welcome header */}
       <div className="rounded-xl border border-border bg-gradient-to-r from-accent/10 via-bg-secondary to-bg-secondary p-6 sm:p-8">
         <h1 className="text-2xl font-bold text-foreground">
-          {greeting()}, {user?.name?.split(" ")[0] || "Admin"}
+          {greeting()}, {user?.first_name || "Admin"}
         </h1>
         <p className="text-text-secondary mt-1">
           Here&apos;s an overview of your application.

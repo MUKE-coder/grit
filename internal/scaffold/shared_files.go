@@ -80,7 +80,8 @@ export const LoginSchema = z.object({
 });
 
 export const RegisterSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
+  firstName: z.string().min(2, "First name must be at least 2 characters"),
+  lastName: z.string().min(2, "Last name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string(),
@@ -90,9 +91,12 @@ export const RegisterSchema = z.object({
 });
 
 export const UpdateUserSchema = z.object({
-  name: z.string().min(2).optional(),
+  firstName: z.string().min(2).optional(),
+  lastName: z.string().min(2).optional(),
   email: z.string().email().optional(),
-  role: z.enum(["admin", "editor", "user"]).optional(),
+  role: z.enum(["ADMIN", "EDITOR", "USER"]).optional(),
+  jobTitle: z.string().optional(),
+  bio: z.string().optional(),
   active: z.boolean().optional(),
 });
 
@@ -133,10 +137,13 @@ func sharedSchemasIndex() string {
 func sharedUserTypes() string {
 	return `export interface User {
   id: number;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
-  role: "admin" | "editor" | "user";
+  role: "ADMIN" | "EDITOR" | "USER";
   avatar: string;
+  job_title: string;
+  bio: string;
   active: boolean;
   email_verified_at: string | null;
   created_at: string;
@@ -149,7 +156,8 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   password: string;
 }
@@ -212,9 +220,9 @@ export type { Upload } from "./upload";
 
 func sharedConstants() string {
 	return `export const ROLES = {
-  ADMIN: "admin",
-  EDITOR: "editor",
-  USER: "user",
+  ADMIN: "ADMIN",
+  EDITOR: "EDITOR",
+  USER: "USER",
 } as const;
 
 export const API_ROUTES = {
@@ -250,6 +258,11 @@ export const API_ROUTES = {
     JOBS_RETRY: (id: string) => ` + "`" + `/api/admin/jobs/${id}/retry` + "`" + `,
     JOBS_CLEAR: (queue: string) => ` + "`" + `/api/admin/jobs/queue/${queue}` + "`" + `,
     CRON_TASKS: "/api/admin/cron/tasks",
+  },
+  PROFILE: {
+    GET: "/api/profile",
+    UPDATE: "/api/profile",
+    DELETE: "/api/profile",
   },
   HEALTH: "/api/health",
   // grit:api-routes

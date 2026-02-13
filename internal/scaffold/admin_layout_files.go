@@ -65,8 +65,12 @@ func adminIconMap() string {
   ShoppingCart,
   Receipt,
   CreditCard,
+  User,
   UserCircle,
   Briefcase,
+  Save,
+  AlertTriangle,
+  Lock,
   CheckSquare,
   Calendar,
   Paperclip,
@@ -168,6 +172,11 @@ export {
   Upload,
   File,
   Image,
+  User,
+  UserCircle,
+  Save,
+  AlertTriangle,
+  Lock,
 };
 `
 }
@@ -198,6 +207,13 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       router.push("/login");
     }
   }, [isError, router]);
+
+  // Redirect USER role to profile page
+  useEffect(() => {
+    if (user && user.role === "USER" && window.location.pathname === "/dashboard") {
+      router.replace("/profile");
+    }
+  }, [user, router]);
 
   const toggleSidebar = () => {
     const next = !sidebarCollapsed;
@@ -257,11 +273,12 @@ func adminSidebar() string {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { resources } from "@/resources";
-import { getIcon, ChevronLeft, ChevronRight, Sun, Moon, LayoutDashboard } from "@/lib/icons";
+import { getIcon, ChevronLeft, ChevronRight, Sun, Moon, LayoutDashboard, UserCircle } from "@/lib/icons";
 import { useTheme } from "@/components/shared/theme-provider";
 
 interface User {
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   role: string;
 }
@@ -278,21 +295,32 @@ export function Sidebar({ user, collapsed, onToggle, mobileOpen, onMobileClose }
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
 
-  const navItems = [
-    { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
-    ...resources.map((r) => ({
-      label: r.label?.plural ?? r.name,
-      href: ` + "`" + `/resources/${r.slug}` + "`" + `,
-      icon: r.icon,
-    })),
-  ];
+  const isAdmin = user.role === "ADMIN" || user.role === "EDITOR";
 
-  const systemItems = [
-    { label: "Jobs", href: "/system/jobs", icon: "Briefcase" },
-    { label: "Files", href: "/system/files", icon: "FolderOpen" },
-    { label: "Cron", href: "/system/cron", icon: "Calendar" },
-    { label: "Mail", href: "/system/mail", icon: "Mail" },
-  ];
+  const navItems = isAdmin
+    ? [
+        { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
+        ...resources.map((r) => ({
+          label: r.label?.plural ?? r.name,
+          href: ` + "`" + `/resources/${r.slug}` + "`" + `,
+          icon: r.icon,
+        })),
+      ]
+    : [];
+
+  // Profile link is always visible
+  const profileItem = { label: "Profile", href: "/profile", icon: "UserCircle" };
+
+  const systemItems = isAdmin
+    ? [
+        { label: "Jobs", href: "/system/jobs", icon: "Briefcase" },
+        { label: "Files", href: "/system/files", icon: "FolderOpen" },
+        { label: "Cron", href: "/system/cron", icon: "Calendar" },
+        { label: "Mail", href: "/system/mail", icon: "Mail" },
+      ]
+    : [];
+
+  const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ") || "User";
 
   const sidebarContent = (
     <>
@@ -335,34 +363,59 @@ export function Sidebar({ user, collapsed, onToggle, mobileOpen, onMobileClose }
           );
         })}
 
-        {/* System section */}
-        {!collapsed && (
-          <p className="px-3 mt-6 mb-2 text-xs font-semibold text-text-muted uppercase tracking-wider">
-            System
-          </p>
-        )}
-        {collapsed && <div className="my-3 mx-3 border-t border-border" />}
-        {systemItems.map((item) => {
-          const Icon = getIcon(item.icon);
-          const isActive = pathname.startsWith(item.href);
-
+        {/* Profile link */}
+        {(() => {
+          const ProfileIcon = getIcon(profileItem.icon);
+          const isProfileActive = pathname === profileItem.href;
           return (
             <Link
-              key={item.href}
-              href={item.href}
+              href={profileItem.href}
               onClick={onMobileClose}
-              title={collapsed ? item.label : undefined}
+              title={collapsed ? profileItem.label : undefined}
               className={` + "`" + `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                isActive
+                isProfileActive
                   ? "bg-accent/10 text-accent"
                   : "text-text-secondary hover:bg-bg-hover hover:text-foreground"
               } ${collapsed ? "justify-center" : ""}` + "`" + `}
             >
-              <Icon className="h-4 w-4 shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
+              <ProfileIcon className="h-4 w-4 shrink-0" />
+              {!collapsed && <span>{profileItem.label}</span>}
             </Link>
           );
-        })}
+        })()}
+
+        {/* System section */}
+        {isAdmin && (
+          <>
+            {!collapsed && (
+              <p className="px-3 mt-6 mb-2 text-xs font-semibold text-text-muted uppercase tracking-wider">
+                System
+              </p>
+            )}
+            {collapsed && <div className="my-3 mx-3 border-t border-border" />}
+            {systemItems.map((item) => {
+              const Icon = getIcon(item.icon);
+              const isActive = pathname.startsWith(item.href);
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onMobileClose}
+                  title={collapsed ? item.label : undefined}
+                  className={` + "`" + `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-accent/10 text-accent"
+                      : "text-text-secondary hover:bg-bg-hover hover:text-foreground"
+                  } ${collapsed ? "justify-center" : ""}` + "`" + `}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {!collapsed && <span>{item.label}</span>}
+                </Link>
+              );
+            })}
+          </>
+        )}
       </nav>
 
       {/* Bottom section */}
@@ -398,11 +451,11 @@ export function Sidebar({ user, collapsed, onToggle, mobileOpen, onMobileClose }
           <div className="flex items-center gap-3 px-3 py-2">
             <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
               <span className="text-sm font-medium text-accent">
-                {user.name?.charAt(0)?.toUpperCase()}
+                {user.first_name?.charAt(0)?.toUpperCase()}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
+              <p className="text-sm font-medium text-foreground truncate">{fullName}</p>
               <p className="text-xs text-text-muted truncate">{user.role}</p>
             </div>
           </div>
@@ -411,7 +464,7 @@ export function Sidebar({ user, collapsed, onToggle, mobileOpen, onMobileClose }
           <div className="flex justify-center px-3 py-2">
             <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
               <span className="text-sm font-medium text-accent">
-                {user.name?.charAt(0)?.toUpperCase()}
+                {user.first_name?.charAt(0)?.toUpperCase()}
               </span>
             </div>
           </div>
@@ -456,8 +509,10 @@ import { getResource } from "@/resources";
 import { Search } from "@/lib/icons";
 
 interface User {
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
+  role: string;
 }
 
 export function Navbar({ user, onMenuToggle }: { user: User; onMenuToggle: () => void }) {
@@ -543,11 +598,11 @@ export function Navbar({ user, onMenuToggle }: { user: User; onMenuToggle: () =>
           >
             <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
               <span className="text-sm font-medium text-accent">
-                {user.name?.charAt(0)?.toUpperCase()}
+                {user.first_name?.charAt(0)?.toUpperCase()}
               </span>
             </div>
             <span className="text-sm font-medium text-foreground hidden sm:block">
-              {user.name}
+              {user.first_name}
             </span>
           </button>
 
@@ -556,7 +611,7 @@ export function Navbar({ user, onMenuToggle }: { user: User; onMenuToggle: () =>
               <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
               <div className="absolute right-0 top-full mt-2 w-48 rounded-lg border border-border bg-bg-elevated shadow-lg z-50">
                 <div className="px-4 py-3 border-b border-border">
-                  <p className="text-sm font-medium text-foreground">{user.name}</p>
+                  <p className="text-sm font-medium text-foreground">{user.first_name} {user.last_name}</p>
                   <p className="text-xs text-text-muted">{user.email}</p>
                 </div>
                 <button

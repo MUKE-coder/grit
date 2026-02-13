@@ -13,6 +13,7 @@ type Generator struct {
 	Root       string // project root (where docker-compose.yml lives)
 	Module     string // Go module path (e.g., myapp/apps/api)
 	Definition *ResourceDefinition
+	Roles      []string // optional: restrict routes to these roles (e.g., ["ADMIN", "EDITOR"])
 }
 
 // Names holds all the naming variants for a resource.

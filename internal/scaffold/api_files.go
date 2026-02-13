@@ -487,19 +487,22 @@ import (
 
 // Role constants
 const (
-	RoleAdmin  = "admin"
-	RoleEditor = "editor"
-	RoleUser   = "user"
+	RoleAdmin  = "ADMIN"
+	RoleEditor = "EDITOR"
+	RoleUser   = "USER"
 )
 
 // User represents a user in the system.
 type User struct {
 	ID              uint           ` + "`" + `gorm:"primarykey" json:"id"` + "`" + `
-	Name            string         ` + "`" + `gorm:"size:255;not null" json:"name" binding:"required"` + "`" + `
+	FirstName       string         ` + "`" + `gorm:"size:255;not null" json:"first_name" binding:"required"` + "`" + `
+	LastName        string         ` + "`" + `gorm:"size:255;not null" json:"last_name" binding:"required"` + "`" + `
 	Email           string         ` + "`" + `gorm:"size:255;uniqueIndex;not null" json:"email" binding:"required,email"` + "`" + `
 	Password        string         ` + "`" + `gorm:"size:255;not null" json:"-"` + "`" + `
-	Role            string         ` + "`" + `gorm:"size:20;default:user" json:"role"` + "`" + `
+	Role            string         ` + "`" + `gorm:"size:20;default:USER" json:"role"` + "`" + `
 	Avatar          string         ` + "`" + `gorm:"size:500" json:"avatar"` + "`" + `
+	JobTitle        string         ` + "`" + `gorm:"size:255" json:"job_title"` + "`" + `
+	Bio             string         ` + "`" + `gorm:"type:text" json:"bio"` + "`" + `
 	Active          bool           ` + "`" + `gorm:"default:true" json:"active"` + "`" + `
 	EmailVerifiedAt *time.Time     ` + "`" + `json:"email_verified_at"` + "`" + `
 	CreatedAt       time.Time      ` + "`" + `json:"created_at"` + "`" + `
@@ -723,9 +726,10 @@ type AuthHandler struct {
 }
 
 type registerRequest struct {
-	Name     string ` + "`" + `json:"name" binding:"required,min=2"` + "`" + `
-	Email    string ` + "`" + `json:"email" binding:"required,email"` + "`" + `
-	Password string ` + "`" + `json:"password" binding:"required,min=8"` + "`" + `
+	FirstName string ` + "`" + `json:"first_name" binding:"required,min=2"` + "`" + `
+	LastName  string ` + "`" + `json:"last_name" binding:"required,min=2"` + "`" + `
+	Email     string ` + "`" + `json:"email" binding:"required,email"` + "`" + `
+	Password  string ` + "`" + `json:"password" binding:"required,min=8"` + "`" + `
 }
 
 type loginRequest struct {
@@ -772,11 +776,12 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	user := models.User{
-		Name:     req.Name,
-		Email:    req.Email,
-		Password: req.Password,
-		Role:     models.RoleUser,
-		Active:   true,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Email:     req.Email,
+		Password:  req.Password,
+		Role:      models.RoleUser,
+		Active:    true,
 	}
 
 	if err := h.DB.Create(&user).Error; err != nil {
@@ -1040,12 +1045,14 @@ type UserHandler struct {
 // Create creates a new user (admin only).
 func (h *UserHandler) Create(c *gin.Context) {
 	var req struct {
-		Name     string ` + "`" + `json:"name" binding:"required"` + "`" + `
-		Email    string ` + "`" + `json:"email" binding:"required,email"` + "`" + `
-		Password string ` + "`" + `json:"password" binding:"required,min=6"` + "`" + `
-		Role     string ` + "`" + `json:"role"` + "`" + `
-		Avatar   string ` + "`" + `json:"avatar"` + "`" + `
-		Active   *bool  ` + "`" + `json:"active"` + "`" + `
+		FirstName string ` + "`" + `json:"first_name" binding:"required"` + "`" + `
+		LastName  string ` + "`" + `json:"last_name" binding:"required"` + "`" + `
+		Email     string ` + "`" + `json:"email" binding:"required,email"` + "`" + `
+		Password  string ` + "`" + `json:"password" binding:"required,min=6"` + "`" + `
+		Role      string ` + "`" + `json:"role"` + "`" + `
+		Avatar    string ` + "`" + `json:"avatar"` + "`" + `
+		JobTitle  string ` + "`" + `json:"job_title"` + "`" + `
+		Active    *bool  ` + "`" + `json:"active"` + "`" + `
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -1071,12 +1078,14 @@ func (h *UserHandler) Create(c *gin.Context) {
 	}
 
 	user := models.User{
-		Name:     req.Name,
-		Email:    req.Email,
-		Password: req.Password,
-		Role:     req.Role,
-		Avatar:   req.Avatar,
-		Active:   true,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Email:     req.Email,
+		Password:  req.Password,
+		Role:      req.Role,
+		Avatar:    req.Avatar,
+		JobTitle:  req.JobTitle,
+		Active:    true,
 	}
 
 	if req.Active != nil {
@@ -1124,7 +1133,7 @@ func (h *UserHandler) List(c *gin.Context) {
 
 	// Validate sort column
 	allowedSorts := map[string]bool{
-		"id": true, "name": true, "email": true, "role": true, "created_at": true,
+		"id": true, "first_name": true, "last_name": true, "email": true, "role": true, "created_at": true,
 	}
 	if !allowedSorts[sortBy] {
 		sortBy = "created_at"
@@ -1134,7 +1143,7 @@ func (h *UserHandler) List(c *gin.Context) {
 
 	// Search
 	if search != "" {
-		query = query.Where("name ILIKE ? OR email ILIKE ?", "%"+search+"%", "%"+search+"%")
+		query = query.Where("first_name ILIKE ? OR last_name ILIKE ? OR email ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 
 	// Count total
@@ -1203,12 +1212,15 @@ func (h *UserHandler) Update(c *gin.Context) {
 	}
 
 	var req struct {
-		Name     string ` + "`" + `json:"name"` + "`" + `
-		Email    string ` + "`" + `json:"email"` + "`" + `
-		Password string ` + "`" + `json:"password"` + "`" + `
-		Role     string ` + "`" + `json:"role"` + "`" + `
-		Avatar   string ` + "`" + `json:"avatar"` + "`" + `
-		Active   *bool  ` + "`" + `json:"active"` + "`" + `
+		FirstName string ` + "`" + `json:"first_name"` + "`" + `
+		LastName  string ` + "`" + `json:"last_name"` + "`" + `
+		Email     string ` + "`" + `json:"email"` + "`" + `
+		Password  string ` + "`" + `json:"password"` + "`" + `
+		Role      string ` + "`" + `json:"role"` + "`" + `
+		Avatar    string ` + "`" + `json:"avatar"` + "`" + `
+		JobTitle  string ` + "`" + `json:"job_title"` + "`" + `
+		Bio       string ` + "`" + `json:"bio"` + "`" + `
+		Active    *bool  ` + "`" + `json:"active"` + "`" + `
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -1222,8 +1234,11 @@ func (h *UserHandler) Update(c *gin.Context) {
 	}
 
 	updates := map[string]interface{}{}
-	if req.Name != "" {
-		updates["name"] = req.Name
+	if req.FirstName != "" {
+		updates["first_name"] = req.FirstName
+	}
+	if req.LastName != "" {
+		updates["last_name"] = req.LastName
 	}
 	if req.Email != "" {
 		updates["email"] = req.Email
@@ -1246,6 +1261,12 @@ func (h *UserHandler) Update(c *gin.Context) {
 	}
 	if req.Avatar != "" {
 		updates["avatar"] = req.Avatar
+	}
+	if req.JobTitle != "" {
+		updates["job_title"] = req.JobTitle
+	}
+	if req.Bio != "" {
+		updates["bio"] = req.Bio
 	}
 	if req.Active != nil {
 		updates["active"] = *req.Active
@@ -1297,6 +1318,142 @@ func (h *UserHandler) Delete(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User deleted successfully",
+	})
+}
+
+// GetProfile returns the currently authenticated user's profile.
+func (h *UserHandler) GetProfile(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+
+	var user models.User
+	if err := h.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": gin.H{
+				"code":    "NOT_FOUND",
+				"message": "User not found",
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": user,
+	})
+}
+
+// UpdateProfile updates the currently authenticated user's profile.
+func (h *UserHandler) UpdateProfile(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+
+	var user models.User
+	if err := h.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": gin.H{
+				"code":    "NOT_FOUND",
+				"message": "User not found",
+			},
+		})
+		return
+	}
+
+	var req struct {
+		FirstName string ` + "`" + `json:"first_name"` + "`" + `
+		LastName  string ` + "`" + `json:"last_name"` + "`" + `
+		Email     string ` + "`" + `json:"email"` + "`" + `
+		Password  string ` + "`" + `json:"password"` + "`" + `
+		Avatar    string ` + "`" + `json:"avatar"` + "`" + `
+		JobTitle  string ` + "`" + `json:"job_title"` + "`" + `
+		Bio       string ` + "`" + `json:"bio"` + "`" + `
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"error": gin.H{
+				"code":    "VALIDATION_ERROR",
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+
+	updates := map[string]interface{}{}
+	if req.FirstName != "" {
+		updates["first_name"] = req.FirstName
+	}
+	if req.LastName != "" {
+		updates["last_name"] = req.LastName
+	}
+	if req.Email != "" {
+		updates["email"] = req.Email
+	}
+	if req.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": gin.H{
+					"code":    "INTERNAL_ERROR",
+					"message": "Failed to hash password",
+				},
+			})
+			return
+		}
+		updates["password"] = string(hashedPassword)
+	}
+	if req.Avatar != "" {
+		updates["avatar"] = req.Avatar
+	}
+	if req.JobTitle != "" {
+		updates["job_title"] = req.JobTitle
+	}
+	if req.Bio != "" {
+		updates["bio"] = req.Bio
+	}
+
+	if err := h.DB.Model(&user).Updates(updates).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "INTERNAL_ERROR",
+				"message": "Failed to update profile",
+			},
+		})
+		return
+	}
+
+	h.DB.First(&user, userID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":    user,
+		"message": "Profile updated successfully",
+	})
+}
+
+// DeleteProfile soft-deletes the currently authenticated user's account.
+func (h *UserHandler) DeleteProfile(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+
+	var user models.User
+	if err := h.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": gin.H{
+				"code":    "NOT_FOUND",
+				"message": "User not found",
+			},
+		})
+		return
+	}
+
+	if err := h.DB.Delete(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "INTERNAL_ERROR",
+				"message": "Failed to delete account",
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Account deleted successfully",
 	})
 }
 `
@@ -1640,10 +1797,18 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// grit:routes:protected
 	}
 
+	// Profile routes (any authenticated user)
+	profile := protected.Group("/profile")
+	{
+		profile.GET("", userHandler.GetProfile)
+		profile.PUT("", userHandler.UpdateProfile)
+		profile.DELETE("", userHandler.DeleteProfile)
+	}
+
 	// Admin routes
 	admin := r.Group("/api")
 	admin.Use(middleware.Auth(db, authService))
-	admin.Use(middleware.RequireRole("admin"))
+	admin.Use(middleware.RequireRole("ADMIN"))
 	{
 		admin.GET("/users", userHandler.List)
 		admin.POST("/users", userHandler.Create)
@@ -1659,6 +1824,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 
 		// grit:routes:admin
 	}
+
+	// Custom role-restricted routes
+	// grit:routes:custom
 
 	return r
 }
