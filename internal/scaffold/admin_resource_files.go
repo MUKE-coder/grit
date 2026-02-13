@@ -196,6 +196,7 @@ export const usersResource = defineResource({
           ADMIN: { color: "accent", label: "Admin" },
           EDITOR: { color: "info", label: "Editor" },
           USER: { color: "muted", label: "User" },
+          // grit:role-badges
         },
       },
       { key: "job_title", label: "Job Title" },
@@ -211,6 +212,7 @@ export const usersResource = defineResource({
           { label: "Admin", value: "ADMIN" },
           { label: "Editor", value: "EDITOR" },
           { label: "User", value: "USER" },
+          // grit:role-filters
         ],
       },
       { key: "active", label: "Status", type: "boolean" },
@@ -267,6 +269,7 @@ export const usersResource = defineResource({
           { label: "Admin", value: "ADMIN" },
           { label: "Editor", value: "EDITOR" },
           { label: "User", value: "USER" },
+          // grit:role-options
         ],
         defaultValue: "USER",
         colSpan: 1,

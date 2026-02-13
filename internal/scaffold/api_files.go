@@ -490,6 +490,7 @@ const (
 	RoleAdmin  = "ADMIN"
 	RoleEditor = "EDITOR"
 	RoleUser   = "USER"
+	// grit:roles
 )
 
 // User represents a user in the system.

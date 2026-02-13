@@ -384,56 +384,41 @@ postsGroup.Use(middleware.RequireRole("ADMIN", "EDITOR"))
                 </div>
               </div>
 
-              {/* Customizing Roles */}
+              {/* Adding New Roles */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
-                  Customizing Roles
+                  Adding New Roles
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  To add new roles to your system:
+                  Use the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit add role</code> command
+                  to add a new role across all project files in one step:
                 </p>
-                <ol className="list-decimal list-inside text-muted-foreground space-y-2 mb-4">
-                  <li>
-                    <strong>Add the constant</strong> in <code>models/user.go</code>:
-                  </li>
-                </ol>
                 <CodeBlock
-                  language="go"
-                  code={`const (
-    RoleAdmin     = "ADMIN"
-    RoleEditor    = "EDITOR"
-    RoleUser      = "USER"
-    RoleModerator = "MODERATOR"  // New role
-)`}
+                  language="bash"
+                  code={`grit add role MODERATOR`}
                 />
-                <ol start={2} className="list-decimal list-inside text-muted-foreground space-y-2 mb-4">
-                  <li>
-                    <strong>Update the TypeScript type</strong> in <code>packages/shared/types/user.ts</code>:
-                  </li>
-                </ol>
-                <CodeBlock
-                  language="typescript"
-                  code={`role: "ADMIN" | "EDITOR" | "USER" | "MODERATOR";`}
-                />
-                <ol start={3} className="list-decimal list-inside text-muted-foreground space-y-2 mb-4">
-                  <li>
-                    <strong>Add to the ROLES constant</strong> in <code>packages/shared/constants/index.ts</code>:
-                  </li>
-                </ol>
-                <CodeBlock
-                  language="typescript"
-                  code={`export const ROLES = {
-  ADMIN: "ADMIN",
-  EDITOR: "EDITOR",
-  USER: "USER",
-  MODERATOR: "MODERATOR",
-} as const;`}
-                />
-                <ol start={4} className="list-decimal list-inside text-muted-foreground space-y-2 mb-4">
-                  <li>
-                    <strong>Use it in routes</strong> with <code>RequireRole</code>:
-                  </li>
-                </ol>
+                <p className="text-muted-foreground leading-relaxed mb-4 mt-4">
+                  This automatically updates <strong className="text-foreground/90">7 locations</strong>:
+                </p>
+                <ul className="space-y-2 mb-6">
+                  {[
+                    'Go model constants (models/user.go)',
+                    'Zod schema enum (schemas/user.ts)',
+                    'TypeScript union type (types/user.ts)',
+                    'ROLES constants object (constants/index.ts)',
+                    'Admin badge configuration (resources/users.ts)',
+                    'Admin table filter options',
+                    'Admin form select options',
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
+                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/50 shrink-0" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  After adding a role, you can use it in route restrictions:
+                </p>
                 <CodeBlock
                   language="go"
                   code={`moderators := protected.Group("/reports")
@@ -442,12 +427,11 @@ moderators.Use(middleware.RequireRole("ADMIN", "MODERATOR"))
     moderators.GET("", reportHandler.List)
 }`}
                 />
-                <ol start={5} className="list-decimal list-inside text-muted-foreground space-y-2 mb-4">
-                  <li>
-                    <strong>Update the admin sidebar</strong> in <code>components/layout/sidebar.tsx</code> to
-                    show/hide navigation items based on the new role.
-                  </li>
-                </ol>
+                <p className="text-sm text-muted-foreground/60 mt-4">
+                  You may also want to update the sidebar visibility logic in{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">components/layout/sidebar.tsx</code>{' '}
+                  if the new role should have admin-level navigation access.
+                </p>
               </div>
 
               {/* Navigation */}

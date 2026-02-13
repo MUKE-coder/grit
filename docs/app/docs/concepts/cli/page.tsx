@@ -506,6 +506,58 @@ fields:
                 </div>
               </div>
 
+              {/* grit add role */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  grit add role
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Add a new role to your project. This command updates all relevant files across the stack
+                  in one step — Go model constants, TypeScript types, Zod schemas, shared constants, and
+                  admin panel resource definitions (badge, filter, and form options).
+                </p>
+
+                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-6">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    </div>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                  </div>
+                  <div className="p-5 font-mono text-sm">
+                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit add role MODERATOR</span></div>
+                  </div>
+                </div>
+
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  This single command updates <strong className="text-foreground/90">7 locations</strong> across your project:
+                </p>
+
+                <ul className="space-y-2 mb-6">
+                  {[
+                    'Go model constants (RoleModerator = "MODERATOR")',
+                    'Zod schema enum validation',
+                    'TypeScript union type',
+                    'ROLES constants object',
+                    'Admin badge configuration',
+                    'Admin table filter options',
+                    'Admin form select options',
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
+                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/50 shrink-0" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <p className="text-sm text-muted-foreground/60">
+                  The role name is automatically uppercased. Multi-word roles use underscores:
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded ml-1">grit add role CONTENT_MANAGER</code>
+                </p>
+              </div>
+
               {/* grit sync */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
@@ -670,6 +722,10 @@ fields:
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit g resource &lt;Name&gt;</td>
                         <td className="px-4 py-2.5">Shorthand for generate resource</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit add role &lt;ROLE&gt;</td>
+                        <td className="px-4 py-2.5">Add a new role across all project files</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit sync</td>

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Github, Youtube, Linkedin, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { SearchDialog } from '@/components/search-dialog'
 
 export function SiteHeader() {
   return (
@@ -19,7 +20,7 @@ export function SiteHeader() {
             </span>
             <span className="text-xs text-muted-foreground/50 font-mono hidden sm:inline">docs</span>
             <span className="hidden sm:inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-mono font-medium text-primary/70">
-              v0.7.0
+              v0.8.0
             </span>
           </Link>
         </div>
@@ -43,6 +44,8 @@ export function SiteHeader() {
 
         {/* Right side */}
         <div className="flex flex-1 items-center justify-end gap-2">
+          <SearchDialog />
+
           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" asChild>
             <Link href="https://www.youtube.com/@JBWEBDEVELOPER" target="_blank" rel="noreferrer">
               <Youtube className="h-4 w-4" />

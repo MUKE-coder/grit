@@ -26,6 +26,7 @@ func main() {
 
 	rootCmd.AddCommand(newCmd())
 	rootCmd.AddCommand(generateCmd())
+	rootCmd.AddCommand(addCmd())
 	rootCmd.AddCommand(syncCmd())
 	rootCmd.AddCommand(migrateCmd())
 	rootCmd.AddCommand(seedCmd())
@@ -123,6 +124,34 @@ func generateCmd() *cobra.Command {
 	cmd.AddCommand(generateResourceCmd())
 
 	return cmd
+}
+
+func addCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "add",
+		Short: "Add components to your Grit project",
+	}
+
+	cmd.AddCommand(addRoleCmd())
+
+	return cmd
+}
+
+func addRoleCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "role <ROLE_NAME>",
+		Short: "Add a new role to the project",
+		Long:  "Adds a new role constant to Go models, TypeScript types, Zod schemas, constants, and admin resource definitions.",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			purple.Printf("\n  Adding role: %s\n\n", strings.ToUpper(args[0]))
+
+			return scaffold.AddRole(args[0])
+		},
+	}
 }
 
 func generateResourceCmd() *cobra.Command {

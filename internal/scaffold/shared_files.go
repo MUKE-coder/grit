@@ -94,7 +94,7 @@ export const UpdateUserSchema = z.object({
   firstName: z.string().min(2).optional(),
   lastName: z.string().min(2).optional(),
   email: z.string().email().optional(),
-  role: z.enum(["ADMIN", "EDITOR", "USER"]).optional(),
+  role: z.enum(["ADMIN", "EDITOR", "USER"]).optional(), // grit:role-enum
   jobTitle: z.string().optional(),
   bio: z.string().optional(),
   active: z.boolean().optional(),
@@ -140,7 +140,7 @@ func sharedUserTypes() string {
   first_name: string;
   last_name: string;
   email: string;
-  role: "ADMIN" | "EDITOR" | "USER";
+  role: "ADMIN" | "EDITOR" | "USER"; // grit:role-union
   avatar: string;
   job_title: string;
   bio: string;
@@ -223,6 +223,7 @@ func sharedConstants() string {
   ADMIN: "ADMIN",
   EDITOR: "EDITOR",
   USER: "USER",
+  // grit:role-constants
 } as const;
 
 export const API_ROUTES = {
