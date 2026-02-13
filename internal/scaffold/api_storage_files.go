@@ -98,6 +98,22 @@ func New(cfg config.StorageConfig) (*Storage, error) {
 		if createErr != nil {
 			return nil, fmt.Errorf("bucket %q not accessible and cannot be created: %w", cfg.Bucket, err)
 		}
+
+		// Set public-read policy so uploaded files are accessible via URL
+		policy := fmt.Sprintf(` + "`" + `{
+			"Version": "2012-10-17",
+			"Statement": [{
+				"Effect": "Allow",
+				"Principal": {"AWS": ["*"]},
+				"Action": ["s3:GetObject"],
+				"Resource": ["arn:aws:s3:::%s/*"]
+			}]
+		}` + "`" + `, cfg.Bucket)
+
+		_, _ = client.PutBucketPolicy(ctx, &s3.PutBucketPolicyInput{
+			Bucket: aws.String(cfg.Bucket),
+			Policy: aws.String(policy),
+		})
 	}
 
 	return &Storage{
@@ -148,7 +164,12 @@ func (s *Storage) Delete(ctx context.Context, key string) error {
 // GetURL returns the public URL for a stored file.
 func (s *Storage) GetURL(key string) string {
 	endpoint := strings.TrimRight(s.cfg.Endpoint, "/")
-	return fmt.Sprintf("%s/%s/%s", endpoint, s.bucket, url.PathEscape(key))
+	// Encode each path segment individually to preserve forward slashes
+	segments := strings.Split(key, "/")
+	for i, seg := range segments {
+		segments[i] = url.PathEscape(seg)
+	}
+	return fmt.Sprintf("%s/%s/%s", endpoint, s.bucket, strings.Join(segments, "/"))
 }
 
 // GetSignedURL returns a pre-signed URL valid for the given duration.

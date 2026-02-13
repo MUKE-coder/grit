@@ -65,7 +65,7 @@ func main() {
 	}
 
 	fmt.Println("Running migrations...")
-	if err := models.AutoMigrate(db); err != nil {
+	if err := models.Migrate(db); err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
 
@@ -102,7 +102,7 @@ func main() {
 
 	// Ensure tables exist before seeding
 	fmt.Println("Running migrations...")
-	if err := models.AutoMigrate(db); err != nil {
+	if err := models.Migrate(db); err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
 

@@ -54,14 +54,14 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.16.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.51.0
 	github.com/disintegration/imaging v1.6.2
-	github.com/gin-gonic/gin v1.9.1
+	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/hibiken/asynq v0.24.1
 	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.4.0
-	golang.org/x/crypto v0.18.0
-	gorm.io/driver/postgres v1.5.4
-	gorm.io/gorm v1.25.5
+	golang.org/x/crypto v0.23.0
+	gorm.io/driver/postgres v1.5.11
+	gorm.io/gorm v1.25.12
 )
 `, opts.ProjectName)
 }
@@ -105,7 +105,6 @@ import (
 	"` + "{{MODULE}}" + `/internal/database"
 	"` + "{{MODULE}}" + `/internal/jobs"
 	"` + "{{MODULE}}" + `/internal/mail"
-	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/routes"
 	"` + "{{MODULE}}" + `/internal/storage"
 )
@@ -121,11 +120,6 @@ func main() {
 	db, err := database.Connect(cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
-	}
-
-	// Auto-migrate models
-	if err := models.AutoMigrate(db); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
 	// ── Phase 4 Services ─────────────────────────────────────────
@@ -483,6 +477,7 @@ func apiUserModelGo() string {
 	return `package models
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -530,19 +525,39 @@ func (u *User) CheckPassword(password string) bool {
 	return err == nil
 }
 
-// AutoMigrate runs database migrations for all models.
-// It migrates each model individually so that one failure doesn't block others.
-func AutoMigrate(db *gorm.DB) error {
-	models := []interface{}{
+// Models returns the ordered list of all models for migration.
+// Models with no foreign key dependencies come first.
+func Models() []interface{} {
+	return []interface{}{
 		&User{},
 		&Upload{},
 		// grit:models
 	}
+}
+
+// Migrate runs database migrations only for tables that don't exist yet.
+// It prints which tables were created and which were skipped.
+func Migrate(db *gorm.DB) error {
+	models := Models()
+	migrated := 0
 
 	for _, model := range models {
-		if err := db.AutoMigrate(model); err != nil {
-			log.Printf("Warning: migration error for %T: %v (skipping)", model, err)
+		if db.Migrator().HasTable(model) {
+			log.Printf("  ✓ %T — already exists, skipping", model)
+			continue
 		}
+
+		if err := db.AutoMigrate(model); err != nil {
+			return fmt.Errorf("migrating %T: %w", model, err)
+		}
+		log.Printf("  ✓ %T — created", model)
+		migrated++
+	}
+
+	if migrated == 0 {
+		log.Println("All tables are up to date — nothing to migrate.")
+	} else {
+		log.Printf("Migrated %d table(s).", migrated)
 	}
 
 	return nil
@@ -1610,7 +1625,6 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 
 		// User routes (authenticated)
 		protected.GET("/users/:id", userHandler.GetByID)
-		protected.PUT("/users/:id", userHandler.Update)
 
 		// File uploads
 		protected.POST("/uploads", uploadHandler.Create)
