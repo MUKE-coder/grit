@@ -632,7 +632,7 @@ fields:
                   </div>
                   <div className="p-5 font-mono text-sm">
                     <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit version</span></div>
-                    <div className="mt-1"><span className="text-muted-foreground/60">grit version 0.7.0</span></div>
+                    <div className="mt-1"><span className="text-muted-foreground/60">grit version 0.8.0</span></div>
                   </div>
                 </div>
               </div>
