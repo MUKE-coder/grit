@@ -61,6 +61,8 @@ const navItems: NavItem[] = [
       { title: 'Middleware', href: '/docs/backend/middleware' },
       { title: 'Authentication', href: '/docs/backend/authentication' },
       { title: 'API Response Format', href: '/docs/backend/response-format' },
+      { title: 'Migrations', href: '/docs/backend/migrations' },
+      { title: 'Seeders', href: '/docs/backend/seeders' },
     ],
   },
   {

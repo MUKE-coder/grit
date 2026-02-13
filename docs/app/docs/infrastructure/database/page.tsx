@@ -21,7 +21,7 @@ export default function DatabasePage() {
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Grit uses GORM as its ORM and PostgreSQL as the primary database.
-                Migrations run automatically on startup &mdash; define your models and GORM handles the rest.
+                Define your models as Go structs and run migrations with a dedicated command.
               </p>
             </div>
 
@@ -198,60 +198,36 @@ func Connect(dsn string) (*gorm.DB, error) {
                 </p>
               </div>
 
-              {/* AutoMigrate */}
+              {/* Migrations */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
-                  AutoMigrate
+                  Migrations
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Grit uses GORM&apos;s{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">AutoMigrate</code> to
-                  keep your database schema in sync with your Go models. Migrations run automatically
-                  every time the API server starts.
+                  Grit uses a smart migration system that only creates tables which don&apos;t exist yet.
+                  Migrations run as a separate command before starting the server:
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
+                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/cmd/server/main.go</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    </div>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
                   </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Connect to database
-db, err := database.Connect(cfg.DatabaseURL)
-if err != nil {
-    log.Fatalf("Failed to connect to database: %v", err)
-}
-
-// Auto-migrate models
-if err := models.AutoMigrate(db); err != nil {
-    log.Fatalf("Failed to run migrations: %v", err)
-}`}</pre>
+                  <div className="p-5 font-mono text-sm">
+                    <span className="text-primary/50 select-none">$ </span>
+                    <span className="text-foreground/80">cd apps/api &amp;&amp; go run cmd/migrate/main.go</span>
+                  </div>
                 </div>
-
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  AutoMigrate will:
+                  For full details on how migrations work, fresh migrations, foreign key ordering,
+                  and the typical workflow, see the{' '}
+                  <Link href="/docs/backend/migrations" className="text-primary hover:underline">
+                    Migrations guide
+                  </Link>.
                 </p>
-                <ul className="space-y-2.5 mb-4">
-                  {[
-                    'Create tables that do not exist',
-                    'Add new columns when you add fields to a struct',
-                    'Create indexes and constraints from struct tags',
-                    'Never delete columns or tables (safe by design)',
-                    'Never change existing column types automatically',
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                      <span className="text-primary mt-1">&#10003;</span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="p-4 rounded-lg border border-yellow-500/20 bg-yellow-500/5">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    <strong className="text-yellow-500/90">Note:</strong> AutoMigrate is great for development and simple schemas.
-                    For production systems that need column renaming, type changes, or data migrations,
-                    consider using a dedicated migration tool like{' '}
-                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">golang-migrate</code> or{' '}
-                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">goose</code> alongside GORM.
-                  </p>
-                </div>
               </div>
 
               {/* Defining Models */}
