@@ -688,10 +688,13 @@ func OpenAPISpec() string {
         "type": "object",
         "properties": {
           "id": { "type": "integer", "example": 1 },
-          "name": { "type": "string", "example": "John Doe" },
+          "first_name": { "type": "string", "example": "John" },
+          "last_name": { "type": "string", "example": "Doe" },
           "email": { "type": "string", "format": "email", "example": "john@example.com" },
-          "role": { "type": "string", "enum": ["user", "editor", "admin"], "example": "user" },
+          "role": { "type": "string", "enum": ["ADMIN", "EDITOR", "USER"], "example": "USER" },
           "avatar": { "type": "string", "example": "" },
+          "job_title": { "type": "string", "example": "" },
+          "bio": { "type": "string", "example": "" },
           "active": { "type": "boolean", "example": true },
           "created_at": { "type": "string", "format": "date-time" },
           "updated_at": { "type": "string", "format": "date-time" }
@@ -712,9 +715,10 @@ func OpenAPISpec() string {
       },
       "RegisterRequest": {
         "type": "object",
-        "required": ["name", "email", "password"],
+        "required": ["first_name", "last_name", "email", "password"],
         "properties": {
-          "name": { "type": "string", "minLength": 2, "example": "John Doe" },
+          "first_name": { "type": "string", "minLength": 2, "example": "John" },
+          "last_name": { "type": "string", "minLength": 2, "example": "Doe" },
           "email": { "type": "string", "format": "email", "example": "john@example.com" },
           "password": { "type": "string", "minLength": 8, "example": "password123" }
         }
@@ -730,9 +734,12 @@ func OpenAPISpec() string {
       "UpdateUserRequest": {
         "type": "object",
         "properties": {
-          "name": { "type": "string" },
+          "first_name": { "type": "string" },
+          "last_name": { "type": "string" },
           "email": { "type": "string", "format": "email" },
-          "role": { "type": "string", "enum": ["user", "editor", "admin"] },
+          "role": { "type": "string", "enum": ["ADMIN", "EDITOR", "USER"] },
+          "job_title": { "type": "string" },
+          "bio": { "type": "string" },
           "active": { "type": "boolean" }
         }
       },

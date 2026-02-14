@@ -366,14 +366,15 @@ import { useAuth } from "@/lib/auth";
 
 export default function RegisterScreen() {
   const { register } = useAuth();
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleRegister = async () => {
-    if (!name || !email || !password) {
+    if (!firstName || !lastName || !email || !password) {
       setError("Please fill in all fields");
       return;
     }
@@ -384,7 +385,7 @@ export default function RegisterScreen() {
     setError("");
     setLoading(true);
     try {
-      await register(name, email, password);
+      await register(firstName, lastName, email, password);
     } catch (err: any) {
       setError(err.message || "Registration failed");
     } finally {
@@ -413,16 +414,29 @@ export default function RegisterScreen() {
           </View>
         ) : null}
 
-        <View className="mb-4">
-          <Text className="text-sm text-[#9090a8] mb-2">Full name</Text>
-          <TextInput
-            className="bg-bg-secondary border border-border rounded-xl px-4 py-3.5 text-white text-base"
-            placeholder="John Doe"
-            placeholderTextColor="#606078"
-            value={name}
-            onChangeText={setName}
-            autoComplete="name"
-          />
+        <View className="flex-row gap-3 mb-4">
+          <View className="flex-1">
+            <Text className="text-sm text-[#9090a8] mb-2">First name</Text>
+            <TextInput
+              className="bg-bg-secondary border border-border rounded-xl px-4 py-3.5 text-white text-base"
+              placeholder="John"
+              placeholderTextColor="#606078"
+              value={firstName}
+              onChangeText={setFirstName}
+              autoComplete="given-name"
+            />
+          </View>
+          <View className="flex-1">
+            <Text className="text-sm text-[#9090a8] mb-2">Last name</Text>
+            <TextInput
+              className="bg-bg-secondary border border-border rounded-xl px-4 py-3.5 text-white text-base"
+              placeholder="Doe"
+              placeholderTextColor="#606078"
+              value={lastName}
+              onChangeText={setLastName}
+              autoComplete="family-name"
+            />
+          </View>
         </View>
 
         <View className="mb-4">
@@ -766,7 +780,8 @@ import { api } from "./api";
 
 interface User {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   role: string;
 }
@@ -776,7 +791,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -814,8 +829,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(res.data.user);
   }, []);
 
-  const register = useCallback(async (name: string, email: string, password: string) => {
-    const res = await api.post("/auth/register", { name, email, password });
+  const register = useCallback(async (firstName: string, lastName: string, email: string, password: string) => {
+    const res = await api.post("/auth/register", { first_name: firstName, last_name: lastName, email, password });
     await api.setTokens(res.data.access_token, res.data.refresh_token);
     setUser(res.data.user);
   }, []);
