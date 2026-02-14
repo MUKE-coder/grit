@@ -683,16 +683,23 @@ import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "@/lib/icons";
 import { useLogin } from "@/hooks/use-auth";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { LoginSchema, type LoginInput } from "@repo/shared/schemas/user";
+
+const inputClass = "w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors";
+const errorInputClass = "w-full rounded-lg border border-danger bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-danger focus:outline-none focus:ring-1 focus:ring-danger transition-colors";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const { mutate: login, isPending, error } = useLogin();
+  const { mutate: login, isPending, error: serverError } = useLogin();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    login({ email, password });
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginInput>({
+    resolver: zodResolver(LoginSchema),
+  });
+
+  const onSubmit = (data: LoginInput) => {
+    login(data);
   };
 
   return (
@@ -732,10 +739,10 @@ export default function LoginPage() {
             <p className="mt-2 text-text-secondary">Sign in to your admin account</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            {serverError && (
               <div className="rounded-lg bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger">
-                {(error as unknown as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || "Invalid credentials"}
+                {(serverError as unknown as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || "Invalid credentials"}
               </div>
             )}
 
@@ -746,13 +753,12 @@ export default function LoginPage() {
               <input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                {...register("email")}
+                className={errors.email ? errorInputClass : inputClass}
                 placeholder="you@example.com"
-                required
                 autoFocus
               />
+              {errors.email && <p className="text-sm text-danger">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -763,11 +769,9 @@ export default function LoginPage() {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 pr-12 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                  {...register("password")}
+                  className={errors.password ? errorInputClass + " pr-12" : inputClass + " pr-12"}
                   placeholder="Enter your password"
-                  required
                 />
                 <button
                   type="button"
@@ -777,6 +781,7 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
+              {errors.password && <p className="text-sm text-danger">{errors.password.message}</p>}
             </div>
 
             <div className="flex items-center justify-between">
@@ -820,21 +825,29 @@ import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "@/lib/icons";
 import { useRegister } from "@/hooks/use-auth";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { RegisterSchema, type RegisterInput } from "@repo/shared/schemas/user";
+
+const inputClass = "w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors";
+const errorInputClass = "w-full rounded-lg border border-danger bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-danger focus:outline-none focus:ring-1 focus:ring-danger transition-colors";
 
 export default function SignUpPage() {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { mutate: register, isPending, error } = useRegister();
+  const { mutate: registerUser, isPending, error: serverError } = useRegister();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password !== confirmPassword) return;
-    register({ first_name: firstName, last_name: lastName, email, password });
+  const { register, handleSubmit, formState: { errors } } = useForm<RegisterInput>({
+    resolver: zodResolver(RegisterSchema),
+  });
+
+  const onSubmit = (data: RegisterInput) => {
+    registerUser({
+      first_name: data.firstName,
+      last_name: data.lastName,
+      email: data.email,
+      password: data.password,
+    });
   };
 
   return (
@@ -874,10 +887,10 @@ export default function SignUpPage() {
             <p className="mt-2 text-text-secondary">Sign up to get started</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            {serverError && (
               <div className="rounded-lg bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger">
-                {(error as unknown as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || "Registration failed"}
+                {(serverError as unknown as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message || "Registration failed"}
               </div>
             )}
 
@@ -889,14 +902,12 @@ export default function SignUpPage() {
                 <input
                   id="firstName"
                   type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                  {...register("firstName")}
+                  className={errors.firstName ? errorInputClass : inputClass}
                   placeholder="John"
-                  required
-                  minLength={2}
                   autoFocus
                 />
+                {errors.firstName && <p className="text-sm text-danger">{errors.firstName.message}</p>}
               </div>
               <div className="space-y-2">
                 <label htmlFor="lastName" className="block text-sm font-medium text-text-secondary">
@@ -905,13 +916,11 @@ export default function SignUpPage() {
                 <input
                   id="lastName"
                   type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                  {...register("lastName")}
+                  className={errors.lastName ? errorInputClass : inputClass}
                   placeholder="Doe"
-                  required
-                  minLength={2}
                 />
+                {errors.lastName && <p className="text-sm text-danger">{errors.lastName.message}</p>}
               </div>
             </div>
 
@@ -922,12 +931,11 @@ export default function SignUpPage() {
               <input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                {...register("email")}
+                className={errors.email ? errorInputClass : inputClass}
                 placeholder="you@example.com"
-                required
               />
+              {errors.email && <p className="text-sm text-danger">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -938,12 +946,9 @@ export default function SignUpPage() {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 pr-12 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                  {...register("password")}
+                  className={errors.password ? errorInputClass + " pr-12" : inputClass + " pr-12"}
                   placeholder="Min. 8 characters"
-                  required
-                  minLength={8}
                 />
                 <button
                   type="button"
@@ -953,6 +958,7 @@ export default function SignUpPage() {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
+              {errors.password && <p className="text-sm text-danger">{errors.password.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -963,12 +969,9 @@ export default function SignUpPage() {
                 <input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 pr-12 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                  {...register("confirmPassword")}
+                  className={errors.confirmPassword ? errorInputClass + " pr-12" : inputClass + " pr-12"}
                   placeholder="Repeat your password"
-                  required
-                  minLength={8}
                 />
                 <button
                   type="button"
@@ -978,14 +981,12 @@ export default function SignUpPage() {
                   {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
-              {password !== confirmPassword && confirmPassword && (
-                <p className="text-sm text-danger">Passwords do not match</p>
-              )}
+              {errors.confirmPassword && <p className="text-sm text-danger">{errors.confirmPassword.message}</p>}
             </div>
 
             <button
               type="submit"
-              disabled={isPending || (!!confirmPassword && password !== confirmPassword)}
+              disabled={isPending}
               className="w-full rounded-lg bg-accent py-3 font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
             >
               {isPending ? "Creating account..." : "Create Account"}
@@ -1013,17 +1014,25 @@ func adminForgotPasswordPage() string {
 import { useState } from "react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ForgotPasswordSchema, type ForgotPasswordInput } from "@repo/shared/schemas/user";
+
+const inputClass = "w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors";
+const errorInputClass = "w-full rounded-lg border border-danger bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-danger focus:outline-none focus:ring-1 focus:ring-danger transition-colors";
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const { register, handleSubmit, formState: { errors } } = useForm<ForgotPasswordInput>({
+    resolver: zodResolver(ForgotPasswordSchema),
+  });
+
+  const onSubmit = async (data: ForgotPasswordInput) => {
     setLoading(true);
     try {
-      await apiClient.post("/api/auth/forgot-password", { email });
+      await apiClient.post("/api/auth/forgot-password", data);
       setSent(true);
     } catch {
       setSent(true); // Always show success for security
@@ -1087,7 +1096,7 @@ export default function ForgotPasswordPage() {
               </Link>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div className="space-y-2">
                 <label htmlFor="email" className="block text-sm font-medium text-text-secondary">
                   Email
@@ -1095,13 +1104,12 @@ export default function ForgotPasswordPage() {
                 <input
                   id="email"
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                  {...register("email")}
+                  className={errors.email ? errorInputClass : inputClass}
                   placeholder="you@example.com"
-                  required
                   autoFocus
                 />
+                {errors.email && <p className="text-sm text-danger">{errors.email.message}</p>}
               </div>
 
               <button
