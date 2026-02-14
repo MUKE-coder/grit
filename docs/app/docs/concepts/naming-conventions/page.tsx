@@ -663,8 +663,8 @@ export default function NamingConventionsPage() {
                 </Link>
               </Button>
               <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">
-                <Link href="/docs/backend/models" className="gap-1.5">
-                  Models & Database
+                <Link href="/docs/concepts/styles" className="gap-1.5">
+                  Style Variants
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </Button>

@@ -47,6 +47,7 @@ const searchIndex: SearchItem[] = [
   { title: 'Code Generation', href: '/docs/concepts/code-generation', section: 'Core Concepts', keywords: 'generate resource crud scaffold model handler' },
   { title: 'Type System', href: '/docs/concepts/type-system', section: 'Core Concepts', keywords: 'typescript go types shared zod schema sync' },
   { title: 'Naming Conventions', href: '/docs/concepts/naming-conventions', section: 'Core Concepts', keywords: 'case snake camel pascal kebab naming style' },
+  { title: 'Style Variants', href: '/docs/concepts/styles', section: 'Core Concepts', keywords: 'style variant theme modern minimal glass default auth dashboard layout design' },
 
   // Backend
   { title: 'Models & Database', href: '/docs/backend/models', section: 'Backend (Go API)', keywords: 'gorm model struct database table fields columns' },

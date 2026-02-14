@@ -49,6 +49,7 @@ const navItems: NavItem[] = [
       { title: 'Code Generation', href: '/docs/concepts/code-generation' },
       { title: 'Type System', href: '/docs/concepts/type-system' },
       { title: 'Naming Conventions', href: '/docs/concepts/naming-conventions' },
+      { title: 'Style Variants', href: '/docs/concepts/styles' },
     ],
   },
   {
