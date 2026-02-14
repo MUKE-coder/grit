@@ -5,6 +5,62 @@ import (
 	"path/filepath"
 )
 
+// adminLoginPageForStyle returns the login page for the given style variant.
+func adminLoginPageForStyle(style string) string {
+	switch style {
+	case "modern":
+		return modernLoginPage()
+	case "minimal":
+		return minimalLoginPage()
+	case "glass":
+		return glassLoginPage()
+	default:
+		return adminLoginPage()
+	}
+}
+
+// adminSignUpPageForStyle returns the sign-up page for the given style variant.
+func adminSignUpPageForStyle(style string) string {
+	switch style {
+	case "modern":
+		return modernSignUpPage()
+	case "minimal":
+		return minimalSignUpPage()
+	case "glass":
+		return glassSignUpPage()
+	default:
+		return adminSignUpPage()
+	}
+}
+
+// adminForgotPasswordPageForStyle returns the forgot password page for the given style variant.
+func adminForgotPasswordPageForStyle(style string) string {
+	switch style {
+	case "modern":
+		return modernForgotPasswordPage()
+	case "minimal":
+		return minimalForgotPasswordPage()
+	case "glass":
+		return glassForgotPasswordPage()
+	default:
+		return adminForgotPasswordPage()
+	}
+}
+
+// adminDashboardPageForStyle returns the dashboard page for the given style variant.
+func adminDashboardPageForStyle(style string) string {
+	switch style {
+	case "modern":
+		return modernDashboardPage()
+	case "minimal":
+		return minimalDashboardPage()
+	case "glass":
+		return glassDashboardPage()
+	default:
+		return adminDashboardPage()
+	}
+}
+
 func writeAdminFiles(root string, opts Options) error {
 	adminRoot := filepath.Join(root, "apps", "admin")
 
@@ -21,10 +77,10 @@ func writeAdminFiles(root string, opts Options) error {
 		// Root redirect page
 		filepath.Join(adminRoot, "app", "page.tsx"): adminRedirectPage(),
 
-		// Auth pages — (auth) route group
-		filepath.Join(adminRoot, "app", "(auth)", "login", "page.tsx"):           adminLoginPage(),
-		filepath.Join(adminRoot, "app", "(auth)", "sign-up", "page.tsx"):         adminSignUpPage(),
-		filepath.Join(adminRoot, "app", "(auth)", "forgot-password", "page.tsx"): adminForgotPasswordPage(),
+		// Auth pages — (auth) route group (style variant)
+		filepath.Join(adminRoot, "app", "(auth)", "login", "page.tsx"):           adminLoginPageForStyle(opts.Style),
+		filepath.Join(adminRoot, "app", "(auth)", "sign-up", "page.tsx"):         adminSignUpPageForStyle(opts.Style),
+		filepath.Join(adminRoot, "app", "(auth)", "forgot-password", "page.tsx"): adminForgotPasswordPageForStyle(opts.Style),
 
 		// Dashboard route group layout
 		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"): adminDashboardLayout(),
@@ -101,8 +157,8 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "hooks", "use-system.ts"):   adminUseSystem(),
 		filepath.Join(adminRoot, "hooks", "use-profile.ts"):  adminUseProfile(),
 
-		// Dashboard pages — (dashboard) route group
-		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):          adminDashboardPage(),
+		// Dashboard pages — (dashboard) route group (style variant)
+		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):          adminDashboardPageForStyle(opts.Style),
 		filepath.Join(adminRoot, "app", "(dashboard)", "profile", "page.tsx"):            adminProfilePage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"): adminUsersPage(),
 

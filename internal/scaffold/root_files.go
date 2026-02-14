@@ -359,13 +359,18 @@ func rootPackageJSON(opts Options) string {
 }
 
 func gritConfig(opts Options) string {
+	style := opts.Style
+	if style == "" {
+		style = "default"
+	}
 	config := fmt.Sprintf(`// Grit Framework Configuration
 export default {
   name: "%s",
+  style: "%s",
   api: {
     port: 8080,
     prefix: "/api",
-  },`, opts.ProjectName)
+  },`, opts.ProjectName, style)
 
 	if opts.ShouldIncludeWeb() {
 		config += `

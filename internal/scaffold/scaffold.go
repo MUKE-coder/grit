@@ -18,6 +18,25 @@ type Options struct {
 	IncludeExpo bool
 	MobileOnly  bool
 	Full        bool
+	Style       string
+}
+
+// ValidStyles lists all supported admin panel style variants.
+var ValidStyles = []string{"default", "modern", "minimal", "glass"}
+
+// ValidateStyle checks that the Style field is a supported value.
+// If empty, it defaults to "default".
+func (o *Options) ValidateStyle() error {
+	if o.Style == "" {
+		o.Style = "default"
+		return nil
+	}
+	for _, s := range ValidStyles {
+		if o.Style == s {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid style %q: must be one of %s", o.Style, strings.Join(ValidStyles, ", "))
 }
 
 // ShouldIncludeWeb returns true if the web app should be scaffolded.

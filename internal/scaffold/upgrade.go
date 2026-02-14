@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/fatih/color"
@@ -34,7 +35,10 @@ func Upgrade(uOpts UpgradeOptions) error {
 	green := color.New(color.FgHiGreen)
 	cyan := color.New(color.FgHiCyan)
 
-	opts := Options{ProjectName: projectName}
+	opts := Options{
+		ProjectName: projectName,
+		Style:       readProjectStyle(root),
+	}
 
 	// Detect which apps exist
 	hasWeb := dirExists(filepath.Join(root, "apps", "web"))
@@ -180,11 +184,11 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 		filepath.Join(adminRoot, "app", "globals.css"):                              adminGlobalCSS(),
 		filepath.Join(adminRoot, "app", "layout.tsx"):                               adminRootLayout(opts),
 		filepath.Join(adminRoot, "app", "page.tsx"):                                 adminRedirectPage(),
-		filepath.Join(adminRoot, "app", "(auth)", "login", "page.tsx"):              adminLoginPage(),
-		filepath.Join(adminRoot, "app", "(auth)", "sign-up", "page.tsx"):            adminSignUpPage(),
-		filepath.Join(adminRoot, "app", "(auth)", "forgot-password", "page.tsx"):    adminForgotPasswordPage(),
+		filepath.Join(adminRoot, "app", "(auth)", "login", "page.tsx"):              adminLoginPageForStyle(opts.Style),
+		filepath.Join(adminRoot, "app", "(auth)", "sign-up", "page.tsx"):            adminSignUpPageForStyle(opts.Style),
+		filepath.Join(adminRoot, "app", "(auth)", "forgot-password", "page.tsx"):    adminForgotPasswordPageForStyle(opts.Style),
 		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"):                adminDashboardLayout(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):     adminDashboardPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):     adminDashboardPageForStyle(opts.Style),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"): adminUsersPage(),
 
 		// System pages
@@ -325,6 +329,30 @@ func readProjectName(root string) (string, error) {
 	}
 
 	return name, nil
+}
+
+// readProjectStyle reads the style variant from grit.config.ts.
+// Returns "default" if the file doesn't exist or the style isn't found.
+func readProjectStyle(root string) string {
+	data, err := os.ReadFile(filepath.Join(root, "grit.config.ts"))
+	if err != nil {
+		return "default"
+	}
+
+	re := regexp.MustCompile(`style:\s*"([^"]+)"`)
+	matches := re.FindSubmatch(data)
+	if len(matches) < 2 {
+		return "default"
+	}
+
+	style := string(matches[1])
+	for _, valid := range ValidStyles {
+		if style == valid {
+			return style
+		}
+	}
+
+	return "default"
 }
 
 // fileExists returns true if a file exists.

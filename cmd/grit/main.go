@@ -15,7 +15,7 @@ import (
 	"github.com/MUKE-coder/grit/internal/scaffold"
 )
 
-var version = "0.8.0"
+var version = "0.9.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -52,6 +52,7 @@ func versionCmd() *cobra.Command {
 
 func newCmd() *cobra.Command {
 	var apiOnly, includeExpo, mobileOnly, full bool
+	var style string
 
 	cmd := &cobra.Command{
 		Use:   "new <project-name>",
@@ -83,18 +84,23 @@ func newCmd() *cobra.Command {
 				return fmt.Errorf("only one mode flag can be used at a time (--api, --expo, --mobile, --full)")
 			}
 
-			printLogo()
-
-			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Printf("\n  Creating new Grit project: %s\n\n", projectName)
-
 			opts := scaffold.Options{
 				ProjectName: projectName,
 				APIOnly:     apiOnly,
 				IncludeExpo: includeExpo,
 				MobileOnly:  mobileOnly,
 				Full:        full,
+				Style:       style,
 			}
+
+			if err := opts.ValidateStyle(); err != nil {
+				return err
+			}
+
+			printLogo()
+
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			purple.Printf("\n  Creating new Grit project: %s\n\n", projectName)
 
 			if err := scaffold.Run(opts); err != nil {
 				color.Red("\n  Error: %v\n", err)
@@ -110,6 +116,7 @@ func newCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&includeExpo, "expo", false, "Include Expo mobile app (api + web + admin + shared + expo)")
 	cmd.Flags().BoolVar(&mobileOnly, "mobile", false, "Scaffold API + Expo mobile app only")
 	cmd.Flags().BoolVar(&full, "full", false, "Scaffold everything including docs site")
+	cmd.Flags().StringVar(&style, "style", "default", "Admin panel style variant (default, modern, minimal, glass)")
 
 	return cmd
 }
