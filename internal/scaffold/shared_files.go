@@ -30,7 +30,7 @@ func writeSharedFiles(root string, opts Options) error {
 }
 
 func sharedPackageJSON(opts Options) string {
-	return fmt.Sprintf(`{
+	return `{
   "name": "@repo/shared",
   "version": "0.1.0",
   "private": true,
@@ -48,7 +48,7 @@ func sharedPackageJSON(opts Options) string {
     "typescript": "^5.3.0"
   }
 }
-`, opts.ProjectName)
+`
 }
 
 func sharedTSConfig() string {
