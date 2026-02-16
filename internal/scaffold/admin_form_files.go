@@ -1104,11 +1104,11 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={` + "`" + `flex h-10 w-full items-center justify-between rounded-md border bg-transparent px-3 py-2 text-sm transition-colors
-          ${error ? "border-red-500" : "border-[hsl(var(--border))]"}
-          ${open ? "ring-2 ring-[hsl(var(--ring))]" : ""}` + "`" + `}
+        className={` + "`" + `flex h-10 w-full items-center justify-between rounded-md border bg-bg-secondary px-3 py-2 text-sm text-foreground transition-colors
+          ${error ? "border-red-500" : "border-border"}
+          ${open ? "ring-2 ring-accent" : ""}` + "`" + `}
       >
-        <span className={value ? "text-[hsl(var(--foreground))]" : "text-[hsl(var(--muted-foreground))]"}>
+        <span className={value ? "text-foreground" : "text-text-secondary"}>
           {value ? selectedLabel : ` + "`" + `Select ${field.label}...` + "`" + `}
         </span>
         <svg className="h-4 w-4 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1117,29 +1117,29 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--popover))] shadow-md">
+        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-bg-elevated shadow-lg">
           <div className="p-2">
             <input
               type="text"
               placeholder="Search..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-[hsl(var(--border))] bg-transparent px-3 py-1 text-sm outline-none placeholder:text-[hsl(var(--muted-foreground))]"
+              className="flex h-9 w-full rounded-md border border-border bg-bg-secondary px-3 py-1 text-sm text-foreground outline-none placeholder:text-text-secondary"
               autoFocus
             />
           </div>
           <div className="max-h-60 overflow-y-auto p-1">
             {isLoading ? (
-              <div className="px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">Loading...</div>
+              <div className="px-3 py-2 text-sm text-text-secondary">Loading...</div>
             ) : filtered.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">No results found</div>
+              <div className="px-3 py-2 text-sm text-text-secondary">No results found</div>
             ) : (
               <>
                 {value && (
                   <button
                     type="button"
                     onClick={() => { onChange(null); setOpen(false); setSearch(""); }}
-                    className="flex w-full items-center rounded-sm px-3 py-2 text-sm text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]"
+                    className="flex w-full items-center rounded-sm px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover"
                   >
                     Clear selection
                   </button>
@@ -1152,8 +1152,8 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
                       key={id}
                       type="button"
                       onClick={() => { onChange(id); setOpen(false); setSearch(""); }}
-                      className={` + "`" + `flex w-full items-center rounded-sm px-3 py-2 text-sm hover:bg-[hsl(var(--accent))]
-                        ${value === id ? "bg-[hsl(var(--accent))] font-medium" : ""}` + "`" + `}
+                      className={` + "`" + `flex w-full items-center rounded-sm px-3 py-2 text-sm text-foreground hover:bg-bg-hover
+                        ${value === id ? "bg-bg-hover font-medium" : ""}` + "`" + `}
                     >
                       {label}
                     </button>
@@ -1246,21 +1246,21 @@ export function MultiRelationshipSelectField({ field, value = [], onChange, erro
     <div ref={containerRef} className="relative">
       <div
         onClick={() => setOpen(!open)}
-        className={` + "`" + `flex min-h-10 w-full cursor-pointer flex-wrap items-center gap-1 rounded-md border bg-transparent px-3 py-2 text-sm transition-colors
-          ${error ? "border-red-500" : "border-[hsl(var(--border))]"}
-          ${open ? "ring-2 ring-[hsl(var(--ring))]" : ""}` + "`" + `}
+        className={` + "`" + `flex min-h-10 w-full cursor-pointer flex-wrap items-center gap-1 rounded-md border bg-bg-secondary px-3 py-2 text-sm text-foreground transition-colors
+          ${error ? "border-red-500" : "border-border"}
+          ${open ? "ring-2 ring-accent" : ""}` + "`" + `}
       >
         {selectedLabels.length > 0 ? (
           selectedLabels.map(({ id, label }) => (
             <span
               key={id}
-              className="inline-flex items-center gap-1 rounded-md bg-[hsl(var(--accent))] px-2 py-0.5 text-xs font-medium"
+              className="inline-flex items-center gap-1 rounded-md bg-accent/20 text-accent px-2 py-0.5 text-xs font-medium"
             >
               {label}
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); removeItem(id); }}
-                className="ml-0.5 rounded-full hover:bg-[hsl(var(--destructive))] hover:text-white"
+                className="ml-0.5 rounded-full hover:bg-red-500/20 hover:text-red-400"
               >
                 <svg className="h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 6 6 18" /><path d="m6 6 12 12" />
@@ -1269,36 +1269,36 @@ export function MultiRelationshipSelectField({ field, value = [], onChange, erro
             </span>
           ))
         ) : (
-          <span className="text-[hsl(var(--muted-foreground))]">
+          <span className="text-text-secondary">
             {` + "`" + `Select ${field.label}...` + "`" + `}
           </span>
         )}
       </div>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--popover))] shadow-md">
+        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-bg-elevated shadow-lg">
           <div className="p-2">
             <input
               type="text"
               placeholder="Search..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-[hsl(var(--border))] bg-transparent px-3 py-1 text-sm outline-none placeholder:text-[hsl(var(--muted-foreground))]"
+              className="flex h-9 w-full rounded-md border border-border bg-bg-secondary px-3 py-1 text-sm text-foreground outline-none placeholder:text-text-secondary"
               autoFocus
             />
           </div>
           <div className="max-h-60 overflow-y-auto p-1">
             {isLoading ? (
-              <div className="px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">Loading...</div>
+              <div className="px-3 py-2 text-sm text-text-secondary">Loading...</div>
             ) : filtered.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">No results found</div>
+              <div className="px-3 py-2 text-sm text-text-secondary">No results found</div>
             ) : (
               <>
                 {value.length > 0 && (
                   <button
                     type="button"
                     onClick={() => onChange([])}
-                    className="flex w-full items-center rounded-sm px-3 py-2 text-sm text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]"
+                    className="flex w-full items-center rounded-sm px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover"
                   >
                     Clear all
                   </button>
@@ -1312,11 +1312,11 @@ export function MultiRelationshipSelectField({ field, value = [], onChange, erro
                       key={id}
                       type="button"
                       onClick={() => toggleItem(id)}
-                      className={` + "`" + `flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm hover:bg-[hsl(var(--accent))]
-                        ${isSelected ? "bg-[hsl(var(--accent))]" : ""}` + "`" + `}
+                      className={` + "`" + `flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-foreground hover:bg-bg-hover
+                        ${isSelected ? "bg-bg-hover" : ""}` + "`" + `}
                     >
                       <div className={` + "`" + `flex h-4 w-4 items-center justify-center rounded border
-                        ${isSelected ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]" : "border-[hsl(var(--border))]"}` + "`" + `}>
+                        ${isSelected ? "border-accent bg-accent text-white" : "border-border"}` + "`" + `}>
                         {isSelected && (
                           <svg className="h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="20 6 9 17 4 12" />

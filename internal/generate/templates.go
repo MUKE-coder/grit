@@ -2,6 +2,7 @@ package generate
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -43,11 +44,7 @@ func (g *Generator) writeGoModel(names Names) error {
 	var imports string
 	if hasSlug {
 		imports = `import (
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
-	"regexp"
-	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -118,21 +115,10 @@ type %s struct {
 }
 `, imports, names.Pascal, names.Lower, names.Pascal, structFields)
 
-	// Add slugify helper + BeforeCreate hook if slug field exists
+	// Add BeforeCreate hook if slug field exists
 	if hasSlug {
 		slugGoName := toPascalCase(slugField.Name)
 		content += fmt.Sprintf(`
-// slugify generates a URL-friendly slug with a unique suffix.
-func slugify(s string) string {
-	slug := strings.ToLower(s)
-	re := regexp.MustCompile(`+"`"+`[^a-z0-9]+`+"`"+`)
-	slug = re.ReplaceAllString(slug, "-")
-	slug = strings.Trim(slug, "-")
-	b := make([]byte, 4)
-	rand.Read(b)
-	return slug + "-" + hex.EncodeToString(b)
-}
-
 // BeforeCreate auto-generates the slug before inserting.
 func (m *%s) BeforeCreate(tx *gorm.DB) error {
 	if m.%s == "" {
@@ -141,6 +127,34 @@ func (m *%s) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 `, names.Pascal, slugGoName, slugGoName, slugSourceGo)
+
+		// Write shared slugify helper if it doesn't exist yet
+		helpersPath := filepath.Join(g.Root, "apps", "api", "internal", "models", "helpers.go")
+		if _, err := os.Stat(helpersPath); os.IsNotExist(err) {
+			helpersContent := `package models
+
+import (
+	"crypto/rand"
+	"encoding/hex"
+	"regexp"
+	"strings"
+)
+
+// slugify generates a URL-friendly slug with a unique suffix.
+func slugify(s string) string {
+	slug := strings.ToLower(s)
+	re := regexp.MustCompile(` + "`" + `[^a-z0-9]+` + "`" + `)
+	slug = re.ReplaceAllString(slug, "-")
+	slug = strings.Trim(slug, "-")
+	b := make([]byte, 4)
+	rand.Read(b)
+	return slug + "-" + hex.EncodeToString(b)
+}
+`
+			if err := writeFileWithDirs(helpersPath, helpersContent); err != nil {
+				return fmt.Errorf("writing helpers.go: %w", err)
+			}
+		}
 	}
 
 	path := filepath.Join(g.Root, "apps", "api", "internal", "models", names.Snake+".go")
