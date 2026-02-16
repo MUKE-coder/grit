@@ -40,8 +40,7 @@ import (
 //   - GET /docs/openapi.json → OpenAPI 3.0 JSON spec
 func RegisterRoutes(r *gin.Engine) {
 	r.GET("/docs/openapi.json", func(c *gin.Context) {
-		c.Header("Content-Type", "application/json")
-		c.String(http.StatusOK, OpenAPISpec())
+		c.Data(http.StatusOK, "application/json", []byte(OpenAPISpec()))
 	})
 
 	r.GET("/docs", func(c *gin.Context) {
@@ -53,11 +52,10 @@ func RegisterRoutes(r *gin.Engine) {
 			DarkMode: true,
 		})
 		if err != nil {
-			c.String(http.StatusInternalServerError, "Error generating docs: "+err.Error())
+			c.String(http.StatusInternalServerError, "%%s", "Error generating docs: "+err.Error())
 			return
 		}
-		c.Header("Content-Type", "text/html")
-		c.String(http.StatusOK, htmlContent)
+		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(htmlContent))
 	})
 }
 `, opts.ProjectName)
