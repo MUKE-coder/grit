@@ -206,7 +206,8 @@ func adminPackageJSON(opts Options) string {
     "sonner": "^1.3.0",
     "tailwind-merge": "^2.2.0",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.22.0"
+    "zod": "^3.22.0",
+    "@repo/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/js-cookie": "^3.0.6",
@@ -228,6 +229,7 @@ func adminNextConfig() string {
 const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
+  transpilePackages: ["@repo/shared"],
 };
 
 export default nextConfig;

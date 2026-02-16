@@ -31,7 +31,7 @@ func writeSharedFiles(root string, opts Options) error {
 
 func sharedPackageJSON(opts Options) string {
 	return fmt.Sprintf(`{
-  "name": "@%s/shared",
+  "name": "@repo/shared",
   "version": "0.1.0",
   "private": true,
   "main": "./index.ts",
