@@ -320,7 +320,7 @@ func rootPackageJSON(opts Options) string {
     "build": "turbo build",
     "lint": "turbo lint",
     "type-check": "turbo type-check",
-    "dev:api": "cd apps/api && go run cmd/server/main.go",`)
+    "dev:api": "cd apps/api && air",`)
 
 	if opts.ShouldIncludeWeb() {
 		scripts += `
@@ -411,13 +411,16 @@ Built with [Grit](https://gritframework.dev) — Go + React. Built with Grit.
 ## Quick Start
 
 `+"```bash"+`
-# 1. Start infrastructure (PostgreSQL, Redis, MinIO, Mailhog)
+# 1. Install Air for Go hot reloading
+go install github.com/air-verse/air@latest
+
+# 2. Start infrastructure (PostgreSQL, Redis, MinIO, Mailhog)
 docker compose up -d
 
-# 2. Install frontend dependencies
+# 3. Install frontend dependencies
 pnpm install
 
-# 3. Start all services
+# 4. Start all services (API auto-reloads on file changes)
 pnpm dev
 `+"```"+`
 

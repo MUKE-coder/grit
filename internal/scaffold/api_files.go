@@ -27,6 +27,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "routes", "routes.go"):    apiRoutesGo(),
 		filepath.Join(apiRoot, "internal", "docs", "docs.go"):       apiScalarHandlerGo(opts),
 		filepath.Join(apiRoot, "internal", "docs", "openapi.go"):    apiOpenAPISpecGo(opts),
+		filepath.Join(apiRoot, ".air.toml"):                          airConfig(),
 	}
 
 	for path, content := range files {
@@ -82,6 +83,32 @@ tmp/
 # IDE
 .vscode/
 .idea/
+`
+}
+
+func airConfig() string {
+	return `root = "."
+tmp_dir = "tmp"
+
+[build]
+  bin = "./tmp/server"
+  cmd = "go build -o ./tmp/server ./cmd/server"
+  delay = 1000
+  exclude_dir = ["tmp", "vendor", "node_modules"]
+  exclude_regex = ["_test.go"]
+  include_ext = ["go", "toml", "yaml"]
+  kill_delay = "0s"
+  send_interrupt = false
+  stop_on_error = true
+
+[log]
+  time = false
+
+[color]
+  build = "yellow"
+  main = "magenta"
+  runner = "green"
+  watcher = "cyan"
 `
 }
 
