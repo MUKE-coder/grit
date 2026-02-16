@@ -43,7 +43,7 @@ const searchIndex: SearchItem[] = [
 
   // Core Concepts
   { title: 'Architecture Overview', href: '/docs/concepts/architecture', section: 'Core Concepts', keywords: 'design monorepo api frontend shared structure' },
-  { title: 'CLI Commands', href: '/docs/concepts/cli', section: 'Core Concepts', keywords: 'grit new generate sync migrate seed add role command' },
+  { title: 'CLI Commands', href: '/docs/concepts/cli', section: 'Core Concepts', keywords: 'grit new generate sync migrate seed add role start client server command' },
   { title: 'Code Generation', href: '/docs/concepts/code-generation', section: 'Core Concepts', keywords: 'generate resource crud scaffold model handler' },
   { title: 'Type System', href: '/docs/concepts/type-system', section: 'Core Concepts', keywords: 'typescript go types shared zod schema sync' },
   { title: 'Naming Conventions', href: '/docs/concepts/naming-conventions', section: 'Core Concepts', keywords: 'case snake camel pascal kebab naming style' },

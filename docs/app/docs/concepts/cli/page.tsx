@@ -558,6 +558,67 @@ fields:
                 </p>
               </div>
 
+              {/* grit start */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  grit start
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Start development servers for your Grit project. Use subcommands to launch
+                  the frontend client apps or the Go API server individually.
+                </p>
+
+                <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
+                  grit start client
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Runs <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">pnpm dev</code> from
+                  the project root, which starts all frontend apps (web, admin, expo, docs) via Turborepo.
+                </p>
+
+                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-8">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    </div>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                  </div>
+                  <div className="p-5 font-mono text-sm">
+                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit start client</span></div>
+                  </div>
+                </div>
+
+                <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
+                  grit start server
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Runs <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">go run cmd/server/main.go</code> from
+                  the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">apps/api</code> directory
+                  to start the Go API server.
+                </p>
+
+                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    </div>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                  </div>
+                  <div className="p-5 font-mono text-sm">
+                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit start server</span></div>
+                  </div>
+                </div>
+
+                <p className="text-sm text-muted-foreground/60">
+                  Both commands auto-detect the project root by looking for <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">docker-compose.yml</code> or <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">turbo.json</code>,
+                  so you can run them from any subdirectory within your project.
+                </p>
+              </div>
+
               {/* grit sync */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
@@ -726,6 +787,14 @@ fields:
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit add role &lt;ROLE&gt;</td>
                         <td className="px-4 py-2.5">Add a new role across all project files</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit start client</td>
+                        <td className="px-4 py-2.5">Start frontend apps via pnpm dev</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit start server</td>
+                        <td className="px-4 py-2.5">Start Go API server</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit sync</td>

@@ -27,6 +27,7 @@ func main() {
 	rootCmd.AddCommand(newCmd())
 	rootCmd.AddCommand(generateCmd())
 	rootCmd.AddCommand(addCmd())
+	rootCmd.AddCommand(startCmd())
 	rootCmd.AddCommand(syncCmd())
 	rootCmd.AddCommand(migrateCmd())
 	rootCmd.AddCommand(seedCmd())
@@ -397,6 +398,69 @@ func updateCmd() *cobra.Command {
 			fmt.Println()
 
 			return nil
+		},
+	}
+}
+
+func startCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "start",
+		Short: "Start development servers",
+		Long:  "Start the Go API server or frontend client apps for local development.",
+	}
+
+	cmd.AddCommand(startClientCmd())
+	cmd.AddCommand(startServerCmd())
+
+	return cmd
+}
+
+func startClientCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "client",
+		Short: "Start frontend apps (web, admin, expo)",
+		Long:  "Runs 'pnpm dev' from the project root to start all frontend apps via Turborepo.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			root, err := scaffold.FindProjectRoot()
+			if err != nil {
+				return err
+			}
+
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			purple.Println("\n  Starting client apps...\n")
+
+			c := exec.Command("pnpm", "dev")
+			c.Dir = root
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			c.Stdin = os.Stdin
+
+			return c.Run()
+		},
+	}
+}
+
+func startServerCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "server",
+		Short: "Start the Go API server",
+		Long:  "Runs 'go run cmd/server/main.go' from the apps/api directory.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			apiDir, err := findAPIDir()
+			if err != nil {
+				return err
+			}
+
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			purple.Println("\n  Starting API server...\n")
+
+			c := exec.Command("go", "run", "cmd/server/main.go")
+			c.Dir = apiDir
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			c.Stdin = os.Stdin
+
+			return c.Run()
 		},
 	}
 }
