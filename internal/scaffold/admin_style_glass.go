@@ -12,7 +12,7 @@ import { Eye, EyeOff } from "@/lib/icons";
 import { useLogin } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoginSchema, type LoginInput } from "@repo/shared/schemas/user";
+import { LoginSchema, type LoginInput } from "@repo/shared/schemas";
 
 const inputClass = "w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors backdrop-blur-sm";
 const errorInputClass = "w-full rounded-lg border border-danger/50 bg-white/5 px-4 py-3 text-foreground placeholder:text-text-muted focus:border-danger focus:outline-none focus:ring-1 focus:ring-danger transition-colors backdrop-blur-sm";
@@ -157,7 +157,7 @@ import { Eye, EyeOff } from "@/lib/icons";
 import { useRegister } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { RegisterSchema, type RegisterInput } from "@repo/shared/schemas/user";
+import { RegisterSchema, type RegisterInput } from "@repo/shared/schemas";
 
 const inputClass = "w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors backdrop-blur-sm";
 const errorInputClass = "w-full rounded-lg border border-danger/50 bg-white/5 px-4 py-3 text-foreground placeholder:text-text-muted focus:border-danger focus:outline-none focus:ring-1 focus:ring-danger transition-colors backdrop-blur-sm";
@@ -349,7 +349,7 @@ import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ForgotPasswordSchema, type ForgotPasswordInput } from "@repo/shared/schemas/user";
+import { ForgotPasswordSchema, type ForgotPasswordInput } from "@repo/shared/schemas";
 
 const inputClass = "w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors backdrop-blur-sm";
 const errorInputClass = "w-full rounded-lg border border-danger/50 bg-white/5 px-4 py-3 text-foreground placeholder:text-text-muted focus:border-danger focus:outline-none focus:ring-1 focus:ring-danger transition-colors backdrop-blur-sm";
