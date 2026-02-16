@@ -383,7 +383,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { ResourceDefinition } from "@/lib/resource";
 import { FormBuilder } from "@/components/forms/form-builder";
 import { useCreateResource, useUpdateResource, useResourceItem } from "@/hooks/use-resource";
-import { ArrowLeft } from "@/lib/icons";
+import { ChevronLeft } from "@/lib/icons";
 
 interface FormPageProps {
   resource: ResourceDefinition;
@@ -426,7 +426,7 @@ export function FormPage({ resource }: FormPageProps) {
             onClick={() => router.back()}
             className="flex items-center gap-2 text-text-secondary hover:text-foreground transition-colors"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
             Back to {pluralName}
           </button>
         </div>
@@ -449,7 +449,7 @@ export function FormPage({ resource }: FormPageProps) {
           onClick={() => router.back()}
           className="flex items-center gap-2 text-text-secondary hover:text-foreground transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4" />
           Back to {pluralName}
         </button>
       </div>
