@@ -119,6 +119,7 @@ export interface ResourceDefinition {
   endpoint: string;
   icon: string;
   label?: { singular: string; plural: string };
+  formView?: "modal" | "page";
   table: TableDefinition;
   form: FormDefinition;
   dashboard?: DashboardDefinition;
@@ -330,6 +331,7 @@ func adminResourcePage() string {
 	return `"use client";
 
 import { useState, useCallback, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { ResourceDefinition } from "@/lib/resource";
 import { useResource, useDeleteResource, useBulkDeleteResource } from "@/hooks/use-resource";
 import { DataTable } from "@/components/tables/data-table";
@@ -337,6 +339,7 @@ import { TableToolbar } from "@/components/tables/table-toolbar";
 import { TablePagination } from "@/components/tables/table-pagination";
 import { TableFilters } from "@/components/tables/table-filters";
 import { FormModal } from "@/components/forms/form-modal";
+import { FormPage } from "@/components/forms/form-page";
 import { ViewModal } from "@/components/resource/view-modal";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 
@@ -345,6 +348,16 @@ interface ResourcePageProps {
 }
 
 export function ResourcePage({ resource }: ResourcePageProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isFormPage = resource.formView === "page";
+  const formAction = searchParams.get("action");
+
+  // If formView is "page" and we have an action param, show the form page
+  if (isFormPage && (formAction === "create" || formAction === "edit")) {
+    return <FormPage resource={resource} />;
+  }
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(resource.table.pageSize ?? 20);
   const [search, setSearch] = useState("");
@@ -423,14 +436,22 @@ export function ResourcePage({ resource }: ResourcePageProps) {
   }, []);
 
   const handleEdit = useCallback((item: Record<string, unknown>) => {
-    setEditingItem(item);
-    setFormOpen(true);
-  }, []);
+    if (isFormPage) {
+      router.push(` + "`" + `/resources/${resource.slug}?action=edit&edit=${item.id}` + "`" + `);
+    } else {
+      setEditingItem(item);
+      setFormOpen(true);
+    }
+  }, [isFormPage, router, resource.slug]);
 
   const handleCreate = useCallback(() => {
-    setEditingItem(null);
-    setFormOpen(true);
-  }, []);
+    if (isFormPage) {
+      router.push(` + "`" + `/resources/${resource.slug}?action=create` + "`" + `);
+    } else {
+      setEditingItem(null);
+      setFormOpen(true);
+    }
+  }, [isFormPage, router, resource.slug]);
 
   const handleDelete = useCallback((id: number) => {
     setDeletingId(id);
@@ -534,7 +555,7 @@ export function ResourcePage({ resource }: ResourcePageProps) {
         />
       </div>
 
-      {formOpen && (
+      {!isFormPage && formOpen && (
         <FormModal
           resource={resource}
           item={editingItem}
@@ -647,14 +668,18 @@ export function useResource<T = Record<string, unknown>>(
   });
 }
 
-export function useResourceItem<T = Record<string, unknown>>(endpoint: string, id: number | null) {
+export function useResourceItem<T = Record<string, unknown>>(
+  endpoint: string,
+  id: number,
+  options?: { enabled?: boolean }
+) {
   return useQuery<{ data: T }>({
     queryKey: [endpoint, id],
     queryFn: async () => {
       const { data } = await apiClient.get(` + "`" + `${endpoint}/${id}` + "`" + `);
       return data;
     },
-    enabled: id !== null,
+    enabled: (options?.enabled ?? true) && id > 0,
   });
 }
 

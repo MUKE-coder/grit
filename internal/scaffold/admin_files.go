@@ -115,6 +115,7 @@ func writeAdminFiles(root string, opts Options) error {
 		// Form components
 		filepath.Join(adminRoot, "components", "forms", "form-builder.tsx"): adminFormBuilder(),
 		filepath.Join(adminRoot, "components", "forms", "form-modal.tsx"):   adminFormModal(),
+		filepath.Join(adminRoot, "components", "forms", "form-page.tsx"):    adminFormPage(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "text-field.tsx"):     adminTextField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "textarea-field.tsx"): adminTextareaField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "number-field.tsx"):   adminNumberField(),

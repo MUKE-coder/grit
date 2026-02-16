@@ -230,6 +230,7 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 		// Form components
 		filepath.Join(adminRoot, "components", "forms", "FormBuilder.tsx"):         adminFormBuilder(),
 		filepath.Join(adminRoot, "components", "forms", "FormModal.tsx"):           adminFormModal(),
+		filepath.Join(adminRoot, "components", "forms", "form-page.tsx"):        adminFormPage(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "TextField.tsx"):     adminTextField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "TextAreaField.tsx"): adminTextareaField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "NumberField.tsx"):   adminNumberField(),
