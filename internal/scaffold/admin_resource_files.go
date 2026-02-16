@@ -9,7 +9,7 @@ func adminResourceTypes() string {
 
 // ─── Column Definitions ─────────────────────────────────────────────
 
-export type ColumnFormat = "text" | "badge" | "currency" | "date" | "relative" | "boolean" | "image";
+export type ColumnFormat = "text" | "badge" | "currency" | "date" | "relative" | "boolean" | "image" | "video" | "link" | "email" | "color";
 
 export interface BadgeConfig {
   [value: string]: { color: string; label: string };
@@ -25,6 +25,7 @@ export interface ColumnDefinition {
   format?: ColumnFormat;
   badge?: BadgeConfig;
   currencyPrefix?: string;
+  className?: string;
 }
 
 // ─── Filter Definitions ─────────────────────────────────────────────

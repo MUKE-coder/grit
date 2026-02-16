@@ -372,12 +372,19 @@ grit g resource <Name> [flags]`}</pre>
                         <td className="px-4 py-2.5 font-mono text-xs">z.string().nullable()</td>
                         <td className="px-4 py-2.5 font-mono text-xs">datetime picker</td>
                       </tr>
-                      <tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs text-primary">date</td>
                         <td className="px-4 py-2.5 font-mono text-xs">*time.Time</td>
                         <td className="px-4 py-2.5 font-mono text-xs">string | null</td>
                         <td className="px-4 py-2.5 font-mono text-xs">z.string().nullable()</td>
                         <td className="px-4 py-2.5 font-mono text-xs">date picker</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2.5 font-mono text-xs text-primary">slug</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">string</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">string</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">z.string()</td>
+                        <td className="px-4 py-2.5 font-mono text-xs italic text-muted-foreground/50">auto-generated</td>
                       </tr>
                     </tbody>
                   </table>
@@ -391,8 +398,41 @@ grit g resource <Name> [flags]`}</pre>
                   and is optional by default. Both <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">datetime</code> and
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">date</code> use Go
                   pointer types (<code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">*time.Time</code>) to
-                  allow null values.
+                  allow null values. The <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug</code> type
+                  is auto-generated from a source field, has a unique index, and is excluded from forms.
                 </p>
+
+                <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
+                  Slug Fields
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug</code> field type
+                  auto-generates a URL-friendly slug from another field. Use the syntax{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">name:slug</code> to
+                  derive from the first string field, or{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">name:slug:source_field</code> to
+                  specify the source explicitly.
+                </p>
+                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    </div>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                  </div>
+                  <div className="p-5 font-mono text-sm space-y-4">
+                    <div>
+                      <span className="text-muted-foreground/40"># Auto-detect source (uses first string field, e.g. &quot;title&quot;)</span>
+                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit g resource Post --fields &quot;title:string,slug:slug,content:text&quot;</span></div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground/40"># Explicit source field</span>
+                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit g resource Post --fields &quot;title:string,headline:string,slug:slug:title&quot;</span></div>
+                    </div>
+                  </div>
+                </div>
 
                 <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
                   Using --from (YAML Definition)
@@ -457,7 +497,7 @@ fields:
 
   Defining fields for Invoice
   Enter fields as name:type (e.g., title:string)
-  Valid types: string, text, int, uint, float, bool, datetime, date
+  Valid types: string, text, int, uint, float, bool, datetime, date, slug
   Press Enter with no input when done.
 
   > number:string
@@ -501,6 +541,10 @@ fields:
                     <div>
                       <span className="text-muted-foreground/40"># Category with just a name</span>
                       <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit g resource Category --fields &quot;name:string,description:text&quot;</span></div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground/40"># Article with an auto-generated slug</span>
+                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit g resource Article --fields &quot;title:string,slug:slug,body:text,published:bool&quot;</span></div>
                     </div>
                   </div>
                 </div>

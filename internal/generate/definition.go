@@ -56,9 +56,10 @@ func PromptInteractive(name string) (*ResourceDefinition, error) {
 
 	fmt.Println()
 	fmt.Printf("  Defining fields for %s\n", name)
-	fmt.Println("  Enter fields as name:type[:modifiers] (e.g., title:string, slug:string:unique)")
+	fmt.Println("  Enter fields as name:type[:modifiers] (e.g., title:string, slug:slug:name)")
 	fmt.Printf("  Valid types: %s\n", strings.Join(ValidFieldTypes(), ", "))
 	fmt.Println("  Valid modifiers: unique, required, optional")
+	fmt.Println("  Slug fields: slug:slug (auto-detect source) or slug:slug:name (explicit source)")
 	fmt.Println("  Press Enter with no input when done.")
 	fmt.Println()
 
@@ -134,6 +135,21 @@ func parseFieldInput(input string) (Field, error) {
 	}
 	if !isValidType(typ) {
 		return Field{}, fmt.Errorf("invalid type %q for field %q (valid: %s)", typ, name, strings.Join(ValidFieldTypes(), ", "))
+	}
+
+	// Slug fields: third part is the source field name, not a modifier
+	if typ == "slug" {
+		slugSource := ""
+		if len(parts) >= 3 && strings.TrimSpace(parts[2]) != "" {
+			slugSource = strings.TrimSpace(parts[2])
+		}
+		return Field{
+			Name:       name,
+			Type:       typ,
+			Required:   false,
+			Unique:     true,
+			SlugSource: slugSource,
+		}, nil
 	}
 
 	// Default: string fields are required

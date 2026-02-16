@@ -223,7 +223,7 @@ export function ColumnHeader({ column, sortBy, sortOrder, onSort }: ColumnHeader
 // adminCellRenderers returns the cell renderer functions.
 func adminCellRenderers() string {
 	return `import type { ColumnDefinition } from "@/lib/resource";
-import { Check, X } from "@/lib/icons";
+import { Check, X, Play, ExternalLink } from "@/lib/icons";
 import { formatDate, formatRelative, formatCurrency } from "@/lib/formatters";
 
 export function renderCell(
@@ -235,22 +235,47 @@ export function renderCell(
     return <span className="text-text-muted">—</span>;
   }
 
+  let content: React.ReactNode;
+
   switch (column.format) {
     case "badge":
-      return <BadgeCell value={String(value)} config={column.badge} />;
+      content = <BadgeCell value={String(value)} config={column.badge} />;
+      break;
     case "boolean":
-      return <BooleanCell value={Boolean(value)} />;
+      content = <BooleanCell value={Boolean(value)} />;
+      break;
     case "currency":
-      return <CurrencyCell value={Number(value)} prefix={column.currencyPrefix} />;
+      content = <CurrencyCell value={Number(value)} prefix={column.currencyPrefix} />;
+      break;
     case "date":
-      return <DateCell value={String(value)} />;
+      content = <DateCell value={String(value)} />;
+      break;
     case "relative":
-      return <RelativeCell value={String(value)} />;
+      content = <RelativeCell value={String(value)} />;
+      break;
     case "image":
-      return <ImageCell value={String(value)} />;
+      content = <ImageCell value={String(value)} />;
+      break;
+    case "video":
+      content = <VideoCell value={String(value)} />;
+      break;
+    case "link":
+      content = <LinkCell value={String(value)} />;
+      break;
+    case "email":
+      content = <EmailCell value={String(value)} />;
+      break;
+    case "color":
+      content = <ColorCell value={String(value)} />;
+      break;
     default:
-      return <span>{String(value)}</span>;
+      content = <span>{String(value)}</span>;
   }
+
+  if (column.className) {
+    return <span className={column.className}>{content}</span>;
+  }
+  return content;
 }
 
 function BadgeCell({
@@ -324,6 +349,60 @@ function ImageCell({ value }: { value: string }) {
       alt=""
       className="h-8 w-8 rounded-full object-cover border border-border"
     />
+  );
+}
+
+function VideoCell({ value }: { value: string }) {
+  return (
+    <div className="relative h-10 w-16 rounded overflow-hidden bg-bg-tertiary">
+      <video src={value} className="h-full w-full object-cover" muted />
+      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+        <Play className="h-3.5 w-3.5 text-white fill-white" />
+      </div>
+    </div>
+  );
+}
+
+function LinkCell({ value }: { value: string }) {
+  let hostname = value;
+  try {
+    hostname = new URL(value).hostname;
+  } catch {
+    // use raw value if not a valid URL
+  }
+  return (
+    <a
+      href={value}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
+    >
+      {hostname}
+      <ExternalLink className="h-3 w-3" />
+    </a>
+  );
+}
+
+function EmailCell({ value }: { value: string }) {
+  return (
+    <a
+      href={` + "`" + `mailto:${value}` + "`" + `}
+      className="text-sm text-accent hover:underline"
+    >
+      {value}
+    </a>
+  );
+}
+
+function ColorCell({ value }: { value: string }) {
+  return (
+    <div className="inline-flex items-center gap-2">
+      <span
+        className="h-5 w-5 rounded-full border border-border shrink-0"
+        style={{ backgroundColor: value }}
+      />
+      <span className="font-mono text-xs text-text-secondary">{value}</span>
+    </div>
   );
 }
 `

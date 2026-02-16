@@ -104,6 +104,8 @@ func adminIconMap() string {
   Columns3,
   RefreshCw,
   Upload,
+  Play,
+  ExternalLink,
   type LucideIcon,
 } from "lucide-react";
 
@@ -177,6 +179,8 @@ export {
   Save,
   AlertTriangle,
   Lock,
+  Play,
+  ExternalLink,
 };
 `
 }

@@ -233,6 +233,49 @@ Response:
 
   // Relation — displays a field from a related object
   { key: 'customer.name', label: 'Customer', relation: 'customer' },
+
+  // Video — thumbnail with play overlay
+  { key: 'preview', label: 'Preview', format: 'video' },
+
+  // Link — clickable URL with hostname
+  { key: 'website', label: 'Website', format: 'link' },
+
+  // Email — clickable mailto link
+  { key: 'email', label: 'Email', format: 'email' },
+
+  // Color — swatch circle with hex value
+  { key: 'color', label: 'Color', format: 'color' },
+]`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <h2>Column Styling</h2>
+              <p>
+                Add the <code>className</code> property to any column definition to apply
+                custom Tailwind CSS classes to every cell in that column. This wraps the
+                rendered content in a <code>&lt;span&gt;</code> with your classes, so it
+                works alongside any format type.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">Column className examples</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`columns: [
+  // Bold title column
+  { key: 'title', label: 'Title', className: 'font-semibold text-foreground' },
+
+  // Green currency column
+  { key: 'price', label: 'Price', format: 'currency', className: 'text-success' },
+
+  // Monospace code column
+  { key: 'sku', label: 'SKU', className: 'font-mono text-xs tracking-wider' },
+
+  // Truncated long text
+  { key: 'description', label: 'Description', className: 'max-w-[200px] truncate' },
 ]`}</pre>
               </div>
             </div>

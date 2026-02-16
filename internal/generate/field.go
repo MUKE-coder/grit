@@ -14,21 +14,28 @@ const (
 	FieldBool     FieldType = "bool"
 	FieldDatetime FieldType = "datetime"
 	FieldDate     FieldType = "date"
+	FieldSlug     FieldType = "slug"
 )
 
 // Field describes a single field in a resource.
 type Field struct {
-	Name     string `yaml:"name"`
-	Type     string `yaml:"type"`
-	Required bool   `yaml:"required"`
-	Unique   bool   `yaml:"unique"`
-	Default  string `yaml:"default"`
+	Name       string `yaml:"name"`
+	Type       string `yaml:"type"`
+	Required   bool   `yaml:"required"`
+	Unique     bool   `yaml:"unique"`
+	Default    string `yaml:"default"`
+	SlugSource string `yaml:"slug_source"`
+}
+
+// IsSlug returns true if this field is an auto-generated slug.
+func (f Field) IsSlug() bool {
+	return FieldType(f.Type) == FieldSlug
 }
 
 // GoType returns the Go type for this field.
 func (f Field) GoType() string {
 	switch FieldType(f.Type) {
-	case FieldString, FieldText:
+	case FieldString, FieldText, FieldSlug:
 		return "string"
 	case FieldInt:
 		return "int"
@@ -56,9 +63,11 @@ func (f Field) GORMTag() string {
 		parts = append(parts, "type:text")
 	case FieldDate:
 		parts = append(parts, "type:date")
+	case FieldSlug:
+		parts = append(parts, "size:255", "uniqueIndex")
 	}
 
-	if f.Unique {
+	if f.Unique && FieldType(f.Type) != FieldSlug {
 		parts = append(parts, "uniqueIndex")
 	}
 	if !f.Required {
@@ -90,7 +99,7 @@ func (f Field) GORMTag() string {
 // TSType returns the TypeScript type for this field.
 func (f Field) TSType() string {
 	switch FieldType(f.Type) {
-	case FieldString, FieldText:
+	case FieldString, FieldText, FieldSlug:
 		return "string"
 	case FieldInt, FieldUint, FieldFloat:
 		return "number"
@@ -114,6 +123,8 @@ func (f Field) ZodType() string {
 		}
 	case FieldText:
 		base = "z.string()"
+	case FieldSlug:
+		base = "z.string()"
 	case FieldInt:
 		base = "z.number().int()"
 	case FieldUint:
@@ -128,7 +139,7 @@ func (f Field) ZodType() string {
 		base = "z.string()"
 	}
 
-	if !f.Required && FieldType(f.Type) != FieldDatetime && FieldType(f.Type) != FieldDate {
+	if !f.Required && FieldType(f.Type) != FieldDatetime && FieldType(f.Type) != FieldDate && FieldType(f.Type) != FieldSlug {
 		base += ".optional()"
 	}
 
@@ -155,6 +166,7 @@ func (f Field) ColumnFormat() string {
 }
 
 // FormFieldType returns the form builder field type for this field type.
+// Returns "" for auto-generated fields like slug (excluded from forms).
 func (f Field) FormFieldType() string {
 	switch FieldType(f.Type) {
 	case FieldString:
@@ -169,6 +181,8 @@ func (f Field) FormFieldType() string {
 		return "datetime"
 	case FieldDate:
 		return "date"
+	case FieldSlug:
+		return ""
 	default:
 		return "text"
 	}
@@ -177,7 +191,7 @@ func (f Field) FormFieldType() string {
 // IsSortable returns true if this field type should be sortable by default.
 func (f Field) IsSortable() bool {
 	switch FieldType(f.Type) {
-	case FieldString, FieldInt, FieldUint, FieldFloat, FieldDatetime, FieldDate:
+	case FieldString, FieldInt, FieldUint, FieldFloat, FieldDatetime, FieldDate, FieldSlug:
 		return true
 	default:
 		return false
@@ -186,10 +200,10 @@ func (f Field) IsSortable() bool {
 
 // IsSearchable returns true if this field type should be searchable by default.
 func (f Field) IsSearchable() bool {
-	return FieldType(f.Type) == FieldString || FieldType(f.Type) == FieldText
+	return FieldType(f.Type) == FieldString || FieldType(f.Type) == FieldText || FieldType(f.Type) == FieldSlug
 }
 
 // ValidFieldTypes returns all valid field type names.
 func ValidFieldTypes() []string {
-	return []string{"string", "text", "int", "uint", "float", "bool", "datetime", "date"}
+	return []string{"string", "text", "int", "uint", "float", "bool", "datetime", "date", "slug"}
 }

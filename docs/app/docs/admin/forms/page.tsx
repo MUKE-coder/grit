@@ -636,6 +636,68 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`}</pre>
               </div>
             </div>
 
+            {/* Auto-Generated Fields */}
+            <div className="prose-grit">
+              <h2>Auto-Generated Fields (Slug)</h2>
+              <p>
+                Fields with the <code>slug</code> type are automatically excluded from forms.
+                Instead of being editable, slugs are auto-generated from another field (usually
+                the name) when a record is created. They still appear in the DataTable as a
+                read-only column.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-4">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">Generating a resource with a slug field</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# Slug auto-detects source (first string field = "name")
+grit generate resource Category name:string slug:slug description:text
+
+# Explicit source field
+grit generate resource Article title:string slug:slug:title content:text`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                The code generator handles everything automatically:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-4">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">Generated Go model with BeforeCreate hook</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type Category struct {
+    ID          uint           \`gorm:"primarykey" json:"id"\`
+    Name        string         \`gorm:"size:255" json:"name"\`
+    Slug        string         \`gorm:"size:255;uniqueIndex" json:"slug"\`
+    Description string         \`gorm:"type:text" json:"description"\`
+    CreatedAt   time.Time      \`json:"created_at"\`
+    ...
+}
+
+// BeforeCreate auto-generates the slug before inserting.
+func (m *Category) BeforeCreate(tx *gorm.DB) error {
+    if m.Slug == "" {
+        m.Slug = slugify(m.Name) // "Electronics" → "electronics-a8f3x2k9"
+    }
+    return nil
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit mb-8">
+              <p>
+                The slug includes an 8-character unique suffix to prevent collisions
+                (e.g., <code>electronics-a8f3x2k9</code>). The Zod create/update schemas
+                also exclude slug fields, since they&apos;re never sent by the client.
+              </p>
+            </div>
+
             {/* Nav */}
             <div className="flex items-center justify-between pt-6 border-t border-border/30">
               <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">
