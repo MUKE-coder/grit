@@ -75,6 +75,7 @@ const navItems: NavItem[] = [
       { title: 'Resource Definitions', href: '/docs/admin/resources' },
       { title: 'DataTable', href: '/docs/admin/datatable' },
       { title: 'Form Builder', href: '/docs/admin/forms' },
+      { title: 'Relationships', href: '/docs/admin/relationships' },
       { title: 'Dashboard & Widgets', href: '/docs/admin/widgets' },
     ],
   },
@@ -120,6 +121,7 @@ const navItems: NavItem[] = [
     title: 'Tutorials',
     icon: <BookOpen className="h-3.5 w-3.5" />,
     items: [
+      { title: 'Learn Grit Step by Step', href: '/docs/tutorials/learn' },
       { title: 'Build a Blog', href: '/docs/tutorials/blog' },
       { title: 'Build a SaaS', href: '/docs/tutorials/saas' },
       { title: 'Build an E-Commerce', href: '/docs/tutorials/ecommerce' },

@@ -60,6 +60,7 @@ func PromptInteractive(name string) (*ResourceDefinition, error) {
 	fmt.Printf("  Valid types: %s\n", strings.Join(ValidFieldTypes(), ", "))
 	fmt.Println("  Valid modifiers: unique, required, optional")
 	fmt.Println("  Slug fields: slug:slug (auto-detect source) or slug:slug:name (explicit source)")
+	fmt.Println("  Relationships: category:belongs_to or author:belongs_to:User, tags:many_to_many:Tag")
 	fmt.Println("  Press Enter with no input when done.")
 	fmt.Println()
 
@@ -149,6 +150,36 @@ func parseFieldInput(input string) (Field, error) {
 			Required:   false,
 			Unique:     true,
 			SlugSource: slugSource,
+		}, nil
+	}
+
+	// belongs_to: third part is the related model name (optional, inferred from field name)
+	// e.g., category:belongs_to → Category, author:belongs_to:User → User
+	if typ == "belongs_to" {
+		relatedModel := ""
+		if len(parts) >= 3 && strings.TrimSpace(parts[2]) != "" {
+			relatedModel = strings.TrimSpace(parts[2])
+		}
+		return Field{
+			Name:         name,
+			Type:         typ,
+			Required:     true,
+			RelatedModel: relatedModel,
+		}, nil
+	}
+
+	// many_to_many: third part is the related model name (required)
+	// e.g., tags:many_to_many:Tag
+	if typ == "many_to_many" {
+		if len(parts) < 3 || strings.TrimSpace(parts[2]) == "" {
+			return Field{}, fmt.Errorf("many_to_many requires a related model name (e.g., tags:many_to_many:Tag)")
+		}
+		relatedModel := strings.TrimSpace(parts[2])
+		return Field{
+			Name:         name,
+			Type:         typ,
+			Required:     false,
+			RelatedModel: relatedModel,
 		}, nil
 	}
 

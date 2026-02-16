@@ -493,6 +493,6 @@ No Docker needed — just your API keys and `+"``"+`go run`+"``"+`.
 
 ---
 
-*Built with Grit v0.1.0*
+*Built with Grit v0.12.0*
 `, opts.ProjectName, opts.ProjectName)
 }

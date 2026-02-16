@@ -20,6 +20,8 @@ import { VideoField } from "./fields/video-field";
 import { VideosField } from "./fields/videos-field";
 import { FileField } from "./fields/file-field";
 import { FilesField } from "./fields/files-field";
+import { RelationshipSelectField } from "./fields/relationship-select-field";
+import { MultiRelationshipSelectField } from "./fields/multi-relationship-select-field";
 import { Loader2 } from "@/lib/icons";
 
 interface FormBuilderProps {
@@ -255,6 +257,27 @@ function FieldRenderer({
           )}
         />
       );
+    case "relationship-select":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          rules={field.required ? { required: ` + "`" + `${field.label} is required` + "`" + ` } : undefined}
+          render={({ field: formField }) => (
+            <RelationshipSelectField field={field} value={formField.value ?? ""} onChange={formField.onChange} error={error} />
+          )}
+        />
+      );
+    case "multi-relationship-select":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          render={({ field: formField }) => (
+            <MultiRelationshipSelectField field={field} value={formField.value ?? []} onChange={formField.onChange} error={error} />
+          )}
+        />
+      );
     default:
       return null;
   }
@@ -266,6 +289,13 @@ function buildDefaults(
 ): Record<string, unknown> {
   const defaults: Record<string, unknown> = {};
   for (const field of fields) {
+    // multi-relationship-select: extract IDs from the nested array of objects
+    if (field.type === "multi-relationship-select" && field.relationshipKey) {
+      const related = existing[field.relationshipKey];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      defaults[field.key] = Array.isArray(related) ? related.map((r: any) => r.id) : [];
+      continue;
+    }
     if (field.key in existing) {
       defaults[field.key] = existing[field.key];
     } else if (field.defaultValue !== undefined) {
@@ -1007,6 +1037,304 @@ export function FilesField({ field, value, onChange, error }: FilesFieldProps) {
       description={field.description ?? "Upload up to " + String(field.max ?? 10) + " files"}
       error={error}
     />
+  );
+}
+`
+}
+
+func adminRelationshipSelectField() string {
+	return `"use client";
+
+import { useState, useRef, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
+import type { FieldDefinition } from "@/lib/resource";
+
+interface RelationshipSelectFieldProps {
+  field: FieldDefinition;
+  value: number | null;
+  onChange: (value: number | null) => void;
+  error?: string;
+}
+
+export function RelationshipSelectField({ field, value, onChange, error }: RelationshipSelectFieldProps) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const { data: options = [], isLoading } = useQuery({
+    queryKey: [field.relatedEndpoint, "options"],
+    queryFn: async () => {
+      const { data } = await apiClient.get(` + "`" + `${field.relatedEndpoint}?page_size=100` + "`" + `);
+      return data.data || data || [];
+    },
+    enabled: !!field.relatedEndpoint,
+  });
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const displayField = field.displayField || "name";
+
+  const filtered = useMemo(() =>
+    (options as Record<string, unknown>[]).filter((item) => {
+      if (!search) return true;
+      const label = String(item[displayField] || item.name || item.title || item.id || "");
+      return label.toLowerCase().includes(search.toLowerCase());
+    }),
+    [options, search, displayField]
+  );
+
+  const selectedLabel = useMemo(() => {
+    if (!value) return "";
+    const found = (options as Record<string, unknown>[]).find((item) => item.id === value);
+    if (!found) return String(value);
+    return String(found[displayField] || found.name || found.title || found.id || "");
+  }, [value, options, displayField]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={` + "`" + `flex h-10 w-full items-center justify-between rounded-md border bg-transparent px-3 py-2 text-sm transition-colors
+          ${error ? "border-red-500" : "border-[hsl(var(--border))]"}
+          ${open ? "ring-2 ring-[hsl(var(--ring))]" : ""}` + "`" + `}
+      >
+        <span className={value ? "text-[hsl(var(--foreground))]" : "text-[hsl(var(--muted-foreground))]"}>
+          {value ? selectedLabel : ` + "`" + `Select ${field.label}...` + "`" + `}
+        </span>
+        <svg className="h-4 w-4 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--popover))] shadow-md">
+          <div className="p-2">
+            <input
+              type="text"
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex h-9 w-full rounded-md border border-[hsl(var(--border))] bg-transparent px-3 py-1 text-sm outline-none placeholder:text-[hsl(var(--muted-foreground))]"
+              autoFocus
+            />
+          </div>
+          <div className="max-h-60 overflow-y-auto p-1">
+            {isLoading ? (
+              <div className="px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">Loading...</div>
+            ) : filtered.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">No results found</div>
+            ) : (
+              <>
+                {value && (
+                  <button
+                    type="button"
+                    onClick={() => { onChange(null); setOpen(false); setSearch(""); }}
+                    className="flex w-full items-center rounded-sm px-3 py-2 text-sm text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]"
+                  >
+                    Clear selection
+                  </button>
+                )}
+                {filtered.map((item) => {
+                  const id = item.id as number;
+                  const label = String(item[displayField] || item.name || item.title || item.id || "");
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => { onChange(id); setOpen(false); setSearch(""); }}
+                      className={` + "`" + `flex w-full items-center rounded-sm px-3 py-2 text-sm hover:bg-[hsl(var(--accent))]
+                        ${value === id ? "bg-[hsl(var(--accent))] font-medium" : ""}` + "`" + `}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+    </div>
+  );
+}
+`
+}
+
+func adminMultiRelationshipSelectField() string {
+	return `"use client";
+
+import { useState, useRef, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
+import type { FieldDefinition } from "@/lib/resource";
+
+interface MultiRelationshipSelectFieldProps {
+  field: FieldDefinition;
+  value: number[];
+  onChange: (value: number[]) => void;
+  error?: string;
+}
+
+export function MultiRelationshipSelectField({ field, value = [], onChange, error }: MultiRelationshipSelectFieldProps) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const { data: options = [], isLoading } = useQuery({
+    queryKey: [field.relatedEndpoint, "options"],
+    queryFn: async () => {
+      const { data } = await apiClient.get(` + "`" + `${field.relatedEndpoint}?page_size=100` + "`" + `);
+      return data.data || data || [];
+    },
+    enabled: !!field.relatedEndpoint,
+  });
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const displayField = field.displayField || "name";
+
+  const filtered = useMemo(() =>
+    (options as Record<string, unknown>[]).filter((item) => {
+      if (!search) return true;
+      const label = String(item[displayField] || item.name || item.title || item.id || "");
+      return label.toLowerCase().includes(search.toLowerCase());
+    }),
+    [options, search, displayField]
+  );
+
+  const selectedLabels = useMemo(() => {
+    return value.map((id) => {
+      const found = (options as Record<string, unknown>[]).find((item) => item.id === id);
+      if (!found) return { id, label: String(id) };
+      return { id, label: String(found[displayField] || found.name || found.title || found.id || "") };
+    });
+  }, [value, options, displayField]);
+
+  const toggleItem = (id: number) => {
+    if (value.includes(id)) {
+      onChange(value.filter((v) => v !== id));
+    } else {
+      onChange([...value, id]);
+    }
+  };
+
+  const removeItem = (id: number) => {
+    onChange(value.filter((v) => v !== id));
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div
+        onClick={() => setOpen(!open)}
+        className={` + "`" + `flex min-h-10 w-full cursor-pointer flex-wrap items-center gap-1 rounded-md border bg-transparent px-3 py-2 text-sm transition-colors
+          ${error ? "border-red-500" : "border-[hsl(var(--border))]"}
+          ${open ? "ring-2 ring-[hsl(var(--ring))]" : ""}` + "`" + `}
+      >
+        {selectedLabels.length > 0 ? (
+          selectedLabels.map(({ id, label }) => (
+            <span
+              key={id}
+              className="inline-flex items-center gap-1 rounded-md bg-[hsl(var(--accent))] px-2 py-0.5 text-xs font-medium"
+            >
+              {label}
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); removeItem(id); }}
+                className="ml-0.5 rounded-full hover:bg-[hsl(var(--destructive))] hover:text-white"
+              >
+                <svg className="h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                </svg>
+              </button>
+            </span>
+          ))
+        ) : (
+          <span className="text-[hsl(var(--muted-foreground))]">
+            {` + "`" + `Select ${field.label}...` + "`" + `}
+          </span>
+        )}
+      </div>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--popover))] shadow-md">
+          <div className="p-2">
+            <input
+              type="text"
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex h-9 w-full rounded-md border border-[hsl(var(--border))] bg-transparent px-3 py-1 text-sm outline-none placeholder:text-[hsl(var(--muted-foreground))]"
+              autoFocus
+            />
+          </div>
+          <div className="max-h-60 overflow-y-auto p-1">
+            {isLoading ? (
+              <div className="px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">Loading...</div>
+            ) : filtered.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">No results found</div>
+            ) : (
+              <>
+                {value.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => onChange([])}
+                    className="flex w-full items-center rounded-sm px-3 py-2 text-sm text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]"
+                  >
+                    Clear all
+                  </button>
+                )}
+                {filtered.map((item) => {
+                  const id = item.id as number;
+                  const label = String(item[displayField] || item.name || item.title || item.id || "");
+                  const isSelected = value.includes(id);
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => toggleItem(id)}
+                      className={` + "`" + `flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm hover:bg-[hsl(var(--accent))]
+                        ${isSelected ? "bg-[hsl(var(--accent))]" : ""}` + "`" + `}
+                    >
+                      <div className={` + "`" + `flex h-4 w-4 items-center justify-center rounded border
+                        ${isSelected ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]" : "border-[hsl(var(--border))]"}` + "`" + `}>
+                        {isSelected && (
+                          <svg className="h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </div>
+                      {label}
+                    </button>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+    </div>
   );
 }
 `

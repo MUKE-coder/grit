@@ -63,7 +63,7 @@ export interface TableDefinition {
 
 // ─── Form Field Definitions ─────────────────────────────────────────
 
-export type FieldType = "text" | "textarea" | "number" | "select" | "date" | "datetime" | "toggle" | "checkbox" | "radio" | "image" | "images" | "video" | "videos" | "file" | "files";
+export type FieldType = "text" | "textarea" | "number" | "select" | "date" | "datetime" | "toggle" | "checkbox" | "radio" | "image" | "images" | "video" | "videos" | "file" | "files" | "relationship-select" | "multi-relationship-select";
 
 export interface FieldDefinition {
   key: string;
@@ -83,6 +83,9 @@ export interface FieldDefinition {
   colSpan?: 1 | 2;
   accept?: string;
   maxSize?: number;
+  relatedEndpoint?: string;
+  displayField?: string;
+  relationshipKey?: string;
 }
 
 export interface FormDefinition {

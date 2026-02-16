@@ -413,6 +413,76 @@ export default defineResource({
             </div>
 
             <div className="prose-grit">
+              {/* Relationship Fields */}
+              <h2>Relationship Fields</h2>
+              <p>
+                Two relationship field types let you associate resources. These fields auto-fetch
+                options from a related API endpoint using React Query.
+              </p>
+
+              <h3>Relationship Select (belongs_to)</h3>
+              <p>
+                A searchable dropdown that loads all records from a related endpoint. Stores
+                the selected item&apos;s ID as the field value.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">Relationship select field</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+  key: 'category_id',
+  label: 'Category',
+  type: 'relationship-select',
+  required: true,
+  relatedEndpoint: '/api/categories',
+  displayField: 'name',
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                Properties:
+              </p>
+              <ul>
+                <li><code>relatedEndpoint</code> &mdash; the API endpoint to fetch options from (e.g., <code>/api/categories</code>).</li>
+                <li><code>displayField</code> &mdash; which field from the related model to display in the dropdown (default: <code>&quot;name&quot;</code>).</li>
+              </ul>
+
+              <h3>Multi Relationship Select (many_to_many)</h3>
+              <p>
+                A multi-select with toggle checkboxes and removable badge chips. Stores
+                an array of IDs. In edit mode, existing selections are extracted from the
+                API response using the <code>relationshipKey</code> property.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">Multi relationship select field</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+  key: 'tag_ids',
+  label: 'Tags',
+  type: 'multi-relationship-select',
+  relatedEndpoint: '/api/tags',
+  displayField: 'name',
+  relationshipKey: 'tags',
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                The <code>relationshipKey</code> tells the form where to find the existing related
+                objects in the API response (e.g., <code>product.tags</code>). In edit mode, the
+                form extracts <code>tag.id</code> from each object to pre-select them.
+              </p>
+
               {/* Validation */}
               <h2>Validation</h2>
               <p>
@@ -707,8 +777,8 @@ func (m *Category) BeforeCreate(tx *gorm.DB) error {
                 </Link>
               </Button>
               <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">
-                <Link href="/docs/admin/widgets" className="gap-1.5">
-                  Dashboard & Widgets
+                <Link href="/docs/admin/relationships" className="gap-1.5">
+                  Relationships
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </Button>

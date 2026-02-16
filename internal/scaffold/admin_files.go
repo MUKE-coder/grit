@@ -129,7 +129,9 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "forms", "fields", "video-field.tsx"):    adminVideoField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "videos-field.tsx"):   adminVideosField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "file-field.tsx"):     adminFileField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "files-field.tsx"):    adminFilesField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "files-field.tsx"):                  adminFilesField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "relationship-select-field.tsx"):      adminRelationshipSelectField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "multi-relationship-select-field.tsx"): adminMultiRelationshipSelectField(),
 
 		// UI components
 		filepath.Join(adminRoot, "components", "ui", "dropzone.tsx"):      adminDropzone(),

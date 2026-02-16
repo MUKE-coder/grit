@@ -1016,9 +1016,9 @@ export default function BlogPostPage() {
                 asChild
                 className="text-muted-foreground/60 hover:text-foreground"
               >
-                <Link href="/docs/design/theme" className="gap-1.5">
+                <Link href="/docs/tutorials/learn" className="gap-1.5">
                   <ArrowLeft className="h-3.5 w-3.5" />
-                  Theme &amp; Colors
+                  Learn Grit Step by Step
                 </Link>
               </Button>
               <Button

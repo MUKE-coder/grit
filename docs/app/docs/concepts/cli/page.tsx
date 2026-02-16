@@ -379,12 +379,26 @@ grit g resource <Name> [flags]`}</pre>
                         <td className="px-4 py-2.5 font-mono text-xs">z.string().nullable()</td>
                         <td className="px-4 py-2.5 font-mono text-xs">date picker</td>
                       </tr>
-                      <tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs text-primary">slug</td>
                         <td className="px-4 py-2.5 font-mono text-xs">string</td>
                         <td className="px-4 py-2.5 font-mono text-xs">string</td>
                         <td className="px-4 py-2.5 font-mono text-xs">z.string()</td>
                         <td className="px-4 py-2.5 font-mono text-xs italic text-muted-foreground/50">auto-generated</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs text-primary">belongs_to</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">uint (FK)</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">number</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">{`z.number().int().min(1)`}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">relationship select</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2.5 font-mono text-xs text-primary">many_to_many</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">[]uint (IDs)</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">{`number[]`}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">{`z.array(z.number().int())`}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">multi-select</td>
                       </tr>
                     </tbody>
                   </table>
@@ -433,6 +447,49 @@ grit g resource <Name> [flags]`}</pre>
                     </div>
                   </div>
                 </div>
+
+                <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
+                  Relationship Fields
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">belongs_to</code> to
+                  create a foreign key relationship, and <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">many_to_many</code> for
+                  junction table relationships. Both generate the Go model associations, handler Preloads, Zod schemas,
+                  TypeScript types, and admin form components automatically.
+                </p>
+                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    </div>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                  </div>
+                  <div className="p-5 font-mono text-sm space-y-4">
+                    <div>
+                      <span className="text-muted-foreground/40"># belongs_to — infer related model from field name</span>
+                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit g resource Product --fields &quot;name:string,category:belongs_to,price:float&quot;</span></div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground/40"># belongs_to — explicit related model</span>
+                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit g resource Post --fields &quot;title:string,author:belongs_to:User,content:text&quot;</span></div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground/40"># many_to_many — requires related model name</span>
+                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit g resource Product --fields &quot;name:string,tags:many_to_many:Tag,price:float&quot;</span></div>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground/60 mt-3 mb-4">
+                  For <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">belongs_to</code>,
+                  the related model is inferred from the field name (<code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">category</code> → <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Category</code>).
+                  Use the three-part syntax <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">name:belongs_to:Model</code> when
+                  the field name differs from the model name.
+                  For <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">many_to_many</code>,
+                  the related model name is always required.
+                  See the <Link href="/docs/admin/relationships" className="text-primary hover:underline">Relationships</Link> page for full details.
+                </p>
 
                 <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
                   Using --from (YAML Definition)
@@ -497,7 +554,7 @@ fields:
 
   Defining fields for Invoice
   Enter fields as name:type (e.g., title:string)
-  Valid types: string, text, int, uint, float, bool, datetime, date, slug
+  Valid types: string, text, int, uint, float, bool, datetime, date, slug, belongs_to, many_to_many
   Press Enter with no input when done.
 
   > number:string

@@ -65,6 +65,7 @@ const searchIndex: SearchItem[] = [
   { title: 'Resource Definitions', href: '/docs/admin/resources', section: 'Admin Panel', keywords: 'resource define crud table form config columns fields' },
   { title: 'DataTable', href: '/docs/admin/datatable', section: 'Admin Panel', keywords: 'table list sort filter search pagination columns' },
   { title: 'Form Builder', href: '/docs/admin/forms', section: 'Admin Panel', keywords: 'form create edit fields input select toggle checkbox' },
+  { title: 'Relationships', href: '/docs/admin/relationships', section: 'Admin Panel', keywords: 'relationship belongs_to many_to_many foreign key association preload select' },
   { title: 'Dashboard & Widgets', href: '/docs/admin/widgets', section: 'Admin Panel', keywords: 'dashboard stats chart widget cards analytics' },
 
   // Frontend
@@ -90,6 +91,7 @@ const searchIndex: SearchItem[] = [
   { title: 'Theme & Colors', href: '/docs/design/theme', section: 'Design System', keywords: 'theme dark light colors palette tailwind design' },
 
   // Tutorials
+  { title: 'Learn Grit Step by Step', href: '/docs/tutorials/learn', section: 'Tutorials', keywords: 'tutorial beginner learn first getting started task manager step by step curriculum' },
   { title: 'Build a Blog', href: '/docs/tutorials/blog', section: 'Tutorials', keywords: 'tutorial blog post article example walkthrough' },
   { title: 'Build a SaaS', href: '/docs/tutorials/saas', section: 'Tutorials', keywords: 'tutorial saas subscription billing example' },
   { title: 'Build an E-Commerce', href: '/docs/tutorials/ecommerce', section: 'Tutorials', keywords: 'tutorial ecommerce store products orders cart' },

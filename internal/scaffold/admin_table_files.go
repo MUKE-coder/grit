@@ -11,6 +11,14 @@ import { TableSkeleton } from "./table-skeleton";
 import { TableEmptyState } from "./table-empty-state";
 import { Eye } from "@/lib/icons";
 
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  if (!path.includes(".")) return obj[path];
+  return path.split(".").reduce<unknown>(
+    (acc, key) => acc && typeof acc === "object" ? (acc as Record<string, unknown>)[key] : undefined,
+    obj
+  );
+}
+
 interface DataTableProps {
   columns: ColumnDefinition[];
   data: Record<string, unknown>[];
@@ -122,7 +130,7 @@ export function DataTable({
                     className="px-4 py-3 text-sm text-foreground"
                     style={col.width ? { width: col.width } : undefined}
                   >
-                    {renderCell(col, row[col.key], row)}
+                    {renderCell(col, getNestedValue(row, col.key), row)}
                   </td>
                 ))}
                 {(onView || onEdit || onDelete) && (
