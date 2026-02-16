@@ -20,6 +20,7 @@ import { VideoField } from "./fields/video-field";
 import { VideosField } from "./fields/videos-field";
 import { FileField } from "./fields/file-field";
 import { FilesField } from "./fields/files-field";
+import { RichTextField } from "./fields/rich-text-field";
 import { RelationshipSelectField } from "./fields/relationship-select-field";
 import { MultiRelationshipSelectField } from "./fields/multi-relationship-select-field";
 import { Loader2 } from "@/lib/icons";
@@ -275,6 +276,17 @@ function FieldRenderer({
           control={control}
           render={({ field: formField }) => (
             <MultiRelationshipSelectField field={field} value={formField.value ?? []} onChange={formField.onChange} error={error} />
+          )}
+        />
+      );
+    case "richtext":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          rules={field.required ? { required: ` + "`" + `${field.label} is required` + "`" + ` } : undefined}
+          render={({ field: formField }) => (
+            <RichTextField field={field} value={formField.value ?? ""} onChange={formField.onChange} error={error} />
           )}
         />
       );
@@ -1045,7 +1057,8 @@ export function FilesField({ field, value, onChange, error }: FilesFieldProps) {
 func adminRelationshipSelectField() string {
 	return `"use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import type { FieldDefinition } from "@/lib/resource";
@@ -1060,7 +1073,9 @@ interface RelationshipSelectFieldProps {
 export function RelationshipSelectField({ field, value, onChange, error }: RelationshipSelectFieldProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
 
   const { data: options = [], isLoading } = useQuery({
     queryKey: [field.relatedEndpoint, "options"],
@@ -1071,15 +1086,33 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
     enabled: !!field.relatedEndpoint,
   });
 
+  const updatePosition = useCallback(() => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    }
+  }, []);
+
   useEffect(() => {
+    if (!open) return;
+    updatePosition();
     function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        triggerRef.current && !triggerRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
         setOpen(false);
       }
     }
+    function handleScroll() { updatePosition(); }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [open, updatePosition]);
 
   const displayField = field.displayField || "name";
 
@@ -1099,11 +1132,67 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
     return String(found[displayField] || found.name || found.title || found.id || "");
   }, [value, options, displayField]);
 
+  const dropdown = open ? createPortal(
+    <div
+      ref={dropdownRef}
+      className="fixed z-[9999] rounded-md border border-border bg-bg-elevated shadow-lg"
+      style={{ top: pos.top, left: pos.left, width: pos.width, backgroundColor: "var(--bg-elevated, #22222e)" }}
+    >
+      <div className="p-2">
+        <input
+          type="text"
+          placeholder="Search..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex h-9 w-full rounded-md border border-border bg-bg-secondary px-3 py-1 text-sm text-foreground outline-none placeholder:text-text-secondary"
+          style={{ backgroundColor: "var(--bg-secondary, #111118)" }}
+          autoFocus
+        />
+      </div>
+      <div className="max-h-60 overflow-y-auto p-1">
+        {isLoading ? (
+          <div className="px-3 py-2 text-sm text-text-secondary">Loading...</div>
+        ) : filtered.length === 0 ? (
+          <div className="px-3 py-2 text-sm text-text-secondary">No results found</div>
+        ) : (
+          <>
+            {value && (
+              <button
+                type="button"
+                onClick={() => { onChange(null); setOpen(false); setSearch(""); }}
+                className="flex w-full items-center rounded-sm px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover"
+              >
+                Clear selection
+              </button>
+            )}
+            {filtered.map((item) => {
+              const id = item.id as number;
+              const label = String(item[displayField] || item.name || item.title || item.id || "");
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => { onChange(id); setOpen(false); setSearch(""); }}
+                  className={` + "`" + `flex w-full items-center rounded-sm px-3 py-2 text-sm text-foreground hover:bg-bg-hover
+                    ${value === id ? "bg-bg-hover font-medium" : ""}` + "`" + `}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </>
+        )}
+      </div>
+    </div>,
+    document.body
+  ) : null;
+
   return (
-    <div ref={containerRef} className="relative">
+    <div>
       <button
+        ref={triggerRef}
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => { if (!open) updatePosition(); setOpen(!open); }}
         className={` + "`" + `flex h-10 w-full items-center justify-between rounded-md border bg-bg-secondary px-3 py-2 text-sm text-foreground transition-colors
           ${error ? "border-red-500" : "border-border"}
           ${open ? "ring-2 ring-accent" : ""}` + "`" + `}
@@ -1115,56 +1204,7 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
           <path d="m6 9 6 6 6-6" />
         </svg>
       </button>
-
-      {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-bg-elevated shadow-lg">
-          <div className="p-2">
-            <input
-              type="text"
-              placeholder="Search..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-border bg-bg-secondary px-3 py-1 text-sm text-foreground outline-none placeholder:text-text-secondary"
-              autoFocus
-            />
-          </div>
-          <div className="max-h-60 overflow-y-auto p-1">
-            {isLoading ? (
-              <div className="px-3 py-2 text-sm text-text-secondary">Loading...</div>
-            ) : filtered.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-text-secondary">No results found</div>
-            ) : (
-              <>
-                {value && (
-                  <button
-                    type="button"
-                    onClick={() => { onChange(null); setOpen(false); setSearch(""); }}
-                    className="flex w-full items-center rounded-sm px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover"
-                  >
-                    Clear selection
-                  </button>
-                )}
-                {filtered.map((item) => {
-                  const id = item.id as number;
-                  const label = String(item[displayField] || item.name || item.title || item.id || "");
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => { onChange(id); setOpen(false); setSearch(""); }}
-                      className={` + "`" + `flex w-full items-center rounded-sm px-3 py-2 text-sm text-foreground hover:bg-bg-hover
-                        ${value === id ? "bg-bg-hover font-medium" : ""}` + "`" + `}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
+      {dropdown}
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );
@@ -1175,7 +1215,8 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
 func adminMultiRelationshipSelectField() string {
 	return `"use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import type { FieldDefinition } from "@/lib/resource";
@@ -1190,7 +1231,9 @@ interface MultiRelationshipSelectFieldProps {
 export function MultiRelationshipSelectField({ field, value = [], onChange, error }: MultiRelationshipSelectFieldProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
 
   const { data: options = [], isLoading } = useQuery({
     queryKey: [field.relatedEndpoint, "options"],
@@ -1201,15 +1244,33 @@ export function MultiRelationshipSelectField({ field, value = [], onChange, erro
     enabled: !!field.relatedEndpoint,
   });
 
+  const updatePosition = useCallback(() => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    }
+  }, []);
+
   useEffect(() => {
+    if (!open) return;
+    updatePosition();
     function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        triggerRef.current && !triggerRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
         setOpen(false);
       }
     }
+    function handleScroll() { updatePosition(); }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [open, updatePosition]);
 
   const displayField = field.displayField || "name";
 
@@ -1242,10 +1303,75 @@ export function MultiRelationshipSelectField({ field, value = [], onChange, erro
     onChange(value.filter((v) => v !== id));
   };
 
+  const dropdown = open ? createPortal(
+    <div
+      ref={dropdownRef}
+      className="fixed z-[9999] rounded-md border border-border bg-bg-elevated shadow-lg"
+      style={{ top: pos.top, left: pos.left, width: pos.width, backgroundColor: "var(--bg-elevated, #22222e)" }}
+    >
+      <div className="p-2">
+        <input
+          type="text"
+          placeholder="Search..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex h-9 w-full rounded-md border border-border bg-bg-secondary px-3 py-1 text-sm text-foreground outline-none placeholder:text-text-secondary"
+          style={{ backgroundColor: "var(--bg-secondary, #111118)" }}
+          autoFocus
+        />
+      </div>
+      <div className="max-h-60 overflow-y-auto p-1">
+        {isLoading ? (
+          <div className="px-3 py-2 text-sm text-text-secondary">Loading...</div>
+        ) : filtered.length === 0 ? (
+          <div className="px-3 py-2 text-sm text-text-secondary">No results found</div>
+        ) : (
+          <>
+            {value.length > 0 && (
+              <button
+                type="button"
+                onClick={() => onChange([])}
+                className="flex w-full items-center rounded-sm px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover"
+              >
+                Clear all
+              </button>
+            )}
+            {filtered.map((item) => {
+              const id = item.id as number;
+              const label = String(item[displayField] || item.name || item.title || item.id || "");
+              const isSelected = value.includes(id);
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => toggleItem(id)}
+                  className={` + "`" + `flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-foreground hover:bg-bg-hover
+                    ${isSelected ? "bg-bg-hover" : ""}` + "`" + `}
+                >
+                  <div className={` + "`" + `flex h-4 w-4 items-center justify-center rounded border
+                    ${isSelected ? "border-accent bg-accent text-white" : "border-border"}` + "`" + `}>
+                    {isSelected && (
+                      <svg className="h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </div>
+                  {label}
+                </button>
+              );
+            })}
+          </>
+        )}
+      </div>
+    </div>,
+    document.body
+  ) : null;
+
   return (
-    <div ref={containerRef} className="relative">
+    <div>
       <div
-        onClick={() => setOpen(!open)}
+        ref={triggerRef}
+        onClick={() => { if (!open) updatePosition(); setOpen(!open); }}
         className={` + "`" + `flex min-h-10 w-full cursor-pointer flex-wrap items-center gap-1 rounded-md border bg-bg-secondary px-3 py-2 text-sm text-foreground transition-colors
           ${error ? "border-red-500" : "border-border"}
           ${open ? "ring-2 ring-accent" : ""}` + "`" + `}
@@ -1274,67 +1400,235 @@ export function MultiRelationshipSelectField({ field, value = [], onChange, erro
           </span>
         )}
       </div>
-
-      {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-bg-elevated shadow-lg">
-          <div className="p-2">
-            <input
-              type="text"
-              placeholder="Search..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex h-9 w-full rounded-md border border-border bg-bg-secondary px-3 py-1 text-sm text-foreground outline-none placeholder:text-text-secondary"
-              autoFocus
-            />
-          </div>
-          <div className="max-h-60 overflow-y-auto p-1">
-            {isLoading ? (
-              <div className="px-3 py-2 text-sm text-text-secondary">Loading...</div>
-            ) : filtered.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-text-secondary">No results found</div>
-            ) : (
-              <>
-                {value.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => onChange([])}
-                    className="flex w-full items-center rounded-sm px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover"
-                  >
-                    Clear all
-                  </button>
-                )}
-                {filtered.map((item) => {
-                  const id = item.id as number;
-                  const label = String(item[displayField] || item.name || item.title || item.id || "");
-                  const isSelected = value.includes(id);
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => toggleItem(id)}
-                      className={` + "`" + `flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-foreground hover:bg-bg-hover
-                        ${isSelected ? "bg-bg-hover" : ""}` + "`" + `}
-                    >
-                      <div className={` + "`" + `flex h-4 w-4 items-center justify-center rounded border
-                        ${isSelected ? "border-accent bg-accent text-white" : "border-border"}` + "`" + `}>
-                        {isSelected && (
-                          <svg className="h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
-                      </div>
-                      {label}
-                    </button>
-                  );
-                })}
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
+      {dropdown}
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
+  );
+}
+`
+}
+
+// adminRichTextField returns the Tiptap rich text editor field component.
+func adminRichTextField() string {
+	return `"use client";
+
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
+import { useEffect, useCallback } from "react";
+import {
+  Bold,
+  Italic,
+  Strikethrough,
+  Heading1,
+  Heading2,
+  Heading3,
+  List,
+  ListOrdered,
+  Quote,
+  Code,
+  Link as LinkIcon,
+  Undo,
+  Redo,
+} from "@/lib/icons";
+
+interface RichTextFieldProps {
+  field: { key: string; label: string; required?: boolean; placeholder?: string };
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+}
+
+export function RichTextField({ field, value, onChange, error }: RichTextFieldProps) {
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+      }),
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: { class: "text-accent underline" },
+      }),
+    ],
+    content: value || "",
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+    editorProps: {
+      attributes: {
+        class:
+          "prose prose-invert max-w-none min-h-[200px] p-4 focus:outline-none text-text-primary " +
+          "prose-headings:text-text-primary prose-p:text-text-primary prose-strong:text-text-primary " +
+          "prose-em:text-text-primary prose-li:text-text-primary prose-a:text-accent " +
+          "prose-blockquote:text-text-secondary prose-blockquote:border-border " +
+          "prose-code:text-accent prose-code:bg-bg-hover prose-code:rounded prose-code:px-1 " +
+          "prose-pre:bg-bg-primary prose-pre:border prose-pre:border-border prose-pre:rounded-lg",
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (editor && value !== editor.getHTML()) {
+      editor.commands.setContent(value || "");
+    }
+  }, [value, editor]);
+
+  const setLink = useCallback(() => {
+    if (!editor) return;
+    const previousUrl = editor.getAttributes("link").href;
+    const url = window.prompt("URL", previousUrl);
+    if (url === null) return;
+    if (url === "") {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+      return;
+    }
+    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+  }, [editor]);
+
+  if (!editor) return null;
+
+  return (
+    <div>
+      <label className="mb-1.5 block text-sm font-medium text-text-primary">
+        {field.label}
+        {field.required && <span className="ml-1 text-red-500">*</span>}
+      </label>
+      <div className="overflow-hidden rounded-lg border border-border bg-bg-secondary">
+        <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-bg-tertiary p-1.5">
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            active={editor.isActive("bold")}
+            title="Bold"
+          >
+            <Bold className="h-4 w-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            active={editor.isActive("italic")}
+            title="Italic"
+          >
+            <Italic className="h-4 w-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleStrike().run()}
+            active={editor.isActive("strike")}
+            title="Strikethrough"
+          >
+            <Strikethrough className="h-4 w-4" />
+          </ToolbarButton>
+
+          <div className="mx-1 h-5 w-px bg-border" />
+
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+            active={editor.isActive("heading", { level: 1 })}
+            title="Heading 1"
+          >
+            <Heading1 className="h-4 w-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            active={editor.isActive("heading", { level: 2 })}
+            title="Heading 2"
+          >
+            <Heading2 className="h-4 w-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+            active={editor.isActive("heading", { level: 3 })}
+            title="Heading 3"
+          >
+            <Heading3 className="h-4 w-4" />
+          </ToolbarButton>
+
+          <div className="mx-1 h-5 w-px bg-border" />
+
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            active={editor.isActive("bulletList")}
+            title="Bullet List"
+          >
+            <List className="h-4 w-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            active={editor.isActive("orderedList")}
+            title="Ordered List"
+          >
+            <ListOrdered className="h-4 w-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            active={editor.isActive("blockquote")}
+            title="Blockquote"
+          >
+            <Quote className="h-4 w-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+            active={editor.isActive("codeBlock")}
+            title="Code Block"
+          >
+            <Code className="h-4 w-4" />
+          </ToolbarButton>
+
+          <div className="mx-1 h-5 w-px bg-border" />
+
+          <ToolbarButton
+            onClick={setLink}
+            active={editor.isActive("link")}
+            title="Link"
+          >
+            <LinkIcon className="h-4 w-4" />
+          </ToolbarButton>
+
+          <div className="mx-1 h-5 w-px bg-border" />
+
+          <ToolbarButton
+            onClick={() => editor.chain().focus().undo().run()}
+            disabled={!editor.can().undo()}
+            title="Undo"
+          >
+            <Undo className="h-4 w-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().redo().run()}
+            disabled={!editor.can().redo()}
+            title="Redo"
+          >
+            <Redo className="h-4 w-4" />
+          </ToolbarButton>
+        </div>
+        <EditorContent editor={editor} />
+      </div>
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+    </div>
+  );
+}
+
+interface ToolbarButtonProps {
+  onClick: () => void;
+  active?: boolean;
+  disabled?: boolean;
+  title: string;
+  children: React.ReactNode;
+}
+
+function ToolbarButton({ onClick, active, disabled, title, children }: ToolbarButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={` + "`" + `
+        flex h-7 w-7 items-center justify-center rounded text-sm transition-colors
+        ${active ? "bg-accent/20 text-accent" : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"}
+        ${disabled ? "opacity-30 cursor-not-allowed" : "cursor-pointer"}
+      ` + "`" + `}
+    >
+      {children}
+    </button>
   );
 }
 `

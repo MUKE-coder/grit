@@ -47,12 +47,14 @@ export default function SharedPackagePage() {
 ├── schemas/              # Zod validation schemas
 │   ├── user.ts           # User auth schemas (Login, Register, etc.)
 │   ├── post.ts           # Generated: CreatePost, UpdatePost schemas
+│   ├── blog.ts           # Generated: CreateBlog, UpdateBlog schemas
 │   └── index.ts          # Re-exports all schemas
 ├── types/                # TypeScript interfaces
 │   ├── user.ts           # User, AuthResponse interfaces
 │   ├── api.ts            # ApiResponse, PaginatedResponse, ApiError
 │   ├── upload.ts         # Upload interface
 │   ├── post.ts           # Generated: Post interface
+│   ├── blog.ts           # Generated: Blog interface
 │   └── index.ts          # Re-exports all types
 └── constants/
     └── index.ts          # ROLES, API_ROUTES, etc.`}</pre>

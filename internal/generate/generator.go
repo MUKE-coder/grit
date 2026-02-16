@@ -3,6 +3,7 @@ package generate
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"unicode"
@@ -110,6 +111,24 @@ func (g *Generator) Run() error {
 
 	if err := g.injectAll(names); err != nil {
 		return fmt.Errorf("injecting code: %w", err)
+	}
+
+	// Resolve new Go dependencies if needed (e.g., gorm.io/datatypes for string_array)
+	needsDatatypes := false
+	for _, f := range g.Definition.Fields {
+		if f.NeedsDatatypesImport() {
+			needsDatatypes = true
+			break
+		}
+	}
+	if needsDatatypes {
+		apiDir := filepath.Join(g.Root, "apps", "api")
+		cmd := exec.Command("go", "get", "gorm.io/datatypes")
+		cmd.Dir = apiDir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("adding gorm.io/datatypes dependency: %w\n%s", err, string(out))
+		}
+		fmt.Println("  ✓ Added gorm.io/datatypes dependency")
 	}
 
 	fmt.Println()

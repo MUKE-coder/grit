@@ -132,6 +132,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "forms", "fields", "files-field.tsx"):                  adminFilesField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "relationship-select-field.tsx"):      adminRelationshipSelectField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "multi-relationship-select-field.tsx"): adminMultiRelationshipSelectField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "rich-text-field.tsx"):                adminRichTextField(),
 
 		// UI components
 		filepath.Join(adminRoot, "components", "ui", "dropzone.tsx"):      adminDropzone(),
@@ -150,6 +151,7 @@ func writeAdminFiles(root string, opts Options) error {
 		// Resource definitions
 		filepath.Join(adminRoot, "resources", "index.ts"): adminResourceRegistry(),
 		filepath.Join(adminRoot, "resources", "users.ts"): adminUsersResource(),
+		filepath.Join(adminRoot, "resources", "blogs.ts"): adminBlogsResource(),
 
 		// Profile components
 		filepath.Join(adminRoot, "components", "profile", "delete-account-dialog.tsx"): adminDeleteAccountDialog(),
@@ -164,6 +166,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):          adminDashboardPageForStyle(opts.Style),
 		filepath.Join(adminRoot, "app", "(dashboard)", "profile", "page.tsx"):            adminProfilePage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"): adminUsersPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "page.tsx"): adminBlogsPage(),
 
 		// System pages — under (dashboard) route group
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "jobs", "page.tsx"):  adminJobsPage(),
@@ -203,6 +206,10 @@ func adminPackageJSON(opts Options) string {
     "next": "^16.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "@tiptap/extension-link": "^2.1.0",
+    "@tiptap/pm": "^2.1.0",
+    "@tiptap/react": "^2.1.0",
+    "@tiptap/starter-kit": "^2.1.0",
     "react-dropzone": "^14.2.0",
     "react-hook-form": "^7.49.0",
     "recharts": "^2.12.0",

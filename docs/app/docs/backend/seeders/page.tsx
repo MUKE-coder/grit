@@ -151,6 +151,52 @@ Database seeded successfully.`}
                 />
               </div>
 
+              {/* Blog Seed Data */}
+              <div className="mb-12">
+                <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">Blog Posts</h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Every Grit project includes built-in blog seed data via the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">seedBlogs()</code> function.
+                  This creates 4 sample blog posts (3 published, 1 draft) to demonstrate the blog feature
+                  out of the box. Like all seeders, it is idempotent and safe to run multiple times.
+                </p>
+
+                <CodeBlock
+                  language="go"
+                  filename="apps/api/internal/database/seed.go"
+                  code={`func seedBlogs(db *gorm.DB) error {
+    blogs := []models.Blog{
+        {Title: "Getting Started with Grit", Slug: "getting-started-with-grit", Status: "published", ...},
+        {Title: "Building APIs with Go & Gin", Slug: "building-apis-with-go-gin", Status: "published", ...},
+        {Title: "Admin Panels Made Easy", Slug: "admin-panels-made-easy", Status: "published", ...},
+        {Title: "Advanced Grit Patterns", Slug: "advanced-grit-patterns", Status: "draft", ...},
+    }
+
+    for _, blog := range blogs {
+        var count int64
+        db.Model(&models.Blog{}).Where("slug = ?", blog.Slug).Count(&count)
+        if count > 0 {
+            continue
+        }
+
+        if err := db.Create(&blog).Error; err != nil {
+            log.Printf("Warning: failed to create blog %s: %v", blog.Title, err)
+            continue
+        }
+        log.Printf("Created blog: %s", blog.Title)
+    }
+
+    return nil
+}`}
+                />
+
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The blog seeder is automatically called by the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Seed()</code> function
+                  alongside the admin and demo user seeders. After running{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">go run cmd/seed/main.go</code>, you
+                  can immediately visit the blog pages in the web app to see the sample content.
+                </p>
+              </div>
+
               {/* Seed Entrypoint */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">

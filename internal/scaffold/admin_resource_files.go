@@ -9,7 +9,7 @@ func adminResourceTypes() string {
 
 // ─── Column Definitions ─────────────────────────────────────────────
 
-export type ColumnFormat = "text" | "badge" | "currency" | "date" | "relative" | "boolean" | "image" | "video" | "link" | "email" | "color";
+export type ColumnFormat = "text" | "badge" | "currency" | "date" | "relative" | "boolean" | "image" | "video" | "link" | "email" | "color" | "richtext";
 
 export interface BadgeConfig {
   [value: string]: { color: string; label: string };
@@ -156,12 +156,14 @@ export function defineResource(config: ResourceDefinition): ResourceDefinition {
 // adminResourceRegistry returns the resource registry (resources/index.ts).
 func adminResourceRegistry() string {
 	return `import { usersResource } from "./users";
+import { blogsResource } from "./blogs";
 // grit:resources
 
 import type { ResourceDefinition } from "@/lib/resource";
 
 export const resources: ResourceDefinition[] = [
   usersResource,
+  blogsResource,
   // grit:resource-list
 ];
 
@@ -1056,6 +1058,104 @@ export function ViewModal({ resource, item, onClose, onEdit }: ViewModalProps) {
       </div>
     </div>
   );
+}
+`
+}
+
+// adminBlogsResource returns the blogs resource definition (resources/blogs.ts).
+func adminBlogsResource() string {
+	return `import { defineResource } from "@/lib/resource";
+
+export const blogsResource = defineResource({
+  name: "Blog",
+  slug: "blogs",
+  endpoint: "/api/blogs",
+  icon: "FileText",
+  label: { singular: "Blog", plural: "Blogs" },
+
+  table: {
+    columns: [
+      { key: "id", label: "ID", sortable: true, width: "80px" },
+      { key: "title", label: "Title", sortable: true, searchable: true },
+      { key: "slug", label: "Slug" },
+      { key: "image", label: "Image", format: "image" },
+      {
+        key: "published",
+        label: "Status",
+        format: "badge",
+        badge: {
+          true: { color: "success", label: "Published" },
+          false: { color: "muted", label: "Draft" },
+        },
+      },
+      { key: "published_at", label: "Published At", format: "relative", sortable: true },
+      { key: "created_at", label: "Created", format: "relative", sortable: true },
+    ],
+    filters: [
+      {
+        key: "published",
+        label: "Status",
+        type: "select",
+        options: [
+          { label: "Published", value: "true" },
+          { label: "Draft", value: "false" },
+        ],
+      },
+    ],
+    searchable: true,
+    searchPlaceholder: "Search blogs by title...",
+    actions: ["create", "view", "edit", "delete"],
+    bulkActions: ["delete"],
+    defaultSort: { key: "created_at", direction: "desc" },
+    pageSize: 20,
+  },
+
+  form: {
+    layout: "single",
+    fields: [
+      {
+        key: "title",
+        label: "Title",
+        type: "text",
+        required: true,
+        placeholder: "Enter blog title",
+      },
+      {
+        key: "excerpt",
+        label: "Excerpt",
+        type: "textarea",
+        placeholder: "Brief summary of the blog post",
+      },
+      {
+        key: "content",
+        label: "Content",
+        type: "richtext",
+      },
+      {
+        key: "image",
+        label: "Cover Image",
+        type: "image",
+      },
+      {
+        key: "published",
+        label: "Published",
+        type: "toggle",
+      },
+    ],
+  },
+});
+`
+}
+
+// adminBlogsPage returns the blogs resource page.
+func adminBlogsPage() string {
+	return `"use client";
+
+import { ResourcePage } from "@/components/resource/resource-page";
+import { blogsResource } from "@/resources/blogs";
+
+export default function BlogsPage() {
+  return <ResourcePage resource={blogsResource} />;
 }
 `
 }

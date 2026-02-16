@@ -306,12 +306,19 @@ type FieldType =
   | 'number'
   | 'select'
   | 'date'
+  | 'datetime'
   | 'toggle'
   | 'checkbox'
   | 'radio'
-  | 'relation'                 // Select from related resource
+  | 'image'                    // Single image upload
+  | 'images'                   // Multiple image upload
+  | 'video'                    // Single video upload
+  | 'videos'                   // Multiple video upload
+  | 'file'                     // Single file upload
+  | 'files'                    // Multiple file upload
   | 'richtext'                 // Rich text editor
-  | 'file'                     // File upload`}</pre>
+  | 'relationship-select'      // Select from related resource
+  | 'multi-relationship-select' // Multi-select from related resource`}</pre>
               </div>
             </div>
 
@@ -339,12 +346,19 @@ type FieldType =
                       ['number', 'Numeric input', 'min, max, step'],
                       ['select', 'Dropdown select', 'options'],
                       ['date', 'Date picker', '--'],
+                      ['datetime', 'Date & time picker', '--'],
                       ['toggle', 'Toggle switch', '--'],
                       ['checkbox', 'Checkbox', '--'],
                       ['radio', 'Radio button group', 'options'],
-                      ['relation', 'Resource select', 'resource, displayKey'],
+                      ['image', 'Single image upload', 'accept'],
+                      ['images', 'Multiple image upload', 'accept'],
+                      ['video', 'Single video upload', 'accept'],
+                      ['videos', 'Multiple video upload', 'accept'],
+                      ['file', 'Single file upload', 'accept'],
+                      ['files', 'Multiple file upload', 'accept'],
                       ['richtext', 'Rich text editor', '--'],
-                      ['file', 'File upload', 'multiple, accept'],
+                      ['relationship-select', 'Resource select', 'resource, displayKey'],
+                      ['multi-relationship-select', 'Resource multi-select', 'resource, displayKey'],
                     ].map(([type, component, props]) => (
                       <tr key={type} className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs text-primary">{type}</td>

@@ -18,8 +18,10 @@ const (
 	FieldDatetime   FieldType = "datetime"
 	FieldDate       FieldType = "date"
 	FieldSlug       FieldType = "slug"
-	FieldBelongsTo  FieldType = "belongs_to"
-	FieldManyToMany FieldType = "many_to_many"
+	FieldRichtext   FieldType = "richtext"
+	FieldBelongsTo   FieldType = "belongs_to"
+	FieldManyToMany  FieldType = "many_to_many"
+	FieldStringArray FieldType = "string_array"
 )
 
 // Field describes a single field in a resource.
@@ -53,10 +55,20 @@ func (f Field) IsRelationship() bool {
 	return f.IsBelongsTo() || f.IsManyToMany()
 }
 
+// IsStringArray returns true if this field is a string array (JSON).
+func (f Field) IsStringArray() bool {
+	return FieldType(f.Type) == FieldStringArray
+}
+
+// NeedsDatatypesImport returns true if this field requires "gorm.io/datatypes" import.
+func (f Field) NeedsDatatypesImport() bool {
+	return FieldType(f.Type) == FieldStringArray
+}
+
 // GoType returns the Go type for this field.
 func (f Field) GoType() string {
 	switch FieldType(f.Type) {
-	case FieldString, FieldText, FieldSlug:
+	case FieldString, FieldText, FieldSlug, FieldRichtext:
 		return "string"
 	case FieldInt:
 		return "int"
@@ -70,6 +82,8 @@ func (f Field) GoType() string {
 		return "*time.Time"
 	case FieldManyToMany:
 		return "[]uint"
+	case FieldStringArray:
+		return "datatypes.JSONSlice[string]"
 	default:
 		return "string"
 	}
@@ -87,7 +101,7 @@ func (f Field) GORMTag() string {
 	switch FieldType(f.Type) {
 	case FieldString:
 		parts = append(parts, "size:255")
-	case FieldText:
+	case FieldText, FieldRichtext:
 		parts = append(parts, "type:text")
 	case FieldDate:
 		parts = append(parts, "type:date")
@@ -95,6 +109,8 @@ func (f Field) GORMTag() string {
 		parts = append(parts, "size:255", "uniqueIndex")
 	case FieldBelongsTo:
 		parts = append(parts, "index")
+	case FieldStringArray:
+		parts = append(parts, "type:json")
 	}
 
 	if f.Unique && FieldType(f.Type) != FieldSlug {
@@ -129,7 +145,7 @@ func (f Field) GORMTag() string {
 // TSType returns the TypeScript type for this field.
 func (f Field) TSType() string {
 	switch FieldType(f.Type) {
-	case FieldString, FieldText, FieldSlug:
+	case FieldString, FieldText, FieldSlug, FieldRichtext:
 		return "string"
 	case FieldInt, FieldUint, FieldFloat, FieldBelongsTo:
 		return "number"
@@ -139,6 +155,8 @@ func (f Field) TSType() string {
 		return "string | null"
 	case FieldManyToMany:
 		return "number[]"
+	case FieldStringArray:
+		return "string[]"
 	default:
 		return "string"
 	}
@@ -153,7 +171,7 @@ func (f Field) ZodType() string {
 		if f.Required {
 			base += `.min(1, "Required")`
 		}
-	case FieldText:
+	case FieldText, FieldRichtext:
 		base = "z.string()"
 	case FieldSlug:
 		base = "z.string()"
@@ -171,11 +189,13 @@ func (f Field) ZodType() string {
 		base = `z.number().int().min(1, "Required")`
 	case FieldManyToMany:
 		base = "z.array(z.number().int()).optional()"
+	case FieldStringArray:
+		base = "z.array(z.string()).optional()"
 	default:
 		base = "z.string()"
 	}
 
-	if !f.Required && FieldType(f.Type) != FieldDatetime && FieldType(f.Type) != FieldDate && FieldType(f.Type) != FieldSlug && FieldType(f.Type) != FieldBelongsTo && FieldType(f.Type) != FieldManyToMany {
+	if !f.Required && FieldType(f.Type) != FieldDatetime && FieldType(f.Type) != FieldDate && FieldType(f.Type) != FieldSlug && FieldType(f.Type) != FieldRichtext && FieldType(f.Type) != FieldBelongsTo && FieldType(f.Type) != FieldManyToMany && FieldType(f.Type) != FieldStringArray {
 		base += ".optional()"
 	}
 
@@ -194,6 +214,8 @@ func (f Field) ColumnFormat() string {
 		return "boolean"
 	case FieldDatetime, FieldDate:
 		return "relative"
+	case FieldRichtext:
+		return "richtext"
 	default:
 		return "text"
 	}
@@ -207,6 +229,8 @@ func (f Field) FormFieldType() string {
 		return "text"
 	case FieldText:
 		return "textarea"
+	case FieldRichtext:
+		return "richtext"
 	case FieldInt, FieldUint, FieldFloat:
 		return "number"
 	case FieldBool:
@@ -221,6 +245,8 @@ func (f Field) FormFieldType() string {
 		return "relationship-select"
 	case FieldManyToMany:
 		return "multi-relationship-select"
+	case FieldStringArray:
+		return "images"
 	default:
 		return "text"
 	}
@@ -238,12 +264,12 @@ func (f Field) IsSortable() bool {
 
 // IsSearchable returns true if this field type should be searchable by default.
 func (f Field) IsSearchable() bool {
-	return FieldType(f.Type) == FieldString || FieldType(f.Type) == FieldText || FieldType(f.Type) == FieldSlug
+	return FieldType(f.Type) == FieldString || FieldType(f.Type) == FieldText || FieldType(f.Type) == FieldSlug || FieldType(f.Type) == FieldRichtext
 }
 
 // ValidFieldTypes returns all valid field type names.
 func ValidFieldTypes() []string {
-	return []string{"string", "text", "int", "uint", "float", "bool", "datetime", "date", "slug", "belongs_to", "many_to_many"}
+	return []string{"string", "text", "richtext", "int", "uint", "float", "bool", "datetime", "date", "slug", "belongs_to", "many_to_many", "string_array"}
 }
 
 // FKColumnName returns the foreign key column name for a belongs_to field.

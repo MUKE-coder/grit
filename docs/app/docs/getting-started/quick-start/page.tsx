@@ -595,7 +595,7 @@ export default function QuickStartPage() {
             <div className="mb-10 rounded-xl border border-primary/20 bg-primary/5 p-5">
               <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                 <span className="text-primary">Upgrading?</span>
-                <span className="text-xs font-mono text-primary/60 bg-primary/10 rounded-full px-2 py-0.5">v0.7.0</span>
+                <span className="text-xs font-mono text-primary/60 bg-primary/10 rounded-full px-2 py-0.5">v0.13.0</span>
               </h3>
               <p className="text-[15px] text-muted-foreground mb-3">
                 If you have an existing Grit project and want to update the framework

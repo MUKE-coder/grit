@@ -4,14 +4,15 @@ package scaffold
 func adminProfilePage() string {
 	return `"use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMe } from "@/hooks/use-auth";
 import { useUpdateProfile, useChangePassword } from "@/hooks/use-profile";
-import { User, Briefcase, Lock, Trash2, Save, Loader2 } from "@/lib/icons";
+import { User, Briefcase, Lock, Trash2, Save, Loader2, Upload } from "@/lib/icons";
 import { DeleteAccountDialog } from "@/components/profile/delete-account-dialog";
+import { apiClient } from "@/lib/api-client";
 
 const PersonalInfoSchema = z.object({
   first_name: z.string().min(2, "First name must be at least 2 characters"),
@@ -47,6 +48,28 @@ export default function ProfilePage() {
   const updateProfile = useUpdateProfile();
   const changePassword = useChangePassword();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const { data } = await apiClient.post("/api/uploads", formData);
+      const url = data.data?.url || data.url;
+      if (url) {
+        updateProfile.mutate({ avatar: url });
+      }
+    } catch {
+      // Upload failed silently
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  };
 
   // Personal info form
   const personalForm = useForm<PersonalInfoValues>({
@@ -118,14 +141,35 @@ export default function ProfilePage() {
       {/* Profile overview card */}
       <div className="rounded-xl border border-border bg-bg-secondary p-6">
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent/15 border border-accent/20">
-            {user.avatar ? (
-              <img src={user.avatar} alt="" className="h-16 w-16 rounded-full object-cover" />
-            ) : (
-              <span className="text-2xl font-bold text-accent">
-                {user.first_name?.[0]}{user.last_name?.[0]}
-              </span>
-            )}
+          <div className="relative group">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent/15 border border-accent/20 overflow-hidden">
+              {user.avatar ? (
+                <img src={user.avatar} alt="" className="h-16 w-16 rounded-full object-cover" />
+              ) : (
+                <span className="text-2xl font-bold text-accent">
+                  {user.first_name?.[0]}{user.last_name?.[0]}
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={avatarUploading}
+              className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            >
+              {avatarUploading ? (
+                <Loader2 className="h-5 w-5 text-white animate-spin" />
+              ) : (
+                <Upload className="h-5 w-5 text-white" />
+              )}
+            </button>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
           </div>
           <div>
             <h2 className="text-lg font-semibold text-foreground">

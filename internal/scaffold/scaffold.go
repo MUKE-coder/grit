@@ -131,6 +131,12 @@ func Run(opts Options) error {
 		return fmt.Errorf("writing AI files: %w", err)
 	}
 
+	// Write blog example files
+	spinner.Printf("  → Adding blog example...\n")
+	if err := writeAPIBlogFiles(root, opts); err != nil {
+		return fmt.Errorf("writing blog files: %w", err)
+	}
+
 	// Run go mod tidy to resolve dependencies and generate go.sum
 	spinner.Printf("  → Resolving Go dependencies...\n")
 	apiDir := filepath.Join(root, "apps", "api")

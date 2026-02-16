@@ -9,15 +9,22 @@ func writeWebFiles(root string, opts Options) error {
 	webRoot := filepath.Join(root, "apps", "web")
 
 	files := map[string]string{
-		filepath.Join(webRoot, "package.json"):       webPackageJSON(opts),
-		filepath.Join(webRoot, "next.config.ts"):     webNextConfig(),
-		filepath.Join(webRoot, "tailwind.config.ts"): webTailwindConfig(),
-		filepath.Join(webRoot, "postcss.config.js"):  webPostCSSConfig(),
-		filepath.Join(webRoot, "tsconfig.json"):      webTSConfig(),
-		filepath.Join(webRoot, "app", "globals.css"): webGlobalCSS(),
-		filepath.Join(webRoot, "app", "layout.tsx"):  webRootLayout(opts),
-		filepath.Join(webRoot, "app", "page.tsx"):    webLandingPage(opts),
-		filepath.Join(webRoot, "lib", "utils.ts"):    webUtils(),
+		filepath.Join(webRoot, "package.json"):                        webPackageJSON(opts),
+		filepath.Join(webRoot, "next.config.ts"):                      webNextConfig(),
+		filepath.Join(webRoot, "tailwind.config.ts"):                  webTailwindConfig(),
+		filepath.Join(webRoot, "postcss.config.js"):                   webPostCSSConfig(),
+		filepath.Join(webRoot, "tsconfig.json"):                       webTSConfig(),
+		filepath.Join(webRoot, "app", "globals.css"):                  webGlobalCSS(),
+		filepath.Join(webRoot, "app", "layout.tsx"):                   webRootLayout(opts),
+		filepath.Join(webRoot, "app", "page.tsx"):                     webLandingPage(opts),
+		filepath.Join(webRoot, "lib", "utils.ts"):                     webUtils(),
+		filepath.Join(webRoot, "components", "navbar.tsx"):            webNavbar(opts),
+		filepath.Join(webRoot, "components", "footer.tsx"):            webFooter(opts),
+		filepath.Join(webRoot, "components", "providers.tsx"):         webProviders(),
+		filepath.Join(webRoot, "lib", "api.ts"):                       webAPIClient(),
+		filepath.Join(webRoot, "hooks", "use-blogs.ts"):               webUseBlogsHook(),
+		filepath.Join(webRoot, "app", "blog", "page.tsx"):             webBlogListPage(),
+		filepath.Join(webRoot, "app", "blog", "[slug]", "page.tsx"):   webBlogDetailPage(),
 	}
 
 	for path, content := range files {
@@ -41,6 +48,8 @@ func webPackageJSON(opts Options) string {
     "lint": "next lint"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.17.0",
+    "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "lucide-react": "^0.303.0",
@@ -206,12 +215,184 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
+
+/* Blog prose styles for rendered HTML content */
+.prose-blog {
+  color: var(--text-primary);
+  font-size: 1.0625rem;
+  line-height: 1.8;
+}
+
+.prose-blog h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+}
+
+.prose-blog h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+}
+
+.prose-blog h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.prose-blog h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.prose-blog p {
+  margin-bottom: 1.25rem;
+  color: var(--text-secondary);
+}
+
+.prose-blog a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+.prose-blog a:hover {
+  color: var(--accent-hover);
+}
+
+.prose-blog strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.prose-blog em {
+  font-style: italic;
+}
+
+.prose-blog ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.prose-blog ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.prose-blog li {
+  margin-bottom: 0.375rem;
+  color: var(--text-secondary);
+}
+
+.prose-blog li::marker {
+  color: var(--text-muted);
+}
+
+.prose-blog blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  padding: 1rem 1.25rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.prose-blog pre {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+.prose-blog code {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.875em;
+  background: var(--bg-elevated);
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--border);
+  color: var(--accent);
+}
+
+.prose-blog pre code {
+  background: transparent;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  font-size: inherit;
+  color: var(--text-primary);
+}
+
+.prose-blog img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 1.5rem 0;
+  border: 1px solid var(--border);
+}
+
+.prose-blog hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+
+.prose-blog table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+.prose-blog th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--border);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.prose-blog td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.prose-blog tr:last-child td {
+  border-bottom: none;
+}
 `
 }
 
 func webRootLayout(opts Options) string {
 	return fmt.Sprintf(`import type { Metadata } from "next";
 import { DM_Sans, JetBrains_Mono } from "next/font/google";
+import { Providers } from "@/components/providers";
+import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -238,8 +419,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className={` + "`" + `${dmSans.variable} ${jetbrainsMono.variable} min-h-screen bg-background font-sans antialiased` + "`" + `}>
-        {children}
+      <body className={`+"`"+`${dmSans.variable} ${jetbrainsMono.variable} font-sans dark antialiased`+"`"+`}>
+        <Providers>
+          <Navbar />
+          <main className="min-h-screen">{children}</main>
+          <Footer />
+        </Providers>
       </body>
     </html>
   );
@@ -248,52 +433,22 @@ export default function RootLayout({
 }
 
 func webLandingPage(opts Options) string {
-	return `import { ArrowRight, Github } from "lucide-react";
+	return `"use client";
 
-const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { usePublicBlogs } from "@/hooks/use-blogs";
+
 const DOCS_URL = "https://grit-vert.vercel.app/docs";
 
 export default function HomePage() {
-  return (
-    <div className="min-h-screen flex flex-col">
-      {/* Navbar */}
-      <nav className="border-b border-border/50 bg-background/80 backdrop-blur-lg">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 border border-accent/20">
-              <span className="text-accent font-mono font-bold text-sm">G</span>
-            </div>
-            <span className="text-lg font-bold tracking-tight">Grit</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <a
-              href={` + "`" + `${DOCS_URL}` + "`" + `}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-text-secondary hover:text-foreground transition-colors"
-            >
-              Docs
-            </a>
-            <a
-              href="https://github.com/MUKE-coder/grit"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-text-secondary hover:text-foreground transition-colors"
-            >
-              <Github className="h-5 w-5" />
-            </a>
-            <a
-              href={` + "`" + `${ADMIN_URL}/login` + "`" + `}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
-            >
-              Admin
-            </a>
-          </div>
-        </div>
-      </nav>
+  const { data, isLoading } = usePublicBlogs(1, 3);
+  const blogs = data?.blogs || [];
 
+  return (
+    <div className="flex flex-col">
       {/* Hero */}
-      <main className="flex-1 flex items-center justify-center">
+      <section className="flex items-center justify-center">
         <div className="mx-auto max-w-2xl px-6 py-24 text-center">
           <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-bg-secondary px-4 py-1.5 text-sm text-text-secondary">
             <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
@@ -345,24 +500,83 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </main>
+      </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border/50 py-6">
-        <div className="mx-auto max-w-5xl px-6 flex items-center justify-between">
-          <span className="text-xs text-text-muted">
-            Built with Grit — Go + React. Open source under MIT.
-          </span>
-          <div className="flex items-center gap-4 text-xs text-text-muted">
-            <a href={` + "`" + `${DOCS_URL}` + "`" + `} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
-              Docs
-            </a>
-            <a href="https://github.com/MUKE-coder/grit" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
-              GitHub
-            </a>
+      {/* Recent Posts */}
+      <section className="border-t border-border/50 bg-bg-secondary/30">
+        <div className="mx-auto max-w-5xl px-6 py-20">
+          <div className="flex items-center justify-between mb-10">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Recent Posts</h2>
+              <p className="mt-1 text-sm text-text-secondary">Latest articles and updates</p>
+            </div>
+            <Link
+              href="/blog"
+              className="text-sm text-accent hover:text-accent-hover transition-colors font-medium flex items-center gap-1"
+            >
+              View all <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
+
+          {isLoading ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-xl border border-border bg-bg-elevated overflow-hidden animate-pulse">
+                  <div className="h-48 bg-bg-hover" />
+                  <div className="p-5 space-y-3">
+                    <div className="h-4 bg-bg-hover rounded w-3/4" />
+                    <div className="h-3 bg-bg-hover rounded w-full" />
+                    <div className="h-3 bg-bg-hover rounded w-2/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : blogs.length > 0 ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {blogs.map((blog: { id: number; title: string; slug: string; image: string; excerpt: string; published_at: string | null; created_at: string }) => (
+                <Link
+                  key={blog.id}
+                  href={` + "`" + `/blog/${blog.slug}` + "`" + `}
+                  className="group rounded-xl border border-border bg-bg-elevated overflow-hidden hover:border-accent/40 hover:shadow-lg hover:shadow-accent/5 transition-all duration-300"
+                >
+                  <div className="h-48 bg-bg-hover overflow-hidden">
+                    {blog.image ? (
+                      <img
+                        src={blog.image}
+                        alt={blog.title}
+                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-accent/10 to-accent/5">
+                        <span className="text-4xl font-bold text-accent/20">{blog.title.charAt(0)}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    <p className="text-xs text-text-muted mb-2">
+                      {new Date(blog.published_at || blog.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </p>
+                    <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">
+                      {blog.title}
+                    </h3>
+                    {blog.excerpt && (
+                      <p className="mt-2 text-sm text-text-secondary line-clamp-2">{blog.excerpt}</p>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-text-muted text-sm">No blog posts yet. Create your first post in the admin panel.</p>
+            </div>
+          )}
         </div>
-      </footer>
+      </section>
     </div>
   );
 }
@@ -375,6 +589,536 @@ import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+`
+}
+
+func webNavbar(opts Options) string {
+	return `"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Menu, X, Github } from "lucide-react";
+
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+const DOCS_URL = "https://grit-vert.vercel.app/docs";
+
+const navLinks = [
+  { href: "/", label: "Home" },
+  { href: "/blog", label: "Blog" },
+];
+
+export function Navbar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+
+  return (
+    <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
+      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 border border-accent/20">
+            <span className="text-accent font-mono font-bold text-sm">G</span>
+          </div>
+          <span className="text-lg font-bold tracking-tight">` + opts.ProjectName + `</span>
+        </Link>
+
+        {/* Desktop nav */}
+        <div className="hidden md:flex items-center gap-6">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={` + "`" + `text-sm transition-colors ${
+                pathname === link.href
+                  ? "text-foreground font-medium"
+                  : "text-text-secondary hover:text-foreground"
+              }` + "`" + `}
+            >
+              {link.label}
+            </Link>
+          ))}
+          <a
+            href={DOCS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-text-secondary hover:text-foreground transition-colors"
+          >
+            Docs
+          </a>
+          <a
+            href="https://github.com/MUKE-coder/grit"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-text-secondary hover:text-foreground transition-colors"
+          >
+            <Github className="h-5 w-5" />
+          </a>
+          <a
+            href={` + "`" + `${ADMIN_URL}/login` + "`" + `}
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+          >
+            Admin
+          </a>
+        </div>
+
+        {/* Mobile hamburger */}
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="md:hidden p-2 text-text-secondary hover:text-foreground transition-colors"
+          aria-label="Toggle menu"
+        >
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-lg">
+          <div className="mx-auto max-w-5xl px-6 py-4 flex flex-col gap-3">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className={` + "`" + `text-sm py-2 transition-colors ${
+                  pathname === link.href
+                    ? "text-foreground font-medium"
+                    : "text-text-secondary hover:text-foreground"
+                }` + "`" + `}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <a
+              href={DOCS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
+            >
+              Docs
+            </a>
+            <a
+              href="https://github.com/MUKE-coder/grit"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
+            >
+              GitHub
+            </a>
+            <a
+              href={` + "`" + `${ADMIN_URL}/login` + "`" + `}
+              className="mt-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white text-center hover:bg-accent-hover transition-colors"
+            >
+              Admin
+            </a>
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+}
+`
+}
+
+func webFooter(opts Options) string {
+	return `import Link from "next/link";
+
+const DOCS_URL = "https://grit-vert.vercel.app/docs";
+
+export function Footer() {
+  return (
+    <footer className="border-t border-border/50 bg-background">
+      <div className="mx-auto max-w-5xl px-6 py-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-sm text-text-muted">
+            <span className="font-semibold text-text-secondary">` + opts.ProjectName + `</span>
+            <span className="text-border">·</span>
+            <span>Built with Grit</span>
+          </div>
+          <div className="flex items-center gap-6 text-sm text-text-muted">
+            <a
+              href="https://github.com/MUKE-coder/grit"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              GitHub
+            </a>
+            <a
+              href={DOCS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              Documentation
+            </a>
+          </div>
+        </div>
+        <div className="mt-6 pt-6 border-t border-border/30 text-center">
+          <p className="text-xs text-text-muted">
+            &copy; {new Date().getFullYear()} ` + opts.ProjectName + `. All rights reserved.
+          </p>
+        </div>
+      </div>
+    </footer>
+  );
+}
+`
+}
+
+func webProviders() string {
+	return `"use client";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState } from "react";
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 60 * 1000,
+            retry: 1,
+          },
+        },
+      })
+  );
+
+  return (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+}
+`
+}
+
+func webAPIClient() string {
+	return `import axios from "axios";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+export const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+`
+}
+
+func webUseBlogsHook() string {
+	return `"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+
+interface Blog {
+  id: number;
+  title: string;
+  slug: string;
+  content: string;
+  image: string;
+  excerpt: string;
+  published: boolean;
+  published_at: string | null;
+  created_at: string;
+}
+
+interface BlogMeta {
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
+
+export function usePublicBlogs(page = 1, pageSize = 20) {
+  return useQuery({
+    queryKey: ["public-blogs", page, pageSize],
+    queryFn: async () => {
+      const { data } = await api.get(
+        ` + "`" + `/api/blogs?page=${page}&page_size=${pageSize}` + "`" + `
+      );
+      return {
+        blogs: (data.data || []) as Blog[],
+        meta: data.meta as BlogMeta | undefined,
+      };
+    },
+  });
+}
+
+export function usePublicBlog(slug: string) {
+  return useQuery({
+    queryKey: ["public-blog", slug],
+    queryFn: async () => {
+      const { data } = await api.get(` + "`" + `/api/blogs/${slug}` + "`" + `);
+      return data.data as Blog;
+    },
+    enabled: !!slug,
+  });
+}
+`
+}
+
+func webBlogListPage() string {
+	return `"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { usePublicBlogs } from "@/hooks/use-blogs";
+
+export default function BlogListPage() {
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = usePublicBlogs(page, 9);
+  const blogs = data?.blogs || [];
+  const meta = data?.meta;
+
+  return (
+    <div className="mx-auto max-w-5xl px-6 py-16">
+      {/* Header */}
+      <div className="mb-12">
+        <h1 className="text-4xl font-bold tracking-tight">Blog</h1>
+        <p className="mt-2 text-text-secondary">
+          Insights, tutorials, and updates from the team.
+        </p>
+      </div>
+
+      {/* Blog grid */}
+      {isLoading ? (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-xl border border-border bg-bg-elevated overflow-hidden animate-pulse"
+            >
+              <div className="h-52 bg-bg-hover" />
+              <div className="p-5 space-y-3">
+                <div className="h-3 bg-bg-hover rounded w-1/3" />
+                <div className="h-5 bg-bg-hover rounded w-3/4" />
+                <div className="h-3 bg-bg-hover rounded w-full" />
+                <div className="h-3 bg-bg-hover rounded w-2/3" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : blogs.length > 0 ? (
+        <>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {blogs.map((blog) => (
+              <Link
+                key={blog.id}
+                href={` + "`" + `/blog/${blog.slug}` + "`" + `}
+                className="group rounded-xl border border-border bg-bg-elevated overflow-hidden hover:border-accent/40 hover:shadow-lg hover:shadow-accent/5 transition-all duration-300"
+              >
+                <div className="h-52 bg-bg-hover overflow-hidden">
+                  {blog.image ? (
+                    <img
+                      src={blog.image}
+                      alt={blog.title}
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-accent/10 to-accent/5">
+                      <span className="text-5xl font-bold text-accent/20">
+                        {blog.title.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="p-5">
+                  <p className="text-xs text-text-muted mb-2.5">
+                    {new Date(
+                      blog.published_at || blog.created_at
+                    ).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </p>
+                  <h2 className="font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2 text-lg leading-snug">
+                    {blog.title}
+                  </h2>
+                  {blog.excerpt && (
+                    <p className="mt-2.5 text-sm text-text-secondary line-clamp-3 leading-relaxed">
+                      {blog.excerpt}
+                    </p>
+                  )}
+                  <span className="mt-4 inline-block text-xs font-medium text-accent group-hover:text-accent-hover transition-colors">
+                    Read more &rarr;
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {meta && meta.pages > 1 && (
+            <div className="mt-12 flex items-center justify-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="flex items-center gap-1 rounded-lg border border-border bg-bg-elevated px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </button>
+              <div className="flex items-center gap-1 px-3">
+                {Array.from({ length: meta.pages }).map((_, i) => (
+                  <button
+                    key={i + 1}
+                    onClick={() => setPage(i + 1)}
+                    className={` + "`" + `h-8 w-8 rounded-lg text-sm font-medium transition-colors ${
+                      page === i + 1
+                        ? "bg-accent text-white"
+                        : "text-text-secondary hover:bg-bg-hover hover:text-foreground"
+                    }` + "`" + `}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setPage((p) => Math.min(meta.pages, p + 1))}
+                disabled={page >= meta.pages}
+                className="flex items-center gap-1 rounded-lg border border-border bg-bg-elevated px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="text-center py-20">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-bg-elevated border border-border">
+            <span className="text-2xl text-text-muted">&#9998;</span>
+          </div>
+          <h3 className="text-lg font-semibold text-foreground">No posts yet</h3>
+          <p className="mt-1 text-sm text-text-muted">
+            Blog posts will appear here once published from the admin panel.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+`
+}
+
+func webBlogDetailPage() string {
+	return `"use client";
+
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Calendar } from "lucide-react";
+import { usePublicBlog } from "@/hooks/use-blogs";
+
+export default function BlogDetailPage() {
+  const params = useParams();
+  const slug = typeof params.slug === "string" ? params.slug : "";
+  const { data: blog, isLoading, error } = usePublicBlog(slug);
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-3xl px-6 py-16 animate-pulse">
+        <div className="h-4 bg-bg-hover rounded w-24 mb-8" />
+        <div className="h-8 bg-bg-hover rounded w-3/4 mb-4" />
+        <div className="h-4 bg-bg-hover rounded w-1/3 mb-12" />
+        <div className="aspect-[2/1] bg-bg-hover rounded-xl mb-12" />
+        <div className="space-y-4">
+          <div className="h-4 bg-bg-hover rounded w-full" />
+          <div className="h-4 bg-bg-hover rounded w-full" />
+          <div className="h-4 bg-bg-hover rounded w-5/6" />
+          <div className="h-4 bg-bg-hover rounded w-full" />
+          <div className="h-4 bg-bg-hover rounded w-4/6" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !blog) {
+    return (
+      <div className="mx-auto max-w-3xl px-6 py-16 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-bg-elevated border border-border">
+          <span className="text-2xl text-text-muted">404</span>
+        </div>
+        <h1 className="text-xl font-semibold text-foreground">Post not found</h1>
+        <p className="mt-2 text-sm text-text-muted">
+          The blog post you're looking for doesn't exist or has been removed.
+        </p>
+        <Link
+          href="/blog"
+          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Blog
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <article className="mx-auto max-w-3xl px-6 py-16">
+      {/* Back link */}
+      <Link
+        href="/blog"
+        className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-foreground transition-colors mb-8"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Blog
+      </Link>
+
+      {/* Title and meta */}
+      <header className="mb-10">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight leading-tight">
+          {blog.title}
+        </h1>
+        <div className="mt-4 flex items-center gap-2 text-sm text-text-muted">
+          <Calendar className="h-4 w-4" />
+          <time dateTime={blog.published_at || blog.created_at}>
+            {new Date(blog.published_at || blog.created_at).toLocaleDateString(
+              "en-US",
+              {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              }
+            )}
+          </time>
+        </div>
+      </header>
+
+      {/* Cover image */}
+      {blog.image && (
+        <div className="mb-12 rounded-xl overflow-hidden border border-border">
+          <img
+            src={blog.image}
+            alt={blog.title}
+            className="w-full h-auto object-cover"
+          />
+        </div>
+      )}
+
+      {/* Content */}
+      <div
+        className="prose-blog"
+        dangerouslySetInnerHTML={{ __html: blog.content }}
+      />
+
+      {/* Bottom nav */}
+      <div className="mt-16 pt-8 border-t border-border/50">
+        <Link
+          href="/blog"
+          className="inline-flex items-center gap-1.5 text-sm text-accent hover:text-accent-hover transition-colors font-medium"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          All posts
+        </Link>
+      </div>
+    </article>
+  );
 }
 `
 }

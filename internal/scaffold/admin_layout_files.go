@@ -106,6 +106,20 @@ func adminIconMap() string {
   Upload,
   Play,
   ExternalLink,
+  LogOut,
+  Bold,
+  Italic,
+  Strikethrough,
+  Heading1,
+  Heading2,
+  Heading3,
+  List,
+  ListOrdered,
+  Quote,
+  Code,
+  Link,
+  Undo,
+  Redo,
   type LucideIcon,
 } from "lucide-react";
 
@@ -181,6 +195,20 @@ export {
   Lock,
   Play,
   ExternalLink,
+  LogOut,
+  Bold,
+  Italic,
+  Strikethrough,
+  Heading1,
+  Heading2,
+  Heading3,
+  List,
+  ListOrdered,
+  Quote,
+  Code,
+  Link,
+  Undo,
+  Redo,
 };
 `
 }
@@ -274,17 +302,21 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 func adminSidebar() string {
 	return `"use client";
 
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { resources } from "@/resources";
-import { getIcon, ChevronLeft, ChevronRight, Sun, Moon, LayoutDashboard, UserCircle } from "@/lib/icons";
+import { getIcon, ChevronLeft, ChevronRight, ChevronDown, Sun, Moon, LayoutDashboard, UserCircle, LogOut } from "@/lib/icons";
 import { useTheme } from "@/components/shared/theme-provider";
+import { useLogout } from "@/hooks/use-auth";
 
 interface User {
   first_name: string;
   last_name: string;
   email: string;
   role: string;
+  avatar?: string;
 }
 
 interface SidebarProps {
@@ -293,6 +325,105 @@ interface SidebarProps {
   onToggle: () => void;
   mobileOpen: boolean;
   onMobileClose: () => void;
+}
+
+function UserMenu({ user, collapsed, fullName }: { user: User; collapsed: boolean; fullName: string }) {
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ bottom: 0, left: 0, width: 0 });
+  const router = useRouter();
+  const { mutate: logout } = useLogout();
+
+  const updatePosition = useCallback(() => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPos({ bottom: window.innerHeight - rect.top + 4, left: rect.left, width: rect.width });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePosition();
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as Node;
+      if (
+        triggerRef.current && !triggerRef.current.contains(target) &&
+        menuRef.current && !menuRef.current.contains(target)
+      ) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open, updatePosition]);
+
+  const handleSignOut = () => {
+    setOpen(false);
+    logout(undefined, {
+      onSuccess: () => router.push("/login"),
+    });
+  };
+
+  const avatar = user.avatar ? (
+    <img src={user.avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
+  ) : (
+    <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
+      <span className="text-sm font-medium text-accent">{user.first_name?.charAt(0)?.toUpperCase()}</span>
+    </div>
+  );
+
+  const menu = open ? createPortal(
+    <div
+      ref={menuRef}
+      className="fixed z-[9999] w-56 rounded-lg border border-border bg-bg-elevated shadow-xl"
+      style={{ bottom: pos.bottom, left: pos.left, backgroundColor: "var(--bg-elevated, #22222e)" }}
+    >
+      <div className="p-3 border-b border-border">
+        <p className="text-sm font-medium text-foreground truncate">{fullName}</p>
+        <p className="text-xs text-text-muted truncate">{user.email}</p>
+      </div>
+      <div className="p-1">
+        <button
+          onClick={() => { setOpen(false); router.push("/profile"); }}
+          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
+        >
+          <UserCircle className="h-4 w-4" />
+          Profile
+        </button>
+        <button
+          onClick={handleSignOut}
+          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-danger hover:bg-danger/10 transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </button>
+      </div>
+    </div>,
+    document.body
+  ) : null;
+
+  return (
+    <div>
+      <div
+        ref={triggerRef}
+        onClick={() => { if (!open) updatePosition(); setOpen(!open); }}
+        className={` + "`" + `flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-bg-hover transition-colors ${collapsed ? "justify-center" : ""}` + "`" + `}
+      >
+        {avatar}
+        {!collapsed && (
+          <>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{fullName}</p>
+              <p className="text-xs text-text-muted truncate">{user.role}</p>
+            </div>
+            <ChevronDown className={` + "`" + `h-3 w-3 text-text-muted transition-transform ${open ? "rotate-180" : ""}` + "`" + `} />
+          </>
+        )}
+      </div>
+      {menu}
+    </div>
+  );
 }
 
 export function Sidebar({ user, collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
@@ -450,29 +581,8 @@ export function Sidebar({ user, collapsed, onToggle, mobileOpen, onMobileClose }
           )}
         </button>
 
-        {/* User info */}
-        {!collapsed && (
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
-              <span className="text-sm font-medium text-accent">
-                {user.first_name?.charAt(0)?.toUpperCase()}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">{fullName}</p>
-              <p className="text-xs text-text-muted truncate">{user.role}</p>
-            </div>
-          </div>
-        )}
-        {collapsed && (
-          <div className="flex justify-center px-3 py-2">
-            <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
-              <span className="text-sm font-medium text-accent">
-                {user.first_name?.charAt(0)?.toUpperCase()}
-              </span>
-            </div>
-          </div>
-        )}
+        {/* User avatar menu */}
+        <UserMenu user={user} collapsed={collapsed} fullName={fullName} />
       </div>
     </>
   );

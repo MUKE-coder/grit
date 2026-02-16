@@ -61,6 +61,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.4.0
 	golang.org/x/crypto v0.23.0
+	gorm.io/datatypes v1.2.7
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.25.12
 )
@@ -562,6 +563,7 @@ func Models() []interface{} {
 	return []interface{}{
 		&User{},
 		&Upload{},
+		&Blog{},
 		// grit:models
 	}
 }
@@ -1744,7 +1746,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 
 	// Mount GORM Studio
 	if cfg.GORMStudioEnabled {
-		studio.Mount(r, db, []interface{}{&models.User{}, &models.Upload{}, /* grit:studio */}, studio.Config{
+		studio.Mount(r, db, []interface{}{&models.User{}, &models.Upload{}, &models.Blog{}, /* grit:studio */}, studio.Config{
 			Prefix: "/studio",
 		})
 		log.Println("GORM Studio mounted at /studio")
@@ -1781,6 +1783,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		RedisURL: cfg.RedisURL,
 	}
 	cronHandler := &handlers.CronHandler{}
+	blogHandler := handlers.NewBlogHandler(db)
 	// grit:handlers
 
 	// Health check
@@ -1790,6 +1793,13 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			"version": "0.1.0",
 		})
 	})
+
+	// Public blog routes (no auth required)
+	blogs := r.Group("/api/blogs")
+	{
+		blogs.GET("", blogHandler.ListPublished)
+		blogs.GET("/:slug", blogHandler.GetBySlug)
+	}
 
 	// Public auth routes
 	auth := r.Group("/api/auth")
@@ -1849,6 +1859,12 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		admin.POST("/admin/jobs/:id/retry", jobsHandler.Retry)
 		admin.DELETE("/admin/jobs/queue/:queue", jobsHandler.ClearQueue)
 		admin.GET("/admin/cron/tasks", cronHandler.ListTasks)
+
+		// Blog management (admin)
+		admin.GET("/blogs", blogHandler.List)
+		admin.POST("/blogs", blogHandler.Create)
+		admin.PUT("/blogs/:id", blogHandler.Update)
+		admin.DELETE("/blogs/:id", blogHandler.Delete)
 
 		// grit:routes:admin
 	}

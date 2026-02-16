@@ -18,6 +18,8 @@ func writeSharedFiles(root string, opts Options) error {
 		filepath.Join(sharedRoot, "types", "index.ts"):   sharedTypesIndex(),
 		filepath.Join(sharedRoot, "constants", "index.ts"): sharedConstants(),
 		filepath.Join(sharedRoot, "types", "upload.ts"):    sharedUploadTypes(),
+		filepath.Join(sharedRoot, "schemas", "blog.ts"):    sharedBlogSchema(),
+		filepath.Join(sharedRoot, "types", "blog.ts"):      sharedBlogTypes(),
 	}
 
 	for path, content := range files {
@@ -130,6 +132,13 @@ func sharedSchemasIndex() string {
   type ForgotPasswordInput,
   type ResetPasswordInput,
 } from "./user";
+export {
+  BlogSchema,
+  CreateBlogSchema,
+  UpdateBlogSchema,
+  type CreateBlogInput,
+  type UpdateBlogInput,
+} from "./blog";
 // grit:schemas
 `
 }
@@ -214,6 +223,7 @@ export type {
 } from "./api";
 
 export type { Upload } from "./upload";
+export type { Blog } from "./blog";
 // grit:types
 `
 }
@@ -265,6 +275,14 @@ export const API_ROUTES = {
     UPDATE: "/api/profile",
     DELETE: "/api/profile",
   },
+  BLOGS: {
+    LIST: "/api/blogs",
+    GET: (slug: string) => ` + "`" + `/api/blogs/${slug}` + "`" + `,
+    ADMIN_LIST: "/api/blogs",
+    CREATE: "/api/blogs",
+    UPDATE: (id: number) => ` + "`" + `/api/blogs/${id}` + "`" + `,
+    DELETE: (id: number) => ` + "`" + `/api/blogs/${id}` + "`" + `,
+  },
   HEALTH: "/api/health",
   // grit:api-routes
 } as const;
@@ -282,6 +300,53 @@ func sharedUploadTypes() string {
   url: string;
   thumbnail_url?: string;
   user_id: number;
+  created_at: string;
+  updated_at: string;
+}
+`
+}
+
+func sharedBlogSchema() string {
+	return `import { z } from "zod";
+
+export const BlogSchema = z.object({
+  id: z.number(),
+  title: z.string(),
+  slug: z.string(),
+  content: z.string(),
+  image: z.string().nullable(),
+  excerpt: z.string().nullable(),
+  published: z.boolean(),
+  published_at: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export const CreateBlogSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  content: z.string().optional(),
+  image: z.string().optional(),
+  excerpt: z.string().optional(),
+  published: z.boolean().optional(),
+});
+
+export const UpdateBlogSchema = CreateBlogSchema.partial();
+
+export type CreateBlogInput = z.infer<typeof CreateBlogSchema>;
+export type UpdateBlogInput = z.infer<typeof UpdateBlogSchema>;
+`
+}
+
+func sharedBlogTypes() string {
+	return `export interface Blog {
+  id: number;
+  title: string;
+  slug: string;
+  content: string;
+  image: string | null;
+  excerpt: string | null;
+  published: boolean;
+  published_at: string | null;
   created_at: string;
   updated_at: string;
 }

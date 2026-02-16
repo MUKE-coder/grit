@@ -39,23 +39,27 @@ func (g *Generator) writeGoModel(names Names) error {
 		}
 	}
 
+	// Check if any field needs datatypes import
+	needsDatatypes := false
+	for _, f := range fields {
+		if f.NeedsDatatypesImport() {
+			needsDatatypes = true
+			break
+		}
+	}
+
 	// Build imports
 	hasSlug := slugField != nil
 	var imports string
+	stdImports := `"time"`
 	if hasSlug {
-		imports = `import (
-	"fmt"
-	"time"
-
-	"gorm.io/gorm"
-)`
-	} else {
-		imports = `import (
-	"time"
-
-	"gorm.io/gorm"
-)`
+		stdImports = "\"fmt\"\n\t\"time\""
 	}
+	extImports := `"gorm.io/gorm"`
+	if needsDatatypes {
+		extImports = "\"gorm.io/datatypes\"\n\t\"gorm.io/gorm\""
+	}
+	imports = fmt.Sprintf("import (\n\t%s\n\n\t%s\n)", stdImports, extImports)
 
 	structFields := ""
 	for _, f := range fields {
@@ -408,15 +412,22 @@ func (g *Generator) writeGoHandler(names Names) error {
 
 	// Check if any field needs "time" import
 	needsTimeImport := false
+	needsHandlerDatatypes := false
 	for _, f := range g.Definition.Fields {
 		if f.GoType() == "*time.Time" {
 			needsTimeImport = true
-			break
+		}
+		if f.NeedsDatatypesImport() {
+			needsHandlerDatatypes = true
 		}
 	}
 	timeImport := ""
 	if needsTimeImport {
 		timeImport = "\n\t\"time\""
+	}
+	datatypesImport := ""
+	if needsHandlerDatatypes {
+		datatypesImport = "\n\t\"gorm.io/datatypes\""
 	}
 
 	r := strings.NewReplacer(
@@ -436,6 +447,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 		"{{M2M_UPDATE}}", m2mUpdateCode,
 		"{{RELOAD}}", reloadLine,
 		"{{TIME_IMPORT}}", timeImport,
+		"{{DATATYPES_IMPORT}}", datatypesImport,
 	)
 
 	content := r.Replace(`package handlers
@@ -445,7 +457,7 @@ import (
 	"net/http"
 	"strconv"{{TIME_IMPORT}}
 
-	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"{{DATATYPES_IMPORT}}
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/models"

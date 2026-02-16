@@ -50,17 +50,25 @@ export default function WebAppPage() {
 │   │   ├── login/page.tsx
 │   │   ├── register/page.tsx
 │   │   └── forgot-password/page.tsx
-│   └── (dashboard)/            # Protected route group
-│       ├── layout.tsx          # Sidebar + auth guard
-│       └── dashboard/page.tsx  # Main dashboard
+│   ├── (dashboard)/            # Protected route group
+│   │   ├── layout.tsx          # Sidebar + auth guard
+│   │   └── dashboard/page.tsx  # Main dashboard
+│   └── blog/                   # Public blog pages
+│       ├── page.tsx            # Blog listing page
+│       └── [slug]/page.tsx     # Blog detail page
 ├── components/
 │   ├── ui/                     # shadcn/ui primitives
+│   ├── navbar.tsx              # Site navigation bar
+│   ├── footer.tsx              # Site footer
+│   ├── providers.tsx           # QueryClient + theme providers
 │   └── shared/
 │       └── providers.tsx       # QueryClient + theme providers
 ├── hooks/
 │   ├── use-auth.ts             # Auth hooks (login, register, etc.)
-│   └── use-users.ts            # Generated CRUD hooks
+│   ├── use-users.ts            # Generated CRUD hooks
+│   └── use-blogs.ts            # Blog data fetching hooks
 ├── lib/
+│   ├── api.ts                  # API helper functions
 │   ├── api-client.ts           # Axios instance with JWT interceptor
 │   ├── query-client.ts         # React Query client config
 │   └── utils.ts                # Utility functions (cn, etc.)

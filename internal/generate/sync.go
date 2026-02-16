@@ -176,6 +176,8 @@ func typeToString(expr ast.Expr) string {
 		return typeToString(t.X) + "." + t.Sel.Name
 	case *ast.ArrayType:
 		return "[]" + typeToString(t.Elt)
+	case *ast.IndexExpr:
+		return typeToString(t.X) + "[" + typeToString(t.Index) + "]"
 	default:
 		return "interface{}"
 	}
@@ -263,6 +265,9 @@ func goTypeToTS(goType string) string {
 	case "gorm.DeletedAt":
 		return "string | null"
 	default:
+		if strings.Contains(goType, "JSONSlice[string]") {
+			return "string[]"
+		}
 		if strings.HasPrefix(goType, "[]") {
 			inner := goTypeToTS(goType[2:])
 			return inner + "[]"
@@ -295,6 +300,9 @@ func goTypeToZod(goType, gormTag string) string {
 	case "time.Time":
 		return "z.string()"
 	default:
+		if strings.Contains(goType, "JSONSlice[string]") {
+			return "z.array(z.string()).optional()"
+		}
 		return "z.unknown()"
 	}
 }

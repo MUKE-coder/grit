@@ -471,7 +471,7 @@ fields:
                         <td className="px-4 py-2.5 font-mono text-xs">type</td>
                         <td className="px-4 py-2.5 font-mono text-xs">string</td>
                         <td className="px-4 py-2.5 font-mono text-xs">(required)</td>
-                        <td className="px-4 py-2.5 text-xs">One of: string, text, int, uint, float, bool, datetime, date</td>
+                        <td className="px-4 py-2.5 text-xs">One of: string, text, richtext, int, uint, float, bool, datetime, date, slug, belongs_to, many_to_many, string_array</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">required</td>
@@ -575,12 +575,52 @@ fields:
                         <td className="px-3 py-2.5 text-xs">Yes</td>
                         <td className="px-3 py-2.5 text-xs">No</td>
                       </tr>
-                      <tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-3 py-2.5 font-mono text-xs">date</td>
                         <td className="px-3 py-2.5 font-mono text-xs">type:date</td>
                         <td className="px-3 py-2.5 font-mono text-xs">relative</td>
                         <td className="px-3 py-2.5 font-mono text-xs">date</td>
                         <td className="px-3 py-2.5 text-xs">Yes</td>
+                        <td className="px-3 py-2.5 text-xs">No</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-3 py-2.5 font-mono text-xs">richtext</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">type:text</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">richtext</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">richtext</td>
+                        <td className="px-3 py-2.5 text-xs">No</td>
+                        <td className="px-3 py-2.5 text-xs">Yes</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-3 py-2.5 font-mono text-xs">slug</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">size:255;uniqueIndex</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">text</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">(excluded)</td>
+                        <td className="px-3 py-2.5 text-xs">Yes</td>
+                        <td className="px-3 py-2.5 text-xs">Yes</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-3 py-2.5 font-mono text-xs">belongs_to</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">index</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">text</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">relationship-select</td>
+                        <td className="px-3 py-2.5 text-xs">No</td>
+                        <td className="px-3 py-2.5 text-xs">No</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-3 py-2.5 font-mono text-xs">many_to_many</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">(junction table)</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">(hidden)</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">multi-relationship-select</td>
+                        <td className="px-3 py-2.5 text-xs">No</td>
+                        <td className="px-3 py-2.5 text-xs">No</td>
+                      </tr>
+                      <tr>
+                        <td className="px-3 py-2.5 font-mono text-xs">string_array</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">type:json</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">text</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">images</td>
+                        <td className="px-3 py-2.5 text-xs">No</td>
                         <td className="px-3 py-2.5 text-xs">No</td>
                       </tr>
                     </tbody>

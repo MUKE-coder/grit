@@ -118,9 +118,13 @@ export default function CLICommandsPage() {
                         <td className="px-4 py-2.5 font-mono text-xs">--mobile</td>
                         <td className="px-4 py-2.5">API + Expo mobile app only. No web or admin frontends</td>
                       </tr>
-                      <tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">--full</td>
                         <td className="px-4 py-2.5">Everything including a documentation site app</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2.5 font-mono text-xs">--style &lt;variant&gt;</td>
+                        <td className="px-4 py-2.5">Admin panel style variant (default, modern, minimal, glass). Default: <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">default</code></td>
                       </tr>
                     </tbody>
                   </table>
@@ -283,9 +287,13 @@ grit g resource <Name> [flags]`}</pre>
                         <td className="px-4 py-2.5 font-mono text-xs">--from &lt;file&gt;</td>
                         <td className="px-4 py-2.5">Load field definitions from a YAML file</td>
                       </tr>
-                      <tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">-i, --interactive</td>
                         <td className="px-4 py-2.5">Define fields interactively in the terminal, one at a time</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2.5 font-mono text-xs">--roles &lt;ROLE1,ROLE2&gt;</td>
+                        <td className="px-4 py-2.5">Restrict resource routes to specific roles</td>
                       </tr>
                     </tbody>
                   </table>
@@ -393,12 +401,26 @@ grit g resource <Name> [flags]`}</pre>
                         <td className="px-4 py-2.5 font-mono text-xs">{`z.number().int().min(1)`}</td>
                         <td className="px-4 py-2.5 font-mono text-xs">relationship select</td>
                       </tr>
-                      <tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs text-primary">many_to_many</td>
                         <td className="px-4 py-2.5 font-mono text-xs">[]uint (IDs)</td>
                         <td className="px-4 py-2.5 font-mono text-xs">{`number[]`}</td>
                         <td className="px-4 py-2.5 font-mono text-xs">{`z.array(z.number().int())`}</td>
                         <td className="px-4 py-2.5 font-mono text-xs">multi-select</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs text-primary">richtext</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">string</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">string</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">z.string()</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">Rich text editor (Tiptap)</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2.5 font-mono text-xs text-primary">string_array</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">{`datatypes.JSONSlice[string]`}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">{`string[]`}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">{`z.array(z.string())`}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">Multi-image upload</td>
                       </tr>
                     </tbody>
                   </table>
@@ -605,6 +627,54 @@ fields:
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* grit remove resource */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  grit remove resource
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Remove a previously generated resource. This deletes the Go model, service, handler,
+                  Zod schemas, TypeScript types, React hooks, resource definition, and admin page. It also
+                  cleans up all injection markers that were added when the resource was generated.
+                </p>
+
+                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-6">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    </div>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                  </div>
+                  <div className="p-5 font-mono text-sm">
+                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit remove resource Post</span></div>
+                  </div>
+                </div>
+
+                <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
+                  Syntax
+                </h3>
+                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                    <span className="text-[11px] font-mono text-muted-foreground/40">usage</span>
+                  </div>
+                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`grit remove resource <Name>
+
+# Shorthand alias
+grit rm resource <Name>`}</pre>
+                </div>
+
+                <p className="text-sm text-muted-foreground/60 mt-3">
+                  The resource name should be the singular PascalCase name (e.g.,{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Post</code>,{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Product</code>,{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">BlogCategory</code>)
+                  — the same name you used with{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate resource</code>.
+                </p>
               </div>
 
               {/* grit add role */}
@@ -846,7 +916,7 @@ fields:
                   </div>
                   <div className="p-5 font-mono text-sm">
                     <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit version</span></div>
-                    <div className="mt-1"><span className="text-muted-foreground/60">grit version 0.8.0</span></div>
+                    <div className="mt-1"><span className="text-muted-foreground/60">grit version 0.13.0</span></div>
                   </div>
                 </div>
               </div>
@@ -884,6 +954,10 @@ fields:
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit g resource &lt;Name&gt;</td>
                         <td className="px-4 py-2.5">Shorthand for generate resource</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit remove resource &lt;Name&gt;</td>
+                        <td className="px-4 py-2.5">Remove a generated resource and clean up markers</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit add role &lt;ROLE&gt;</td>

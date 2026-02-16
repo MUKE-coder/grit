@@ -276,6 +276,9 @@ export function renderCell(
     case "color":
       content = <ColorCell value={String(value)} />;
       break;
+    case "richtext":
+      content = <RichTextCell value={String(value)} />;
+      break;
     default:
       content = <span>{String(value)}</span>;
   }
@@ -412,6 +415,12 @@ function ColorCell({ value }: { value: string }) {
       <span className="font-mono text-xs text-text-secondary">{value}</span>
     </div>
   );
+}
+
+function RichTextCell({ value }: { value: string }) {
+  const stripped = value.replace(/<[^>]*>/g, "").trim();
+  const truncated = stripped.length > 100 ? stripped.slice(0, 100) + "..." : stripped;
+  return <span className="text-text-secondary">{truncated}</span>;
 }
 `
 }

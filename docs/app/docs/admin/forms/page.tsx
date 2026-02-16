@@ -413,6 +413,278 @@ export default defineResource({
             </div>
 
             <div className="prose-grit">
+              {/* Upload Variants */}
+              <h2>Upload Variants</h2>
+              <p>
+                All upload field types (<code>image</code>, <code>images</code>, <code>file</code>,
+                <code>files</code>, <code>video</code>, <code>videos</code>) use the Dropzone
+                component under the hood. By default, uploads render as a large dashed drop zone,
+                but you can customize the appearance with the <code>variant</code> property.
+                Five variants are available:
+              </p>
+
+              <h3>default</h3>
+              <p>
+                The standard large dashed drop zone with drag-and-drop support.
+                Uploaded files appear as grid preview thumbnails below the zone.
+                Best suited for multi-file uploads where you want a prominent
+                upload area.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">default variant (this is the default, no need to specify)</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+  key: 'gallery',
+  label: 'Product Gallery',
+  type: 'images',
+  max: 8,
+  // variant: 'default'  (implied)
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <h3>compact</h3>
+              <p>
+                An inline horizontal layout that takes less vertical space than the default.
+                Good for single-file uploads where you want a smaller footprint. The file
+                name and a remove button appear inline after upload.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">compact variant</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+  key: 'document',
+  label: 'Document',
+  type: 'file',
+  variant: 'compact',
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <h3>minimal</h3>
+              <p>
+                A button-like minimal appearance that looks like a standard form control.
+                Ideal when the upload area should blend in with other fields and not
+                dominate the form visually.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">minimal variant</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+  key: 'receipt',
+  label: 'Receipt',
+  type: 'file',
+  variant: 'minimal',
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <h3>avatar</h3>
+              <p>
+                A circular image preview with a hover overlay for changing the image.
+                Designed specifically for profile pictures and user avatars. Shows a
+                round preview of the current image with a camera icon overlay on hover.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">avatar variant</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+  key: 'avatar',
+  label: 'Profile Picture',
+  type: 'image',
+  variant: 'avatar',
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <h3>inline</h3>
+              <p>
+                A horizontal layout with a &quot;Browse&quot; button and file name display
+                on the same line. Similar to a native file input but styled to match the
+                admin theme. Works well in compact form layouts.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">inline variant</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+  key: 'thumbnail',
+  label: 'Thumbnail',
+  type: 'image',
+  variant: 'inline',
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                Here is a complete example using multiple upload variants in a single
+                resource definition:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">Mixing upload variants in a form</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`form: {
+  layout: 'two-column',
+  fields: [
+    { key: 'name', label: 'Name', type: 'text',
+      required: true, span: 'full' },
+
+    // Circular avatar preview for the profile picture
+    { key: 'avatar', label: 'Avatar', type: 'image',
+      variant: 'avatar', span: 'half' },
+
+    // Compact single-file upload for a cover image
+    { key: 'cover', label: 'Cover Image', type: 'image',
+      variant: 'compact', span: 'half' },
+
+    // Default large drop zone for a gallery
+    { key: 'gallery', label: 'Gallery', type: 'images',
+      max: 12, span: 'full' },
+
+    // Inline file upload for a document
+    { key: 'resume', label: 'Resume', type: 'file',
+      variant: 'inline', span: 'half' },
+  ],
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              {/* Rich Text Editor */}
+              <h2>Rich Text Editor</h2>
+              <p>
+                The <code>richtext</code> field type provides a full-featured rich text editor
+                powered by <strong>Tiptap</strong>. It renders a toolbar with formatting controls
+                and a content-editable area that stores its output as an HTML string.
+              </p>
+
+              <h3>Toolbar Actions</h3>
+              <p>
+                The editor toolbar includes the following formatting options:
+              </p>
+              <ul>
+                <li><strong>Bold</strong>, <strong>Italic</strong>, <strong>Strikethrough</strong> &mdash; inline text formatting.</li>
+                <li><strong>Heading 1</strong>, <strong>Heading 2</strong>, <strong>Heading 3</strong> &mdash; block-level headings.</li>
+                <li><strong>Bullet List</strong>, <strong>Ordered List</strong> &mdash; list structures.</li>
+                <li><strong>Blockquote</strong> &mdash; indented quote blocks.</li>
+                <li><strong>Code Block</strong> &mdash; syntax-highlighted code fences.</li>
+                <li><strong>Link</strong> &mdash; insert or edit hyperlinks with a URL prompt.</li>
+                <li><strong>Undo / Redo</strong> &mdash; history navigation.</li>
+              </ul>
+
+              <h3>Usage in Resource Definitions</h3>
+              <p>
+                Add a <code>richtext</code> field to your form definition. The field stores
+                its content as an HTML string (e.g., <code>&lt;p&gt;Hello &lt;strong&gt;world&lt;/strong&gt;&lt;/p&gt;</code>).
+                In two-column layouts, rich text fields typically use <code>span: &apos;full&apos;</code> to
+                give the editor enough horizontal space.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">Rich text field in a resource definition</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`form: {
+  layout: 'two-column',
+  fields: [
+    { key: 'title', label: 'Title', type: 'text',
+      required: true, span: 'full' },
+    { key: 'status', label: 'Status', type: 'select',
+      options: ['draft', 'published'], span: 'half' },
+    { key: 'category_id', label: 'Category',
+      type: 'relationship-select',
+      relatedEndpoint: '/api/categories',
+      displayField: 'name', span: 'half' },
+
+    // Rich text editor — full width for maximum editing space
+    { key: 'content', label: 'Content', type: 'richtext',
+      span: 'full' },
+  ],
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <h3>Code Generator Support</h3>
+              <p>
+                The <code>grit generate resource</code> command supports the <code>richtext</code> type
+                in YAML field definitions and in the CLI field syntax. The generator creates
+                a <code>text</code> column in the Go model (to store the HTML) and a
+                <code>richtext</code> form field in the admin resource definition.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">Generating a resource with a richtext field</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# CLI field syntax
+grit generate resource Article title:string content:richtext status:select
+
+# The generator produces:
+# - Go model:  Content string \`gorm:"type:text" json:"content"\`
+# - Zod schema: content: z.string().optional()
+# - Form field: { key: 'content', label: 'Content', type: 'richtext' }`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <h3>DataTable Display</h3>
+              <p>
+                When a <code>richtext</code> field appears in the DataTable, the HTML content
+                is automatically stripped of tags and truncated to show a plain-text preview.
+                This keeps the table rows compact while still giving a readable summary of
+                the content.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                  <span className="text-[11px] font-mono text-muted-foreground/40">DataTable column for richtext fields</span>
+                </div>
+                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// In the resource column definition:
+{
+  key: 'content',
+  label: 'Content',
+  format: 'richtext',   // strips HTML, truncates to ~80 chars
+  sortable: false,
+}`}</pre>
+              </div>
+            </div>
+
+            <div className="prose-grit">
               {/* Relationship Fields */}
               <h2>Relationship Fields</h2>
               <p>
