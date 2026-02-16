@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
@@ -359,8 +359,9 @@ export default function AISkillPage() {
                   </Link>
                 </Button>
                 <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">
-                  <Link href="/docs" className="gap-1.5">
-                    Back to Docs
+                  <Link href="/docs/ai-workflows/claude" className="gap-1.5">
+                    Using Grit with Claude
+                    <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </Button>
               </div>

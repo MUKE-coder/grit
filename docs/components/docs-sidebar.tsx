@@ -16,6 +16,7 @@ import {
   Layers,
   Settings,
   Lightbulb,
+  Wand2,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -125,6 +126,14 @@ const navItems: NavItem[] = [
       { title: 'Build a Blog', href: '/docs/tutorials/blog' },
       { title: 'Build a SaaS', href: '/docs/tutorials/saas' },
       { title: 'Build an E-Commerce', href: '/docs/tutorials/ecommerce' },
+    ],
+  },
+  {
+    title: 'AI Workflows',
+    icon: <Wand2 className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Using Grit with Claude', href: '/docs/ai-workflows/claude' },
+      { title: 'Using Grit with Antigravity', href: '/docs/ai-workflows/antigravity' },
     ],
   },
   {

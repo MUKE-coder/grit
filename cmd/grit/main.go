@@ -26,6 +26,7 @@ func main() {
 
 	rootCmd.AddCommand(newCmd())
 	rootCmd.AddCommand(generateCmd())
+	rootCmd.AddCommand(removeCmd())
 	rootCmd.AddCommand(addCmd())
 	rootCmd.AddCommand(startCmd())
 	rootCmd.AddCommand(syncCmd())
@@ -130,6 +131,46 @@ func generateCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(generateResourceCmd())
+
+	return cmd
+}
+
+func removeCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "remove",
+		Short: "Remove components from your Grit project",
+		Aliases: []string{"rm"},
+	}
+
+	cmd.AddCommand(removeResourceCmd())
+
+	return cmd
+}
+
+func removeResourceCmd() *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "resource <Name>",
+		Short: "Remove a previously generated resource",
+		Long:  "Delete generated files and reverse all marker-based injections for a resource.",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+
+			if !force {
+				fmt.Printf("\n  ⚠ This will remove all files and injections for resource %q.\n", args[0])
+				if !generate.ConfirmRemoval() {
+					fmt.Println("\n  Cancelled.")
+					return nil
+				}
+			}
+
+			return generate.RemoveResource(args[0])
+		},
+	}
+
+	cmd.Flags().BoolVar(&force, "force", false, "Skip confirmation prompt")
 
 	return cmd
 }

@@ -21,6 +21,7 @@ import {
   Palette,
   BookOpen,
   Lightbulb,
+  Wand2,
   FileText,
 } from 'lucide-react'
 
@@ -98,6 +99,10 @@ const searchIndex: SearchItem[] = [
 
   // AI
   { title: 'LLM Skill Guide', href: '/docs/ai-skill', section: 'For AI Assistants', keywords: 'ai llm claude skill guide assistant prompt' },
+
+  // AI Workflows
+  { title: 'Using Grit with Claude', href: '/docs/ai-workflows/claude', section: 'AI Workflows', keywords: 'claude code ai spec workflow plan build prompt project description phases' },
+  { title: 'Using Grit with Antigravity', href: '/docs/ai-workflows/antigravity', section: 'AI Workflows', keywords: 'antigravity cursor ide ai spec workflow plan build composer inline' },
 ]
 
 const sectionIcons: Record<string, React.ReactNode> = {
@@ -111,6 +116,7 @@ const sectionIcons: Record<string, React.ReactNode> = {
   'Design System': <Palette className="h-3.5 w-3.5" />,
   'Tutorials': <BookOpen className="h-3.5 w-3.5" />,
   'For AI Assistants': <Lightbulb className="h-3.5 w-3.5" />,
+  'AI Workflows': <Wand2 className="h-3.5 w-3.5" />,
 }
 
 export function SearchDialog() {
