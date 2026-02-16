@@ -487,6 +487,8 @@ type Task struct {
         return
     }
 
+    h.DB.First(&item, item.ID)
+
     c.JSON(http.StatusCreated, gin.H{
         "data":    item,
         "message": "Task created successfully",

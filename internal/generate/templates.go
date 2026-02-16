@@ -392,6 +392,19 @@ func (g *Generator) writeGoHandler(names Names) error {
 
 	searchArgs := g.buildHandlerSearchArgs(names)
 
+	// Check if any field needs "time" import
+	needsTimeImport := false
+	for _, f := range g.Definition.Fields {
+		if f.GoType() == "*time.Time" {
+			needsTimeImport = true
+			break
+		}
+	}
+	timeImport := ""
+	if needsTimeImport {
+		timeImport = "\n\t\"time\""
+	}
+
 	r := strings.NewReplacer(
 		"{{MODULE}}", g.Module,
 		"{{Pascal}}", names.Pascal,
@@ -408,6 +421,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 		"{{M2M_CREATE}}", m2mCreateCode,
 		"{{M2M_UPDATE}}", m2mUpdateCode,
 		"{{RELOAD}}", reloadLine,
+		"{{TIME_IMPORT}}", timeImport,
 	)
 
 	content := r.Replace(`package handlers
@@ -415,7 +429,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 import (
 	"math"
 	"net/http"
-	"strconv"
+	"strconv"{{TIME_IMPORT}}
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
