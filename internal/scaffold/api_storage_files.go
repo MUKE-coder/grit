@@ -98,23 +98,24 @@ func New(cfg config.StorageConfig) (*Storage, error) {
 		if createErr != nil {
 			return nil, fmt.Errorf("bucket %q not accessible and cannot be created: %w", cfg.Bucket, err)
 		}
-
-		// Set public-read policy so uploaded files are accessible via URL
-		policy := fmt.Sprintf(` + "`" + `{
-			"Version": "2012-10-17",
-			"Statement": [{
-				"Effect": "Allow",
-				"Principal": {"AWS": ["*"]},
-				"Action": ["s3:GetObject"],
-				"Resource": ["arn:aws:s3:::%s/*"]
-			}]
-		}` + "`" + `, cfg.Bucket)
-
-		_, _ = client.PutBucketPolicy(ctx, &s3.PutBucketPolicyInput{
-			Bucket: aws.String(cfg.Bucket),
-			Policy: aws.String(policy),
-		})
 	}
+
+	// Always ensure public-read policy so uploaded files are accessible via URL.
+	// This is idempotent — safe to call on every startup.
+	policy := fmt.Sprintf(` + "`" + `{
+		"Version": "2012-10-17",
+		"Statement": [{
+			"Effect": "Allow",
+			"Principal": {"AWS": ["*"]},
+			"Action": ["s3:GetObject"],
+			"Resource": ["arn:aws:s3:::%s/*"]
+		}]
+	}` + "`" + `, cfg.Bucket)
+
+	_, _ = client.PutBucketPolicy(ctx, &s3.PutBucketPolicyInput{
+		Bucket: aws.String(cfg.Bucket),
+		Policy: aws.String(policy),
+	})
 
 	return &Storage{
 		client: client,
