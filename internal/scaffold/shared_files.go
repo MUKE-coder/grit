@@ -278,10 +278,10 @@ export const API_ROUTES = {
   BLOGS: {
     LIST: "/api/blogs",
     GET: (slug: string) => ` + "`" + `/api/blogs/${slug}` + "`" + `,
-    ADMIN_LIST: "/api/blogs",
-    CREATE: "/api/blogs",
-    UPDATE: (id: number) => ` + "`" + `/api/blogs/${id}` + "`" + `,
-    DELETE: (id: number) => ` + "`" + `/api/blogs/${id}` + "`" + `,
+    ADMIN_LIST: "/api/admin/blogs",
+    CREATE: "/api/admin/blogs",
+    UPDATE: (id: number) => ` + "`" + `/api/admin/blogs/${id}` + "`" + `,
+    DELETE: (id: number) => ` + "`" + `/api/admin/blogs/${id}` + "`" + `,
   },
   HEALTH: "/api/health",
   // grit:api-routes

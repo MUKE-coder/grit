@@ -1069,7 +1069,7 @@ func adminBlogsResource() string {
 export const blogsResource = defineResource({
   name: "Blog",
   slug: "blogs",
-  endpoint: "/api/blogs",
+  endpoint: "/api/admin/blogs",
   icon: "FileText",
   label: { singular: "Blog", plural: "Blogs" },
 

@@ -1861,10 +1861,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		admin.GET("/admin/cron/tasks", cronHandler.ListTasks)
 
 		// Blog management (admin)
-		admin.GET("/blogs", blogHandler.List)
-		admin.POST("/blogs", blogHandler.Create)
-		admin.PUT("/blogs/:id", blogHandler.Update)
-		admin.DELETE("/blogs/:id", blogHandler.Delete)
+		admin.GET("/admin/blogs", blogHandler.List)
+		admin.POST("/admin/blogs", blogHandler.Create)
+		admin.PUT("/admin/blogs/:id", blogHandler.Update)
+		admin.DELETE("/admin/blogs/:id", blogHandler.Delete)
 
 		// grit:routes:admin
 	}
