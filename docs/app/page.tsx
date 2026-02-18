@@ -1,8 +1,9 @@
 import Link from 'next/link'
-import { ArrowRight, Terminal, Shield, Layers, Zap, Code2, Rocket, Github, Globe, Server, Gauge, CheckCircle2, X, Minus } from 'lucide-react'
+import { ArrowRight, Shield, Layers, Zap, Code2, Rocket, Github, Globe, Server, Gauge, CheckCircle2, X, Minus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SiteHeader } from '@/components/site-header'
+import { AnimatedTerminal } from '@/components/animated-terminal'
 
 export default function HomePage() {
   return (
@@ -67,54 +68,7 @@ export default function HomePage() {
 
           {/* Terminal Demo */}
           <div className="mt-12 w-full max-w-2xl animate-fade-in">
-            <div className="rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm overflow-hidden glow-purple">
-              {/* Terminal header */}
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 bg-accent/30">
-                <div className="flex items-center gap-1.5">
-                  <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                  <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                  <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                </div>
-                <span className="ml-2 text-[11px] font-mono text-muted-foreground/50">terminal</span>
-              </div>
-              {/* Terminal body */}
-              <div className="p-6 font-mono text-sm space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-primary/50 select-none">$ </span>
-                  <span className="text-foreground/80">grit new myapp</span>
-                </div>
-                <div className="text-muted-foreground/40 text-xs space-y-1.5 pl-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-primary/60">+</span>
-                    <span>Creating directory structure...</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-primary/60">+</span>
-                    <span>Scaffolding Go API (Gin + GORM)...</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-primary/60">+</span>
-                    <span>Adding batteries (cache, storage, mail, jobs, AI)...</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-primary/60">+</span>
-                    <span>Setting up Next.js web app...</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-primary/60">+</span>
-                    <span>Creating admin panel with data tables and form builders...</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-primary/60">+</span>
-                    <span>Writing shared schemas and types...</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-primary/80">
-                    <span>&#10003;</span>
-                    <span>Project &quot;myapp&quot; created successfully!</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <AnimatedTerminal />
           </div>
         </div>
       </section>
@@ -309,21 +263,25 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="max-w-5xl mx-auto rounded-xl border border-border/40 bg-card/50 overflow-hidden">
+        <div className="max-w-5xl mx-auto rounded-xl border border-border/40 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="border-b border-border/40 bg-accent/20">
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted-foreground/70 min-w-[160px]">Feature</th>
-                  <th className="text-center px-4 py-3.5 text-xs font-semibold text-primary min-w-[80px]">Grit</th>
-                  <th className="text-center px-4 py-3.5 text-xs font-semibold text-muted-foreground/70 min-w-[80px]">Laravel</th>
-                  <th className="text-center px-4 py-3.5 text-xs font-semibold text-muted-foreground/70 min-w-[80px]">Django</th>
-                  <th className="text-center px-4 py-3.5 text-xs font-semibold text-muted-foreground/70 min-w-[80px]">Rails</th>
-                  <th className="text-center px-4 py-3.5 text-xs font-semibold text-muted-foreground/70 min-w-[80px]">T3 Stack</th>
-                  <th className="text-center px-4 py-3.5 text-xs font-semibold text-muted-foreground/70 min-w-[80px]">Refine</th>
+                <tr>
+                  <th className="text-left px-5 py-4 text-xs font-semibold text-muted-foreground/70 min-w-[180px] bg-accent/20 border-b border-border/40" />
+                  <th className="text-center px-5 py-4 min-w-[90px] bg-primary/[0.08] border-b-2 border-primary/40">
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="inline-flex items-center rounded-full bg-primary/15 border border-primary/25 px-2.5 py-0.5 text-[10px] font-bold text-primary tracking-wider uppercase">Grit</span>
+                    </div>
+                  </th>
+                  <th className="text-center px-4 py-4 text-xs font-semibold text-muted-foreground/60 min-w-[80px] bg-accent/20 border-b border-border/40">Laravel</th>
+                  <th className="text-center px-4 py-4 text-xs font-semibold text-muted-foreground/60 min-w-[80px] bg-accent/20 border-b border-border/40">Django</th>
+                  <th className="text-center px-4 py-4 text-xs font-semibold text-muted-foreground/60 min-w-[80px] bg-accent/20 border-b border-border/40">Rails</th>
+                  <th className="text-center px-4 py-4 text-xs font-semibold text-muted-foreground/60 min-w-[80px] bg-accent/20 border-b border-border/40">T3 Stack</th>
+                  <th className="text-center px-4 py-4 text-xs font-semibold text-muted-foreground/60 min-w-[80px] bg-accent/20 border-b border-border/40">Refine</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/30">
+              <tbody>
                 {([
                   { feature: 'Language', grit: 'Go + TS', laravel: 'PHP', django: 'Python', rails: 'Ruby', t3: 'TypeScript', refine: 'TypeScript', type: 'text' as const },
                   { feature: 'Compiled / Native', grit: true, laravel: false, django: false, rails: false, t3: false, refine: false },
@@ -339,23 +297,32 @@ export default function HomePage() {
                   { feature: 'Database Browser', grit: true, laravel: false, django: true, rails: false, t3: false, refine: false },
                   { feature: 'Multi-Step Forms', grit: true, laravel: false, django: false, rails: false, t3: false, refine: 'partial' },
                   { feature: 'Docker Setup', grit: true, laravel: 'partial', django: false, rails: false, t3: false, refine: false },
-                ] as const).map((row) => (
-                  <tr key={row.feature} className="hover:bg-accent/10 transition-colors">
-                    <td className="px-5 py-2.5 text-xs text-foreground/80 font-medium">{row.feature}</td>
-                    {(['grit', 'laravel', 'django', 'rails', 't3', 'refine'] as const).map((fw) => {
+                ] as const).map((row, idx) => (
+                  <tr key={row.feature} className={idx % 2 === 0 ? 'bg-card/30' : 'bg-card/50'}>
+                    <td className="px-5 py-3 text-xs text-foreground/80 font-medium border-r border-border/20">{row.feature}</td>
+                    <td className="text-center px-5 py-3 bg-primary/[0.04] border-x border-primary/10">
+                      {row.type === 'text' ? (
+                        <span className="text-xs text-primary font-semibold">{row.grit as string}</span>
+                      ) : row.grit === true ? (
+                        <CheckCircle2 className="h-4.5 w-4.5 mx-auto text-primary" />
+                      ) : row.grit === false ? (
+                        <X className="h-4 w-4 mx-auto text-muted-foreground/25" />
+                      ) : (
+                        <Minus className="h-4 w-4 mx-auto text-amber-500/50" />
+                      )}
+                    </td>
+                    {(['laravel', 'django', 'rails', 't3', 'refine'] as const).map((fw) => {
                       const val = row[fw]
                       return (
-                        <td key={fw} className="text-center px-4 py-2.5">
+                        <td key={fw} className="text-center px-4 py-3">
                           {row.type === 'text' ? (
-                            <span className={`text-xs ${fw === 'grit' ? 'text-primary font-medium' : 'text-muted-foreground/60'}`}>
-                              {val as string}
-                            </span>
+                            <span className="text-xs text-muted-foreground/50">{val as string}</span>
                           ) : val === true ? (
-                            <CheckCircle2 className={`h-4 w-4 mx-auto ${fw === 'grit' ? 'text-primary' : 'text-emerald-500/70'}`} />
+                            <CheckCircle2 className="h-4 w-4 mx-auto text-emerald-500/60" />
                           ) : val === false ? (
-                            <X className="h-4 w-4 mx-auto text-muted-foreground/25" />
+                            <X className="h-4 w-4 mx-auto text-muted-foreground/20" />
                           ) : (
-                            <Minus className="h-4 w-4 mx-auto text-amber-500/50" />
+                            <Minus className="h-4 w-4 mx-auto text-amber-500/40" />
                           )}
                         </td>
                       )
@@ -365,16 +332,19 @@ export default function HomePage() {
               </tbody>
             </table>
           </div>
-          <div className="px-5 py-3 border-t border-border/30 bg-accent/10">
-            <p className="text-[11px] text-muted-foreground/40">
-              <CheckCircle2 className="h-3 w-3 inline-block mr-1 text-emerald-500/70 -mt-px" /> Built-in
-              <span className="mx-2">&middot;</span>
-              <Minus className="h-3 w-3 inline-block mr-1 text-amber-500/50 -mt-px" /> Partial / via plugin
-              <span className="mx-2">&middot;</span>
-              <X className="h-3 w-3 inline-block mr-1 text-muted-foreground/25 -mt-px" /> Not included
-              <span className="mx-2">&middot;</span>
-              Laravel includes Filament. T3 = Next.js + tRPC + Prisma + NextAuth.
-            </p>
+          <div className="px-5 py-3.5 border-t border-border/30 bg-accent/10 flex flex-wrap items-center gap-x-5 gap-y-1">
+            <span className="text-[11px] text-muted-foreground/40 flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3 text-emerald-500/70" /> Built-in
+            </span>
+            <span className="text-[11px] text-muted-foreground/40 flex items-center gap-1">
+              <Minus className="h-3 w-3 text-amber-500/50" /> Partial / Plugin
+            </span>
+            <span className="text-[11px] text-muted-foreground/40 flex items-center gap-1">
+              <X className="h-3 w-3 text-muted-foreground/25" /> Not included
+            </span>
+            <span className="text-[11px] text-muted-foreground/30 ml-auto hidden sm:inline">
+              Laravel includes Filament &middot; T3 = Next.js + tRPC + Prisma + NextAuth
+            </span>
           </div>
         </div>
       </section>
