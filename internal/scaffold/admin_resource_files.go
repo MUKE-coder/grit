@@ -88,9 +88,18 @@ export interface FieldDefinition {
   relationshipKey?: string;
 }
 
+export interface StepDefinition {
+  title: string;
+  description?: string;
+  fields: string[];
+}
+
 export interface FormDefinition {
   fields: FieldDefinition[];
   layout?: "single" | "two-column";
+  steps?: StepDefinition[];
+  fieldsPerStep?: number;
+  stepVariant?: "horizontal" | "vertical";
 }
 
 // ─── Widget Definitions ─────────────────────────────────────────────
@@ -123,7 +132,7 @@ export interface ResourceDefinition {
   endpoint: string;
   icon: string;
   label?: { singular: string; plural: string };
-  formView?: "modal" | "page";
+  formView?: "modal" | "page" | "modal-steps" | "page-steps";
   table: TableDefinition;
   form: FormDefinition;
   dashboard?: DashboardDefinition;
@@ -346,6 +355,8 @@ import { TablePagination } from "@/components/tables/table-pagination";
 import { TableFilters } from "@/components/tables/table-filters";
 import { FormModal } from "@/components/forms/form-modal";
 import { FormPage } from "@/components/forms/form-page";
+import { FormModalSteps } from "@/components/forms/form-modal-steps";
+import { FormPageSteps } from "@/components/forms/form-page-steps";
 import { ViewModal } from "@/components/resource/view-modal";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 
@@ -356,12 +367,13 @@ interface ResourcePageProps {
 export function ResourcePage({ resource }: ResourcePageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isFormPage = resource.formView === "page";
+  const isFormPage = resource.formView === "page" || resource.formView === "page-steps";
+  const isSteps = resource.formView === "modal-steps" || resource.formView === "page-steps";
   const formAction = searchParams.get("action");
 
-  // If formView is "page" and we have an action param, show the form page
+  // If formView is "page" or "page-steps" and we have an action param, show the form page
   if (isFormPage && (formAction === "create" || formAction === "edit")) {
-    return <FormPage resource={resource} />;
+    return isSteps ? <FormPageSteps resource={resource} /> : <FormPage resource={resource} />;
   }
 
   const [page, setPage] = useState(1);
@@ -562,11 +574,19 @@ export function ResourcePage({ resource }: ResourcePageProps) {
       </div>
 
       {!isFormPage && formOpen && (
-        <FormModal
-          resource={resource}
-          item={editingItem}
-          onClose={handleFormClose}
-        />
+        isSteps ? (
+          <FormModalSteps
+            resource={resource}
+            item={editingItem}
+            onClose={handleFormClose}
+          />
+        ) : (
+          <FormModal
+            resource={resource}
+            item={editingItem}
+            onClose={handleFormClose}
+          />
+        )
       )}
 
       {viewingItem && (

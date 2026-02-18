@@ -1470,8 +1470,8 @@ func (s *ProductService) GetPublished(page, pageSize int) ([]models.Product, int
                 asChild
                 className="text-muted-foreground/60 hover:text-foreground"
               >
-                <Link href="/docs/ai-skill" className="gap-1.5">
-                  LLM Skill Guide
+                <Link href="/docs/tutorials/product-catalog" className="gap-1.5">
+                  Build a Product Catalog
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </Button>

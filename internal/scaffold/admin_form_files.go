@@ -92,7 +92,7 @@ export function FormBuilder({
   );
 }
 
-function FieldRenderer({
+export function FieldRenderer({
   field,
   control,
   errors,
@@ -295,7 +295,7 @@ function FieldRenderer({
   }
 }
 
-function buildDefaults(
+export function buildDefaults(
   fields: FieldDefinition[],
   existing: Record<string, unknown>
 ): Record<string, unknown> {
@@ -477,6 +477,507 @@ export function FormPage({ resource }: FormPageProps) {
 
       <div className="rounded-xl border border-border bg-bg-secondary p-6">
         <FormBuilder
+          form={resource.form}
+          defaultValues={isEdit && item?.data ? (item.data as Record<string, unknown>) : undefined}
+          onSubmit={handleSubmit}
+          onCancel={() => router.back()}
+          isSubmitting={isCreating || isUpdating}
+          submitLabel={isEdit ? "Update" : "Create"}
+        />
+      </div>
+    </div>
+  );
+}
+`
+}
+
+// adminFormStepper returns the multi-step form stepper component.
+func adminFormStepper() string {
+	return `"use client";
+
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import type { FieldDefinition, FormDefinition, StepDefinition } from "@/lib/resource";
+import { FieldRenderer, buildDefaults } from "./form-builder";
+import { Check, ChevronLeft, ChevronRight, Loader2 } from "@/lib/icons";
+
+interface ComputedStep {
+  title: string;
+  description?: string;
+  fields: FieldDefinition[];
+}
+
+function computeSteps(form: FormDefinition): ComputedStep[] {
+  if (form.steps && form.steps.length > 0) {
+    return form.steps.map((step) => ({
+      title: step.title,
+      description: step.description,
+      fields: step.fields
+        .map((key) => form.fields.find((f) => f.key === key))
+        .filter(Boolean) as FieldDefinition[],
+    }));
+  }
+  const perStep = form.fieldsPerStep ?? 4;
+  const chunks: FieldDefinition[][] = [];
+  for (let i = 0; i < form.fields.length; i += perStep) {
+    chunks.push(form.fields.slice(i, i + perStep));
+  }
+  return chunks.map((fields, i) => ({
+    title: ` + "`" + `Step ${i + 1}` + "`" + `,
+    fields,
+  }));
+}
+
+interface FormStepperProps {
+  form: FormDefinition;
+  defaultValues?: Record<string, unknown>;
+  onSubmit: (data: Record<string, unknown>) => void;
+  onCancel: () => void;
+  isSubmitting?: boolean;
+  submitLabel?: string;
+}
+
+export function FormStepper({
+  form: formDef,
+  defaultValues = {},
+  onSubmit,
+  onCancel,
+  isSubmitting,
+  submitLabel = "Save",
+}: FormStepperProps) {
+  const [currentStep, setCurrentStep] = useState(0);
+  const steps = computeSteps(formDef);
+  const isVertical = formDef.stepVariant === "vertical";
+  const isTwoColumn = formDef.layout === "two-column";
+  const isLastStep = currentStep === steps.length - 1;
+
+  const {
+    control,
+    handleSubmit,
+    trigger,
+    formState: { errors },
+  } = useForm({
+    defaultValues: buildDefaults(formDef.fields, defaultValues),
+  });
+
+  const handleNext = async () => {
+    const fieldKeys = steps[currentStep].fields.map((f) => f.key);
+    const valid = await trigger(fieldKeys);
+    if (valid) setCurrentStep((s) => s + 1);
+  };
+
+  const handlePrev = () => setCurrentStep((s) => Math.max(0, s - 1));
+
+  const handleFinalSubmit = handleSubmit(onSubmit);
+
+  return (
+    <div className={isVertical ? "flex gap-8" : "space-y-6"}>
+      {/* Step Indicator */}
+      {isVertical ? (
+        <VerticalIndicator steps={steps} current={currentStep} onStepClick={setCurrentStep} trigger={trigger} />
+      ) : (
+        <HorizontalIndicator steps={steps} current={currentStep} onStepClick={setCurrentStep} trigger={trigger} />
+      )}
+
+      {/* Step Content */}
+      <div className={isVertical ? "flex-1 min-w-0" : ""}>
+        <div className="overflow-hidden">
+          {steps.map((step, idx) => (
+            <div
+              key={idx}
+              className={idx === currentStep ? "block" : "hidden"}
+            >
+              {step.description && (
+                <p className="text-sm text-text-secondary mb-4">{step.description}</p>
+              )}
+              <div className={` + "`" + `grid gap-4 ${isTwoColumn ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}` + "`" + `}>
+                {step.fields.map((field) => (
+                  <div
+                    key={field.key}
+                    className={field.colSpan === 2 && isTwoColumn ? "sm:col-span-2" : ""}
+                  >
+                    <FieldRenderer field={field} control={control} errors={errors} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Progress Bar */}
+        <div className="mt-6 mb-4">
+          <div className="h-1 w-full rounded-full bg-border">
+            <div
+              className="h-1 rounded-full bg-accent transition-all duration-300"
+              style={{ width: ` + "`" + `${((currentStep + 1) / steps.length) * 100}%` + "`" + ` }}
+            />
+          </div>
+          <p className="text-xs text-text-muted mt-1.5">
+            Step {currentStep + 1} of {steps.length}
+          </p>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex items-center justify-between pt-4 border-t border-border">
+          <div>
+            {currentStep > 0 ? (
+              <button
+                type="button"
+                onClick={handlePrev}
+                className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-bg-hover transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-bg-hover transition-colors"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+          <div>
+            {isLastStep ? (
+              <button
+                type="button"
+                onClick={handleFinalSubmit}
+                disabled={isSubmitting}
+                className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
+              >
+                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                {submitLabel}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleNext}
+                className="flex items-center gap-1.5 rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Horizontal Step Indicator ─────────────────────────────────── */
+
+function HorizontalIndicator({
+  steps,
+  current,
+  onStepClick,
+  trigger,
+}: {
+  steps: ComputedStep[];
+  current: number;
+  onStepClick: (i: number) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  trigger: any;
+}) {
+  const handleClick = async (idx: number) => {
+    if (idx < current) {
+      onStepClick(idx);
+    } else if (idx === current + 1) {
+      const fieldKeys = steps[current].fields.map((f) => f.key);
+      const valid = await trigger(fieldKeys);
+      if (valid) onStepClick(idx);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center">
+      {steps.map((step, idx) => {
+        const state = idx < current ? "completed" : idx === current ? "active" : "upcoming";
+        return (
+          <div key={idx} className="flex items-center">
+            <button
+              type="button"
+              onClick={() => handleClick(idx)}
+              className="flex flex-col items-center gap-1.5 group"
+            >
+              <div
+                className={` + "`" + `
+                  flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-all
+                  ${state === "completed"
+                    ? "bg-success text-white"
+                    : state === "active"
+                    ? "bg-accent text-white ring-4 ring-accent/20"
+                    : "bg-bg-hover text-text-muted border border-border group-hover:border-border/80"}
+                ` + "`" + `}
+              >
+                {state === "completed" ? <Check className="h-4 w-4" /> : idx + 1}
+              </div>
+              <span
+                className={` + "`" + `
+                  text-xs whitespace-nowrap transition-colors
+                  ${state === "active" ? "text-foreground font-medium" : state === "completed" ? "text-foreground" : "text-text-muted"}
+                ` + "`" + `}
+              >
+                {step.title}
+              </span>
+            </button>
+            {idx < steps.length - 1 && (
+              <div
+                className={` + "`" + `
+                  h-0.5 w-12 mx-2 rounded-full transition-colors
+                  ${idx < current ? "bg-success" : "bg-border"}
+                ` + "`" + `}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── Vertical Step Indicator ───────────────────────────────────── */
+
+function VerticalIndicator({
+  steps,
+  current,
+  onStepClick,
+  trigger,
+}: {
+  steps: ComputedStep[];
+  current: number;
+  onStepClick: (i: number) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  trigger: any;
+}) {
+  const handleClick = async (idx: number) => {
+    if (idx < current) {
+      onStepClick(idx);
+    } else if (idx === current + 1) {
+      const fieldKeys = steps[current].fields.map((f) => f.key);
+      const valid = await trigger(fieldKeys);
+      if (valid) onStepClick(idx);
+    }
+  };
+
+  return (
+    <div className="w-52 shrink-0">
+      <nav className="space-y-1">
+        {steps.map((step, idx) => {
+          const state = idx < current ? "completed" : idx === current ? "active" : "upcoming";
+          return (
+            <div key={idx}>
+              <button
+                type="button"
+                onClick={() => handleClick(idx)}
+                className={` + "`" + `
+                  flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-left transition-colors
+                  ${state === "active" ? "bg-accent/10" : "hover:bg-bg-hover"}
+                ` + "`" + `}
+              >
+                <div
+                  className={` + "`" + `
+                    flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-all
+                    ${state === "completed"
+                      ? "bg-success text-white"
+                      : state === "active"
+                      ? "bg-accent text-white ring-2 ring-accent/20"
+                      : "bg-bg-hover text-text-muted border border-border"}
+                  ` + "`" + `}
+                >
+                  {state === "completed" ? <Check className="h-3 w-3" /> : idx + 1}
+                </div>
+                <div className="min-w-0">
+                  <p
+                    className={` + "`" + `
+                      text-sm truncate
+                      ${state === "active" ? "text-foreground font-medium" : state === "completed" ? "text-foreground" : "text-text-muted"}
+                    ` + "`" + `}
+                  >
+                    {step.title}
+                  </p>
+                  {step.description && (
+                    <p className="text-xs text-text-muted truncate">{step.description}</p>
+                  )}
+                </div>
+              </button>
+              {idx < steps.length - 1 && (
+                <div className="ml-6 py-1">
+                  <div
+                    className={` + "`" + `
+                      w-0.5 h-4 rounded-full transition-colors
+                      ${idx < current ? "bg-success" : "bg-border"}
+                    ` + "`" + `}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </nav>
+    </div>
+  );
+}
+`
+}
+
+// adminFormModalSteps returns the multi-step modal form component.
+func adminFormModalSteps() string {
+	return `"use client";
+
+import type { ResourceDefinition } from "@/lib/resource";
+import { FormStepper } from "./form-stepper";
+import { useCreateResource, useUpdateResource } from "@/hooks/use-resource";
+import { X } from "@/lib/icons";
+
+interface FormModalStepsProps {
+  resource: ResourceDefinition;
+  item: Record<string, unknown> | null;
+  onClose: () => void;
+}
+
+export function FormModalSteps({ resource, item, onClose }: FormModalStepsProps) {
+  const isEdit = item !== null;
+  const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint);
+  const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint);
+  const isVertical = resource.form.stepVariant === "vertical";
+
+  const handleSubmit = (data: Record<string, unknown>) => {
+    if (isEdit) {
+      update(
+        { id: Number(item.id), body: data },
+        { onSuccess: () => onClose() }
+      );
+    } else {
+      create(data, { onSuccess: () => onClose() });
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      <div className={` + "`" + `relative z-10 w-full ${isVertical ? "max-w-4xl" : "max-w-2xl"} max-h-[90vh] overflow-y-auto rounded-xl border border-border bg-bg-secondary shadow-2xl` + "`" + `}>
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <h2 className="text-lg font-semibold text-foreground">
+            {isEdit ? "Edit" : "Create"} {resource.label?.singular ?? resource.name}
+          </h2>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1 text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          <FormStepper
+            form={resource.form}
+            defaultValues={isEdit ? (item as Record<string, unknown>) : undefined}
+            onSubmit={handleSubmit}
+            onCancel={onClose}
+            isSubmitting={isCreating || isUpdating}
+            submitLabel={isEdit ? "Update" : "Create"}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+`
+}
+
+// adminFormPageSteps returns the full-page multi-step form component.
+func adminFormPageSteps() string {
+	return `"use client";
+
+import { useRouter, useSearchParams } from "next/navigation";
+import type { ResourceDefinition } from "@/lib/resource";
+import { FormStepper } from "@/components/forms/form-stepper";
+import { useCreateResource, useUpdateResource, useResourceItem } from "@/hooks/use-resource";
+import { ChevronLeft } from "@/lib/icons";
+
+interface FormPageStepsProps {
+  resource: ResourceDefinition;
+}
+
+export function FormPageSteps({ resource }: FormPageStepsProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("edit");
+  const isEdit = editId !== null;
+
+  const { data: item, isLoading } = useResourceItem(
+    resource.endpoint,
+    editId ? Number(editId) : 0,
+    { enabled: isEdit }
+  );
+
+  const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint);
+  const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint);
+
+  const singularName = resource.label?.singular ?? resource.name;
+  const pluralName = resource.label?.plural ?? resource.slug;
+
+  const handleSubmit = (data: Record<string, unknown>) => {
+    if (isEdit && editId) {
+      update(
+        { id: Number(editId), body: data },
+        { onSuccess: () => router.push(` + "`" + `/resources/${resource.slug}` + "`" + `) }
+      );
+    } else {
+      create(data, { onSuccess: () => router.push(` + "`" + `/resources/${resource.slug}` + "`" + `) });
+    }
+  };
+
+  if (isEdit && isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-text-secondary hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to {pluralName}
+          </button>
+        </div>
+        <div className="rounded-xl border border-border bg-bg-secondary p-8">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 w-48 rounded bg-bg-tertiary" />
+            <div className="h-10 rounded bg-bg-tertiary" />
+            <div className="h-10 rounded bg-bg-tertiary" />
+            <div className="h-10 rounded bg-bg-tertiary" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-text-secondary hover:text-foreground transition-colors"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back to {pluralName}
+        </button>
+      </div>
+
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">
+          {isEdit ? "Edit" : "Create"} {singularName}
+        </h1>
+        <p className="text-text-secondary mt-1">
+          {isEdit ? ` + "`" + `Update this ${singularName.toLowerCase()}'s details` + "`" + ` : ` + "`" + `Add a new ${singularName.toLowerCase()} to your application` + "`" + `}
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-border bg-bg-secondary p-6">
+        <FormStepper
           form={resource.form}
           defaultValues={isEdit && item?.data ? (item.data as Record<string, unknown>) : undefined}
           onSubmit={handleSubmit}

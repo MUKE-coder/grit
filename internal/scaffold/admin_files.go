@@ -113,9 +113,12 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "tables", "table-empty-state.tsx"): adminTableEmptyState(),
 
 		// Form components
-		filepath.Join(adminRoot, "components", "forms", "form-builder.tsx"): adminFormBuilder(),
-		filepath.Join(adminRoot, "components", "forms", "form-modal.tsx"):   adminFormModal(),
-		filepath.Join(adminRoot, "components", "forms", "form-page.tsx"):    adminFormPage(),
+		filepath.Join(adminRoot, "components", "forms", "form-builder.tsx"):      adminFormBuilder(),
+		filepath.Join(adminRoot, "components", "forms", "form-modal.tsx"):        adminFormModal(),
+		filepath.Join(adminRoot, "components", "forms", "form-page.tsx"):         adminFormPage(),
+		filepath.Join(adminRoot, "components", "forms", "form-stepper.tsx"):      adminFormStepper(),
+		filepath.Join(adminRoot, "components", "forms", "form-modal-steps.tsx"):  adminFormModalSteps(),
+		filepath.Join(adminRoot, "components", "forms", "form-page-steps.tsx"):   adminFormPageSteps(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "text-field.tsx"):     adminTextField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "textarea-field.tsx"): adminTextareaField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "number-field.tsx"):   adminNumberField(),

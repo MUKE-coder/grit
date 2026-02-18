@@ -17,6 +17,7 @@ import {
   Settings,
   Lightbulb,
   Wand2,
+  FileText,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -76,6 +77,8 @@ const navItems: NavItem[] = [
       { title: 'Resource Definitions', href: '/docs/admin/resources' },
       { title: 'DataTable', href: '/docs/admin/datatable' },
       { title: 'Form Builder', href: '/docs/admin/forms' },
+      { title: 'Multi-Step Forms', href: '/docs/admin/multi-step-forms' },
+      { title: 'Standalone Usage', href: '/docs/admin/standalone-usage' },
       { title: 'Relationships', href: '/docs/admin/relationships' },
       { title: 'Dashboard & Widgets', href: '/docs/admin/widgets' },
     ],
@@ -126,6 +129,7 @@ const navItems: NavItem[] = [
       { title: 'Build a Blog', href: '/docs/tutorials/blog' },
       { title: 'Build a SaaS', href: '/docs/tutorials/saas' },
       { title: 'Build an E-Commerce', href: '/docs/tutorials/ecommerce' },
+      { title: 'Build a Product Catalog', href: '/docs/tutorials/product-catalog' },
     ],
   },
   {
@@ -141,6 +145,13 @@ const navItems: NavItem[] = [
     icon: <Lightbulb className="h-3.5 w-3.5" />,
     items: [
       { title: 'LLM Skill Guide', href: '/docs/ai-skill' },
+    ],
+  },
+  {
+    title: 'Changelog',
+    icon: <FileText className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Release History', href: '/docs/changelog' },
     ],
   },
 ]

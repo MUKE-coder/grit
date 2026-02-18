@@ -42,6 +42,15 @@ export default function FormBuilderPage() {
                 your resource config. This renders the form as a dedicated page
                 at <code>/resources/[slug]/create</code> or <code>/resources/[slug]/[id]/edit</code>.
               </p>
+              <p>
+                For resources with many fields, <strong>multi-step forms</strong> break the form into
+                a guided wizard with per-step validation. Use <code>formView: &apos;modal-steps&apos;</code> or{' '}
+                <code>formView: &apos;page-steps&apos;</code>. See the{' '}
+                <Link href="/docs/admin/multi-step-forms" className="text-primary hover:underline">
+                  Multi-Step Forms
+                </Link>{' '}
+                guide for full documentation.
+              </p>
             </div>
 
             <div className="mt-4 mb-8">
@@ -1049,8 +1058,8 @@ func (m *Category) BeforeCreate(tx *gorm.DB) error {
                 </Link>
               </Button>
               <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">
-                <Link href="/docs/admin/relationships" className="gap-1.5">
-                  Relationships
+                <Link href="/docs/admin/multi-step-forms" className="gap-1.5">
+                  Multi-Step Forms
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </Button>
