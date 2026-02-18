@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, Terminal, Shield, Layers, Zap, Code2, Rocket, Box, Github, Globe } from 'lucide-react'
+import { ArrowRight, Terminal, Shield, Layers, Zap, Code2, Rocket, Github, Globe, Server, Gauge, CheckCircle2, X, Minus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SiteHeader } from '@/components/site-header'
@@ -22,7 +22,7 @@ export default function HomePage() {
           {/* Top badge */}
           <div className="flex items-center gap-2 rounded-full border border-border/60 bg-accent/40 px-4 py-1.5 animate-fade-in">
             <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-glow" />
-            <span className="tag-mono text-muted-foreground">Full-Stack Meta-Framework</span>
+            <span className="tag-mono text-muted-foreground">The CRM Framework for Builders Who Ship</span>
           </div>
 
           {/* Main heading */}
@@ -34,7 +34,9 @@ export default function HomePage() {
 
           {/* Subtitle */}
           <p className="text-balance text-center text-lg text-muted-foreground max-w-2xl leading-relaxed animate-fade-in">
-            The batteries-included framework that fuses a Go backend with Next.js, a Filament-like admin panel, and full-stack code generation. Scaffold an entire project in seconds, generate resources with one command, and ship fast.
+            The batteries-included framework for CRMs, admin dashboards, SaaS products, and internal tools.
+            Go performance on the backend. React on the frontend. A Filament-like admin panel.
+            Full-stack code generation. Self-host everything. Ship in hours, not weeks.
           </p>
 
           {/* Action buttons */}
@@ -55,7 +57,7 @@ export default function HomePage() {
 
           {/* Platform tags */}
           <div className="flex items-center gap-4 mt-4 animate-fade-in flex-wrap justify-center">
-            {['Go', 'React', 'TypeScript', 'PostgreSQL'].map((platform) => (
+            {['Go', 'React', 'TypeScript', 'PostgreSQL', 'Redis', 'Docker'].map((platform) => (
               <span key={platform} className="tag-mono text-muted-foreground/60 flex items-center gap-1.5">
                 <span className="h-1 w-1 rounded-full bg-primary/40" />
                 {platform}
@@ -100,7 +102,7 @@ export default function HomePage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-primary/60">+</span>
-                    <span>Creating admin panel...</span>
+                    <span>Creating admin panel with data tables and form builders...</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-primary/60">+</span>
@@ -120,6 +122,73 @@ export default function HomePage() {
       {/* Divider */}
       <div className="w-full h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
 
+      {/* Built for Builders */}
+      <section className="container max-w-screen-2xl py-24 md:py-32 px-6">
+        <div className="text-center mb-16">
+          <span className="tag-mono text-primary/80 mb-4 block">Built for Builders</span>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
+            Ship fast. Self-host. Own everything.
+          </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Grit is for developers who want to build real products without fighting infrastructure.
+            No vendor lock-in. No serverless surprises. Just a solid framework that gets out of your way.
+          </p>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-2 max-w-5xl mx-auto">
+          <div className="group rounded-xl border border-border/40 bg-card/50 p-6 hover:border-primary/20 transition-all duration-300">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/10 group-hover:bg-primary/15 transition-colors mb-4">
+              <Rocket className="h-5 w-5 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Ship in Hours, Not Weeks</h3>
+            <p className="text-sm text-muted-foreground/80 leading-relaxed">
+              One command scaffolds your entire stack. Another generates full-stack CRUD resources &mdash;
+              Go model, API handler, React Query hooks, Zod schema, and admin page &mdash; all wired
+              together. Stop gluing boilerplate and start building what your users actually need.
+            </p>
+          </div>
+
+          <div className="group rounded-xl border border-border/40 bg-card/50 p-6 hover:border-emerald-500/20 transition-all duration-300">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/10 group-hover:bg-emerald-500/15 transition-colors mb-4">
+              <Server className="h-5 w-5 text-emerald-400" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Self-Host Everything</h3>
+            <p className="text-sm text-muted-foreground/80 leading-relaxed">
+              No vendor lock-in. No serverless cold starts. No per-request pricing surprises. Grit compiles
+              to a single Go binary and static Next.js bundles. Deploy on a $5 VPS, your own
+              servers, or any cloud. You own every byte of your infrastructure and data.
+            </p>
+          </div>
+
+          <div className="group rounded-xl border border-border/40 bg-card/50 p-6 hover:border-sky-500/20 transition-all duration-300">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-500/10 border border-sky-500/10 group-hover:bg-sky-500/15 transition-colors mb-4">
+              <Gauge className="h-5 w-5 text-sky-400" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Go Performance</h3>
+            <p className="text-sm text-muted-foreground/80 leading-relaxed">
+              Your API compiles to native machine code. Handle thousands of concurrent requests with
+              minimal memory. No interpreter overhead, no JIT warm-up, no garbage collection pauses
+              that matter. Just raw speed backed by goroutines and a compiled runtime.
+            </p>
+          </div>
+
+          <div className="group rounded-xl border border-border/40 bg-card/50 p-6 hover:border-amber-500/20 transition-all duration-300">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/10 group-hover:bg-amber-500/15 transition-colors mb-4">
+              <Shield className="h-5 w-5 text-amber-400" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Rock Solid</h3>
+            <p className="text-sm text-muted-foreground/80 leading-relaxed">
+              Opinionated by design. One folder structure, one auth system, one state management approach.
+              Every pattern is predictable and consistent. Any developer &mdash; or AI assistant &mdash; can jump
+              into any Grit project and immediately understand it. Convention over configuration.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Divider */}
+      <div className="w-full h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+
       {/* Features Section */}
       <section className="container max-w-screen-2xl py-24 md:py-32 px-6">
         <div className="text-center mb-16">
@@ -128,7 +197,7 @@ export default function HomePage() {
             Everything you need, nothing you don&apos;t
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            A full-stack framework that eliminates boilerplate and lets you focus on building your product.
+            A full-stack CRM framework that eliminates boilerplate and lets you focus on building your product.
           </p>
         </div>
 
@@ -141,8 +210,8 @@ export default function HomePage() {
             },
             {
               icon: Shield,
-              title: 'Admin Panel',
-              desc: 'A Filament-like resource-based admin dashboard with data tables, form builders, widgets, and a premium dark theme.',
+              title: 'CRM-Grade Admin Panel',
+              desc: 'Resource-based admin with data tables, form builders, multi-step wizards, RBAC, widgets, and a premium dark theme.',
             },
             {
               icon: Layers,
@@ -205,7 +274,7 @@ export default function HomePage() {
             {
               step: '03',
               title: 'Ship',
-              desc: 'Your app is production-ready from day one. Docker Compose for dev, multi-stage builds for prod. Deploy anywhere Go and Node can run.',
+              desc: 'Your app is production-ready from day one. Self-host on a VPS, your own servers, or any cloud. No vendor lock-in, no recurring platform fees.',
               code: 'docker compose up -d && turbo dev',
             },
           ].map((item) => (
@@ -221,6 +290,92 @@ export default function HomePage() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Divider */}
+      <div className="w-full h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+
+      {/* Comparison Table */}
+      <section className="container max-w-screen-2xl py-24 md:py-32 px-6">
+        <div className="text-center mb-16">
+          <span className="tag-mono text-primary/80 mb-4 block">Comparison</span>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
+            How Grit stacks up
+          </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Grit combines the developer experience of Laravel, the type safety of the T3 stack,
+            and the performance of Go into one cohesive framework.
+          </p>
+        </div>
+
+        <div className="max-w-5xl mx-auto rounded-xl border border-border/40 bg-card/50 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/40 bg-accent/20">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted-foreground/70 min-w-[160px]">Feature</th>
+                  <th className="text-center px-4 py-3.5 text-xs font-semibold text-primary min-w-[80px]">Grit</th>
+                  <th className="text-center px-4 py-3.5 text-xs font-semibold text-muted-foreground/70 min-w-[80px]">Laravel</th>
+                  <th className="text-center px-4 py-3.5 text-xs font-semibold text-muted-foreground/70 min-w-[80px]">Django</th>
+                  <th className="text-center px-4 py-3.5 text-xs font-semibold text-muted-foreground/70 min-w-[80px]">Rails</th>
+                  <th className="text-center px-4 py-3.5 text-xs font-semibold text-muted-foreground/70 min-w-[80px]">T3 Stack</th>
+                  <th className="text-center px-4 py-3.5 text-xs font-semibold text-muted-foreground/70 min-w-[80px]">Refine</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/30">
+                {([
+                  { feature: 'Language', grit: 'Go + TS', laravel: 'PHP', django: 'Python', rails: 'Ruby', t3: 'TypeScript', refine: 'TypeScript', type: 'text' as const },
+                  { feature: 'Compiled / Native', grit: true, laravel: false, django: false, rails: false, t3: false, refine: false },
+                  { feature: 'Built-in Admin Panel', grit: true, laravel: 'partial', django: true, rails: false, t3: false, refine: true },
+                  { feature: 'Full-Stack Code Gen', grit: true, laravel: 'partial', django: false, rails: 'partial', t3: false, refine: false },
+                  { feature: 'End-to-End Type Safety', grit: true, laravel: false, django: false, rails: false, t3: true, refine: true },
+                  { feature: 'React Frontend', grit: true, laravel: false, django: false, rails: false, t3: true, refine: true },
+                  { feature: 'Self-Hostable', grit: true, laravel: true, django: true, rails: true, t3: 'partial', refine: true },
+                  { feature: 'Background Jobs', grit: true, laravel: true, django: 'partial', rails: true, t3: false, refine: false },
+                  { feature: 'File Storage (S3)', grit: true, laravel: true, django: 'partial', rails: true, t3: false, refine: false },
+                  { feature: 'Email Service', grit: true, laravel: true, django: true, rails: true, t3: false, refine: false },
+                  { feature: 'AI Integration', grit: true, laravel: false, django: false, rails: false, t3: false, refine: false },
+                  { feature: 'Database Browser', grit: true, laravel: false, django: true, rails: false, t3: false, refine: false },
+                  { feature: 'Multi-Step Forms', grit: true, laravel: false, django: false, rails: false, t3: false, refine: 'partial' },
+                  { feature: 'Docker Setup', grit: true, laravel: 'partial', django: false, rails: false, t3: false, refine: false },
+                ] as const).map((row) => (
+                  <tr key={row.feature} className="hover:bg-accent/10 transition-colors">
+                    <td className="px-5 py-2.5 text-xs text-foreground/80 font-medium">{row.feature}</td>
+                    {(['grit', 'laravel', 'django', 'rails', 't3', 'refine'] as const).map((fw) => {
+                      const val = row[fw]
+                      return (
+                        <td key={fw} className="text-center px-4 py-2.5">
+                          {row.type === 'text' ? (
+                            <span className={`text-xs ${fw === 'grit' ? 'text-primary font-medium' : 'text-muted-foreground/60'}`}>
+                              {val as string}
+                            </span>
+                          ) : val === true ? (
+                            <CheckCircle2 className={`h-4 w-4 mx-auto ${fw === 'grit' ? 'text-primary' : 'text-emerald-500/70'}`} />
+                          ) : val === false ? (
+                            <X className="h-4 w-4 mx-auto text-muted-foreground/25" />
+                          ) : (
+                            <Minus className="h-4 w-4 mx-auto text-amber-500/50" />
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-5 py-3 border-t border-border/30 bg-accent/10">
+            <p className="text-[11px] text-muted-foreground/40">
+              <CheckCircle2 className="h-3 w-3 inline-block mr-1 text-emerald-500/70 -mt-px" /> Built-in
+              <span className="mx-2">&middot;</span>
+              <Minus className="h-3 w-3 inline-block mr-1 text-amber-500/50 -mt-px" /> Partial / via plugin
+              <span className="mx-2">&middot;</span>
+              <X className="h-3 w-3 inline-block mr-1 text-muted-foreground/25 -mt-px" /> Not included
+              <span className="mx-2">&middot;</span>
+              Laravel includes Filament. T3 = Next.js + tRPC + Prisma + NextAuth.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -277,13 +432,14 @@ export default function HomePage() {
           </div>
 
           <div className="text-center space-y-6 py-20 md:py-28 px-6">
-            <span className="tag-mono text-primary/80">Ready?</span>
+            <span className="tag-mono text-primary/80">Ready to ship?</span>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
               Start building with{' '}
               <span className="gradient-text">Grit</span>
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto">
-              Go performance. React ecosystem. One framework. Five minutes to a full-stack app with auth, admin panel, and all the batteries you need.
+              Go performance. React ecosystem. Self-hosted. One framework.
+              Five minutes to a full-stack app with auth, admin panel, and all the batteries you need.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
               <Button size="lg" asChild className="h-11 px-6 text-sm font-medium rounded-lg glow-purple-sm">
@@ -314,6 +470,7 @@ export default function HomePage() {
           <div className="flex items-center gap-6">
             {[
               { label: 'Docs', href: '/docs' },
+              { label: 'Tutorials', href: '/docs/tutorials/learn' },
               { label: 'Quick Start', href: '/docs/getting-started/quick-start' },
               { label: 'GitHub', href: 'https://github.com/MUKE-coder/grit' },
             ].map((link) => (
