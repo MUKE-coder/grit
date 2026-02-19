@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function DashboardWidgetsPage() {
   return (
@@ -63,11 +64,7 @@ export default function DashboardWidgetsPage() {
 
             {/* Stats card config */}
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">StatsCard properties</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`interface StatsCardWidget {
+              <CodeBlock filename="StatsCard properties" code={`interface StatsCardWidget {
   type: 'stat'
   label: string              // Display label (e.g. "Total Revenue")
   query: string              // Server query (e.g. "sum:amount")
@@ -75,8 +72,7 @@ export default function DashboardWidgetsPage() {
   color?: string             // Accent color: 'purple' | 'green' | 'blue' | 'yellow' | 'red'
   icon?: string              // Lucide icon name
   changeQuery?: string       // Query for period-over-period change %
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -93,11 +89,7 @@ export default function DashboardWidgetsPage() {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Stats card examples</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`dashboard: {
+              <CodeBlock filename="Stats card examples" code={`dashboard: {
   widgets: [
     {
       type: 'stat',
@@ -133,8 +125,7 @@ export default function DashboardWidgetsPage() {
       color: 'purple',
     },
   ],
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -148,11 +139,7 @@ export default function DashboardWidgetsPage() {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">LineChart properties</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`interface LineChartWidget {
+              <CodeBlock filename="LineChart properties" code={`interface LineChartWidget {
   type: 'chart'
   chartType: 'line'
   label: string              // Chart title
@@ -160,8 +147,7 @@ export default function DashboardWidgetsPage() {
   format?: 'number' | 'currency'
   color?: string             // Line color
   height?: number            // Chart height in px (default: 300)
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -174,11 +160,7 @@ export default function DashboardWidgetsPage() {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Line chart example</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Line chart example" code={`{
   type: 'chart',
   chartType: 'line',
   label: 'Revenue Over Time',
@@ -186,8 +168,7 @@ export default function DashboardWidgetsPage() {
   format: 'currency',
   color: 'purple',
   height: 320,
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -201,11 +182,7 @@ export default function DashboardWidgetsPage() {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">BarChart properties</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`interface BarChartWidget {
+              <CodeBlock filename="BarChart properties" code={`interface BarChartWidget {
   type: 'chart'
   chartType: 'bar'
   label: string              // Chart title
@@ -213,24 +190,18 @@ export default function DashboardWidgetsPage() {
   format?: 'number' | 'currency'
   color?: string             // Bar color
   height?: number            // Chart height in px (default: 300)
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Bar chart example</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Bar chart example" code={`{
   type: 'chart',
   chartType: 'bar',
   label: 'Posts by Category',
   query: 'count:by:category',
   format: 'number',
   color: 'blue',
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -245,11 +216,7 @@ export default function DashboardWidgetsPage() {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Activity widget properties</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`interface ActivityWidget {
+              <CodeBlock filename="Activity widget properties" code={`interface ActivityWidget {
   type: 'activity'
   label: string              // Widget title (e.g. "Recent Activity")
   query: string              // e.g. "recent:10" (last 10 events)
@@ -265,22 +232,16 @@ interface ActivityEvent {
   user?: { name: string; avatar?: string }
   timestamp: string          // ISO 8601
   link?: string              // Optional link to the resource
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Activity widget example</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Activity widget example" code={`{
   type: 'activity',
   label: 'Recent Activity',
   query: 'recent:15',
   height: 400,
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -357,11 +318,7 @@ interface ActivityEvent {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/handlers/stats.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Custom endpoint for conversion rate widget
+              <CodeBlock filename="apps/api/internal/handlers/stats.go" code={`// Custom endpoint for conversion rate widget
 func (h *StatsHandler) GetConversionRate(c *gin.Context) {
     totalVisitors, err := h.service.CountVisitors(c)
     if err != nil {
@@ -383,8 +340,7 @@ func (h *StatsHandler) GetConversionRate(c *gin.Context) {
             "label": "Conversion Rate",
         },
     })
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -394,18 +350,13 @@ func (h *StatsHandler) GetConversionRate(c *gin.Context) {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/routes/routes.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Stats endpoints
+              <CodeBlock filename="apps/api/internal/routes/routes.go" code={`// Stats endpoints
 stats := api.Group("/stats")
 stats.Use(middleware.AuthMiddleware(), middleware.RequireRole("admin"))
 {
     stats.GET("/conversion-rate", statsHandler.GetConversionRate)
     stats.GET("/monthly-mrr", statsHandler.GetMonthlyMRR)
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -419,11 +370,7 @@ stats.Use(middleware.AuthMiddleware(), middleware.RequireRole("admin"))
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/admin/resources/orders.ts</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { defineResource } from '@grit/admin'
+              <CodeBlock language="typescript" filename="apps/admin/resources/orders.ts" code={`import { defineResource } from '@grit/admin'
 
 export default defineResource({
   name: 'Order',
@@ -485,8 +432,7 @@ export default defineResource({
       },
     ],
   },
-})`}</pre>
-              </div>
+})`} />
             </div>
 
             <div className="prose-grit">
@@ -500,11 +446,7 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Stats API response</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// GET /api/orders/stats?metric=count
+              <CodeBlock language="json" filename="Stats API response" code={`// GET /api/orders/stats?metric=count
 {
   "data": {
     "value": 1247,
@@ -519,8 +461,7 @@ export default defineResource({
     "value": 84350.00,
     "change": -3.2
   }
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -528,11 +469,7 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Chart API response</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// GET /api/orders/stats?metric=sum&field=total&group=month
+              <CodeBlock language="json" filename="Chart API response" code={`// GET /api/orders/stats?metric=sum&field=total&group=month
 {
   "data": [
     { "label": "Sep 2025", "value": 12400 },
@@ -551,8 +488,7 @@ export default defineResource({
     { "label": "Design",   "value": 28 },
     { "label": "Business", "value": 15 }
   ]
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -560,11 +496,7 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Activity API response</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// GET /api/activity?limit=10
+              <CodeBlock language="json" filename="Activity API response" code={`// GET /api/activity?limit=10
 {
   "data": [
     {
@@ -585,8 +517,7 @@ export default defineResource({
       "timestamp": "2026-02-11T14:15:00Z"
     }
   ]
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">

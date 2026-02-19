@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function AdminOverviewPage() {
   return (
@@ -62,11 +63,7 @@ export default function AdminOverviewPage() {
 
             {/* Resource definition example */}
             <div className="mt-8 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/admin/resources/posts.ts</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { defineResource } from '@grit/admin'
+              <CodeBlock language="typescript" filename="apps/admin/resources/posts.ts" code={`import { defineResource } from '@grit/admin'
 
 export default defineResource({
   name: 'Post',
@@ -94,8 +91,7 @@ export default defineResource({
         options: ['published', 'draft'], default: 'draft' },
     ],
   },
-})`}</pre>
-              </div>
+})`} />
             </div>
 
             <div className="prose-grit">
@@ -115,11 +111,7 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/admin/</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`apps/admin/
+              <CodeBlock filename="apps/admin/" code={`apps/admin/
 \u251c\u2500\u2500 app/
 \u2502   \u251c\u2500\u2500 layout.tsx            # Root layout with providers
 \u2502   \u251c\u2500\u2500 page.tsx              # Dashboard (admin home)
@@ -158,8 +150,7 @@ export default defineResource({
 \u2514\u2500\u2500 lib/
     \u251c\u2500\u2500 api-client.ts         # Axios wrapper for Go API
     \u251c\u2500\u2500 auth.ts
-    \u2514\u2500\u2500 utils.ts`}</pre>
-              </div>
+    \u2514\u2500\u2500 utils.ts`} />
             </div>
 
             <div className="prose-grit">

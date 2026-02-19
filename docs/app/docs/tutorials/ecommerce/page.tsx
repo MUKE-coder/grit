@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
+import { CodeBlock } from '@/components/code-block'
 
 export default function TutorialEcommercePage() {
   return (
@@ -171,13 +172,7 @@ export default function TutorialEcommercePage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/product.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/product.go" code={`package models
 
 import (
     "time"
@@ -195,8 +190,7 @@ type Product struct {
     CreatedAt   time.Time      \`json:"created_at"\`
     UpdatedAt   time.Time      \`json:"updated_at"\`
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"deleted_at,omitempty"\`
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 
@@ -243,13 +237,7 @@ type Product struct {
                   handle uploads in Step 8):
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/product.go &mdash; updated
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/product.go &mdash; updated" code={`package models
 
 import (
     "time"
@@ -273,8 +261,7 @@ type Product struct {
     CreatedAt   time.Time      \`json:"created_at"\`
     UpdatedAt   time.Time      \`json:"updated_at"\`
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"deleted_at,omitempty"\`
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 
@@ -315,14 +302,8 @@ type Product struct {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/order.go &mdash; with User
-                      relationship
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/order.go &mdash; with User
+                      relationship" code={`package models
 
 import (
     "time"
@@ -354,8 +335,7 @@ type Order struct {
     CreatedAt time.Time      \`json:"created_at"\`
     UpdatedAt time.Time      \`json:"updated_at"\`
     DeletedAt gorm.DeletedAt \`gorm:"index" json:"deleted_at,omitempty"\`
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 
@@ -396,14 +376,8 @@ type Order struct {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/order_item.go &mdash; with
-                      relationships
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/order_item.go &mdash; with
+                      relationships" code={`package models
 
 import (
     "time"
@@ -426,8 +400,7 @@ type OrderItem struct {
     CreatedAt time.Time      \`json:"created_at"\`
     UpdatedAt time.Time      \`json:"updated_at"\`
     DeletedAt gorm.DeletedAt \`gorm:"index" json:"deleted_at,omitempty"\`
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
                   Run <code>grit sync</code> to regenerate all TypeScript types
@@ -452,13 +425,7 @@ type OrderItem struct {
                   inverse relationships to the Category model:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      relationship diagram
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`Category
+                <CodeBlock filename="relationship diagram" code={`Category
   └── has many Products
 
 Product
@@ -473,16 +440,9 @@ OrderItem
   └── belongs to Product
 
 User (built-in)
-  └── has many Orders`}</pre>
-                </div>
+  └── has many Orders`} />
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/category.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/category.go" code={`package models
 
 import (
     "time"
@@ -498,8 +458,7 @@ type Category struct {
     CreatedAt   time.Time      \`json:"created_at"\`
     UpdatedAt   time.Time      \`json:"updated_at"\`
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"deleted_at,omitempty"\`
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 
@@ -521,14 +480,8 @@ type Category struct {
                   handler that saves the file URL to the product.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/handlers/product.go &mdash; add upload
-                      method
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// UploadImage handles product image upload.
+                <CodeBlock filename="apps/api/internal/handlers/product.go &mdash; add upload
+                      method" code={`// UploadImage handles product image upload.
 func (h *ProductHandler) UploadImage(c *gin.Context) {
     id, err := strconv.ParseUint(c.Param("id"), 10, 64)
     if err != nil {
@@ -583,35 +536,21 @@ func (h *ProductHandler) UploadImage(c *gin.Context) {
         "data":    gin.H{"image_url": url},
         "message": "Image uploaded successfully",
     })
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Register the upload route:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/routes/routes.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Inside the authenticated products group
-products.POST("/:id/upload-image", productHandler.UploadImage)`}</pre>
-                </div>
+                <CodeBlock filename="apps/api/internal/routes/routes.go" code={`// Inside the authenticated products group
+products.POST("/:id/upload-image", productHandler.UploadImage)`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Update the admin resource definition to include the file
                   upload field and display the product image in the table:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/admin/resources/products.ts
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { defineResource } from '@grit/admin'
+                <CodeBlock language="typescript" filename="apps/admin/resources/products.ts" code={`import { defineResource } from '@grit/admin'
 
 export default defineResource({
   name: 'Product',
@@ -659,8 +598,7 @@ export default defineResource({
       { key: 'published', label: 'Published', type: 'toggle', default: false },
     ],
   },
-})`}</pre>
-                </div>
+})`} />
               </div>
             </div>
 
@@ -682,13 +620,7 @@ export default defineResource({
                   database transaction.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/handlers/order.go &mdash; CreateOrder
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type CreateOrderInput struct {
+                <CodeBlock filename="apps/api/internal/handlers/order.go &mdash; CreateOrder" code={`type CreateOrderInput struct {
     Notes string \`json:"notes"\`
     Items []struct {
         ProductID uint \`json:"product_id" binding:"required"\`
@@ -809,28 +741,20 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
         "data":    order,
         "message": "Order created successfully",
     })
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Register the custom order creation route:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/routes/routes.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Replace the default POST /api/orders with the custom handler
+                <CodeBlock filename="apps/api/internal/routes/routes.go" code={`// Replace the default POST /api/orders with the custom handler
 orders := auth.Group("/orders")
 {
     orders.POST("", orderHandler.CreateOrder)    // custom creation
     orders.GET("", orderHandler.GetAll)           // generated
     orders.GET("/:id", orderHandler.GetByID)      // generated
     // No PUT or DELETE — orders are immutable once created
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 
@@ -850,13 +774,7 @@ orders := auth.Group("/orders")
                   confirmation email. This keeps the API response fast.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/jobs/order_confirmation.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package jobs
+                <CodeBlock filename="apps/api/internal/jobs/order_confirmation.go" code={`package jobs
 
 import (
     "context"
@@ -909,16 +827,9 @@ func HandleOrderConfirmation(mailer *mail.Mailer) asynq.HandlerFunc {
             },
         })
     }
-}`}</pre>
-                </div>
+}`} />
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/mail/templates/order-confirmation.html
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`<!DOCTYPE html>
+                <CodeBlock language="markup" filename="apps/api/internal/mail/templates/order-confirmation.html" code={`<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: 'DM Sans', sans-serif; background: #0a0a0f; color: #e8e8f0; padding: 40px;">
@@ -939,8 +850,7 @@ func HandleOrderConfirmation(mailer *mail.Mailer) asynq.HandlerFunc {
     </p>
   </div>
 </body>
-</html>`}</pre>
-                </div>
+</html>`} />
               </div>
             </div>
 
@@ -961,14 +871,8 @@ func HandleOrderConfirmation(mailer *mail.Mailer) asynq.HandlerFunc {
                   widget for the admin panel.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/handlers/order.go &mdash; revenue stats
-                      endpoint
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// GetRevenueStats returns store-wide revenue and order statistics.
+                <CodeBlock filename="apps/api/internal/handlers/order.go &mdash; revenue stats
+                      endpoint" code={`// GetRevenueStats returns store-wide revenue and order statistics.
 func (h *OrderHandler) GetRevenueStats(c *gin.Context) {
     var totalRevenue float64
     var totalOrders int64
@@ -1021,16 +925,9 @@ func (h *OrderHandler) GetRevenueStats(c *gin.Context) {
             "daily_revenue":     dailyRevenue,
         },
     })
-}`}</pre>
-                </div>
+}`} />
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/admin/components/widgets/revenue-stats.tsx
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`'use client'
+                <CodeBlock language="tsx" filename="apps/admin/components/widgets/revenue-stats.tsx" code={`'use client'
 
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
@@ -1118,8 +1015,7 @@ export function RevenueStatsWidget() {
       )}
     </div>
   )
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 
@@ -1141,14 +1037,8 @@ export function RevenueStatsWidget() {
                   is updated.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/services/product.go &mdash; cached
-                      GetByID
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package services
+                <CodeBlock filename="apps/api/internal/services/product.go &mdash; cached
+                      GetByID" code={`package services
 
 import (
     "encoding/json"
@@ -1250,8 +1140,7 @@ func (s *ProductService) GetPublished(page, pageSize int) ([]models.Product, int
     _ = s.cache.Set(cacheKey, string(data), 2*time.Minute)
 
     return products, total, nil
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
                   The cache is automatically invalidated when a product is
@@ -1323,13 +1212,7 @@ func (s *ProductService) GetPublished(page, pageSize int) ([]models.Product, int
                   </li>
                   <li>
                     Place an order via the API:
-                    <div className="mt-2 rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                        <span className="text-[11px] font-mono text-muted-foreground/40">
-                          terminal
-                        </span>
-                      </div>
-                      <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`curl -X POST http://localhost:8080/api/orders \\
+                    <CodeBlock language="bash" code={`curl -X POST http://localhost:8080/api/orders \\
   -H "Authorization: Bearer <your-token>" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -1337,8 +1220,7 @@ func (s *ProductService) GetPublished(page, pageSize int) ([]models.Product, int
       { "product_id": 1, "quantity": 2 }
     ],
     "notes": "Please gift wrap"
-  }'`}</pre>
-                    </div>
+  }'`} />
                   </li>
                   <li>
                     Check that the product stock decreased from 50 to 48 in the

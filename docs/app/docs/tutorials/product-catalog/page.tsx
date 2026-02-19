@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
+import { CodeBlock } from '@/components/code-block'
 
 export default function TutorialProductCatalogPage() {
   return (
@@ -209,13 +210,7 @@ export default function TutorialProductCatalogPage() {
                   The generator creates these files:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      generated files
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`apps/api/internal/models/product.go        # GORM model
+                <CodeBlock language="bash" filename="generated files" code={`apps/api/internal/models/product.go        # GORM model
 apps/api/internal/handlers/product.go      # CRUD handler
 apps/api/internal/services/product.go      # Business logic
 packages/shared/schemas/product.ts         # Zod validation
@@ -223,20 +218,13 @@ packages/shared/types/product.ts           # TypeScript types
 apps/web/hooks/use-products.ts             # React Query hooks (web)
 apps/admin/hooks/use-products.ts           # React Query hooks (admin)
 apps/admin/app/resources/products/page.tsx # Admin page
-apps/admin/resources/products.ts           # Resource definition`}</pre>
-                </div>
+apps/admin/resources/products.ts           # Resource definition`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Here is the generated Go model:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/product.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/product.go" code={`package models
 
 import (
     "time"
@@ -257,8 +245,7 @@ type Product struct {
     CreatedAt   time.Time      \`json:"created_at"\`
     UpdatedAt   time.Time      \`json:"updated_at"\`
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"deleted_at,omitempty"\`
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 
@@ -282,13 +269,7 @@ type Product struct {
                   <code>&quot;modal-steps&quot;</code> with custom steps.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/admin/resources/products.ts
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { defineResource } from "@/lib/resource";
+                <CodeBlock language="typescript" filename="apps/admin/resources/products.ts" code={`import { defineResource } from "@/lib/resource";
 
 export default defineResource({
   name: "Product",
@@ -387,8 +368,7 @@ export default defineResource({
         description: "Show on the homepage featured section" },
     ],
   },
-});`}</pre>
-                </div>
+});`} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mt-4">
                   <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
@@ -494,13 +474,7 @@ export default defineResource({
                   web app. Open the product handler and add a new method:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/handlers/product.go &mdash; add this method
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// GetPublished returns only published products for the public storefront.
+                <CodeBlock filename="apps/api/internal/handlers/product.go &mdash; add this method" code={`// GetPublished returns only published products for the public storefront.
 func (h *ProductHandler) GetPublished(c *gin.Context) {
     page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
     pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
@@ -543,29 +517,21 @@ func (h *ProductHandler) GetPublished(c *gin.Context) {
             "pages":     pages,
         },
     })
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Register the route in <code>routes.go</code> under the public
                   group (no auth required):
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/routes/routes.go &mdash; public group
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Public routes (no authentication required)
+                <CodeBlock filename="apps/api/internal/routes/routes.go &mdash; public group" code={`// Public routes (no authentication required)
 public := router.Group("/api")
 {
     // ... existing public routes ...
 
     // Published products — public access
     public.GET("/products/published", productHandler.GetPublished)
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 
@@ -608,13 +574,7 @@ public := router.Group("/api")
                   it). You need:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      files to copy from admin to web
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# Core types
+                <CodeBlock filename="files to copy from admin to web" code={`# Core types
 apps/admin/lib/resource.ts → apps/web/lib/resource.ts
 
 # Table components
@@ -622,20 +582,13 @@ apps/admin/components/tables/data-table.tsx
 apps/admin/components/tables/column-header.tsx
 apps/admin/components/tables/table-pagination.tsx
 apps/admin/components/tables/cell-renderers.tsx
-apps/admin/components/tables/formatters.ts`}</pre>
-                </div>
+apps/admin/components/tables/formatters.ts`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Now create the public product catalog page:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/web/app/(dashboard)/products/page.tsx
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`"use client";
+                <CodeBlock language="tsx" filename="apps/web/app/(dashboard)/products/page.tsx" code={`"use client";
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -699,8 +652,7 @@ export default function ProductCatalogPage() {
       />
     </div>
   );
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mt-4">
                   The standalone <code>DataTable</code> gives your public
@@ -728,33 +680,20 @@ export default function ProductCatalogPage() {
                   components from admin:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      files to copy from admin to web
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# Form components
+                <CodeBlock filename="files to copy from admin to web" code={`# Form components
 apps/admin/components/forms/form-builder.tsx
 apps/admin/components/forms/fields/text-field.tsx
 apps/admin/components/forms/fields/textarea-field.tsx
 apps/admin/components/forms/fields/number-field.tsx
 apps/admin/components/forms/fields/select-field.tsx
-apps/admin/components/forms/fields/toggle-field.tsx`}</pre>
-                </div>
+apps/admin/components/forms/fields/toggle-field.tsx`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Now create the inquiry page with a{" "}
                   <code>FormDefinition</code>:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/web/app/(dashboard)/inquiry/page.tsx
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`"use client";
+                <CodeBlock language="tsx" filename="apps/web/app/(dashboard)/inquiry/page.tsx" code={`"use client";
 
 import { useState } from "react";
 import { FormBuilder } from "@/components/forms/form-builder";
@@ -830,8 +769,7 @@ export default function InquiryPage() {
       />
     </div>
   );
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mt-4">
                   The <code>FormBuilder</code> handles validation, error

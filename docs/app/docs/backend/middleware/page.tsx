@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function MiddlewarePage() {
   return (
@@ -32,11 +33,7 @@ export default function MiddlewarePage() {
                 Middleware is registered in <code>routes/routes.go</code>. The order matters --
                 middleware executes in the order it is registered.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/routes/routes.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
+              <CodeBlock filename="apps/api/internal/routes/routes.go" code={`func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
     r := gin.New()
 
     // ── Global middleware (applied to ALL routes) ────────
@@ -68,8 +65,7 @@ export default function MiddlewarePage() {
     }
 
     return r
-}`}</pre>
-              </div>
+}`} />
 
               <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
                 <p className="text-sm text-foreground/80 mb-0">
@@ -86,11 +82,7 @@ export default function MiddlewarePage() {
                 validates it, loads the user from the database, and stores the user in the
                 Gin context for downstream handlers.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/middleware/auth.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
+              <CodeBlock filename="apps/api/internal/middleware/auth.go" code={`func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
     return func(c *gin.Context) {
         // 1. Extract the Authorization header
         authHeader := c.GetHeader("Authorization")
@@ -162,16 +154,11 @@ export default function MiddlewarePage() {
         c.Set("user_role", user.Role)
         c.Next()
     }
-}`}</pre>
-              </div>
+}`} />
               <p>
                 After this middleware runs, handlers can access the authenticated user:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">accessing user in handler</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func (h *PostHandler) Create(c *gin.Context) {
+              <CodeBlock filename="accessing user in handler" code={`func (h *PostHandler) Create(c *gin.Context) {
     // Get the full user object
     user, _ := c.Get("user")
     currentUser := user.(models.User)
@@ -179,8 +166,7 @@ export default function MiddlewarePage() {
     // Or get individual fields
     userID, _ := c.Get("user_id")    // uint
     role, _ := c.Get("user_role")     // string
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── RequireRole ─────────────────────────────── */}
               <h2 id="require-role">RequireRole Middleware</h2>
@@ -189,11 +175,7 @@ export default function MiddlewarePage() {
                 It must be used <strong>after</strong> the Auth middleware (which sets <code>user_role</code>
                 in the context).
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/middleware/auth.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// RequireRole checks if the user has one of the required roles.
+              <CodeBlock filename="apps/api/internal/middleware/auth.go" code={`// RequireRole checks if the user has one of the required roles.
 func RequireRole(roles ...string) gin.HandlerFunc {
     return func(c *gin.Context) {
         userRole, exists := c.Get("user_role")
@@ -235,21 +217,15 @@ func RequireRole(roles ...string) gin.HandlerFunc {
         })
         c.Abort()
     }
-}`}</pre>
-              </div>
+}`} />
               <p>Usage examples:</p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">role_examples.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Admin only
+              <CodeBlock filename="role_examples.go" code={`// Admin only
 admin.Use(middleware.RequireRole("admin"))
 
 // Admin or editor
 editors.Use(middleware.RequireRole("admin", "editor"))
 
-// Any authenticated user (no RequireRole needed, just Auth middleware)`}</pre>
-              </div>
+// Any authenticated user (no RequireRole needed, just Auth middleware)`} />
 
               {/* ── CORS Middleware ─────────────────────────────── */}
               <h2 id="cors-middleware">CORS Middleware</h2>
@@ -258,11 +234,7 @@ editors.Use(middleware.RequireRole("admin", "editor"))
                 to make API requests to the Go backend. It reads the allowed origins from
                 the <code>CORS_ORIGINS</code> environment variable.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/middleware/cors.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func CORS(allowedOrigins []string) gin.HandlerFunc {
+              <CodeBlock filename="apps/api/internal/middleware/cors.go" code={`func CORS(allowedOrigins []string) gin.HandlerFunc {
     originsMap := make(map[string]bool)
     for _, origin := range allowedOrigins {
         originsMap[origin] = true
@@ -289,17 +261,11 @@ editors.Use(middleware.RequireRole("admin", "editor"))
 
         c.Next()
     }
-}`}</pre>
-              </div>
+}`} />
               <p>
                 Configure allowed origins in your <code>.env</code> file:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">.env</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`CORS_ORIGINS=http://localhost:3000,http://localhost:3001`}</pre>
-              </div>
+              <CodeBlock language="bash" filename=".env" code={`CORS_ORIGINS=http://localhost:3000,http://localhost:3001`} />
 
               {/* ── Logger Middleware ─────────────────────────────── */}
               <h2 id="logger-middleware">Logger Middleware</h2>
@@ -308,11 +274,7 @@ editors.Use(middleware.RequireRole("admin", "editor"))
                 client IP, and response latency. It runs before all other middleware so it
                 captures the total request time.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/middleware/logger.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func Logger() gin.HandlerFunc {
+              <CodeBlock filename="apps/api/internal/middleware/logger.go" code={`func Logger() gin.HandlerFunc {
     return func(c *gin.Context) {
         start := time.Now()
         path := c.Request.URL.Path
@@ -333,22 +295,11 @@ editors.Use(middleware.RequireRole("admin", "editor"))
             status, method, path, clientIP, latency,
         )
     }
-}`}</pre>
-              </div>
+}`} />
               <p>Example output:</p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`[200] GET /api/users?page=1 | 127.0.0.1 | 3.241ms
+              <CodeBlock language="bash" code={`[200] GET /api/users?page=1 | 127.0.0.1 | 3.241ms
 [201] POST /api/posts | 127.0.0.1 | 12.507ms
-[401] GET /api/auth/me | 127.0.0.1 | 0.128ms`}</pre>
-              </div>
+[401] GET /api/auth/me | 127.0.0.1 | 0.128ms`} />
 
               {/* ── Cache Middleware ─────────────────────────────── */}
               <h2 id="cache-middleware">Cache Middleware</h2>
@@ -356,11 +307,7 @@ editors.Use(middleware.RequireRole("admin", "editor"))
                 The <code>CacheResponse</code> middleware caches the full HTTP response for GET requests in Redis.
                 Subsequent identical requests are served from cache with an <code>X-Cache: HIT</code> header.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/middleware/cache.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func CacheResponse(
+              <CodeBlock filename="apps/api/internal/middleware/cache.go" code={`func CacheResponse(
     cacheService *cache.Cache, ttl time.Duration,
 ) gin.HandlerFunc {
     return func(c *gin.Context) {
@@ -405,14 +352,9 @@ editors.Use(middleware.RequireRole("admin", "editor"))
             _ = cacheService.Set(c.Request.Context(), key, resp, ttl)
         }
     }
-}`}</pre>
-              </div>
+}`} />
               <p>Apply it to specific routes:</p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">cache_usage.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Cache the posts list for 5 minutes
+              <CodeBlock filename="cache_usage.go" code={`// Cache the posts list for 5 minutes
 protected.GET("/posts",
     middleware.CacheResponse(svc.Cache, 5*time.Minute),
     postHandler.List,
@@ -422,8 +364,7 @@ protected.GET("/posts",
 protected.GET("/posts/:id",
     middleware.CacheResponse(svc.Cache, 10*time.Minute),
     postHandler.GetByID,
-)`}</pre>
-              </div>
+)`} />
 
               {/* ── Custom Middleware ─────────────────────────────── */}
               <h2 id="custom-middleware">Creating Custom Middleware</h2>
@@ -431,11 +372,7 @@ protected.GET("/posts/:id",
                 A Gin middleware is any function that returns <code>gin.HandlerFunc</code>.
                 Here is the pattern for creating your own:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/middleware/rate_limit.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package middleware
+              <CodeBlock filename="apps/api/internal/middleware/rate_limit.go" code={`package middleware
 
 import (
     "net/http"
@@ -509,30 +446,20 @@ func RateLimit(maxRequests int, window time.Duration) gin.HandlerFunc {
         mu.Unlock()
         c.Next()
     }
-}`}</pre>
-              </div>
+}`} />
               <p>Register it on routes that need rate limiting:</p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">routes.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Limit auth endpoints to 10 requests per minute per IP
+              <CodeBlock filename="routes.go" code={`// Limit auth endpoints to 10 requests per minute per IP
 auth := r.Group("/api/auth")
 auth.Use(middleware.RateLimit(10, 1*time.Minute))
 {
     auth.POST("/login", authHandler.Login)
     auth.POST("/register", authHandler.Register)
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── Middleware Anatomy ─────────────────────────────── */}
               <h2 id="middleware-anatomy">Middleware Anatomy</h2>
               <p>Every Gin middleware follows the same structure:</p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">middleware_anatomy.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func MyMiddleware() gin.HandlerFunc {
+              <CodeBlock filename="middleware_anatomy.go" code={`func MyMiddleware() gin.HandlerFunc {
     return func(c *gin.Context) {
         // ── BEFORE the handler ──────────────────────
         // Check conditions, set context values, etc.
@@ -547,8 +474,7 @@ auth.Use(middleware.RateLimit(10, 1*time.Minute))
         // c.Abort()
         // c.JSON(http.StatusForbidden, gin.H{...})
     }
-}`}</pre>
-              </div>
+}`} />
               <ul>
                 <li>
                   <strong><code>c.Next()</code></strong> passes control to the next middleware or handler

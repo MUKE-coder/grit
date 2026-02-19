@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
+import { CodeBlock } from '@/components/code-block'
 
 export default function TutorialSaaSPage() {
   return (
@@ -171,13 +172,7 @@ export default function TutorialSaaSPage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/project.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/project.go" code={`package models
 
 import (
     "time"
@@ -192,8 +187,7 @@ type Project struct {
     CreatedAt   time.Time      \`json:"created_at"\`
     UpdatedAt   time.Time      \`json:"updated_at"\`
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"deleted_at,omitempty"\`
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 
@@ -234,13 +228,7 @@ type Project struct {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/task.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/task.go" code={`package models
 
 import (
     "time"
@@ -257,8 +245,7 @@ type Task struct {
     CreatedAt   time.Time      \`json:"created_at"\`
     UpdatedAt   time.Time      \`json:"updated_at"\`
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"deleted_at,omitempty"\`
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 
@@ -318,13 +305,7 @@ type Task struct {
                   authored by a User. A Project has many Tasks.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/task.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/task.go" code={`package models
 
 import (
     "time"
@@ -353,16 +334,9 @@ type Task struct {
     CreatedAt   time.Time      \`json:"created_at"\`
     UpdatedAt   time.Time      \`json:"updated_at"\`
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"deleted_at,omitempty"\`
-}`}</pre>
-                </div>
+}`} />
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/comment.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/comment.go" code={`package models
 
 import (
     "time"
@@ -384,17 +358,10 @@ type Comment struct {
     CreatedAt time.Time      \`json:"created_at"\`
     UpdatedAt time.Time      \`json:"updated_at"\`
     DeletedAt gorm.DeletedAt \`gorm:"index" json:"deleted_at,omitempty"\`
-}`}</pre>
-                </div>
+}`} />
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/project.go &mdash; add Tasks
-                      relation
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type Project struct {
+                <CodeBlock filename="apps/api/internal/models/project.go &mdash; add Tasks
+                      relation" code={`type Project struct {
     ID          uint           \`gorm:"primarykey" json:"id"\`
     Name        string         \`gorm:"size:255;not null" json:"name" binding:"required"\`
     Description string         \`gorm:"type:text" json:"description"\`
@@ -403,8 +370,7 @@ type Comment struct {
     CreatedAt   time.Time      \`json:"created_at"\`
     UpdatedAt   time.Time      \`json:"updated_at"\`
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"deleted_at,omitempty"\`
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
                   Run <code>grit sync</code> to regenerate the TypeScript types
@@ -431,14 +397,8 @@ type Comment struct {
                   a validation method that enforces valid transitions.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/task.go &mdash; add status
-                      constants and validation
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Task status constants
+                <CodeBlock filename="apps/api/internal/models/task.go &mdash; add status
+                      constants and validation" code={`// Task status constants
 const (
     TaskStatusTodo       = "todo"
     TaskStatusInProgress = "in_progress"
@@ -482,21 +442,14 @@ func (t *Task) CanTransitionTo(newStatus string) bool {
         }
     }
     return false
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Now enforce the workflow in the Task service&apos;s update
                   method:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/services/task.go &mdash; Update method
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func (s *TaskService) Update(id uint, input map[string]interface{}) (*models.Task, error) {
+                <CodeBlock filename="apps/api/internal/services/task.go &mdash; Update method" code={`func (s *TaskService) Update(id uint, input map[string]interface{}) (*models.Task, error) {
     task, err := s.GetByID(id)
     if err != nil {
         return nil, fmt.Errorf("task not found: %w", err)
@@ -519,8 +472,7 @@ func (t *Task) CanTransitionTo(newStatus string) bool {
 
     // Reload with relationships
     return s.GetByID(id)
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 
@@ -541,14 +493,8 @@ func (t *Task) CanTransitionTo(newStatus string) bool {
                   panel.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/handlers/project.go &mdash; add stats
-                      endpoint
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// GetStats returns task statistics grouped by status.
+                <CodeBlock filename="apps/api/internal/handlers/project.go &mdash; add stats
+                      endpoint" code={`// GetStats returns task statistics grouped by status.
 func (h *ProjectHandler) GetStats(c *gin.Context) {
     type StatusCount struct {
         Status string \`json:"status"\`
@@ -590,35 +536,21 @@ func (h *ProjectHandler) GetStats(c *gin.Context) {
             "by_status":      stats,
         },
     })
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Register the route:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/routes/routes.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Inside the authenticated group
-projects.GET("/stats", projectHandler.GetStats)`}</pre>
-                </div>
+                <CodeBlock filename="apps/api/internal/routes/routes.go" code={`// Inside the authenticated group
+projects.GET("/stats", projectHandler.GetStats)`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Now create a React component that fetches and displays these
                   stats on the admin dashboard:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/admin/components/widgets/project-stats.tsx
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`'use client'
+                <CodeBlock language="tsx" filename="apps/admin/components/widgets/project-stats.tsx" code={`'use client'
 
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
@@ -688,8 +620,7 @@ export function ProjectStatsWidget() {
       ))}
     </div>
   )
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 
@@ -715,13 +646,7 @@ export function ProjectStatsWidget() {
                   First, define the job type and its payload:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/jobs/task_assigned.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package jobs
+                <CodeBlock filename="apps/api/internal/jobs/task_assigned.go" code={`package jobs
 
 import (
     "context"
@@ -772,22 +697,15 @@ func HandleTaskAssigned(mailer *mail.Mailer) asynq.HandlerFunc {
             },
         })
     }
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Now dispatch the job from the Task service whenever a task is
                   assigned:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/services/task.go &mdash; add to Update
-                      method
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// After the task is updated, check if assignee changed
+                <CodeBlock filename="apps/api/internal/services/task.go &mdash; add to Update
+                      method" code={`// After the task is updated, check if assignee changed
 if newAssigneeID, ok := input["assignee_id"]; ok && newAssigneeID != nil {
     // Reload the updated task with relationships
     updated, _ := s.GetByID(id)
@@ -803,20 +721,13 @@ if newAssigneeID, ok := input["assignee_id"]; ok && newAssigneeID != nil {
             log.Printf("failed to enqueue task assignment email: %v", err)
         }
     }
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Create the email template:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/mail/templates/task-assigned.html
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`<!DOCTYPE html>
+                <CodeBlock language="markup" filename="apps/api/internal/mail/templates/task-assigned.html" code={`<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: 'DM Sans', sans-serif; background: #0a0a0f; color: #e8e8f0; padding: 40px;">
@@ -831,8 +742,7 @@ if newAssigneeID, ok := input["assignee_id"]; ok && newAssigneeID != nil {
     <p style="color: #9090a8; font-size: 14px;">Log in to Taskflow to view the details and get started.</p>
   </div>
 </body>
-</html>`}</pre>
-                </div>
+</html>`} />
               </div>
             </div>
 
@@ -853,13 +763,7 @@ if newAssigneeID, ok := input["assignee_id"]; ok && newAssigneeID != nil {
                   names. Add filters for status, priority, and project.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/admin/resources/tasks.ts
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { defineResource } from '@grit/admin'
+                <CodeBlock language="typescript" filename="apps/admin/resources/tasks.ts" code={`import { defineResource } from '@grit/admin'
 
 export default defineResource({
   name: 'Task',
@@ -923,8 +827,7 @@ export default defineResource({
       { key: 'due_date', label: 'Due Date', type: 'date' },
     ],
   },
-})`}</pre>
-                </div>
+})`} />
               </div>
             </div>
 
@@ -946,13 +849,7 @@ export default defineResource({
                   task handler.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/services/task.go &mdash; scoped query
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// GetAllScoped returns tasks scoped to the current user's role.
+                <CodeBlock filename="apps/api/internal/services/task.go &mdash; scoped query" code={`// GetAllScoped returns tasks scoped to the current user's role.
 func (s *TaskService) GetAllScoped(
     userID uint, role string,
     page, pageSize int, sort, order, search string,
@@ -993,21 +890,14 @@ func (s *TaskService) GetAllScoped(
     result := query.Offset(offset).Limit(pageSize).Find(&tasks)
 
     return tasks, total, result.Error
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Use the scoped query in the handler by extracting the current
                   user from the Gin context (set by the auth middleware):
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/handlers/task.go &mdash; GetAll handler
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func (h *TaskHandler) GetAll(c *gin.Context) {
+                <CodeBlock filename="apps/api/internal/handlers/task.go &mdash; GetAll handler" code={`func (h *TaskHandler) GetAll(c *gin.Context) {
     // Extract the authenticated user from context
     user, _ := c.Get("user")
     currentUser := user.(*models.User)
@@ -1041,8 +931,7 @@ func (s *TaskService) GetAllScoped(
             "page_size": pageSize, "pages": pages,
         },
     })
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 

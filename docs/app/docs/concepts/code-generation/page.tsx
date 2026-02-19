@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function CodeGenerationPage() {
   return (
@@ -123,11 +124,7 @@ export default function CodeGenerationPage() {
                 <h3 className="text-xl font-semibold tracking-tight mt-6 mb-3">
                   Go Model
                 </h3>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/post.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/post.go" code={`package models
 
 import (
     "time"
@@ -143,17 +140,12 @@ type Post struct {
     CreatedAt time.Time      \`json:"created_at"\`
     UpdatedAt time.Time      \`json:"updated_at"\`
     DeletedAt gorm.DeletedAt \`gorm:"index" json:"-"\`
-}`}</pre>
-                </div>
+}`} />
 
                 <h3 className="text-xl font-semibold tracking-tight mt-6 mb-3">
                   Zod Schema
                 </h3>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">packages/shared/schemas/post.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { z } from "zod";
+                <CodeBlock language="typescript" filename="packages/shared/schemas/post.ts" code={`import { z } from "zod";
 
 export const CreatePostSchema = z.object({
   title: z.string().min(1, "Required"),
@@ -168,34 +160,24 @@ export const UpdatePostSchema = z.object({
 });
 
 export type CreatePostInput = z.infer<typeof CreatePostSchema>;
-export type UpdatePostInput = z.infer<typeof UpdatePostSchema>;`}</pre>
-                </div>
+export type UpdatePostInput = z.infer<typeof UpdatePostSchema>;`} />
 
                 <h3 className="text-xl font-semibold tracking-tight mt-6 mb-3">
                   TypeScript Interface
                 </h3>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">packages/shared/types/post.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`export interface Post {
+                <CodeBlock language="typescript" filename="packages/shared/types/post.ts" code={`export interface Post {
   id: number;
   title: string;
   content: string;
   published: boolean;
   created_at: string;
   updated_at: string;
-}`}</pre>
-                </div>
+}`} />
 
                 <h3 className="text-xl font-semibold tracking-tight mt-6 mb-3">
                   Admin Resource Definition
                 </h3>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/admin/resources/posts.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { defineResource } from "@/lib/resource";
+                <CodeBlock language="typescript" filename="apps/admin/resources/posts.ts" code={`import { defineResource } from "@/lib/resource";
 
 export const postResource = defineResource({
   name: "Post",
@@ -225,8 +207,7 @@ export const postResource = defineResource({
       { key: "published", label: "Published", type: "toggle" },
     ],
   },
-});`}</pre>
-                </div>
+});`} />
               </div>
 
               {/* Files Modified */}
@@ -421,11 +402,7 @@ export const postResource = defineResource({
                   For complex resources, use a YAML file to define the fields. This gives you
                   more control over field properties like required, unique, and default values.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">invoice.yaml</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`name: Invoice
+                <CodeBlock language="yaml" filename="invoice.yaml" code={`name: Invoice
 fields:
   - name: number
     type: string
@@ -444,8 +421,7 @@ fields:
     type: date           # maps to *time.Time, gorm:"type:date"
   - name: paid
     type: bool
-    default: "false"     # adds gorm:"default:false"`}</pre>
-                </div>
+    default: "false"     # adds gorm:"default:false"`} />
 
                 <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
                   YAML Field Properties
@@ -640,18 +616,13 @@ fields:
                   included in the search WHERE clause using PostgreSQL&apos;s ILIKE operator for
                   case-insensitive matching.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">generated search query for Post</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// For --fields "title:string,content:text,published:bool"
+                <CodeBlock filename="generated search query for Post" code={`// For --fields "title:string,content:text,published:bool"
 // The generator produces:
 query.Where("title ILIKE ? OR content ILIKE ?",
     "%"+search+"%", "%"+search+"%")
 
 // Notice: bool and numeric fields are NOT included in text search.
-// Only string and text fields participate in ILIKE search.`}</pre>
-                </div>
+// Only string and text fields participate in ILIKE search.`} />
                 <p className="text-sm text-muted-foreground/60 mt-3">
                   If a resource has no string or text fields, the generator falls back to searching
                   by ID: <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">{`id::text ILIKE ?`}</code>.

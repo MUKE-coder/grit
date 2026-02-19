@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function UsingGritWithClaudePage() {
   return (
@@ -106,11 +107,7 @@ export default function UsingGritWithClaudePage() {
                   bracketed sections with your own project details:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">Prompt template for Claude Web</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`I want to build a [PROJECT NAME] using the Grit framework.
+                <CodeBlock filename="Prompt template for Claude Web" code={`I want to build a [PROJECT NAME] using the Grit framework.
 
 Grit is a full-stack meta-framework that uses:
 - Go backend (Gin web framework + GORM ORM)
@@ -136,8 +133,7 @@ Please create these 3 files for me:
 
 3. project-phases.md — A phased build plan with checkboxes. Phase 1:
    scaffold + core models. Phase 2: relationships + complex features.
-   Phase 3: frontend customization + polish.`}</pre>
-                </div>
+   Phase 3: frontend customization + polish.`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3 mt-8">
                   Example: Job Board Application
@@ -146,11 +142,7 @@ Please create these 3 files for me:
                   Here is what a filled-in prompt looks like for a Job Board app:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">Example prompt for a Job Board</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`I want to build a Job Board using the Grit framework.
+                <CodeBlock filename="Example prompt for a Job Board" code={`I want to build a Job Board using the Grit framework.
 
 Grit is a full-stack meta-framework that uses:
 - Go backend (Gin web framework + GORM ORM)
@@ -177,8 +169,7 @@ Please create these 3 files for me:
 
 1. project-description.md
 2. claude-code-prompt.md
-3. project-phases.md`}</pre>
-                </div>
+3. project-phases.md`} />
 
                 <p className="text-muted-foreground leading-relaxed">
                   Claude Web will respond with all 3 files, fully detailed and ready to use.
@@ -216,11 +207,7 @@ Please create these 3 files for me:
                     what the application does.
                   </p>
 
-                  <div className="ml-10 rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                      <span className="text-[11px] font-mono text-muted-foreground/40">project-description.md (Job Board example)</span>
-                    </div>
-                    <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# Job Board — Project Description
+                  <CodeBlock filename="project-description.md (Job Board example)" code={`# Job Board — Project Description
 
 ## Overview
 A full-stack job board where companies post listings
@@ -270,8 +257,7 @@ and candidates browse and apply.
 - Company profile pages
 - Job detail pages with "Apply" button
 - Application tracking for users
-- Admin dashboard with stats and management`}</pre>
-                  </div>
+- Admin dashboard with stats and management`} />
                 </div>
 
                 {/* claude-code-prompt.md */}
@@ -291,11 +277,7 @@ and candidates browse and apply.
                     executes each step automatically.
                   </p>
 
-                  <div className="ml-10 rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                      <span className="text-[11px] font-mono text-muted-foreground/40">claude-code-prompt.md (Job Board example)</span>
-                    </div>
-                    <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# Claude Code — Build Instructions
+                  <CodeBlock filename="claude-code-prompt.md (Job Board example)" code={`# Claude Code — Build Instructions
 
 Read GRIT_SKILL.md first to understand the framework.
 Then read project-description.md for the full spec.
@@ -334,8 +316,7 @@ Execute these steps in order:
 10. Customize admin resource definitions
 11. Build the public job listing page
 12. Build the company profile page
-13. Add search and filter functionality`}</pre>
-                  </div>
+13. Add search and filter functionality`} />
                 </div>
 
                 {/* project-phases.md */}
@@ -355,11 +336,7 @@ Execute these steps in order:
                     and polish. This prevents Claude Code from trying to do everything at once.
                   </p>
 
-                  <div className="ml-10 rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                      <span className="text-[11px] font-mono text-muted-foreground/40">project-phases.md (Job Board example)</span>
-                    </div>
-                    <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# Job Board — Build Phases
+                  <CodeBlock filename="project-phases.md (Job Board example)" code={`# Job Board — Build Phases
 
 ## Phase 1: Scaffold + Core Models
 - [ ] Run grit new jobboard
@@ -387,8 +364,7 @@ Execute these steps in order:
 - [ ] Build job detail page with Apply button
 - [ ] Build company profile page
 - [ ] Add application tracking page for logged-in users
-- [ ] Test full flow: post job -> browse -> apply -> review`}</pre>
-                  </div>
+- [ ] Test full flow: post job -> browse -> apply -> review`} />
                 </div>
               </div>
 
@@ -419,13 +395,7 @@ Execute these steps in order:
                       <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                         Install Claude Code globally using npm. You need Node.js 18+ installed.
                       </p>
-                      <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                          <div className="flex gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" /><div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" /><div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" /></div>
-                          <span className="text-[11px] font-mono text-muted-foreground/40">Terminal</span>
-                        </div>
-                        <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`npm install -g @anthropic-ai/claude-code`}</pre>
-                      </div>
+                      <CodeBlock language="bash" filename="Terminal" code={`npm install -g @anthropic-ai/claude-code`} />
                     </div>
                   </div>
 
@@ -442,18 +412,12 @@ Execute these steps in order:
                         Create a new folder for your project and navigate into it. Place the 3 spec
                         files from Claude Web into this directory.
                       </p>
-                      <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                          <div className="flex gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" /><div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" /><div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" /></div>
-                          <span className="text-[11px] font-mono text-muted-foreground/40">Terminal</span>
-                        </div>
-                        <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`mkdir jobboard-project && cd jobboard-project
+                      <CodeBlock language="bash" filename="Terminal" code={`mkdir jobboard-project && cd jobboard-project
 
 # Place your 3 spec files here:
 # - project-description.md
 # - claude-code-prompt.md
-# - project-phases.md`}</pre>
-                      </div>
+# - project-phases.md`} />
                     </div>
                   </div>
 
@@ -470,13 +434,7 @@ Execute these steps in order:
                         Launch Claude Code in the project directory. It will detect the spec files
                         and be ready to execute instructions.
                       </p>
-                      <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                          <div className="flex gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" /><div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" /><div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" /></div>
-                          <span className="text-[11px] font-mono text-muted-foreground/40">Terminal</span>
-                        </div>
-                        <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`claude`}</pre>
-                      </div>
+                      <CodeBlock language="bash" filename="Terminal" code={`claude`} />
                     </div>
                   </div>
 
@@ -493,15 +451,10 @@ Execute these steps in order:
                         Tell Claude Code to read the prompt file and execute the instructions.
                         It will scaffold the project, generate every resource, and build the app step by step.
                       </p>
-                      <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                          <span className="text-[11px] font-mono text-muted-foreground/40">Message to Claude Code</span>
-                        </div>
-                        <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`Read claude-code-prompt.md and project-description.md.
+                      <CodeBlock filename="Message to Claude Code" code={`Read claude-code-prompt.md and project-description.md.
 Execute all the steps in Phase 1 of the build instructions.
 After each grit command, verify the output looks correct
-before moving to the next step.`}</pre>
-                      </div>
+before moving to the next step.`} />
                     </div>
                   </div>
 
@@ -519,19 +472,14 @@ before moving to the next step.`}</pre>
                         compiles, models look correct, and the admin panel renders properly.
                         Then tell it to proceed with the next phase, or ask for adjustments.
                       </p>
-                      <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                          <span className="text-[11px] font-mono text-muted-foreground/40">Follow-up messages</span>
-                        </div>
-                        <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# After Phase 1 completes:
+                      <CodeBlock filename="Follow-up messages" code={`# After Phase 1 completes:
 Phase 1 looks good. Now execute Phase 2 from the build instructions.
 
 # If something needs fixing:
 The Job model needs a "deadline" field (datetime). Add it and re-run grit sync.
 
 # When ready for frontend work:
-Execute Phase 3. Customize the admin resources and build the public pages.`}</pre>
-                      </div>
+Execute Phase 3. Customize the admin resources and build the public pages.`} />
                     </div>
                   </div>
                 </div>
@@ -570,11 +518,7 @@ Execute Phase 3. Customize the admin resources and build the public pages.`}</pr
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">GRIT_SKILL.md</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# Grit Framework — AI Skill Context
+                <CodeBlock filename="GRIT_SKILL.md" code={`# Grit Framework — AI Skill Context
 
 > Give this file to any AI coding assistant to teach it how to work with your Grit project.
 
@@ -634,8 +578,7 @@ project/
 2. grit generate resource <Name> --fields "..." for each model
 3. cd apps/api && air (hot reload)
 4. cd apps/admin && pnpm install && pnpm dev
-5. Customize handlers, add business logic, build frontend pages`}</pre>
-                </div>
+5. Customize handlers, add business logic, build frontend pages`} />
               </div>
 
               {/* ============================================================ */}
@@ -696,11 +639,7 @@ project/
                   generate all 3 spec files in a single response.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">Copy this entire prompt into claude.ai</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`I want to build a [PROJECT NAME] using the Grit framework.
+                <CodeBlock filename="Copy this entire prompt into claude.ai" code={`I want to build a [PROJECT NAME] using the Grit framework.
 
 Grit is a full-stack meta-framework that uses:
 - Go backend (Gin web framework + GORM ORM)
@@ -726,8 +665,7 @@ Please create these 3 files for me:
 
 3. project-phases.md — A phased build plan with checkboxes. Phase 1:
    scaffold + core models. Phase 2: relationships + complex features.
-   Phase 3: frontend customization + polish.`}</pre>
-                </div>
+   Phase 3: frontend customization + polish.`} />
 
                 <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
                   <p className="text-sm text-muted-foreground leading-relaxed">

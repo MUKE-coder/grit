@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function ThemePage() {
   return (
@@ -271,11 +272,7 @@ export default function ThemePage() {
                   Fonts are loaded via Google Fonts in the root layout. Next.js automatically optimizes
                   font loading with <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">next/font</code>:
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/app/layout.tsx</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { DM_Sans, JetBrains_Mono } from 'next/font/google'
+                <CodeBlock language="tsx" filename="apps/web/app/layout.tsx" code={`import { DM_Sans, JetBrains_Mono } from 'next/font/google'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -287,8 +284,7 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
   weight: ['400', '500', '600'],
-})`}</pre>
-                </div>
+})`} />
               </div>
 
               {/* Using the Theme in CSS */}
@@ -300,11 +296,7 @@ const jetbrainsMono = JetBrains_Mono({
                   The theme tokens are available as Tailwind CSS classes via shadcn/ui&apos;s configuration.
                   Use them like any Tailwind utility:
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">Tailwind usage examples</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{/* Background colors */}
+                <CodeBlock filename="Tailwind usage examples" code={`{/* Background colors */}
 <div className="bg-background">       {/* --bg-primary */}
 <div className="bg-card">             {/* --bg-secondary */}
 <div className="bg-accent">           {/* --bg-tertiary */}
@@ -319,8 +311,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 {/* Borders */}
 <div className="border border-border">
-<hr className="border-border/30">`}</pre>
-                </div>
+<hr className="border-border/30">`} />
               </div>
 
               {/* Dark/Light Toggle */}
@@ -335,11 +326,7 @@ const jetbrainsMono = JetBrains_Mono({
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">class</code> attribute
                   on the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">&lt;html&gt;</code> element.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">Theme toggle component</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`'use client'
+                <CodeBlock filename="Theme toggle component" code={`'use client'
 
 import { useTheme } from 'next-themes'
 import { Moon, Sun } from 'lucide-react'
@@ -358,8 +345,7 @@ export function ThemeToggle() {
       <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
     </Button>
   )
-}`}</pre>
-                </div>
+}`} />
                 <p className="text-sm text-muted-foreground/60">
                   The theme preference is stored in <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">localStorage</code> and
                   persists across sessions. The default is <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">dark</code>.
@@ -375,11 +361,7 @@ export function ThemeToggle() {
                   All theme tokens are defined in your <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">globals.css</code> file.
                   To customize the theme, update the CSS custom properties:
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">app/globals.css</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`@layer base {
+                <CodeBlock language="css" filename="app/globals.css" code={`@layer base {
   :root {
     /* Light mode tokens */
     --background: 0 0% 100%;
@@ -403,21 +385,15 @@ export function ThemeToggle() {
     --accent: 240 18% 12%;        /* #1a1a24 */
     /* ... */
   }
-}`}</pre>
-                </div>
+}`} />
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   To change the accent color from purple to blue, for example, update the{' '}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--primary</code> value
                   in both light and dark sections:
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">Custom blue accent</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`.dark {
+                <CodeBlock filename="Custom blue accent" code={`.dark {
     --primary: 217 91% 60%;   /* #3b82f6 — Tailwind blue-500 */
-}`}</pre>
-                </div>
+}`} />
 
                 <div className="p-4 rounded-lg border border-primary/20 bg-primary/5">
                   <p className="text-sm text-muted-foreground leading-relaxed">

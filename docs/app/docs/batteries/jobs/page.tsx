@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function JobsPage() {
   return (
@@ -38,18 +39,13 @@ export default function JobsPage() {
                   The worker runs as a goroutine inside the API server -- no separate process needed.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">job-architecture.txt</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`┌──────────────────┐     ┌─────────┐     ┌──────────────────┐
+                <CodeBlock language="bash" filename="job-architecture.txt" code={`┌──────────────────┐     ┌─────────┐     ┌──────────────────┐
 │  API Handler     │     │  Redis  │     │  Worker          │
 │                  │     │         │     │                  │
 │  client.Enqueue  │────>│  Queue  │────>│  handleEmailSend │
 │  SendEmail(...)  │     │         │     │  handleImage...  │
 │                  │     │         │     │  handleCleanup   │
-└──────────────────┘     └─────────┘     └──────────────────┘`}</pre>
-                </div>
+└──────────────────┘     └─────────┘     └──────────────────┘`} />
               </div>
 
               {/* Job Client */}
@@ -63,11 +59,7 @@ export default function JobsPage() {
                   and configures retry policies per job type.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/jobs/client.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Task type constants
+                <CodeBlock language="go" filename="internal/jobs/client.go" code={`// Task type constants
 const (
     TypeEmailSend     = "email:send"
     TypeImageProcess  = "image:process"
@@ -83,16 +75,11 @@ type Client struct {
 func NewClient(redisURL string) (*Client, error)
 
 // Close shuts down the client connection.
-func (c *Client) Close() error`}</pre>
-                </div>
+func (c *Client) Close() error`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3">Enqueue Methods</h3>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/jobs/client.go (enqueue methods)</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// EnqueueSendEmail enqueues an email send job.
+                <CodeBlock language="go" filename="internal/jobs/client.go (enqueue methods)" code={`// EnqueueSendEmail enqueues an email send job.
 // Max retries: 3
 func (c *Client) EnqueueSendEmail(
     to, subject, template string,
@@ -108,16 +95,11 @@ func (c *Client) EnqueueProcessImage(
 
 // EnqueueTokensCleanup enqueues a token cleanup job.
 // Max retries: 1
-func (c *Client) EnqueueTokensCleanup() error`}</pre>
-                </div>
+func (c *Client) EnqueueTokensCleanup() error`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3">Job Payloads</h3>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/jobs/client.go (payloads)</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// EmailPayload holds the data for an email send job.
+                <CodeBlock language="go" filename="internal/jobs/client.go (payloads)" code={`// EmailPayload holds the data for an email send job.
 type EmailPayload struct {
     To       string                 \`json:"to"\`
     Subject  string                 \`json:"subject"\`
@@ -130,8 +112,7 @@ type ImagePayload struct {
     UploadID uint   \`json:"upload_id"\`
     Key      string \`json:"key"\`
     MimeType string \`json:"mime_type"\`
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Worker Setup */}
@@ -145,11 +126,7 @@ type ImagePayload struct {
                   giving handler functions access to the database, mailer, storage, and cache.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/jobs/workers.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// WorkerDeps holds dependencies needed by job handlers.
+                <CodeBlock language="go" filename="internal/jobs/workers.go" code={`// WorkerDeps holds dependencies needed by job handlers.
 type WorkerDeps struct {
     DB      *gorm.DB
     Mailer  *mail.Mailer
@@ -181,16 +158,11 @@ func StartWorker(redisURL string, deps WorkerDeps) (func(), error) {
     }()
 
     return func() { srv.Shutdown() }, nil
-}`}</pre>
-                </div>
+}`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3">Starting the Worker in main.go</h3>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">cmd/server/main.go (excerpt)</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Start the background worker
+                <CodeBlock language="go" filename="cmd/server/main.go (excerpt)" code={`// Start the background worker
 stopWorker, err := jobs.StartWorker(cfg.RedisURL, jobs.WorkerDeps{
     DB:      db,
     Mailer:  mailer,
@@ -200,8 +172,7 @@ stopWorker, err := jobs.StartWorker(cfg.RedisURL, jobs.WorkerDeps{
 if err != nil {
     log.Fatalf("Failed to start worker: %v", err)
 }
-defer stopWorker()`}</pre>
-                </div>
+defer stopWorker()`} />
               </div>
 
               {/* Queue Priorities */}
@@ -255,11 +226,7 @@ defer stopWorker()`}</pre>
                   the job is moved to the &quot;archived&quot; (failed) state.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">retry-config.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Email: 3 retries (important to deliver)
+                <CodeBlock language="go" filename="retry-config.go" code={`// Email: 3 retries (important to deliver)
 task := asynq.NewTask(TypeEmailSend, payload)
 _, err = c.client.Enqueue(task, asynq.MaxRetry(3))
 
@@ -277,8 +244,7 @@ _, err = c.client.Enqueue(task,
     asynq.MaxRetry(5),
     asynq.Queue("critical"),
     asynq.Timeout(30*time.Second),
-)`}</pre>
-                </div>
+)`} />
               </div>
 
               {/* Adding Custom Jobs */}
@@ -292,11 +258,7 @@ _, err = c.client.Enqueue(task,
                   in the worker mux.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">custom-job-example.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// 1. Add task type constant
+                <CodeBlock language="go" filename="custom-job-example.go" code={`// 1. Add task type constant
 const TypeInvoiceGenerate = "invoice:generate"
 
 // 2. Define payload
@@ -329,8 +291,7 @@ func handleInvoiceGenerate(deps WorkerDeps) func(ctx context.Context, task *asyn
 }
 
 // 5. Register in worker mux (in StartWorker)
-mux.HandleFunc(TypeInvoiceGenerate, handleInvoiceGenerate(deps))`}</pre>
-                </div>
+mux.HandleFunc(TypeInvoiceGenerate, handleInvoiceGenerate(deps))`} />
               </div>
 
               {/* Admin Jobs Dashboard */}

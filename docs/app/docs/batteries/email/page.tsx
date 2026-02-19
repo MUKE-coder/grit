@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
+import { CodeBlock } from "@/components/code-block";
 
 export default function EmailPage() {
   return (
@@ -45,16 +46,9 @@ export default function EmailPage() {
                   Compose for testing without sending real emails.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      .env
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# Email Configuration
+                <CodeBlock language="bash" filename=".env" code={`# Email Configuration
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxx
-MAIL_FROM=noreply@yourdomain.com`}</pre>
-                </div>
+MAIL_FROM=noreply@yourdomain.com`} />
               </div>
 
               {/* Mailer Service */}
@@ -78,13 +72,7 @@ MAIL_FROM=noreply@yourdomain.com`}</pre>
                   for raw HTML emails.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      internal/mail/mailer.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Mailer sends emails via the Resend API.
+                <CodeBlock language="go" filename="internal/mail/mailer.go" code={`// Mailer sends emails via the Resend API.
 type Mailer struct {
     apiKey string
     from   string
@@ -106,20 +94,13 @@ type SendOptions struct {
 func (m *Mailer) Send(ctx context.Context, opts SendOptions) error
 
 // SendRaw sends an email with raw HTML content (no template).
-func (m *Mailer) SendRaw(ctx context.Context, to, subject, htmlBody string) error`}</pre>
-                </div>
+func (m *Mailer) SendRaw(ctx context.Context, to, subject, htmlBody string) error`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">
                   Usage Examples
                 </h3>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      send-welcome-email.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Send a welcome email using a template
+                <CodeBlock language="go" filename="send-welcome-email.go" code={`// Send a welcome email using a template
 err := mailer.Send(ctx, mail.SendOptions{
     To:       "user@example.com",
     Subject:  "Welcome to MyApp!",
@@ -145,8 +126,7 @@ err = mailer.Send(ctx, mail.SendOptions{
 })
 
 // Send a raw HTML email
-err = mailer.SendRaw(ctx, "user@example.com", "Custom Email", "<h1>Hello!</h1>")`}</pre>
-                </div>
+err = mailer.SendRaw(ctx, "user@example.com", "Custom Email", "<h1>Hello!</h1>")`} />
               </div>
 
               {/* Template Rendering */}
@@ -169,20 +149,13 @@ err = mailer.SendRaw(ctx, "user@example.com", "Custom Email", "<h1>Hello!</h1>")
                   .
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      internal/mail/templates.go (registry)
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// EmailTemplates contains all available email templates.
+                <CodeBlock language="go" filename="internal/mail/templates.go (registry)" code={`// EmailTemplates contains all available email templates.
 var EmailTemplates = map[string]string{
     "welcome":            welcomeTemplate,
     "password-reset":     passwordResetTemplate,
     "email-verification": emailVerificationTemplate,
     "notification":       notificationTemplate,
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Built-in Templates */}
@@ -264,13 +237,7 @@ var EmailTemplates = map[string]string{
                   button, and footer. Here is the welcome template:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      welcome template (simplified)
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`<body style="background-color: #0a0a0f; color: #e8e8f0;">
+                <CodeBlock language="markup" filename="welcome template (simplified)" code={`<body style="background-color: #0a0a0f; color: #e8e8f0;">
   <div class="container">
     <div class="card">
       <div class="logo">{{.AppName}}</div>
@@ -285,8 +252,7 @@ var EmailTemplates = map[string]string{
       <p>&copy; {{.Year}} {{.AppName}}. All rights reserved.</p>
     </div>
   </div>
-</body>`}</pre>
-                </div>
+</body>`} />
               </div>
 
               {/* Adding Custom Templates */}
@@ -306,13 +272,7 @@ var EmailTemplates = map[string]string{
                   map.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      internal/mail/templates.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Add to the EmailTemplates map:
+                <CodeBlock language="go" filename="internal/mail/templates.go" code={`// Add to the EmailTemplates map:
 var EmailTemplates = map[string]string{
     "welcome":            welcomeTemplate,
     "password-reset":     passwordResetTemplate,
@@ -350,8 +310,7 @@ mailer.Send(ctx, mail.SendOptions{
         "DueDate":       "Feb 28, 2026",
         "PaymentURL":    "https://myapp.com/pay/inv-001",
     },
-})`}</pre>
-                </div>
+})`} />
               </div>
 
               {/* Background Email Sending */}
@@ -369,13 +328,7 @@ mailer.Send(ctx, mail.SendOptions{
                   method that sends the email asynchronously.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      async-email.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Instead of sending synchronously:
+                <CodeBlock language="go" filename="async-email.go" code={`// Instead of sending synchronously:
 // mailer.Send(ctx, opts)
 
 // Enqueue a background job (returns immediately):
@@ -390,8 +343,7 @@ err := jobsClient.EnqueueSendEmail(
         "Year":         2026,
     },
 )
-// The asynq worker picks it up and calls mailer.Send()`}</pre>
-                </div>
+// The asynq worker picks it up and calls mailer.Send()`} />
 
                 <div className="p-4 rounded-lg border border-primary/20 bg-primary/5">
                   <p className="text-sm text-foreground/80">

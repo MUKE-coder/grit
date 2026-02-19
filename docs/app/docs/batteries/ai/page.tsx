@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function AIPage() {
   return (
@@ -37,15 +38,10 @@ export default function AIPage() {
                   and Gemini by changing the provider and model -- no code changes required.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">.env</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# AI Configuration
+                <CodeBlock language="bash" filename=".env" code={`# AI Configuration
 AI_PROVIDER=claude                   # "claude", "openai", or "gemini"
 AI_API_KEY=sk-ant-xxxxxxxxxxxxx      # API key for the selected provider
-AI_MODEL=claude-sonnet-4-5-20250929  # Model identifier`}</pre>
-                </div>
+AI_MODEL=claude-sonnet-4-5-20250929  # Model identifier`} />
 
                 <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden">
                   <table className="w-full text-sm">
@@ -88,11 +84,7 @@ AI_MODEL=claude-sonnet-4-5-20250929  # Model identifier`}</pre>
                   in API formats, authentication headers, and response structures internally.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/ai/ai.go (types)</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Message represents a chat message.
+                <CodeBlock filename="internal/ai/ai.go (types)" code={`// Message represents a chat message.
 type Message struct {
     Role    string \`json:"role"\`    // "user" or "assistant"
     Content string \`json:"content"\`
@@ -120,14 +112,9 @@ type Usage struct {
 }
 
 // StreamHandler is called for each chunk of a streamed response.
-type StreamHandler func(chunk string) error`}</pre>
-                </div>
+type StreamHandler func(chunk string) error`} />
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/ai/ai.go (methods)</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// New creates a new AI service instance.
+                <CodeBlock filename="internal/ai/ai.go (methods)" code={`// New creates a new AI service instance.
 func New(provider, apiKey, model string) *AI
 
 // Complete generates a response from a single prompt or message history.
@@ -136,8 +123,7 @@ func (a *AI) Complete(ctx context.Context, req CompletionRequest) (*CompletionRe
 
 // Stream generates a streaming response, calling handler for each text chunk.
 // Uses SSE (Server-Sent Events) from the upstream API.
-func (a *AI) Stream(ctx context.Context, req CompletionRequest, handler StreamHandler) error`}</pre>
-                </div>
+func (a *AI) Stream(ctx context.Context, req CompletionRequest, handler StreamHandler) error`} />
               </div>
 
               {/* Complete (Single Prompt) */}
@@ -149,11 +135,7 @@ func (a *AI) Stream(ctx context.Context, req CompletionRequest, handler StreamHa
                   The simplest way to use the AI service. Send a prompt, get a response.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">complete-example.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`aiService := ai.New("claude", apiKey, "claude-sonnet-4-20250514")
+                <CodeBlock filename="complete-example.go" code={`aiService := ai.New("claude", apiKey, "claude-sonnet-4-20250514")
 
 resp, err := aiService.Complete(ctx, ai.CompletionRequest{
     Prompt:    "Explain the Go concurrency model in 3 sentences.",
@@ -166,8 +148,7 @@ if err != nil {
 fmt.Println(resp.Content)  // "Go uses goroutines..."
 fmt.Println(resp.Model)    // "claude-sonnet-4-20250514"
 fmt.Println(resp.Usage.InputTokens)  // 12
-fmt.Println(resp.Usage.OutputTokens) // 87`}</pre>
-                </div>
+fmt.Println(resp.Usage.OutputTokens) // 87`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3">API Endpoint</h3>
 
@@ -209,11 +190,7 @@ fmt.Println(resp.Usage.OutputTokens) // 87`}</pre>
                   to the provider.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">chat-example.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`resp, err := aiService.Complete(ctx, ai.CompletionRequest{
+                <CodeBlock filename="chat-example.go" code={`resp, err := aiService.Complete(ctx, ai.CompletionRequest{
     Messages: []ai.Message{
         {Role: "user", Content: "I'm building a SaaS with Go and React."},
         {Role: "assistant", Content: "That's a great stack! Go handles the backend..."},
@@ -221,16 +198,11 @@ fmt.Println(resp.Usage.OutputTokens) // 87`}</pre>
     },
     MaxTokens:   512,
     Temperature: 0.7,
-})`}</pre>
-                </div>
+})`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3">API Endpoint</h3>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">POST /api/ai/chat</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Request body:
+                <CodeBlock filename="POST /api/ai/chat" code={`// Request body:
 {
   "messages": [
     { "role": "user", "content": "What is Grit?" },
@@ -251,8 +223,7 @@ fmt.Println(resp.Usage.OutputTokens) // 87`}</pre>
       "output_tokens": 120
     }
   }
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Stream (SSE) */}
@@ -266,19 +237,14 @@ fmt.Println(resp.Usage.OutputTokens) // 87`}</pre>
                   chunk as it arrives from the AI provider.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">stream-example.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// In a Go service:
+                <CodeBlock filename="stream-example.go" code={`// In a Go service:
 err := aiService.Stream(ctx, ai.CompletionRequest{
     Prompt:    "Write a haiku about Go programming",
     MaxTokens: 100,
 }, func(chunk string) error {
     fmt.Print(chunk)  // Prints each word/token as it arrives
     return nil
-})`}</pre>
-                </div>
+})`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3">How Streaming Works via Gin</h3>
                 <p className="text-muted-foreground leading-relaxed mb-4">
@@ -287,11 +253,7 @@ err := aiService.Stream(ctx, ai.CompletionRequest{
                   send each chunk to the client. The connection stays open until the AI response is complete.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/handlers/ai.go (stream handler)</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func (h *AIHandler) Stream(c *gin.Context) {
+                <CodeBlock filename="internal/handlers/ai.go (stream handler)" code={`func (h *AIHandler) Stream(c *gin.Context) {
     var req chatRequest
     if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(http.StatusUnprocessableEntity, gin.H{...})
@@ -321,16 +283,11 @@ err := aiService.Stream(ctx, ai.CompletionRequest{
 
     c.SSEvent("done", "[DONE]")
     c.Writer.Flush()
-}`}</pre>
-                </div>
+}`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3">Consuming the Stream (Frontend)</h3>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">hooks/use-ai-stream.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`async function streamCompletion(messages: Message[]) {
+                <CodeBlock language="typescript" filename="hooks/use-ai-stream.ts" code={`async function streamCompletion(messages: Message[]) {
   const response = await fetch("/api/ai/stream", {
     method: "POST",
     headers: {
@@ -359,8 +316,7 @@ err := aiService.Stream(ctx, ai.CompletionRequest{
       }
     }
   }
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* API Endpoints Summary */}
@@ -410,32 +366,17 @@ err := aiService.Stream(ctx, ai.CompletionRequest{
                   authentication headers, and streaming protocols.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">.env (Claude)</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`AI_PROVIDER=claude
+                <CodeBlock filename=".env (Claude)" code={`AI_PROVIDER=claude
 AI_API_KEY=sk-ant-api03-xxxxxxxxxxxx
-AI_MODEL=claude-sonnet-4-20250514`}</pre>
-                </div>
+AI_MODEL=claude-sonnet-4-20250514`} />
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">.env (OpenAI)</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`AI_PROVIDER=openai
+                <CodeBlock filename=".env (OpenAI)" code={`AI_PROVIDER=openai
 AI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
-AI_MODEL=gpt-4o`}</pre>
-                </div>
+AI_MODEL=gpt-4o`} />
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">.env (Gemini)</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`AI_PROVIDER=gemini
+                <CodeBlock filename=".env (Gemini)" code={`AI_PROVIDER=gemini
 AI_API_KEY=AIzaSyxxxxxxxxxxxxxxxxxxxxxxx
-AI_MODEL=gemini-2.0-flash`}</pre>
-                </div>
+AI_MODEL=gemini-2.0-flash`} />
 
                 <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden">
                   <table className="w-full text-sm">
@@ -488,11 +429,7 @@ AI_MODEL=gemini-2.0-flash`}</pre>
                   a 503 &quot;AI service not configured&quot; response.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">cmd/server/main.go (excerpt)</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Initialize AI service (optional -- graceful if not configured)
+                <CodeBlock filename="cmd/server/main.go (excerpt)" code={`// Initialize AI service (optional -- graceful if not configured)
 var aiService *ai.AI
 if cfg.AIProvider != "" && cfg.AIAPIKey != "" {
     aiService = ai.New(cfg.AIProvider, cfg.AIAPIKey, cfg.AIModel)
@@ -506,8 +443,7 @@ aiGroup := api.Group("/ai", authMiddleware)
     aiGroup.POST("/complete", aiHandler.Complete)
     aiGroup.POST("/chat", aiHandler.Chat)
     aiGroup.POST("/stream", aiHandler.Stream)
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 

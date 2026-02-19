@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function MultiStepFormsPage() {
   return (
@@ -56,11 +57,7 @@ export default function MultiStepFormsPage() {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">resources/products.ts</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { defineResource } from "@/lib/resource";
+              <CodeBlock language="typescript" filename="resources/products.ts" code={`import { defineResource } from "@/lib/resource";
 
 export const productsResource = defineResource({
   name: "Product",
@@ -83,8 +80,7 @@ export const productsResource = defineResource({
     ],
   },
   // ... table config
-});`}</pre>
-              </div>
+});`} />
             </div>
 
             <div className="prose-grit mb-8">
@@ -144,11 +140,7 @@ export const productsResource = defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">resources/employees.ts — Custom steps</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`export const employeesResource = defineResource({
+              <CodeBlock filename="resources/employees.ts — Custom steps" code={`export const employeesResource = defineResource({
   name: "Employee",
   slug: "employees",
   endpoint: "/api/admin/employees",
@@ -199,8 +191,7 @@ export const productsResource = defineResource({
     ],
   },
   // ... table config
-});`}</pre>
-              </div>
+});`} />
             </div>
 
             {/* Auto-Split Mode */}
@@ -213,11 +204,7 @@ export const productsResource = defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Auto-split configuration</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`form: {
+              <CodeBlock filename="Auto-split configuration" code={`form: {
   fieldsPerStep: 3,  // 3 fields per step (default: 4)
   fields: [
     // 9 fields → 3 steps: "Step 1", "Step 2", "Step 3"
@@ -231,8 +218,7 @@ export const productsResource = defineResource({
     { key: "avatar", label: "Avatar", type: "image" },
     { key: "active", label: "Active", type: "toggle" },
   ],
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit mb-8">
@@ -263,16 +249,11 @@ export const productsResource = defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Horizontal variant (default)</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`form: {
+              <CodeBlock filename="Horizontal variant (default)" code={`form: {
   stepVariant: "horizontal",  // This is the default, can be omitted
   steps: [...],
   fields: [...],
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -285,11 +266,7 @@ export const productsResource = defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Vertical variant</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`form: {
+              <CodeBlock filename="Vertical variant" code={`form: {
   stepVariant: "vertical",
   steps: [
     { title: "Personal Info", description: "Name, email, phone" },
@@ -297,8 +274,7 @@ export const productsResource = defineResource({
     { title: "Employment", description: "Role and salary" },
   ],
   fields: [...],
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             {/* Per-Step Validation */}
@@ -350,11 +326,7 @@ export const productsResource = defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">lib/resource.ts — Step types</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`export interface StepDefinition {
+              <CodeBlock filename="lib/resource.ts — Step types" code={`export interface StepDefinition {
   title: string;          // Step label shown in the indicator
   description?: string;   // Optional subtitle (shown in vertical variant)
   fields: string[];       // Field keys to include in this step
@@ -369,8 +341,7 @@ export interface FormDefinition {
 }
 
 // formView on ResourceDefinition:
-formView?: "modal" | "page" | "modal-steps" | "page-steps";`}</pre>
-              </div>
+formView?: "modal" | "page" | "modal-steps" | "page-steps";`} />
             </div>
 
             {/* Complete Example */}
@@ -383,11 +354,7 @@ formView?: "modal" | "page" | "modal-steps" | "page-steps";`}</pre>
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">resources/employees.ts — Full example</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { defineResource } from "@/lib/resource";
+              <CodeBlock filename="resources/employees.ts — Full example" code={`import { defineResource } from "@/lib/resource";
 
 export const employeesResource = defineResource({
   name: "Employee",
@@ -457,8 +424,7 @@ export const employeesResource = defineResource({
       { key: "active", label: "Active", type: "toggle" },
     ],
   },
-});`}</pre>
-              </div>
+});`} />
             </div>
 
             {/* Nav */}

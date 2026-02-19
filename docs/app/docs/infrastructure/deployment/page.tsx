@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function DeploymentPage() {
   return (
@@ -338,11 +339,7 @@ export default function DeploymentPage() {
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Update these critical values for production. Never use default credentials in production:
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">.env</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`APP_ENV=production
+                <CodeBlock language="bash" filename=".env" code={`APP_ENV=production
 APP_PORT=8080
 
 # Database — change password!
@@ -380,8 +377,7 @@ AI_API_KEY=sk-ant-xxxxx
 AI_MODEL=claude-sonnet-4-5-20250929
 
 # Disable GORM Studio in production
-GORM_STUDIO_ENABLED=false`}</pre>
-                </div>
+GORM_STUDIO_ENABLED=false`} />
 
                 <div className="p-4 rounded-lg border border-warning/20 bg-warning/5 mb-6">
                   <p className="text-sm text-foreground/80 leading-relaxed">
@@ -574,11 +570,7 @@ GORM_STUDIO_ENABLED=false`}</pre>
                   Before editing, make sure your DNS A records point to your server&apos;s IP address.
                   Caddy will automatically obtain SSL certificates once DNS is configured.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">/etc/caddy/Caddyfile</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# Go API
+                <CodeBlock filename="/etc/caddy/Caddyfile" code={`# Go API
 api.yourdomain.com {
     reverse_proxy localhost:8080
 }
@@ -591,8 +583,7 @@ yourdomain.com {
 # Admin Panel
 admin.yourdomain.com {
     reverse_proxy localhost:3001
-}`}</pre>
-                </div>
+}`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3">
                   6c. Start Caddy
@@ -733,11 +724,7 @@ admin.yourdomain.com {
                   Here&apos;s a GitHub Actions workflow that SSHs into your server and redeploys:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">.github/workflows/deploy.yml</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`name: Deploy to VPS
+                <CodeBlock language="yaml" filename=".github/workflows/deploy.yml" code={`name: Deploy to VPS
 
 on:
   push:
@@ -757,8 +744,7 @@ jobs:
             cd /opt/myapp
             git pull origin main
             docker compose -f docker-compose.prod.yml up -d --build
-            docker image prune -f`}</pre>
-                </div>
+            docker image prune -f`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3">
                   Set up GitHub Secrets
@@ -865,13 +851,8 @@ jobs:
                     </div>
                   </div>
                 </div>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">crontab</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# Daily DB backup at 3 AM, keep last 7 days
-0 3 * * * cd /opt/myapp && docker compose -f docker-compose.prod.yml exec -T postgres pg_dump -U grit myapp | gzip > /backups/myapp-$(date +\\%Y\\%m\\%d).sql.gz && find /backups -name "myapp-*.sql.gz" -mtime +7 -delete`}</pre>
-                </div>
+                <CodeBlock filename="crontab" code={`# Daily DB backup at 3 AM, keep last 7 days
+0 3 * * * cd /opt/myapp && docker compose -f docker-compose.prod.yml exec -T postgres pg_dump -U grit myapp | gzip > /backups/myapp-$(date +\\%Y\\%m\\%d).sql.gz && find /backups -name "myapp-*.sql.gz" -mtime +7 -delete`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3">
                   Managed database backups

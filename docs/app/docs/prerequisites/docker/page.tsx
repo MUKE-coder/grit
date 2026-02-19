@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
+import { CodeBlock } from '@/components/code-block'
 
 /* ------------------------------------------------------------------ */
 /*  Code strings defined outside JSX to avoid curly-brace parsing     */
@@ -242,39 +243,25 @@ export default function DockerForGritPage() {
               <p className="text-sm font-semibold mb-2 text-foreground/80">
                 Linux (Ubuntu/Debian)
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">terminal</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`# Install Docker Engine
+              <CodeBlock language="bash" code={`# Install Docker Engine
 $ curl -fsSL https://get.docker.com | sh
 
 # Add your user to the docker group (avoids needing sudo)
 $ sudo usermod -aG docker $USER
 
 # Log out and back in, then verify
-$ docker --version`}
-                </pre>
-              </div>
+$ docker --version`} />
             </div>
 
             <div className="mb-6">
               <p className="text-sm font-semibold mb-2 text-foreground/80">
                 Verify your installation
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">terminal</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`$ docker --version
+              <CodeBlock language="bash" code={`$ docker --version
 Docker version 27.x.x, build abcdef0
 
 $ docker compose version
-Docker Compose version v2.x.x`}
-                </pre>
-              </div>
+Docker Compose version v2.x.x`} />
             </div>
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
@@ -305,14 +292,7 @@ Docker Compose version v2.x.x`}
               </p>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">terminal</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{dockerRunExample}
-              </pre>
-            </div>
+            <CodeBlock language="bash" code={dockerRunExample} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -350,14 +330,7 @@ Docker Compose version v2.x.x`}
               </p>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/Dockerfile</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{dockerfileExample}
-              </pre>
-            </div>
+            <CodeBlock filename="apps/api/Dockerfile" code={dockerfileExample} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -388,14 +361,7 @@ Docker Compose version v2.x.x`}
               </p>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">docker-compose.yml (simplified example)</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{simpleComposeExample}
-              </pre>
-            </div>
+            <CodeBlock language="yaml" filename="docker-compose.yml (simplified example)" code={simpleComposeExample} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -444,14 +410,7 @@ Docker Compose version v2.x.x`}
               ))}
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">docker-compose.yml (generated by grit new)</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{gritComposeExample}
-              </pre>
-            </div>
+            <CodeBlock language="yaml" filename="docker-compose.yml (generated by grit new)" code={gritComposeExample} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -502,21 +461,14 @@ Docker Compose version v2.x.x`}
               </table>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">terminal</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`# Start your infrastructure
+            <CodeBlock language="bash" code={`# Start your infrastructure
 $ docker compose up -d
 
 # Check that everything is running
 $ docker compose ps
 
 # When you're done for the day
-$ docker compose down`}
-              </pre>
-            </div>
+$ docker compose down`} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -545,14 +497,7 @@ $ docker compose down`}
               </p>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">docker-compose.yml (volumes section)</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{volumeExample}
-              </pre>
-            </div>
+            <CodeBlock language="yaml" filename="docker-compose.yml (volumes section)" code={volumeExample} />
 
             <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-6">
               <table className="w-full text-sm">
@@ -612,14 +557,7 @@ $ docker compose down`}
               </p>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">port mapping explained</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{portMappingExample}
-              </pre>
-            </div>
+            <CodeBlock filename="port mapping explained" code={portMappingExample} />
 
             <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-6">
               <table className="w-full text-sm">
@@ -729,12 +667,7 @@ $ docker compose down`}
               ))}
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">terminal &mdash; common troubleshooting commands</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`# View logs for a specific service
+            <CodeBlock filename="terminal &mdash; common troubleshooting commands" code={`# View logs for a specific service
 $ docker compose logs postgres
 
 # Follow logs in real-time
@@ -747,9 +680,7 @@ $ lsof -i :5432
 $ docker system prune
 
 # Nuclear option: remove everything and start fresh
-$ docker compose down -v && docker compose up -d`}
-              </pre>
-            </div>
+$ docker compose down -v && docker compose up -d`} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>

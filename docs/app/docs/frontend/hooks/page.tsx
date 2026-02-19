@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function HooksPage() {
   return (
@@ -89,11 +90,7 @@ export default function HooksPage() {
                   result with the paginated data and metadata (total, page, pages).
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">hooks/use-posts.ts (list hook)</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`interface UsePostsParams {
+                <CodeBlock filename="hooks/use-posts.ts (list hook)" code={`interface UsePostsParams {
   page?: number;
   pageSize?: number;
   search?: string;
@@ -124,8 +121,7 @@ export function usePosts({
       return data;
     },
   });
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* useGetById Hook */}
@@ -139,11 +135,7 @@ export function usePosts({
                   precise cache targeting.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">hooks/use-posts.ts (getById hook)</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`export function useGetPost(id: number) {
+                <CodeBlock filename="hooks/use-posts.ts (getById hook)" code={`export function useGetPost(id: number) {
   return useQuery<Post>({
     queryKey: ["posts", id],
     queryFn: async () => {
@@ -152,8 +144,7 @@ export function usePosts({
     },
     enabled: !!id,
   });
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Mutation Hooks */}
@@ -167,11 +158,7 @@ export function usePosts({
                   to refetch fresh data from the server.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">hooks/use-posts.ts (mutations)</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`export function useCreatePost() {
+                <CodeBlock filename="hooks/use-posts.ts (mutations)" code={`export function useCreatePost() {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -213,8 +200,7 @@ export function useDeletePost() {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
     },
   });
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Query Key Patterns */}
@@ -272,19 +258,14 @@ export function useDeletePost() {
                   reflects the latest server state without manual refetching.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">invalidation-flow.txt</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`User clicks "Delete" on row
+                <CodeBlock filename="invalidation-flow.txt" code={`User clicks "Delete" on row
   -> useDeletePost.mutate(42)
     -> DELETE /api/posts/42
       -> 200 OK
         -> onSuccess fires
           -> queryClient.invalidateQueries(["posts"])
             -> usePosts() refetches from server
-              -> Table re-renders with updated data`}</pre>
-                </div>
+              -> Table re-renders with updated data`} />
               </div>
 
               {/* Pagination + Search */}
@@ -298,11 +279,7 @@ export function useDeletePost() {
                   is instant on revisit.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">example-usage.tsx</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Fetch page 2 with 10 items, search for "react", sort by title
+                <CodeBlock language="tsx" filename="example-usage.tsx" code={`// Fetch page 2 with 10 items, search for "react", sort by title
 const { data, isLoading, error } = usePosts({
   page: 2,
   pageSize: 10,
@@ -315,8 +292,7 @@ const { data, isLoading, error } = usePosts({
 console.log(data?.data);          // Post[]
 console.log(data?.meta.total);    // 42
 console.log(data?.meta.pages);    // 5
-console.log(data?.meta.page);     // 2`}</pre>
-                </div>
+console.log(data?.meta.page);     // 2`} />
               </div>
 
               {/* Full Component Example */}
@@ -329,11 +305,7 @@ console.log(data?.meta.page);     // 2`}</pre>
                   including search, pagination, and delete functionality.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">app/(dashboard)/posts/page.tsx</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`"use client";
+                <CodeBlock language="tsx" filename="app/(dashboard)/posts/page.tsx" code={`"use client";
 
 import { useState } from "react";
 import { usePosts, useDeletePost } from "@/hooks/use-posts";
@@ -434,8 +406,7 @@ export default function PostsPage() {
       </div>
     </div>
   );
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Custom Hooks */}
@@ -450,11 +421,7 @@ export default function PostsPage() {
                   to ensure JWT tokens are automatically injected.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">hooks/use-post-stats.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { useQuery } from "@tanstack/react-query";
+                <CodeBlock language="typescript" filename="hooks/use-post-stats.ts" code={`import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 
 interface PostStats {
@@ -491,8 +458,7 @@ export function useBulkPublish() {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
     },
   });
-}`}</pre>
-                </div>
+}`} />
 
                 <div className="p-4 rounded-lg border border-primary/20 bg-primary/5">
                   <p className="text-sm text-foreground/80">

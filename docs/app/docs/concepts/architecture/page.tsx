@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function ArchitecturePage() {
   return (
@@ -37,11 +38,7 @@ export default function ArchitecturePage() {
                   alongside the Next.js frontends and a shared TypeScript package. This structure allows
                   all apps to share validation schemas, types, and constants from a single source of truth.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">project structure</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`myapp/
+                <CodeBlock language="bash" filename="project structure" code={`myapp/
 \u251c\u2500\u2500 apps/
 \u2502   \u251c\u2500\u2500 api/                  # Go backend (Gin + GORM)
 \u2502   \u251c\u2500\u2500 web/                  # Next.js main frontend
@@ -51,8 +48,7 @@ export default function ArchitecturePage() {
 \u251c\u2500\u2500 docker-compose.yml        # PostgreSQL, Redis, MinIO, Mailhog
 \u251c\u2500\u2500 turbo.json                # Monorepo task orchestration
 \u251c\u2500\u2500 pnpm-workspace.yaml       # Workspace definition
-\u2514\u2500\u2500 .env                      # Environment variables`}</pre>
-                </div>
+\u2514\u2500\u2500 .env                      # Environment variables`} />
                 <p className="text-sm text-muted-foreground/60 mt-3">
                   Turborepo handles parallel builds and caching across apps. The <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">pnpm-workspace.yaml</code> file
                   links the frontend apps to the shared package, so importing <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">@shared/schemas</code> works
@@ -70,9 +66,7 @@ export default function ArchitecturePage() {
                   Next.js frontends, which talk to the Go API over REST. The Go API manages the
                   database, cache, file storage, job queue, and email.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden p-6">
-                  <pre className="text-sm font-mono text-foreground/70 overflow-x-auto leading-relaxed">{`
-\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+                <CodeBlock language="bash" filename="architecture" code={`\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
 \u2502                       BROWSER                          \u2502
 \u2502  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510   \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510   \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510  \u2502
 \u2502  \u2502  Web App    \u2502   \u2502 Admin Panel \u2502   \u2502 GORM Studio \u2502  \u2502
@@ -96,8 +90,7 @@ export default function ArchitecturePage() {
 \u250c\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2510  \u250c\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2510  \u250c\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2510  \u250c\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2510  \u250c\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2510
 \u2502PostgreSQL\u2502  \u2502  Redis   \u2502  \u2502 MinIO \u2502  \u2502 Resend \u2502  \u2502  Jobs  \u2502
 \u2502  :5432   \u2502  \u2502  :6379  \u2502  \u2502  :9000\u2502  \u2502  API  \u2502  \u2502 (asynq)\u2502
-\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`}</pre>
-                </div>
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`} />
               </div>
 
               {/* Go API Layer */}
@@ -111,11 +104,7 @@ export default function ArchitecturePage() {
                   and services interact with the database through GORM models.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/ structure</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`apps/api/
+                <CodeBlock language="bash" filename="apps/api/ structure" code={`apps/api/
 \u251c\u2500\u2500 cmd/server/main.go          # Entry point: loads config, connects DB,
 \u2502                              # registers routes, starts Gin server
 \u2514\u2500\u2500 internal/
@@ -131,8 +120,7 @@ export default function ArchitecturePage() {
     \u251c\u2500\u2500 jobs/                   # Background job queue (asynq + Redis)
     \u251c\u2500\u2500 cron/                   # Cron scheduler (asynq scheduler)
     \u251c\u2500\u2500 cache/                  # Redis caching layer
-    \u2514\u2500\u2500 ai/                     # AI provider abstraction (Claude, OpenAI)`}</pre>
-                </div>
+    \u2514\u2500\u2500 ai/                     # AI provider abstraction (Claude, OpenAI)`} />
 
                 <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
                   Handler / Service Separation
@@ -142,11 +130,7 @@ export default function ArchitecturePage() {
                   a JSON response. All business logic, database queries, and validation live in
                   the service layer. This separation makes code testable and reusable.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/handlers/post.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Handler: thin HTTP layer
+                <CodeBlock language="go" filename="internal/handlers/post.go" code={`// Handler: thin HTTP layer
 func (h *PostHandler) List(c *gin.Context) {
     page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
     search := c.Query("search")
@@ -162,14 +146,9 @@ func (h *PostHandler) List(c *gin.Context) {
         "data": items,
         "meta": gin.H{"total": total, "page": page, "pages": pages},
     })
-}`}</pre>
-                </div>
+}`} />
 
-                <div className="mt-4 rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/services/post.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Service: business logic + database queries
+                <CodeBlock language="go" filename="internal/services/post.go" className="mt-4 mb-6" code={`// Service: business logic + database queries
 func (s *PostService) List(params PostListParams) ([]models.Post, int64, int, error) {
     query := s.DB.Model(&models.Post{})
 
@@ -188,8 +167,7 @@ func (s *PostService) List(params PostListParams) ([]models.Post, int64, int, er
 
     pages := int(math.Ceil(float64(total) / float64(params.PageSize)))
     return items, total, pages, nil
-}`}</pre>
-                </div>
+}`} />
 
                 <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
                   Middleware Stack
@@ -325,11 +303,7 @@ func (s *PostService) List(params PostListParams) ([]models.Post, int64, int, er
                   fetch or Axios directly. This ensures consistent caching, background refetching,
                   loading states, and cache invalidation on mutations.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">hooks/use-posts.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Generated React Query hook
+                <CodeBlock language="tsx" filename="hooks/use-posts.ts" code={`// Generated React Query hook
 export function usePosts({ page, search, sortBy, sortOrder } = {}) {
   return useQuery<PostsResponse>({
     queryKey: ["posts", { page, search, sortBy, sortOrder }],
@@ -348,8 +322,7 @@ export function useCreatePost() {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
     },
   });
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Shared Package */}
@@ -441,17 +414,12 @@ export function useCreatePost() {
                   gives you a web UI to browse, query, and inspect your database tables. All
                   registered GORM models appear automatically.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/routes/routes.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// GORM Studio is mounted with all registered models
+                <CodeBlock language="go" filename="internal/routes/routes.go" code={`// GORM Studio is mounted with all registered models
 studio.Mount(router, db, []interface{}{
     &models.User{},
     &models.Post{},  // auto-injected by grit generate
     /* grit:studio */
-}, studio.Config{Prefix: "/studio"})`}</pre>
-                </div>
+}, studio.Config{Prefix: "/studio"})`} />
                 <p className="text-sm text-muted-foreground/60 mt-3">
                   When you generate a new resource, the CLI automatically injects the model into
                   the GORM Studio mount call using the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/* grit:studio */</code> marker.
@@ -468,20 +436,11 @@ studio.Mount(router, db, []interface{}{
                   allows React Query hooks and error handlers to work generically across every resource.
                 </p>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                      <span className="text-[11px] font-mono text-muted-foreground/40">success (single item)</span>
-                    </div>
-                    <pre className="p-4 text-xs font-mono text-foreground/80 overflow-x-auto">{`{
+                  <CodeBlock language="json" filename="success (single item)" code={`{
   "data": { ... },
   "message": "Post created"
-}`}</pre>
-                  </div>
-                  <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                      <span className="text-[11px] font-mono text-muted-foreground/40">success (paginated list)</span>
-                    </div>
-                    <pre className="p-4 text-xs font-mono text-foreground/80 overflow-x-auto">{`{
+}`} />
+                  <CodeBlock language="json" filename="success (paginated list)" code={`{
   "data": [ ... ],
   "meta": {
     "total": 100,
@@ -489,19 +448,15 @@ studio.Mount(router, db, []interface{}{
     "page_size": 20,
     "pages": 5
   }
-}`}</pre>
-                  </div>
-                  <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden sm:col-span-2">
-                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                      <span className="text-[11px] font-mono text-muted-foreground/40">error</span>
-                    </div>
-                    <pre className="p-4 text-xs font-mono text-foreground/80 overflow-x-auto">{`{
+}`} />
+                  <div className="sm:col-span-2">
+                    <CodeBlock language="json" filename="error" code={`{
   "error": {
     "code": "VALIDATION_ERROR",
     "message": "Title is required",
     "details": { "title": "This field is required" }
   }
-}`}</pre>
+}`} />
                   </div>
                 </div>
               </div>

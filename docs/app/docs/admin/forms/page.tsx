@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function FormBuilderPage() {
   return (
@@ -54,11 +55,7 @@ export default function FormBuilderPage() {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Form view modes</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Modal (default) — opens over the data table
+              <CodeBlock filename="Form view modes" code={`// Modal (default) — opens over the data table
 export default defineResource({
   name: 'Post',
   // formView: 'modal'  (this is the default, no need to specify)
@@ -70,8 +67,7 @@ export default defineResource({
   name: 'Invoice',
   formView: 'page',
   ...
-})`}</pre>
-              </div>
+})`} />
             </div>
 
             <div className="prose-grit">
@@ -90,18 +86,13 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Text field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Text field" code={`{
   key: 'title',
   label: 'Title',
   type: 'text',
   required: true,
   placeholder: 'Enter post title',
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -114,18 +105,13 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Textarea field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Textarea field" code={`{
   key: 'description',
   label: 'Description',
   type: 'textarea',
   rows: 6,
   placeholder: 'Describe the product...',
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -138,11 +124,7 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Number field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Number field" code={`{
   key: 'price',
   label: 'Price',
   type: 'number',
@@ -150,8 +132,7 @@ export default defineResource({
   max: 99999,
   step: 0.01,
   placeholder: '0.00',
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -164,11 +145,7 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Select field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Simple string options
+              <CodeBlock filename="Select field" code={`// Simple string options
 {
   key: 'status',
   label: 'Status',
@@ -188,8 +165,7 @@ export default defineResource({
     { label: 'High',     value: 'high' },
     { label: 'Critical', value: 'critical' },
   ],
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -203,17 +179,12 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Date field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Date field" code={`{
   key: 'due_date',
   label: 'Due Date',
   type: 'date',
   required: true,
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -225,17 +196,12 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Toggle field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Toggle field" code={`{
   key: 'featured',
   label: 'Featured Post',
   type: 'toggle',
   default: false,
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -248,17 +214,12 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Checkbox field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Checkbox field" code={`{
   key: 'active',
   label: 'Active',
   type: 'checkbox',
   default: true,
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -271,11 +232,7 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Radio field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Radio field" code={`{
   key: 'visibility',
   label: 'Visibility',
   type: 'radio',
@@ -285,8 +242,7 @@ export default defineResource({
     { label: 'Unlisted', value: 'unlisted' },
   ],
   default: 'public',
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -299,16 +255,11 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Image field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Image field" code={`{
   key: 'avatar',
   label: 'Avatar',
   type: 'image',
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -321,17 +272,12 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Images field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Images field" code={`{
   key: 'gallery',
   label: 'Product Gallery',
   type: 'images',
   max: 8,
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -343,16 +289,11 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Video field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Video field" code={`{
   key: 'intro_video',
   label: 'Intro Video',
   type: 'video',
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -364,17 +305,12 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Videos field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Videos field" code={`{
   key: 'media',
   label: 'Course Videos',
   type: 'videos',
   max: 10,
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -387,16 +323,11 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">File field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="File field" code={`{
   key: 'resume',
   label: 'Resume (PDF)',
   type: 'file',
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -408,17 +339,12 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Files field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Files field" code={`{
   key: 'attachments',
   label: 'Attachments',
   type: 'files',
   max: 5,
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -442,18 +368,13 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">default variant (this is the default, no need to specify)</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="default variant (this is the default, no need to specify)" code={`{
   key: 'gallery',
   label: 'Product Gallery',
   type: 'images',
   max: 8,
   // variant: 'default'  (implied)
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -466,17 +387,12 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">compact variant</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="compact variant" code={`{
   key: 'document',
   label: 'Document',
   type: 'file',
   variant: 'compact',
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -489,17 +405,12 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">minimal variant</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="minimal variant" code={`{
   key: 'receipt',
   label: 'Receipt',
   type: 'file',
   variant: 'minimal',
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -512,17 +423,12 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">avatar variant</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="avatar variant" code={`{
   key: 'avatar',
   label: 'Profile Picture',
   type: 'image',
   variant: 'avatar',
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -535,17 +441,12 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">inline variant</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="inline variant" code={`{
   key: 'thumbnail',
   label: 'Thumbnail',
   type: 'image',
   variant: 'inline',
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -556,11 +457,7 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Mixing upload variants in a form</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`form: {
+              <CodeBlock filename="Mixing upload variants in a form" code={`form: {
   layout: 'two-column',
   fields: [
     { key: 'name', label: 'Name', type: 'text',
@@ -582,8 +479,7 @@ export default defineResource({
     { key: 'resume', label: 'Resume', type: 'file',
       variant: 'inline', span: 'half' },
   ],
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -619,11 +515,7 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Rich text field in a resource definition</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`form: {
+              <CodeBlock filename="Rich text field in a resource definition" code={`form: {
   layout: 'two-column',
   fields: [
     { key: 'title', label: 'Title', type: 'text',
@@ -639,8 +531,7 @@ export default defineResource({
     { key: 'content', label: 'Content', type: 'richtext',
       span: 'full' },
   ],
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -654,18 +545,13 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Generating a resource with a richtext field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# CLI field syntax
+              <CodeBlock filename="Generating a resource with a richtext field" code={`# CLI field syntax
 grit generate resource Article title:string content:richtext status:select
 
 # The generator produces:
 # - Go model:  Content string \`gorm:"type:text" json:"content"\`
 # - Zod schema: content: z.string().optional()
-# - Form field: { key: 'content', label: 'Content', type: 'richtext' }`}</pre>
-              </div>
+# - Form field: { key: 'content', label: 'Content', type: 'richtext' }`} />
             </div>
 
             <div className="prose-grit">
@@ -679,18 +565,13 @@ grit generate resource Article title:string content:richtext status:select
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">DataTable column for richtext fields</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// In the resource column definition:
+              <CodeBlock filename="DataTable column for richtext fields" code={`// In the resource column definition:
 {
   key: 'content',
   label: 'Content',
   format: 'richtext',   // strips HTML, truncates to ~80 chars
   sortable: false,
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -709,19 +590,14 @@ grit generate resource Article title:string content:richtext status:select
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Relationship select field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Relationship select field" code={`{
   key: 'category_id',
   label: 'Category',
   type: 'relationship-select',
   required: true,
   relatedEndpoint: '/api/categories',
   displayField: 'name',
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -742,19 +618,14 @@ grit generate resource Article title:string content:richtext status:select
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Multi relationship select field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Multi relationship select field" code={`{
   key: 'tag_ids',
   label: 'Tags',
   type: 'multi-relationship-select',
   relatedEndpoint: '/api/tags',
   displayField: 'name',
   relationshipKey: 'tags',
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -788,11 +659,7 @@ grit generate resource Article title:string content:richtext status:select
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">packages/shared/schemas/post.ts</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { z } from 'zod'
+              <CodeBlock language="typescript" filename="packages/shared/schemas/post.ts" code={`import { z } from 'zod'
 
 export const CreatePostSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
@@ -805,8 +672,7 @@ export const CreatePostSchema = z.object({
 export const UpdatePostSchema = CreatePostSchema.partial()
 
 export type CreatePostInput = z.infer<typeof CreatePostSchema>
-export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`}</pre>
-              </div>
+export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`} />
             </div>
 
             <div className="prose-grit">
@@ -821,11 +687,7 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`}</pre>
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">API 422 response</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock language="json" filename="API 422 response" code={`{
   "error": {
     "code": "VALIDATION_ERROR",
     "message": "Validation failed",
@@ -834,8 +696,7 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`}</pre>
       "slug": "This slug is already taken"
     }
   }
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -863,11 +724,7 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`}</pre>
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Two-column layout example</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`form: {
+              <CodeBlock filename="Two-column layout example" code={`form: {
   layout: 'two-column',
   fields: [
     // Full width — spans both columns
@@ -888,8 +745,7 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`}</pre>
     { key: 'published_at', label: 'Publish Date', type: 'date' },
     { key: 'featured', label: 'Featured', type: 'toggle' },
   ],
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -920,11 +776,7 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`}</pre>
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Default values</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`fields: [
+              <CodeBlock filename="Default values" code={`fields: [
   { key: 'status', label: 'Status', type: 'select',
     options: ['draft', 'published'], default: 'draft' },
   { key: 'priority', label: 'Priority', type: 'number',
@@ -933,8 +785,7 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`}</pre>
     default: true },
   { key: 'visibility', label: 'Visibility', type: 'radio',
     options: ['public', 'private'], default: 'public' },
-]`}</pre>
-              </div>
+]`} />
             </div>
 
             <div className="prose-grit">
@@ -947,11 +798,7 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`}</pre>
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/admin/resources/invoices.ts (form section)</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`form: {
+              <CodeBlock filename="apps/admin/resources/invoices.ts (form section)" code={`form: {
   layout: 'two-column',
   validation: 'InvoiceSchema',   // References packages/shared/schemas
   fields: [
@@ -983,8 +830,7 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`}</pre>
     { key: 'attachments', label: 'Attachments', type: 'file',
       multiple: true, span: 'full' },
   ],
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             {/* Auto-Generated Fields */}
@@ -999,16 +845,11 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`}</pre>
             </div>
 
             <div className="mt-4 mb-4">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Generating a resource with a slug field</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# Slug auto-detects source (first string field = "name")
+              <CodeBlock filename="Generating a resource with a slug field" code={`# Slug auto-detects source (first string field = "name")
 grit generate resource Category name:string slug:slug description:text
 
 # Explicit source field
-grit generate resource Article title:string slug:slug:title content:text`}</pre>
-              </div>
+grit generate resource Article title:string slug:slug:title content:text`} />
             </div>
 
             <div className="prose-grit">
@@ -1018,11 +859,7 @@ grit generate resource Article title:string slug:slug:title content:text`}</pre>
             </div>
 
             <div className="mt-4 mb-4">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Generated Go model with BeforeCreate hook</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type Category struct {
+              <CodeBlock filename="Generated Go model with BeforeCreate hook" code={`type Category struct {
     ID          uint           \`gorm:"primarykey" json:"id"\`
     Name        string         \`gorm:"size:255" json:"name"\`
     Slug        string         \`gorm:"size:255;uniqueIndex" json:"slug"\`
@@ -1037,8 +874,7 @@ func (m *Category) BeforeCreate(tx *gorm.DB) error {
         m.Slug = slugify(m.Name) // "Electronics" → "electronics-a8f3x2k9"
     }
     return nil
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit mb-8">

@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function TypeSystemPage() {
   return (
@@ -80,11 +81,7 @@ export default function TypeSystemPage() {
                   Everything starts with a Go struct. GORM tags define the database schema. JSON
                   tags define the API serialization. Binding tags define server-side validation.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/post.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type Post struct {
+                <CodeBlock filename="apps/api/internal/models/post.go" code={`type Post struct {
     ID        uint           \`gorm:"primarykey" json:"id"\`
     Title     string         \`gorm:"size:255" json:"title" binding:"required"\`
     Content   string         \`gorm:"type:text" json:"content"\`
@@ -95,8 +92,7 @@ export default function TypeSystemPage() {
     CreatedAt time.Time      \`json:"created_at"\`
     UpdatedAt time.Time      \`json:"updated_at"\`
     DeletedAt gorm.DeletedAt \`gorm:"index" json:"-"\`
-}`}</pre>
-                </div>
+}`} />
 
                 <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
                   2. GORM to PostgreSQL
@@ -105,11 +101,7 @@ export default function TypeSystemPage() {
                   GORM reads the struct tags and auto-migrates the database. This happens
                   automatically when the API starts. No manual SQL or migration files needed.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">resulting PostgreSQL table</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`CREATE TABLE posts (
+                <CodeBlock filename="resulting PostgreSQL table" code={`CREATE TABLE posts (
     id          BIGSERIAL PRIMARY KEY,
     title       VARCHAR(255) NOT NULL,
     content     TEXT,
@@ -121,8 +113,7 @@ export default function TypeSystemPage() {
     updated_at  TIMESTAMPTZ,
     deleted_at  TIMESTAMPTZ
 );
-CREATE INDEX idx_posts_deleted_at ON posts(deleted_at);`}</pre>
-                </div>
+CREATE INDEX idx_posts_deleted_at ON posts(deleted_at);`} />
 
                 <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
                   3. JSON Serialization
@@ -132,11 +123,7 @@ CREATE INDEX idx_posts_deleted_at ON posts(deleted_at);`}</pre>
                   The <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">json:&quot;-&quot;</code> tag
                   on DeletedAt hides it from API responses entirely.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">API response JSON</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+                <CodeBlock language="json" filename="API response JSON" code={`{
   "data": {
     "id": 1,
     "title": "Hello World",
@@ -148,8 +135,7 @@ CREATE INDEX idx_posts_deleted_at ON posts(deleted_at);`}</pre>
     "created_at": "2026-01-10T08:30:00Z",
     "updated_at": "2026-01-10T08:30:00Z"
   }
-}`}</pre>
-                </div>
+}`} />
 
                 <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
                   4. TypeScript Interface
@@ -159,11 +145,7 @@ CREATE INDEX idx_posts_deleted_at ON posts(deleted_at);`}</pre>
                   parses the Go struct using Go&apos;s AST parser and generates a matching TypeScript
                   interface. Each Go type maps to a specific TypeScript type.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">packages/shared/types/post.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`export interface Post {
+                <CodeBlock language="typescript" filename="packages/shared/types/post.ts" code={`export interface Post {
   id: number;
   title: string;
   content: string;
@@ -173,8 +155,7 @@ CREATE INDEX idx_posts_deleted_at ON posts(deleted_at);`}</pre>
   publish_at: string | null;
   created_at: string;
   updated_at: string;
-}`}</pre>
-                </div>
+}`} />
 
                 <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
                   5. Zod Schema
@@ -184,11 +165,7 @@ CREATE INDEX idx_posts_deleted_at ON posts(deleted_at);`}</pre>
                   separate Create and Update schemas. The Update schema makes all fields optional
                   for partial updates.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">packages/shared/schemas/post.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { z } from "zod";
+                <CodeBlock language="typescript" filename="packages/shared/schemas/post.ts" code={`import { z } from "zod";
 
 export const CreatePostSchema = z.object({
   title: z.string().min(1, "Required"),
@@ -209,8 +186,7 @@ export const UpdatePostSchema = z.object({
 });
 
 export type CreatePostInput = z.infer<typeof CreatePostSchema>;
-export type UpdatePostInput = z.infer<typeof UpdatePostSchema>;`}</pre>
-                </div>
+export type UpdatePostInput = z.infer<typeof UpdatePostSchema>;`} />
 
                 <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
                   6. React Components
@@ -220,11 +196,7 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>;`}</pre>
                   Forms use the Zod schema for validation. The types flow through the entire
                   component tree without any manual type assertions.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">using the types in a component</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { usePosts, useCreatePost } from "@/hooks/use-posts";
+                <CodeBlock filename="using the types in a component" code={`import { usePosts, useCreatePost } from "@/hooks/use-posts";
 import { CreatePostSchema, type CreatePostInput } from "@shared/schemas";
 
 function PostList() {
@@ -249,8 +221,7 @@ function CreatePostForm() {
     const validated = CreatePostSchema.parse(input);
     createPost.mutate(validated);
   };
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Type Mapping Table */}
@@ -340,11 +311,7 @@ function CreatePostForm() {
                   and validation logic.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">shared package structure</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`packages/shared/
+                <CodeBlock filename="shared package structure" code={`packages/shared/
 \u251c\u2500\u2500 schemas/
 \u2502   \u251c\u2500\u2500 index.ts            # Re-exports all schemas
 \u2502   \u251c\u2500\u2500 user.ts             # Hand-written (not overwritten by sync)
@@ -357,21 +324,15 @@ function CreatePostForm() {
 \u2502   \u251c\u2500\u2500 post.ts             # Auto-generated: Post interface
 \u2502   \u2514\u2500\u2500 invoice.ts          # Auto-generated
 \u2514\u2500\u2500 constants/
-    \u2514\u2500\u2500 index.ts            # API_ROUTES, ROLES, APP_CONFIG`}</pre>
-                </div>
+    \u2514\u2500\u2500 index.ts            # API_ROUTES, ROLES, APP_CONFIG`} />
 
                 <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
                   The index files use barrel exports so the frontends can import cleanly:
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">importing from shared</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// In apps/web or apps/admin
+                <CodeBlock filename="importing from shared" code={`// In apps/web or apps/admin
 import { CreatePostSchema, type CreatePostInput } from "@shared/schemas";
 import type { Post } from "@shared/types";
-import { API_ROUTES, ROLES } from "@shared/constants";`}</pre>
-                </div>
+import { API_ROUTES, ROLES } from "@shared/constants";`} />
               </div>
 
               {/* grit sync */}
@@ -406,16 +367,7 @@ import { API_ROUTES, ROLES } from "@shared/constants";`}</pre>
                   ))}
                 </ol>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`$ grit sync
+                <CodeBlock language="bash" code={`$ grit sync
 
   Syncing Go types \u2192 TypeScript...
 
@@ -424,8 +376,7 @@ import { API_ROUTES, ROLES } from "@shared/constants";`}</pre>
   \u2713 packages/shared/types/invoice.ts
   \u2713 packages/shared/schemas/invoice.ts
 
-  \u2705 Synced 2 model(s) to TypeScript + Zod`}</pre>
-                </div>
+  \u2705 Synced 2 model(s) to TypeScript + Zod`} />
               </div>
 
               {/* Auto-Skipped Fields */}

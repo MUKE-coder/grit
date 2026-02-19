@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function DatabasePage() {
   return (
@@ -60,12 +61,7 @@ export default function DatabasePage() {
                   The database connection is configured via the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">DATABASE_URL</code> environment
                   variable in your <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.env</code> file. The format follows the standard PostgreSQL connection string:
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">.env</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`DATABASE_URL=postgres://grit:grit@localhost:5432/myapp?sslmode=disable`}</pre>
-                </div>
+                <CodeBlock language="bash" filename=".env" code={`DATABASE_URL=postgres://grit:grit@localhost:5432/myapp?sslmode=disable`} />
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   The URL format breakdown:
                 </p>
@@ -119,11 +115,7 @@ export default function DatabasePage() {
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">apps/api/internal/database/database.go</code>.
                   It opens a GORM connection with PostgreSQL and configures connection pooling:
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/database/database.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package database
+                <CodeBlock filename="apps/api/internal/database/database.go" code={`package database
 
 import (
     "fmt"
@@ -154,8 +146,7 @@ func Connect(dsn string) (*gorm.DB, error) {
 
     log.Println("Database connected successfully")
     return db, nil
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Connection Pooling */}
@@ -240,11 +231,7 @@ func Connect(dsn string) (*gorm.DB, error) {
                   Each model is a Go struct with GORM tags that define the database schema. Here is the
                   User model that ships with every Grit project:
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/user.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/user.go" code={`package models
 
 import (
     "time"
@@ -285,8 +272,7 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
         u.Password = string(hashedPassword)
     }
     return nil
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Struct Tags */}
@@ -339,11 +325,7 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
                 </p>
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">Create</h3>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">Create a record</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`user := models.User{
+                <CodeBlock filename="Create a record" code={`user := models.User{
     Name:  "John Doe",
     Email: "john@example.com",
     Password: "secret123",
@@ -353,15 +335,10 @@ result := db.Create(&user)
 if result.Error != nil {
     return fmt.Errorf("creating user: %w", result.Error)
 }
-// user.ID is now populated`}</pre>
-                </div>
+// user.ID is now populated`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">Find (Single Record)</h3>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">Find by ID or condition</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Find by primary key
+                <CodeBlock filename="Find by ID or condition" code={`// Find by primary key
 var user models.User
 db.First(&user, 1) // SELECT * FROM users WHERE id = 1
 
@@ -371,15 +348,10 @@ db.Where("email = ?", "john@example.com").First(&user)
 // Check if record exists
 if errors.Is(result.Error, gorm.ErrRecordNotFound) {
     // User not found
-}`}</pre>
-                </div>
+}`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">Find (Multiple Records)</h3>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">Query lists with pagination</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`var users []models.User
+                <CodeBlock filename="Query lists with pagination" code={`var users []models.User
 
 // All records
 db.Find(&users)
@@ -392,15 +364,10 @@ db.Offset(0).Limit(20).Order("created_at DESC").Find(&users)
 
 // Count total for pagination
 var count int64
-db.Model(&models.User{}).Where("active = ?", true).Count(&count)`}</pre>
-                </div>
+db.Model(&models.User{}).Where("active = ?", true).Count(&count)`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">Update</h3>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">Update records</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Update single field
+                <CodeBlock filename="Update records" code={`// Update single field
 db.Model(&user).Update("name", "Jane Doe")
 
 // Update multiple fields
@@ -413,30 +380,20 @@ db.Model(&user).Updates(models.User{
 db.Model(&user).Updates(map[string]interface{}{
     "active": false,
     "name":   "Jane Doe",
-})`}</pre>
-                </div>
+})`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">Delete</h3>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">Delete records</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Soft delete (sets deleted_at, record still in DB)
+                <CodeBlock filename="Delete records" code={`// Soft delete (sets deleted_at, record still in DB)
 db.Delete(&user, 1)
 
 // Hard delete (permanently removes from DB)
 db.Unscoped().Delete(&user, 1)
 
 // Delete by condition
-db.Where("active = ? AND created_at < ?", false, cutoffDate).Delete(&models.User{})`}</pre>
-                </div>
+db.Where("active = ? AND created_at < ?", false, cutoffDate).Delete(&models.User{})`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">Preload (Relationships)</h3>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">Eager-load relationships</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Define a Post model with relationship
+                <CodeBlock filename="Eager-load relationships" code={`// Define a Post model with relationship
 type Post struct {
     ID        uint           \`gorm:"primarykey" json:"id"\`
     Title     string         \`gorm:"size:255;not null" json:"title"\`
@@ -451,8 +408,7 @@ var posts []Post
 db.Preload("User").Find(&posts)
 
 // Nested preload
-db.Preload("User").Preload("Comments").Find(&posts)`}</pre>
-                </div>
+db.Preload("User").Preload("Comments").Find(&posts)`} />
               </div>
 
               {/* Indexing */}
@@ -464,19 +420,14 @@ db.Preload("User").Preload("Comments").Find(&posts)`}</pre>
                   Proper indexing is critical for query performance. GORM creates indexes from struct tags
                   during AutoMigrate:
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">Index examples</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type Product struct {
+                <CodeBlock filename="Index examples" code={`type Product struct {
     ID       uint   \`gorm:"primarykey"\`
     Name     string \`gorm:"size:255;index"\`           // Regular index
     SKU      string \`gorm:"size:100;uniqueIndex"\`     // Unique index
     Category string \`gorm:"size:100;index:idx_cat_price"\` // Composite index
     Price    float64 \`gorm:"index:idx_cat_price"\`     // Same composite index
     DeletedAt gorm.DeletedAt \`gorm:"index"\`           // Soft delete index
-}`}</pre>
-                </div>
+}`} />
                 <p className="text-sm text-muted-foreground/60">
                   Add indexes to columns you frequently filter, sort, or join on. The{' '}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">DeletedAt</code> field
@@ -495,11 +446,7 @@ db.Preload("User").Preload("Comments").Find(&posts)`}</pre>
                   If you want to prototype without Docker or PostgreSQL, GORM supports SQLite as a drop-in
                   replacement. Add the SQLite driver and swap the connection:
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">SQLite connection</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import (
+                <CodeBlock filename="SQLite connection" code={`import (
     "gorm.io/driver/sqlite"
     "gorm.io/gorm"
 )
@@ -514,8 +461,7 @@ func ConnectSQLite(dbPath string) (*gorm.DB, error) {
 
 // Usage:
 // db, err := ConnectSQLite("test.db")     // file-based
-// db, err := ConnectSQLite(":memory:")     // in-memory (tests)`}</pre>
-                </div>
+// db, err := ConnectSQLite(":memory:")     // in-memory (tests)`} />
                 <div className="p-4 rounded-lg border border-yellow-500/20 bg-yellow-500/5">
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     <strong className="text-yellow-500/90">Note:</strong> SQLite is great for prototyping and unit tests,
@@ -542,12 +488,7 @@ func ConnectSQLite(dbPath string) (*gorm.DB, error) {
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Enable or disable it in your <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.env</code>:
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">.env</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`GORM_STUDIO_ENABLED=true`}</pre>
-                </div>
+                <CodeBlock language="bash" filename=".env" code={`GORM_STUDIO_ENABLED=true`} />
                 <p className="text-sm text-muted-foreground/60 mt-3">
                   Access GORM Studio at{' '}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">http://localhost:8080/studio</code>{' '}

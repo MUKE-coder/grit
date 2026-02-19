@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function StoragePage() {
   return (
@@ -83,17 +84,12 @@ export default function StoragePage() {
                   setup, so local development works out of the box.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">.env</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# Storage Configuration
+                <CodeBlock language="bash" filename=".env" code={`# Storage Configuration
 STORAGE_ENDPOINT=http://localhost:9000   # MinIO for local dev
 STORAGE_BUCKET=myapp-uploads
 STORAGE_REGION=us-east-1
 STORAGE_ACCESS_KEY=minioadmin
-STORAGE_SECRET_KEY=minioadmin`}</pre>
-                </div>
+STORAGE_SECRET_KEY=minioadmin`} />
               </div>
 
               {/* Storage Service API */}
@@ -106,11 +102,7 @@ STORAGE_SECRET_KEY=minioadmin`}</pre>
                   provides five core methods.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/storage/storage.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// New creates a Storage instance from config.
+                <CodeBlock language="go" filename="internal/storage/storage.go" code={`// New creates a Storage instance from config.
 // Automatically creates the bucket if it doesn't exist.
 func New(cfg config.StorageConfig) (*Storage, error)
 
@@ -127,16 +119,11 @@ func (s *Storage) Delete(ctx context.Context, key string) error
 func (s *Storage) GetURL(key string) string
 
 // GetSignedURL returns a pre-signed URL valid for the given duration.
-func (s *Storage) GetSignedURL(ctx context.Context, key string, duration time.Duration) (string, error)`}</pre>
-                </div>
+func (s *Storage) GetSignedURL(ctx context.Context, key string, duration time.Duration) (string, error)`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">Usage Example</h3>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">example.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Upload a file
+                <CodeBlock language="go" filename="example.go" code={`// Upload a file
 err := store.Upload(ctx, "uploads/2026/01/avatar.jpg", fileReader, "image/jpeg")
 
 // Get the public URL
@@ -151,8 +138,7 @@ reader, err := store.Download(ctx, "uploads/2026/01/avatar.jpg")
 defer reader.Close()
 
 // Delete a file
-err = store.Delete(ctx, "uploads/2026/01/avatar.jpg")`}</pre>
-                </div>
+err = store.Delete(ctx, "uploads/2026/01/avatar.jpg")`} />
               </div>
 
               {/* Image Processing */}
@@ -166,11 +152,7 @@ err = store.Delete(ctx, "uploads/2026/01/avatar.jpg")`}</pre>
                   the maximum width, and thumbnails can be generated via background jobs.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/storage/image.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`const MaxImageWidth = 1920   // Maximum width for processed images
+                <CodeBlock language="go" filename="internal/storage/image.go" code={`const MaxImageWidth = 1920   // Maximum width for processed images
 const ThumbnailSize = 300    // Size of generated thumbnails
 
 // ProcessImage resizes an image if it exceeds MaxImageWidth.
@@ -183,8 +165,7 @@ func GenerateThumbnail(reader io.Reader, mimeType string) ([]byte, error)
 
 // IsImageMimeType returns true for supported image formats.
 // Supports: image/jpeg, image/png, image/gif
-func IsImageMimeType(mimeType string) bool`}</pre>
-                </div>
+func IsImageMimeType(mimeType string) bool`} />
               </div>
 
               {/* Upload Handler */}
@@ -239,11 +220,7 @@ func IsImageMimeType(mimeType string) bool`}</pre>
                   in <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">internal/handlers/upload.go</code>.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/handlers/upload.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// MaxUploadSize is the maximum file size (50 MB).
+                <CodeBlock language="go" filename="internal/handlers/upload.go" code={`// MaxUploadSize is the maximum file size (50 MB).
 const MaxUploadSize = 50 << 20
 
 var AllowedMimeTypes = map[string]bool{
@@ -260,8 +237,7 @@ var AllowedMimeTypes = map[string]bool{
     "application/json": true,
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": true,
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": true,
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Upload Model */}
@@ -274,11 +250,7 @@ var AllowedMimeTypes = map[string]bool{
                   When a file is deleted, both the database record and the stored file are removed.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/models/upload.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type Upload struct {
+                <CodeBlock language="go" filename="internal/models/upload.go" code={`type Upload struct {
     ID            uint           \`gorm:"primarykey" json:"id"\`
     Filename      string         \`gorm:"size:255;not null" json:"filename"\`
     OriginalName  string         \`gorm:"size:255;not null" json:"original_name"\`
@@ -291,8 +263,7 @@ var AllowedMimeTypes = map[string]bool{
     CreatedAt     time.Time      \`json:"created_at"\`
     UpdatedAt     time.Time      \`json:"updated_at"\`
     DeletedAt     gorm.DeletedAt \`gorm:"index" json:"-"\`
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Upload Flow */}
@@ -305,39 +276,19 @@ var AllowedMimeTypes = map[string]bool{
                   and (for images) enqueues a background job to generate a thumbnail.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">upload-flow.txt</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`POST /api/uploads (multipart/form-data)
+                <CodeBlock language="bash" filename="upload-flow.txt" code={`POST /api/uploads (multipart/form-data)
   1. Validate file size (max 50 MB)
   2. Validate MIME type (AllowedMimeTypes)
   3. Generate unique filename: {timestamp}-{original_name}.{ext}
   4. Upload to S3 at key: uploads/{year}/{month}/{filename}
   5. Save Upload record to database
   6. If image -> enqueue ProcessImage background job
-  7. Return { data: upload, message: "File uploaded successfully" }`}</pre>
-                </div>
+  7. Return { data: upload, message: "File uploaded successfully" }`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">cURL Example</h3>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">curl -X POST http://localhost:8080/api/uploads \</span>
-                    <br />
-                    <span className="text-foreground/80">{'  '}-H &quot;Authorization: Bearer $TOKEN&quot; \</span>
-                    <br />
-                    <span className="text-foreground/80">{'  '}-F &quot;file=@photo.jpg&quot;</span>
-                  </div>
-                </div>
+                <CodeBlock terminal code={`curl -X POST http://localhost:8080/api/uploads \\
+  -H "Authorization: Bearer $TOKEN" \\
+  -F "file=@photo.jpg"`} />
               </div>
 
               {/* Admin File Browser */}

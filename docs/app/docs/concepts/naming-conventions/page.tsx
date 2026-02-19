@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function NamingConventionsPage() {
   return (
@@ -158,11 +159,7 @@ export default function NamingConventionsPage() {
                   PascalCase, snake_case, or kebab-case -- the generator normalizes it to
                   PascalCase first, then derives all other forms.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal naming struct</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type Names struct {
+                <CodeBlock filename="internal naming struct" code={`type Names struct {
     Pascal       string  // BlogPost
     Camel        string  // blogPost
     Snake        string  // blog_post
@@ -172,8 +169,7 @@ export default function NamingConventionsPage() {
     PluralPascal string  // BlogPosts
     PluralSnake  string  // blog_posts
     PluralKebab  string  // blog-posts
-}`}</pre>
-                </div>
+}`} />
 
                 <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
                   Conversion Flow

@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function ResponseFormatPage() {
   return (
@@ -33,11 +34,7 @@ export default function ResponseFormatPage() {
                 <code>data</code> field. An optional <code>message</code> field provides
                 a human-readable description of what happened.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">GET /api/users/1 -- 200 OK</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="GET /api/users/1 -- 200 OK" code={`{
     "data": {
         "id": 1,
         "name": "John Doe",
@@ -49,17 +46,12 @@ export default function ResponseFormatPage() {
         "created_at": "2026-02-11T10:00:00Z",
         "updated_at": "2026-02-11T10:00:00Z"
     }
-}`}</pre>
-              </div>
+}`} />
 
               <p>
                 For create and update operations, include a <code>message</code> field:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">POST /api/posts -- 201 Created</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="POST /api/posts -- 201 Created" code={`{
     "data": {
         "id": 42,
         "title": "Getting Started with Grit",
@@ -71,15 +63,10 @@ export default function ResponseFormatPage() {
         "updated_at": "2026-02-11T14:30:00Z"
     },
     "message": "Post created successfully"
-}`}</pre>
-              </div>
+}`} />
 
               <p>In Go, this looks like:</p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">handler.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Single item with message
+              <CodeBlock filename="handler.go" code={`// Single item with message
 c.JSON(http.StatusCreated, gin.H{
     "data":    post,
     "message": "Post created successfully",
@@ -88,8 +75,7 @@ c.JSON(http.StatusCreated, gin.H{
 // Single item without message
 c.JSON(http.StatusOK, gin.H{
     "data": user,
-})`}</pre>
-              </div>
+})`} />
 
               {/* ── Success (List) ─────────────────────────────── */}
               <h2 id="success-list">Success Response (List with Pagination)</h2>
@@ -97,11 +83,7 @@ c.JSON(http.StatusOK, gin.H{
                 List endpoints return an array of resources in the <code>data</code> field and
                 pagination metadata in the <code>meta</code> field.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">GET /api/users?page=2&page_size=10 -- 200 OK</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="GET /api/users?page=2&page_size=10 -- 200 OK" code={`{
     "data": [
         {
             "id": 11,
@@ -128,8 +110,7 @@ c.JSON(http.StatusOK, gin.H{
         "page_size": 10,
         "pages": 6
     }
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── Pagination Meta ─────────────────────────────── */}
               <h3 id="pagination-meta">Pagination Meta Structure</h3>
@@ -167,11 +148,7 @@ c.JSON(http.StatusOK, gin.H{
                 </table>
               </div>
               <p>In Go:</p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">handler.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`pages := int(math.Ceil(float64(total) / float64(pageSize)))
+              <CodeBlock filename="handler.go" code={`pages := int(math.Ceil(float64(total) / float64(pageSize)))
 
 c.JSON(http.StatusOK, gin.H{
     "data": users,
@@ -181,8 +158,7 @@ c.JSON(http.StatusOK, gin.H{
         "page_size": pageSize,
         "pages":     pages,
     },
-})`}</pre>
-              </div>
+})`} />
 
               {/* ── Error Response ─────────────────────────────── */}
               <h2 id="error-response">Error Response</h2>
@@ -191,11 +167,7 @@ c.JSON(http.StatusOK, gin.H{
                 containing a machine-readable <code>code</code>, a human-readable <code>message</code>,
                 and optional <code>details</code> for field-level validation errors.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">422 Unprocessable Entity</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="422 Unprocessable Entity" code={`{
     "error": {
         "code": "VALIDATION_ERROR",
         "message": "Key: 'Email' Error:Field validation for 'Email' failed on the 'required' tag",
@@ -204,28 +176,18 @@ c.JSON(http.StatusOK, gin.H{
             "password": "Must be at least 8 characters"
         }
     }
-}`}</pre>
-              </div>
+}`} />
 
               <p>Simple error (no field details):</p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">404 Not Found</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="404 Not Found" code={`{
     "error": {
         "code": "NOT_FOUND",
         "message": "User not found"
     }
-}`}</pre>
-              </div>
+}`} />
 
               <p>In Go:</p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">handler.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Simple error
+              <CodeBlock filename="handler.go" code={`// Simple error
 c.JSON(http.StatusNotFound, gin.H{
     "error": gin.H{
         "code":    "NOT_FOUND",
@@ -243,8 +205,7 @@ c.JSON(http.StatusUnprocessableEntity, gin.H{
             "password": "Must be at least 8 characters",
         },
     },
-})`}</pre>
-              </div>
+})`} />
 
               {/* ── Delete / Action Response ─────────────────────────────── */}
               <h2 id="action-response">Action Response (Delete, Logout, etc.)</h2>
@@ -252,14 +213,9 @@ c.JSON(http.StatusUnprocessableEntity, gin.H{
                 For operations that do not return a resource (like delete or logout),
                 return only a <code>message</code> field:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">DELETE /api/users/5 -- 200 OK</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="DELETE /api/users/5 -- 200 OK" code={`{
     "message": "User deleted successfully"
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── HTTP Status Codes ─────────────────────────────── */}
               <h2 id="status-codes">HTTP Status Codes</h2>
@@ -415,11 +371,7 @@ c.JSON(http.StatusUnprocessableEntity, gin.H{
               <h2 id="full-examples">Full JSON Examples</h2>
 
               <h3 id="example-register">Register (Success)</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">POST /api/auth/register -- 201 Created</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="POST /api/auth/register -- 201 Created" code={`{
     "data": {
         "user": {
             "id": 1,
@@ -439,67 +391,42 @@ c.JSON(http.StatusUnprocessableEntity, gin.H{
         }
     },
     "message": "User registered successfully"
-}`}</pre>
-              </div>
+}`} />
 
               <h3 id="example-register-error">Register (Email Taken)</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">POST /api/auth/register -- 409 Conflict</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="POST /api/auth/register -- 409 Conflict" code={`{
     "error": {
         "code": "EMAIL_EXISTS",
         "message": "A user with this email already exists"
     }
-}`}</pre>
-              </div>
+}`} />
 
               <h3 id="example-validation">Validation Error</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">POST /api/posts -- 422 Unprocessable Entity</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="POST /api/posts -- 422 Unprocessable Entity" code={`{
     "error": {
         "code": "VALIDATION_ERROR",
         "message": "Key: 'Title' Error:Field validation for 'Title' failed on the 'required' tag"
     }
-}`}</pre>
-              </div>
+}`} />
 
               <h3 id="example-unauthorized">Unauthorized (Missing Token)</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">GET /api/posts -- 401 Unauthorized</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="GET /api/posts -- 401 Unauthorized" code={`{
     "error": {
         "code": "UNAUTHORIZED",
         "message": "Authorization header is required"
     }
-}`}</pre>
-              </div>
+}`} />
 
               <h3 id="example-forbidden">Forbidden (Insufficient Role)</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">DELETE /api/users/3 -- 403 Forbidden</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="DELETE /api/users/3 -- 403 Forbidden" code={`{
     "error": {
         "code": "FORBIDDEN",
         "message": "You do not have permission to access this resource"
     }
-}`}</pre>
-              </div>
+}`} />
 
               <h3 id="example-list">Paginated List</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">GET /api/users?page=1&page_size=2&search=john -- 200 OK</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="GET /api/users?page=1&page_size=2&search=john -- 200 OK" code={`{
     "data": [
         {
             "id": 1,
@@ -530,21 +457,15 @@ c.JSON(http.StatusUnprocessableEntity, gin.H{
         "page_size": 2,
         "pages": 2
     }
-}`}</pre>
-              </div>
+}`} />
 
               <h3 id="example-server-error">Internal Server Error</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">POST /api/posts -- 500 Internal Server Error</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="POST /api/posts -- 500 Internal Server Error" code={`{
     "error": {
         "code": "INTERNAL_ERROR",
         "message": "Failed to create post"
     }
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── Frontend Consumption ─────────────────────────────── */}
               <h2 id="frontend-consumption">Consuming on the Frontend</h2>
@@ -552,11 +473,7 @@ c.JSON(http.StatusUnprocessableEntity, gin.H{
                 Because the format is consistent, your React Query hooks can use a single
                 error handler and response parser:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/hooks/use-posts.ts</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { useQuery, useMutation } from '@tanstack/react-query';
+              <CodeBlock language="typescript" filename="apps/web/hooks/use-posts.ts" code={`import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '@/lib/api-client';
 
 interface PaginatedResponse<T> {
@@ -602,8 +519,7 @@ export function useCreatePost() {
       // apiError.error.details?.title === "..."
     },
   });
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── Summary ─────────────────────────────── */}
               <h2 id="summary">Response Format Summary</h2>

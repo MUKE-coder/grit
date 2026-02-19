@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function StandaloneUsagePage() {
   return (
@@ -57,11 +58,7 @@ export default function StandaloneUsagePage() {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">app/contact/page.tsx &mdash; Contact form</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`"use client";
+              <CodeBlock filename="app/contact/page.tsx &mdash; Contact form" code={`"use client";
 
 import { FormBuilder } from "@/components/forms/form-builder";
 import type { FormDefinition } from "@/lib/resource";
@@ -104,8 +101,7 @@ export default function ContactPage() {
       />
     </div>
   );
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -170,11 +166,7 @@ export default function ContactPage() {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Two-column registration form</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`const registrationForm: FormDefinition = {
+              <CodeBlock filename="Two-column registration form" code={`const registrationForm: FormDefinition = {
   layout: "two-column",
   fields: [
     { key: "first_name", label: "First Name", type: "text",
@@ -190,8 +182,7 @@ export default function ContactPage() {
     { key: "terms", label: "I agree to the terms", type: "checkbox",
       required: true, colSpan: 2 },
   ],
-};`}</pre>
-              </div>
+};`} />
             </div>
 
             {/* FormStepper */}
@@ -205,11 +196,7 @@ export default function ContactPage() {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">app/checkout/page.tsx &mdash; Multi-step checkout</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`"use client";
+              <CodeBlock filename="app/checkout/page.tsx &mdash; Multi-step checkout" code={`"use client";
 
 import { FormStepper } from "@/components/forms/form-stepper";
 import type { FormDefinition } from "@/lib/resource";
@@ -277,8 +264,7 @@ export default function CheckoutPage() {
       />
     </div>
   );
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             {/* DataTable */}
@@ -292,11 +278,7 @@ export default function CheckoutPage() {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">app/team/page.tsx &mdash; Team directory</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`"use client";
+              <CodeBlock filename="app/team/page.tsx &mdash; Team directory" code={`"use client";
 
 import { useState, useEffect } from "react";
 import { DataTable } from "@/components/tables/data-table";
@@ -343,8 +325,7 @@ export default function TeamPage() {
       />
     </div>
   );
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             {/* DataTable Props */}
@@ -415,11 +396,7 @@ export default function TeamPage() {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Copy components from admin to web</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# 1. Copy the type definitions
+              <CodeBlock filename="Copy components from admin to web" code={`# 1. Copy the type definitions
 cp apps/admin/lib/resource.ts apps/web/lib/resource.ts
 
 # 2. Copy the form components you need
@@ -429,8 +406,7 @@ cp -r apps/admin/components/forms/ apps/web/components/forms/
 cp -r apps/admin/components/tables/ apps/web/components/tables/
 
 # 4. Copy the icon map (used by both)
-cp apps/admin/lib/icons.ts apps/web/lib/icons.ts`}</pre>
-              </div>
+cp apps/admin/lib/icons.ts apps/web/lib/icons.ts`} />
             </div>
 
             <div className="prose-grit">
@@ -442,17 +418,12 @@ cp apps/admin/lib/icons.ts apps/web/lib/icons.ts`}</pre>
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Optional dependencies for advanced fields</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# File upload fields (image, images, video, file, files)
+              <CodeBlock filename="Optional dependencies for advanced fields" code={`# File upload fields (image, images, video, file, files)
 cd apps/web && pnpm add react-dropzone
 
 # Rich text editor field
 cd apps/web && pnpm add @tiptap/react @tiptap/starter-kit \\
-  @tiptap/extension-link @tiptap/pm`}</pre>
-              </div>
+  @tiptap/extension-link @tiptap/pm`} />
             </div>
 
             {/* Minimal example */}
@@ -465,11 +436,7 @@ cd apps/web && pnpm add @tiptap/react @tiptap/starter-kit \\
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">app/settings/page.tsx &mdash; Settings form</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`"use client";
+              <CodeBlock filename="app/settings/page.tsx &mdash; Settings form" code={`"use client";
 
 import { useState } from "react";
 import { FormBuilder } from "@/components/forms/form-builder";
@@ -534,8 +501,7 @@ export default function SettingsPage() {
       </div>
     </div>
   );
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             {/* Field types reference */}

@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function DataTablePage() {
   return (
@@ -45,11 +46,7 @@ export default function DataTablePage() {
 
             {/* API request example */}
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">HTTP request</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`GET /api/posts?page=1&page_size=20&sort=created_at&order=desc&search=hello
+              <CodeBlock filename="HTTP request" code={`GET /api/posts?page=1&page_size=20&sort=created_at&order=desc&search=hello
 
 Response:
 {
@@ -60,8 +57,7 @@ Response:
     "page_size": 20,
     "pages": 8
   }
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -90,15 +86,10 @@ Response:
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Default sort</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`table: {
+              <CodeBlock filename="Default sort" code={`table: {
   defaultSort: { key: 'created_at', direction: 'desc' },
   columns: [ ... ],
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -117,12 +108,7 @@ Response:
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Select filter</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{ key: 'status', type: 'select', options: ['active', 'inactive', 'banned'] }`}</pre>
-              </div>
+              <CodeBlock filename="Select filter" code={`{ key: 'status', type: 'select', options: ['active', 'inactive', 'banned'] }`} />
             </div>
 
             <div className="prose-grit">
@@ -135,12 +121,7 @@ Response:
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Date range filter</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{ key: 'created_at', type: 'date-range', label: 'Created Date' }`}</pre>
-              </div>
+              <CodeBlock filename="Date range filter" code={`{ key: 'created_at', type: 'date-range', label: 'Created Date' }`} />
             </div>
 
             <div className="prose-grit">
@@ -153,12 +134,7 @@ Response:
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Number range filter</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{ key: 'amount', type: 'number-range', label: 'Amount' }`}</pre>
-              </div>
+              <CodeBlock filename="Number range filter" code={`{ key: 'amount', type: 'number-range', label: 'Amount' }`} />
             </div>
 
             <div className="prose-grit">
@@ -202,11 +178,7 @@ Response:
 
             {/* Cell renderer examples */}
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Column renderer examples</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`columns: [
+              <CodeBlock filename="Column renderer examples" code={`columns: [
   // Badge — colored pills for status values
   { key: 'status', label: 'Status', badge: {
     active:   { color: 'green', label: 'Active' },
@@ -245,8 +217,7 @@ Response:
 
   // Color — swatch circle with hex value
   { key: 'color', label: 'Color', format: 'color' },
-]`}</pre>
-              </div>
+]`} />
             </div>
 
             <div className="prose-grit">
@@ -260,11 +231,7 @@ Response:
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Column className examples</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`columns: [
+              <CodeBlock filename="Column className examples" code={`columns: [
   // Bold title column
   { key: 'title', label: 'Title', className: 'font-semibold text-foreground' },
 
@@ -276,8 +243,7 @@ Response:
 
   // Truncated long text
   { key: 'description', label: 'Description', className: 'max-w-[200px] truncate' },
-]`}</pre>
-              </div>
+]`} />
             </div>
 
             <div className="prose-grit">
@@ -302,16 +268,11 @@ Response:
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Actions configuration</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`table: {
+              <CodeBlock filename="Actions configuration" code={`table: {
   actions: ['create', 'edit', 'delete', 'export'],
   bulkActions: ['delete', 'export'],
   columns: [ ... ],
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -384,11 +345,7 @@ Response:
               <h2 className="text-2xl font-semibold tracking-tight mb-4">
                 Full Table Configuration Example
               </h2>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/admin/resources/invoices.ts (table section)</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`table: {
+              <CodeBlock filename="apps/admin/resources/invoices.ts (table section)" code={`table: {
   columns: [
     { key: 'id', label: 'ID', sortable: true, hidden: true },
     { key: 'number', label: 'Invoice #', sortable: true, searchable: true },
@@ -414,8 +371,7 @@ Response:
   searchable: true,
   actions: ['create', 'edit', 'delete', 'view', 'export'],
   bulkActions: ['delete', 'export', 'mark-paid'],
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             {/* Nav */}

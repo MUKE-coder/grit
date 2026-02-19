@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function AISkillPage() {
   return (
@@ -73,11 +74,7 @@ export default function AISkillPage() {
                     a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">GRIT_SKILL.md</code> file
                     in the project root automatically. If you don&apos;t have one, create it manually:
                   </p>
-                  <div className="ml-10 rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                      <span className="text-[11px] font-mono text-muted-foreground/40">Project structure</span>
-                    </div>
-                    <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`myapp/
+                  <CodeBlock filename="Project structure" code={`myapp/
 ├── GRIT_SKILL.md          <-- AI reads this
 ├── grit.config.ts
 ├── docker-compose.yml
@@ -86,8 +83,7 @@ export default function AISkillPage() {
 │   ├── api/
 │   ├── web/
 │   └── admin/
-└── ...`}</pre>
-                  </div>
+└── ...`} />
                 </div>
 
                 <div className="mb-8">

@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function ModelsPage() {
   return (
@@ -38,11 +39,7 @@ export default function ModelsPage() {
               <p>
                 Here is a minimal model that demonstrates all three:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/post.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+              <CodeBlock language="go" filename="apps/api/internal/models/post.go" code={`package models
 
 import (
     "time"
@@ -60,8 +57,7 @@ type Post struct {
     CreatedAt time.Time      \`json:"created_at"\`
     UpdatedAt time.Time      \`json:"updated_at"\`
     DeletedAt gorm.DeletedAt \`gorm:"index" json:"-"\`
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── Built-in User Model ─────────────────────────────── */}
               <h2 id="user-model">Built-in User Model</h2>
@@ -69,11 +65,7 @@ type Post struct {
                 Every Grit project ships with a <code>User</code> model out of the box. It includes
                 authentication fields, role-based access, soft deletes, and a password-hashing hook.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/user.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+              <CodeBlock language="go" filename="apps/api/internal/models/user.go" code={`package models
 
 import (
     "time"
@@ -100,8 +92,7 @@ type User struct {
     CreatedAt       time.Time      \`json:"created_at"\`
     UpdatedAt       time.Time      \`json:"updated_at"\`
     DeletedAt       gorm.DeletedAt \`gorm:"index" json:"-"\`
-}`}</pre>
-              </div>
+}`} />
               <p>Key things to note about the User model:</p>
               <ul>
                 <li><code>Password</code> uses <code>json:"-"</code> so it is <strong>never</strong> included in API responses.</li>
@@ -117,11 +108,7 @@ type User struct {
                 with bcrypt before it is saved to the database. A <code>CheckPassword</code> method
                 is provided for login verification.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/user.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// BeforeCreate hashes the password before saving.
+              <CodeBlock language="go" filename="apps/api/internal/models/user.go" code={`// BeforeCreate hashes the password before saving.
 func (u *User) BeforeCreate(tx *gorm.DB) error {
     if u.Password != "" {
         hashedPassword, err := bcrypt.GenerateFromPassword(
@@ -141,8 +128,7 @@ func (u *User) CheckPassword(password string) bool {
         []byte(u.Password), []byte(password),
     )
     return err == nil
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── Upload Model ─────────────────────────────── */}
               <h2 id="upload-model">Upload Model</h2>
@@ -150,11 +136,7 @@ func (u *User) CheckPassword(password string) bool {
                 Grit includes an <code>Upload</code> model for tracking files stored in S3-compatible storage.
                 Each upload is associated with a user and records the file metadata.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/upload.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+              <CodeBlock language="go" filename="apps/api/internal/models/upload.go" code={`package models
 
 import (
     "time"
@@ -175,8 +157,7 @@ type Upload struct {
     CreatedAt    time.Time      \`json:"created_at"\`
     UpdatedAt    time.Time      \`json:"updated_at"\`
     DeletedAt    gorm.DeletedAt \`gorm:"index" json:"-"\`
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── Creating Custom Models ─────────────────────────────── */}
               <h2 id="custom-models">Creating Custom Models</h2>
@@ -185,11 +166,7 @@ type Upload struct {
                 Follow the naming convention: one model per file, file name in <code>snake_case</code>,
                 struct name in <code>PascalCase</code>.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/invoice.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+              <CodeBlock language="go" filename="apps/api/internal/models/invoice.go" code={`package models
 
 import (
     "time"
@@ -208,8 +185,7 @@ type Invoice struct {
     CreatedAt  time.Time      \`json:"created_at"\`
     UpdatedAt  time.Time      \`json:"updated_at"\`
     DeletedAt  gorm.DeletedAt \`gorm:"index" json:"-"\`
-}`}</pre>
-              </div>
+}`} />
               <p>
                 When using <code>grit generate resource Invoice</code>, this file is created automatically
                 along with the handler, hooks, Zod schema, and admin page.
@@ -339,11 +315,7 @@ type Invoice struct {
                 A <code>belongsTo</code> relationship means the current model holds the foreign key.
                 For example, a Post belongs to a User (the author):
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">belongs_to.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type Post struct {
+              <CodeBlock language="go" filename="belongs_to.go" code={`type Post struct {
     ID       uint \`gorm:"primarykey" json:"id"\`
     Title    string \`gorm:"size:255;not null" json:"title"\`
     // Foreign key field
@@ -354,8 +326,7 @@ type Invoice struct {
 
 // Usage in a handler or service:
 var post Post
-db.Preload("Author").First(&post, 1)`}</pre>
-              </div>
+db.Preload("Author").First(&post, 1)`} />
               <p>
                 The <code>json:"author,omitempty"</code> tag means the author object is only included
                 in the JSON response when it has been preloaded. This avoids empty nested objects.
@@ -366,11 +337,7 @@ db.Preload("Author").First(&post, 1)`}</pre>
                 A <code>hasMany</code> relationship means another model holds a foreign key pointing
                 back to this model. For example, a User has many Posts:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">has_many.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type User struct {
+              <CodeBlock language="go" filename="has_many.go" code={`type User struct {
     ID    uint   \`gorm:"primarykey" json:"id"\`
     Name  string \`gorm:"size:255;not null" json:"name"\`
     Email string \`gorm:"size:255;uniqueIndex;not null" json:"email"\`
@@ -380,18 +347,13 @@ db.Preload("Author").First(&post, 1)`}</pre>
 
 // Usage: load a user with all their posts
 var user User
-db.Preload("Posts").First(&user, 1)`}</pre>
-              </div>
+db.Preload("Posts").First(&user, 1)`} />
 
               <h3 id="many-to-many">Many to Many</h3>
               <p>
                 For many-to-many relationships, GORM creates a join table automatically:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">many_to_many.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type Post struct {
+              <CodeBlock language="go" filename="many_to_many.go" code={`type Post struct {
     ID   uint   \`gorm:"primarykey" json:"id"\`
     Title string \`gorm:"size:255" json:"title"\`
     Tags []Tag  \`gorm:"many2many:post_tags;" json:"tags,omitempty"\`
@@ -402,8 +364,7 @@ type Tag struct {
     Name string \`gorm:"size:100;uniqueIndex" json:"name"\`
 }
 
-// GORM auto-creates a "post_tags" join table with post_id and tag_id columns.`}</pre>
-              </div>
+// GORM auto-creates a "post_tags" join table with post_id and tag_id columns.`} />
 
               {/* ── Soft Deletes ─────────────────────────────── */}
               <h2 id="soft-deletes">Soft Deletes</h2>
@@ -412,11 +373,7 @@ type Tag struct {
                 When you call <code>db.Delete(&record)</code>, GORM does not actually remove the row.
                 Instead, it sets <code>deleted_at</code> to the current timestamp.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">soft_delete.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Add this field to any model for soft deletes:
+              <CodeBlock language="go" filename="soft_delete.go" code={`// Add this field to any model for soft deletes:
 DeletedAt gorm.DeletedAt \`gorm:"index" json:"-"\`
 
 // Soft-delete a record (sets deleted_at, does NOT remove the row)
@@ -429,8 +386,7 @@ db.Find(&users) // only returns records where deleted_at IS NULL
 db.Unscoped().Find(&users)
 
 // To permanently delete a record:
-db.Unscoped().Delete(&user)`}</pre>
-              </div>
+db.Unscoped().Delete(&user)`} />
               <p>
                 The <code>json:"-"</code> tag on <code>DeletedAt</code> ensures the field is never
                 exposed in API responses.
@@ -443,31 +399,21 @@ db.Unscoped().Delete(&user)`}</pre>
                 Go structs. When the server starts, it automatically creates or alters tables to match
                 your models.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/user.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// AutoMigrate runs database migrations for all models.
+              <CodeBlock language="go" filename="apps/api/internal/models/user.go" code={`// AutoMigrate runs database migrations for all models.
 func AutoMigrate(db *gorm.DB) error {
     return db.AutoMigrate(
         &User{},
         &Upload{},
         // grit:models -- new models are added here by the generator
     )
-}`}</pre>
-              </div>
+}`} />
               <p>
                 This function is called in <code>cmd/server/main.go</code> during startup:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/cmd/server/main.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Auto-migrate models
+              <CodeBlock language="go" filename="apps/api/cmd/server/main.go" code={`// Auto-migrate models
 if err := models.AutoMigrate(db); err != nil {
     log.Fatalf("Failed to run migrations: %v", err)
-}`}</pre>
-              </div>
+}`} />
 
               <h3 id="automigrate-behavior">How AutoMigrate Works</h3>
               <p>AutoMigrate is <strong>safe to run repeatedly</strong>. It will:</p>
@@ -487,20 +433,8 @@ if err := models.AutoMigrate(db); err != nil {
                 (this drops all tables and re-migrates). In production, write manual SQL migrations.
               </p>
 
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
-                </div>
-                <div className="p-5 font-mono text-sm space-y-2">
-                  <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit migrate</span><span className="text-muted-foreground/50">        # run AutoMigrate</span></div>
-                  <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit migrate:fresh</span><span className="text-muted-foreground/50">  # drop all + re-migrate (dev only!)</span></div>
-                </div>
-              </div>
+              <CodeBlock terminal code={`grit migrate        # run AutoMigrate
+grit migrate:fresh  # drop all + re-migrate (dev only!)`} />
 
               {/* ── Adding a New Model Step by Step ─────────────────────────────── */}
               <h2 id="adding-models">Adding a New Model (Step by Step)</h2>
@@ -522,11 +456,7 @@ if err := models.AutoMigrate(db); err != nil {
                   Restart the server -- GORM will create the table automatically.
                 </li>
               </ol>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/product.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+              <CodeBlock language="go" filename="apps/api/internal/models/product.go" code={`package models
 
 import (
     "time"
@@ -546,25 +476,12 @@ type Product struct {
     CreatedAt   time.Time      \`json:"created_at"\`
     UpdatedAt   time.Time      \`json:"updated_at"\`
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"-"\`
-}`}</pre>
-              </div>
+}`} />
 
               <p>
                 Or use the generator and let Grit do the work for you:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
-                </div>
-                <div className="p-5 font-mono text-sm">
-                  <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Product</span>
-                </div>
-              </div>
+              <CodeBlock terminal code="grit generate resource Product" />
             </div>
 
             {/* Nav */}

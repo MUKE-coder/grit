@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function AuthenticationPage() {
   return (
@@ -34,11 +35,7 @@ export default function AuthenticationPage() {
                 tokens without re-authenticating.
               </p>
 
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">authentication flow</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`
+              <CodeBlock filename="authentication flow" code={`
   Client                           Grit API
     |                                  |
     |  POST /api/auth/register         |
@@ -68,8 +65,7 @@ export default function AuthenticationPage() {
     |  { tokens }                      |
     | <--------------------------------|
     |                                  |
-`}</pre>
-              </div>
+`} />
 
               {/* ── JWT Tokens ─────────────────────────────── */}
               <h2 id="jwt-tokens">JWT Tokens</h2>
@@ -103,28 +99,18 @@ export default function AuthenticationPage() {
               </div>
 
               <p>Configure token expiry via environment variables:</p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">.env</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`JWT_SECRET=your-super-secret-key-at-least-32-chars
+              <CodeBlock language="bash" filename=".env" code={`JWT_SECRET=your-super-secret-key-at-least-32-chars
 JWT_ACCESS_EXPIRY=15m
-JWT_REFRESH_EXPIRY=168h`}</pre>
-              </div>
+JWT_REFRESH_EXPIRY=168h`} />
 
               <h3 id="token-claims">Token Claims (JWT Payload)</h3>
               <p>Each token contains these claims:</p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">services/auth.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type Claims struct {
+              <CodeBlock filename="services/auth.go" code={`type Claims struct {
     UserID uint   \`json:"user_id"\`
     Email  string \`json:"email"\`
     Role   string \`json:"role"\`
     jwt.RegisteredClaims  // exp, iat, etc.
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── Auth Endpoints ─────────────────────────────── */}
               <h2 id="auth-endpoints">Auth Endpoints</h2>
@@ -192,11 +178,7 @@ JWT_REFRESH_EXPIRY=168h`}</pre>
 
               {/* ── Register ─────────────────────────────── */}
               <h3 id="register">Register</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">POST /api/auth/register</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Request
+              <CodeBlock filename="POST /api/auth/register" code={`// Request
 {
     "name": "John Doe",
     "email": "john@example.com",
@@ -224,15 +206,10 @@ JWT_REFRESH_EXPIRY=168h`}</pre>
         }
     },
     "message": "User registered successfully"
-}`}</pre>
-              </div>
+}`} />
 
               <h3 id="login">Login</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">POST /api/auth/login</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Request
+              <CodeBlock filename="POST /api/auth/login" code={`// Request
 {
     "email": "john@example.com",
     "password": "securepassword123"
@@ -257,15 +234,10 @@ JWT_REFRESH_EXPIRY=168h`}</pre>
         "code": "INVALID_CREDENTIALS",
         "message": "Invalid email or password"
     }
-}`}</pre>
-              </div>
+}`} />
 
               <h3 id="refresh">Refresh Token</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">POST /api/auth/refresh</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Request
+              <CodeBlock filename="POST /api/auth/refresh" code={`// Request
 {
     "refresh_token": "eyJhbGciOiJIUzI1NiIs..."
 }
@@ -280,15 +252,10 @@ JWT_REFRESH_EXPIRY=168h`}</pre>
         }
     },
     "message": "Token refreshed successfully"
-}`}</pre>
-              </div>
+}`} />
 
               <h3 id="forgot-password">Forgot Password</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">POST /api/auth/forgot-password</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Request
+              <CodeBlock filename="POST /api/auth/forgot-password" code={`// Request
 {
     "email": "john@example.com"
 }
@@ -296,19 +263,14 @@ JWT_REFRESH_EXPIRY=168h`}</pre>
 // Response (200 OK) -- always returns success for security
 {
     "message": "If an account with that email exists, a password reset link has been sent"
-}`}</pre>
-              </div>
+}`} />
               <p>
                 The forgot-password endpoint always returns a success message regardless of whether
                 the email exists. This prevents email enumeration attacks.
               </p>
 
               <h3 id="reset-password">Reset Password</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">POST /api/auth/reset-password</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Request
+              <CodeBlock filename="POST /api/auth/reset-password" code={`// Request
 {
     "token": "abc123def456...",
     "password": "newSecurePassword456"
@@ -317,8 +279,7 @@ JWT_REFRESH_EXPIRY=168h`}</pre>
 // Response (200 OK)
 {
     "message": "Password reset successfully"
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── Auth Middleware Usage ─────────────────────────────── */}
               <h2 id="auth-middleware">Auth Middleware Usage</h2>
@@ -327,11 +288,7 @@ JWT_REFRESH_EXPIRY=168h`}</pre>
                 See the <Link href="/docs/backend/middleware" className="text-primary hover:underline">Middleware</Link> page
                 for the full implementation.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">routes.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Protected routes -- any authenticated user
+              <CodeBlock filename="routes.go" code={`// Protected routes -- any authenticated user
 protected := r.Group("/api")
 protected.Use(middleware.Auth(db, authService))
 {
@@ -347,8 +304,7 @@ admin.Use(middleware.RequireRole("admin"))
 {
     admin.GET("/users", userHandler.List)
     admin.DELETE("/users/:id", userHandler.Delete)
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── Role-Based Access ─────────────────────────────── */}
               <h2 id="roles">Role-Based Access Control</h2>
@@ -384,11 +340,7 @@ admin.Use(middleware.RequireRole("admin"))
                   </tbody>
                 </table>
               </div>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">models/user.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Built-in roles
+              <CodeBlock filename="models/user.go" code={`// Built-in roles
 const (
     RoleAdmin  = "admin"
     RoleEditor = "editor"
@@ -399,8 +351,7 @@ const (
 const (
     RoleManager   = "manager"
     RoleModerator = "moderator"
-)`}</pre>
-              </div>
+)`} />
 
               {/* ── Token Storage (Frontend) ─────────────────────────────── */}
               <h2 id="token-storage">Token Storage on the Frontend</h2>
@@ -408,11 +359,7 @@ const (
                 The Next.js frontend stores tokens and includes them in API requests using
                 an Axios interceptor. The recommended pattern:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/lib/api-client.ts</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import axios from 'axios';
+              <CodeBlock language="typescript" filename="apps/web/lib/api-client.ts" code={`import axios from 'axios';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
@@ -461,8 +408,7 @@ api.interceptors.response.use(
   },
 );
 
-export default api;`}</pre>
-              </div>
+export default api;`} />
 
               <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
                 <p className="text-sm text-foreground/80 mb-0">
@@ -481,11 +427,7 @@ export default api;`}</pre>
                 User model. Passwords are never stored in plain text and are never returned in
                 API responses (the <code>Password</code> field uses <code>json:&quot;-&quot;</code>).
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">models/user.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Password field -- never included in JSON responses
+              <CodeBlock filename="models/user.go" code={`// Password field -- never included in JSON responses
 Password string \`gorm:"size:255;not null" json:"-"\`
 
 // Automatically hash on create
@@ -508,8 +450,7 @@ func (u *User) CheckPassword(password string) bool {
         []byte(u.Password), []byte(password),
     )
     return err == nil
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── Token Generation ─────────────────────────────── */}
               <h2 id="token-generation">Token Generation</h2>
@@ -517,11 +458,7 @@ func (u *User) CheckPassword(password string) bool {
                 The <code>AuthService</code> handles all token operations. It uses the
                 <code>golang-jwt/jwt/v5</code> library with HMAC-SHA256 signing.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">services/auth.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// GenerateTokenPair creates access + refresh tokens.
+              <CodeBlock filename="services/auth.go" code={`// GenerateTokenPair creates access + refresh tokens.
 func (s *AuthService) GenerateTokenPair(
     userID uint, email, role string,
 ) (*TokenPair, error) {
@@ -568,8 +505,7 @@ func (s *AuthService) generateToken(
     }
 
     return tokenString, expiresAt.Unix(), nil
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── Password Reset Token ─────────────────────────────── */}
               <h2 id="reset-token">Password Reset Tokens</h2>
@@ -578,11 +514,7 @@ func (s *AuthService) generateToken(
                 They are generated using Go&apos;s <code>crypto/rand</code> package, which is
                 secure for this purpose.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">services/auth.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// GenerateResetToken creates a random hex token for password resets.
+              <CodeBlock filename="services/auth.go" code={`// GenerateResetToken creates a random hex token for password resets.
 func GenerateResetToken() (string, error) {
     bytes := make([]byte, 32)
     if _, err := rand.Read(bytes); err != nil {
@@ -592,25 +524,19 @@ func GenerateResetToken() (string, error) {
 }
 
 // Output example: "a3f4b2c1e5d6f7890123456789abcdef..."
-// (64 hex characters = 32 bytes of randomness)`}</pre>
-              </div>
+// (64 hex characters = 32 bytes of randomness)`} />
 
               {/* ── Configuration ─────────────────────────────── */}
               <h2 id="configuration">Auth Configuration</h2>
               <p>
                 All authentication settings are configured via environment variables:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">.env</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# Required
+              <CodeBlock language="bash" filename=".env" code={`# Required
 JWT_SECRET=change-this-to-a-long-random-string
 
 # Optional (defaults shown)
 JWT_ACCESS_EXPIRY=15m      # Go duration format
-JWT_REFRESH_EXPIRY=168h    # 7 days`}</pre>
-              </div>
+JWT_REFRESH_EXPIRY=168h    # 7 days`} />
               <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/5 mb-6">
                 <p className="text-sm text-foreground/80 mb-0">
                   <strong>Important:</strong> The <code>JWT_SECRET</code> environment variable is required.

@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function RelationshipsPage() {
   return (
@@ -89,11 +90,7 @@ export default function RelationshipsPage() {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/product.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type Product struct {
+              <CodeBlock filename="apps/api/internal/models/product.go" code={`type Product struct {
     ID         uint           \`gorm:"primarykey" json:"id"\`
     Name       string         \`gorm:"size:255" json:"name" binding:"required"\`
     CategoryID uint           \`gorm:"index" json:"category_id" binding:"required"\`
@@ -102,8 +99,7 @@ export default function RelationshipsPage() {
     CreatedAt  time.Time      \`json:"created_at"\`
     UpdatedAt  time.Time      \`json:"updated_at"\`
     DeletedAt  gorm.DeletedAt \`gorm:"index" json:"-"\`
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -116,19 +112,14 @@ export default function RelationshipsPage() {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/handlers/product_handler.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// List with eager loading
+              <CodeBlock filename="apps/api/internal/handlers/product_handler.go" code={`// List with eager loading
 db.Preload("Category").Find(&products)
 
 // Get by ID
 db.Preload("Category").First(&product, id)
 
 // After create/update — reload to include related data in response
-db.Preload("Category").First(&product, product.ID)`}</pre>
-              </div>
+db.Preload("Category").First(&product, product.ID)`} />
             </div>
 
             <div className="prose-grit">
@@ -140,19 +131,14 @@ db.Preload("Category").First(&product, product.ID)`}</pre>
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Relationship select field definition</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Relationship select field definition" code={`{
   key: "category_id",
   label: "Category",
   type: "relationship-select",
   required: true,
   relatedEndpoint: "/api/categories",
   displayField: "name",
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -170,12 +156,7 @@ db.Preload("Category").First(&product, product.ID)`}</pre>
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Column definition with dot notation</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{ key: "category.name", label: "Category", sortable: false }`}</pre>
-              </div>
+              <CodeBlock filename="Column definition with dot notation" code={`{ key: "category.name", label: "Category", sortable: false }`} />
             </div>
 
             <div className="prose-grit">
@@ -231,15 +212,10 @@ db.Preload("Category").First(&product, product.ID)`}</pre>
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/product.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type Product struct {
+              <CodeBlock filename="apps/api/internal/models/product.go" code={`type Product struct {
     // ...other fields...
     Tags []Tag \`gorm:"many2many:product_tags" json:"tags"\`
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -252,11 +228,7 @@ db.Preload("Category").First(&product, product.ID)`}</pre>
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/handlers/product_handler.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Create — attach tags by IDs
+              <CodeBlock filename="apps/api/internal/handlers/product_handler.go" code={`// Create — attach tags by IDs
 if len(req.TagIDs) > 0 {
     var tags []models.Tag
     h.DB.Where("id IN ?", req.TagIDs).Find(&tags)
@@ -268,8 +240,7 @@ if req.TagIDs != nil {
     var tags []models.Tag
     h.DB.Where("id IN ?", *req.TagIDs).Find(&tags)
     h.DB.Model(&item).Association("Tags").Replace(tags)
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -289,19 +260,14 @@ if req.TagIDs != nil {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Multi-relationship select field definition</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Multi-relationship select field definition" code={`{
   key: "tag_ids",
   label: "Tags",
   type: "multi-relationship-select",
   relatedEndpoint: "/api/tags",
   displayField: "name",
   relationshipKey: "tags",
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -328,16 +294,11 @@ if req.TagIDs != nil {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/models/category.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Add to your Category model manually
+              <CodeBlock filename="apps/api/internal/models/category.go" code={`// Add to your Category model manually
 type Category struct {
     // ...existing fields...
     Products []Product \`gorm:"foreignKey:CategoryID" json:"products,omitempty"\`
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -387,11 +348,7 @@ type Category struct {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/admin/resources/products.ts</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`export default defineResource({
+              <CodeBlock language="typescript" filename="apps/admin/resources/products.ts" code={`export default defineResource({
   name: "Product",
   endpoint: "/api/products",
   columns: [
@@ -423,8 +380,7 @@ type Category struct {
       { key: "published", label: "Published", type: "toggle" },
     ],
   },
-})`}</pre>
-              </div>
+})`} />
             </div>
 
             <div className="prose-grit">
@@ -445,11 +401,7 @@ type Category struct {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Custom displayField</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Show user email instead of name
+              <CodeBlock filename="Custom displayField" code={`// Show user email instead of name
 {
   key: "author_id",
   label: "Author",
@@ -465,8 +417,7 @@ type Category struct {
   type: "relationship-select",
   relatedEndpoint: "/api/articles",
   displayField: "title",
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -479,11 +430,7 @@ type Category struct {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Custom relatedEndpoint</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Custom API path
+              <CodeBlock filename="Custom relatedEndpoint" code={`// Custom API path
 {
   key: "category_id",
   label: "Category",
@@ -499,8 +446,7 @@ type Category struct {
   type: "relationship-select",
   relatedEndpoint: "/api/users?active=true",
   displayField: "name",
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -513,18 +459,13 @@ type Category struct {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Custom dot notation columns</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`columns: [
+              <CodeBlock filename="Custom dot notation columns" code={`columns: [
   // Display category slug instead of name
   { key: "category.slug", label: "Category Slug", sortable: false },
 
   // Display author email
   { key: "author.email", label: "Author Email", sortable: false },
-]`}</pre>
-              </div>
+]`} />
             </div>
 
             {/* Nav */}

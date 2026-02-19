@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function ProjectStructurePage() {
   return (
@@ -37,12 +38,7 @@ export default function ProjectStructurePage() {
 
             {/* Full Tree */}
             <div className="mb-10">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">monorepo root</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto leading-relaxed">
-{`myapp/
+              <CodeBlock filename="monorepo root" code={`myapp/
 ├── .env                        # Environment variables
 ├── .env.example                # Template with documentation
 ├── .env.cloud.example          # Cloud-only setup (no Docker)
@@ -61,9 +57,7 @@ export default function ProjectStructurePage() {
 │   └── admin/                  # Next.js admin panel
 │
 └── packages/
-    └── shared/                 # Shared Zod schemas, TS types, constants`}
-                </pre>
-              </div>
+    └── shared/                 # Shared Zod schemas, TS types, constants`} />
             </div>
 
             <div className="prose-grit">
@@ -102,12 +96,7 @@ export default function ProjectStructurePage() {
             </div>
 
             <div className="mb-4">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto leading-relaxed">
-{`apps/api/
+              <CodeBlock filename="apps/api/" code={`apps/api/
 ├── go.mod                      # Go module definition
 ├── go.sum                      # Dependency checksums
 ├── Dockerfile                  # Multi-stage production build
@@ -151,9 +140,7 @@ export default function ProjectStructurePage() {
     ├── cron/
     │   └── cron.go             # Asynq cron scheduler
     └── ai/
-        └── ai.go               # AI integration (Claude + OpenAI)`}
-                </pre>
-              </div>
+        └── ai.go               # AI integration (Claude + OpenAI)`} />
             </div>
 
             <div className="prose-grit mb-10">
@@ -177,12 +164,7 @@ export default function ProjectStructurePage() {
             </div>
 
             <div className="mb-4">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto leading-relaxed">
-{`apps/web/
+              <CodeBlock filename="apps/web/" code={`apps/web/
 ├── package.json
 ├── next.config.ts
 ├── tailwind.config.ts
@@ -210,9 +192,7 @@ export default function ProjectStructurePage() {
 └── lib/
     ├── api-client.ts           # Axios instance with JWT interceptor
     ├── auth.ts                 # Auth utilities (token storage)
-    └── utils.ts                # Utility functions`}
-                </pre>
-              </div>
+    └── utils.ts                # Utility functions`} />
             </div>
 
             <div className="prose-grit mb-10">
@@ -235,12 +215,7 @@ export default function ProjectStructurePage() {
             </div>
 
             <div className="mb-4">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/admin/</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto leading-relaxed">
-{`apps/admin/
+              <CodeBlock filename="apps/admin/" code={`apps/admin/
 ├── package.json
 ├── next.config.ts
 ├── tailwind.config.ts
@@ -277,9 +252,7 @@ export default function ProjectStructurePage() {
 └── resources/                  # Resource definitions (THE MAGIC)
     ├── index.ts                # Resource registry
     ├── users.ts                # User resource config
-    └── posts.ts                # Generated resource configs`}
-                </pre>
-              </div>
+    └── posts.ts                # Generated resource configs`} />
             </div>
 
             <div className="prose-grit mb-10">
@@ -303,12 +276,7 @@ export default function ProjectStructurePage() {
             </div>
 
             <div className="mb-4">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">packages/shared/</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto leading-relaxed">
-{`packages/shared/
+              <CodeBlock filename="packages/shared/" code={`packages/shared/
 ├── package.json
 │
 ├── schemas/                    # Zod validation schemas
@@ -323,9 +291,7 @@ export default function ProjectStructurePage() {
 │   └── index.ts                # Re-exports all types
 │
 └── constants/
-    └── index.ts                # Roles, API routes, config constants`}
-                </pre>
-              </div>
+    └── index.ts                # Roles, API routes, config constants`} />
             </div>
 
             <div className="prose-grit mb-10">

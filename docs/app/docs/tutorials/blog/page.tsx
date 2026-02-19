@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
+import { CodeBlock } from '@/components/code-block'
 
 export default function TutorialBlogPage() {
   return (
@@ -183,13 +184,7 @@ export default function TutorialBlogPage() {
                   The generator creates these files:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      generated files
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`apps/api/internal/models/post.go        # GORM model
+                <CodeBlock language="bash" filename="generated files" code={`apps/api/internal/models/post.go        # GORM model
 apps/api/internal/handlers/post.go      # CRUD handler
 apps/api/internal/services/post.go      # Business logic
 packages/shared/schemas/post.ts         # Zod validation
@@ -197,20 +192,13 @@ packages/shared/types/post.ts           # TypeScript types
 apps/web/hooks/use-posts.ts             # React Query hooks (web)
 apps/admin/hooks/use-posts.ts           # React Query hooks (admin)
 apps/admin/app/resources/posts/page.tsx # Admin page
-apps/admin/resources/posts.ts           # Resource definition`}</pre>
-                </div>
+apps/admin/resources/posts.ts           # Resource definition`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Here is the generated Go model:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/post.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/post.go" code={`package models
 
 import (
     "time"
@@ -228,8 +216,7 @@ type Post struct {
     CreatedAt time.Time      \`json:"created_at"\`
     UpdatedAt time.Time      \`json:"updated_at"\`
     DeletedAt gorm.DeletedAt \`gorm:"index" json:"deleted_at,omitempty"\`
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 
@@ -273,13 +260,7 @@ type Post struct {
                   The generated Category model:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/category.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/category.go" code={`package models
 
 import (
     "time"
@@ -294,8 +275,7 @@ type Category struct {
     CreatedAt   time.Time      \`json:"created_at"\`
     UpdatedAt   time.Time      \`json:"updated_at"\`
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"deleted_at,omitempty"\`
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 
@@ -318,13 +298,7 @@ type Category struct {
                   relationship.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/post.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/post.go" code={`package models
 
 import (
     "time"
@@ -344,16 +318,9 @@ type Post struct {
     CreatedAt  time.Time      \`json:"created_at"\`
     UpdatedAt  time.Time      \`json:"updated_at"\`
     DeletedAt  gorm.DeletedAt \`gorm:"index" json:"deleted_at,omitempty"\`
-}`}</pre>
-                </div>
+}`} />
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/category.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/category.go" code={`package models
 
 import (
     "time"
@@ -369,8 +336,7 @@ type Category struct {
     CreatedAt   time.Time      \`json:"created_at"\`
     UpdatedAt   time.Time      \`json:"updated_at"\`
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"deleted_at,omitempty"\`
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Now sync the types to TypeScript so the frontend knows about
@@ -423,13 +389,7 @@ type Category struct {
                   post response includes its category data.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/services/post.go &mdash; GetAll method
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func (s *PostService) GetAll(page, pageSize int, sort, order, search string) ([]models.Post, int64, error) {
+                <CodeBlock filename="apps/api/internal/services/post.go &mdash; GetAll method" code={`func (s *PostService) GetAll(page, pageSize int, sort, order, search string) ([]models.Post, int64, error) {
     var posts []models.Post
     var total int64
 
@@ -473,8 +433,7 @@ func (s *PostService) GetByID(id uint) (*models.Post, error) {
         return nil, result.Error
     }
     return &post, nil
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
                   Now every API response for posts includes the nested{" "}
@@ -501,13 +460,7 @@ func (s *PostService) GetByID(id uint) (*models.Post, error) {
                   required).
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/handlers/post.go &mdash; add this method
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// GetPublished returns only published posts for the public frontend.
+                <CodeBlock filename="apps/api/internal/handlers/post.go &mdash; add this method" code={`// GetPublished returns only published posts for the public frontend.
 func (h *PostHandler) GetPublished(c *gin.Context) {
     page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
     pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
@@ -538,29 +491,21 @@ func (h *PostHandler) GetPublished(c *gin.Context) {
             "pages":     pages,
         },
     })
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Register the new route in <code>routes.go</code>. Place it
                   outside the auth middleware group so anyone can access it:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/routes/routes.go &mdash; add this route
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Public routes (no authentication required)
+                <CodeBlock filename="apps/api/internal/routes/routes.go &mdash; add this route" code={`// Public routes (no authentication required)
 public := router.Group("/api")
 {
     // ... existing public routes (auth, health) ...
 
     // Published blog posts — public access
     public.GET("/posts/published", postHandler.GetPublished)
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 
@@ -582,13 +527,7 @@ public := router.Group("/api")
                   category selector in the form.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/admin/resources/posts.ts
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { defineResource } from '@grit/admin'
+                <CodeBlock language="typescript" filename="apps/admin/resources/posts.ts" code={`import { defineResource } from '@grit/admin'
 
 export default defineResource({
   name: 'Post',
@@ -632,8 +571,7 @@ export default defineResource({
       { key: 'published', label: 'Published', type: 'toggle', default: false },
     ],
   },
-})`}</pre>
-                </div>
+})`} />
               </div>
             </div>
 
@@ -659,13 +597,7 @@ export default defineResource({
                   First, add a hook for the published posts endpoint:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/web/hooks/use-published-posts.ts
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { useQuery } from '@tanstack/react-query'
+                <CodeBlock language="typescript" filename="apps/web/hooks/use-published-posts.ts" code={`import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
 import type { Post } from '@shared/types/post'
 import type { PaginatedResponse } from '@shared/types/api'
@@ -685,20 +617,13 @@ export function usePublishedPosts({ page = 1, pageSize = 10 }: UsePublishedPosts
       return data
     },
   })
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Next, create the blog listing page:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/web/app/(dashboard)/blog/page.tsx
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`'use client'
+                <CodeBlock language="tsx" filename="apps/web/app/(dashboard)/blog/page.tsx" code={`'use client'
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -785,21 +710,14 @@ export default function BlogPage() {
       )}
     </div>
   )
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Finally, create the single post page to display a full
                   article:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/web/app/(dashboard)/blog/[slug]/page.tsx
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`'use client'
+                <CodeBlock language="tsx" filename="apps/web/app/(dashboard)/blog/[slug]/page.tsx" code={`'use client'
 
 import { useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -869,8 +787,7 @@ export default function BlogPostPage() {
       <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: post.content }} />
     </article>
   )
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 

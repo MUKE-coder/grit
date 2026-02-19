@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function CachingPage() {
   return (
@@ -38,11 +39,7 @@ export default function CachingPage() {
                   convenience methods for storing and retrieving JSON-serialized values.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/cache/cache.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// DefaultTTL is the default cache expiration time.
+                <CodeBlock filename="internal/cache/cache.go" code={`// DefaultTTL is the default cache expiration time.
 const DefaultTTL = 5 * time.Minute
 
 // Cache provides a Redis-backed caching service.
@@ -73,8 +70,7 @@ func (c *Cache) Flush(ctx context.Context) error
 func (c *Cache) Client() *redis.Client
 
 // Close closes the Redis connection.
-func (c *Cache) Close() error`}</pre>
-                </div>
+func (c *Cache) Close() error`} />
               </div>
 
               {/* JSON Serialization */}
@@ -87,11 +83,7 @@ func (c *Cache) Close() error`}</pre>
                   You can cache any Go struct, slice, map, or primitive type.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">cache-examples.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Cache a single struct
+                <CodeBlock filename="cache-examples.go" code={`// Cache a single struct
 user := models.User{ID: 1, Name: "John", Email: "john@example.com"}
 err := cache.Set(ctx, "user:1", user, 10*time.Minute)
 
@@ -115,8 +107,7 @@ stats := map[string]int{"total": 100, "active": 42}
 err = cache.Set(ctx, "stats:users", stats, 30*time.Second)
 
 // Cache a simple string
-err = cache.Set(ctx, "config:motd", "Welcome!", 24*time.Hour)`}</pre>
-                </div>
+err = cache.Set(ctx, "config:motd", "Welcome!", 24*time.Hour)`} />
               </div>
 
               {/* TTL Configuration */}
@@ -183,11 +174,7 @@ err = cache.Set(ctx, "config:motd", "Welcome!", 24*time.Hour)`}</pre>
                   for debugging.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/middleware/cache.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// CacheResponse caches GET request responses in Redis.
+                <CodeBlock filename="internal/middleware/cache.go" code={`// CacheResponse caches GET request responses in Redis.
 // Only caches 200 OK responses. Skips if no cache service available.
 func CacheResponse(cacheService *cache.Cache, ttl time.Duration) gin.HandlerFunc
 
@@ -195,16 +182,11 @@ func CacheResponse(cacheService *cache.Cache, ttl time.Duration) gin.HandlerFunc
 // 1. Generate cache key from URL: sha256(request.URL.String())
 // 2. Check cache: if HIT -> return cached response (X-Cache: HIT)
 // 3. If MISS -> capture response, serve it, then cache it
-// 4. Only cache 200 OK responses with non-empty bodies`}</pre>
-                </div>
+// 4. Only cache 200 OK responses with non-empty bodies`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3">Using the Middleware</h3>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/routes/routes.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import "myapp/apps/api/internal/middleware"
+                <CodeBlock filename="internal/routes/routes.go" code={`import "myapp/apps/api/internal/middleware"
 
 // Apply cache middleware to specific routes
 api := router.Group("/api")
@@ -225,8 +207,7 @@ api := router.Group("/api")
     api.POST("/products", productHandler.Create)
     api.PUT("/products/:id", productHandler.Update)
     api.DELETE("/products/:id", productHandler.Delete)
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Cache Key Patterns */}
@@ -240,11 +221,7 @@ api := router.Group("/api")
                   accepts glob patterns, making it easy to clear all keys for a resource.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">cache-key-patterns.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Recommended key patterns:
+                <CodeBlock filename="cache-key-patterns.go" code={`// Recommended key patterns:
 "user:{id}"             // Single resource: user:42
 "users:page:{page}"     // Paginated list: users:page:1
 "users:count"           // Aggregation
@@ -263,8 +240,7 @@ cache.Delete(ctx, "user:42")
 cache.DeletePattern(ctx, "users:*")  // Clears all user cache
 
 // Flush the entire cache (use with caution)
-cache.Flush(ctx)`}</pre>
-                </div>
+cache.Flush(ctx)`} />
               </div>
 
               {/* When to Use Caching */}
@@ -326,11 +302,7 @@ cache.Flush(ctx)`}</pre>
                   read-through caching and cache invalidation on writes.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/services/product.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type ProductService struct {
+                <CodeBlock filename="internal/services/product.go" code={`type ProductService struct {
     DB    *gorm.DB
     Cache *cache.Cache
 }
@@ -366,8 +338,7 @@ func (s *ProductService) Update(ctx context.Context, id uint, updates map[string
     _ = s.Cache.DeletePattern(ctx, "products:*")
 
     return nil
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 

@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function DockerSetupPage() {
   return (
@@ -79,11 +80,7 @@ export default function DockerSetupPage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">docker-compose.yml</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`services:
+                <CodeBlock language="yaml" filename="docker-compose.yml" code={`services:
   postgres:
     image: postgres:16-alpine
     container_name: myapp-postgres
@@ -141,8 +138,7 @@ export default function DockerSetupPage() {
 volumes:
   postgres-data:
   redis-data:
-  minio-data:`}</pre>
-                </div>
+  minio-data:`} />
               </div>
 
               {/* Service details table */}
@@ -242,11 +238,7 @@ volumes:
                   alongside PostgreSQL and Redis.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">docker-compose.prod.yml</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`services:
+                <CodeBlock language="yaml" filename="docker-compose.prod.yml" code={`services:
   api:
     build:
       context: ./apps/api
@@ -318,8 +310,7 @@ volumes:
 
 volumes:
   postgres-data:
-  redis-data:`}</pre>
-                </div>
+  redis-data:`} />
 
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Deploy to production with:
@@ -354,11 +345,7 @@ volumes:
                   with all dependencies, and the second stage copies only the binary into a minimal
                   Alpine image. The final image is typically under 20MB.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/Dockerfile</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# Build stage
+                <CodeBlock filename="apps/api/Dockerfile" code={`# Build stage
 FROM golang:1.21-alpine AS builder
 
 WORKDIR /app
@@ -384,8 +371,7 @@ COPY --from=builder /app/server .
 
 EXPOSE 8080
 
-CMD ["./server"]`}</pre>
-                </div>
+CMD ["./server"]`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">
                   Next.js (Standalone Build)
@@ -395,11 +381,7 @@ CMD ["./server"]`}</pre>
                   builds the app with standalone output, and runs the production server as a non-root user.
                   Both the web and admin apps share this same Dockerfile pattern.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/Dockerfile</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# Build stage
+                <CodeBlock filename="apps/web/Dockerfile" code={`# Build stage
 FROM node:20-alpine AS base
 
 RUN corepack enable
@@ -445,8 +427,7 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "apps/web/server.js"]`}</pre>
-                </div>
+CMD ["node", "apps/web/server.js"]`} />
               </div>
 
               {/* Common Commands */}

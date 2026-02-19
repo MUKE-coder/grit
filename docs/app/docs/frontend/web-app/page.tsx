@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function WebAppPage() {
   return (
@@ -37,11 +38,7 @@ export default function WebAppPage() {
                   is enabled by default, matching the premium aesthetic across the entire Grit stack.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`apps/web/
+                <CodeBlock filename="apps/web/" code={`apps/web/
 ├── app/
 │   ├── layout.tsx              # Root layout with providers
 │   ├── page.tsx                # Landing / home page
@@ -75,8 +72,7 @@ export default function WebAppPage() {
 ├── next.config.ts
 ├── tailwind.config.ts
 ├── tsconfig.json
-└── package.json`}</pre>
-                </div>
+└── package.json`} />
               </div>
 
               {/* App Router Structure */}
@@ -98,11 +94,7 @@ export default function WebAppPage() {
                   for code elements.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/app/layout.tsx</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import type { Metadata } from "next";
+                <CodeBlock language="tsx" filename="apps/web/app/layout.tsx" code={`import type { Metadata } from "next";
 import { Providers } from "@/components/shared/providers";
 import "./globals.css";
 
@@ -123,8 +115,7 @@ export default function RootLayout({
       </body>
     </html>
   );
-}`}</pre>
-                </div>
+}`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">Providers Component</h3>
                 <p className="text-muted-foreground leading-relaxed mb-4">
@@ -132,11 +123,7 @@ export default function RootLayout({
                   and wraps children with the QueryClientProvider. Toast notifications use Sonner.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/components/shared/providers.tsx</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`"use client";
+                <CodeBlock language="tsx" filename="apps/web/components/shared/providers.tsx" code={`"use client";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
@@ -149,8 +136,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <Toaster theme="dark" position="top-right" />
     </QueryClientProvider>
   );
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Auth Pages */}
@@ -198,11 +184,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                   validates with the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">LoginSchema</code> from the shared package.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/app/(auth)/login/page.tsx</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`"use client";
+                <CodeBlock language="tsx" filename="apps/web/app/(auth)/login/page.tsx" code={`"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -251,8 +233,7 @@ export default function LoginPage() {
       </form>
     </div>
   );
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Protected Dashboard */}
@@ -267,11 +248,7 @@ export default function LoginPage() {
                   navbar with the user avatar and logout button.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/app/(dashboard)/layout.tsx</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`"use client";
+                <CodeBlock language="tsx" filename="apps/web/app/(dashboard)/layout.tsx" code={`"use client";
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -319,19 +296,14 @@ export default function DashboardLayout({
       </main>
     </div>
   );
-}`}</pre>
-                </div>
+}`} />
 
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   The dashboard page itself shows a welcome message, stats cards (total users, active sessions, etc.),
                   and a recent activity feed. Stats are fetched from the Go API using React Query.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/app/(dashboard)/dashboard/page.tsx</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`"use client";
+                <CodeBlock language="tsx" filename="apps/web/app/(dashboard)/dashboard/page.tsx" code={`"use client";
 
 import { useMe } from "@/hooks/use-auth";
 
@@ -359,8 +331,7 @@ export default function DashboardPage() {
       </div>
     </div>
   );
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* API Client */}
@@ -374,11 +345,7 @@ export default function DashboardPage() {
                   when a 401 response is received.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/lib/api-client.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import axios from "axios";
+                <CodeBlock language="typescript" filename="apps/web/lib/api-client.ts" code={`import axios from "axios";
 import Cookies from "js-cookie";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -428,8 +395,7 @@ apiClient.interceptors.response.use(
 
     return Promise.reject(error);
   }
-);`}</pre>
-                </div>
+);`} />
               </div>
 
               {/* React Query Setup */}
@@ -442,11 +408,7 @@ apiClient.interceptors.response.use(
                   window focus in development, stale time of 30 seconds, and retry of 1 attempt on failure.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/lib/query-client.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { QueryClient } from "@tanstack/react-query";
+                <CodeBlock language="typescript" filename="apps/web/lib/query-client.ts" code={`import { QueryClient } from "@tanstack/react-query";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -459,8 +421,7 @@ export const queryClient = new QueryClient({
       retry: 0,
     },
   },
-});`}</pre>
-                </div>
+});`} />
               </div>
 
               {/* Tailwind + shadcn/ui */}
@@ -474,11 +435,7 @@ export const queryClient = new QueryClient({
                   mapped to Tailwind utility classes in <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">tailwind.config.ts</code>.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/app/globals.css</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`:root {
+                <CodeBlock language="css" filename="apps/web/app/globals.css" code={`:root {
   --bg-primary:    #0a0a0f;
   --bg-secondary:  #111118;
   --bg-tertiary:   #1a1a24;
@@ -494,14 +451,9 @@ export const queryClient = new QueryClient({
   --danger:        #ff6b6b;
   --warning:       #fdcb6e;
   --info:          #74b9ff;
-}`}</pre>
-                </div>
+}`} />
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">apps/web/tailwind.config.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import type { Config } from "tailwindcss";
+                <CodeBlock language="typescript" filename="apps/web/tailwind.config.ts" code={`import type { Config } from "tailwindcss";
 
 const config: Config = {
   darkMode: "class",
@@ -533,8 +485,7 @@ const config: Config = {
   plugins: [require("tailwindcss-animate")],
 };
 
-export default config;`}</pre>
-                </div>
+export default config;`} />
               </div>
 
               {/* Dark Theme Default */}

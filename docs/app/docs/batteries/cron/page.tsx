@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function CronPage() {
   return (
@@ -38,11 +39,7 @@ export default function CronPage() {
                   to cron expressions. Both share the same Redis connection and task types.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">cron-flow.txt</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`┌────────────────────┐     ┌─────────┐     ┌──────────────────┐
+                <CodeBlock filename="cron-flow.txt" code={`┌────────────────────┐     ┌─────────┐     ┌──────────────────┐
 │  Cron Scheduler    │     │  Redis  │     │  Worker          │
 │                    │     │  Queue  │     │                  │
 │  Every hour:       │     │         │     │                  │
@@ -52,8 +49,7 @@ export default function CronPage() {
 │  Custom schedule:  │     │         │     │                  │
 │  enqueue           │────>│  task   │────>│  handleCustom()  │
 │  report:generate   │     │         │     │                  │
-└────────────────────┘     └─────────┘     └──────────────────┘`}</pre>
-                </div>
+└────────────────────┘     └─────────┘     └──────────────────┘`} />
               </div>
 
               {/* Scheduler Service */}
@@ -66,11 +62,7 @@ export default function CronPage() {
                   wraps the asynq Scheduler and registers cron tasks at creation time.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/cron/cron.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Task represents a registered cron task for display purposes.
+                <CodeBlock filename="internal/cron/cron.go" code={`// Task represents a registered cron task for display purposes.
 type Task struct {
     Name     string \`json:"name"\`
     Schedule string \`json:"schedule"\`
@@ -92,8 +84,7 @@ func New(redisURL string) (*Scheduler, error)
 func (s *Scheduler) Start() error
 
 // Stop shuts down the scheduler gracefully.
-func (s *Scheduler) Stop()`}</pre>
-                </div>
+func (s *Scheduler) Stop()`} />
               </div>
 
               {/* Built-in Tasks */}
@@ -127,11 +118,7 @@ func (s *Scheduler) Stop()`}</pre>
                   </table>
                 </div>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/cron/cron.go (registration)</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func New(redisURL string) (*Scheduler, error) {
+                <CodeBlock filename="internal/cron/cron.go (registration)" code={`func New(redisURL string) (*Scheduler, error) {
     redisOpt, err := asynq.ParseRedisURI(redisURL)
     if err != nil {
         return nil, fmt.Errorf("parsing redis URL for cron: %w", err)
@@ -156,8 +143,7 @@ func (s *Scheduler) Stop()`}</pre>
     // grit:cron-tasks
 
     return &Scheduler{scheduler: scheduler}, nil
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Adding Custom Cron Tasks */}
@@ -171,11 +157,7 @@ func (s *Scheduler) Stop()`}</pre>
                   registered in the job worker.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">custom-cron-task.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Add after the "// grit:cron-tasks" marker:
+                <CodeBlock filename="custom-cron-task.go" code={`// Add after the "// grit:cron-tasks" marker:
 
 // Generate daily reports -- every day at midnight
 _, err = scheduler.Register("0 0 * * *", asynq.NewTask("report:daily", nil))
@@ -198,8 +180,7 @@ RegisteredTasks = append(RegisteredTasks, Task{
     Name:     "Send weekly digest",
     Schedule: "0 9 * * 1",
     Type:     "email:digest",
-})`}</pre>
-                </div>
+})`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3">Cron Expression Reference</h3>
 
@@ -253,17 +234,12 @@ RegisteredTasks = append(RegisteredTasks, Task{
                   add tasks manually either above or below it -- just do not remove the marker.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">marker-location.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`    // ... built-in tasks above ...
+                <CodeBlock filename="marker-location.go" code={`    // ... built-in tasks above ...
 
     // grit:cron-tasks    <-- CLI injects new tasks here
 
     return &Scheduler{scheduler: scheduler}, nil
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Admin Cron Viewer */}
@@ -277,11 +253,7 @@ RegisteredTasks = append(RegisteredTasks, Task{
                   which is populated during scheduler initialization.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">internal/handlers/cron.go</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// CronHandler handles admin cron task endpoints.
+                <CodeBlock filename="internal/handlers/cron.go" code={`// CronHandler handles admin cron task endpoints.
 type CronHandler struct{}
 
 // ListTasks returns all registered cron tasks.
@@ -305,8 +277,7 @@ func (h *CronHandler) ListTasks(c *gin.Context) {
 //       "type": "tokens:cleanup"
 //     }
 //   ]
-// }`}</pre>
-                </div>
+// }`} />
               </div>
 
               {/* Lifecycle */}
@@ -319,11 +290,7 @@ func (h *CronHandler) ListTasks(c *gin.Context) {
                   and stopped during graceful shutdown. It runs as a goroutine alongside the HTTP server.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">cmd/server/main.go (excerpt)</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Create and start the cron scheduler
+                <CodeBlock filename="cmd/server/main.go (excerpt)" code={`// Create and start the cron scheduler
 cronScheduler, err := cron.New(cfg.RedisURL)
 if err != nil {
     log.Printf("Warning: Cron scheduler failed to start: %v", err)
@@ -331,8 +298,7 @@ if err != nil {
     cronScheduler.Start()
     defer cronScheduler.Stop()
     log.Println("Cron scheduler started")
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 

@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function SharedPackagePage() {
   return (
@@ -37,11 +38,7 @@ export default function SharedPackagePage() {
                   on. Import from it using the workspace alias (e.g., <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">@myapp/shared/schemas</code>).
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">packages/shared/</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`packages/shared/
+                <CodeBlock filename="packages/shared/" code={`packages/shared/
 ├── package.json
 ├── tsconfig.json
 ├── schemas/              # Zod validation schemas
@@ -57,14 +54,9 @@ export default function SharedPackagePage() {
 │   ├── blog.ts           # Generated: Blog interface
 │   └── index.ts          # Re-exports all types
 └── constants/
-    └── index.ts          # ROLES, API_ROUTES, etc.`}</pre>
-                </div>
+    └── index.ts          # ROLES, API_ROUTES, etc.`} />
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">packages/shared/package.json</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+                <CodeBlock language="json" filename="packages/shared/package.json" code={`{
   "name": "@myapp/shared",
   "version": "0.8.0",
   "private": true,
@@ -78,8 +70,7 @@ export default function SharedPackagePage() {
   "dependencies": {
     "zod": "^3.22.0"
   }
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Zod Schemas */}
@@ -95,11 +86,7 @@ export default function SharedPackagePage() {
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">User Schemas (Built-in)</h3>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">packages/shared/schemas/user.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { z } from "zod";
+                <CodeBlock language="typescript" filename="packages/shared/schemas/user.ts" code={`import { z } from "zod";
 
 export const LoginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -137,19 +124,14 @@ export type LoginInput = z.infer<typeof LoginSchema>;
 export type RegisterInput = z.infer<typeof RegisterSchema>;
 export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;
 export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
-export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;`}</pre>
-                </div>
+export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">Generated Resource Schemas</h3>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Running <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate resource Post --fields &quot;title:string,content:text,published:bool&quot;</code> generates:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">packages/shared/schemas/post.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { z } from "zod";
+                <CodeBlock language="typescript" filename="packages/shared/schemas/post.ts" code={`import { z } from "zod";
 
 export const CreatePostSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -164,8 +146,7 @@ export const UpdatePostSchema = z.object({
 });
 
 export type CreatePostInput = z.infer<typeof CreatePostSchema>;
-export type UpdatePostInput = z.infer<typeof UpdatePostSchema>;`}</pre>
-                </div>
+export type UpdatePostInput = z.infer<typeof UpdatePostSchema>;`} />
               </div>
 
               {/* TypeScript Types */}
@@ -179,11 +160,7 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>;`}</pre>
                   API response wrapper types standardize how the frontend handles all API responses.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">packages/shared/types/user.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`export interface User {
+                <CodeBlock language="typescript" filename="packages/shared/types/user.ts" code={`export interface User {
   id: number;
   name: string;
   email: string;
@@ -213,14 +190,9 @@ export interface AuthResponse {
     refresh_token: string;
     expires_at: number;
   };
-}`}</pre>
-                </div>
+}`} />
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">packages/shared/types/api.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`export interface ApiResponse<T> {
+                <CodeBlock language="typescript" filename="packages/shared/types/api.ts" code={`export interface ApiResponse<T> {
   data: T;
   message?: string;
 }
@@ -241,14 +213,9 @@ export interface ApiError {
     message: string;
     details?: Record<string, string>;
   };
-}`}</pre>
-                </div>
+}`} />
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">packages/shared/types/upload.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`export interface Upload {
+                <CodeBlock language="typescript" filename="packages/shared/types/upload.ts" code={`export interface Upload {
   id: number;
   filename: string;
   original_name: string;
@@ -260,8 +227,7 @@ export interface ApiError {
   user_id: number;
   created_at: string;
   updated_at: string;
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Constants */}
@@ -275,11 +241,7 @@ export interface ApiError {
                   across the entire frontend.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">packages/shared/constants/index.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`export const ROLES = {
+                <CodeBlock language="typescript" filename="packages/shared/constants/index.ts" code={`export const ROLES = {
   ADMIN: "admin",
   EDITOR: "editor",
   USER: "user",
@@ -320,8 +282,7 @@ export const API_ROUTES = {
   },
   HEALTH: "/api/health",
   // grit:api-routes  (marker for code generation)
-} as const;`}</pre>
-                </div>
+} as const;`} />
               </div>
 
               {/* How Schemas Are Used */}
@@ -335,11 +296,7 @@ export const API_ROUTES = {
                   validation. This ensures consistent error messages and validation rules across the stack.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">validation-flow.txt</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`┌─────────────────────────────────────────────────┐
+                <CodeBlock filename="validation-flow.txt" code={`┌─────────────────────────────────────────────────┐
 │  Go Struct (source of truth)                    │
 │  type Post struct {                             │
 │    Title   string \`binding:"required"\`           │
@@ -360,18 +317,13 @@ export const API_ROUTES = {
       ┌──────────────┐  ┌──────────────┐
       │  apps/web    │  │  apps/admin  │
       │  form valid. │  │  form valid. │
-      └──────────────┘  └──────────────┘`}</pre>
-                </div>
+      └──────────────┘  └──────────────┘`} />
 
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Example usage in a form component:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">using-schemas-in-forms.tsx</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { CreatePostSchema, type CreatePostInput } from "@myapp/shared/schemas";
+                <CodeBlock language="tsx" filename="using-schemas-in-forms.tsx" code={`import { CreatePostSchema, type CreatePostInput } from "@myapp/shared/schemas";
 import { useCreatePost } from "@/hooks/use-posts";
 
 function CreatePostForm() {
@@ -397,8 +349,7 @@ function CreatePostForm() {
     // Schema validation passed -- send to Go API
     createPost.mutate(result.data);
   };
-}`}</pre>
-                </div>
+}`} />
               </div>
 
               {/* Export Structure */}
@@ -412,11 +363,7 @@ function CreatePostForm() {
                   are used by the code generator to inject new exports when a resource is generated.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">packages/shared/schemas/index.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`export {
+                <CodeBlock language="typescript" filename="packages/shared/schemas/index.ts" code={`export {
   LoginSchema,
   RegisterSchema,
   UpdateUserSchema,
@@ -428,14 +375,9 @@ function CreatePostForm() {
   type ForgotPasswordInput,
   type ResetPasswordInput,
 } from "./user";
-// grit:schemas  <-- new exports are injected here`}</pre>
-                </div>
+// grit:schemas  <-- new exports are injected here`} />
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">packages/shared/types/index.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`export type {
+                <CodeBlock language="typescript" filename="packages/shared/types/index.ts" code={`export type {
   User, LoginRequest, RegisterRequest, AuthResponse,
 } from "./user";
 
@@ -444,8 +386,7 @@ export type {
 } from "./api";
 
 export type { Upload } from "./upload";
-// grit:types  <-- new type exports are injected here`}</pre>
-                </div>
+// grit:types  <-- new type exports are injected here`} />
 
                 <div className="p-4 rounded-lg border border-primary/20 bg-primary/5">
                   <p className="text-sm text-foreground/80">

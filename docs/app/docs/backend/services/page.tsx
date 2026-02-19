@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function ServicesPage() {
   return (
@@ -81,11 +82,7 @@ export default function ServicesPage() {
                 plus methods that contain business logic. Services live in
                 <code>apps/api/internal/services/</code>.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/services/post.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package services
+              <CodeBlock language="go" filename="apps/api/internal/services/post.go" code={`package services
 
 import (
     "fmt"
@@ -104,21 +101,15 @@ type PostService struct {
 // NewPostService creates a new PostService.
 func NewPostService(db *gorm.DB) *PostService {
     return &PostService{DB: db}
-}`}</pre>
-              </div>
+}`} />
               <p>
                 Inject the service into your handler:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">routes/routes.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`postService := services.NewPostService(db)
+              <CodeBlock language="go" filename="routes/routes.go" code={`postService := services.NewPostService(db)
 postHandler := &handlers.PostHandler{
     DB:      db,
     Service: postService,
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── ListParams ─────────────────────────────── */}
               <h2 id="list-params">ListParams Struct</h2>
@@ -127,11 +118,7 @@ postHandler := &handlers.PostHandler{
                 pagination, search, sort, and filter parameters. This keeps service method
                 signatures clean and makes it easy to add new filters.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">services/post.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// ListParams holds pagination, search, and sort parameters.
+              <CodeBlock language="go" filename="services/post.go" code={`// ListParams holds pagination, search, and sort parameters.
 type ListParams struct {
     Page      int
     PageSize  int
@@ -164,8 +151,7 @@ func (p *ListParams) ClampDefaults() {
     if p.SortBy == "" {
         p.SortBy = "created_at"
     }
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── Query Building ─────────────────────────────── */}
               <h2 id="query-building">Query Building</h2>
@@ -173,11 +159,7 @@ func (p *ListParams) ClampDefaults() {
                 Services build GORM queries step by step. This pattern keeps complex queries
                 readable and composable.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">services/post.go -- List</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// AllowedSorts defines which columns can be sorted on.
+              <CodeBlock language="go" filename="services/post.go -- List" code={`// AllowedSorts defines which columns can be sorted on.
 var postAllowedSorts = map[string]bool{
     "id": true, "title": true, "created_at": true, "published": true,
 }
@@ -246,16 +228,11 @@ func (s *PostService) List(params ListParams) (*ListResult, error) {
         Size:  params.PageSize,
         Pages: pages,
     }, nil
-}`}</pre>
-              </div>
+}`} />
               <p>
                 The handler becomes much simpler when it delegates to a service:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">handlers/post.go -- using service</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func (h *PostHandler) List(c *gin.Context) {
+              <CodeBlock language="go" filename="handlers/post.go -- using service" code={`func (h *PostHandler) List(c *gin.Context) {
     page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
     pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 
@@ -291,8 +268,7 @@ func (s *PostService) List(params ListParams) (*ListResult, error) {
             "pages":     result.Pages,
         },
     })
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── Business Logic Examples ─────────────────────────────── */}
               <h2 id="business-logic">Business Logic Examples</h2>
@@ -306,11 +282,7 @@ func (s *PostService) List(params ListParams) (*ListResult, error) {
                 A publish action might need to validate the post, update its status, and send a
                 notification. All of this belongs in a service:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">services/post.go -- Publish</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Publish marks a post as published after validation.
+              <CodeBlock language="go" filename="services/post.go -- Publish" code={`// Publish marks a post as published after validation.
 func (s *PostService) Publish(postID uint) (*models.Post, error) {
     var post models.Post
     if err := s.DB.First(&post, postID).Error; err != nil {
@@ -335,15 +307,10 @@ func (s *PostService) Publish(postID uint) (*models.Post, error) {
     }
 
     return &post, nil
-}`}</pre>
-              </div>
+}`} />
 
               <h3 id="user-stats">Aggregation / Statistics</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">services/user.go -- Stats</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// UserStats holds aggregated user statistics.
+              <CodeBlock language="go" filename="services/user.go -- Stats" code={`// UserStats holds aggregated user statistics.
 type UserStats struct {
     Total       int64 \`json:"total"\`
     Active      int64 \`json:"active"\`
@@ -366,8 +333,7 @@ func (s *UserService) GetStats() (*UserStats, error) {
         Count(&stats.NewThisWeek)
 
     return &stats, nil
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── Transaction Handling ─────────────────────────────── */}
               <h2 id="transactions">Transaction Handling</h2>
@@ -376,11 +342,7 @@ func (s *UserService) GetStats() (*UserStats, error) {
                 fail together, wrap them in a GORM transaction. If any step returns an error,
                 the entire transaction is rolled back.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">services/order.go -- CreateOrder</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// CreateOrder creates an order and decrements product stock atomically.
+              <CodeBlock language="go" filename="services/order.go -- CreateOrder" code={`// CreateOrder creates an order and decrements product stock atomically.
 func (s *OrderService) CreateOrder(order *models.Order, items []models.OrderItem) error {
     return s.DB.Transaction(func(tx *gorm.DB) error {
         // Step 1: Create the order
@@ -420,8 +382,7 @@ func (s *OrderService) CreateOrder(order *models.Order, items []models.OrderItem
 
         return nil // commit
     })
-}`}</pre>
-              </div>
+}`} />
               <p>Key points about GORM transactions:</p>
               <ul>
                 <li>Use <code>tx</code> (the transaction handle) for all queries inside the callback, not <code>s.DB</code>.</li>
@@ -436,11 +397,7 @@ func (s *OrderService) CreateOrder(order *models.Order, items []models.OrderItem
                 Grit ships with an <code>AuthService</code> that handles all JWT token operations.
                 It is the canonical example of a well-structured service.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/services/auth.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type AuthService struct {
+              <CodeBlock language="go" filename="apps/api/internal/services/auth.go" code={`type AuthService struct {
     Secret        string
     AccessExpiry  time.Duration
     RefreshExpiry time.Duration
@@ -505,8 +462,7 @@ func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
     }
 
     return claims, nil
-}`}</pre>
-              </div>
+}`} />
 
               {/* ── Best Practices ─────────────────────────────── */}
               <h2 id="best-practices">Best Practices</h2>

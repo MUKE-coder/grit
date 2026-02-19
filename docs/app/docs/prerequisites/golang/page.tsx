@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
+import { CodeBlock } from "@/components/code-block";
 
 export default function GoForGritPage() {
   return (
@@ -47,20 +48,13 @@ export default function GoForGritPage() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">main.go</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`package main
+            <CodeBlock language="go" filename="main.go" code={`package main
 
 import "fmt"
 
 func main() {
     fmt.Println("Hello, Grit!")
-}`}
-              </pre>
-            </div>
+}`} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -92,12 +86,7 @@ func main() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">variables.go</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`package main
+            <CodeBlock language="go" filename="variables.go" code={`package main
 
 import "fmt"
 
@@ -118,9 +107,7 @@ func main() {
 
     fmt.Println(name, host, port, debug, price, width, height)
     fmt.Println("App:", AppName)
-}`}
-              </pre>
-            </div>
+}`} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -153,12 +140,7 @@ func main() {
               </ul>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">models/user.go</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`package models
+            <CodeBlock language="go" filename="models/user.go" code={`package models
 
 import (
     "time"
@@ -175,9 +157,7 @@ type User struct {
     CreatedAt time.Time      \`json:"created_at"\`
     UpdatedAt time.Time      \`json:"updated_at"\`
     DeletedAt gorm.DeletedAt \`gorm:"index" json:"-"\`
-}`}
-              </pre>
-            </div>
+}`} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -208,12 +188,7 @@ type User struct {
               </p>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">errors.go</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`package main
+            <CodeBlock language="go" filename="errors.go" code={`package main
 
 import (
     "errors"
@@ -244,9 +219,7 @@ func main() {
         return
     }
     fmt.Println("Discount:", discount) // 20.0
-}`}
-              </pre>
-            </div>
+}`} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -280,12 +253,7 @@ func main() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">collections.go</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`package main
+            <CodeBlock language="go" filename="collections.go" code={`package main
 
 import "fmt"
 
@@ -311,9 +279,7 @@ func main() {
 
     // Access a single value
     fmt.Println("Name:", user["name"])
-}`}
-              </pre>
-            </div>
+}`} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -342,12 +308,7 @@ func main() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">interfaces.go</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`package main
+            <CodeBlock language="go" filename="interfaces.go" code={`package main
 
 import "fmt"
 
@@ -387,9 +348,7 @@ func main() {
 
     alert(email, "alice@example.com")
     alert(slack, "alice")
-}`}
-              </pre>
-            </div>
+}`} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -420,12 +379,7 @@ func main() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">pointers.go</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`package main
+            <CodeBlock language="go" filename="pointers.go" code={`package main
 
 import "fmt"
 
@@ -451,9 +405,7 @@ func main() {
     if name == nil {
         fmt.Println("Name is not set")
     }
-}`}
-              </pre>
-            </div>
+}`} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -483,12 +435,7 @@ func main() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">goroutines.go</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`package main
+            <CodeBlock language="go" filename="goroutines.go" code={`package main
 
 import (
     "fmt"
@@ -524,9 +471,7 @@ func main() {
 
     msg := <-ch // Receive
     fmt.Println(msg)
-}`}
-              </pre>
-            </div>
+}`} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -558,12 +503,7 @@ func main() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">project structure</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`apps/api/
+            <CodeBlock language="bash" filename="project structure" code={`apps/api/
 ├── cmd/server/
 │   └── main.go          # Entry point (package main)
 ├── internal/
@@ -582,9 +522,7 @@ func main() {
 │   │   └── auth.go      # package middleware -- RequireAuth()
 │   └── routes/
 │       └── routes.go    # package routes -- Setup()
-└── go.mod               # Module definition`}
-              </pre>
-            </div>
+└── go.mod               # Module definition`} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -619,12 +557,7 @@ func main() {
               </ul>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">server.go</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`package main
+            <CodeBlock language="go" filename="server.go" code={`package main
 
 import (
     "net/http"
@@ -677,9 +610,7 @@ func createUser(c *gin.Context) {
 func getUserByID(c *gin.Context) {
     id := c.Param("id")
     c.JSON(http.StatusOK, gin.H{"data": gin.H{"id": id}})
-}`}
-              </pre>
-            </div>
+}`} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -711,12 +642,7 @@ func getUserByID(c *gin.Context) {
               </p>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">gorm_crud.go</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`package main
+            <CodeBlock language="go" filename="gorm_crud.go" code={`package main
 
 import (
     "gorm.io/driver/postgres"
@@ -763,9 +689,7 @@ func main() {
 
     // Preload relationships
     // db.Preload("Category").Find(&products)
-}`}
-              </pre>
-            </div>
+}`} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -795,12 +719,7 @@ func main() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">config/config.go</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`package config
+            <CodeBlock language="go" filename="config/config.go" code={`package config
 
 import (
     "os"
@@ -843,9 +762,7 @@ func getEnv(key, fallback string) string {
         return value
     }
     return fallback
-}`}
-              </pre>
-            </div>
+}`} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -878,12 +795,7 @@ func getEnv(key, fallback string) string {
               </ol>
             </div>
 
-            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                <span className="text-[11px] font-mono text-muted-foreground/40">request lifecycle</span>
-              </div>
-              <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-{`GET /api/products/42
+            <CodeBlock language="bash" filename="request lifecycle" code={`GET /api/products/42
         │
         ▼
 ┌─── main.go ───────────────────────────────┐
@@ -924,9 +836,7 @@ func getEnv(key, fallback string) string {
 │         First(&product, id).Error         │
 │     return product, err                   │
 │ }                                         │
-└───────────────────────────────────────────┘`}
-              </pre>
-            </div>
+└───────────────────────────────────────────┘`} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>

@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
+import { CodeBlock } from '@/components/code-block'
 
 export default function InstallationPage() {
   return (
@@ -631,16 +632,7 @@ export default function InstallationPage() {
             </div>
 
             <div className="mb-4">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">
-                    ~/.zshrc
-                  </span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">
-                  {`export PATH=$PATH:$(go env GOPATH)/bin`}
-                </pre>
-              </div>
+              <CodeBlock filename="~/.zshrc" code={`export PATH=$PATH:$(go env GOPATH)/bin`} />
             </div>
 
             <div className="prose-grit">

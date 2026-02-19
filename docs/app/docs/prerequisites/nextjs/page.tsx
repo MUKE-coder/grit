@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
+import { CodeBlock } from "@/components/code-block";
 
 const reactBasicsCode = `// A React component is just a function that returns JSX
 interface GreetingProps {
@@ -511,12 +512,7 @@ export default function NextjsForGritPage() {
                   ternaries.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">components/Greeting.tsx</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{reactBasicsCode}</pre>
-                </div>
+                <CodeBlock language="tsx" filename="components/Greeting.tsx" code={reactBasicsCode} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
                   <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -546,12 +542,7 @@ export default function NextjsForGritPage() {
                   but explicit types on function parameters and return values make your code self-documenting.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">types.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{typescriptCode}</pre>
-                </div>
+                <CodeBlock language="tsx" filename="types.ts" code={typescriptCode} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
                   <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -578,12 +569,7 @@ export default function NextjsForGritPage() {
                   effect re-runs, and the cleanup function handles teardown.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">components/UserProfile.tsx</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{useStateEffectCode}</pre>
-                </div>
+                <CodeBlock language="tsx" filename="components/UserProfile.tsx" code={useStateEffectCode} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
                   <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -613,12 +599,7 @@ export default function NextjsForGritPage() {
                   like <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">[id]</code>.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">app/ folder structure</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{appRouterCode}</pre>
-                </div>
+                <CodeBlock filename="app/ folder structure" code={appRouterCode} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
                   <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -648,12 +629,7 @@ export default function NextjsForGritPage() {
                   event handlers, and everything interactive.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">server-vs-client.tsx</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{serverClientCode}</pre>
-                </div>
+                <CodeBlock language="tsx" filename="server-vs-client.tsx" code={serverClientCode} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
                   <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -682,12 +658,7 @@ export default function NextjsForGritPage() {
                   under the hood and can be customized by editing the source files directly.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">components/ProductCard.tsx</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{tailwindCode}</pre>
-                </div>
+                <CodeBlock language="tsx" filename="components/ProductCard.tsx" code={tailwindCode} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
                   <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -717,12 +688,7 @@ export default function NextjsForGritPage() {
                   the root of the app provides the cache to all components.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">hooks/use-posts.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{reactQueryCode}</pre>
-                </div>
+                <CodeBlock language="typescript" filename="hooks/use-posts.ts" code={reactQueryCode} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
                   <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -751,12 +717,7 @@ export default function NextjsForGritPage() {
                   error handling without exceptions.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">schemas/user.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{zodCode}</pre>
-                </div>
+                <CodeBlock language="typescript" filename="schemas/user.ts" code={zodCode} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
                   <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -785,12 +746,7 @@ export default function NextjsForGritPage() {
                   you already defined -- no duplicate validation logic.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">components/LoginForm.tsx</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{reactHookFormCode}</pre>
-                </div>
+                <CodeBlock language="tsx" filename="components/LoginForm.tsx" code={reactHookFormCode} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
                   <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -817,12 +773,7 @@ export default function NextjsForGritPage() {
                   in kebab-case.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">hooks/use-users.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{customHooksCode}</pre>
-                </div>
+                <CodeBlock language="typescript" filename="hooks/use-users.ts" code={customHooksCode} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
                   <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -852,12 +803,7 @@ export default function NextjsForGritPage() {
                   and <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded"> lib/</code> for utilities.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">lib/api-client.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{apiClientCode}</pre>
-                </div>
+                <CodeBlock language="typescript" filename="lib/api-client.ts" code={apiClientCode} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
                   <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>

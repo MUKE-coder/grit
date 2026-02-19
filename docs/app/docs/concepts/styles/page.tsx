@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function StyleVariantsPage() {
   return (
@@ -287,11 +288,7 @@ export default function StyleVariantsPage() {
                   The selected style is saved in your project&apos;s <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit.config.ts</code> file:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">grit.config.ts</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// Grit Framework Configuration
+                <CodeBlock language="typescript" filename="grit.config.ts" code={`// Grit Framework Configuration
 export default {
   name: "my-app",
   style: "modern",
@@ -300,8 +297,7 @@ export default {
     prefix: "/api",
   },
   // ...
-};`}</pre>
-                </div>
+};`} />
 
                 <p className="text-muted-foreground leading-relaxed mt-4">
                   When you run <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit upgrade</code>,

@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function HandlersPage() {
   return (
@@ -32,11 +33,7 @@ export default function HandlersPage() {
                 Every handler in Grit is a struct with a <code>DB</code> field (and optionally other
                 dependencies). Methods on the struct correspond to HTTP endpoints.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/handlers/post.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package handlers
+              <CodeBlock language="go" filename="apps/api/internal/handlers/post.go" code={`package handlers
 
 import (
     "github.com/gin-gonic/gin"
@@ -53,24 +50,18 @@ type PostHandler struct {
 // func (h *PostHandler) GetByID(c *gin.Context) { ... }
 // func (h *PostHandler) Create(c *gin.Context)  { ... }
 // func (h *PostHandler) Update(c *gin.Context)  { ... }
-// func (h *PostHandler) Delete(c *gin.Context)  { ... }`}</pre>
-              </div>
+// func (h *PostHandler) Delete(c *gin.Context)  { ... }`} />
               <p>
                 Handlers are instantiated in <code>routes/routes.go</code> and wired to their endpoints:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/api/internal/routes/routes.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`postHandler := &handlers.PostHandler{DB: db}
+              <CodeBlock language="go" filename="apps/api/internal/routes/routes.go" code={`postHandler := &handlers.PostHandler{DB: db}
 
 // Wire to routes
 protected.GET("/posts", postHandler.List)
 protected.GET("/posts/:id", postHandler.GetByID)
 protected.POST("/posts", postHandler.Create)
 protected.PUT("/posts/:id", postHandler.Update)
-protected.DELETE("/posts/:id", postHandler.Delete)`}</pre>
-              </div>
+protected.DELETE("/posts/:id", postHandler.Delete)`} />
 
               {/* ── Request Binding ─────────────────────────────── */}
               <h2 id="request-binding">Request Binding with Gin</h2>
@@ -79,11 +70,7 @@ protected.DELETE("/posts/:id", postHandler.Delete)`}</pre>
                 and validates it using <code>binding</code> struct tags. If validation fails, it
                 returns an error that you can send back to the client.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">request_binding.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type createPostRequest struct {
+              <CodeBlock language="go" filename="request_binding.go" code={`type createPostRequest struct {
     Title     string \`json:"title" binding:"required,min=3,max=255"\`
     Body      string \`json:"body" binding:"required"\`
     Published bool   \`json:"published"\`
@@ -102,8 +89,7 @@ func (h *PostHandler) Create(c *gin.Context) {
     }
 
     // req is now validated and ready to use
-}`}</pre>
-              </div>
+}`} />
               <p>
                 Define request structs as private types (lowercase first letter) inside the handler
                 file. This keeps them close to the handler that uses them and prevents external access.
@@ -171,11 +157,7 @@ func (h *PostHandler) Create(c *gin.Context) {
                 control the page number and page size, and the response includes a <code>meta</code> object
                 with pagination details.
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">pagination.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func (h *PostHandler) List(c *gin.Context) {
+              <CodeBlock language="go" filename="pagination.go" code={`func (h *PostHandler) List(c *gin.Context) {
     page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
     pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 
@@ -209,22 +191,9 @@ func (h *PostHandler) Create(c *gin.Context) {
             "pages":     pages,
         },
     })
-}`}</pre>
-              </div>
+}`} />
               <p>The client calls the endpoint like this:</p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
-                </div>
-                <div className="p-5 font-mono text-sm">
-                  <span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">GET /api/posts?page=2&page_size=10</span>
-                </div>
-              </div>
+              <CodeBlock terminal code="GET /api/posts?page=2&page_size=10" />
 
               {/* ── Search, Sort & Filter ─────────────────────────────── */}
               <h2 id="search-sort-filter">Search, Sort & Filter</h2>
@@ -232,11 +201,7 @@ func (h *PostHandler) Create(c *gin.Context) {
                 The Grit handler pattern supports search, sort, and filter out of the box.
                 The built-in <code>UserHandler.List</code> demonstrates the full pattern:
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">search_sort_filter.go</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func (h *UserHandler) List(c *gin.Context) {
+              <CodeBlock language="go" filename="search_sort_filter.go" code={`func (h *UserHandler) List(c *gin.Context) {
     page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
     pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
     search := c.Query("search")
@@ -289,8 +254,7 @@ func (h *PostHandler) Create(c *gin.Context) {
             "pages":     pages,
         },
     })
-}`}</pre>
-              </div>
+}`} />
 
               <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-6">
                 <table className="w-full text-sm">
@@ -339,11 +303,7 @@ func (h *PostHandler) Create(c *gin.Context) {
               </p>
 
               <h3 id="create">Create</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">handlers/post.go -- Create</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type createPostRequest struct {
+              <CodeBlock language="go" filename="handlers/post.go -- Create" code={`type createPostRequest struct {
     Title     string \`json:"title" binding:"required,min=3,max=255"\`
     Body      string \`json:"body" binding:"required"\`
     Published bool   \`json:"published"\`
@@ -385,15 +345,10 @@ func (h *PostHandler) Create(c *gin.Context) {
         "data":    post,
         "message": "Post created successfully",
     })
-}`}</pre>
-              </div>
+}`} />
 
               <h3 id="get-by-id">GetByID</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">handlers/post.go -- GetByID</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func (h *PostHandler) GetByID(c *gin.Context) {
+              <CodeBlock language="go" filename="handlers/post.go -- GetByID" code={`func (h *PostHandler) GetByID(c *gin.Context) {
     id := c.Param("id")
 
     var post models.Post
@@ -410,15 +365,10 @@ func (h *PostHandler) Create(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{
         "data": post,
     })
-}`}</pre>
-              </div>
+}`} />
 
               <h3 id="update">Update</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">handlers/post.go -- Update</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func (h *PostHandler) Update(c *gin.Context) {
+              <CodeBlock language="go" filename="handlers/post.go -- Update" code={`func (h *PostHandler) Update(c *gin.Context) {
     id := c.Param("id")
 
     var post models.Post
@@ -476,8 +426,7 @@ func (h *PostHandler) Create(c *gin.Context) {
         "data":    post,
         "message": "Post updated successfully",
     })
-}`}</pre>
-              </div>
+}`} />
               <p>
                 Notice the use of a <strong>pointer</strong> for boolean fields (<code>*bool</code>).
                 This lets you distinguish between &quot;not sent&quot; (<code>nil</code>) and &quot;sent as false&quot;.
@@ -485,11 +434,7 @@ func (h *PostHandler) Create(c *gin.Context) {
               </p>
 
               <h3 id="delete">Delete</h3>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">handlers/post.go -- Delete</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func (h *PostHandler) Delete(c *gin.Context) {
+              <CodeBlock language="go" filename="handlers/post.go -- Delete" code={`func (h *PostHandler) Delete(c *gin.Context) {
     id := c.Param("id")
 
     var post models.Post
@@ -516,8 +461,7 @@ func (h *PostHandler) Create(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{
         "message": "Post deleted successfully",
     })
-}`}</pre>
-              </div>
+}`} />
               <p>
                 Because the <code>Post</code> model includes <code>gorm.DeletedAt</code>, calling
                 <code>db.Delete()</code> performs a <strong>soft delete</strong>. The row remains in the

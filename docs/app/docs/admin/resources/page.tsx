@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function ResourceDefinitionsPage() {
   return (
@@ -38,11 +39,7 @@ export default function ResourceDefinitionsPage() {
 
             {/* Type reference */}
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">ResourceConfig type</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`interface ResourceConfig {
+              <CodeBlock filename="ResourceConfig type" code={`interface ResourceConfig {
   // Identity
   name: string              // Singular name, PascalCase (e.g. "Invoice")
   slug?: string             // URL slug, auto-derived if omitted (e.g. "invoices")
@@ -66,8 +63,7 @@ export default function ResourceDefinitionsPage() {
   permissions?: {
     roles: string[]         // Roles that can access this resource
   }
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -105,11 +101,7 @@ export default function ResourceDefinitionsPage() {
 
             {/* Table config type */}
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">TableConfig type</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`interface TableConfig {
+              <CodeBlock filename="TableConfig type" code={`interface TableConfig {
   columns: ColumnDef[]
   filters?: FilterDef[]
   pageSize?: number            // Default: 20
@@ -120,8 +112,7 @@ export default function ResourceDefinitionsPage() {
   searchable?: boolean         // Enable global search (default: true)
   actions?: Action[]           // 'create' | 'edit' | 'delete' | 'view' | 'export'
   bulkActions?: BulkAction[]   // 'delete' | 'export' | custom string
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -135,11 +126,7 @@ export default function ResourceDefinitionsPage() {
 
             {/* Column type */}
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">ColumnDef type</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`interface ColumnDef {
+              <CodeBlock filename="ColumnDef type" code={`interface ColumnDef {
   key: string                  // JSON field name (supports dot notation: "customer.name")
   label: string                // Column header text
   sortable?: boolean           // Allow sorting by this column
@@ -165,8 +152,7 @@ interface BadgeConfig {
     color: 'green' | 'yellow' | 'red' | 'blue' | 'purple' | 'gray'
     label: string
   }
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -219,11 +205,7 @@ interface BadgeConfig {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">Badge column example</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+              <CodeBlock filename="Badge column example" code={`{
   key: 'status',
   label: 'Status',
   badge: {
@@ -231,8 +213,7 @@ interface BadgeConfig {
     pending: { color: 'yellow', label: 'Pending' },
     overdue: { color: 'red',    label: 'Overdue' },
   },
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -244,11 +225,7 @@ interface BadgeConfig {
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">FilterDef type</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`interface FilterDef {
+              <CodeBlock filename="FilterDef type" code={`interface FilterDef {
   key: string                  // Field to filter on
   type: 'select' | 'date-range' | 'number-range'
   label?: string               // Display label (defaults to key)
@@ -260,8 +237,7 @@ filters: [
   { key: 'status', type: 'select', options: ['paid', 'pending', 'overdue'] },
   { key: 'created_at', type: 'date-range' },
   { key: 'amount', type: 'number-range' },
-]`}</pre>
-              </div>
+]`} />
             </div>
 
             <div className="prose-grit">
@@ -275,11 +251,7 @@ filters: [
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">FormConfig type</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`interface FormConfig {
+              <CodeBlock filename="FormConfig type" code={`interface FormConfig {
   fields: FieldDef[]
   layout?: 'single' | 'two-column'  // Default: 'single'
   validation?: string               // Zod schema name from shared package
@@ -318,8 +290,7 @@ type FieldType =
   | 'files'                    // Multiple file upload
   | 'richtext'                 // Rich text editor
   | 'relationship-select'      // Select from related resource
-  | 'multi-relationship-select' // Multi-select from related resource`}</pre>
-              </div>
+  | 'multi-relationship-select' // Multi-select from related resource`} />
             </div>
 
             <div className="prose-grit">
@@ -382,11 +353,7 @@ type FieldType =
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">DashboardConfig type</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`interface DashboardConfig {
+              <CodeBlock filename="DashboardConfig type" code={`interface DashboardConfig {
   widgets: WidgetDef[]
 }
 
@@ -398,8 +365,7 @@ interface WidgetDef {
   color?: string               // Accent color for the widget
   // Chart-specific
   chartType?: 'line' | 'bar'   // For type: 'chart'
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">
@@ -413,11 +379,7 @@ interface WidgetDef {
 
             {/* Full example */}
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/admin/resources/posts.ts</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import { defineResource } from '@grit/admin'
+              <CodeBlock language="typescript" filename="apps/admin/resources/posts.ts" code={`import { defineResource } from '@grit/admin'
 
 export default defineResource({
   name: 'Post',
@@ -488,8 +450,7 @@ export default defineResource({
   permissions: {
     roles: ['admin', 'editor'],
   },
-})`}</pre>
-              </div>
+})`} />
             </div>
 
             <div className="prose-grit">
@@ -503,11 +464,7 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <span className="text-[11px] font-mono text-muted-foreground/40">apps/admin/resources/index.ts</span>
-                </div>
-                <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`import users from './users'
+              <CodeBlock language="typescript" filename="apps/admin/resources/index.ts" code={`import users from './users'
 import posts from './posts'
 import invoices from './invoices'
 
@@ -517,8 +474,7 @@ export const resources = [users, posts, invoices]
 // Helper to look up a resource by slug
 export function getResource(slug: string) {
   return resources.find((r) => r.slug === slug)
-}`}</pre>
-              </div>
+}`} />
             </div>
 
             <div className="prose-grit">

@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
+import { CodeBlock } from '@/components/code-block'
 
 export default function TutorialLearnPage() {
   return (
@@ -166,13 +167,7 @@ export default function TutorialLearnPage() {
                   the structure:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      project structure
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`task-manager/
+                <CodeBlock filename="project structure" code={`task-manager/
 ├── apps/
 │   ├── api/          # Go backend (Gin + GORM)
 │   │   ├── cmd/server/main.go
@@ -182,8 +177,7 @@ export default function TutorialLearnPage() {
 ├── packages/
 │   └── shared/       # Zod schemas, TypeScript types
 ├── docker-compose.yml
-└── pnpm-workspace.yaml`}</pre>
-                </div>
+└── pnpm-workspace.yaml`} />
               </div>
             </div>
 
@@ -322,32 +316,19 @@ export default function TutorialLearnPage() {
                   One command just generated 7 files across the entire stack:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      generated files
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`✓ apps/api/internal/models/task.go        # Go model
+                <CodeBlock language="bash" filename="generated files" code={`✓ apps/api/internal/models/task.go        # Go model
 ✓ apps/api/internal/services/task.go      # Service layer
 ✓ apps/api/internal/handlers/task.go      # API endpoints
 ✓ packages/shared/schemas/task.ts         # Zod validation
 ✓ packages/shared/types/task.ts           # TypeScript types
 ✓ apps/admin/resources/tasks.ts           # Admin resource definition
-✓ apps/admin/app/.../tasks/page.tsx       # Admin page`}</pre>
-                </div>
+✓ apps/admin/app/.../tasks/page.tsx       # Admin page`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Here is the generated Go model:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/task.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`package models
+                <CodeBlock filename="apps/api/internal/models/task.go" code={`package models
 
 import (
     "time"
@@ -365,8 +346,7 @@ type Task struct {
     CreatedAt   time.Time      \`json:"created_at"\`
     UpdatedAt   time.Time      \`json:"updated_at"\`
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"-"\`
-}`}</pre>
-                </div>
+}`} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
                   <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
@@ -442,13 +422,7 @@ type Task struct {
                   Let&apos;s look at the Create handler:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/handlers/task.go &mdash; Create
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`func (h *TaskHandler) Create(c *gin.Context) {
+                <CodeBlock filename="apps/api/internal/handlers/task.go &mdash; Create" code={`func (h *TaskHandler) Create(c *gin.Context) {
     var req struct {
         Title       string     \`json:"title" binding:"required"\`
         Description string     \`json:"description"\`
@@ -493,8 +467,7 @@ type Task struct {
         "data":    item,
         "message": "Task created successfully",
     })
-}`}</pre>
-                </div>
+}`} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
                   <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
@@ -612,13 +585,7 @@ type Task struct {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      API response
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+                <CodeBlock language="json" filename="API response" code={`{
   "data": [
     {
       "id": 1,
@@ -638,8 +605,7 @@ type Task struct {
     "page_size": 20,
     "pages": 1
   }
-}`}</pre>
-                </div>
+}`} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
                   <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
@@ -768,13 +734,7 @@ type Task struct {
                   Here&apos;s what changed in the Go model:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/task.go &mdash; with relationship
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type Task struct {
+                <CodeBlock filename="apps/api/internal/models/task.go &mdash; with relationship" code={`type Task struct {
     ID          uint           \`gorm:"primarykey" json:"id"\`
     Title       string         \`gorm:"size:255" json:"title" binding:"required"\`
     Description string         \`gorm:"type:text" json:"description"\`
@@ -787,8 +747,7 @@ type Task struct {
     CreatedAt   time.Time      \`json:"created_at"\`
     UpdatedAt   time.Time      \`json:"updated_at"\`
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"-"\`
-}`}</pre>
-                </div>
+}`} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
                   <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
@@ -847,18 +806,11 @@ type Task struct {
                   to eager-load the related category data:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      handler snippet
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`// List — eager loading with Preload
+                <CodeBlock filename="handler snippet" code={`// List — eager loading with Preload
 query := h.DB.Model(&models.Task{}).Preload("Category")
 
 // GetByID — also preloads
-h.DB.Preload("Category").First(&item, id)`}</pre>
-                </div>
+h.DB.Preload("Category").First(&item, id)`} />
               </div>
             </div>
 
@@ -905,13 +857,7 @@ h.DB.Preload("Category").First(&item, id)`}</pre>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      API response
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`{
+                <CodeBlock language="json" filename="API response" code={`{
   "data": {
     "id": 1,
     "title": "Build the landing page",
@@ -928,8 +874,7 @@ h.DB.Preload("Category").First(&item, id)`}</pre>
     "priority": 2,
     "completed": false
   }
-}`}</pre>
-                </div>
+}`} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
                   <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
@@ -1036,13 +981,7 @@ h.DB.Preload("Category").First(&item, id)`}</pre>
                   model:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/task.go &mdash; with m2m
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type Task struct {
+                <CodeBlock filename="apps/api/internal/models/task.go &mdash; with m2m" code={`type Task struct {
     ID          uint           \`gorm:"primarykey" json:"id"\`
     Title       string         \`gorm:"size:255" json:"title" binding:"required"\`
     Description string         \`gorm:"type:text" json:"description"\`
@@ -1056,8 +995,7 @@ h.DB.Preload("Category").First(&item, id)`}</pre>
     CreatedAt   time.Time      \`json:"created_at"\`
     UpdatedAt   time.Time      \`json:"updated_at"\`
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"-"\`
-}`}</pre>
-                </div>
+}`} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
                   <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
@@ -1158,13 +1096,7 @@ h.DB.Preload("Category").First(&item, id)`}</pre>
                   Here is the generated Comment model:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/api/internal/models/comment.go
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`type Comment struct {
+                <CodeBlock filename="apps/api/internal/models/comment.go" code={`type Comment struct {
     ID        uint           \`gorm:"primarykey" json:"id"\`
     Content   string         \`gorm:"type:text" json:"content"\`
     TaskID    uint           \`gorm:"index" json:"task_id" binding:"required"\`
@@ -1174,8 +1106,7 @@ h.DB.Preload("Category").First(&item, id)`}</pre>
     CreatedAt time.Time      \`json:"created_at"\`
     UpdatedAt time.Time      \`json:"updated_at"\`
     DeletedAt gorm.DeletedAt \`gorm:"index" json:"-"\`
-}`}</pre>
-                </div>
+}`} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
                   <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
@@ -1236,13 +1167,7 @@ h.DB.Preload("Category").First(&item, id)`}</pre>
                   You now have 4 models with 3 types of relationships:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      data model diagram
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`Category ──< Task >── Tag
+                <CodeBlock filename="data model diagram" code={`Category ──< Task >── Tag
                │        (many-to-many via task_tags)
                │
             Comment
@@ -1250,8 +1175,7 @@ h.DB.Preload("Category").First(&item, id)`}</pre>
               User
 
 ── belongs_to (foreign key on child)
->── many_to_many (junction table)`}</pre>
-                </div>
+>── many_to_many (junction table)`} />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
                   Create some tags (&quot;frontend&quot;, &quot;backend&quot;,
@@ -1294,13 +1218,7 @@ h.DB.Preload("Category").First(&item, id)`}</pre>
                   is a Next.js project. Let&apos;s create a simple API helper:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/web/lib/api.ts
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+                <CodeBlock language="typescript" filename="apps/web/lib/api.ts" code={`const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(\`\${API_URL}\${path}\`, {
@@ -1309,8 +1227,7 @@ export async function fetchAPI<T>(path: string, options?: RequestInit): Promise<
   });
   if (!res.ok) throw new Error(\`API error: \${res.status}\`);
   return res.json();
-}`}</pre>
-                </div>
+}`} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
                   <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
@@ -1350,13 +1267,7 @@ export async function fetchAPI<T>(path: string, options?: RequestInit): Promise<
                   categories and tags:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/web/app/tasks/page.tsx
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`"use client";
+                <CodeBlock language="tsx" filename="apps/web/app/tasks/page.tsx" code={`"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -1435,8 +1346,7 @@ export default function TasksPage() {
       </div>
     </div>
   );
-}`}</pre>
-                </div>
+}`} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
                   <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">
@@ -1488,13 +1398,7 @@ export default function TasksPage() {
                   its comments:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/web/app/tasks/[id]/page.tsx
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`"use client";
+                <CodeBlock language="tsx" filename="apps/web/app/tasks/[id]/page.tsx" code={`"use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -1593,8 +1497,7 @@ export default function TaskDetailPage() {
       </div>
     </div>
   );
-}`}</pre>
-                </div>
+}`} />
               </div>
             </div>
 
@@ -1614,13 +1517,7 @@ export default function TaskDetailPage() {
                   to the Go API:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">
-                      apps/web/app/tasks/new/page.tsx
-                    </span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`"use client";
+                <CodeBlock language="tsx" filename="apps/web/app/tasks/new/page.tsx" code={`"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -1729,8 +1626,7 @@ export default function NewTaskPage() {
       </form>
     </div>
   );
-}`}</pre>
-                </div>
+}`} />
 
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
                   <p className="text-xs font-semibold text-primary/80 uppercase tracking-wider mb-2">

@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function UsingGritWithAntigravityPage() {
   return (
@@ -89,11 +90,7 @@ export default function UsingGritWithAntigravityPage() {
                   Copy the prompt template below, replace the bracketed sections with your project details,
                   and paste it into Claude Web:
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">Prompt for Claude Web</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`I want to build a [PROJECT NAME] using the Grit framework.
+                <CodeBlock filename="Prompt for Claude Web" code={`I want to build a [PROJECT NAME] using the Grit framework.
 
 Grit is a full-stack meta-framework that uses:
 - Go backend (Gin web framework + GORM ORM)
@@ -120,8 +117,7 @@ Please create these 3 files for me:
 3. project-phases.md — A phased build plan with checkboxes.
    Phase 1: scaffold + core models.
    Phase 2: relationships + complex features.
-   Phase 3: frontend customization + polish.`}</pre>
-                </div>
+   Phase 3: frontend customization + polish.`} />
                 <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     <strong className="text-primary/90">Tip:</strong> The more detail you provide about your
@@ -271,15 +267,9 @@ Please create these 3 files for me:
                     Use the integrated terminal to scaffold a new Grit project and start the
                     Docker infrastructure:
                   </p>
-                  <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                      <div className="flex gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" /><div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" /><div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" /></div>
-                      <span className="text-[11px] font-mono text-muted-foreground/40">Terminal</span>
-                    </div>
-                    <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`grit new jobboard
+                  <CodeBlock language="bash" filename="Terminal" code={`grit new jobboard
 cd jobboard
-docker compose up -d`}</pre>
-                  </div>
+docker compose up -d`} />
                 </div>
 
                 <div className="mb-8">
@@ -355,11 +345,7 @@ docker compose up -d`}</pre>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Here is the full content of the skill file:
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">GRIT_SKILL.md</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`# Grit Framework — AI Skill Context
+                <CodeBlock filename="GRIT_SKILL.md" code={`# Grit Framework — AI Skill Context
 
 > Give this file to any AI coding assistant to teach it
 > how to work with your Grit project.
@@ -431,8 +417,7 @@ project/
 3. cd apps/api && air (hot reload)
 4. cd apps/admin && pnpm install && pnpm dev
 5. Customize handlers, add business logic,
-   build frontend pages`}</pre>
-                </div>
+   build frontend pages`} />
               </div>
 
               {/* Antigravity-Specific Tips */}
@@ -491,11 +476,7 @@ project/
                   to generate your 3 spec files. Replace the bracketed sections with your
                   project details.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-6">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <span className="text-[11px] font-mono text-muted-foreground/40">prompt-template.md</span>
-                  </div>
-                  <pre className="p-5 text-sm font-mono text-foreground/80 overflow-x-auto">{`I want to build a [PROJECT NAME] using the Grit framework.
+                <CodeBlock filename="prompt-template.md" code={`I want to build a [PROJECT NAME] using the Grit framework.
 
 Grit is a full-stack meta-framework that uses:
 - Go backend (Gin web framework + GORM ORM)
@@ -523,8 +504,7 @@ Please create these 3 files for me:
 3. project-phases.md — A phased build plan with checkboxes.
    Phase 1: scaffold + core models.
    Phase 2: relationships + complex features.
-   Phase 3: frontend customization + polish.`}</pre>
-                </div>
+   Phase 3: frontend customization + polish.`} />
                 <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     <strong className="text-primary/90">Tip:</strong> For a Job Board, you might describe it as:
