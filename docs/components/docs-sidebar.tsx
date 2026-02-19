@@ -18,6 +18,7 @@ import {
   Lightbulb,
   Wand2,
   FileText,
+  GraduationCap,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -29,6 +30,15 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  {
+    title: 'Prerequisites',
+    icon: <GraduationCap className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Go for Grit Developers', href: '/docs/prerequisites/golang' },
+      { title: 'Next.js & React', href: '/docs/prerequisites/nextjs' },
+      { title: 'Docker', href: '/docs/prerequisites/docker' },
+    ],
+  },
   {
     title: 'Getting Started',
     icon: <Rocket className="h-3.5 w-3.5" />,
