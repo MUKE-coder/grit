@@ -481,19 +481,63 @@ func ConnectSQLite(dbPath string) (*gorm.DB, error) {
                   <Link href="https://github.com/MUKE-coder/gorm-studio" target="_blank" className="text-primary hover:underline">
                     GORM Studio
                   </Link>{' '}
-                  &mdash; a visual database browser embedded directly into your API at{' '}
+                  &mdash; a full-featured visual database browser and editor embedded directly into your API at{' '}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/studio</code>.
-                  Browse tables, view records, inspect relationships, and run queries without leaving your browser.
                 </p>
+
+                {/* Feature grid */}
+                <div className="grid gap-3 sm:grid-cols-2 mb-6">
+                  {[
+                    { title: 'Data Browser', desc: 'Paginated grid with sorting, full-text search, column filtering, and relationship navigation' },
+                    { title: 'CRUD Operations', desc: 'Create, edit, and delete records through modal forms. Bulk deletion support' },
+                    { title: 'Raw SQL Editor', desc: 'Execute queries with read/write detection and DDL blocking for safety' },
+                    { title: 'Schema Export', desc: 'Export schemas as SQL, JSON, YAML, DBML, or PNG/PDF entity-relationship diagrams' },
+                    { title: 'Data Export', desc: 'Export data as JSON, CSV (ZIP), or SQL INSERT statements' },
+                    { title: 'Data Import', desc: 'Import data from JSON, CSV, SQL, or Excel (.xlsx) files into existing tables' },
+                    { title: 'Schema Import', desc: 'Import schemas from SQL, JSON, YAML, or DBML files to create tables' },
+                    { title: 'Go Model Generation', desc: 'Generate Go model structs with proper GORM tags from your database schema' },
+                  ].map((item) => (
+                    <div key={item.title} className="rounded-lg border border-border/30 bg-card/30 p-4">
+                      <p className="text-sm font-medium text-foreground/90 mb-1">{item.title}</p>
+                      <p className="text-xs text-muted-foreground/70 leading-relaxed">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Enable or disable it in your <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.env</code>:
                 </p>
                 <CodeBlock language="bash" filename=".env" code={`GORM_STUDIO_ENABLED=true`} />
+
+                <h3 className="text-lg font-semibold mt-6 mb-3">Configuration</h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  GORM Studio is mounted in{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">routes.go</code> with
+                  all registered models. When you generate a new resource, the CLI automatically injects
+                  the model using the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/* grit:studio */</code> marker.
+                </p>
+                <CodeBlock language="go" filename="internal/routes/routes.go" code={`studio.Mount(router, db, []interface{}{
+    &models.User{},
+    &models.Post{},  // auto-injected by grit generate
+    /* grit:studio */
+}, studio.Config{
+    Prefix:     "/studio",
+    ReadOnly:   false,        // set true to disable mutations
+    DisableSQL: false,        // set true to hide SQL editor
+})`} />
+
+                <h3 className="text-lg font-semibold mt-6 mb-3">Security</h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  GORM Studio includes built-in security: table name validation against registered models,
+                  parameterized queries, DDL blocking (DROP, ALTER, TRUNCATE, CREATE), CSV formula injection
+                  prevention, and SRI hashes for embedded assets.
+                </p>
+
                 <p className="text-sm text-muted-foreground/60 mt-3">
                   Access GORM Studio at{' '}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">http://localhost:8080/studio</code>{' '}
-                  when the API is running. Disable it in production by setting the variable to{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">false</code>.
+                  when the API is running. Disable it in production by setting{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">GORM_STUDIO_ENABLED=false</code>.
                 </p>
               </div>
 

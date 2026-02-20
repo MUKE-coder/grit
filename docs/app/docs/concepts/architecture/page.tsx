@@ -409,10 +409,10 @@ export function useCreatePost() {
                   GORM Studio
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  GORM Studio is a visual database browser embedded directly into the Go API.
+                  GORM Studio is a full-featured visual database browser and editor embedded directly into the Go API.
                   It mounts at <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/studio</code> and
-                  gives you a web UI to browse, query, and inspect your database tables. All
-                  registered GORM models appear automatically.
+                  gives you a web UI to browse, query, import/export data, generate Go models, and inspect
+                  your database tables. All registered GORM models appear automatically.
                 </p>
                 <CodeBlock language="go" filename="internal/routes/routes.go" code={`// GORM Studio is mounted with all registered models
 studio.Mount(router, db, []interface{}{
@@ -423,6 +423,8 @@ studio.Mount(router, db, []interface{}{
                 <p className="text-sm text-muted-foreground/60 mt-3">
                   When you generate a new resource, the CLI automatically injects the model into
                   the GORM Studio mount call using the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/* grit:studio */</code> marker.
+                  See the <Link href="/docs/infrastructure/database" className="text-primary hover:underline">Database</Link> page
+                  for full GORM Studio documentation.
                 </p>
               </div>
 

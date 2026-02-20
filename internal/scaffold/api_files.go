@@ -48,7 +48,7 @@ go 1.21
 
 require (
 	github.com/MarceloPetrucio/go-scalar-api-reference v0.0.0-20240521013641-ce5d2efe0e06
-	github.com/MUKE-coder/gorm-studio v0.0.0-20260210080608-2fb07b651336
+	github.com/MUKE-coder/gorm-studio v0.0.0-20260220065727-01539fe1212f
 	github.com/aws/aws-sdk-go-v2 v1.25.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.0
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.0
