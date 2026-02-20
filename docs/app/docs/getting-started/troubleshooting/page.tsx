@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 
 export default function TroubleshootingPage() {
   return (
@@ -52,38 +53,22 @@ export default function TroubleshootingPage() {
                   <div className="space-y-3">
                     <div className="rounded-lg border border-border/30 bg-card/30 p-4">
                       <h4 className="text-sm font-semibold mb-2">Option 1: Stop the conflicting container</h4>
-                      <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm space-y-2">
-                        <div className="text-muted-foreground/40 text-xs">{`# Find what's using the port`}</div>
-                        <div>
-                          <span className="text-primary/50 select-none">$ </span>
-                          <span className="text-foreground/80">{`docker ps --format "table {{.Names}}\\t{{.Ports}}" | grep 5432`}</span>
-                        </div>
-                        <div className="text-muted-foreground/40 text-xs mt-3">{`# Stop the conflicting container`}</div>
-                        <div>
-                          <span className="text-primary/50 select-none">$ </span>
-                          <span className="text-foreground/80">docker stop &lt;container-name&gt;</span>
-                        </div>
-                      </div>
+                      <CodeBlock terminal code={`# Find what's using the port
+docker ps --format "table {{.Names}}\\t{{.Ports}}" | grep 5432
+
+# Stop the conflicting container
+docker stop <container-name>`} className="mb-0" />
                     </div>
                     <div className="rounded-lg border border-border/30 bg-card/30 p-4">
                       <h4 className="text-sm font-semibold mb-2">Option 2: Stop a local PostgreSQL service</h4>
-                      <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm space-y-2">
-                        <div className="text-muted-foreground/40 text-xs">{`# macOS (Homebrew)`}</div>
-                        <div>
-                          <span className="text-primary/50 select-none">$ </span>
-                          <span className="text-foreground/80">brew services stop postgresql@16</span>
-                        </div>
-                        <div className="text-muted-foreground/40 text-xs mt-3">{`# Linux (systemd)`}</div>
-                        <div>
-                          <span className="text-primary/50 select-none">$ </span>
-                          <span className="text-foreground/80">sudo systemctl stop postgresql</span>
-                        </div>
-                        <div className="text-muted-foreground/40 text-xs mt-3">{`# Windows`}</div>
-                        <div>
-                          <span className="text-primary/50 select-none">&gt; </span>
-                          <span className="text-foreground/80">net stop postgresql-x64-16</span>
-                        </div>
-                      </div>
+                      <CodeBlock terminal code={`# macOS (Homebrew)
+brew services stop postgresql@16
+
+# Linux (systemd)
+sudo systemctl stop postgresql
+
+# Windows
+net stop postgresql-x64-16`} className="mb-0" />
                     </div>
                     <div className="rounded-lg border border-border/30 bg-card/30 p-4">
                       <h4 className="text-sm font-semibold mb-2">Option 3: Change the port in docker-compose.yml</h4>
@@ -92,15 +77,9 @@ export default function TroubleshootingPage() {
                           Edit <code>docker-compose.yml</code> and change the host port (left side):
                         </p>
                       </div>
-                      <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm mt-2">
-                        <div className="text-muted-foreground/40 text-xs">{`# Change "5432:5432" to "5433:5432"`}</div>
-                        <div className="mt-1">
-                          <span className="text-foreground/80">ports:</span>
-                        </div>
-                        <div>
-                          <span className="text-foreground/80">  - &quot;5433:5432&quot;</span>
-                        </div>
-                      </div>
+                      <CodeBlock language="yaml" filename="docker-compose.yml" code={`# Change "5432:5432" to "5433:5432"
+ports:
+  - "5433:5432"`} className="mt-2 mb-0" />
                       <div className="prose-grit mt-2">
                         <p>
                           Then update <code>.env</code> to match: <code>DB_PORT=5433</code>
@@ -128,38 +107,21 @@ export default function TroubleshootingPage() {
                     <p><strong>Fix:</strong> Same approach as PostgreSQL -- find and stop the conflicting
                     container, stop the local Redis service, or remap the port.</p>
                   </div>
-                  <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm space-y-2">
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">{`docker ps --format "table {{.Names}}\\t{{.Ports}}" | grep 6379`}</span>
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">docker stop &lt;container-name&gt;</span>
-                    </div>
-                  </div>
+                  <CodeBlock terminal code={`docker ps --format "table {{.Names}}\\t{{.Ports}}" | grep 6379
+docker stop <container-name>`} className="mb-0" />
                   <div className="prose-grit">
                     <p>
                       Or to stop a locally installed Redis:
                     </p>
                   </div>
-                  <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm space-y-2">
-                    <div className="text-muted-foreground/40 text-xs">{`# macOS`}</div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">brew services stop redis</span>
-                    </div>
-                    <div className="text-muted-foreground/40 text-xs mt-3">{`# Linux`}</div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">sudo systemctl stop redis-server</span>
-                    </div>
-                    <div className="text-muted-foreground/40 text-xs mt-3">{`# Windows`}</div>
-                    <div>
-                      <span className="text-primary/50 select-none">&gt; </span>
-                      <span className="text-foreground/80">net stop Redis</span>
-                    </div>
-                  </div>
+                  <CodeBlock terminal code={`# macOS
+brew services stop redis
+
+# Linux
+sudo systemctl stop redis-server
+
+# Windows
+net stop Redis`} className="mb-0" />
                 </div>
               </div>
             </div>
@@ -180,26 +142,13 @@ export default function TroubleshootingPage() {
                     </p>
                     <p><strong>Fix:</strong> Find and kill the process:</p>
                   </div>
-                  <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm space-y-2">
-                    <div className="text-muted-foreground/40 text-xs">{`# macOS / Linux`}</div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">lsof -i :3000</span>
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">kill -9 &lt;PID&gt;</span>
-                    </div>
-                    <div className="text-muted-foreground/40 text-xs mt-3">{`# Windows`}</div>
-                    <div>
-                      <span className="text-primary/50 select-none">&gt; </span>
-                      <span className="text-foreground/80">netstat -ano | findstr :3000</span>
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">&gt; </span>
-                      <span className="text-foreground/80">taskkill /PID &lt;PID&gt; /F</span>
-                    </div>
-                  </div>
+                  <CodeBlock terminal code={`# macOS / Linux
+lsof -i :3000
+kill -9 <PID>
+
+# Windows
+netstat -ano | findstr :3000
+taskkill /PID <PID> /F`} className="mb-0" />
                 </div>
               </div>
             </div>
@@ -219,21 +168,12 @@ export default function TroubleshootingPage() {
                     </p>
                     <p><strong>Fix:</strong> Kill the existing process or change the port in <code>.env</code>:</p>
                   </div>
-                  <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm space-y-2">
-                    <div className="text-muted-foreground/40 text-xs">{`# Find and kill the process`}</div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">lsof -i :8080</span>
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">kill -9 &lt;PID&gt;</span>
-                    </div>
-                    <div className="text-muted-foreground/40 text-xs mt-3">{`# Or change the port in .env`}</div>
-                    <div>
-                      <span className="text-foreground/80">PORT=8081</span>
-                    </div>
-                  </div>
+                  <CodeBlock terminal code={`# Find and kill the process
+lsof -i :8080
+kill -9 <PID>
+
+# Or change the port in .env
+PORT=8081`} className="mb-0" />
                 </div>
               </div>
             </div>
@@ -251,12 +191,7 @@ export default function TroubleshootingPage() {
                       stop them all at once:
                     </p>
                   </div>
-                  <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm space-y-2">
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">docker stop $(docker ps -q)</span>
-                    </div>
-                  </div>
+                  <CodeBlock terminal code="docker stop $(docker ps -q)" className="mb-0" />
                   <div className="prose-grit mt-3">
                     <p>
                       This stops every running container. Then retry <code>docker compose up -d</code>
@@ -287,29 +222,15 @@ export default function TroubleshootingPage() {
                     </p>
                     <p><strong>Fix:</strong></p>
                   </div>
-                  <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm space-y-2">
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">cd apps/api</span>
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">go mod tidy</span>
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">go mod download</span>
-                    </div>
-                  </div>
+                  <CodeBlock terminal code={`cd apps/api
+go mod tidy
+go mod download`} className="mb-0" />
                   <div className="prose-grit">
                     <p>
                       If that doesn&apos;t work, clear the module cache and try again:
                     </p>
                   </div>
-                  <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">go clean -modcache &amp;&amp; go mod tidy</span>
-                  </div>
+                  <CodeBlock terminal code="go clean -modcache && go mod tidy" className="mb-0" />
                 </div>
               </div>
             </div>
@@ -339,9 +260,7 @@ export default function TroubleshootingPage() {
                       Also verify your <code>.env</code> has the correct database URL:
                     </p>
                   </div>
-                  <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm">
-                    <span className="text-foreground/80">DATABASE_URL=postgres://grit:grit@localhost:5432/grit_dev?sslmode=disable</span>
-                  </div>
+                  <CodeBlock language="bash" filename=".env" code="DATABASE_URL=postgres://grit:grit@localhost:5432/grit_dev?sslmode=disable" className="mb-0" />
                 </div>
               </div>
             </div>
@@ -362,10 +281,7 @@ export default function TroubleshootingPage() {
                     </p>
                     <p><strong>Fix:</strong> Start the Redis container:</p>
                   </div>
-                  <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">docker compose up -d redis</span>
-                  </div>
+                  <CodeBlock terminal code="docker compose up -d redis" className="mb-0" />
                   <div className="prose-grit">
                     <p>
                       The API will still work without Redis -- it logs a warning and disables
@@ -397,22 +313,12 @@ export default function TroubleshootingPage() {
                     </p>
                     <p><strong>Fix:</strong></p>
                   </div>
-                  <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm space-y-2">
-                    <div className="text-muted-foreground/40 text-xs">{`# Install pnpm globally`}</div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">npm install -g pnpm</span>
-                    </div>
-                    <div className="text-muted-foreground/40 text-xs mt-3">{`# Or use corepack (built into Node.js 16+)`}</div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">corepack enable</span>
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">corepack prepare pnpm@latest --activate</span>
-                    </div>
-                  </div>
+                  <CodeBlock terminal code={`# Install pnpm globally
+npm install -g pnpm
+
+# Or use corepack (built into Node.js 16+)
+corepack enable
+corepack prepare pnpm@latest --activate`} className="mb-0" />
                 </div>
               </div>
             </div>
@@ -433,32 +339,16 @@ export default function TroubleshootingPage() {
                     </p>
                     <p><strong>Fix:</strong> Run install from the project root:</p>
                   </div>
-                  <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm space-y-2">
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">cd myapp</span>
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">pnpm install</span>
-                    </div>
-                  </div>
+                  <CodeBlock terminal code={`cd myapp
+pnpm install`} className="mb-0" />
                   <div className="prose-grit">
                     <p>
                       If that doesn&apos;t work, delete <code>node_modules</code> and the lockfile, then
                       reinstall:
                     </p>
                   </div>
-                  <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm space-y-2">
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">rm -rf node_modules apps/*/node_modules pnpm-lock.yaml</span>
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">pnpm install</span>
-                    </div>
-                  </div>
+                  <CodeBlock terminal code={`rm -rf node_modules apps/*/node_modules pnpm-lock.yaml
+pnpm install`} className="mb-0" />
                 </div>
               </div>
             </div>
@@ -479,9 +369,7 @@ export default function TroubleshootingPage() {
                     </p>
                     <p><strong>Fix:</strong> Make sure your <code>.env</code> includes the frontend origins:</p>
                   </div>
-                  <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm">
-                    <span className="text-foreground/80">CORS_ORIGINS=http://localhost:3000,http://localhost:3001</span>
-                  </div>
+                  <CodeBlock language="bash" filename=".env" code="CORS_ORIGINS=http://localhost:3000,http://localhost:3001" className="mb-0" />
                   <div className="prose-grit">
                     <p>
                       Then restart the Go API. The CORS middleware reads this value on startup.
@@ -538,16 +426,8 @@ export default function TroubleshootingPage() {
                     </p>
                     <p><strong>Fix:</strong> Add your user to the docker group:</p>
                   </div>
-                  <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm space-y-2">
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">sudo usermod -aG docker $USER</span>
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">newgrp docker</span>
-                    </div>
-                  </div>
+                  <CodeBlock terminal code={`sudo usermod -aG docker $USER
+newgrp docker`} className="mb-0" />
                   <div className="prose-grit">
                     <p>
                       You may need to log out and log back in for the group change to take effect.
@@ -580,16 +460,8 @@ export default function TroubleshootingPage() {
                     (the folder that contains <code>docker-compose.yml</code>, <code>apps/</code>,
                     and <code>packages/</code>):</p>
                   </div>
-                  <div className="rounded-lg bg-card/80 border border-border/40 p-4 font-mono text-sm space-y-2">
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">cd myapp</span>
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">grit generate resource Post --fields &quot;title:string&quot;</span>
-                    </div>
-                  </div>
+                  <CodeBlock terminal code={`cd myapp
+grit generate resource Post --fields "title:string"`} className="mb-0" />
                 </div>
               </div>
             </div>

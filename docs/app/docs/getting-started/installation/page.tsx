@@ -129,22 +129,7 @@ export default function InstallationPage() {
               <p className="text-sm font-semibold mb-2 text-foreground/80">
                 macOS (Homebrew)
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-sm">
-                  <span className="text-primary/50 select-none">$ </span>
-                  <span className="text-foreground/80">brew install go</span>
-                </div>
-              </div>
+              <CodeBlock terminal code="brew install go" className="mb-0" />
             </div>
 
             {/* Linux */}
@@ -152,38 +137,9 @@ export default function InstallationPage() {
               <p className="text-sm font-semibold mb-2 text-foreground/80">
                 Linux (Ubuntu/Debian)
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-sm space-y-1">
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      wget https://go.dev/dl/go1.22.0.linux-amd64.tar.gz
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      sudo tar -C /usr/local -xzf go1.22.0.linux-amd64.tar.gz
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      export PATH=$PATH:/usr/local/go/bin
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <CodeBlock terminal code={`wget https://go.dev/dl/go1.22.0.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.22.0.linux-amd64.tar.gz
+export PATH=$PATH:/usr/local/go/bin`} className="mb-0" />
             </div>
 
             {/* Windows */}
@@ -219,52 +175,15 @@ export default function InstallationPage() {
               <p className="text-sm font-semibold mb-2 text-foreground/80">
                 Using nvm (recommended)
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-sm space-y-1">
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">nvm install 20</span>
-                  </div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">nvm use 20</span>
-                  </div>
-                </div>
-              </div>
+              <CodeBlock terminal code={`nvm install 20
+nvm use 20`} className="mb-0" />
             </div>
 
             <div className="mb-8">
               <p className="text-sm font-semibold mb-2 text-foreground/80">
                 Using Homebrew (macOS)
               </p>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-sm">
-                  <span className="text-primary/50 select-none">$ </span>
-                  <span className="text-foreground/80">
-                    brew install node@20
-                  </span>
-                </div>
-              </div>
+              <CodeBlock terminal code="brew install node@20" className="mb-0" />
             </div>
 
             <div className="prose-grit">
@@ -278,42 +197,12 @@ export default function InstallationPage() {
             </div>
 
             <div className="mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-sm space-y-1">
-                  <div className="text-muted-foreground/40 text-xs mb-2">
-                    # Using npm (easiest)
-                  </div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      npm install -g pnpm
-                    </span>
-                  </div>
-                  <div className="text-muted-foreground/40 text-xs mb-2 mt-4">
-                    # Or using corepack (built into Node.js)
-                  </div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">corepack enable</span>
-                  </div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      corepack prepare pnpm@latest --activate
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <CodeBlock terminal code={`# Using npm (easiest)
+npm install -g pnpm
+
+# Or using corepack (built into Node.js)
+corepack enable
+corepack prepare pnpm@latest --activate`} className="mb-0" />
             </div>
 
             <div className="prose-grit">
@@ -368,30 +257,8 @@ export default function InstallationPage() {
             </div>
 
             <div className="mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-sm space-y-1">
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">docker --version</span>
-                  </div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      docker compose version
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <CodeBlock terminal code={`docker --version
+docker compose version`} className="mb-0" />
             </div>
 
             <div className="prose-grit">
@@ -405,24 +272,7 @@ export default function InstallationPage() {
             </div>
 
             <div className="mb-4">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-sm">
-                  <span className="text-primary/50 select-none">$ </span>
-                  <span className="text-foreground/80">
-                    go install github.com/MUKE-coder/grit/cmd/grit@latest
-                  </span>
-                </div>
-              </div>
+              <CodeBlock terminal code="go install github.com/MUKE-coder/grit/cmd/grit@latest" className="mb-0 glow-purple-sm" />
             </div>
 
             <div className="prose-grit">
@@ -490,24 +340,7 @@ export default function InstallationPage() {
             </div>
 
             <div className="mb-4">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-sm">
-                  <span className="text-primary/50 select-none">$ </span>
-                  <span className="text-foreground/80">
-                    grit new my-saas-app
-                  </span>
-                </div>
-              </div>
+              <CodeBlock terminal code="grit new my-saas-app" className="mb-0 glow-purple-sm" />
             </div>
 
             <div className="prose-grit">
@@ -575,45 +408,14 @@ export default function InstallationPage() {
             </div>
 
             <div className="mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-sm space-y-2">
-                  <div className="text-muted-foreground/40 text-xs">
-                    # Full-stack (default)
-                  </div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">grit new my-crm</span>
-                  </div>
-                  <div className="text-muted-foreground/40 text-xs mt-3">
-                    # API only (no frontend)
-                  </div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      grit new my-api --api
-                    </span>
-                  </div>
-                  <div className="text-muted-foreground/40 text-xs mt-3">
-                    # Full + mobile + docs
-                  </div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      grit new my-startup --full
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <CodeBlock terminal code={`# Full-stack (default)
+grit new my-crm
+
+# API only (no frontend)
+grit new my-api --api
+
+# Full + mobile + docs
+grit new my-startup --full`} className="mb-0" />
             </div>
 
             <div className="prose-grit">
@@ -673,31 +475,8 @@ export default function InstallationPage() {
             </div>
 
             <div className="mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-sm space-y-1">
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      rm -rf node_modules pnpm-lock.yaml apps/*/node_modules
-                      packages/*/node_modules
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">pnpm install</span>
-                  </div>
-                </div>
-              </div>
+              <CodeBlock terminal code={`rm -rf node_modules pnpm-lock.yaml apps/*/node_modules packages/*/node_modules
+pnpm install`} className="mb-0" />
             </div>
 
             <div className="prose-grit">
@@ -749,24 +528,7 @@ export default function InstallationPage() {
             </div>
 
             <div className="mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-sm">
-                  <span className="text-primary/50 select-none">$ </span>
-                  <span className="text-foreground/80">
-                    cp .env.cloud.example .env
-                  </span>
-                </div>
-              </div>
+              <CodeBlock terminal code="cp .env.cloud.example .env" className="mb-0" />
             </div>
 
             {/* Nav */}

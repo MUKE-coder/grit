@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
+import { CodeBlock } from "@/components/code-block";
 
 export default function QuickStartPage() {
   return (
@@ -89,24 +90,7 @@ export default function QuickStartPage() {
                   anywhere on your system.
                 </p>
               </div>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-[15px]">
-                  <span className="text-primary/50 select-none">$ </span>
-                  <span className="text-foreground/80">
-                    go install github.com/MUKE-coder/grit/cmd/grit@latest
-                  </span>
-                </div>
-              </div>
+              <CodeBlock terminal code="go install github.com/MUKE-coder/grit/cmd/grit@latest" className="mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>
                   Verify the installation by running <code>grit --help</code>.
@@ -124,22 +108,7 @@ export default function QuickStartPage() {
                   with a single command. This removes the old binary and installs the
                   newest release:
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-[15px]">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">grit update</span>
-                  </div>
-                </div>
+                <CodeBlock terminal code="grit update" className="mb-0" />
                 <p className="text-[15px] text-muted-foreground">
                   Run <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">grit version</code> afterwards
                   to confirm you&apos;re on the latest release.
@@ -164,55 +133,7 @@ export default function QuickStartPage() {
                   panel, shared types, Docker setup, and all the batteries.
                 </p>
               </div>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-[15px] space-y-2">
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">grit new myapp</span>
-                  </div>
-                  <div className="text-muted-foreground/40 text-xs space-y-1 pl-4 mt-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-primary/60">+</span>
-                      <span>Creating directory structure...</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-primary/60">+</span>
-                      <span>Scaffolding Go API...</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-primary/60">+</span>
-                      <span>
-                        Adding batteries (cache, storage, mail, jobs, cron,
-                        AI)...
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-primary/60">+</span>
-                      <span>Setting up Next.js web app...</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-primary/60">+</span>
-                      <span>Creating admin panel...</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-primary/80">
-                      <span>&#10003;</span>
-                      <span>
-                        Project &quot;myapp&quot; created successfully!
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <CodeBlock terminal code="grit new myapp" className="mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>
                   The project name must be lowercase, alphanumeric, and hyphens
@@ -239,30 +160,8 @@ export default function QuickStartPage() {
                   Mailhog (email testing).
                 </p>
               </div>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-[15px] space-y-2">
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">cd myapp</span>
-                  </div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      docker compose up -d
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <CodeBlock terminal code={`cd myapp
+docker compose up -d`} className="mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>This starts the following services in the background:</p>
                 <ul>
@@ -314,34 +213,9 @@ export default function QuickStartPage() {
                   Go backend on port 8080 with auto-migration enabled.
                 </p>
               </div>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-[15px] space-y-2">
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">cd apps/api</span>
-                  </div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">go mod tidy</span>
-                  </div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      go run cmd/server/main.go
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <CodeBlock terminal code={`cd apps/api
+go mod tidy
+go run cmd/server/main.go`} className="mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>
                   You should see the Gin router start up and log all registered
@@ -375,83 +249,24 @@ export default function QuickStartPage() {
                   dependencies, then start the Next.js web app.
                 </p>
               </div>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal (new tab)
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-[15px] space-y-2">
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">cd myapp</span>
-                  </div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">pnpm install</span>
-                  </div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      cd apps/web &amp;&amp; pnpm dev
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <CodeBlock terminal filename="terminal (new tab)" code={`cd myapp
+pnpm install
+cd apps/web && pnpm dev`} className="mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>
                   To also run the admin panel, open{" "}
                   <strong>another terminal</strong> and run:
                 </p>
               </div>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mt-4">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal (another tab)
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-[15px]">
-                  <span className="text-primary/50 select-none">$ </span>
-                  <span className="text-foreground/80">
-                    cd myapp/apps/admin &amp;&amp; pnpm dev
-                  </span>
-                </div>
-              </div>
+              <CodeBlock terminal filename="terminal (another tab)" code="cd myapp/apps/admin && pnpm dev" className="mt-4 mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>
                   Alternatively, you can run everything at once with Turborepo
                   from the project root:
                 </p>
               </div>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mt-4">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-[15px] space-y-2">
-                  <div className="text-muted-foreground/40 text-xs">{`# From the project root (myapp/)`}</div>
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">turbo dev</span>
-                  </div>
-                </div>
-              </div>
+              <CodeBlock terminal code={`# From the project root (myapp/)
+turbo dev`} className="mt-4 mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>Once started, you can access:</p>
               </div>
@@ -529,25 +344,7 @@ export default function QuickStartPage() {
                   TypeScript types, and an admin page -- all wired together.
                 </p>
               </div>
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-[15px]">
-                  <span className="text-primary/50 select-none">$ </span>
-                  <span className="text-foreground/80">
-                    grit generate resource Post --fields
-                    &quot;title:string,content:text,published:bool&quot;
-                  </span>
-                </div>
-              </div>
+              <CodeBlock terminal code={`grit generate resource Post --fields "title:string,content:text,published:bool"`} className="mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>This generates the following files:</p>
                 <ul>
@@ -601,12 +398,7 @@ export default function QuickStartPage() {
                 If you have an existing Grit project and want to update the framework
                 components (admin panel, configs, web app) to the latest version, run:
               </p>
-              <div className="rounded-lg border border-border/40 bg-card/80 overflow-hidden">
-                <div className="p-4 font-mono text-[15px]">
-                  <span className="text-primary/50 select-none">$ </span>
-                  <span className="text-foreground/80">grit upgrade</span>
-                </div>
-              </div>
+              <CodeBlock terminal code="grit upgrade" className="mb-0" />
               <p className="text-sm text-muted-foreground/50 mt-2">
                 This preserves your resource definitions and API code while updating
                 all framework-generated files. Use <code className="text-primary/60">grit upgrade --force</code> to

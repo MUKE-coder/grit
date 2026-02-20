@@ -64,13 +64,25 @@ export function CodeBlock({ code, language = 'go', filename, terminal, className
 
       {/* Code content */}
       {terminal ? (
-        <div className="p-5 font-mono text-sm overflow-x-auto">
-          {trimmedCode.split('\n').map((line, i) => (
-            <div key={i}>
-              <span className="text-primary/50 select-none">$ </span>
-              <span className="text-foreground/80">{line}</span>
-            </div>
-          ))}
+        <div className="p-5 font-mono text-sm overflow-x-auto space-y-1">
+          {trimmedCode.split('\n').map((line, i) => {
+            if (line.trim() === '') {
+              return <div key={i} className="h-1" />
+            }
+            if (line.trimStart().startsWith('#')) {
+              return (
+                <div key={i}>
+                  <span className="text-muted-foreground/40 text-xs">{line}</span>
+                </div>
+              )
+            }
+            return (
+              <div key={i}>
+                <span className="text-primary/50 select-none">$ </span>
+                <span className="text-foreground/80">{line}</span>
+              </div>
+            )
+          })}
         </div>
       ) : (
         <Highlight theme={theme} code={trimmedCode} language={language}>

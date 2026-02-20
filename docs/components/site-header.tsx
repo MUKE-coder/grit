@@ -1,11 +1,18 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Github, Youtube, Linkedin, Globe } from 'lucide-react'
+import { Github, Youtube, Linkedin, Globe, Sun, Moon } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { SearchDialog } from '@/components/search-dialog'
 
 export function SiteHeader() {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => setMounted(true), [])
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-2xl">
       <div className="container flex h-14 max-w-screen-2xl items-center px-6">
@@ -45,6 +52,18 @@ export function SiteHeader() {
         {/* Right side */}
         <div className="flex flex-1 items-center justify-end gap-2">
           <SearchDialog />
+
+          {mounted && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              <span className="sr-only">Toggle theme</span>
+            </Button>
+          )}
 
           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" asChild>
             <Link href="https://www.youtube.com/@JBWEBDEVELOPER" target="_blank" rel="noreferrer">
