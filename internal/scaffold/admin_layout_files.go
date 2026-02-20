@@ -452,6 +452,7 @@ export function Sidebar({ user, collapsed, onToggle, mobileOpen, onMobileClose }
         { label: "Files", href: "/system/files", icon: "FolderOpen" },
         { label: "Cron", href: "/system/cron", icon: "Calendar" },
         { label: "Mail", href: "/system/mail", icon: "Mail" },
+        { label: "Security", href: "/system/security", icon: "Shield" },
       ]
     : [];
 

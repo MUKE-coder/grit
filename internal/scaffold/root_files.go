@@ -91,6 +91,12 @@ GORM_STUDIO_ENABLED=true
 AI_PROVIDER=claude
 AI_API_KEY=                          # sk-ant-... (Claude), sk-... (OpenAI), or AIza... (Gemini)
 AI_MODEL=claude-sonnet-4-5-20250929  # Model to use
+
+# Security — Sentinel WAF, rate limiting, threat detection
+SENTINEL_ENABLED=true
+SENTINEL_USERNAME=admin
+SENTINEL_PASSWORD=sentinel
+SENTINEL_SECRET_KEY=change-me-in-production
 `, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 
@@ -153,6 +159,12 @@ GORM_STUDIO_ENABLED=true
 AI_PROVIDER=claude                   # "claude", "openai", or "gemini"
 AI_API_KEY=                          # sk-ant-... (Claude), sk-... (OpenAI), or AIza... (Gemini)
 AI_MODEL=claude-sonnet-4-5-20250929  # Model to use
+
+# Security — Sentinel (WAF, rate limiting, threat detection)
+SENTINEL_ENABLED=true                # Set to "false" to disable Sentinel entirely
+SENTINEL_USERNAME=admin              # Dashboard login username
+SENTINEL_PASSWORD=sentinel           # Dashboard login password (change in production!)
+SENTINEL_SECRET_KEY=change-me        # Secret for dashboard JWT sessions
 `
 }
 
@@ -220,6 +232,12 @@ GORM_STUDIO_ENABLED=true
 AI_PROVIDER=claude                   # "claude", "openai", or "gemini"
 AI_API_KEY=your-api-key-here         # sk-ant-... (Claude), sk-... (OpenAI), or AIza... (Gemini)
 AI_MODEL=claude-sonnet-4-5-20250929  # Model to use
+
+# ─── Security (Sentinel) ─────────────────────────────
+SENTINEL_ENABLED=true
+SENTINEL_USERNAME=admin
+SENTINEL_PASSWORD=change-me-in-production
+SENTINEL_SECRET_KEY=generate-a-random-string-here
 `, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 

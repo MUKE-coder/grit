@@ -237,6 +237,7 @@ func createDirectories(root string, opts Options) error {
 			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "files"),
 			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "cron"),
 			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "mail"),
+			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "security"),
 			filepath.Join(root, "apps", "admin", "components", "layout"),
 			filepath.Join(root, "apps", "admin", "components", "tables"),
 			filepath.Join(root, "apps", "admin", "components", "forms", "fields"),

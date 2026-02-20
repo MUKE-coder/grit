@@ -112,6 +112,7 @@ const navItems: NavItem[] = [
       { title: 'Cron Scheduler', href: '/docs/batteries/cron' },
       { title: 'Redis Caching', href: '/docs/batteries/caching' },
       { title: 'AI Integration', href: '/docs/batteries/ai' },
+      { title: 'Security (Sentinel)', href: '/docs/batteries/security' },
     ],
   },
   {

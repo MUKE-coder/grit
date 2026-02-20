@@ -15,7 +15,7 @@ import (
 	"github.com/MUKE-coder/grit/internal/scaffold"
 )
 
-var version = "0.14.0"
+var version = "0.15.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -562,6 +562,7 @@ func printSuccess(name string, opts scaffold.Options) {
 	gray.Printf("  API:         http://localhost:8080\n")
 	gray.Printf("  API Docs:    http://localhost:8080/docs\n")
 	gray.Printf("  GORM Studio: http://localhost:8080/studio\n")
+	gray.Printf("  Sentinel:    http://localhost:8080/sentinel/ui\n")
 
 	if opts.ShouldIncludeWeb() {
 		gray.Printf("  Web App:     http://localhost:3000\n")

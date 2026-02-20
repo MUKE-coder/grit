@@ -61,6 +61,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.4.0
 	golang.org/x/crypto v0.23.0
+	github.com/MUKE-coder/sentinel v0.0.0-20260220061042-2d2324be6824
 	gorm.io/datatypes v1.2.7
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.25.12
@@ -262,6 +263,9 @@ func main() {
 	go func() {
 		log.Printf("Server starting on port %s", cfg.Port)
 		log.Printf("GORM Studio available at http://localhost:%s/studio", cfg.Port)
+		if cfg.SentinelEnabled {
+			log.Printf("Sentinel dashboard at http://localhost:%s/sentinel/ui", cfg.Port)
+		}
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed: %v", err)
 		}
@@ -357,6 +361,12 @@ type Config struct {
 	AIProvider string // "claude", "openai", or "gemini"
 	AIAPIKey   string
 	AIModel    string
+
+	// Security (Sentinel)
+	SentinelEnabled   bool
+	SentinelUsername   string
+	SentinelPassword  string
+	SentinelSecretKey string
 }
 
 // Load reads configuration from environment variables.
@@ -389,6 +399,11 @@ func Load() (*Config, error) {
 		AIProvider: getEnv("AI_PROVIDER", "claude"),
 		AIAPIKey:   getEnv("AI_API_KEY", ""),
 		AIModel:    getEnv("AI_MODEL", "claude-sonnet-4-5-20250929"),
+
+		SentinelEnabled:   getEnv("SENTINEL_ENABLED", "true") == "true",
+		SentinelUsername:   getEnv("SENTINEL_USERNAME", "admin"),
+		SentinelPassword:  getEnv("SENTINEL_PASSWORD", "sentinel"),
+		SentinelSecretKey: getEnv("SENTINEL_SECRET_KEY", "sentinel-secret-change-me"),
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -1704,8 +1719,10 @@ func apiRoutesGo() string {
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/MUKE-coder/gorm-studio/studio"
+	"github.com/MUKE-coder/sentinel"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
@@ -1743,6 +1760,40 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	r.Use(middleware.Logger())
 	r.Use(gin.Recovery())
 	r.Use(middleware.CORS(cfg.CORSOrigins))
+
+	// Mount Sentinel security suite (WAF, rate limiting, auth shield, anomaly detection)
+	if cfg.SentinelEnabled {
+		sentinel.Mount(r, db, sentinel.Config{
+			Dashboard: sentinel.DashboardConfig{
+				Username:  cfg.SentinelUsername,
+				Password:  cfg.SentinelPassword,
+				SecretKey: cfg.SentinelSecretKey,
+			},
+			WAF: sentinel.WAFConfig{
+				Enabled: true,
+				Mode:    sentinel.ModeLog, // Switch to sentinel.ModeBlock in production
+			},
+			RateLimit: sentinel.RateLimitConfig{
+				Enabled: true,
+				ByIP:    &sentinel.Limit{Requests: 100, Window: 1 * time.Minute},
+				ByRoute: map[string]sentinel.Limit{
+					"/api/auth/login":    {Requests: 5, Window: 15 * time.Minute},
+					"/api/auth/register": {Requests: 3, Window: 15 * time.Minute},
+				},
+			},
+			AuthShield: sentinel.AuthShieldConfig{
+				Enabled:    true,
+				LoginRoute: "/api/auth/login",
+			},
+			Anomaly: sentinel.AnomalyConfig{
+				Enabled: true,
+			},
+			Geo: sentinel.GeoConfig{
+				Enabled: true,
+			},
+		})
+		log.Println("Sentinel security suite mounted at /sentinel")
+	}
 
 	// Mount GORM Studio
 	if cfg.GORMStudioEnabled {

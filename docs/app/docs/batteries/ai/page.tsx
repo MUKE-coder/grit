@@ -456,8 +456,8 @@ aiGroup := api.Group("/ai", authMiddleware)
                 </Link>
               </Button>
               <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">
-                <Link href="/docs/infrastructure/docker" className="gap-1.5">
-                  Docker Setup
+                <Link href="/docs/batteries/security" className="gap-1.5">
+                  Security
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </Button>

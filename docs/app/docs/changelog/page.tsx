@@ -25,10 +25,45 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v0.14.0 */}
+            {/* v0.15.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v0.15.0
+                </span>
+                <span className="text-sm text-muted-foreground">February 20, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>Security (Sentinel)</strong> &mdash; Every <code>grit new</code> project now ships with
+                    a production-grade security suite powered by{' '}
+                    <Link href="https://github.com/MUKE-coder/sentinel" className="text-primary hover:underline">Sentinel</Link>.
+                    Includes WAF, rate limiting, brute-force protection, anomaly detection, IP geolocation,
+                    security headers, and a real-time threat dashboard at <code>/sentinel/ui</code>.
+                    See <Link href="/docs/batteries/security" className="text-primary hover:underline">Security docs</Link>.
+                  </li>
+                  <li>
+                    <strong>Admin security page</strong> &mdash; New System &rarr; Security page in the admin panel
+                    embeds the Sentinel dashboard for monitoring threats without leaving the admin UI.
+                  </li>
+                </ul>
+
+                <h3>Documentation</h3>
+                <ul>
+                  <li>New: <Link href="/docs/batteries/security" className="text-primary hover:underline">Security (Sentinel)</Link> documentation page</li>
+                  <li>Migrated getting-started pages (Installation, Quick Start, Troubleshooting) to use CodeBlock component</li>
+                  <li>Added prerequisite learning pages for Go, Next.js, and Docker</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v0.14.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v0.14.0
                 </span>
                 <span className="text-sm text-muted-foreground">February 18, 2026</span>
