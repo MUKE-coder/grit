@@ -25,10 +25,48 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v0.15.0 */}
+            {/* v0.16.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v0.16.0
+                </span>
+                <span className="text-sm text-muted-foreground">February 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>Go Playground</strong> &mdash; Interactive code editor at{' '}
+                    <Link href="/playground" className="text-primary hover:underline">/playground</Link> with
+                    Go syntax highlighting, code execution via the official Go Playground API, example snippets,
+                    share links, and keyboard shortcuts (Ctrl+Enter to run).
+                  </li>
+                  <li>
+                    <strong>GORM Studio updated</strong> &mdash; Updated to latest version with raw SQL editor,
+                    schema export (SQL/JSON/YAML/DBML/ERD), data import/export (JSON/CSV/SQL/XLSX),
+                    and Go model generation from database schema.
+                  </li>
+                </ul>
+
+                <h3>Documentation</h3>
+                <ul>
+                  <li>
+                    <Link href="/docs/prerequisites/golang" className="text-primary hover:underline">Go for Grit Developers</Link> &mdash;
+                    comprehensive rewrite with 22 sections covering methods, Gin routing, middleware, CORS,
+                    handler/service architecture, GORM CRUD, migrations, seeding, JWT auth flow, and RBAC
+                  </li>
+                  <li>Fixed right-side table of contents for the Go prerequisites page</li>
+                  <li>New Middleware and CORS sections added to Go guide</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v0.15.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v0.15.0
                 </span>
                 <span className="text-sm text-muted-foreground">February 20, 2026</span>

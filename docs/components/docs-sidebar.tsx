@@ -35,6 +35,7 @@ const navItems: NavItem[] = [
     icon: <GraduationCap className="h-3.5 w-3.5" />,
     items: [
       { title: 'Go for Grit Developers', href: '/docs/prerequisites/golang' },
+      { title: 'Go Playground', href: '/playground' },
       { title: 'Next.js & React', href: '/docs/prerequisites/nextjs' },
       { title: 'Docker', href: '/docs/prerequisites/docker' },
     ],
