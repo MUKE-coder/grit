@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import { Play, Loader2, RotateCcw, Share2, Check, BookOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
@@ -247,12 +248,18 @@ export default function PlaygroundPage() {
 
 function PlaygroundInner() {
   const searchParams = useSearchParams()
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const [code, setCode] = useState(DEFAULT_CODE)
   const [output, setOutput] = useState('')
   const [running, setRunning] = useState(false)
   const [copied, setCopied] = useState(false)
   const [duration, setDuration] = useState<number | null>(null)
   const [challengeTitle, setChallengeTitle] = useState<string | null>(null)
+
+  const isDark = mounted ? resolvedTheme === 'dark' : true
+
+  useEffect(() => setMounted(true), [])
 
   // Load code from URL query params (?code=base64&title=name)
   useEffect(() => {
@@ -450,7 +457,7 @@ function PlaygroundInner() {
               value={code}
               onChange={setCode}
               extensions={[go()]}
-              theme={vscodeDark}
+              theme={isDark ? vscodeDark : 'light'}
               basicSetup={{
                 lineNumbers: true,
                 highlightActiveLineGutter: true,
@@ -474,7 +481,7 @@ function PlaygroundInner() {
               <span className="text-xs text-muted-foreground/40 font-mono">{duration}ms</span>
             )}
           </div>
-          <div className="flex-1 min-h-[200px] lg:min-h-0 overflow-auto p-4 bg-[#1e1e1e]">
+          <div className={`flex-1 min-h-[200px] lg:min-h-0 overflow-auto p-4 ${isDark ? 'bg-[#1e1e1e]' : 'bg-white'}`}>
             {running ? (
               <div className="flex items-center gap-2 text-muted-foreground/60 text-sm">
                 <Loader2 className="h-4 w-4 animate-spin" />
