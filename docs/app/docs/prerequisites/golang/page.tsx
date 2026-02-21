@@ -109,16 +109,27 @@ func main() {
             <PlaygroundChallenge
               title="Go Basics"
               description="Print your name and the current year using fmt.Printf with format verbs (%s and %d)."
-              code={`package main
+              challenge={`package main
 
 import "fmt"
 
 func main() {
-	// TODO: Replace the values below with your name and the current year
-	name := "YOUR_NAME"
+	// Challenge: Print your name and the current year
+	// 1. Create a string variable "name" with your name
+	// 2. Create an int variable "year" with 2026
+	// 3. Use fmt.Printf to print: "Hi, I'm <name> and it's <year>!"
+	//    Hint: use %s for strings and %d for integers
+	// 4. Bonus: Print the type of each variable using %T
+
+}`}
+              solution={`package main
+
+import "fmt"
+
+func main() {
+	name := "Alice"
 	year := 2026
 
-	// Use fmt.Printf to print: "Hi, I'm <name> and it's <year>!"
 	fmt.Printf("Hi, I'm %s and it's %d!\\n", name, year)
 
 	// Bonus: Print the type of each variable using %T
@@ -247,22 +258,33 @@ func main() {
             <PlaygroundChallenge
               title="Variables & Types"
               description="Declare variables of different types (string, int, float64, bool), convert an int to float64, and print all values with their types."
-              code={`package main
+              challenge={`package main
 
 import "fmt"
 
 func main() {
-	// TODO: Declare these variables with appropriate types
+	// Challenge: Variables & Type Conversion
+	// 1. Declare a string variable "name" with any name
+	// 2. Declare an int variable "age" with a number
+	// 3. Declare a float64 variable "score" with a decimal number
+	// 4. Declare a bool variable "passed" set to true
+	// 5. Convert age to float64 and add it to score, store in "total"
+	// 6. Print each variable with its value and type using %v and %T
+
+}`}
+              solution={`package main
+
+import "fmt"
+
+func main() {
 	age := 25
 	name := "Alice"
 	score := 95.5
 	passed := true
 
-	// TODO: Convert age (int) to float64 and add it to score
 	total := float64(age) + score
 	fmt.Printf("Total: %.1f\\n", total)
 
-	// TODO: Print each variable with its type using %v and %T
 	fmt.Printf("name: %v (%T)\\n", name, name)
 	fmt.Printf("age: %v (%T)\\n", age, age)
 	fmt.Printf("score: %v (%T)\\n", score, score)
@@ -323,14 +345,24 @@ type User struct {
             <PlaygroundChallenge
               title="Structs"
               description="Create a Product struct with Name (string), Price (float64), and InStock (bool) fields. Create two products and print them."
-              code={`package main
+              challenge={`package main
 
 import "fmt"
 
-// TODO: Define a Product struct with:
-//   - Name    string
-//   - Price   float64
-//   - InStock bool
+// Challenge: Structs
+// 1. Define a Product struct with fields: Name (string), Price (float64), InStock (bool)
+// 2. Create two Product instances (e.g. laptop and phone)
+// 3. Print each product using %+v to show field names
+// 4. Access individual fields: print the name and price of one product
+// 5. Check if a product is out of stock using an if statement
+
+func main() {
+
+}`}
+              solution={`package main
+
+import "fmt"
+
 type Product struct {
 	Name    string
 	Price   float64
@@ -338,15 +370,12 @@ type Product struct {
 }
 
 func main() {
-	// TODO: Create two products
 	laptop := Product{Name: "Laptop", Price: 999.99, InStock: true}
 	phone := Product{Name: "Phone", Price: 699.00, InStock: false}
 
-	// TODO: Print each product using %+v (shows field names)
 	fmt.Printf("Product 1: %+v\\n", laptop)
 	fmt.Printf("Product 2: %+v\\n", phone)
 
-	// TODO: Access individual fields
 	fmt.Printf("%s costs $%.2f\\n", laptop.Name, laptop.Price)
 	if !phone.InStock {
 		fmt.Printf("%s is out of stock!\\n", phone.Name)
@@ -419,7 +448,28 @@ func main() {
             <PlaygroundChallenge
               title="Functions & Errors"
               description="Write a sqrt function that returns an error for negative numbers. Test it with both positive and negative inputs."
-              code={`package main
+              challenge={`package main
+
+import (
+	"fmt"
+)
+
+// Challenge: Functions & Error Handling
+// 1. Write a function: func sqrt(n float64) (float64, error)
+//    - If n is negative, return 0 and an error: "cannot take square root of negative number"
+//    - Otherwise return math.Sqrt(n) and nil
+//    Hint: use errors.New() to create errors, import "errors" and "math"
+// 2. In main, call sqrt(16) and sqrt(-4)
+// 3. Handle both cases: print the result on success, print the error on failure
+//
+// Expected output:
+//   sqrt(16) = 4.0
+//   Error: cannot take square root of negative number
+
+func main() {
+
+}`}
+              solution={`package main
 
 import (
 	"errors"
@@ -427,9 +477,6 @@ import (
 	"math"
 )
 
-// TODO: Write a function that takes a float64 and returns (float64, error)
-// If the number is negative, return an error "cannot take square root of negative number"
-// Otherwise return math.Sqrt(n)
 func sqrt(n float64) (float64, error) {
 	if n < 0 {
 		return 0, errors.New("cannot take square root of negative number")
@@ -438,7 +485,6 @@ func sqrt(n float64) (float64, error) {
 }
 
 func main() {
-	// Test with positive number
 	result, err := sqrt(16)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -446,17 +492,12 @@ func main() {
 		fmt.Printf("sqrt(16) = %.1f\\n", result)
 	}
 
-	// Test with negative number
 	result, err = sqrt(-4)
 	if err != nil {
 		fmt.Println("Error:", err)
 	} else {
 		fmt.Printf("sqrt(-4) = %.1f\\n", result)
 	}
-
-	// Expected output:
-	// sqrt(16) = 4.0
-	// Error: cannot take square root of negative number
 }`}
             />
 
@@ -539,7 +580,29 @@ func main() {
             <PlaygroundChallenge
               title="Methods"
               description="Create a Rectangle struct with Width and Height, then add Area() and Perimeter() methods. Use a pointer receiver to add a Scale() method."
-              code={`package main
+              challenge={`package main
+
+import "fmt"
+
+// Challenge: Methods
+// 1. Create a Rectangle struct with Width and Height (float64)
+// 2. Add an Area() method (value receiver) — returns Width * Height
+// 3. Add a Perimeter() method (value receiver) — returns 2 * (Width + Height)
+// 4. Add a Scale(factor float64) method (pointer receiver) — multiplies both dimensions
+//    Hint: pointer receiver (*Rectangle) so it modifies the original
+// 5. In main: create a rect, print area/perimeter, scale it, print new area
+//
+// Expected output:
+//   Rectangle: {Width:10 Height:5}
+//   Area: 50.0
+//   Perimeter: 30.0
+//   After Scale(2): {Width:20 Height:10}
+//   New Area: 200.0
+
+func main() {
+	_ = fmt.Sprintf // remove this line when you start
+}`}
+              solution={`package main
 
 import "fmt"
 
@@ -548,17 +611,14 @@ type Rectangle struct {
 	Height float64
 }
 
-// TODO: Add an Area() method (value receiver) that returns Width * Height
 func (r Rectangle) Area() float64 {
 	return r.Width * r.Height
 }
 
-// TODO: Add a Perimeter() method (value receiver) that returns 2 * (Width + Height)
 func (r Rectangle) Perimeter() float64 {
 	return 2 * (r.Width + r.Height)
 }
 
-// TODO: Add a Scale() method (pointer receiver) that multiplies both dimensions by a factor
 func (r *Rectangle) Scale(factor float64) {
 	r.Width *= factor
 	r.Height *= factor
@@ -574,13 +634,6 @@ func main() {
 	rect.Scale(2)
 	fmt.Printf("After Scale(2): %+v\\n", rect)
 	fmt.Printf("New Area: %.1f\\n", rect.Area())
-
-	// Expected output:
-	// Rectangle: {Width:10 Height:5}
-	// Area: 50.0
-	// Perimeter: 30.0
-	// After Scale(2): {Width:20 Height:10}
-	// New Area: 200.0
 }`}
             />
 
@@ -646,7 +699,28 @@ func main() {
             <PlaygroundChallenge
               title="Slices & Maps"
               description="Build a word frequency counter: split a sentence into words, count how many times each word appears using a map, and print the results."
-              code={`package main
+              challenge={`package main
+
+import (
+	"fmt"
+	"strings"
+)
+
+// Challenge: Word Frequency Counter
+// 1. Write a function: func wordFrequency(sentence string) map[string]int
+//    - Split the sentence into words using strings.Fields()
+//    - Create a map[string]int to count occurrences
+//    - Loop through words, lowercase each with strings.ToLower(), increment count
+//    - Return the map
+// 2. In main, call it with: "the quick brown fox jumps over the lazy dog the fox"
+// 3. Print each word and its count
+// 4. Print the total number of unique words using len()
+
+func main() {
+	_ = fmt.Sprintf // remove this line when you start
+	_ = strings.ToLower
+}`}
+              solution={`package main
 
 import (
 	"fmt"
@@ -654,17 +728,11 @@ import (
 )
 
 func wordFrequency(sentence string) map[string]int {
-	// TODO: Split the sentence into words using strings.Fields()
 	words := strings.Fields(sentence)
-
-	// TODO: Create a map to count word occurrences
 	freq := make(map[string]int)
-
-	// TODO: Loop through words and increment the count
 	for _, word := range words {
 		freq[strings.ToLower(word)]++
 	}
-
 	return freq
 }
 
@@ -673,12 +741,10 @@ func main() {
 
 	freq := wordFrequency(text)
 
-	// Print each word and its count
 	for word, count := range freq {
 		fmt.Printf("%-10s %d\\n", word, count)
 	}
 
-	// Print total unique words
 	fmt.Printf("\\nUnique words: %d\\n", len(freq))
 }`}
             />
@@ -756,38 +822,50 @@ func main() {
             <PlaygroundChallenge
               title="Interfaces"
               description="Define a Describable interface with a Describe() string method. Implement it for a Book and a Movie type, then write a function that accepts any Describable."
-              code={`package main
+              challenge={`package main
 
 import "fmt"
 
-// TODO: Define a Describable interface with one method: Describe() string
+// Challenge: Interfaces
+// 1. Define a Describable interface with one method: Describe() string
+// 2. Create a Book struct with Title and Author (both string)
+// 3. Implement Describe() for Book — return "Book: <Title> by <Author>"
+// 4. Create a Movie struct with Title and Director (both string)
+// 5. Implement Describe() for Movie — return "Movie: <Title> directed by <Director>"
+// 6. Write a function: func printDescription(d Describable) that prints d.Describe()
+// 7. In main, create a slice of Describable with books and movies, loop and print
+//
+// Hint: Go interfaces are implicit — no "implements" keyword needed
+
+func main() {
+	_ = fmt.Sprintf // remove this line when you start
+}`}
+              solution={`package main
+
+import "fmt"
+
 type Describable interface {
 	Describe() string
 }
 
-// TODO: Create a Book struct with Title and Author fields
 type Book struct {
 	Title  string
 	Author string
 }
 
-// TODO: Implement Describe() for Book — return "Book: <Title> by <Author>"
 func (b Book) Describe() string {
 	return fmt.Sprintf("Book: %s by %s", b.Title, b.Author)
 }
 
-// TODO: Create a Movie struct with Title and Director fields
 type Movie struct {
 	Title    string
 	Director string
 }
 
-// TODO: Implement Describe() for Movie — return "Movie: <Title> directed by <Director>"
 func (m Movie) Describe() string {
 	return fmt.Sprintf("Movie: %s directed by %s", m.Title, m.Director)
 }
 
-// This function works with ANY Describable
 func printDescription(d Describable) {
 	fmt.Println(d.Describe())
 }
@@ -865,18 +943,32 @@ func main() {
 
             <PlaygroundChallenge
               title="Pointers"
-              description="Write a tripleValue function that uses a pointer to modify the original variable. Test it to prove the original value changes."
-              code={`package main
+              description="Write a tripleValue function that uses a pointer to modify the original variable, and a swap function that swaps two integers using pointers."
+              challenge={`package main
 
 import "fmt"
 
-// TODO: Write a function that triples a number using a pointer receiver
-// It should take a *int parameter and multiply the value by 3
+// Challenge: Pointers
+// 1. Write a function: func tripleValue(n *int)
+//    - It takes a pointer to int and multiplies the value by 3
+//    - Use *n to dereference (read/write the value the pointer points to)
+// 2. Write a function: func swap(a, b *int)
+//    - Swap the values using: *a, *b = *b, *a
+// 3. In main:
+//    - Create x := 10, call tripleValue(&x), print x (should be 30)
+//    - Create a, b := 5, 15, call swap(&a, &b), print (should be a=15, b=5)
+
+func main() {
+	_ = fmt.Sprintf // remove this line when you start
+}`}
+              solution={`package main
+
+import "fmt"
+
 func tripleValue(n *int) {
 	*n = *n * 3
 }
 
-// TODO: Write a swap function that swaps two integers using pointers
 func swap(a, b *int) {
 	*a, *b = *b, *a
 }
@@ -886,13 +978,13 @@ func main() {
 	fmt.Println("Before triple:", x)
 
 	tripleValue(&x)
-	fmt.Println("After triple:", x) // Should be 30
+	fmt.Println("After triple:", x)
 
 	a, b := 5, 15
 	fmt.Printf("Before swap: a=%d, b=%d\\n", a, b)
 
 	swap(&a, &b)
-	fmt.Printf("After swap: a=%d, b=%d\\n", a, b) // a=15, b=5
+	fmt.Printf("After swap: a=%d, b=%d\\n", a, b)
 }`}
             />
 
@@ -965,11 +1057,28 @@ func main() {
             <PlaygroundChallenge
               title="Goroutines & Channels"
               description="Create 3 goroutines that each compute a result and send it through a channel. Collect all results in main and print the total."
-              code={`package main
+              challenge={`package main
 
 import "fmt"
 
-// TODO: Write a function that computes n*n and sends the result to a channel
+// Challenge: Goroutines & Channels
+// 1. Write a function: func square(n int, ch chan int)
+//    - Compute n*n and send the result to the channel: ch <- n*n
+// 2. In main:
+//    - Create a channel: ch := make(chan int)
+//    - Launch 3 goroutines: go square(3, ch), go square(4, ch), go square(5, ch)
+//    - Receive 3 results from the channel in a loop
+//    - Sum all results and print the total
+//
+// Expected: 9 + 16 + 25 = 50 (order of receives may vary)
+
+func main() {
+	_ = fmt.Sprintf // remove this line when you start
+}`}
+              solution={`package main
+
+import "fmt"
+
 func square(n int, ch chan int) {
 	ch <- n * n
 }
@@ -977,12 +1086,10 @@ func square(n int, ch chan int) {
 func main() {
 	ch := make(chan int)
 
-	// TODO: Launch 3 goroutines that compute squares of 3, 4, and 5
 	go square(3, ch)
 	go square(4, ch)
 	go square(5, ch)
 
-	// TODO: Receive 3 results from the channel and sum them
 	total := 0
 	for i := 0; i < 3; i++ {
 		result := <-ch
@@ -991,7 +1098,6 @@ func main() {
 	}
 
 	fmt.Printf("Sum of squares: %d\\n", total)
-	// Expected: 9 + 16 + 25 = 50 (order may vary)
 }`}
             />
 

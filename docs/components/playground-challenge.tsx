@@ -1,17 +1,23 @@
 import Link from 'next/link'
-import { Code2 } from 'lucide-react'
+import { Code2, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface PlaygroundChallengeProps {
   title: string
   description: string
-  code: string
+  challenge: string
+  solution: string
 }
 
-export function PlaygroundChallenge({ title, description, code }: PlaygroundChallengeProps) {
-  const encoded = typeof window !== 'undefined'
+function encode(code: string) {
+  return typeof window !== 'undefined'
     ? btoa(code)
     : Buffer.from(code).toString('base64')
+}
+
+export function PlaygroundChallenge({ title, description, challenge, solution }: PlaygroundChallengeProps) {
+  const challengeEncoded = encode(challenge)
+  const solutionEncoded = encode(solution)
 
   return (
     <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 mb-8">
@@ -26,11 +32,20 @@ export function PlaygroundChallenge({ title, description, code }: PlaygroundChal
           <p className="text-[13px] text-muted-foreground/80 leading-relaxed mb-3">
             {description}
           </p>
-          <Button size="sm" variant="outline" className="h-7 text-xs border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300" asChild>
-            <Link href={`/playground?code=${encodeURIComponent(encoded)}&title=${encodeURIComponent(title)}`}>
-              Open in Playground
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" className="h-7 text-xs border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300" asChild>
+              <Link href={`/playground?code=${encodeURIComponent(challengeEncoded)}&title=${encodeURIComponent(title)}`}>
+                <Code2 className="h-3 w-3 mr-1" />
+                Try It
+              </Link>
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 text-xs text-muted-foreground/60 hover:text-muted-foreground" asChild>
+              <Link href={`/playground?code=${encodeURIComponent(solutionEncoded)}&title=${encodeURIComponent(title + ' (Solution)')}`}>
+                <Eye className="h-3 w-3 mr-1" />
+                See Solution
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
     </div>
