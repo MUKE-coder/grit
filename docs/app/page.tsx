@@ -1,13 +1,24 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { ArrowRight, Shield, Layers, Zap, Code2, Rocket, Github, Globe, Server, Gauge, CheckCircle2, X, Minus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SiteHeader } from '@/components/site-header'
 import { AnimatedTerminal } from '@/components/animated-terminal'
+import { SoftwareApplicationSchema, FAQPageSchema } from '@/components/structured-data'
+
+export const metadata: Metadata = {
+  title: 'Grit — Go + React Full-Stack Framework',
+  description:
+    'Grit is a full-stack meta-framework that combines Go (Gin + GORM) with React (Next.js) and a Filament-like admin panel. One CLI command scaffolds an entire monorepo with API, web app, admin dashboard, shared types, and Docker setup.',
+  alternates: { canonical: 'https://gritframework.dev' },
+}
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
+      <SoftwareApplicationSchema />
+      <FAQPageSchema />
       <SiteHeader />
 
       {/* Hero Section */}

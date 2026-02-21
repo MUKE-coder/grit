@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from '@/components/code-block'
+import { getDocMetadata } from '@/config/docs-metadata'
+
+export const metadata = getDocMetadata('/docs/tutorials/saas')
 
 export default function TutorialSaaSPage() {
   return (

@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { getDocMetadata } from '@/config/docs-metadata'
+
+export const metadata = getDocMetadata('/docs')
 
 export default function DocsIntroductionPage() {
   return (

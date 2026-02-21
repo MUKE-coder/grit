@@ -6,6 +6,9 @@ import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from "@/components/code-block";
 import { TableOfContents } from "@/components/table-of-contents";
 import { PlaygroundChallenge } from "@/components/playground-challenge";
+import { getDocMetadata } from '@/config/docs-metadata'
+
+export const metadata = getDocMetadata('/docs/prerequisites/golang')
 
 const tocItems = [
   { id: 'go-basics', label: 'Go Basics' },

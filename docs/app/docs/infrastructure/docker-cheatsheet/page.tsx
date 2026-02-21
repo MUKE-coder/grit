@@ -3,6 +3,9 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
+import { getDocMetadata } from '@/config/docs-metadata'
+
+export const metadata = getDocMetadata('/docs/infrastructure/docker-cheatsheet')
 
 export default function DockerCheatSheetPage() {
   return (

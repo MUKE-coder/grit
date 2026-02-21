@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from "@/components/code-block";
+import { getDocMetadata } from '@/config/docs-metadata'
+
+export const metadata = getDocMetadata('/docs/prerequisites/nextjs')
 
 const reactBasicsCode = `// A React component is just a function that returns JSX
 interface GreetingProps {
