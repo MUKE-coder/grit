@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { Play, Loader2, RotateCcw, Share2, Check, BookOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
@@ -237,11 +238,37 @@ interface CompileResponse {
 }
 
 export default function PlaygroundPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <PlaygroundInner />
+    </Suspense>
+  )
+}
+
+function PlaygroundInner() {
+  const searchParams = useSearchParams()
   const [code, setCode] = useState(DEFAULT_CODE)
   const [output, setOutput] = useState('')
   const [running, setRunning] = useState(false)
   const [copied, setCopied] = useState(false)
   const [duration, setDuration] = useState<number | null>(null)
+  const [challengeTitle, setChallengeTitle] = useState<string | null>(null)
+
+  // Load code from URL query params (?code=base64&title=name)
+  useEffect(() => {
+    const codeParam = searchParams.get('code')
+    const titleParam = searchParams.get('title')
+    if (codeParam) {
+      try {
+        setCode(atob(codeParam))
+      } catch {
+        // Invalid base64, ignore
+      }
+    }
+    if (titleParam) {
+      setChallengeTitle(titleParam)
+    }
+  }, [searchParams])
 
   const runCode = useCallback(async () => {
     setRunning(true)
@@ -251,7 +278,7 @@ export default function PlaygroundPage() {
     const start = performance.now()
 
     try {
-      const res = await fetch('https://go.dev/_/compile', {
+      const res = await fetch('/api/compile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `version=2&body=${encodeURIComponent(code)}&withVet=true`,
@@ -283,13 +310,12 @@ export default function PlaygroundPage() {
 
   const shareCode = useCallback(async () => {
     try {
-      const res = await fetch('https://go.dev/_/share', {
+      const res = await fetch('/api/share', {
         method: 'POST',
         body: code,
       })
-      const id = await res.text()
-      const url = `https://go.dev/play/p/${id}`
-      await navigator.clipboard.writeText(url)
+      const data = await res.json()
+      await navigator.clipboard.writeText(data.url)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
@@ -321,9 +347,15 @@ export default function PlaygroundPage() {
         <div className="container max-w-screen-2xl flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-3">
             <h1 className="text-sm font-semibold text-foreground/90">Go Playground</h1>
-            <span className="text-xs text-muted-foreground/50 hidden sm:inline">
-              Powered by go.dev
-            </span>
+            {challengeTitle ? (
+              <span className="hidden sm:inline-flex items-center rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400">
+                Challenge: {challengeTitle}
+              </span>
+            ) : (
+              <span className="text-xs text-muted-foreground/50 hidden sm:inline">
+                Powered by go.dev
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from "@/components/code-block";
 import { TableOfContents } from "@/components/table-of-contents";
+import { PlaygroundChallenge } from "@/components/playground-challenge";
 
 const tocItems = [
   { id: 'go-basics', label: 'Go Basics' },
@@ -105,6 +106,26 @@ func main() {
               </p>
             </div>
 
+            <PlaygroundChallenge
+              title="Go Basics"
+              description="Print your name and the current year using fmt.Printf with format verbs (%s and %d)."
+              code={`package main
+
+import "fmt"
+
+func main() {
+	// TODO: Replace the values below with your name and the current year
+	name := "YOUR_NAME"
+	year := 2026
+
+	// Use fmt.Printf to print: "Hi, I'm <name> and it's <year>!"
+	fmt.Printf("Hi, I'm %s and it's %d!\\n", name, year)
+
+	// Bonus: Print the type of each variable using %T
+	fmt.Printf("name is %T, year is %T\\n", name, year)
+}`}
+            />
+
             {/* ─────────────────────────────────────────────────── */}
             {/* 2. Variables & Types */}
             {/* ─────────────────────────────────────────────────── */}
@@ -158,6 +179,32 @@ func main() {
               </p>
             </div>
 
+            <PlaygroundChallenge
+              title="Variables & Types"
+              description="Declare variables of different types (string, int, float64, bool), convert an int to float64, and print all values with their types."
+              code={`package main
+
+import "fmt"
+
+func main() {
+	// TODO: Declare these variables with appropriate types
+	age := 25
+	name := "Alice"
+	score := 95.5
+	passed := true
+
+	// TODO: Convert age (int) to float64 and add it to score
+	total := float64(age) + score
+	fmt.Printf("Total: %.1f\\n", total)
+
+	// TODO: Print each variable with its type using %v and %T
+	fmt.Printf("name: %v (%T)\\n", name, name)
+	fmt.Printf("age: %v (%T)\\n", age, age)
+	fmt.Printf("score: %v (%T)\\n", score, score)
+	fmt.Printf("passed: %v (%T)\\n", passed, passed)
+}`}
+            />
+
             {/* ─────────────────────────────────────────────────── */}
             {/* 3. Structs & Tags */}
             {/* ─────────────────────────────────────────────────── */}
@@ -207,6 +254,40 @@ type User struct {
                 Zod schema and TypeScript type on the frontend.
               </p>
             </div>
+
+            <PlaygroundChallenge
+              title="Structs"
+              description="Create a Product struct with Name (string), Price (float64), and InStock (bool) fields. Create two products and print them."
+              code={`package main
+
+import "fmt"
+
+// TODO: Define a Product struct with:
+//   - Name    string
+//   - Price   float64
+//   - InStock bool
+type Product struct {
+	Name    string
+	Price   float64
+	InStock bool
+}
+
+func main() {
+	// TODO: Create two products
+	laptop := Product{Name: "Laptop", Price: 999.99, InStock: true}
+	phone := Product{Name: "Phone", Price: 699.00, InStock: false}
+
+	// TODO: Print each product using %+v (shows field names)
+	fmt.Printf("Product 1: %+v\\n", laptop)
+	fmt.Printf("Product 2: %+v\\n", phone)
+
+	// TODO: Access individual fields
+	fmt.Printf("%s costs $%.2f\\n", laptop.Name, laptop.Price)
+	if !phone.InStock {
+		fmt.Printf("%s is out of stock!\\n", phone.Name)
+	}
+}`}
+            />
 
             {/* ─────────────────────────────────────────────────── */}
             {/* 4. Functions & Error Handling */}
@@ -269,6 +350,50 @@ func main() {
                 an <code>if err != nil</code> block that sends a 404 or 500 JSON response.
               </p>
             </div>
+
+            <PlaygroundChallenge
+              title="Functions & Errors"
+              description="Write a sqrt function that returns an error for negative numbers. Test it with both positive and negative inputs."
+              code={`package main
+
+import (
+	"errors"
+	"fmt"
+	"math"
+)
+
+// TODO: Write a function that takes a float64 and returns (float64, error)
+// If the number is negative, return an error "cannot take square root of negative number"
+// Otherwise return math.Sqrt(n)
+func sqrt(n float64) (float64, error) {
+	if n < 0 {
+		return 0, errors.New("cannot take square root of negative number")
+	}
+	return math.Sqrt(n), nil
+}
+
+func main() {
+	// Test with positive number
+	result, err := sqrt(16)
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		fmt.Printf("sqrt(16) = %.1f\\n", result)
+	}
+
+	// Test with negative number
+	result, err = sqrt(-4)
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		fmt.Printf("sqrt(-4) = %.1f\\n", result)
+	}
+
+	// Expected output:
+	// sqrt(16) = 4.0
+	// Error: cannot take square root of negative number
+}`}
+            />
 
             {/* ─────────────────────────────────────────────────── */}
             {/* 5. Methods */}
@@ -346,6 +471,54 @@ func main() {
               </p>
             </div>
 
+            <PlaygroundChallenge
+              title="Methods"
+              description="Create a Rectangle struct with Width and Height, then add Area() and Perimeter() methods. Use a pointer receiver to add a Scale() method."
+              code={`package main
+
+import "fmt"
+
+type Rectangle struct {
+	Width  float64
+	Height float64
+}
+
+// TODO: Add an Area() method (value receiver) that returns Width * Height
+func (r Rectangle) Area() float64 {
+	return r.Width * r.Height
+}
+
+// TODO: Add a Perimeter() method (value receiver) that returns 2 * (Width + Height)
+func (r Rectangle) Perimeter() float64 {
+	return 2 * (r.Width + r.Height)
+}
+
+// TODO: Add a Scale() method (pointer receiver) that multiplies both dimensions by a factor
+func (r *Rectangle) Scale(factor float64) {
+	r.Width *= factor
+	r.Height *= factor
+}
+
+func main() {
+	rect := Rectangle{Width: 10, Height: 5}
+
+	fmt.Printf("Rectangle: %+v\\n", rect)
+	fmt.Printf("Area: %.1f\\n", rect.Area())
+	fmt.Printf("Perimeter: %.1f\\n", rect.Perimeter())
+
+	rect.Scale(2)
+	fmt.Printf("After Scale(2): %+v\\n", rect)
+	fmt.Printf("New Area: %.1f\\n", rect.Area())
+
+	// Expected output:
+	// Rectangle: {Width:10 Height:5}
+	// Area: 50.0
+	// Perimeter: 30.0
+	// After Scale(2): {Width:20 Height:10}
+	// New Area: 200.0
+}`}
+            />
+
             {/* ─────────────────────────────────────────────────── */}
             {/* 6. Slices & Maps */}
             {/* ─────────────────────────────────────────────────── */}
@@ -404,6 +577,46 @@ func main() {
                 For example, <code>c.JSON(200, gin.H{"{"}&quot;data&quot;: users, &quot;message&quot;: &quot;success&quot;{"}"})</code>.
               </p>
             </div>
+
+            <PlaygroundChallenge
+              title="Slices & Maps"
+              description="Build a word frequency counter: split a sentence into words, count how many times each word appears using a map, and print the results."
+              code={`package main
+
+import (
+	"fmt"
+	"strings"
+)
+
+func wordFrequency(sentence string) map[string]int {
+	// TODO: Split the sentence into words using strings.Fields()
+	words := strings.Fields(sentence)
+
+	// TODO: Create a map to count word occurrences
+	freq := make(map[string]int)
+
+	// TODO: Loop through words and increment the count
+	for _, word := range words {
+		freq[strings.ToLower(word)]++
+	}
+
+	return freq
+}
+
+func main() {
+	text := "the quick brown fox jumps over the lazy dog the fox"
+
+	freq := wordFrequency(text)
+
+	// Print each word and its count
+	for word, count := range freq {
+		fmt.Printf("%-10s %d\\n", word, count)
+	}
+
+	// Print total unique words
+	fmt.Printf("\\nUnique words: %d\\n", len(freq))
+}`}
+            />
 
             {/* ─────────────────────────────────────────────────── */}
             {/* 7. Interfaces */}
@@ -475,6 +688,58 @@ func main() {
               </p>
             </div>
 
+            <PlaygroundChallenge
+              title="Interfaces"
+              description="Define a Describable interface with a Describe() string method. Implement it for a Book and a Movie type, then write a function that accepts any Describable."
+              code={`package main
+
+import "fmt"
+
+// TODO: Define a Describable interface with one method: Describe() string
+type Describable interface {
+	Describe() string
+}
+
+// TODO: Create a Book struct with Title and Author fields
+type Book struct {
+	Title  string
+	Author string
+}
+
+// TODO: Implement Describe() for Book — return "Book: <Title> by <Author>"
+func (b Book) Describe() string {
+	return fmt.Sprintf("Book: %s by %s", b.Title, b.Author)
+}
+
+// TODO: Create a Movie struct with Title and Director fields
+type Movie struct {
+	Title    string
+	Director string
+}
+
+// TODO: Implement Describe() for Movie — return "Movie: <Title> directed by <Director>"
+func (m Movie) Describe() string {
+	return fmt.Sprintf("Movie: %s directed by %s", m.Title, m.Director)
+}
+
+// This function works with ANY Describable
+func printDescription(d Describable) {
+	fmt.Println(d.Describe())
+}
+
+func main() {
+	items := []Describable{
+		Book{Title: "The Go Programming Language", Author: "Donovan & Kernighan"},
+		Movie{Title: "The Matrix", Director: "Wachowskis"},
+		Book{Title: "Clean Code", Author: "Robert C. Martin"},
+	}
+
+	for _, item := range items {
+		printDescription(item)
+	}
+}`}
+            />
+
             {/* ─────────────────────────────────────────────────── */}
             {/* 8. Pointers */}
             {/* ─────────────────────────────────────────────────── */}
@@ -532,6 +797,39 @@ func main() {
                 All GORM operations take pointers: <code>db.Create(&amp;user)</code>, <code>db.First(&amp;user, id)</code>.
               </p>
             </div>
+
+            <PlaygroundChallenge
+              title="Pointers"
+              description="Write a tripleValue function that uses a pointer to modify the original variable. Test it to prove the original value changes."
+              code={`package main
+
+import "fmt"
+
+// TODO: Write a function that triples a number using a pointer receiver
+// It should take a *int parameter and multiply the value by 3
+func tripleValue(n *int) {
+	*n = *n * 3
+}
+
+// TODO: Write a swap function that swaps two integers using pointers
+func swap(a, b *int) {
+	*a, *b = *b, *a
+}
+
+func main() {
+	x := 10
+	fmt.Println("Before triple:", x)
+
+	tripleValue(&x)
+	fmt.Println("After triple:", x) // Should be 30
+
+	a, b := 5, 15
+	fmt.Printf("Before swap: a=%d, b=%d\\n", a, b)
+
+	swap(&a, &b)
+	fmt.Printf("After swap: a=%d, b=%d\\n", a, b) // a=15, b=5
+}`}
+            />
 
             {/* ─────────────────────────────────────────────────── */}
             {/* 9. Goroutines & Channels */}
@@ -598,6 +896,39 @@ func main() {
                 concurrency for you.
               </p>
             </div>
+
+            <PlaygroundChallenge
+              title="Goroutines & Channels"
+              description="Create 3 goroutines that each compute a result and send it through a channel. Collect all results in main and print the total."
+              code={`package main
+
+import "fmt"
+
+// TODO: Write a function that computes n*n and sends the result to a channel
+func square(n int, ch chan int) {
+	ch <- n * n
+}
+
+func main() {
+	ch := make(chan int)
+
+	// TODO: Launch 3 goroutines that compute squares of 3, 4, and 5
+	go square(3, ch)
+	go square(4, ch)
+	go square(5, ch)
+
+	// TODO: Receive 3 results from the channel and sum them
+	total := 0
+	for i := 0; i < 3; i++ {
+		result := <-ch
+		fmt.Printf("Received: %d\\n", result)
+		total += result
+	}
+
+	fmt.Printf("Sum of squares: %d\\n", total)
+	// Expected: 9 + 16 + 25 = 50 (order may vary)
+}`}
+            />
 
             {/* ─────────────────────────────────────────────────── */}
             {/* 10. Packages & Project Structure */}
