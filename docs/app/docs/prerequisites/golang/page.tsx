@@ -169,6 +169,69 @@ func main() {
     fmt.Println("App:", AppName)
 }`} />
 
+            <div className="prose-grit mb-10">
+              <h3 id="format-specifiers">Format Specifiers</h3>
+              <p>
+                Go&apos;s <code>fmt.Printf</code> and <code>fmt.Sprintf</code> use <strong>format verbs</strong> to
+                control how values are printed. You will use these constantly when logging, building strings,
+                and debugging. Here are the ones you need to know:
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/40 overflow-hidden mb-8">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/40 bg-accent/10">
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground/80">Specifier</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground/80">Use</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground/80">Example</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/30">
+                  <tr>
+                    <td className="py-2.5 px-4"><code className="text-xs bg-accent/20 px-1.5 py-0.5 rounded">%s</code></td>
+                    <td className="py-2.5 px-4 text-muted-foreground/80">String</td>
+                    <td className="py-2.5 px-4"><code className="text-xs bg-accent/20 px-1.5 py-0.5 rounded">fmt.Printf(&quot;%s&quot;, &quot;text&quot;)</code></td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-4"><code className="text-xs bg-accent/20 px-1.5 py-0.5 rounded">%d</code></td>
+                    <td className="py-2.5 px-4 text-muted-foreground/80">Integer</td>
+                    <td className="py-2.5 px-4"><code className="text-xs bg-accent/20 px-1.5 py-0.5 rounded">fmt.Printf(&quot;%d&quot;, 42)</code></td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-4"><code className="text-xs bg-accent/20 px-1.5 py-0.5 rounded">%f</code></td>
+                    <td className="py-2.5 px-4 text-muted-foreground/80">Float</td>
+                    <td className="py-2.5 px-4"><code className="text-xs bg-accent/20 px-1.5 py-0.5 rounded">fmt.Printf(&quot;%.2f&quot;, 3.14159)</code></td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-4"><code className="text-xs bg-accent/20 px-1.5 py-0.5 rounded">%t</code></td>
+                    <td className="py-2.5 px-4 text-muted-foreground/80">Boolean</td>
+                    <td className="py-2.5 px-4"><code className="text-xs bg-accent/20 px-1.5 py-0.5 rounded">fmt.Printf(&quot;%t&quot;, true)</code></td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-4"><code className="text-xs bg-accent/20 px-1.5 py-0.5 rounded">%v</code></td>
+                    <td className="py-2.5 px-4 text-muted-foreground/80">Any value</td>
+                    <td className="py-2.5 px-4"><code className="text-xs bg-accent/20 px-1.5 py-0.5 rounded">fmt.Printf(&quot;%v&quot;, anything)</code></td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-4"><code className="text-xs bg-accent/20 px-1.5 py-0.5 rounded">%+v</code></td>
+                    <td className="py-2.5 px-4 text-muted-foreground/80">Struct with field names</td>
+                    <td className="py-2.5 px-4"><code className="text-xs bg-accent/20 px-1.5 py-0.5 rounded">fmt.Printf(&quot;%+v&quot;, person)</code></td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-4"><code className="text-xs bg-accent/20 px-1.5 py-0.5 rounded">%T</code></td>
+                    <td className="py-2.5 px-4 text-muted-foreground/80">Type of value</td>
+                    <td className="py-2.5 px-4"><code className="text-xs bg-accent/20 px-1.5 py-0.5 rounded">fmt.Printf(&quot;%T&quot;, variable)</code></td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-4"><code className="text-xs bg-accent/20 px-1.5 py-0.5 rounded">\n</code></td>
+                    <td className="py-2.5 px-4 text-muted-foreground/80">Newline</td>
+                    <td className="py-2.5 px-4"><code className="text-xs bg-accent/20 px-1.5 py-0.5 rounded">fmt.Printf(&quot;line1\nline2&quot;)</code></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
@@ -176,6 +239,8 @@ func main() {
                 from <code>.env</code> are stored in typed struct fields (like <code>Port int</code>,
                 <code>JWTSecret string</code>). Constants are used for role names
                 (<code>RoleAdmin = &quot;ADMIN&quot;</code>) and error codes.
+                Format specifiers are used in error wrapping (<code>fmt.Errorf(&quot;failed to create user: %w&quot;, err)</code>)
+                and logging throughout the codebase.
               </p>
             </div>
 
