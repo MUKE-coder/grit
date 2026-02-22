@@ -1,5 +1,6 @@
 import React from "react"
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { DM_Sans, JetBrains_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { OrganizationSchema } from '@/components/structured-data'
@@ -81,6 +82,14 @@ export default function RootLayout({
           <OrganizationSchema />
           {children}
         </ThemeProvider>
+        {process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID && (
+          <Script
+            defer
+            src={`${process.env.NEXT_PUBLIC_UMAMI_URL || 'https://analytics.gritframework.dev'}/script.js`}
+            data-website-id={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID}
+            strategy="afterInteractive"
+          />
+        )}
       </body>
     </html>
   )
