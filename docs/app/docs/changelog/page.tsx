@@ -28,10 +28,58 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v0.16.0 */}
+            {/* v0.17.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v0.17.0
+                </span>
+                <span className="text-sm text-muted-foreground">February 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>API Documentation (gin-docs)</strong> &mdash; Replaced hand-written Scalar/OpenAPI
+                    spec with{' '}
+                    <a href="https://github.com/MUKE-coder/gin-docs" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">gin-docs</a>,
+                    a zero-annotation API documentation generator. Routes and GORM models are introspected
+                    automatically to produce an OpenAPI 3.1 spec with interactive Scalar or Swagger UI,
+                    plus Postman and Insomnia export.
+                  </li>
+                  <li>
+                    <strong>Dark/Light mode for Go Playground</strong> &mdash; The playground now follows the
+                    site-wide theme toggle, switching between VS Code dark and light CodeMirror themes.
+                  </li>
+                  <li>
+                    <strong>Umami Analytics</strong> &mdash; Optional visitor analytics via self-hosted Umami,
+                    configured with <code>NEXT_PUBLIC_UMAMI_WEBSITE_ID</code> environment variable.
+                  </li>
+                </ul>
+
+                <h3>Documentation</h3>
+                <ul>
+                  <li>
+                    New{' '}
+                    <Link href="/docs/backend/api-docs" className="text-primary hover:underline">API Documentation</Link> page
+                    covering gin-docs configuration, GORM model schemas, route customization, UI switching, and spec export
+                  </li>
+                  <li>Full SEO + AEO implementation: sitemap, robots.txt, JSON-LD structured data, per-page metadata</li>
+                </ul>
+
+                <h3>Infrastructure</h3>
+                <ul>
+                  <li>Added Dockerfile for docs site deployment (Next.js standalone output)</li>
+                  <li>Google Search Console verification</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v0.16.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v0.16.0
                 </span>
                 <span className="text-sm text-muted-foreground">February 21, 2026</span>

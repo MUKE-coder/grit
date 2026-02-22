@@ -83,13 +83,8 @@ func Upgrade(uOpts UpgradeOptions) error {
 		green.Printf("  ✓ Migration and seed tools updated\n")
 		updated += 4
 
-		// API documentation (Scalar)
-		spinner.Printf("  → Updating API documentation (Scalar)...\n")
-		if err := writeScalarFiles(root, opts); err != nil {
-			return fmt.Errorf("updating Scalar docs files: %w", err)
-		}
-		green.Printf("  ✓ API documentation updated\n")
-		updated += 2
+		// API documentation (gin-docs — now configured in routes.go)
+		green.Printf("  ✓ API documentation (gin-docs) configured in routes.go\n")
 	}
 
 	// --- Shared package ---

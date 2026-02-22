@@ -469,7 +469,7 @@ pnpm dev
 | Web (Landing Page) | http://localhost:3000 |
 | Admin Panel | http://localhost:3001 |
 | Go API | http://localhost:8080 |
-| API Docs (Scalar) | http://localhost:8080/docs |
+| API Docs (gin-docs) | http://localhost:8080/docs |
 | GORM Studio | http://localhost:8080/studio |
 | Mailhog | http://localhost:8025 |
 | MinIO Console | http://localhost:9001 |

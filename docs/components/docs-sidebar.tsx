@@ -78,6 +78,7 @@ const navItems: NavItem[] = [
       { title: 'Migrations', href: '/docs/backend/migrations' },
       { title: 'Seeders', href: '/docs/backend/seeders' },
       { title: 'RBAC & Roles', href: '/docs/backend/rbac' },
+      { title: 'API Documentation', href: '/docs/backend/api-docs' },
     ],
   },
   {

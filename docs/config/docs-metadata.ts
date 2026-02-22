@@ -128,6 +128,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Role-based access control in Grit: ADMIN, EDITOR, USER roles, RequireRole middleware, role-restricted routes, and grit add role.',
   },
+  '/docs/backend/api-docs': {
+    title: 'API Documentation',
+    description:
+      'Auto-generated API documentation in Grit with gin-docs: zero-annotation OpenAPI spec, interactive Scalar/Swagger UI, Postman/Insomnia export, and GORM model schemas.',
+  },
   '/docs/backend/response-format': {
     title: 'API Response Format',
     description:

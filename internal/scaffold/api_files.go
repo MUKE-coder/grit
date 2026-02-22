@@ -25,8 +25,6 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "cors.go"):  apiCorsMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "logger.go"): apiLoggerMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "routes", "routes.go"):    apiRoutesGo(),
-		filepath.Join(apiRoot, "internal", "docs", "docs.go"):       apiScalarHandlerGo(opts),
-		filepath.Join(apiRoot, "internal", "docs", "openapi.go"):    apiOpenAPISpecGo(opts),
 		filepath.Join(apiRoot, ".air.toml"):                          airConfig(),
 	}
 
@@ -47,7 +45,7 @@ func apiGoMod(opts Options) string {
 go 1.21
 
 require (
-	github.com/MarceloPetrucio/go-scalar-api-reference v0.0.0-20240521013641-ce5d2efe0e06
+	github.com/MUKE-coder/gin-docs v0.0.0-20260222113017-4d647cb4e7aa
 	github.com/MUKE-coder/gorm-studio v0.0.0-20260220065727-01539fe1212f
 	github.com/aws/aws-sdk-go-v2 v1.25.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.0
@@ -263,6 +261,7 @@ func main() {
 	go func() {
 		log.Printf("Server starting on port %s", cfg.Port)
 		log.Printf("GORM Studio available at http://localhost:%s/studio", cfg.Port)
+		log.Printf("API Documentation at http://localhost:%s/docs", cfg.Port)
 		if cfg.SentinelEnabled {
 			log.Printf("Sentinel dashboard at http://localhost:%s/sentinel/ui", cfg.Port)
 		}
@@ -1721,6 +1720,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/MUKE-coder/gin-docs/gindocs"
 	"github.com/MUKE-coder/gorm-studio/studio"
 	"github.com/MUKE-coder/sentinel"
 	"github.com/gin-gonic/gin"
@@ -1729,7 +1729,6 @@ import (
 	"` + "{{MODULE}}" + `/internal/ai"
 	"` + "{{MODULE}}" + `/internal/cache"
 	"` + "{{MODULE}}" + `/internal/config"
-	"` + "{{MODULE}}" + `/internal/docs"
 	"` + "{{MODULE}}" + `/internal/handlers"
 	"` + "{{MODULE}}" + `/internal/mail"
 	"` + "{{MODULE}}" + `/internal/middleware"
@@ -1803,8 +1802,16 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		log.Println("GORM Studio mounted at /studio")
 	}
 
-	// API Documentation (Scalar)
-	docs.RegisterRoutes(r)
+	// API Documentation (gin-docs — auto-generated from routes + models)
+	gindocs.Mount(r, db, gindocs.Config{
+		Title:       cfg.AppName + " API",
+		Description: "REST API built with [Grit](https://gritframework.dev) — Go + React meta-framework.",
+		Version:     "1.0.0",
+		UI:          gindocs.UIScalar,
+		ScalarTheme: "kepler",
+		Models:      []interface{}{&models.User{}, &models.Upload{}, &models.Blog{}},
+		Auth:        gindocs.AuthBearer,
+	})
 	log.Println("API docs available at /docs")
 
 	// Auth service
