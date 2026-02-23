@@ -360,6 +360,141 @@ volumes:
                     so Dokploy can route traffic to each service.
                   </p>
                 </div>
+
+                <h3 className="text-lg font-semibold tracking-tight mt-8 mb-3">
+                  Build Context &amp; Monorepo
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Notice that the <strong>API</strong> service uses <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">context: ./apps/api</code> because
+                  the Go module is self-contained. The <strong>Next.js</strong> services use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">context: .</code> (repo
+                  root) because they need access to the shared <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">packages/shared</code>, the
+                  root <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">pnpm-lock.yaml</code>, and <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">pnpm-workspace.yaml</code>.
+                </p>
+
+                <h3 className="text-lg font-semibold tracking-tight mt-8 mb-3">
+                  Dockerfiles
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Grit scaffolds production-ready Dockerfiles with <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit new</code>.
+                  Here&apos;s what each one looks like:
+                </p>
+
+                <h4 className="text-base font-semibold tracking-tight mb-3 text-foreground/80">
+                  Go API Dockerfile
+                </h4>
+                <p className="text-muted-foreground leading-relaxed mb-3 text-sm">
+                  Multi-stage build &mdash; compiles a static Go binary, then copies it into a minimal Alpine image (~15 MB final):
+                </p>
+                <CodeBlock language="dockerfile" filename="apps/api/Dockerfile" code={`# Build stage
+FROM golang:1.23-alpine AS builder
+
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build static binary
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/server ./cmd/server
+
+# Run stage
+FROM alpine:3.19
+
+RUN apk --no-cache add ca-certificates tzdata
+
+WORKDIR /app
+
+COPY --from=builder /app/server .
+
+EXPOSE 8080
+
+CMD ["./server"]`} />
+
+                <h4 className="text-base font-semibold tracking-tight mt-6 mb-3 text-foreground/80">
+                  Next.js Dockerfile (Web &amp; Admin)
+                </h4>
+                <p className="text-muted-foreground leading-relaxed mb-3 text-sm">
+                  Three-stage build &mdash; installs deps, builds with standalone output, then creates a minimal runner (~120 MB final).
+                  The same pattern is used for both <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">apps/web</code> and <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">apps/admin</code>:
+                </p>
+                <CodeBlock language="dockerfile" filename="apps/web/Dockerfile" code={`# Build stage
+FROM node:20-alpine AS base
+
+RUN corepack enable
+
+# Install dependencies
+FROM base AS deps
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/shared/package.json ./packages/shared/
+
+RUN pnpm install --frozen-lockfile
+
+# Build
+FROM base AS builder
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY . .
+
+RUN pnpm --filter web build
+
+# Run
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder /app/apps/web/public ./apps/web/public
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "apps/web/server.js"]`} />
+
+                <div className="p-4 rounded-lg border border-[hsl(38,90%,50%)]/20 bg-[hsl(38,90%,50%)]/5 mt-4">
+                  <p className="text-sm text-foreground/80 leading-relaxed">
+                    <span className="font-semibold text-[hsl(38,90%,50%)]">Critical:</span>{' '}
+                    The Next.js Dockerfiles depend on <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">output: &quot;standalone&quot;</code> being
+                    set in your <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">next.config.ts</code>. Grit sets this automatically
+                    for both web and admin apps. Without it, <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.next/standalone</code> won&apos;t
+                    be generated and the Docker build will fail. If you removed it, add it back:
+                  </p>
+                  <div className="mt-3">
+                    <CodeBlock language="typescript" filename="next.config.ts" code={`const nextConfig: NextConfig = {
+  output: "standalone",  // Required for Docker builds
+  reactStrictMode: true,
+};`} />
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mt-4">
+                  <p className="text-sm text-foreground/80 leading-relaxed">
+                    <span className="font-semibold text-primary/90">How standalone works:</span>{' '}
+                    With <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">output: &quot;standalone&quot;</code>, Next.js
+                    creates a self-contained <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">server.js</code> that includes
+                    only the required <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">node_modules</code> files &mdash;
+                    reducing the Docker image from ~1 GB to ~120 MB. The runner stage
+                    only needs the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">standalone</code>, <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">static</code>,
+                    and <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">public</code> folders &mdash; no full <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">node_modules</code>.
+                  </p>
+                </div>
               </div>
 
               {/* Step 6: Environment Variables */}
