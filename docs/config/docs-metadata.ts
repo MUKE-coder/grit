@@ -133,6 +133,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Auto-generated API documentation in Grit with gin-docs: zero-annotation OpenAPI spec, interactive Scalar/Swagger UI, Postman/Insomnia export, and GORM model schemas.',
   },
+  '/docs/backend/pulse': {
+    title: 'Pulse (Observability)',
+    description:
+      'Self-hosted observability for Grit APIs with Pulse: request tracing, database monitoring, runtime metrics, error tracking, health checks, alerting, and Prometheus export.',
+  },
   '/docs/backend/response-format': {
     title: 'API Response Format',
     description:

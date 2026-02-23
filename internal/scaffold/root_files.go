@@ -92,6 +92,11 @@ AI_PROVIDER=claude
 AI_API_KEY=                          # sk-ant-... (Claude), sk-... (OpenAI), or AIza... (Gemini)
 AI_MODEL=claude-sonnet-4-5-20250929  # Model to use
 
+# Observability — Pulse performance monitoring dashboard
+PULSE_ENABLED=true
+PULSE_USERNAME=admin
+PULSE_PASSWORD=pulse
+
 # Security — Sentinel WAF, rate limiting, threat detection
 SENTINEL_ENABLED=true
 SENTINEL_USERNAME=admin
@@ -159,6 +164,11 @@ GORM_STUDIO_ENABLED=true
 AI_PROVIDER=claude                   # "claude", "openai", or "gemini"
 AI_API_KEY=                          # sk-ant-... (Claude), sk-... (OpenAI), or AIza... (Gemini)
 AI_MODEL=claude-sonnet-4-5-20250929  # Model to use
+
+# Observability — Pulse (performance monitoring, request tracing, error tracking)
+PULSE_ENABLED=true                   # Set to "false" to disable Pulse entirely
+PULSE_USERNAME=admin                 # Dashboard login username
+PULSE_PASSWORD=pulse                 # Dashboard login password (change in production!)
 
 # Security — Sentinel (WAF, rate limiting, threat detection)
 SENTINEL_ENABLED=true                # Set to "false" to disable Sentinel entirely
@@ -232,6 +242,11 @@ GORM_STUDIO_ENABLED=true
 AI_PROVIDER=claude                   # "claude", "openai", or "gemini"
 AI_API_KEY=your-api-key-here         # sk-ant-... (Claude), sk-... (OpenAI), or AIza... (Gemini)
 AI_MODEL=claude-sonnet-4-5-20250929  # Model to use
+
+# ─── Observability (Pulse) ────────────────────────────
+PULSE_ENABLED=true
+PULSE_USERNAME=admin
+PULSE_PASSWORD=change-me-in-production
 
 # ─── Security (Sentinel) ─────────────────────────────
 SENTINEL_ENABLED=true

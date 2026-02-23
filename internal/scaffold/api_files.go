@@ -47,6 +47,7 @@ go 1.21
 require (
 	github.com/MUKE-coder/gin-docs v0.0.0-20260222113017-4d647cb4e7aa
 	github.com/MUKE-coder/gorm-studio v0.0.0-20260220065727-01539fe1212f
+	github.com/MUKE-coder/pulse v0.0.0-20260223005903-6f5d6e356231
 	github.com/aws/aws-sdk-go-v2 v1.25.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.0
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.0
@@ -262,6 +263,9 @@ func main() {
 		log.Printf("Server starting on port %s", cfg.Port)
 		log.Printf("GORM Studio available at http://localhost:%s/studio", cfg.Port)
 		log.Printf("API Documentation at http://localhost:%s/docs", cfg.Port)
+		if cfg.PulseEnabled {
+			log.Printf("Pulse dashboard at http://localhost:%s/pulse/ui/", cfg.Port)
+		}
 		if cfg.SentinelEnabled {
 			log.Printf("Sentinel dashboard at http://localhost:%s/sentinel/ui", cfg.Port)
 		}
@@ -366,6 +370,11 @@ type Config struct {
 	SentinelUsername   string
 	SentinelPassword  string
 	SentinelSecretKey string
+
+	// Observability (Pulse)
+	PulseEnabled   bool
+	PulseUsername   string
+	PulsePassword  string
 }
 
 // Load reads configuration from environment variables.
@@ -403,6 +412,10 @@ func Load() (*Config, error) {
 		SentinelUsername:   getEnv("SENTINEL_USERNAME", "admin"),
 		SentinelPassword:  getEnv("SENTINEL_PASSWORD", "sentinel"),
 		SentinelSecretKey: getEnv("SENTINEL_SECRET_KEY", "sentinel-secret-change-me"),
+
+		PulseEnabled:  getEnv("PULSE_ENABLED", "true") == "true",
+		PulseUsername: getEnv("PULSE_USERNAME", "admin"),
+		PulsePassword: getEnv("PULSE_PASSWORD", "pulse"),
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -1716,12 +1729,14 @@ func apiRoutesGo() string {
 	return `package routes
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/MUKE-coder/gin-docs/gindocs"
 	"github.com/MUKE-coder/gorm-studio/studio"
+	"github.com/MUKE-coder/pulse/pulse"
 	"github.com/MUKE-coder/sentinel"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -1813,6 +1828,39 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		Auth:        gindocs.AuthBearer,
 	})
 	log.Println("API docs available at /docs")
+
+	// Mount Pulse observability (request tracing, DB monitoring, runtime metrics, error tracking)
+	if cfg.PulseEnabled {
+		p := pulse.Mount(r, db, pulse.Config{
+			AppName: cfg.AppName,
+			DevMode: cfg.IsDevelopment(),
+			Dashboard: pulse.DashboardConfig{
+				Username: cfg.PulseUsername,
+				Password: cfg.PulsePassword,
+			},
+			Tracing: pulse.TracingConfig{
+				ExcludePaths: []string{"/studio/*", "/sentinel/*", "/docs/*", "/pulse/*"},
+			},
+			Alerts: pulse.AlertConfig{},
+			Prometheus: pulse.PrometheusConfig{
+				Enabled: true,
+			},
+		})
+
+		// Register health checks for connected services
+		if svc.Cache != nil {
+			p.AddHealthCheck(pulse.HealthCheck{
+				Name:     "redis",
+				Type:     "redis",
+				Critical: false,
+				CheckFunc: func(ctx context.Context) error {
+					return svc.Cache.Client().Ping(ctx).Err()
+				},
+			})
+		}
+
+		log.Println("Pulse observability mounted at /pulse")
+	}
 
 	// Auth service
 	authService := &services.AuthService{

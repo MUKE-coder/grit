@@ -41,6 +41,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/docs/backend/seeders', priority: 0.6, changeFrequency: 'monthly' as const },
     { path: '/docs/backend/services', priority: 0.7, changeFrequency: 'monthly' as const },
     { path: '/docs/backend/api-docs', priority: 0.7, changeFrequency: 'monthly' as const },
+    { path: '/docs/backend/pulse', priority: 0.7, changeFrequency: 'monthly' as const },
 
     // Frontend
     { path: '/docs/frontend/hooks', priority: 0.6, changeFrequency: 'monthly' as const },

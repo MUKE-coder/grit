@@ -28,10 +28,43 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v0.17.0 */}
+            {/* v0.18.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v0.18.0
+                </span>
+                <span className="text-sm text-muted-foreground">February 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>Pulse (Observability)</strong> &mdash; Every <code>grit new</code> project now includes{' '}
+                    <a href="https://github.com/MUKE-coder/pulse" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Pulse</a>,
+                    a self-hosted observability SDK. Provides request tracing, database monitoring, runtime metrics,
+                    error tracking, health checks, alerting, Prometheus export, and an embedded React dashboard
+                    at <code>/pulse</code>. Enabled by default, configurable via <code>PULSE_ENABLED</code>.
+                    See <Link href="/docs/backend/pulse" className="text-primary hover:underline">Pulse docs</Link>.
+                  </li>
+                </ul>
+
+                <h3>Documentation</h3>
+                <ul>
+                  <li>
+                    New{' '}
+                    <Link href="/docs/backend/pulse" className="text-primary hover:underline">Pulse (Observability)</Link> page
+                    covering configuration, endpoints, health checks, alerting, Prometheus metrics, and data storage
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v0.17.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v0.17.0
                 </span>
                 <span className="text-sm text-muted-foreground">February 22, 2026</span>

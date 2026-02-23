@@ -27,7 +27,7 @@ export function SiteHeader() {
             </span>
             <span className="text-xs text-muted-foreground/50 font-mono hidden sm:inline">docs</span>
             <span className="hidden sm:inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-mono font-medium text-primary/70">
-              v0.17.0
+              v0.18.0
             </span>
           </Link>
         </div>

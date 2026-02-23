@@ -470,6 +470,7 @@ pnpm dev
 | Admin Panel | http://localhost:3001 |
 | Go API | http://localhost:8080 |
 | API Docs (gin-docs) | http://localhost:8080/docs |
+| Pulse (Observability) | http://localhost:8080/pulse/ui/ |
 | GORM Studio | http://localhost:8080/studio |
 | Mailhog | http://localhost:8025 |
 | MinIO Console | http://localhost:9001 |

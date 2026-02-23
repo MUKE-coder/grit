@@ -79,6 +79,7 @@ const navItems: NavItem[] = [
       { title: 'Seeders', href: '/docs/backend/seeders' },
       { title: 'RBAC & Roles', href: '/docs/backend/rbac' },
       { title: 'API Documentation', href: '/docs/backend/api-docs' },
+      { title: 'Pulse (Observability)', href: '/docs/backend/pulse' },
     ],
   },
   {
