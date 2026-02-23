@@ -997,18 +997,73 @@ func main() {
             <div className="prose-grit mb-10">
               <h2 id="goroutines-channels">9. Goroutines & Channels</h2>
               <p>
-                A goroutine is a lightweight thread managed by the Go runtime. You start one by
-                putting <code>go</code> before a function call. Goroutines are extremely cheap --
-                you can run thousands simultaneously, unlike OS threads.
+                Concurrency is one of Go&apos;s most powerful features. Go achieves concurrency through
+                two key primitives: <strong>goroutines</strong> and <strong>channels</strong>.
+              </p>
+
+              <h3>What is a Goroutine?</h3>
+              <p>
+                A goroutine is a lightweight thread of execution managed by the Go runtime, not the
+                operating system. You start one by putting the <code>go</code> keyword before a
+                function call. Goroutines are extremely cheap — you can run <strong>thousands</strong> simultaneously,
+                each using only a few kilobytes of memory. This is unlike OS threads which are
+                expensive to create and manage.
               </p>
               <p>
-                Channels are the way goroutines communicate. A channel is a typed pipe: one
-                goroutine sends a value in, another receives it out. Use <code>sync.WaitGroup</code>
-                when you need to wait for multiple goroutines to finish before proceeding.
+                When you call a function normally, it runs <strong>synchronously</strong> — your
+                program waits for it to finish before moving to the next line. When you
+                prefix it with <code>go</code>, it runs <strong>asynchronously</strong> — execution
+                continues immediately while the goroutine runs in the background.
               </p>
             </div>
 
-            <CodeBlock language="go" filename="goroutines.go" code={`package main
+            <CodeBlock language="go" filename="goroutines-basic.go" code={`package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func sayHello(name string) {
+    fmt.Printf("Hello, %s!\\n", name)
+}
+
+func main() {
+    // Synchronous — runs and completes before moving on
+    sayHello("direct call")
+
+    // Asynchronous — starts a new goroutine
+    go sayHello("goroutine")
+
+    // Anonymous goroutine — common pattern
+    go func(msg string) {
+        fmt.Println(msg)
+    }("anonymous goroutine")
+
+    // Without this sleep, main() would exit before
+    // the goroutines have a chance to run!
+    time.Sleep(100 * time.Millisecond)
+    fmt.Println("main done")
+}`} />
+
+            <div className="prose-grit mb-10">
+              <p>
+                <strong>Important:</strong> When the <code>main()</code> function returns, the
+                program exits — even if goroutines are still running.
+                Using <code>time.Sleep</code> to wait is fragile. In real code, you need proper
+                synchronization, which is where <code>sync.WaitGroup</code> and channels come in.
+              </p>
+
+              <h3>WaitGroup — Waiting for Goroutines to Finish</h3>
+              <p>
+                A <code>sync.WaitGroup</code> is a counter that lets you wait for a collection of
+                goroutines to finish. Call <code>wg.Add(1)</code> before launching each goroutine,
+                call <code>wg.Done()</code> inside the goroutine when it finishes, and
+                call <code>wg.Wait()</code> to block until the counter reaches zero.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="waitgroup.go" code={`package main
 
 import (
     "fmt"
@@ -1028,32 +1083,332 @@ func main() {
     sources := []string{"database", "cache", "api"}
 
     for _, src := range sources {
-        wg.Add(1)
+        wg.Add(1)           // Increment counter
         go fetchData(src, &wg) // Run concurrently
     }
 
-    wg.Wait() // Wait for all goroutines to finish
+    wg.Wait() // Block until all goroutines call Done()
     fmt.Println("All data fetched!")
+    // All 3 goroutines run at the same time (~100ms total, not 300ms)
+}`} />
 
-    // Channel example
-    ch := make(chan string)
+            <div className="prose-grit mb-10">
+              <h3>Channels — Communication Between Goroutines</h3>
+              <p>
+                Channels are typed pipes that connect concurrent goroutines. One goroutine
+                sends a value into a channel, and another receives it. Think of it like a mailbox: one
+                goroutine drops a letter in, another picks it up.
+              </p>
+              <p>
+                You create a channel with <code>make(chan Type)</code>. The key
+                operators are:
+              </p>
+              <ul>
+                <li><code>{'ch <- value'}</code> — <strong>Send</strong> a value into the channel</li>
+                <li><code>{'value := <-ch'}</code> — <strong>Receive</strong> a value from the channel</li>
+              </ul>
+              <p>
+                By default, channels are <strong>unbuffered</strong> — sends and receives block
+                until the other side is ready. This blocking behavior is what makes channels
+                a powerful synchronization tool: you don&apos;t need explicit locks.
+              </p>
+            </div>
 
+            <CodeBlock language="go" filename="channels.go" code={`package main
+
+import "fmt"
+
+func main() {
+    // Create an unbuffered channel of strings
+    messages := make(chan string)
+
+    // Launch a goroutine that sends a value
     go func() {
-        ch <- "hello from goroutine" // Send
+        messages <- "ping" // Send blocks until someone receives
     }()
 
-    msg := <-ch // Receive
-    fmt.Println(msg)
+    // Receive blocks until someone sends
+    msg := <-messages
+    fmt.Println(msg) // "ping"
+
+    // --- Channel for returning results ---
+    results := make(chan int)
+
+    go func() {
+        sum := 0
+        for i := 1; i <= 100; i++ {
+            sum += i
+        }
+        results <- sum // Send the computed result back
+    }()
+
+    total := <-results
+    fmt.Println("Sum 1..100 =", total) // 5050
 }`} />
+
+            <div className="prose-grit mb-10">
+              <h3>Buffered Channels</h3>
+              <p>
+                By default, channels are unbuffered — a send blocks until a receiver is ready.
+                A <strong>buffered channel</strong> has a capacity and can hold values without a
+                receiver being ready, up to the buffer size. You create one by passing the
+                capacity as the second argument to <code>make</code>.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="buffered-channels.go" code={`package main
+
+import "fmt"
+
+func main() {
+    // Buffered channel — can hold up to 2 values
+    ch := make(chan string, 2)
+
+    // These sends don't block because the buffer has space
+    ch <- "first"
+    ch <- "second"
+
+    // Receives pull values out in FIFO order
+    fmt.Println(<-ch) // "first"
+    fmt.Println(<-ch) // "second"
+}`} />
+
+            <div className="prose-grit mb-10">
+              <h3>Channel Directions</h3>
+              <p>
+                When passing channels as function parameters, you can restrict them to
+                be <strong>send-only</strong> or <strong>receive-only</strong>. This adds type-safety —
+                the compiler prevents you from accidentally reading from a write-only channel or
+                vice versa.
+              </p>
+              <ul>
+                <li><code>{'chan<- string'}</code> — send-only channel (can only send strings into it)</li>
+                <li><code>{'<-chan string'}</code> — receive-only channel (can only receive strings from it)</li>
+                <li><code>chan string</code> — bidirectional channel (can send and receive)</li>
+              </ul>
+            </div>
+
+            <CodeBlock language="go" filename="channel-directions.go" code={`package main
+
+import "fmt"
+
+// producer can ONLY send to the channel
+func producer(ch chan<- string, msg string) {
+    ch <- msg
+    // <-ch  // This would be a compile error!
+}
+
+// consumer can ONLY receive from the channel
+func consumer(ch <-chan string) string {
+    return <-ch
+    // ch <- "x"  // This would be a compile error!
+}
+
+func main() {
+    ch := make(chan string, 1)
+    producer(ch, "hello from producer")
+    msg := consumer(ch)
+    fmt.Println(msg) // "hello from producer"
+}`} />
+
+            <div className="prose-grit mb-10">
+              <h3>Ranging Over Channels &amp; Closing</h3>
+              <p>
+                You can iterate over values received from a channel using <code>for range</code>.
+                The loop continues until the channel is <strong>closed</strong>. The
+                sender closes a channel with <code>close(ch)</code> to signal that no more values
+                will be sent. Closing a channel is important — without it, a <code>range</code> loop
+                would block forever waiting for more values.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="range-channels.go" code={`package main
+
+import "fmt"
+
+func generateNumbers(count int, ch chan<- int) {
+    for i := 1; i <= count; i++ {
+        ch <- i
+    }
+    close(ch) // Signal: no more values will be sent
+}
+
+func main() {
+    ch := make(chan int)
+    go generateNumbers(5, ch)
+
+    // range automatically stops when channel is closed
+    for num := range ch {
+        fmt.Printf("Received: %d\\n", num)
+    }
+    fmt.Println("Channel closed, done!")
+    // Output:
+    // Received: 1
+    // Received: 2
+    // Received: 3
+    // Received: 4
+    // Received: 5
+    // Channel closed, done!
+}`} />
+
+            <div className="prose-grit mb-10">
+              <h3>Select — Waiting on Multiple Channels</h3>
+              <p>
+                The <code>select</code> statement lets you wait on multiple channel operations
+                at once. It&apos;s like a <code>switch</code> statement, but for channels: it blocks
+                until one of its cases is ready, then executes that case. If multiple are ready,
+                one is chosen at random.
+              </p>
+              <p>
+                <code>select</code> is commonly used for timeouts, cancellation, and multiplexing
+                data from multiple sources.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="select.go" code={`package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func main() {
+    ch1 := make(chan string)
+    ch2 := make(chan string)
+
+    // Goroutine 1: slow operation (200ms)
+    go func() {
+        time.Sleep(200 * time.Millisecond)
+        ch1 <- "result from service A"
+    }()
+
+    // Goroutine 2: fast operation (100ms)
+    go func() {
+        time.Sleep(100 * time.Millisecond)
+        ch2 <- "result from service B"
+    }()
+
+    // Receive results from whichever finishes first
+    for i := 0; i < 2; i++ {
+        select {
+        case msg1 := <-ch1:
+            fmt.Println("Got:", msg1)
+        case msg2 := <-ch2:
+            fmt.Println("Got:", msg2)
+        }
+    }
+    // Output (service B finishes first):
+    // Got: result from service B
+    // Got: result from service A
+}`} />
+
+            <div className="prose-grit mb-10">
+              <h3>Practical Pattern: Fan-out / Fan-in</h3>
+              <p>
+                A common real-world pattern is <strong>fan-out / fan-in</strong>: launch multiple
+                goroutines (fan-out), each doing work in parallel, then collect all their results
+                through a channel (fan-in). This is the pattern you&apos;ll see in API servers that
+                need to fetch data from multiple sources simultaneously.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="fan-out-fan-in.go" code={`package main
+
+import (
+    "fmt"
+    "time"
+)
+
+// Simulates fetching data from different services
+func fetch(service string, ch chan<- string) {
+    time.Sleep(100 * time.Millisecond) // Simulate network call
+    ch <- fmt.Sprintf("data from %s", service)
+}
+
+func main() {
+    ch := make(chan string)
+
+    // Fan-out: launch 3 goroutines concurrently
+    services := []string{"users-api", "orders-api", "payments-api"}
+    for _, svc := range services {
+        go fetch(svc, ch)
+    }
+
+    // Fan-in: collect all results
+    for i := 0; i < len(services); i++ {
+        result := <-ch
+        fmt.Println(result)
+    }
+    // All 3 fetches run in parallel (~100ms total, not 300ms)
+}`} />
+
+            <div className="prose-grit mb-10">
+              <h3>Quick Reference</h3>
+              <div className="overflow-x-auto">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Operation</th>
+                      <th>Syntax</th>
+                      <th>Blocks?</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Start goroutine</td>
+                      <td><code>go func()</code></td>
+                      <td>No — runs async</td>
+                    </tr>
+                    <tr>
+                      <td>Create channel</td>
+                      <td><code>{'make(chan T)'}</code></td>
+                      <td>No</td>
+                    </tr>
+                    <tr>
+                      <td>Create buffered channel</td>
+                      <td><code>{'make(chan T, size)'}</code></td>
+                      <td>No</td>
+                    </tr>
+                    <tr>
+                      <td>Send to channel</td>
+                      <td><code>{'ch <- value'}</code></td>
+                      <td>Yes (until receiver ready, or buffer has space)</td>
+                    </tr>
+                    <tr>
+                      <td>Receive from channel</td>
+                      <td><code>{'v := <-ch'}</code></td>
+                      <td>Yes (until sender sends)</td>
+                    </tr>
+                    <tr>
+                      <td>Close channel</td>
+                      <td><code>close(ch)</code></td>
+                      <td>No</td>
+                    </tr>
+                    <tr>
+                      <td>Range over channel</td>
+                      <td><code>{'for v := range ch'}</code></td>
+                      <td>Until channel is closed</td>
+                    </tr>
+                    <tr>
+                      <td>Wait on multiple</td>
+                      <td><code>{'select { case ... }'}</code></td>
+                      <td>Until one case is ready</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 Grit&apos;s background job system (powered by asynq) uses goroutines under the hood to
                 process tasks like sending emails, resizing images, and running cleanup jobs.
-                The Gin web server itself handles each HTTP request in its own goroutine. You
-                generally do not need to write goroutine code directly -- asynq and Gin manage
-                concurrency for you.
+                The Gin web server itself handles each HTTP request in its own goroutine — this is
+                how it achieves high concurrency without you writing any goroutine code. Pulse&apos;s
+                observability tracing also runs in its own goroutines to avoid slowing down your
+                API. You generally do not need to write goroutine code directly — asynq, Gin,
+                and Pulse manage concurrency for you.
               </p>
             </div>
 
