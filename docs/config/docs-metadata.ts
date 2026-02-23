@@ -261,6 +261,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Deploy Grit projects: Docker production builds, environment configuration, database setup, and hosting options.',
   },
+  '/docs/infrastructure/dokploy': {
+    title: 'Deploy with Dokploy',
+    description:
+      'Deploy your Grit application with Dokploy: self-hosted PaaS with Docker Compose, auto-SSL, GitHub integration, and a web dashboard on your own VPS.',
+  },
   '/docs/infrastructure/docker': {
     title: 'Docker',
     description:

@@ -70,6 +70,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Infrastructure
     { path: '/docs/infrastructure/database', priority: 0.6, changeFrequency: 'monthly' as const },
     { path: '/docs/infrastructure/deployment', priority: 0.7, changeFrequency: 'monthly' as const },
+    { path: '/docs/infrastructure/dokploy', priority: 0.7, changeFrequency: 'monthly' as const },
     { path: '/docs/infrastructure/docker', priority: 0.6, changeFrequency: 'monthly' as const },
     { path: '/docs/infrastructure/docker-cheatsheet', priority: 0.5, changeFrequency: 'monthly' as const },
 

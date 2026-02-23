@@ -126,6 +126,7 @@ const navItems: NavItem[] = [
       { title: 'Docker Cheat Sheet', href: '/docs/infrastructure/docker-cheatsheet' },
       { title: 'Database & Migrations', href: '/docs/infrastructure/database' },
       { title: 'Deployment', href: '/docs/infrastructure/deployment' },
+      { title: 'Deploy with Dokploy', href: '/docs/infrastructure/dokploy' },
     ],
   },
   {

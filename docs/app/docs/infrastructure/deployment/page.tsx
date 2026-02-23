@@ -1044,11 +1044,24 @@ jobs:
                       desc: 'Open-source Heroku alternative you host on your own VPS. Docker-based, built-in databases, auto SSL. Free.',
                       fit: 'Best for PaaS convenience at VPS pricing.',
                     },
-                  ].map((platform) => (
+                    {
+                      name: 'Dokploy (Self-Hosted)',
+                      desc: 'Open-source PaaS with Docker Compose support, web dashboard, auto SSL via Traefik, and GitHub auto-deploy. Free.',
+                      fit: 'Best for Docker Compose-based monorepos like Grit. See our dedicated guide.',
+                      link: '/docs/infrastructure/dokploy',
+                    },
+                  ].map((platform: { name: string; desc: string; fit: string; link?: string }) => (
                     <div key={platform.name} className="p-4 rounded-lg border border-border/30 bg-card/30">
                       <h3 className="text-sm font-semibold mb-1.5">{platform.name}</h3>
                       <p className="text-xs text-muted-foreground/70 leading-relaxed mb-2">{platform.desc}</p>
-                      <p className="text-xs text-primary/70 leading-relaxed">{platform.fit}</p>
+                      <p className="text-xs text-primary/70 leading-relaxed">
+                        {platform.fit}
+                        {platform.link && (
+                          <>
+                            {' '}<Link href={platform.link} className="text-primary hover:underline font-medium">Read the guide &rarr;</Link>
+                          </>
+                        )}
+                      </p>
                     </div>
                   ))}
                 </div>
