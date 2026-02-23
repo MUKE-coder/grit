@@ -12,7 +12,8 @@ Grit is a full-stack meta-framework that combines **Go** (backend) + **React/Nex
 - A **Go API** with Gin + GORM + PostgreSQL
 - A **Next.js web app** with App Router + Tailwind + shadcn/ui
 - A **Filament-like admin panel** with resource definitions, DataTables, forms, and widgets
-- **Batteries included**: file storage (S3), email (Resend), background jobs (asynq), cron, Redis caching, AI integration (Claude/OpenAI)
+- **Batteries included**: file storage (S3), email (Resend), background jobs (asynq), cron, Redis caching, AI integration (Claude/OpenAI), security (Sentinel), observability (Pulse)
+- **Auto-generated API docs** via gin-docs — zero-annotation OpenAPI spec with interactive UI
 - A **shared package** with Zod schemas, TypeScript types, and constants
 
 **Think of it as:** Laravel + Filament, but with Go + React instead of PHP + Blade.
@@ -35,6 +36,14 @@ grit generate resource Category -i   # Interactive mode
 
 # Sync Go types to TypeScript
 grit sync
+
+# Add a new role to the project
+grit add role MODERATOR             # Injects into Go, Zod, TypeScript, admin
+
+# Development
+grit dev                            # Start all services with hot-reload
+grit start server                   # Start Go API only
+grit start client                   # Start frontend only
 ```
 
 ---
@@ -99,6 +108,12 @@ myapp/
 │   │       ├── cache/cache.go         # Redis cache service
 │   │       └── ai/ai.go              # AI service (Claude/OpenAI)
 │   │
+│   │   # Mounted tools (auto-configured in routes.go):
+│   │   # /docs         → gin-docs API documentation (OpenAPI 3.1 + Scalar UI)
+│   │   # /studio       → GORM Studio database browser
+│   │   # /sentinel/*   → Sentinel security dashboard (WAF, rate limiting)
+│   │   # /pulse        → Pulse observability dashboard (tracing, metrics)
+│   │
 │   ├── web/                      # Next.js main frontend
 │   │   ├── app/
 │   │   │   ├── layout.tsx             # Root layout + providers
@@ -120,7 +135,8 @@ myapp/
 │       │       ├── jobs/page.tsx       # Job queue dashboard
 │       │       ├── files/page.tsx      # File browser
 │       │       ├── cron/page.tsx       # Cron tasks viewer
-│       │       └── mail/page.tsx       # Email template preview
+│       │       ├── mail/page.tsx       # Email template preview
+│       │       └── security/page.tsx   # Sentinel security dashboard
 │       ├── components/
 │       │   ├── layout/                # Sidebar, Navbar, AdminLayout
 │       │   ├── tables/                # DataTable, filters, pagination
@@ -187,6 +203,11 @@ This creates **8 files** and injects into **10 existing files**:
 | `bool` | `bool` | `boolean` | `z.boolean()` | Toggle switch |
 | `datetime` | `*time.Time` | `string \| null` | `z.string().nullable()` | Datetime picker |
 | `date` | `*time.Time` | `string \| null` | `z.string().nullable()` | Date picker |
+| `richtext` | `string` | `string` | `z.string()` | Tiptap WYSIWYG editor |
+| `slug` | `string` | `string` | Auto-generated | Hidden from forms |
+| `string_array` | `datatypes.JSONSlice[string]` | `string[]` | `z.array(z.string())` | Tag input |
+| `belongs_to:Resource` | `uint` (FK) | `number` | `z.number()` | Relationship select |
+| `many_to_many:Resource` | Junction table | `number[]` | `z.array(z.number())` | Multi-select |
 
 ### Field Modifiers
 
@@ -412,6 +433,35 @@ export const postsResource = defineResource({
 | `checkbox` | Checkbox |
 | `radio` | Radio group |
 | `image` | Image upload (drag & drop via Dropzone) |
+| `richtext` | Tiptap WYSIWYG editor (bold, italic, headings, lists, code, links) |
+| `relationship-select` | Searchable dropdown for belongs_to relationships |
+| `multi-relationship-select` | Multi-select tags for many_to_many relationships |
+
+### Form View Variants
+
+Set `formView` in the resource definition to change how forms render:
+
+| View | Description |
+|------|-----------|
+| `modal` | Default — form opens in a modal dialog |
+| `page` | Full-page form at a dedicated URL |
+| `modal-steps` | Multi-step wizard in a modal with step indicators |
+| `page-steps` | Multi-step wizard on a full page with progress bar |
+
+For multi-step forms, add `steps` and assign each field to a step:
+```typescript
+form: {
+  formView: "modal-steps",
+  steps: [
+    { key: "basic", label: "Basic Info" },
+    { key: "details", label: "Details" },
+  ],
+  fields: [
+    { key: "title", label: "Title", type: "text", step: "basic" },
+    { key: "content", label: "Content", type: "richtext", step: "details" },
+  ],
+}
+```
 
 ### Dropzone Component
 
@@ -791,6 +841,46 @@ API endpoints:
 - `POST /api/ai/chat` — Multi-turn conversation
 - `POST /api/ai/stream` — Server-sent events streaming
 
+### Security (Sentinel)
+
+Grit ships with [Sentinel](https://github.com/MUKE-coder/sentinel), a production-grade security suite:
+
+- **WAF** — SQL injection, XSS, path traversal, command injection detection
+- **Rate Limiting** — Per-IP request throttling
+- **Brute-Force Protection** — Account lockout after failed login attempts
+- **Anomaly Detection** — Unusual traffic pattern alerts
+- **IP Geolocation** — Country-level blocking
+- **Security Headers** — HSTS, CSP, X-Frame-Options
+- **Dashboard** — Real-time threat monitoring at `/sentinel/ui`
+
+Enabled by default. Disable with `SENTINEL_ENABLED=false`.
+
+### Observability (Pulse)
+
+Grit ships with [Pulse](https://github.com/MUKE-coder/pulse), a self-hosted observability SDK:
+
+- **Request Tracing** — HTTP method, path, status, latency for every request
+- **Database Monitoring** — Query count, slow queries, connection pool stats
+- **Runtime Metrics** — Memory, goroutines, GC stats
+- **Error Tracking** — Captures panics and 5xx responses
+- **Health Checks** — Built-in DB check + custom checks (Redis, etc.)
+- **Alerting** — High error rate, slow response, memory threshold alerts
+- **Prometheus** — `/pulse/metrics` endpoint for Grafana integration
+- **Dashboard** — Embedded React dashboard at `/pulse`
+
+Enabled by default. Disable with `PULSE_ENABLED=false`.
+
+### API Documentation (gin-docs)
+
+Auto-generated API docs powered by [gin-docs](https://github.com/MUKE-coder/gin-docs):
+
+- Introspects Gin routes and GORM models automatically — zero annotations needed
+- Generates OpenAPI 3.1 spec at `/docs/openapi.json`
+- Interactive UI at `/docs` (Scalar theme by default, Swagger available)
+- Export to Postman or Insomnia
+
+No manual spec maintenance — routes and models are discovered at startup.
+
 ---
 
 ## Configuration (.env)
@@ -825,6 +915,16 @@ MAIL_FROM=noreply@myapp.com
 AI_PROVIDER=claude            # or: openai
 AI_API_KEY=sk-ant-xxxxx
 AI_MODEL=claude-sonnet-4-5-20250929
+
+# Security (Sentinel)
+SENTINEL_ENABLED=true
+SENTINEL_USERNAME=admin
+SENTINEL_PASSWORD=sentinel
+
+# Observability (Pulse)
+PULSE_ENABLED=true
+PULSE_USERNAME=admin
+PULSE_PASSWORD=pulse
 ```
 
 ---
@@ -919,6 +1019,21 @@ In the handler, preload related data:
 query.Preload("Category").Find(&posts)
 ```
 
+### "Add a new role"
+
+```bash
+grit add role MODERATOR
+```
+
+This injects the new role into 7 locations:
+1. Go constants (`models/user.go` — role constant)
+2. Zod enum (`schemas/user.ts` — UserRole enum)
+3. TypeScript union (`types/user.ts` — Role type)
+4. Roles constant (`constants/index.ts` — ROLES array)
+5. Admin badge mapping (role color in DataTable)
+6. Admin filter options (role filter dropdown)
+7. Admin form options (role select in user form)
+
 ### "Customize the admin table"
 
 Edit the resource definition in `apps/admin/resources/<name>.ts`:
@@ -959,11 +1074,16 @@ dashboard: {
 
 ---
 
-## GORM Studio
+## Mounted Dashboards
 
-The API embeds GORM Studio, a visual database browser, at `/studio`. It automatically registers all models.
+The Go API mounts several dashboards automatically:
 
-Access: `http://localhost:8080/studio`
+| Path | Tool | Purpose |
+|------|------|---------|
+| `/studio` | GORM Studio | Visual database browser — view/edit data, run SQL, export schemas |
+| `/docs` | gin-docs | Auto-generated API documentation with interactive UI |
+| `/sentinel/ui` | Sentinel | Security dashboard — threats, blocked IPs, rate limits |
+| `/pulse` | Pulse | Observability dashboard — request tracing, metrics, errors |
 
 ---
 

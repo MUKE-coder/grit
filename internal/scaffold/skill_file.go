@@ -17,7 +17,8 @@ Grit is a full-stack meta-framework that combines **Go** (backend) + **React/Nex
 - A **Go API** with Gin + GORM + PostgreSQL
 - A **Next.js web app** with App Router + Tailwind + shadcn/ui
 - A **Filament-like admin panel** with resource definitions, DataTables, forms, and widgets
-- **Batteries included**: file storage (S3), email (Resend), background jobs (asynq), cron, Redis caching, AI integration (Claude/OpenAI)
+- **Batteries included**: file storage (S3), email (Resend), background jobs (asynq), cron, Redis caching, AI integration (Claude/OpenAI), security (Sentinel), observability (Pulse)
+- **Auto-generated API docs** via gin-docs — zero-annotation OpenAPI spec with interactive UI
 - A **shared package** with Zod schemas, TypeScript types, and constants
 
 **Think of it as:** Laravel + Filament, but with Go + React instead of PHP + Blade.
@@ -40,6 +41,9 @@ grit generate resource Category -i   # Interactive mode
 
 # Sync Go types to TypeScript
 grit sync
+
+# Add a new role to the project
+grit add role MODERATOR             # Injects into Go, Zod, TypeScript, admin
 
 # Database migrations
 grit migrate                          # Run GORM AutoMigrate
@@ -113,6 +117,12 @@ After running %[1]s new %[2]s%[1]s, you get:
 │   │       ├── cache/cache.go         # Redis cache service
 │   │       └── ai/ai.go              # AI service (Claude/OpenAI)
 │   │
+│   │   # Mounted tools (auto-configured in routes.go):
+│   │   # /docs         → gin-docs API documentation (OpenAPI 3.1 + Scalar UI)
+│   │   # /studio       → GORM Studio database browser
+│   │   # /sentinel/*   → Sentinel security dashboard (WAF, rate limiting)
+│   │   # /pulse        → Pulse observability dashboard (tracing, metrics)
+│   │
 │   ├── web/                      # SaaS landing page (Next.js)
 │   │   ├── app/
 │   │   │   ├── layout.tsx             # Root layout
@@ -137,7 +147,8 @@ After running %[1]s new %[2]s%[1]s, you get:
 │       │           ├── jobs/page.tsx
 │       │           ├── files/page.tsx
 │       │           ├── cron/page.tsx
-│       │           └── mail/page.tsx
+│       │           ├── mail/page.tsx
+│       │           └── security/page.tsx
 │       ├── components/
 │       │   ├── layout/                # Sidebar, Navbar
 │       │   ├── tables/                # DataTable, filters, pagination
@@ -204,6 +215,11 @@ This creates **8 files** and injects into **10 existing files**:
 | %[1]sbool%[1]s | %[1]sbool%[1]s | %[1]sboolean%[1]s | %[1]sz.boolean()%[1]s | Toggle switch |
 | %[1]sdatetime%[1]s | %[1]s*time.Time%[1]s | %[1]sstring | null%[1]s | %[1]sz.string().nullable()%[1]s | Datetime picker |
 | %[1]sdate%[1]s | %[1]s*time.Time%[1]s | %[1]sstring | null%[1]s | %[1]sz.string().nullable()%[1]s | Date picker |
+| %[1]srichtext%[1]s | %[1]sstring%[1]s | %[1]sstring%[1]s | %[1]sz.string()%[1]s | Tiptap WYSIWYG editor |
+| %[1]sslug%[1]s | %[1]sstring%[1]s | %[1]sstring%[1]s | Auto-generated | Hidden from forms |
+| %[1]sstring_array%[1]s | %[1]sdatatypes.JSONSlice[string]%[1]s | %[1]sstring[]%[1]s | %[1]sz.array(z.string())%[1]s | Tag input |
+| %[1]sbelongs_to:Resource%[1]s | %[1]suint%[1]s (FK) | %[1]snumber%[1]s | %[1]sz.number()%[1]s | Relationship select |
+| %[1]smany_to_many:Resource%[1]s | Junction table | %[1]snumber[]%[1]s | %[1]sz.array(z.number())%[1]s | Multi-select |
 
 ### Field Modifiers
 
@@ -397,6 +413,36 @@ export const postsResource = defineResource({
 | %[1]scheckbox%[1]s | Checkbox | |
 | %[1]sradio%[1]s | Radio group | Requires options array |
 | %[1]simage%[1]s | Image upload (drag & drop) | Uses react-dropzone, uploads to /api/uploads |
+| %[1]srichtext%[1]s | Tiptap WYSIWYG editor | Bold, italic, headings, lists, code, links |
+| %[1]srelationship-select%[1]s | Searchable dropdown | For belongs_to relationships |
+| %[1]smulti-relationship-select%[1]s | Multi-select tags | For many_to_many relationships |
+
+### Form View Variants
+
+Set %[1]sformView%[1]s in the resource definition to change how forms render:
+
+| View | Description |
+|------|-----------|
+| %[1]smodal%[1]s | Default — form opens in a modal dialog |
+| %[1]spage%[1]s | Full-page form at a dedicated URL |
+| %[1]smodal-steps%[1]s | Multi-step wizard in a modal with step indicators |
+| %[1]spage-steps%[1]s | Multi-step wizard on a full page with progress bar |
+
+### Dropzone Component
+
+A reusable file upload component with 5 variants:
+
+%[1]stsx
+import { Dropzone } from "@/components/ui/dropzone";
+
+<Dropzone
+  variant="default"     // "default" | "compact" | "minimal" | "avatar" | "inline"
+  maxFiles={5}
+  maxSize={1024 * 1024 * 10} // 10MB
+  onFilesChange={setFiles}
+  accept={{ "image/*": [] }}
+/>
+%[1]s
 
 ---
 
@@ -523,6 +569,39 @@ result, err := ai.Complete(ctx, ai.CompletionRequest{
 ai.Stream(ctx, req, func(chunk string) { /* SSE */ })
 %[1]s
 
+### Security (Sentinel)
+
+Built-in security suite powered by [Sentinel](https://github.com/MUKE-coder/sentinel):
+- **WAF** — SQL injection, XSS, path traversal detection
+- **Rate Limiting** — Per-IP request throttling
+- **Brute-Force Protection** — Account lockout after failed logins
+- **Anomaly Detection** — Unusual traffic pattern alerts
+- **Dashboard** — Real-time threat monitoring at %[1]s/sentinel/ui%[1]s
+
+Enabled by default. Disable with %[1]sSENTINEL_ENABLED=false%[1]s.
+
+### Observability (Pulse)
+
+Built-in observability SDK powered by [Pulse](https://github.com/MUKE-coder/pulse):
+- **Request Tracing** — HTTP method, path, status, latency
+- **Database Monitoring** — Query count, slow queries, pool stats
+- **Runtime Metrics** — Memory, goroutines, GC stats
+- **Error Tracking** — Captures panics and 5xx responses
+- **Health Checks** — DB + custom checks (Redis, etc.)
+- **Alerting** — High error rate, slow response alerts
+- **Prometheus** — %[1]s/pulse/metrics%[1]s for Grafana
+- **Dashboard** — Embedded React dashboard at %[1]s/pulse%[1]s
+
+Enabled by default. Disable with %[1]sPULSE_ENABLED=false%[1]s.
+
+### API Documentation (gin-docs)
+
+Auto-generated docs via [gin-docs](https://github.com/MUKE-coder/gin-docs):
+- Introspects Gin routes and GORM models — zero annotations needed
+- OpenAPI 3.1 spec at %[1]s/docs/openapi.json%[1]s
+- Interactive UI at %[1]s/docs%[1]s (Scalar theme)
+- Export to Postman or Insomnia
+
 ---
 
 ## Configuration (.env)
@@ -541,6 +620,12 @@ STORAGE_SECRET_KEY=minioadmin
 RESEND_API_KEY=re_xxxxx
 AI_PROVIDER=claude
 AI_API_KEY=sk-ant-xxxxx
+SENTINEL_ENABLED=true
+SENTINEL_USERNAME=admin
+SENTINEL_PASSWORD=sentinel
+PULSE_ENABLED=true
+PULSE_USERNAME=admin
+PULSE_PASSWORD=pulse
 %[1]s
 
 ---
@@ -609,6 +694,14 @@ docker compose up -d    # Start all services
 2. Register the route in %[1]sapps/api/internal/routes/routes.go%[1]s
 3. Create React Query hook in %[1]sapps/web/hooks/%[1]s or %[1]sapps/admin/hooks/%[1]s
 
+### "Add a new role"
+
+%[1]sash
+grit add role MODERATOR
+%[1]s
+
+This injects the new role into 7 locations: Go constants, Zod enum, TypeScript union, ROLES array, admin badge mapping, filter options, and form options.
+
 ### "Add a relationship between resources"
 
 In the Go model:
@@ -639,11 +732,16 @@ query.Preload("Category").Find(&posts)
 
 ---
 
-## GORM Studio
+## Mounted Dashboards
 
-The API embeds GORM Studio, a visual database browser, at %[1]s/studio%[1]s.
+The Go API mounts several dashboards automatically:
 
-Access: %[1]shttp://localhost:8080/studio%[1]s
+| Path | Tool | Purpose |
+|------|------|---------|
+| %[1]s/studio%[1]s | GORM Studio | Visual database browser — view/edit data, run SQL, export schemas |
+| %[1]s/docs%[1]s | gin-docs | Auto-generated API documentation with interactive UI |
+| %[1]s/sentinel/ui%[1]s | Sentinel | Security dashboard — threats, blocked IPs, rate limits |
+| %[1]s/pulse%[1]s | Pulse | Observability dashboard — request tracing, metrics, errors |
 
 ---
 

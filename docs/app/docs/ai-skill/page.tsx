@@ -167,8 +167,8 @@ export default function AISkillPage() {
                     },
                     {
                       title: 'CLI Commands',
-                      desc: 'All available Grit CLI commands: grit new, grit generate resource, grit dev, grit migrate, grit sync, grit studio. The AI knows which commands to suggest.',
-                      example: 'grit generate resource Invoice\n# Creates model, handler, service, hook, schema, admin page',
+                      desc: 'All available Grit CLI commands: grit new, grit generate resource, grit dev, grit migrate, grit sync, grit studio, grit add role, grit start, grit upgrade. The AI knows which commands to suggest.',
+                      example: 'grit generate resource Invoice\n# Creates model, handler, service, hook, schema, admin page\n\ngrit add role MODERATOR\n# Injects into Go, Zod, TS, admin (7 locations)',
                     },
                     {
                       title: 'Code Patterns',
@@ -184,6 +184,11 @@ export default function AISkillPage() {
                       title: 'Markers (Do Not Delete!)',
                       desc: 'Code markers like // GRIT:MODELS and // GRIT:ROUTES that the CLI uses to inject generated code. The AI knows to preserve these markers and insert new code at the correct positions.',
                       example: '// GRIT:MODELS — do not remove\n&models.User{},\n&models.Invoice{},\n// END GRIT:MODELS',
+                    },
+                    {
+                      title: 'Batteries & Dashboards',
+                      desc: 'All built-in services: file storage (S3/R2), email (Resend), background jobs (asynq), cron, Redis caching, AI (Claude/OpenAI), security (Sentinel), observability (Pulse), and API docs (gin-docs).',
+                      example: '/studio   → GORM Studio (DB browser)\n/docs     → gin-docs (API docs)\n/sentinel → Security dashboard\n/pulse    → Observability dashboard',
                     },
                     {
                       title: 'Naming Conventions',
