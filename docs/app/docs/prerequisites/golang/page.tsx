@@ -759,9 +759,14 @@ func main() {
               <h2 id="interfaces">7. Interfaces</h2>
               <p>
                 An interface defines a set of method signatures. Any type that implements all those
-                methods <strong>automatically</strong> satisfies the interface -- there is no
-                <code>implements</code> keyword. This is called implicit implementation, and it is
-                one of Go&apos;s most powerful features.
+                methods <strong>automatically</strong> satisfies the interface &mdash; there is no
+                <code>implements</code> keyword. This is called <strong>implicit implementation</strong> (or
+                structural typing), and it is one of Go&apos;s most powerful features.
+              </p>
+              <p>
+                Think of an interface like a restaurant menu: it lists <em>what you can order</em>,
+                not <em>how the kitchen prepares it</em>. Any kitchen that can serve those dishes
+                satisfies the menu&apos;s contract.
               </p>
               <p>
                 Interfaces enable polymorphism and are essential for testing. You can swap a real
@@ -770,16 +775,27 @@ func main() {
               </p>
             </div>
 
+            {/* 7.1 Basic Interface */}
+            <div className="prose-grit mb-6">
+              <h3>7.1 Defining &amp; Implementing an Interface</h3>
+              <p>
+                Define an interface with the <code>type</code> keyword and a list of method signatures.
+                Any type whose methods match is considered an implementation &mdash; no explicit declaration needed.
+                This is sometimes called <strong>duck typing</strong>: &quot;if it walks like a duck and
+                quacks like a duck, then it&apos;s a duck.&quot;
+              </p>
+            </div>
+
             <CodeBlock language="go" filename="interfaces.go" code={`package main
 
 import "fmt"
 
-// Define an interface
+// Define an interface — just method signatures
 type Notifier interface {
     Send(to string, message string) error
 }
 
-// EmailNotifier implements Notifier (implicitly)
+// EmailNotifier implements Notifier (implicitly — no "implements" keyword)
 type EmailNotifier struct {
     From string
 }
@@ -799,7 +815,7 @@ func (s *SlackNotifier) Send(to string, message string) error {
     return nil
 }
 
-// Works with ANY Notifier
+// This function works with ANY Notifier — email, slack, SMS, webhook...
 func alert(n Notifier, user string) {
     n.Send(user, "Your report is ready")
 }
@@ -808,17 +824,458 @@ func main() {
     email := &EmailNotifier{From: "noreply@app.com"}
     slack := &SlackNotifier{Channel: "alerts"}
 
-    alert(email, "alice@example.com")
-    alert(slack, "alice")
+    alert(email, "alice@example.com") // Email from noreply@app.com to alice@example.com: Your report is ready
+    alert(slack, "alice")             // Slack #alerts -> alice: Your report is ready
 }`} />
+
+            <div className="prose-grit mb-6 mt-8">
+              <p>
+                Notice that neither <code>EmailNotifier</code> nor <code>SlackNotifier</code> declares
+                &quot;I implement Notifier.&quot; They just <em>have</em> the <code>Send</code> method
+                with the right signature. The compiler checks this for you at build time &mdash;
+                if you misspell a method or get the parameters wrong, you get a compile error, not
+                a runtime crash.
+              </p>
+            </div>
+
+            {/* 7.2 Why Interfaces Matter */}
+            <div className="prose-grit mb-6">
+              <h3>7.2 Why Interfaces Matter</h3>
+              <p>
+                Interfaces solve three real problems:
+              </p>
+              <ol>
+                <li>
+                  <strong>Reduce boilerplate</strong> &mdash; Write a function once that works with any
+                  type matching the interface. The <code>SaveData</code> function below works with files,
+                  network connections, in-memory buffers, and anything else that implements <code>io.Writer</code>.
+                </li>
+                <li>
+                  <strong>Enable testing</strong> &mdash; Swap real services for mocks without changing your
+                  business logic. Define a <code>Mailer</code> interface, use the real Resend mailer in
+                  production, and a fake one in tests.
+                </li>
+                <li>
+                  <strong>Decouple architecture</strong> &mdash; Your handler layer depends on an interface,
+                  not a concrete struct. You can replace the database, switch cloud providers, or refactor
+                  internals without touching the code that <em>uses</em> the service.
+                </li>
+              </ol>
+            </div>
+
+            <CodeBlock language="go" filename="why_interfaces.go" code={`package main
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "os"
+)
+
+// SaveData works with ANY io.Writer — files, buffers, HTTP responses, etc.
+func SaveData(w io.Writer, data []byte) error {
+    _, err := w.Write(data)
+    return err
+}
+
+func main() {
+    data := []byte("Hello, Grit!")
+
+    // Write to a file
+    file, _ := os.Create("output.txt")
+    SaveData(file, data)
+    file.Close()
+
+    // Write to an in-memory buffer (same function!)
+    var buf bytes.Buffer
+    SaveData(&buf, data)
+    fmt.Println(buf.String()) // Hello, Grit!
+
+    // Write to stdout (same function!)
+    SaveData(os.Stdout, data) // Hello, Grit!
+}`} />
+
+            {/* 7.3 Empty Interface & any */}
+            <div className="prose-grit mb-6 mt-8">
+              <h3>7.3 The Empty Interface &amp; <code>any</code></h3>
+              <p>
+                The empty interface <code>interface{'{}'}</code> has zero methods, which means <strong>every
+                type satisfies it</strong>. It&apos;s Go&apos;s way of saying &quot;any type at all.&quot;
+                Since Go 1.18, you can write <code>any</code> instead &mdash; they are identical.
+              </p>
+              <p>
+                You&apos;ll see empty interfaces in generic data structures, JSON unmarshalling, and
+                functions that need to accept truly unpredictable types. But use them sparingly &mdash;
+                you lose type safety, so prefer concrete types or named interfaces whenever possible.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="empty_interface.go" code={`package main
+
+import "fmt"
+
+func printAnything(v any) {
+    fmt.Printf("Value: %v (type: %T)\\n", v, v)
+}
+
+func main() {
+    printAnything(42)          // Value: 42 (type: int)
+    printAnything("hello")     // Value: hello (type: string)
+    printAnything(true)        // Value: true (type: bool)
+    printAnything(3.14)        // Value: 3.14 (type: float64)
+
+    // Common in JSON-like data structures
+    person := map[string]any{
+        "name":  "Alice",
+        "age":   30,
+        "admin": true,
+    }
+    fmt.Println(person) // map[admin:true age:30 name:Alice]
+}`} />
+
+            {/* 7.4 Type Assertions */}
+            <div className="prose-grit mb-6 mt-8">
+              <h3>7.4 Type Assertions</h3>
+              <p>
+                When you have an interface value, you can extract the underlying concrete type
+                with a <strong>type assertion</strong>. The syntax is <code>value.(Type)</code>.
+                Always use the two-return form <code>val, ok := value.(Type)</code> to avoid
+                panics if the assertion fails.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="type_assertions.go" code={`package main
+
+import "fmt"
+
+func describe(v any) {
+    // Two-return form — safe, won't panic
+    if str, ok := v.(string); ok {
+        fmt.Printf("String of length %d: %q\\n", len(str), str)
+        return
+    }
+
+    if num, ok := v.(int); ok {
+        fmt.Printf("Integer: %d (doubled: %d)\\n", num, num*2)
+        return
+    }
+
+    fmt.Printf("Unknown type: %T\\n", v)
+}
+
+func main() {
+    describe("hello")  // String of length 5: "hello"
+    describe(42)        // Integer: 42 (doubled: 84)
+    describe(true)      // Unknown type: bool
+
+    // DANGER: single-return form panics on mismatch!
+    // s := someValue.(string) // panics if someValue isn't a string
+}`} />
+
+            {/* 7.5 Type Switch */}
+            <div className="prose-grit mb-6 mt-8">
+              <h3>7.5 Type Switch</h3>
+              <p>
+                When you need to handle multiple types, a <strong>type switch</strong> is cleaner
+                than chaining type assertions. It&apos;s like a regular <code>switch</code> but
+                branches on the type of the value using <code>value.(type)</code>.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="type_switch.go" code={`package main
+
+import "fmt"
+
+func process(v any) string {
+    switch val := v.(type) {
+    case string:
+        return fmt.Sprintf("string: %q", val)
+    case int:
+        return fmt.Sprintf("int: %d", val)
+    case bool:
+        if val {
+            return "bool: yes"
+        }
+        return "bool: no"
+    case []string:
+        return fmt.Sprintf("string slice with %d items", len(val))
+    default:
+        return fmt.Sprintf("unhandled type: %T", val)
+    }
+}
+
+func main() {
+    fmt.Println(process("Go"))              // string: "Go"
+    fmt.Println(process(2024))              // int: 2024
+    fmt.Println(process(true))              // bool: yes
+    fmt.Println(process([]string{"a","b"})) // string slice with 2 items
+    fmt.Println(process(3.14))              // unhandled type: float64
+}`} />
+
+            {/* 7.6 Common Standard Library Interfaces */}
+            <div className="prose-grit mb-6 mt-8">
+              <h3>7.6 Common Standard Library Interfaces</h3>
+              <p>
+                Go&apos;s standard library is built around small, composable interfaces. Learning
+                these will make you dramatically more productive:
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-6">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/30 bg-accent/20">
+                    <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Interface</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Method</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Used For</th>
+                  </tr>
+                </thead>
+                <tbody className="text-muted-foreground">
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5 font-mono text-xs text-foreground/90">fmt.Stringer</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">String() string</td>
+                    <td className="px-4 py-2.5 text-xs">Custom string representation (like Python&apos;s __str__)</td>
+                  </tr>
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5 font-mono text-xs text-foreground/90">error</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">Error() string</td>
+                    <td className="px-4 py-2.5 text-xs">Custom error types with extra context</td>
+                  </tr>
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5 font-mono text-xs text-foreground/90">io.Reader</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">Read(p []byte) (n int, err error)</td>
+                    <td className="px-4 py-2.5 text-xs">Reading data &mdash; files, HTTP bodies, buffers</td>
+                  </tr>
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5 font-mono text-xs text-foreground/90">io.Writer</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">Write(p []byte) (n int, err error)</td>
+                    <td className="px-4 py-2.5 text-xs">Writing data &mdash; files, HTTP responses, buffers</td>
+                  </tr>
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5 font-mono text-xs text-foreground/90">io.Closer</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">Close() error</td>
+                    <td className="px-4 py-2.5 text-xs">Releasing resources &mdash; files, connections, streams</td>
+                  </tr>
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5 font-mono text-xs text-foreground/90">http.Handler</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">ServeHTTP(w, r)</td>
+                    <td className="px-4 py-2.5 text-xs">HTTP request handling &mdash; middleware, routers</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-2.5 font-mono text-xs text-foreground/90">sort.Interface</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">Len, Less, Swap</td>
+                    <td className="px-4 py-2.5 text-xs">Custom sorting for any collection</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <CodeBlock language="go" filename="stringer_error.go" code={`package main
+
+import "fmt"
+
+// Implementing fmt.Stringer — controls how your type prints
+type User struct {
+    Name string
+    Role string
+}
+
+func (u User) String() string {
+    return fmt.Sprintf("%s (%s)", u.Name, u.Role)
+}
+
+// Implementing the error interface — custom error types
+type ValidationError struct {
+    Field   string
+    Message string
+}
+
+func (e *ValidationError) Error() string {
+    return fmt.Sprintf("validation failed on %s: %s", e.Field, e.Message)
+}
+
+func validateEmail(email string) error {
+    if email == "" {
+        return &ValidationError{Field: "email", Message: "cannot be empty"}
+    }
+    return nil
+}
+
+func main() {
+    user := User{Name: "Alice", Role: "ADMIN"}
+    fmt.Println(user) // Alice (ADMIN) — fmt.Stringer in action
+
+    if err := validateEmail(""); err != nil {
+        fmt.Println(err) // validation failed on email: cannot be empty
+    }
+}`} />
+
+            {/* 7.7 Interface Composition */}
+            <div className="prose-grit mb-6 mt-8">
+              <h3>7.7 Interface Composition</h3>
+              <p>
+                Go encourages <strong>small, focused interfaces</strong>. You compose larger
+                interfaces by embedding smaller ones. This is why the standard library has
+                <code>io.Reader</code>, <code>io.Writer</code>, and <code>io.Closer</code> separately,
+                then composes them into <code>io.ReadWriter</code>, <code>io.ReadCloser</code>,
+                <code>io.WriteCloser</code>, and <code>io.ReadWriteCloser</code>.
+              </p>
+              <p>
+                The Go proverb is: <em>&quot;The bigger the interface, the weaker the abstraction.&quot;</em> Keep
+                interfaces small (1-3 methods), and compose when needed.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="composition.go" code={`package main
+
+import "fmt"
+
+// Small, focused interfaces
+type Reader interface {
+    Read(id string) ([]byte, error)
+}
+
+type Writer interface {
+    Write(id string, data []byte) error
+}
+
+type Deleter interface {
+    Delete(id string) error
+}
+
+// Compose them into a full storage interface
+type Storage interface {
+    Reader
+    Writer
+    Deleter
+}
+
+// A function that only needs to read — accepts the smallest interface
+func loadConfig(r Reader) ([]byte, error) {
+    return r.Read("config.json")
+}
+
+// MemoryStore implements all three — so it satisfies Storage
+type MemoryStore struct {
+    data map[string][]byte
+}
+
+func (m *MemoryStore) Read(id string) ([]byte, error) {
+    d, ok := m.data[id]
+    if !ok {
+        return nil, fmt.Errorf("not found: %s", id)
+    }
+    return d, nil
+}
+
+func (m *MemoryStore) Write(id string, data []byte) error {
+    m.data[id] = data
+    return nil
+}
+
+func (m *MemoryStore) Delete(id string) error {
+    delete(m.data, id)
+    return nil
+}
+
+func main() {
+    store := &MemoryStore{data: make(map[string][]byte)}
+    store.Write("config.json", []byte("port=8080"))
+
+    // Pass the full Storage where only Reader is needed — works fine
+    config, _ := loadConfig(store)
+    fmt.Println(string(config)) // port=8080
+}`} />
+
+            {/* 7.8 Interface Best Practices */}
+            <div className="prose-grit mb-6 mt-8">
+              <h3>7.8 Best Practices</h3>
+            </div>
+
+            <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-6">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/30 bg-accent/20">
+                    <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Rule</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Why</th>
+                  </tr>
+                </thead>
+                <tbody className="text-muted-foreground">
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5 font-medium text-foreground/90">Accept interfaces, return structs</td>
+                    <td className="px-4 py-2.5 text-xs">Functions should accept the smallest interface they need, but return concrete types so callers get full functionality</td>
+                  </tr>
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5 font-medium text-foreground/90">Keep interfaces small (1-3 methods)</td>
+                    <td className="px-4 py-2.5 text-xs">Small interfaces are easier to implement, mock, and compose. <code>io.Reader</code> has 1 method and is used everywhere</td>
+                  </tr>
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5 font-medium text-foreground/90">Define interfaces where they&apos;re used, not where they&apos;re implemented</td>
+                    <td className="px-4 py-2.5 text-xs">The consumer knows what it needs. The implementer doesn&apos;t need to know about every consumer</td>
+                  </tr>
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5 font-medium text-foreground/90">Prefer <code>any</code> over <code>interface{'{}'}</code></td>
+                    <td className="px-4 py-2.5 text-xs">Since Go 1.18, <code>any</code> is the idiomatic alias. Use it for readability</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-2.5 font-medium text-foreground/90">Don&apos;t use empty interfaces when you can be specific</td>
+                    <td className="px-4 py-2.5 text-xs">Every <code>any</code> you use is type safety you lose. Define a named interface instead</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Quick reference */}
+            <div className="prose-grit mb-6">
+              <h3>Quick Reference</h3>
+            </div>
+
+            <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-6">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/30 bg-accent/20">
+                    <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Syntax</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-foreground/80">What It Does</th>
+                  </tr>
+                </thead>
+                <tbody className="text-muted-foreground font-mono text-xs">
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5">type X interface {'{ M() }'}</td>
+                    <td className="px-4 py-2.5 font-sans">Define interface X with method M</td>
+                  </tr>
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5">func (t T) M() {'{ }'}</td>
+                    <td className="px-4 py-2.5 font-sans">T implicitly satisfies X (has method M)</td>
+                  </tr>
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5">val, ok := i.(string)</td>
+                    <td className="px-4 py-2.5 font-sans">Type assertion (safe, two-return form)</td>
+                  </tr>
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5">switch v := i.(type)</td>
+                    <td className="px-4 py-2.5 font-sans">Type switch — branch on underlying type</td>
+                  </tr>
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5">type RW interface {'{ Reader; Writer }'}</td>
+                    <td className="px-4 py-2.5 font-sans">Compose interfaces by embedding</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-2.5">any</td>
+                    <td className="px-4 py-2.5 font-sans">Alias for interface{'{}'} — accepts any type</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
-                Grit services can implement interfaces for testability. For example, you could
-                define a <code>UserService</code> interface with methods like <code>GetByID</code>,
-                <code>Create</code>, and <code>Delete</code>, then swap in a mock implementation
-                during tests. The built-in mailer and storage services also follow this pattern.
+                Grit services follow the interface pattern for testability and flexibility. The mailer
+                service, storage service, cache service, and AI service all define interfaces internally.
+                For example, you could define a <code>UserService</code> interface with methods
+                like <code>GetByID</code>, <code>Create</code>, and <code>Delete</code>, then swap
+                in a mock implementation during tests. The <code>routes.Services</code> struct accepts
+                these interfaces, making it easy to inject different implementations per environment.
               </p>
             </div>
 
