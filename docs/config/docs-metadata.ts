@@ -340,6 +340,13 @@ export const docsMetadata: Record<string, DocPage> = {
       'All notable changes to Grit: new features, bug fixes, and breaking changes for each release.',
   },
 
+  // Course
+  '/course': {
+    title: 'Grit Fullstack Course',
+    description:
+      'Master fullstack development with Grit. Build 5 real-world apps, complete 50+ assignments, and learn Go, React, Next.js from zero to production.',
+  },
+
   // Playground
   '/playground': {
     title: 'Go Playground',

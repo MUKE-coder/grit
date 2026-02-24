@@ -36,9 +36,9 @@ export function SiteHeader() {
         <nav className="hidden md:flex items-center gap-1">
           {[
             { label: 'Docs', href: '/docs' },
+            { label: 'Course', href: '/course' },
             { label: 'Tutorials', href: '/docs/tutorials/blog' },
             { label: 'Playground', href: '/playground' },
-            { label: 'API Reference', href: '/docs/backend/response-format' },
           ].map((item) => (
             <Link
               key={item.label}
