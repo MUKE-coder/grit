@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
-import { ArrowRight, Shield, Layers, Zap, Code2, Rocket, Github, Globe, Server, Gauge, CheckCircle2, X, Minus } from 'lucide-react'
+import { ArrowRight, Shield, Layers, Zap, Code2, Rocket, Github, Globe, Server, Gauge, CheckCircle2, X, Minus, Lock, HardDrive, LayoutDashboard, FileText, Database, Mail, Bot, Activity } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SiteHeader } from '@/components/site-header'
@@ -234,6 +234,260 @@ export default function HomePage() {
               <div className="text-sm font-semibold text-foreground/90">JB Web Developer</div>
               <div className="text-xs text-muted-foreground/60">Creator of Grit</div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Divider */}
+      <div className="w-full h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+
+      {/* Grit Has Everything */}
+      <section className="container max-w-screen-2xl py-24 md:py-32 px-6">
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-[2.75rem] mb-4">
+            Grit has everything.
+          </h2>
+          <p className="text-muted-foreground max-w-2xl leading-relaxed">
+            Grit&apos;s mission is to give you every tool you need to build production-ready
+            full-stack apps with Go and React. If it can be included, we&apos;ve built it in.
+          </p>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-2 max-w-5xl">
+          {/* Authentication */}
+          <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+            <div className="flex items-center gap-2.5 mb-2">
+              <Lock className="h-4.5 w-4.5 text-primary/70" />
+              <h3 className="text-lg font-semibold">Authentication</h3>
+            </div>
+            <p className="text-sm text-muted-foreground/70 leading-relaxed mb-5">
+              JWT-based auth with login, register, password reset, email verification, and role-based access control.
+              Three roles out of the box (Admin, Editor, User) and a CLI command to add more.
+            </p>
+            <div className="rounded-lg border border-border/30 bg-accent/20 p-4 space-y-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+                  <Lock className="h-3.5 w-3.5 text-primary/50" />
+                </div>
+                <div className="flex-1">
+                  <div className="h-2 w-16 rounded-full bg-foreground/10" />
+                  <div className="h-1.5 w-24 rounded-full bg-foreground/5 mt-1.5" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-8 rounded-md bg-foreground/[0.03] border border-border/20 px-3 flex items-center">
+                  <div className="h-1.5 w-28 rounded-full bg-foreground/8" />
+                </div>
+                <div className="h-8 rounded-md bg-foreground/[0.03] border border-border/20 px-3 flex items-center">
+                  <div className="h-1.5 w-20 rounded-full bg-foreground/8" />
+                </div>
+              </div>
+              <div className="h-8 rounded-md bg-primary/15 flex items-center justify-center">
+                <div className="h-1.5 w-12 rounded-full bg-primary/40" />
+              </div>
+            </div>
+          </div>
+
+          {/* Admin Dashboard */}
+          <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+            <div className="flex items-center gap-2.5 mb-2">
+              <LayoutDashboard className="h-4.5 w-4.5 text-primary/70" />
+              <h3 className="text-lg font-semibold">Admin Dashboard</h3>
+            </div>
+            <p className="text-sm text-muted-foreground/70 leading-relaxed mb-5">
+              A Filament-like admin panel with resource definitions, data tables with sorting/filtering/search,
+              form builders, multi-step wizards, dashboard widgets, and dark/light themes.
+            </p>
+            <div className="rounded-lg border border-border/30 bg-accent/20 p-4">
+              {/* Table mockup */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-2 w-14 rounded-full bg-foreground/8" />
+                <div className="h-2 w-14 rounded-full bg-foreground/8" />
+                <div className="h-2 w-14 rounded-full bg-foreground/8" />
+                <div className="h-2 w-14 rounded-full bg-foreground/8" />
+              </div>
+              <div className="space-y-2">
+                {[1, 2, 3, 4].map((row) => (
+                  <div key={row} className="flex items-center gap-3">
+                    <div className="h-2 w-14 rounded-full bg-foreground/5" />
+                    <div className="h-2 w-14 rounded-full bg-foreground/5" />
+                    <div className="h-2 w-14 rounded-full bg-foreground/5" />
+                    <div className="h-2 w-14 rounded-full bg-foreground/5" />
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-end gap-2 mt-3">
+                <div className="h-5 w-5 rounded bg-foreground/5" />
+                <div className="h-5 w-5 rounded bg-foreground/5" />
+              </div>
+            </div>
+          </div>
+
+          {/* File Storage */}
+          <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+            <div className="flex items-center gap-2.5 mb-2">
+              <HardDrive className="h-4.5 w-4.5 text-primary/70" />
+              <h3 className="text-lg font-semibold">File Storage</h3>
+            </div>
+            <p className="text-sm text-muted-foreground/70 leading-relaxed mb-5">
+              S3-compatible file uploads that work with MinIO in development and AWS S3 or
+              Cloudflare R2 in production. Built-in image processing, resizing, and a file browser in the admin panel.
+            </p>
+            <div className="rounded-lg border border-border/30 bg-accent/20 p-4">
+              <div className="border-2 border-dashed border-border/30 rounded-lg p-6 flex flex-col items-center justify-center gap-2">
+                <HardDrive className="h-6 w-6 text-muted-foreground/20" />
+                <div className="h-1.5 w-28 rounded-full bg-foreground/8" />
+              </div>
+              <div className="flex items-center gap-2 mt-3">
+                <div className="h-7 w-7 rounded bg-foreground/5 flex items-center justify-center">
+                  <div className="h-3 w-3 rounded-sm bg-foreground/10" />
+                </div>
+                <div className="flex-1">
+                  <div className="h-1.5 w-full rounded-full bg-primary/20" />
+                </div>
+                <X className="h-3 w-3 text-muted-foreground/20" />
+              </div>
+            </div>
+          </div>
+
+          {/* API Documentation */}
+          <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+            <div className="flex items-center gap-2.5 mb-2">
+              <FileText className="h-4.5 w-4.5 text-primary/70" />
+              <h3 className="text-lg font-semibold">API Documentation</h3>
+            </div>
+            <p className="text-sm text-muted-foreground/70 leading-relaxed mb-5">
+              Zero-configuration interactive API docs generated automatically from your routes.
+              Browse endpoints, test requests, and export to Postman or Insomnia.
+            </p>
+            <div className="rounded-lg border border-border/30 bg-accent/20 p-4 space-y-2">
+              {[
+                { method: 'GET', path: '/api/users', color: 'bg-emerald-500/20 text-emerald-400/70' },
+                { method: 'POST', path: '/api/users', color: 'bg-blue-500/20 text-blue-400/70' },
+                { method: 'GET', path: '/api/users/:id', color: 'bg-emerald-500/20 text-emerald-400/70' },
+                { method: 'PUT', path: '/api/users/:id', color: 'bg-amber-500/20 text-amber-400/70' },
+                { method: 'DEL', path: '/api/users/:id', color: 'bg-red-500/20 text-red-400/70' },
+              ].map((route) => (
+                <div key={`${route.method}-${route.path}`} className="flex items-center gap-2.5 text-xs font-mono">
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${route.color}`}>
+                    {route.method}
+                  </span>
+                  <span className="text-foreground/30">{route.path}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Database Browser */}
+          <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+            <div className="flex items-center gap-2.5 mb-2">
+              <Database className="h-4.5 w-4.5 text-primary/70" />
+              <h3 className="text-lg font-semibold">Database Browser</h3>
+            </div>
+            <p className="text-sm text-muted-foreground/70 leading-relaxed mb-5">
+              GORM Studio ships with every project &mdash; a visual database browser to inspect tables,
+              view relationships, browse records, and run queries without leaving your browser.
+            </p>
+            <div className="rounded-lg border border-border/30 bg-accent/20 p-4">
+              <div className="flex items-center gap-2 mb-3 border-b border-border/20 pb-2">
+                {['users', 'posts', 'groups'].map((table) => (
+                  <span key={table} className={`text-[10px] font-mono px-2 py-0.5 rounded ${table === 'users' ? 'bg-primary/10 text-primary/60' : 'text-foreground/20'}`}>
+                    {table}
+                  </span>
+                ))}
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-[10px] font-mono text-foreground/15">
+                  <span className="w-6 text-right text-foreground/10">1</span>
+                  <span className="w-16 text-foreground/25">admin@...</span>
+                  <span className="w-12">John</span>
+                  <span className="px-1 rounded bg-emerald-500/10 text-emerald-400/30">ADMIN</span>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-mono text-foreground/15">
+                  <span className="w-6 text-right text-foreground/10">2</span>
+                  <span className="w-16 text-foreground/25">jane@...</span>
+                  <span className="w-12">Jane</span>
+                  <span className="px-1 rounded bg-blue-500/10 text-blue-400/30">EDITOR</span>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-mono text-foreground/15">
+                  <span className="w-6 text-right text-foreground/10">3</span>
+                  <span className="w-16 text-foreground/25">mike@...</span>
+                  <span className="w-12">Mike</span>
+                  <span className="px-1 rounded bg-foreground/5 text-foreground/20">USER</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Background Jobs & Cron */}
+          <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+            <div className="flex items-center gap-2.5 mb-2">
+              <Activity className="h-4.5 w-4.5 text-primary/70" />
+              <h3 className="text-lg font-semibold">Background Jobs &amp; Cron</h3>
+            </div>
+            <p className="text-sm text-muted-foreground/70 leading-relaxed mb-5">
+              Asynq-powered job queues backed by Redis. Send emails, process images, and run
+              cleanup tasks in the background. Schedule recurring cron jobs. Monitor everything from the admin panel.
+            </p>
+            <div className="rounded-lg border border-border/30 bg-accent/20 p-4 space-y-2">
+              {[
+                { name: 'email:welcome', status: 'completed', color: 'bg-emerald-500/20 text-emerald-400/60' },
+                { name: 'image:resize', status: 'running', color: 'bg-blue-500/20 text-blue-400/60' },
+                { name: 'cleanup:temp', status: 'scheduled', color: 'bg-amber-500/20 text-amber-400/60' },
+                { name: 'email:digest', status: 'completed', color: 'bg-emerald-500/20 text-emerald-400/60' },
+              ].map((job) => (
+                <div key={job.name} className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-foreground/30">{job.name}</span>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] ${job.color}`}>
+                    {job.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Email */}
+          <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+            <div className="flex items-center gap-2.5 mb-2">
+              <Mail className="h-4.5 w-4.5 text-primary/70" />
+              <h3 className="text-lg font-semibold">Email</h3>
+            </div>
+            <p className="text-sm text-muted-foreground/70 leading-relaxed mb-5">
+              Send transactional emails with Resend. Four HTML templates included: welcome, password reset,
+              email verification, and notifications. Mailhog catches everything in development.
+            </p>
+            <div className="rounded-lg border border-border/30 bg-accent/20 p-4 space-y-2">
+              <div className="flex items-center gap-2.5">
+                <div className="h-6 w-6 rounded bg-primary/10 flex items-center justify-center">
+                  <Mail className="h-3 w-3 text-primary/40" />
+                </div>
+                <div>
+                  <div className="h-1.5 w-24 rounded-full bg-foreground/10" />
+                  <div className="h-1 w-16 rounded-full bg-foreground/5 mt-1" />
+                </div>
+              </div>
+              <div className="border-t border-border/20 pt-2 space-y-1.5">
+                <div className="h-1.5 w-full rounded-full bg-foreground/5" />
+                <div className="h-1.5 w-4/5 rounded-full bg-foreground/5" />
+                <div className="h-1.5 w-3/5 rounded-full bg-foreground/5" />
+              </div>
+              <div className="h-7 rounded bg-primary/10 flex items-center justify-center">
+                <div className="h-1.5 w-16 rounded-full bg-primary/30" />
+              </div>
+            </div>
+          </div>
+
+          {/* And much more */}
+          <div className="rounded-xl border border-border/40 bg-card/50 p-6 flex flex-col items-center justify-center text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 border border-primary/15 mb-4">
+              <Bot className="h-6 w-6 text-primary/60" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">And much more</h3>
+            <p className="text-sm text-muted-foreground/70 leading-relaxed max-w-sm">
+              Redis caching with middleware, AI integration (Claude + OpenAI with streaming),
+              Sentinel security (WAF, rate limiting, threat monitoring), Pulse observability,
+              and full Docker setup &mdash; all built in.
+            </p>
           </div>
         </div>
       </section>

@@ -47,6 +47,7 @@ const navItems: NavItem[] = [
       { title: 'Introduction', href: '/docs' },
       { title: 'Philosophy & Inspiration', href: '/docs/getting-started/philosophy' },
       { title: 'Quick Start', href: '/docs/getting-started/quick-start' },
+      { title: 'Your First App', href: '/docs/tutorials/contact-app' },
       { title: 'Installation', href: '/docs/getting-started/installation' },
       { title: 'Project Structure', href: '/docs/getting-started/project-structure' },
       { title: 'Configuration', href: '/docs/getting-started/configuration' },
