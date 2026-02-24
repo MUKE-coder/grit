@@ -200,19 +200,98 @@ export default function TutorialContactAppPage() {
                   in use, you will see an error.
                 </p>
 
-                <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 mb-4">
-                  <p className="text-[13px] text-yellow-200/80 leading-relaxed">
-                    <strong className="text-yellow-300">Tip:</strong> If port
-                    5432 is already taken (e.g. a local PostgreSQL installation),
-                    change it in <code>docker-compose.yml</code>:
-                  </p>
-                  <div className="mt-2 font-mono text-xs text-yellow-200/60">
-                    ports: &quot;5433:5432&quot;
+                <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
+                  The most common conflict is port <code>5432</code> &mdash;
+                  if you have PostgreSQL installed locally it&apos;s already
+                  listening there. Check what&apos;s using the port:
+                </p>
+
+                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    </div>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      windows
+                    </span>
                   </div>
-                  <p className="text-[13px] text-yellow-200/80 leading-relaxed mt-2">
-                    Then update the <code>DATABASE_URL</code> in{" "}
-                    <code>.env</code> to use the new port.
+                  <div className="p-5 font-mono text-sm space-y-2">
+                    <div className="text-muted-foreground/40 text-xs select-none"># Find the process using port 5432</div>
+                    <div>
+                      <span className="text-primary/50 select-none">&gt; </span>
+                      <span className="text-foreground/80">
+                        netstat -ano | findstr :5432
+                      </span>
+                    </div>
+                    <div className="text-muted-foreground/40 text-xs select-none"># Stop the local PostgreSQL service</div>
+                    <div>
+                      <span className="text-primary/50 select-none">&gt; </span>
+                      <span className="text-foreground/80">
+                        net stop postgresql-x64-16
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    </div>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
+                      macOS / Linux
+                    </span>
+                  </div>
+                  <div className="p-5 font-mono text-sm space-y-2">
+                    <div className="text-muted-foreground/40 text-xs select-none"># Find the process using port 5432</div>
+                    <div>
+                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-foreground/80">
+                        lsof -i :5432
+                      </span>
+                    </div>
+                    <div className="text-muted-foreground/40 text-xs select-none"># Stop local PostgreSQL (macOS with Homebrew)</div>
+                    <div>
+                      <span className="text-primary/50 select-none">$ </span>
+                      <span className="text-foreground/80">
+                        brew services stop postgresql@16
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 mb-4">
+                  <p className="text-[13px] text-yellow-200/80 leading-relaxed mb-3">
+                    <strong className="text-yellow-300">You have three options:</strong>
                   </p>
+                  <ol className="space-y-2 text-[13px] text-yellow-200/80 leading-relaxed list-decimal list-inside">
+                    <li>
+                      <strong className="text-yellow-200/90">Stop the local service</strong> &mdash;
+                      run <code>net stop postgresql-x64-16</code> (Windows) or{" "}
+                      <code>brew services stop postgresql@16</code> (macOS).
+                      This frees the port so Docker can use it.
+                    </li>
+                    <li>
+                      <strong className="text-yellow-200/90">Uninstall local PostgreSQL</strong> &mdash;
+                      if you only use Docker for databases, remove the local
+                      installation entirely to avoid future conflicts.
+                    </li>
+                    <li>
+                      <strong className="text-yellow-200/90">Change the port</strong> &mdash;
+                      update <code>docker-compose.yml</code> to map a different
+                      host port:
+                      <div className="mt-1.5 font-mono text-xs text-yellow-200/60 bg-yellow-500/5 rounded px-2 py-1 inline-block">
+                        ports: &quot;5433:5432&quot;
+                      </div>
+                      <br />
+                      Then update <code>DATABASE_URL</code> in{" "}
+                      <code>.env</code> to use port <code>5433</code>.
+                    </li>
+                  </ol>
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
