@@ -1620,6 +1620,74 @@ func main() {
     // All 3 goroutines run at the same time (~100ms total, not 300ms)
 }`} />
 
+            <div className="prose-grit mb-6 mt-8">
+              <h4 className="text-base font-semibold tracking-tight mb-3 text-foreground/80">How the Pieces Connect</h4>
+              <p>
+                Think of <code>WaitGroup</code> as a simple <strong>counter with a blocking mechanism</strong>:
+              </p>
+              <ul>
+                <li>
+                  <code>wg.Add(1)</code> — increments the internal counter. You&apos;re telling the WaitGroup:
+                  <em>&quot;one more goroutine is about to start working.&quot;</em> After the loop, the counter is at <strong>3</strong>.
+                </li>
+                <li>
+                  <code>go fetchData(src, &amp;wg)</code> — launches a goroutine. It runs concurrently,
+                  meaning it doesn&apos;t block the loop. The loop keeps going and launches all three goroutines almost instantly.
+                </li>
+                <li>
+                  <code>wg.Done()</code> — decrements the counter by 1. Each goroutine calls this
+                  (via <code>defer</code>) when it finishes. It&apos;s essentially <code>wg.Add(-1)</code>.
+                </li>
+                <li>
+                  <code>wg.Wait()</code> — blocks the calling goroutine (here, <code>main</code>) until the
+                  counter reaches <strong>0</strong>. Once all three goroutines call <code>Done()</code>, the
+                  counter hits 0, <code>Wait()</code> unblocks, and <code>main</code> continues.
+                </li>
+              </ul>
+            </div>
+
+            <CodeBlock language="text" filename="Timeline" code={`Time 0ms:
+  main:       wg.Add(1), go fetchData("database")  → counter = 1
+              wg.Add(1), go fetchData("cache")     → counter = 2
+              wg.Add(1), go fetchData("api")       → counter = 3
+              wg.Wait()  ← main is now BLOCKED
+
+Time 0-100ms:
+  goroutine1: sleeping... (database)
+  goroutine2: sleeping... (cache)
+  goroutine3: sleeping... (api)
+
+Time ~100ms:
+  goroutine1: wg.Done() → counter = 2
+  goroutine2: wg.Done() → counter = 1
+  goroutine3: wg.Done() → counter = 0  ← Wait() unblocks!
+
+  main:       prints "All data fetched!"`} />
+
+            <div className="prose-grit mb-6 mt-6">
+              <h4 className="text-base font-semibold tracking-tight mb-3 text-foreground/80">Two Key Details</h4>
+              <p>
+                <strong>Why pass <code>&amp;wg</code> (a pointer)?</strong> If you passed <code>wg</code> by value,
+                each goroutine would get its own <em>copy</em> of the WaitGroup. Calling <code>Done()</code> on
+                a copy wouldn&apos;t decrement the original counter, so <code>Wait()</code> would block forever &mdash;
+                a deadlock.
+              </p>
+              <p>
+                <strong>Why <code>defer wg.Done()</code>?</strong> Using <code>defer</code> ensures <code>Done()</code> is
+                called even if the function panics. Without it, a panic would leave the counter above 0,
+                and <code>Wait()</code> would block forever.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">Mental Model</h4>
+              <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
+                <code>Add</code> = &quot;I&apos;m starting work&quot;, <code>Done</code> = &quot;I&apos;m finished&quot;,
+                <code>Wait</code> = &quot;hold here until everyone&apos;s finished.&quot; The WaitGroup is just
+                the shared scoreboard that makes this coordination possible across goroutines.
+              </p>
+            </div>
+
             <div className="prose-grit mb-10">
               <h3>Channels — Communication Between Goroutines</h3>
               <p>
