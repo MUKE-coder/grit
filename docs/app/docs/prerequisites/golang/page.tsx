@@ -861,7 +861,53 @@ func main() {
                 doesn&apos;t care about the concrete type &mdash; it only cares that the candidate
                 satisfies the <code>TruckDriver</code> contract.
               </p>
+              <p>
+                Here&apos;s the same pattern in a more real-world context &mdash; a notification
+                system where different channels (email, Slack) all satisfy the same <code>Notifier</code> interface:
+              </p>
             </div>
+
+            <CodeBlock language="go" filename="notifier.go" code={`package main
+
+import "fmt"
+
+// Notifier — any type that can send a notification
+type Notifier interface {
+    Send(to string, message string) error
+}
+
+// EmailNotifier implements Notifier (implicitly)
+type EmailNotifier struct {
+    From string
+}
+
+func (e *EmailNotifier) Send(to string, message string) error {
+    fmt.Printf("Email from %s to %s: %s\\n", e.From, to, message)
+    return nil
+}
+
+// SlackNotifier also implements Notifier
+type SlackNotifier struct {
+    Channel string
+}
+
+func (s *SlackNotifier) Send(to string, message string) error {
+    fmt.Printf("Slack #%s -> %s: %s\\n", s.Channel, to, message)
+    return nil
+}
+
+// Works with ANY Notifier — email, slack, SMS, webhook...
+func alert(n Notifier, user string) {
+    n.Send(user, "Your report is ready")
+}
+
+func main() {
+    email := &EmailNotifier{From: "noreply@app.com"}
+    slack := &SlackNotifier{Channel: "alerts"}
+
+    alert(email, "alice@example.com") // Email from noreply@app.com to alice@example.com: Your report is ready
+    alert(slack, "alice")             // Slack #alerts -> alice: Your report is ready
+}`} />
 
             {/* 7.2 Why Interfaces Matter */}
             <div className="prose-grit mb-6">
