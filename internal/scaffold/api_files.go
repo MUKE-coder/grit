@@ -1835,7 +1835,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		UI:          gindocs.UIScalar,
 		ScalarTheme: "kepler",
 		Models:      []interface{}{&models.User{}, &models.Upload{}, &models.Blog{}},
-		Auth:        gindocs.AuthBearer,
+		Auth: gindocs.AuthConfig{
+			Type:         gindocs.AuthBearer,
+			BearerFormat: "JWT",
+		},
 	})
 	log.Println("API docs available at /docs")
 

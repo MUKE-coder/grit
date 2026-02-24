@@ -120,7 +120,10 @@ gindocs.Mount(r, db, gindocs.Config{
     UI:          gindocs.UIScalar,     // or gindocs.UISwagger
     ScalarTheme: "kepler",
     Models:      []interface{}{&models.User{}, &models.Upload{}, &models.Blog{}},
-    Auth:        gindocs.AuthBearer,
+    Auth: gindocs.AuthConfig{
+        Type:         gindocs.AuthBearer,
+        BearerFormat: "JWT",
+    },
 })`}
                 />
 
@@ -169,7 +172,7 @@ gindocs.Mount(r, db, gindocs.Config{
                       <tr className="border-b border-border/20">
                         <td className="py-2 pr-4"><code>Auth</code></td>
                         <td className="py-2 pr-4 text-muted-foreground"><code>AuthNone</code></td>
-                        <td className="py-2 text-muted-foreground"><code>AuthBearer</code> for JWT authentication</td>
+                        <td className="py-2 text-muted-foreground"><code>AuthConfig&#123;Type: AuthBearer, BearerFormat: &quot;JWT&quot;&#125;</code></td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="py-2 pr-4"><code>DevMode</code></td>

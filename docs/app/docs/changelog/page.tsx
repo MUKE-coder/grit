@@ -28,10 +28,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v0.18.0 */}
+            {/* v0.19.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v0.19.0
+                </span>
+                <span className="text-sm text-muted-foreground">February 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Fixes</h3>
+                <ul>
+                  <li>
+                    <strong>gin-docs AuthConfig</strong> &mdash; Updated scaffold template to use the new{' '}
+                    <code>gindocs.AuthConfig</code> struct instead of the deprecated <code>gindocs.AuthBearer</code> constant,
+                    fixing compilation errors in newly scaffolded projects.
+                  </li>
+                </ul>
+
+                <h3>Documentation</h3>
+                <ul>
+                  <li>
+                    New{' '}
+                    <Link href="/docs/tutorials/contact-app" className="text-primary hover:underline">Your First App</Link>{' '}
+                    tutorial &mdash; step-by-step Contact Manager guide covering project setup, resource generation, and CRUD
+                  </li>
+                  <li>
+                    New{' '}
+                    <Link href="/docs/deployment/dokploy" className="text-primary hover:underline">Dokploy Deployment</Link>{' '}
+                    guide with Dockerfile examples
+                  </li>
+                  <li>
+                    Improved terminal blocks across all tutorials with copy buttons and horizontal scroll
+                  </li>
+                  <li>
+                    Updated{' '}
+                    <Link href="/docs/backend/api-docs" className="text-primary hover:underline">API Documentation</Link>{' '}
+                    page to reflect the new <code>AuthConfig</code> struct format
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v0.18.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v0.18.0
                 </span>
                 <span className="text-sm text-muted-foreground">February 22, 2026</span>
