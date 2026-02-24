@@ -1691,22 +1691,30 @@ Time ~100ms:
             <div className="prose-grit mb-10">
               <h3>Channels — Communication Between Goroutines</h3>
               <p>
-                Channels are typed pipes that connect concurrent goroutines. One goroutine
-                sends a value into a channel, and another receives it. Think of it like a mailbox: one
-                goroutine drops a letter in, another picks it up.
+                A <strong>channel is a pipe</strong> that lets goroutines talk to each other:
               </p>
+            </div>
+
+            <CodeBlock language="text" filename="How channels work" code={`Goroutine A  ── sends data ──→  [channel]  ──→  receives data ── Goroutine B`} />
+
+            <div className="prose-grit mb-10 mt-6">
               <p>
-                You create a channel with <code>make(chan Type)</code>. The key
-                operators are:
+                You create a channel with <code>make(chan Type)</code>. The two key operations are:
               </p>
               <ul>
-                <li><code>{'ch <- value'}</code> — <strong>Send</strong> a value into the channel</li>
-                <li><code>{'value := <-ch'}</code> — <strong>Receive</strong> a value from the channel</li>
+                <li>
+                  <strong>Send:</strong> <code>{'channel <- value'}</code> — pushes a value into the pipe.
+                  The sender <strong>stops and waits</strong> until someone is ready to receive on the other end.
+                </li>
+                <li>
+                  <strong>Receive:</strong> <code>{'value := <-channel'}</code> — pulls a value out of the pipe.
+                  The receiver <strong>stops and waits</strong> until someone sends something.
+                </li>
               </ul>
               <p>
-                By default, channels are <strong>unbuffered</strong> — sends and receives block
-                until the other side is ready. This blocking behavior is what makes channels
-                a powerful synchronization tool: you don&apos;t need explicit locks.
+                This waiting is the magic — it forces goroutines to <strong>synchronize</strong> without
+                needing WaitGroups or sleep. By default, channels are <strong>unbuffered</strong> —
+                like a phone call where both sides must be on the line at the same time.
               </p>
             </div>
 
@@ -1741,6 +1749,92 @@ func main() {
     total := <-results
     fmt.Println("Sum 1..100 =", total) // 5050
 }`} />
+
+            <div className="prose-grit mb-6 mt-8">
+              <h4 className="text-base font-semibold tracking-tight mb-3 text-foreground/80">Walking Through the Code</h4>
+              <p>
+                <strong>Example 1 — Simple message passing:</strong>
+              </p>
+            </div>
+
+            <CodeBlock language="text" filename="Timeline: message passing" code={`Time 0:
+  main:       creates channel "messages"
+              launches goroutine
+              hits  msg := <-messages  ← BLOCKED (nothing sent yet)
+
+  goroutine:  hits  messages <- "ping" ← finds main is waiting!
+
+  ── handoff happens ──
+
+  main:       msg now equals "ping", prints it
+  goroutine:  finishes and exits`} />
+
+            <div className="prose-grit mb-6 mt-6">
+              <p>
+                The two sides meet at the channel like a <strong>hand-to-hand delivery</strong>. Neither
+                side can continue until the other shows up.
+              </p>
+              <p>
+                <strong>Example 2 — Returning a result:</strong>
+              </p>
+            </div>
+
+            <CodeBlock language="text" filename="Timeline: returning results" code={`  main:       creates channel "results"
+              launches goroutine
+              hits  total := <-results  ← BLOCKED (waiting for answer)
+
+  goroutine:  calculates sum (1+2+...+100 = 5050)
+              hits  results <- 5050     ← delivers the answer
+
+  ── handoff happens ──
+
+  main:       total now equals 5050, prints it`} />
+
+            <div className="prose-grit mb-6 mt-6">
+              <p>
+                This is the pattern: <strong>send work to a goroutine, get results back through a channel</strong>.
+              </p>
+            </div>
+
+            {/* Channels vs WaitGroups comparison */}
+            <div className="prose-grit mb-6">
+              <h4 className="text-base font-semibold tracking-tight mb-3 text-foreground/80">Channels vs WaitGroups</h4>
+            </div>
+
+            <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-6">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/30 bg-accent/20">
+                    <th className="text-left px-4 py-2.5 font-medium text-foreground/80">WaitGroup</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Channel</th>
+                  </tr>
+                </thead>
+                <tbody className="text-muted-foreground">
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5 text-xs">Just says &quot;I&apos;m done&quot;</td>
+                    <td className="px-4 py-2.5 text-xs">Sends actual <strong>data</strong> back</td>
+                  </tr>
+                  <tr className="border-b border-border/20">
+                    <td className="px-4 py-2.5 text-xs">Only synchronization</td>
+                    <td className="px-4 py-2.5 text-xs">Synchronization <strong>+ communication</strong></td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-2.5 text-xs"><code>wg.Done()</code> signals completion</td>
+                    <td className="px-4 py-2.5 text-xs">Sending a value signals completion</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">The Go Proverb</h4>
+              <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
+                <em>&quot;Don&apos;t communicate by sharing memory; share memory by communicating.&quot;</em> Channels
+                <strong> are</strong> that communication. An unbuffered channel (<code>make(chan string)</code>)
+                is like a phone call &mdash; both sides must be on the line at the same time. The sender
+                blocks until the receiver is ready, and vice versa.
+              </p>
+            </div>
 
             <div className="prose-grit mb-10">
               <h3>Buffered Channels</h3>
