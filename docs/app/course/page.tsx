@@ -2,6 +2,7 @@ import Link from "next/link"
 import { ArrowRight, Clock, Code2, BookOpen, Trophy, CheckCircle2, Play, Zap, Users, BarChart3, Shield, Database, Layers, Rocket, GraduationCap, Target, Briefcase } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SiteHeader } from "@/components/site-header"
+import { WaitlistForm } from "@/components/waitlist-form"
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -255,18 +256,8 @@ export default function CoursePage() {
                 email, background jobs, AI integration, and more.
               </p>
 
-              <div className="flex flex-wrap gap-3">
-                <Button size="lg" className="glow-purple-sm" asChild>
-                  <Link href="#module-1">
-                    Start Learning
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button size="lg" variant="outline" className="border-border/60" asChild>
-                  <Link href="/docs/getting-started/quick-start">
-                    Quick Start Guide
-                  </Link>
-                </Button>
+              <div className="max-w-xl">
+                <WaitlistForm />
               </div>
             </div>
           </div>
@@ -405,31 +396,19 @@ export default function CoursePage() {
           </div>
         </section>
 
-        {/* CTA */}
+        {/* Waitlist CTA */}
         <section className="py-16 border-t border-border/30">
           <div className="container max-w-screen-xl px-6">
             <div className="max-w-xl mx-auto text-center">
               <GraduationCap className="h-8 w-8 text-primary mx-auto mb-4" />
               <h2 className="text-2xl font-semibold tracking-tight mb-3">
-                Ready to start building?
+                Join the waitlist
               </h2>
               <p className="text-sm text-muted-foreground mb-6">
-                Install Grit and follow along. Every lesson has a hands-on assignment
-                so you learn by doing, not just reading.
+                Be the first to know when the course launches. Enter your name and
+                email below and we&apos;ll notify you on launch day.
               </p>
-              <div className="flex flex-wrap justify-center gap-3">
-                <Button size="lg" className="glow-purple-sm" asChild>
-                  <Link href="/docs/getting-started/quick-start">
-                    Install Grit
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button size="lg" variant="outline" className="border-border/60" asChild>
-                  <Link href="/docs">
-                    Read the Docs
-                  </Link>
-                </Button>
-              </div>
+              <WaitlistForm />
             </div>
           </div>
         </section>
