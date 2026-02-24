@@ -12,6 +12,7 @@ Grit is a full-stack meta-framework that combines **Go** (backend) + **React/Nex
 - A **Go API** with Gin + GORM + PostgreSQL
 - A **Next.js web app** with App Router + Tailwind + shadcn/ui
 - A **Filament-like admin panel** with resource definitions, DataTables, forms, and widgets
+- **Social login** out of the box — Google + GitHub OAuth2 via Gothic, with account linking
 - **Batteries included**: file storage (S3), email (Resend), background jobs (asynq), cron, Redis caching, AI integration (Claude/OpenAI), security (Sentinel), observability (Pulse)
 - **Auto-generated API docs** via gin-docs — zero-annotation OpenAPI spec with interactive UI
 - A **shared package** with Zod schemas, TypeScript types, and constants
@@ -81,7 +82,7 @@ myapp/
 │   │       │   ├── user.go            # User model + AutoMigrate
 │   │       │   └── upload.go          # Upload model (Phase 4)
 │   │       ├── handlers/              # HTTP request handlers
-│   │       │   ├── auth.go            # Register, Login, Refresh, Logout, Me, ForgotPassword, ResetPassword
+│   │       │   ├── auth.go            # Register, Login, Refresh, Logout, Me, ForgotPassword, ResetPassword, OAuth
 │   │       │   ├── user.go            # CRUD for users
 │   │       │   ├── upload.go          # File upload endpoints
 │   │       │   ├── ai.go             # AI completion/chat/stream
@@ -117,7 +118,7 @@ myapp/
 │   ├── web/                      # Next.js main frontend
 │   │   ├── app/
 │   │   │   ├── layout.tsx             # Root layout + providers
-│   │   │   ├── (auth)/               # Auth pages (login, register, forgot-password)
+│   │   │   ├── (auth)/               # Auth pages (login, register, forgot-password, callback)
 │   │   │   └── (dashboard)/          # Protected pages with sidebar
 │   │   ├── components/ui/            # shadcn/ui components
 │   │   ├── hooks/                    # React Query hooks (auto-generated)
@@ -333,6 +334,52 @@ GET  /api/auth/me        → Returns current user (requires auth header)
 ```
 
 Access tokens expire in 15 minutes. Refresh tokens last 7 days. The frontend automatically refreshes via Axios interceptor.
+
+### Social Login (OAuth2)
+
+Grit includes Google and GitHub OAuth2 authentication via [Gothic](https://github.com/markbates/goth). Social login buttons appear on all login and register pages across all admin style variants.
+
+**OAuth Flow:**
+```
+1. User clicks "Sign in with Google" → browser navigates to /api/auth/oauth/google
+2. Backend (Gothic) redirects to Google consent screen
+3. Google redirects back to /api/auth/oauth/google/callback
+4. Backend completes auth, finds/creates user in DB, generates JWT tokens
+5. Backend redirects to OAUTH_FRONTEND_URL/auth/callback?access_token=XXX&refresh_token=XXX
+6. Frontend callback page stores tokens in cookies, fetches /api/auth/me, redirects to dashboard
+```
+
+**OAuth Routes:**
+```
+GET /api/auth/oauth/google          → Begins Google OAuth flow
+GET /api/auth/oauth/google/callback → Google OAuth callback
+GET /api/auth/oauth/github          → Begins GitHub OAuth flow
+GET /api/auth/oauth/github/callback → GitHub OAuth callback
+```
+
+**Account Linking:**
+- If an OAuth email matches an existing user → link accounts (sets GoogleID/GithubID), login
+- If no existing user → create new user (Provider="google"/"github", empty password), login
+- OAuth-only users have an empty password — they can set one later via profile
+- Email/password login returns a helpful error for password-less accounts: "Please sign in with Google/GitHub"
+
+**User Model Fields (for OAuth):**
+```go
+Provider string `gorm:"size:50;default:'local'" json:"provider"`  // "local", "google", "github"
+GoogleID string `gorm:"size:255" json:"-"`
+GithubID string `gorm:"size:255" json:"-"`
+```
+
+**Setup:** Add your OAuth credentials to `.env`:
+```bash
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+OAUTH_FRONTEND_URL=http://localhost:3001
+```
+
+Providers are conditionally initialized — if credentials are empty, that provider is simply skipped (no crash).
 
 ### Route Groups
 
@@ -915,6 +962,13 @@ MAIL_FROM=noreply@myapp.com
 AI_PROVIDER=claude            # or: openai
 AI_API_KEY=sk-ant-xxxxx
 AI_MODEL=claude-sonnet-4-5-20250929
+
+# OAuth2 — Social Login
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+OAUTH_FRONTEND_URL=http://localhost:3001
 
 # Security (Sentinel)
 SENTINEL_ENABLED=true
