@@ -357,8 +357,12 @@ export default function TutorialContactAppPage() {
                       desc: "API Documentation \u2014 auto-generated interactive docs for every endpoint",
                     },
                     {
-                      url: "http://localhost:8080/sentinel",
+                      url: "http://localhost:8080/sentinel/ui",
                       desc: "Sentinel \u2014 security dashboard with WAF, rate limiting, and threat monitoring",
+                    },
+                    {
+                      url: "http://localhost:8080/pulse",
+                      desc: "Pulse \u2014 observability dashboard with request tracing, database monitoring, and runtime metrics",
                     },
                     {
                       url: "http://localhost:8025",
