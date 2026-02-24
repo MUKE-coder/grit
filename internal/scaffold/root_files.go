@@ -86,6 +86,8 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 
 # GORM Studio
 GORM_STUDIO_ENABLED=true
+GORM_STUDIO_USERNAME=admin
+GORM_STUDIO_PASSWORD=studio
 
 # AI — Provider: claude, openai, or gemini
 AI_PROVIDER=claude
@@ -159,6 +161,8 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 
 # GORM Studio — Visual database browser
 GORM_STUDIO_ENABLED=true
+GORM_STUDIO_USERNAME=admin              # Login username for the Studio UI
+GORM_STUDIO_PASSWORD=studio             # Login password for the Studio UI
 
 # AI — Text generation (Claude, OpenAI, or Gemini)
 AI_PROVIDER=claude                   # "claude", "openai", or "gemini"
@@ -237,6 +241,8 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 
 # ─── GORM Studio ──────────────────────────────────────
 GORM_STUDIO_ENABLED=true
+GORM_STUDIO_USERNAME=admin               # Login username for the Studio UI
+GORM_STUDIO_PASSWORD=change-me-in-prod   # Login password — CHANGE THIS in production!
 
 # ─── AI (Claude, OpenAI, or Gemini) ──────────────────
 AI_PROVIDER=claude                   # "claude", "openai", or "gemini"

@@ -46,7 +46,7 @@ go 1.21
 
 require (
 	github.com/MUKE-coder/gin-docs v0.0.0-20260222113017-4d647cb4e7aa
-	github.com/MUKE-coder/gorm-studio v0.0.0-20260220065727-01539fe1212f
+	github.com/MUKE-coder/gorm-studio v0.0.0-20260224054159-c6507ad6c6e9
 	github.com/MUKE-coder/pulse v0.0.0-20260223005903-6f5d6e356231
 	github.com/aws/aws-sdk-go-v2 v1.25.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.0
@@ -358,7 +358,9 @@ type Config struct {
 
 	CORSOrigins []string
 
-	GORMStudioEnabled bool
+	GORMStudioEnabled  bool
+	GORMStudioUsername string
+	GORMStudioPassword string
 
 	// AI
 	AIProvider string // "claude", "openai", or "gemini"
@@ -402,7 +404,9 @@ func Load() (*Config, error) {
 
 		CORSOrigins: strings.Split(getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"), ","),
 
-		GORMStudioEnabled: getEnv("GORM_STUDIO_ENABLED", "true") == "true",
+		GORMStudioEnabled:  getEnv("GORM_STUDIO_ENABLED", "true") == "true",
+		GORMStudioUsername: getEnv("GORM_STUDIO_USERNAME", "admin"),
+		GORMStudioPassword: getEnv("GORM_STUDIO_PASSWORD", "studio"),
 
 		AIProvider: getEnv("AI_PROVIDER", "claude"),
 		AIAPIKey:   getEnv("AI_API_KEY", ""),
@@ -1811,9 +1815,15 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 
 	// Mount GORM Studio
 	if cfg.GORMStudioEnabled {
-		studio.Mount(r, db, []interface{}{&models.User{}, &models.Upload{}, &models.Blog{}, /* grit:studio */}, studio.Config{
+		studioCfg := studio.Config{
 			Prefix: "/studio",
-		})
+		}
+		if cfg.GORMStudioUsername != "" && cfg.GORMStudioPassword != "" {
+			studioCfg.AuthMiddleware = gin.BasicAuth(gin.Accounts{
+				cfg.GORMStudioUsername: cfg.GORMStudioPassword,
+			})
+		}
+		studio.Mount(r, db, []interface{}{&models.User{}, &models.Upload{}, &models.Blog{}, /* grit:studio */}, studioCfg)
 		log.Println("GORM Studio mounted at /studio")
 	}
 
