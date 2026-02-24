@@ -100,6 +100,7 @@ export const UpdateUserSchema = z.object({
   jobTitle: z.string().optional(),
   bio: z.string().optional(),
   active: z.boolean().optional(),
+  provider: z.string().optional(),
 });
 
 export const ForgotPasswordSchema = z.object({
@@ -154,6 +155,7 @@ func sharedUserTypes() string {
   job_title: string;
   bio: string;
   active: boolean;
+  provider: string;
   email_verified_at: string | null;
   created_at: string;
   updated_at: string;
@@ -245,6 +247,10 @@ export const API_ROUTES = {
     ME: "/api/auth/me",
     FORGOT_PASSWORD: "/api/auth/forgot-password",
     RESET_PASSWORD: "/api/auth/reset-password",
+    OAUTH: {
+      GOOGLE: "/api/auth/oauth/google",
+      GITHUB: "/api/auth/oauth/github",
+    },
   },
   USERS: {
     LIST: "/api/users",

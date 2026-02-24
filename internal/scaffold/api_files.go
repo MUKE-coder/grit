@@ -46,7 +46,7 @@ go 1.21
 
 require (
 	github.com/MUKE-coder/gin-docs v0.0.0-20260222113017-4d647cb4e7aa
-	github.com/MUKE-coder/gorm-studio v0.0.0-20260224054159-c6507ad6c6e9
+	github.com/MUKE-coder/gorm-studio v1.0.1
 	github.com/MUKE-coder/pulse v0.0.0-20260223005903-6f5d6e356231
 	github.com/aws/aws-sdk-go-v2 v1.25.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.0
@@ -56,7 +56,9 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.2.0
+	github.com/gorilla/sessions v1.4.0
 	github.com/hibiken/asynq v0.24.1
+	github.com/markbates/goth v1.80.0
 	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.4.0
 	golang.org/x/crypto v0.23.0
@@ -125,6 +127,10 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/markbates/goth"
+	gothGithub "github.com/markbates/goth/providers/github"
+	"github.com/markbates/goth/providers/google"
 
 	"` + "{{MODULE}}" + `/internal/ai"
 	"` + "{{MODULE}}" + `/internal/cache"
@@ -202,6 +208,27 @@ func main() {
 			jobClient = jc
 			log.Println("Job queue connected")
 		}
+	}
+
+	// OAuth2 social login providers
+	os.Setenv("SESSION_SECRET", cfg.JWTSecret)
+	var oauthProviders []goth.Provider
+	if cfg.GoogleClientID != "" {
+		oauthProviders = append(oauthProviders, google.New(
+			cfg.GoogleClientID, cfg.GoogleClientSecret,
+			cfg.AppURL+"/api/auth/oauth/google/callback",
+		))
+		log.Println("Google OAuth2 configured")
+	}
+	if cfg.GithubClientID != "" {
+		oauthProviders = append(oauthProviders, gothGithub.New(
+			cfg.GithubClientID, cfg.GithubClientSecret,
+			cfg.AppURL+"/api/auth/oauth/github/callback",
+		))
+		log.Println("GitHub OAuth2 configured")
+	}
+	if len(oauthProviders) > 0 {
+		goth.UseProviders(oauthProviders...)
 	}
 
 	// Build services
@@ -377,6 +404,13 @@ type Config struct {
 	PulseEnabled   bool
 	PulseUsername   string
 	PulsePassword  string
+
+	// OAuth2 Social Login
+	GoogleClientID     string
+	GoogleClientSecret string
+	GithubClientID     string
+	GithubClientSecret string
+	OAuthFrontendURL   string // Where to redirect after OAuth callback
 }
 
 // Load reads configuration from environment variables.
@@ -420,6 +454,12 @@ func Load() (*Config, error) {
 		PulseEnabled:  getEnv("PULSE_ENABLED", "true") == "true",
 		PulseUsername: getEnv("PULSE_USERNAME", "admin"),
 		PulsePassword: getEnv("PULSE_PASSWORD", "pulse"),
+
+		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
+		GithubClientID:     getEnv("GITHUB_CLIENT_ID", ""),
+		GithubClientSecret: getEnv("GITHUB_CLIENT_SECRET", ""),
+		OAuthFrontendURL:   getEnv("OAUTH_FRONTEND_URL", "http://localhost:3001"),
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -558,12 +598,15 @@ type User struct {
 	FirstName       string         ` + "`" + `gorm:"size:255;not null" json:"first_name" binding:"required"` + "`" + `
 	LastName        string         ` + "`" + `gorm:"size:255;not null" json:"last_name" binding:"required"` + "`" + `
 	Email           string         ` + "`" + `gorm:"size:255;uniqueIndex;not null" json:"email" binding:"required,email"` + "`" + `
-	Password        string         ` + "`" + `gorm:"size:255;not null" json:"-"` + "`" + `
+	Password        string         ` + "`" + `gorm:"size:255" json:"-"` + "`" + `
 	Role            string         ` + "`" + `gorm:"size:20;default:USER" json:"role"` + "`" + `
 	Avatar          string         ` + "`" + `gorm:"size:500" json:"avatar"` + "`" + `
 	JobTitle        string         ` + "`" + `gorm:"size:255" json:"job_title"` + "`" + `
 	Bio             string         ` + "`" + `gorm:"type:text" json:"bio"` + "`" + `
 	Active          bool           ` + "`" + `gorm:"default:true" json:"active"` + "`" + `
+	Provider        string         ` + "`" + `gorm:"size:50;default:'local'" json:"provider"` + "`" + `
+	GoogleID        string         ` + "`" + `gorm:"size:255" json:"-"` + "`" + `
+	GithubID        string         ` + "`" + `gorm:"size:255" json:"-"` + "`" + `
 	EmailVerifiedAt *time.Time     ` + "`" + `json:"email_verified_at"` + "`" + `
 	CreatedAt       time.Time      ` + "`" + `json:"created_at"` + "`" + `
 	UpdatedAt       time.Time      ` + "`" + `json:"updated_at"` + "`" + `
@@ -768,14 +811,19 @@ func apiAuthHandlerGo() string {
 	return `package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"net/url"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/markbates/goth/gothic"
 	"gorm.io/gorm"
 
 	"golang.org/x/crypto/bcrypt"
 
+	"` + "{{MODULE}}" + `/internal/config"
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/services"
 )
@@ -784,6 +832,7 @@ import (
 type AuthHandler struct {
 	DB          *gorm.DB
 	AuthService *services.AuthService
+	Config      *config.Config
 }
 
 type registerRequest struct {
@@ -904,6 +953,20 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			"error": gin.H{
 				"code":    "ACCOUNT_DISABLED",
 				"message": "Your account has been disabled",
+			},
+		})
+		return
+	}
+
+	if user.Password == "" {
+		provider := user.Provider
+		if provider == "" || provider == "local" {
+			provider = "social login"
+		}
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{
+				"code":    "SOCIAL_AUTH_ONLY",
+				"message": fmt.Sprintf("This account uses %s. Please sign in with your social account.", provider),
 			},
 		})
 		return
@@ -1079,6 +1142,125 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Password reset successfully",
 	})
+}
+
+// OAuthBegin redirects the user to the OAuth provider's consent screen.
+func (h *AuthHandler) OAuthBegin(c *gin.Context) {
+	provider := c.Param("provider")
+
+	// Gothic reads provider from query string, not URL params
+	q := c.Request.URL.Query()
+	q.Set("provider", provider)
+	c.Request.URL.RawQuery = q.Encode()
+
+	gothic.BeginAuthHandler(c.Writer, c.Request)
+}
+
+// OAuthCallback completes the OAuth flow, finds or creates the user, and redirects with JWT tokens.
+func (h *AuthHandler) OAuthCallback(c *gin.Context) {
+	provider := c.Param("provider")
+
+	q := c.Request.URL.Query()
+	q.Set("provider", provider)
+	c.Request.URL.RawQuery = q.Encode()
+
+	gothUser, err := gothic.CompleteUserAuth(c.Writer, c.Request)
+	if err != nil {
+		log.Printf("OAuth callback error: %v", err)
+		redirectURL := fmt.Sprintf("%s/login?error=%s", h.Config.OAuthFrontendURL, url.QueryEscape("Authentication failed. Please try again."))
+		c.Redirect(http.StatusTemporaryRedirect, redirectURL)
+		return
+	}
+
+	// Find or create user by email
+	var user models.User
+	result := h.DB.Where("email = ?", gothUser.Email).First(&user)
+
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			// Create new user from OAuth data
+			now := time.Now()
+			user = models.User{
+				FirstName:       gothUser.FirstName,
+				LastName:        gothUser.LastName,
+				Email:           gothUser.Email,
+				Avatar:          gothUser.AvatarURL,
+				Provider:        provider,
+				Active:          true,
+				EmailVerifiedAt: &now,
+			}
+
+			if provider == "google" {
+				user.GoogleID = gothUser.UserID
+			} else if provider == "github" {
+				user.GithubID = gothUser.UserID
+			}
+
+			// If name is empty, try to use NickName
+			if user.FirstName == "" && gothUser.NickName != "" {
+				user.FirstName = gothUser.NickName
+			}
+			if user.FirstName == "" {
+				user.FirstName = "User"
+			}
+			if user.LastName == "" {
+				user.LastName = ""
+			}
+
+			if err := h.DB.Create(&user).Error; err != nil {
+				log.Printf("OAuth: failed to create user: %v", err)
+				redirectURL := fmt.Sprintf("%s/login?error=%s", h.Config.OAuthFrontendURL, url.QueryEscape("Failed to create account."))
+				c.Redirect(http.StatusTemporaryRedirect, redirectURL)
+				return
+			}
+		} else {
+			log.Printf("OAuth: database error: %v", result.Error)
+			redirectURL := fmt.Sprintf("%s/login?error=%s", h.Config.OAuthFrontendURL, url.QueryEscape("Something went wrong."))
+			c.Redirect(http.StatusTemporaryRedirect, redirectURL)
+			return
+		}
+	} else {
+		// Link OAuth provider to existing account
+		updates := map[string]interface{}{}
+		if provider == "google" && user.GoogleID == "" {
+			updates["google_id"] = gothUser.UserID
+		} else if provider == "github" && user.GithubID == "" {
+			updates["github_id"] = gothUser.UserID
+		}
+		if user.Avatar == "" && gothUser.AvatarURL != "" {
+			updates["avatar"] = gothUser.AvatarURL
+		}
+		if user.Provider == "local" {
+			updates["provider"] = provider
+		}
+
+		if len(updates) > 0 {
+			h.DB.Model(&user).Updates(updates)
+		}
+	}
+
+	if !user.Active {
+		redirectURL := fmt.Sprintf("%s/login?error=%s", h.Config.OAuthFrontendURL, url.QueryEscape("Your account has been disabled."))
+		c.Redirect(http.StatusTemporaryRedirect, redirectURL)
+		return
+	}
+
+	// Generate JWT tokens
+	tokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
+	if err != nil {
+		log.Printf("OAuth: failed to generate tokens: %v", err)
+		redirectURL := fmt.Sprintf("%s/login?error=%s", h.Config.OAuthFrontendURL, url.QueryEscape("Failed to sign in."))
+		c.Redirect(http.StatusTemporaryRedirect, redirectURL)
+		return
+	}
+
+	// Redirect to frontend with tokens
+	redirectURL := fmt.Sprintf("%s/auth/callback?access_token=%s&refresh_token=%s",
+		h.Config.OAuthFrontendURL,
+		url.QueryEscape(tokens["access_token"].(string)),
+		url.QueryEscape(tokens["refresh_token"].(string)),
+	)
+	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 }
 `
 }
@@ -1886,6 +2068,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	authHandler := &handlers.AuthHandler{
 		DB:          db,
 		AuthService: authService,
+		Config:      cfg,
 	}
 	userHandler := &handlers.UserHandler{
 		DB: db,
@@ -1928,6 +2111,13 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		auth.POST("/refresh", authHandler.Refresh)
 		auth.POST("/forgot-password", authHandler.ForgotPassword)
 		auth.POST("/reset-password", authHandler.ResetPassword)
+	}
+
+	// OAuth2 social login
+	oauth := auth.Group("/oauth")
+	{
+		oauth.GET("/:provider", authHandler.OAuthBegin)
+		oauth.GET("/:provider/callback", authHandler.OAuthCallback)
 	}
 
 	// Protected routes

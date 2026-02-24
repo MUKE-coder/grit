@@ -216,6 +216,16 @@ export const usersResource = defineResource({
         },
       },
       { key: "job_title", label: "Job Title" },
+      {
+        key: "provider",
+        label: "Provider",
+        format: "badge",
+        badge: {
+          local: { color: "muted", label: "Email" },
+          google: { color: "info", label: "Google" },
+          github: { color: "accent", label: "GitHub" },
+        },
+      },
       { key: "active", label: "Status", format: "boolean" },
       { key: "created_at", label: "Created", format: "relative", sortable: true },
     ],
@@ -232,6 +242,16 @@ export const usersResource = defineResource({
         ],
       },
       { key: "active", label: "Status", type: "boolean" },
+      {
+        key: "provider",
+        label: "Provider",
+        type: "select",
+        options: [
+          { label: "Email", value: "local" },
+          { label: "Google", value: "google" },
+          { label: "GitHub", value: "github" },
+        ],
+      },
     ],
     searchable: true,
     searchPlaceholder: "Search by name or email...",

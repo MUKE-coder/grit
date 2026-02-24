@@ -49,6 +49,13 @@ JWT_SECRET=your-super-secret-jwt-key-change-in-production
 JWT_ACCESS_EXPIRY=15m
 JWT_REFRESH_EXPIRY=168h
 
+# OAuth2 — Social Login (Google + GitHub)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+OAUTH_FRONTEND_URL=http://localhost:3001
+
 # Redis
 REDIS_URL=redis://localhost:6379
 
@@ -121,6 +128,15 @@ DATABASE_URL=postgres://grit:grit@localhost:5432/myapp?sslmode=disable
 JWT_SECRET=change-me-in-production   # MUST change in production
 JWT_ACCESS_EXPIRY=15m                # Access token lifetime
 JWT_REFRESH_EXPIRY=168h              # Refresh token lifetime (7 days)
+
+# OAuth2 — Social Login (Google + GitHub)
+# Google: https://console.cloud.google.com/apis/credentials
+GOOGLE_CLIENT_ID=                    # Google OAuth 2.0 Client ID
+GOOGLE_CLIENT_SECRET=                # Google OAuth 2.0 Client Secret
+# GitHub: https://github.com/settings/developers
+GITHUB_CLIENT_ID=                    # GitHub OAuth App Client ID
+GITHUB_CLIENT_SECRET=                # GitHub OAuth App Client Secret
+OAUTH_FRONTEND_URL=http://localhost:3001  # Where to redirect after OAuth
 
 # Redis — Cache and job queue
 REDIS_URL=redis://localhost:6379

@@ -28,10 +28,51 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v0.19.0 */}
+            {/* v1.0.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v1.0.0
+                </span>
+                <span className="text-sm text-muted-foreground">February 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>Social Login (Google + GitHub)</strong> &mdash; Every <code>grit new</code> project now
+                    includes OAuth2 social authentication via{' '}
+                    <a href="https://github.com/markbates/goth" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Gothic</a>.
+                    Users can sign in with Google or GitHub on all auth pages (login, register, admin).
+                    Accounts are linked by email &mdash; existing users who sign in with a social provider are automatically connected.
+                    Configurable via <code>GOOGLE_CLIENT_ID</code>, <code>GITHUB_CLIENT_ID</code> environment variables.
+                  </li>
+                  <li>
+                    <strong>GORM Studio v1.0.1</strong> &mdash; Updated to the first stable tagged release of GORM Studio.
+                  </li>
+                </ul>
+
+                <h3>Improvements</h3>
+                <ul>
+                  <li>
+                    User model now includes <code>Provider</code>, <code>GoogleID</code>, and <code>GithubID</code> fields
+                    for social account linking. Password field is now nullable to support OAuth-only accounts.
+                  </li>
+                  <li>
+                    Admin users table shows Provider column with badges (Email, Google, GitHub) and new filter option.
+                  </li>
+                  <li>
+                    Social login buttons (Google + GitHub) appear on all 4 admin style variants (default, modern, minimal, glass).
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v0.19.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v0.19.0
                 </span>
                 <span className="text-sm text-muted-foreground">February 24, 2026</span>

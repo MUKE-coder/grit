@@ -120,7 +120,7 @@ export default function LoginPage() {
               {isPending ? "Signing in..." : "Sign In"}
             </button>
           </form>
-
+` + socialLoginButtonsJSX() + `
           {/* Footer link */}
           <p className="mt-6 text-center text-sm text-text-secondary">
             Don&apos;t have an account?{" "}
@@ -307,7 +307,7 @@ export default function SignUpPage() {
               {isPending ? "Creating account..." : "Create Account"}
             </button>
           </form>
-
+` + socialLoginButtonsJSX() + `
           {/* Footer link */}
           <p className="mt-6 text-center text-sm text-text-secondary">
             Already have an account?{" "}

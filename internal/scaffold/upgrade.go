@@ -182,6 +182,7 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 		filepath.Join(adminRoot, "app", "(auth)", "login", "page.tsx"):              adminLoginPageForStyle(opts.Style),
 		filepath.Join(adminRoot, "app", "(auth)", "sign-up", "page.tsx"):            adminSignUpPageForStyle(opts.Style),
 		filepath.Join(adminRoot, "app", "(auth)", "forgot-password", "page.tsx"):    adminForgotPasswordPageForStyle(opts.Style),
+		filepath.Join(adminRoot, "app", "(auth)", "callback", "page.tsx"):           adminAuthCallbackPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"):                adminDashboardLayout(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):     adminDashboardPageForStyle(opts.Style),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"): adminUsersPage(),

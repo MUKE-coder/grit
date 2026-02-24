@@ -103,7 +103,7 @@ export default function LoginPage() {
               {isPending ? "Signing in..." : "Sign in"}
             </button>
           </form>
-
+` + socialLoginButtonsJSX() + `
           <p className="text-center text-sm text-text-muted">
             Don&apos;t have an account?{" "}
             <Link href="/sign-up" className="text-foreground hover:text-accent transition-colors">
@@ -271,7 +271,7 @@ export default function SignUpPage() {
               {isPending ? "Creating account..." : "Create account"}
             </button>
           </form>
-
+` + socialLoginButtonsJSX() + `
           <p className="text-center text-sm text-text-muted">
             Already have an account?{" "}
             <Link href="/login" className="text-foreground hover:text-accent transition-colors">
