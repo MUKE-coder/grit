@@ -285,6 +285,11 @@ export const docsMetadata: Record<string, DocPage> = {
   },
 
   // Tutorials
+  '/docs/tutorials/contact-app': {
+    title: 'Your First App',
+    description:
+      'Step-by-step tutorial: build a contact manager with Grit. Create Group and Contact resources, explore the admin panel, GORM Studio, and API docs.',
+  },
   '/docs/tutorials/blog': {
     title: 'Build a Blog Tutorial',
     description:

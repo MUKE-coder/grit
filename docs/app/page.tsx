@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import type { Metadata } from 'next'
 import { ArrowRight, Shield, Layers, Zap, Code2, Rocket, Github, Globe, Server, Gauge, CheckCircle2, X, Minus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -204,6 +205,36 @@ export default function HomePage() {
               </CardHeader>
             </Card>
           ))}
+        </div>
+      </section>
+
+      {/* Divider */}
+      <div className="w-full h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+
+      {/* Creator Quote */}
+      <section className="container max-w-screen-2xl py-24 md:py-32 px-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="text-6xl font-serif text-primary/20 leading-none mb-6">&ldquo;</div>
+          <blockquote className="text-xl md:text-2xl font-medium text-foreground/90 leading-relaxed mb-8 text-balance">
+            I kept rebuilding the same Go + React stack for every project &mdash;
+            authentication, admin panels, file uploads, background jobs. The same
+            plumbing every time. Grit packages all of that into one CLI command
+            so you can focus on what makes your app unique.
+          </blockquote>
+          <div className="flex flex-col items-center gap-3">
+            <div className="relative h-14 w-14 rounded-full overflow-hidden border-2 border-primary/20">
+              <Image
+                src="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfAUUBxSZezIN7vwylkF1PXSCqAuseUG0gx8mh"
+                alt="JB Web Developer"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-foreground/90">JB Web Developer</div>
+              <div className="text-xs text-muted-foreground/60">Creator of Grit</div>
+            </div>
+          </div>
         </div>
       </section>
 

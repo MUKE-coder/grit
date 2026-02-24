@@ -78,6 +78,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/docs/design/theme', priority: 0.5, changeFrequency: 'monthly' as const },
 
     // Tutorials
+    { path: '/docs/tutorials/contact-app', priority: 0.9, changeFrequency: 'monthly' as const },
     { path: '/docs/tutorials/blog', priority: 0.8, changeFrequency: 'monthly' as const },
     { path: '/docs/tutorials/ecommerce', priority: 0.7, changeFrequency: 'monthly' as const },
     { path: '/docs/tutorials/learn', priority: 0.8, changeFrequency: 'monthly' as const },

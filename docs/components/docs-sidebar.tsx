@@ -140,6 +140,7 @@ const navItems: NavItem[] = [
     title: 'Tutorials',
     icon: <BookOpen className="h-3.5 w-3.5" />,
     items: [
+      { title: 'Your First App', href: '/docs/tutorials/contact-app' },
       { title: 'Learn Grit Step by Step', href: '/docs/tutorials/learn' },
       { title: 'Build a Blog', href: '/docs/tutorials/blog' },
       { title: 'Build a SaaS', href: '/docs/tutorials/saas' },
