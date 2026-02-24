@@ -73,30 +73,7 @@ export default function TutorialEcommercePage() {
                   Scaffold a new Grit project called <code>shopgrit</code>.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm space-y-2">
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">
-                        grit new shopgrit
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">cd shopgrit</span>
-                    </div>
-                  </div>
-                </div>
+                <CodeBlock terminal code={`grit new shopgrit\ncd shopgrit`} className="glow-purple-sm" />
               </div>
             </div>
 
@@ -117,24 +94,7 @@ export default function TutorialEcommercePage() {
                   for product image uploads.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      docker compose up -d
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal code="docker compose up -d" className="glow-purple-sm" />
               </div>
             </div>
 
@@ -155,25 +115,7 @@ export default function TutorialEcommercePage() {
                   stock count, and a published flag.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      grit generate resource Product --fields
-                      &quot;name:string,description:text,price:float,sku:string:unique,stock:int,published:bool&quot;
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal code={`grit generate resource Product --fields "name:string,description:text,price:float,sku:string:unique,stock:int,published:bool"`} className="glow-purple-sm mb-4" />
 
                 <CodeBlock filename="apps/api/internal/models/product.go" code={`package models
 
@@ -213,25 +155,7 @@ type Product struct {
                   resource and add the relationship to Product.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      grit generate resource Category --fields
-                      &quot;name:string:unique,slug:string:unique,description:text&quot;
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal code={`grit generate resource Category --fields "name:string:unique,slug:string:unique,description:text"`} className="glow-purple-sm mb-4" />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Now add the category relationship to the Product model. Also
@@ -285,25 +209,7 @@ type Product struct {
                   authenticated user.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      grit generate resource Order --fields
-                      &quot;status:string,total:float,notes:text&quot;
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal code={`grit generate resource Order --fields "status:string,total:float,notes:text"`} className="glow-purple-sm mb-4" />
 
                 <CodeBlock filename="apps/api/internal/models/order.go &mdash; with User
                       relationship" code={`package models
@@ -359,25 +265,7 @@ type Order struct {
                   changes do not affect past orders).
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      grit generate resource OrderItem --fields
-                      &quot;quantity:int,price:float&quot;
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal code={`grit generate resource OrderItem --fields "quantity:int,price:float"`} className="glow-purple-sm mb-4" />
 
                 <CodeBlock filename="apps/api/internal/models/order_item.go &mdash; with
                       relationships" code={`package models
@@ -1170,22 +1058,7 @@ func (s *ProductService) GetPublished(page, pageSize int) ([]models.Product, int
                   Start all services and test the complete e-commerce workflow.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">grit dev</span>
-                  </div>
-                </div>
+                <CodeBlock terminal code="grit dev" className="glow-purple-sm mb-4" />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Walk through this testing checklist:

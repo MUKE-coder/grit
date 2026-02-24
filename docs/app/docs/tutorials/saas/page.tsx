@@ -74,30 +74,7 @@ export default function TutorialSaaSPage() {
                   admin panel, shared packages, and Docker configuration.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm space-y-2">
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">
-                        grit new taskflow
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">cd taskflow</span>
-                    </div>
-                  </div>
-                </div>
+                <CodeBlock terminal code={`grit new taskflow\ncd taskflow`} className="glow-purple-sm" />
               </div>
             </div>
 
@@ -118,24 +95,7 @@ export default function TutorialSaaSPage() {
                   for the background job queue that sends email notifications.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      docker compose up -d
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal code="docker compose up -d" className="glow-purple-sm" />
               </div>
             </div>
 
@@ -155,25 +115,7 @@ export default function TutorialSaaSPage() {
                   with name, description, and status fields.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      grit generate resource Project --fields
-                      &quot;name:string,description:text,status:string&quot;
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal code={`grit generate resource Project --fields "name:string,description:text,status:string"`} className="glow-purple-sm mb-4" />
 
                 <CodeBlock filename="apps/api/internal/models/project.go" code={`package models
 
@@ -211,25 +153,7 @@ type Project struct {
                   date.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      grit generate resource Task --fields
-                      &quot;title:string,description:text,status:string,priority:string,dueDate:date&quot;
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal code={`grit generate resource Task --fields "title:string,description:text,status:string,priority:string,dueDate:date"`} className="glow-purple-sm mb-4" />
 
                 <CodeBlock filename="apps/api/internal/models/task.go" code={`package models
 
@@ -269,25 +193,7 @@ type Task struct {
                   to Task and User in the next step.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      grit generate resource Comment --fields
-                      &quot;content:text&quot;
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal code={`grit generate resource Comment --fields "content:text"`} className="glow-purple-sm" />
               </div>
             </div>
 
@@ -953,22 +859,7 @@ func (s *TaskService) GetAllScoped(
                   Start all services and verify the complete workflow.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">grit dev</span>
-                  </div>
-                </div>
+                <CodeBlock terminal code="grit dev" className="glow-purple-sm mb-4" />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Test the workflow:

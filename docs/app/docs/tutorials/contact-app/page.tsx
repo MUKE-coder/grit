@@ -74,30 +74,7 @@ export default function TutorialContactAppPage() {
                   package, and Docker configuration in one shot.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm space-y-2">
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">
-                        grit new contact-app
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">cd contact-app</span>
-                    </div>
-                  </div>
-                </div>
+                <CodeBlock terminal code={`grit new contact-app\ncd contact-app`} className="glow-purple-sm mb-4" />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
                   Grit prints an ASCII art logo, creates the folder structure,
@@ -125,22 +102,7 @@ export default function TutorialContactAppPage() {
                   installs from the project root.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">pnpm install</span>
-                  </div>
-                </div>
+                <CodeBlock terminal code="pnpm install" className="glow-purple-sm" />
               </div>
             </div>
 
@@ -160,24 +122,7 @@ export default function TutorialContactAppPage() {
                   These run in the background and persist data across restarts.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      docker compose up -d
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal code="docker compose up -d" className="glow-purple-sm" />
               </div>
             </div>
 
@@ -205,70 +150,9 @@ export default function TutorialContactAppPage() {
                   listening there. Check what&apos;s using the port:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      windows
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm space-y-2">
-                    <div className="text-muted-foreground/40 text-xs select-none">
-                      # Find the process using port 5432
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">&gt; </span>
-                      <span className="text-foreground/80">
-                        netstat -ano | findstr :5432
-                      </span>
-                    </div>
-                    <div className="text-muted-foreground/40 text-xs select-none">
-                      # Stop the local PostgreSQL service (Run the bash in
-                      administrator mode)
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">&gt; </span>
-                      <span className="text-foreground/80">
-                        net stop postgresql-x64-16
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                <CodeBlock terminal filename="windows" code={`# Find the process using port 5432\nnetstat -ano | findstr :5432\n\n# Stop the local PostgreSQL service (Run as administrator)\nnet stop postgresql-x64-16`} className="glow-purple-sm mb-4" />
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      macOS / Linux
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm space-y-2">
-                    <div className="text-muted-foreground/40 text-xs select-none">
-                      # Find the process using port 5432
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">lsof -i :5432</span>
-                    </div>
-                    <div className="text-muted-foreground/40 text-xs select-none">
-                      # Stop local PostgreSQL (macOS with Homebrew)
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">
-                        brew services stop postgresql@16
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                <CodeBlock terminal filename="macOS / Linux" code={`# Find the process using port 5432\nlsof -i :5432\n\n# Stop local PostgreSQL (macOS with Homebrew)\nbrew services stop postgresql@16`} className="glow-purple-sm mb-4" />
 
                 <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 mb-4">
                   <p className="text-[13px] text-yellow-200/80 leading-relaxed mb-3">
@@ -330,22 +214,7 @@ export default function TutorialContactAppPage() {
                   PostgreSQL tables automatically.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">grit migrate</span>
-                  </div>
-                </div>
+                <CodeBlock terminal code="grit migrate" className="glow-purple-sm" />
               </div>
             </div>
 
@@ -366,22 +235,7 @@ export default function TutorialContactAppPage() {
                   <code>admin@example.com</code> / <code>password</code>.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">grit seed</span>
-                  </div>
-                </div>
+                <CodeBlock terminal code="grit seed" className="glow-purple-sm" />
               </div>
             </div>
 
@@ -401,24 +255,7 @@ export default function TutorialContactAppPage() {
                   the server on <code>http://localhost:8080</code>.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal 1
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      grit start server
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal filename="terminal 1" code="grit start server" className="glow-purple-sm" />
               </div>
             </div>
 
@@ -440,24 +277,7 @@ export default function TutorialContactAppPage() {
                   <code>localhost:3001</code>.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal 2
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      grit start client
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal filename="terminal 2" code="grit start client" className="glow-purple-sm" />
               </div>
             </div>
 
@@ -581,25 +401,7 @@ export default function TutorialContactAppPage() {
                   generates a URL-friendly slug from the group name.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      grit generate resource Group --fields
-                      &quot;name:string,slug:slug:name&quot;
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal code={`grit generate resource Group --fields "name:string,slug:slug:name"`} className="glow-purple-sm mb-4" />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
                   The generator creates these files:
@@ -661,25 +463,7 @@ type Group struct {
                   photos), and a <code>belongs_to</code> relationship to Group.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      grit generate resource Contact --fields
-                      &quot;name:string,email:string,phone:string,country:string,image:string_array,group:belongs_to:Group&quot;
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal code={`grit generate resource Contact --fields "name:string,email:string,phone:string,country:string,image:string_array,group:belongs_to:Group"`} className="glow-purple-sm mb-4" />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   The generated Contact model includes a <code>GroupID</code>{" "}
@@ -740,26 +524,7 @@ type Contact struct {
                   the API to make sure everything compiles:
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm space-y-2">
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">
-                        cd apps/api &amp;&amp; go build ./...
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                <CodeBlock terminal code="cd apps/api && go build ./..." className="glow-purple-sm mb-4" />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
                   If the build succeeds with no output, everything is wired
@@ -787,24 +552,7 @@ type Contact struct {
                   <code>contacts</code> tables in PostgreSQL.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal 1
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      grit start server
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal filename="terminal 1" code="grit start server" className="glow-purple-sm mb-4" />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
                   Open the admin panel at <code>http://localhost:3001</code>.

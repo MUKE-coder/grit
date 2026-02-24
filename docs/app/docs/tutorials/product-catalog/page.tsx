@@ -98,32 +98,7 @@ export default function TutorialProductCatalogPage() {
                   configuration.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm space-y-2">
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">
-                        grit new product-catalog
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">
-                        cd product-catalog
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                <CodeBlock terminal code={`grit new product-catalog\ncd product-catalog`} className="glow-purple-sm mb-4" />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
                   Grit creates the folder structure, initializes{" "}
@@ -149,24 +124,7 @@ export default function TutorialProductCatalogPage() {
                   the background and persist data across restarts.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      docker compose up -d
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal code="docker compose up -d" className="glow-purple-sm" />
               </div>
             </div>
 
@@ -189,25 +147,7 @@ export default function TutorialProductCatalogPage() {
                   hooks, and admin page.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">
-                      grit generate resource Product --fields
-                      &quot;name:string,description:text,price:float,sku:string:unique,category:string,stock:int,image_url:string,published:bool,featured:bool&quot;
-                    </span>
-                  </div>
-                </div>
+                <CodeBlock terminal code={`grit generate resource Product --fields "name:string,description:text,price:float,sku:string:unique,category:string,stock:int,image_url:string,published:bool,featured:bool"`} className="glow-purple-sm mb-4" />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
                   The generator creates these files:
@@ -409,22 +349,7 @@ export default defineResource({
                   <code>products</code> table in PostgreSQL.
                 </p>
 
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                    </div>
-                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                      terminal
-                    </span>
-                  </div>
-                  <div className="p-5 font-mono text-sm">
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">grit dev</span>
-                  </div>
-                </div>
+                <CodeBlock terminal code="grit dev" className="glow-purple-sm mb-4" />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
                   Open the admin panel at{" "}
