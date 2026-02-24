@@ -764,9 +764,9 @@ func main() {
                 structural typing), and it is one of Go&apos;s most powerful features.
               </p>
               <p>
-                Think of an interface like a restaurant menu: it lists <em>what you can order</em>,
-                not <em>how the kitchen prepares it</em>. Any kitchen that can serve those dishes
-                satisfies the menu&apos;s contract.
+                Think of an interface like a <strong>job posting</strong>: it lists the skills required
+                (e.g. &quot;must be able to Drive() and Refuel()&quot;), not <em>who</em> you are.
+                Anyone who has those skills qualifies &mdash; whether it&apos;s a human or a robot.
               </p>
               <p>
                 Interfaces enable polymorphism and are essential for testing. You can swap a real
@@ -790,51 +790,76 @@ func main() {
 
 import "fmt"
 
-// Define an interface — just method signatures
-type Notifier interface {
-    Send(to string, message string) error
+// ---- THE JOB POSTING (Interface) ----
+// This is like a job ad that says:
+// "We need someone who can Drive() and Refuel()"
+type TruckDriver interface {
+    Drive() string
+    Refuel() string
 }
 
-// EmailNotifier implements Notifier (implicitly — no "implements" keyword)
-type EmailNotifier struct {
-    From string
+// ---- CANDIDATE 1: John (Struct) ----
+// John never said "I am a TruckDriver"
+// He just happens to know how to Drive() and Refuel()
+type John struct {
+    Name string
+    Age  int
 }
 
-func (e *EmailNotifier) Send(to string, message string) error {
-    fmt.Printf("Email from %s to %s: %s\\n", e.From, to, message)
-    return nil
+func (j John) Drive() string {
+    return j.Name + " is driving the truck!"
 }
 
-// SlackNotifier also implements Notifier
-type SlackNotifier struct {
-    Channel string
+func (j John) Refuel() string {
+    return j.Name + " is refueling the truck!"
 }
 
-func (s *SlackNotifier) Send(to string, message string) error {
-    fmt.Printf("Slack #%s -> %s: %s\\n", s.Channel, to, message)
-    return nil
+// ---- CANDIDATE 2: Robot (Struct) ----
+// Robot also never said "I am a TruckDriver"
+// But it also knows how to Drive() and Refuel()
+type Robot struct {
+    Model string
 }
 
-// This function works with ANY Notifier — email, slack, SMS, webhook...
-func alert(n Notifier, user string) {
-    n.Send(user, "Your report is ready")
+func (r Robot) Drive() string {
+    return "Robot " + r.Model + " is driving the truck!"
+}
+
+func (r Robot) Refuel() string {
+    return "Robot " + r.Model + " is refueling the truck!"
+}
+
+// ---- THE COMPANY (Function that accepts the interface) ----
+// The company doesn't care WHO you are.
+// It only cares: "Can you Drive() and Refuel()?"
+func HireDriver(d TruckDriver) {
+    fmt.Println("Hired!")
+    fmt.Println("  ", d.Drive())
+    fmt.Println("  ", d.Refuel())
+    fmt.Println()
 }
 
 func main() {
-    email := &EmailNotifier{From: "noreply@app.com"}
-    slack := &SlackNotifier{Channel: "alerts"}
+    // John applies — he can Drive() and Refuel() -> HIRED
+    john := John{Name: "John", Age: 35}
+    fmt.Println("John applies for the job:")
+    HireDriver(john)
 
-    alert(email, "alice@example.com") // Email from noreply@app.com to alice@example.com: Your report is ready
-    alert(slack, "alice")             // Slack #alerts -> alice: Your report is ready
+    // Robot applies — it can Drive() and Refuel() -> HIRED
+    robot := Robot{Model: "TX-500"}
+    fmt.Println("Robot applies for the job:")
+    HireDriver(robot)
 }`} />
 
             <div className="prose-grit mb-6 mt-8">
               <p>
-                Notice that neither <code>EmailNotifier</code> nor <code>SlackNotifier</code> declares
-                &quot;I implement Notifier.&quot; They just <em>have</em> the <code>Send</code> method
-                with the right signature. The compiler checks this for you at build time &mdash;
-                if you misspell a method or get the parameters wrong, you get a compile error, not
-                a runtime crash.
+                Notice that neither <code>John</code> nor <code>Robot</code> declares
+                &quot;I am a TruckDriver.&quot; They just <em>have</em> the <code>Drive()</code> and
+                <code>Refuel()</code> methods with the right signatures. The compiler checks this
+                for you at build time &mdash; if you misspell a method or get the return type wrong,
+                you get a compile error, not a runtime crash. The <code>HireDriver</code> function
+                doesn&apos;t care about the concrete type &mdash; it only cares that the candidate
+                satisfies the <code>TruckDriver</code> contract.
               </p>
             </div>
 
