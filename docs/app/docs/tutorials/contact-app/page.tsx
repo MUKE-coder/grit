@@ -3,10 +3,10 @@ import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
-import { CodeBlock } from '@/components/code-block'
-import { getDocMetadata } from '@/config/docs-metadata'
+import { CodeBlock } from "@/components/code-block";
+import { getDocMetadata } from "@/config/docs-metadata";
 
-export const metadata = getDocMetadata('/docs/tutorials/contact-app')
+export const metadata = getDocMetadata("/docs/tutorials/contact-app");
 
 export default function TutorialContactAppPage() {
   return (
@@ -69,10 +69,9 @@ export default function TutorialContactAppPage() {
                   Create the project
                 </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Scaffold a new Grit monorepo called{" "}
-                  <code>contact-app</code>. This creates the Go API, Next.js web
-                  app, admin panel, shared package, and Docker configuration in
-                  one shot.
+                  Scaffold a new Grit monorepo called <code>contact-app</code>.
+                  This creates the Go API, Next.js web app, admin panel, shared
+                  package, and Docker configuration in one shot.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
@@ -201,8 +200,8 @@ export default function TutorialContactAppPage() {
                 </p>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  The most common conflict is port <code>5432</code> &mdash;
-                  if you have PostgreSQL installed locally it&apos;s already
+                  The most common conflict is port <code>5432</code> &mdash; if
+                  you have PostgreSQL installed locally it&apos;s already
                   listening there. Check what&apos;s using the port:
                 </p>
 
@@ -218,14 +217,19 @@ export default function TutorialContactAppPage() {
                     </span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
-                    <div className="text-muted-foreground/40 text-xs select-none"># Find the process using port 5432</div>
+                    <div className="text-muted-foreground/40 text-xs select-none">
+                      # Find the process using port 5432
+                    </div>
                     <div>
                       <span className="text-primary/50 select-none">&gt; </span>
                       <span className="text-foreground/80">
                         netstat -ano | findstr :5432
                       </span>
                     </div>
-                    <div className="text-muted-foreground/40 text-xs select-none"># Stop the local PostgreSQL service</div>
+                    <div className="text-muted-foreground/40 text-xs select-none">
+                      # Stop the local PostgreSQL service (Run the bash in
+                      administrator mode)
+                    </div>
                     <div>
                       <span className="text-primary/50 select-none">&gt; </span>
                       <span className="text-foreground/80">
@@ -247,14 +251,16 @@ export default function TutorialContactAppPage() {
                     </span>
                   </div>
                   <div className="p-5 font-mono text-sm space-y-2">
-                    <div className="text-muted-foreground/40 text-xs select-none"># Find the process using port 5432</div>
+                    <div className="text-muted-foreground/40 text-xs select-none">
+                      # Find the process using port 5432
+                    </div>
                     <div>
                       <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">
-                        lsof -i :5432
-                      </span>
+                      <span className="text-foreground/80">lsof -i :5432</span>
                     </div>
-                    <div className="text-muted-foreground/40 text-xs select-none"># Stop local PostgreSQL (macOS with Homebrew)</div>
+                    <div className="text-muted-foreground/40 text-xs select-none">
+                      # Stop local PostgreSQL (macOS with Homebrew)
+                    </div>
                     <div>
                       <span className="text-primary/50 select-none">$ </span>
                       <span className="text-foreground/80">
@@ -266,30 +272,38 @@ export default function TutorialContactAppPage() {
 
                 <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 mb-4">
                   <p className="text-[13px] text-yellow-200/80 leading-relaxed mb-3">
-                    <strong className="text-yellow-300">You have three options:</strong>
+                    <strong className="text-yellow-300">
+                      You have three options:
+                    </strong>
                   </p>
                   <ol className="space-y-2 text-[13px] text-yellow-200/80 leading-relaxed list-decimal list-inside">
                     <li>
-                      <strong className="text-yellow-200/90">Stop the local service</strong> &mdash;
-                      run <code>net stop postgresql-x64-16</code> (Windows) or{" "}
-                      <code>brew services stop postgresql@16</code> (macOS).
-                      This frees the port so Docker can use it.
+                      <strong className="text-yellow-200/90">
+                        Stop the local service
+                      </strong>{" "}
+                      &mdash; run <code>net stop postgresql-x64-16</code>{" "}
+                      (Windows) or <code>brew services stop postgresql@16</code>{" "}
+                      (macOS). This frees the port so Docker can use it.
                     </li>
                     <li>
-                      <strong className="text-yellow-200/90">Uninstall local PostgreSQL</strong> &mdash;
-                      if you only use Docker for databases, remove the local
-                      installation entirely to avoid future conflicts.
+                      <strong className="text-yellow-200/90">
+                        Uninstall local PostgreSQL
+                      </strong>{" "}
+                      &mdash; if you only use Docker for databases, remove the
+                      local installation entirely to avoid future conflicts.
                     </li>
                     <li>
-                      <strong className="text-yellow-200/90">Change the port</strong> &mdash;
-                      update <code>docker-compose.yml</code> to map a different
-                      host port:
+                      <strong className="text-yellow-200/90">
+                        Change the port
+                      </strong>{" "}
+                      &mdash; update <code>docker-compose.yml</code> to map a
+                      different host port:
                       <div className="mt-1.5 font-mono text-xs text-yellow-200/60 bg-yellow-500/5 rounded px-2 py-1 inline-block">
                         ports: &quot;5433:5432&quot;
                       </div>
                       <br />
-                      Then update <code>DATABASE_URL</code> in{" "}
-                      <code>.env</code> to use port <code>5433</code>.
+                      Then update <code>DATABASE_URL</code> in <code>.env</code>{" "}
+                      to use port <code>5433</code>.
                     </li>
                   </ol>
                 </div>
@@ -309,9 +323,7 @@ export default function TutorialContactAppPage() {
                 5
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">
-                  Run migrations
-                </h3>
+                <h3 className="text-xl font-semibold mb-2">Run migrations</h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
                   Create the database tables. Grit uses GORM AutoMigrate, which
                   reads your Go models and creates/updates the corresponding
@@ -593,7 +605,10 @@ export default function TutorialContactAppPage() {
                   The generator creates these files:
                 </p>
 
-                <CodeBlock language="bash" filename="generated files" code={`apps/api/internal/models/group.go        # GORM model
+                <CodeBlock
+                  language="bash"
+                  filename="generated files"
+                  code={`apps/api/internal/models/group.go        # GORM model
 apps/api/internal/handlers/group.go      # CRUD handler
 apps/api/internal/services/group.go      # Business logic
 packages/shared/schemas/group.ts         # Zod validation
@@ -601,13 +616,16 @@ packages/shared/types/group.ts           # TypeScript types
 apps/web/hooks/use-groups.ts             # React Query hooks (web)
 apps/admin/hooks/use-groups.ts           # React Query hooks (admin)
 apps/admin/app/resources/groups/page.tsx # Admin page
-apps/admin/resources/groups.ts           # Resource definition`} />
+apps/admin/resources/groups.ts           # Resource definition`}
+                />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
                   Here is the generated Go model:
                 </p>
 
-                <CodeBlock filename="apps/api/internal/models/group.go" code={`package models
+                <CodeBlock
+                  filename="apps/api/internal/models/group.go"
+                  code={`package models
 
 import (
     "time"
@@ -621,7 +639,8 @@ type Group struct {
     CreatedAt time.Time      \`json:"created_at"\`
     UpdatedAt time.Time      \`json:"updated_at"\`
     DeletedAt gorm.DeletedAt \`gorm:"index" json:"deleted_at,omitempty"\`
-}`} />
+}`}
+                />
               </div>
             </div>
 
@@ -637,10 +656,9 @@ type Group struct {
                   Generate the Contact resource
                 </h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
-                  Now generate the Contact resource with all the fields:
-                  name, email, phone, country, image (as a string array for
-                  multiple photos), and a <code>belongs_to</code> relationship
-                  to Group.
+                  Now generate the Contact resource with all the fields: name,
+                  email, phone, country, image (as a string array for multiple
+                  photos), and a <code>belongs_to</code> relationship to Group.
                 </p>
 
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-4">
@@ -664,13 +682,15 @@ type Group struct {
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-3">
-                  The generated Contact model includes a{" "}
-                  <code>GroupID</code> foreign key and a <code>Group</code>{" "}
-                  relation. The <code>Image</code> field is a JSON array that
-                  stores multiple image URLs:
+                  The generated Contact model includes a <code>GroupID</code>{" "}
+                  foreign key and a <code>Group</code> relation. The{" "}
+                  <code>Image</code> field is a JSON array that stores multiple
+                  image URLs:
                 </p>
 
-                <CodeBlock filename="apps/api/internal/models/contact.go" code={`package models
+                <CodeBlock
+                  filename="apps/api/internal/models/contact.go"
+                  code={`package models
 
 import (
     "time"
@@ -690,7 +710,8 @@ type Contact struct {
     CreatedAt time.Time                   \`json:"created_at"\`
     UpdatedAt time.Time                   \`json:"updated_at"\`
     DeletedAt gorm.DeletedAt              \`gorm:"index" json:"deleted_at,omitempty"\`
-}`} />
+}`}
+                />
 
                 <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 mt-4">
                   <p className="text-[13px] text-blue-200/80 leading-relaxed">
@@ -712,9 +733,7 @@ type Contact struct {
                 13
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">
-                  Rebuild the API
-                </h3>
+                <h3 className="text-xl font-semibold mb-2">Rebuild the API</h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
                   The generator injected new code into your Go API &mdash;
                   models, handlers, routes, and GORM Studio registration. Build
@@ -788,12 +807,11 @@ type Contact struct {
                 </div>
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
-                  Open the admin panel at{" "}
-                  <code>http://localhost:3001</code>. You will see{" "}
-                  <strong>Groups</strong> and <strong>Contacts</strong> in the
-                  sidebar alongside Users and Posts. The admin panel reads
-                  from the resource registry at runtime &mdash; no manual sidebar
-                  configuration needed.
+                  Open the admin panel at <code>http://localhost:3001</code>.
+                  You will see <strong>Groups</strong> and{" "}
+                  <strong>Contacts</strong> in the sidebar alongside Users and
+                  Posts. The admin panel reads from the resource registry at
+                  runtime &mdash; no manual sidebar configuration needed.
                 </p>
               </div>
             </div>
@@ -825,9 +843,7 @@ type Contact struct {
                         <span className="text-primary/60 text-xs font-mono w-16">
                           {group.slug}
                         </span>
-                        <span className="text-foreground/80">
-                          {group.name}
-                        </span>
+                        <span className="text-foreground/80">{group.name}</span>
                       </div>
                     ))}
                   </div>
@@ -844,10 +860,9 @@ type Contact struct {
                 <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
                   <p className="text-[13px] text-blue-200/80 leading-relaxed">
                     <strong className="text-blue-300">Tip:</strong> Open GORM
-                    Studio at{" "}
-                    <code>http://localhost:8080/studio</code> to see your groups
-                    and contacts in the database. You can browse the tables, see
-                    the relationships, and even run raw SQL queries.
+                    Studio at <code>http://localhost:8080/studio</code> to see
+                    your groups and contacts in the database. You can browse the
+                    tables, see the relationships, and even run raw SQL queries.
                   </p>
                 </div>
               </div>
@@ -861,9 +876,7 @@ type Contact struct {
                 16
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">
-                  Explore the API
-                </h3>
+                <h3 className="text-xl font-semibold mb-2">Explore the API</h3>
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
                   Every resource you generate gets a full REST API. Try these
                   endpoints in your browser or with a tool like Postman:
@@ -907,9 +920,7 @@ type Contact struct {
                       className="flex items-start gap-2.5 text-[13px] text-muted-foreground/70"
                     >
                       <code className="text-xs font-mono mt-0.5">
-                        <span className="text-green-400/70">
-                          {item.method}
-                        </span>{" "}
+                        <span className="text-green-400/70">{item.method}</span>{" "}
                         <span className="text-primary/70">{item.url}</span>
                       </code>
                       <span>&mdash; {item.desc}</span>
@@ -1002,7 +1013,10 @@ type Contact struct {
                 asChild
                 className="text-muted-foreground/60 hover:text-foreground"
               >
-                <Link href="/docs/getting-started/quick-start" className="gap-1.5">
+                <Link
+                  href="/docs/getting-started/quick-start"
+                  className="gap-1.5"
+                >
                   <ArrowLeft className="h-3.5 w-3.5" />
                   Quick Start
                 </Link>

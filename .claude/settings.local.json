@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"d:\\\\Projects\\\\GO FRAMEWORK\\\\grit\\\\grit\\\\internal\\\\scaffold\"\" | grep \".go \")",
+      "Bash(go build:*)",
+      "Bash(node scripts/inject-metadata.mjs:*)",
+      "Bash(npx next build:*)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx next build:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=8192\" npx next build:*)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" NEXT_BUILD_WORKERS=2 npx next build:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:freedium.cfd)",
+      "WebFetch(domain:webcache.googleusercontent.com)",
+      "WebFetch(domain:gobyexample.com)",
+      "WebFetch(domain:readmedium.com)",
+      "WebFetch(domain:archive.org)",
+      "Bash(git status:*)"
+    ]
+  }
+}
