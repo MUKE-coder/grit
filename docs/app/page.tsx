@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
-import { ArrowRight, Shield, Layers, Zap, Code2, Rocket, Github, Globe, Server, Gauge, CheckCircle2, X, Minus, Lock, HardDrive, LayoutDashboard, FileText, Database, Mail, Bot, Activity } from 'lucide-react'
+import { ArrowRight, Shield, Layers, Zap, Code2, Rocket, Github, Globe, Server, Gauge, CheckCircle2, X, Minus, Lock, HardDrive, LayoutDashboard, FileText, Database, Mail, Bot, Activity, Wand2, Table2, ClipboardList, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SiteHeader } from '@/components/site-header'
@@ -477,6 +477,167 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* Code Generator */}
+          <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+            <div className="flex items-center gap-2.5 mb-2">
+              <Wand2 className="h-4.5 w-4.5 text-primary/70" />
+              <h3 className="text-lg font-semibold">Code Generator</h3>
+            </div>
+            <p className="text-sm text-muted-foreground/70 leading-relaxed mb-5">
+              One command generates the full stack for a resource: Go model, CRUD handler, service layer,
+              Zod schema, TypeScript types, React Query hooks, and admin page &mdash; all wired together.
+            </p>
+            <div className="rounded-lg border border-border/30 bg-accent/20 p-4">
+              <div className="font-mono text-xs space-y-1.5">
+                <div className="text-foreground/30">
+                  <span className="text-primary/50 select-none">$ </span>
+                  grit generate resource Product
+                </div>
+                <div className="text-muted-foreground/25 pl-3 space-y-0.5">
+                  <div><span className="text-emerald-400/40">+</span> models/product.go</div>
+                  <div><span className="text-emerald-400/40">+</span> handlers/product.go</div>
+                  <div><span className="text-emerald-400/40">+</span> services/product.go</div>
+                  <div><span className="text-emerald-400/40">+</span> schemas/product.ts</div>
+                  <div><span className="text-emerald-400/40">+</span> types/product.ts</div>
+                  <div><span className="text-emerald-400/40">+</span> hooks/use-products.ts</div>
+                  <div><span className="text-emerald-400/40">+</span> resources/products.ts</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* DataTable */}
+          <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+            <div className="flex items-center gap-2.5 mb-2">
+              <Table2 className="h-4.5 w-4.5 text-primary/70" />
+              <h3 className="text-lg font-semibold">DataTable</h3>
+            </div>
+            <p className="text-sm text-muted-foreground/70 leading-relaxed mb-5">
+              A powerful data table with column sorting, full-text search, faceted filters,
+              row selection, pagination, column visibility toggles, bulk actions, and custom cell renderers.
+            </p>
+            <div className="rounded-lg border border-border/30 bg-accent/20 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-6 flex-1 rounded bg-foreground/[0.03] border border-border/20 px-2 flex items-center">
+                  <div className="h-1 w-12 rounded-full bg-foreground/8" />
+                </div>
+                <div className="h-6 w-14 rounded bg-primary/10 flex items-center justify-center">
+                  <div className="h-1 w-8 rounded-full bg-primary/30" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                {[
+                  { cols: ['John Doe', 'john@...', 'Admin'], active: true },
+                  { cols: ['Jane Smith', 'jane@...', 'Editor'], active: false },
+                  { cols: ['Bob Wilson', 'bob@...', 'User'], active: false },
+                ].map((row) => (
+                  <div key={row.cols[0]} className="flex items-center gap-2 text-[10px] font-mono">
+                    <div className={`h-3 w-3 rounded border ${row.active ? 'bg-primary/20 border-primary/40' : 'border-border/30'}`} />
+                    <span className="w-20 text-foreground/25 truncate">{row.cols[0]}</span>
+                    <span className="w-16 text-foreground/15 truncate">{row.cols[1]}</span>
+                    <span className="px-1 rounded bg-foreground/5 text-foreground/20 text-[9px]">{row.cols[2]}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Form Builder */}
+          <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+            <div className="flex items-center gap-2.5 mb-2">
+              <ClipboardList className="h-4.5 w-4.5 text-primary/70" />
+              <h3 className="text-lg font-semibold">Form Builder</h3>
+            </div>
+            <p className="text-sm text-muted-foreground/70 leading-relaxed mb-5">
+              Define forms declaratively with 10+ field types: text, textarea, number, select, date, toggle,
+              checkbox, radio, richtext, and relationship fields. Multi-step wizards with per-step validation included.
+            </p>
+            <div className="rounded-lg border border-border/30 bg-accent/20 p-4 space-y-2.5">
+              <div className="space-y-1">
+                <div className="h-1.5 w-8 rounded-full bg-foreground/10" />
+                <div className="h-7 rounded-md bg-foreground/[0.03] border border-border/20 px-2 flex items-center">
+                  <div className="h-1.5 w-24 rounded-full bg-foreground/8" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="h-1.5 w-10 rounded-full bg-foreground/10" />
+                <div className="h-7 rounded-md bg-foreground/[0.03] border border-border/20 px-2 flex items-center justify-between">
+                  <div className="h-1.5 w-16 rounded-full bg-foreground/8" />
+                  <div className="h-2.5 w-2.5 border-l border-b border-foreground/15 rotate-[-45deg] -mt-1" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-7 rounded-full bg-primary/20 relative">
+                  <div className="absolute right-0.5 top-0.5 h-3 w-3 rounded-full bg-primary/50" />
+                </div>
+                <div className="h-1.5 w-14 rounded-full bg-foreground/10" />
+              </div>
+            </div>
+          </div>
+
+          {/* Security */}
+          <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+            <div className="flex items-center gap-2.5 mb-2">
+              <ShieldCheck className="h-4.5 w-4.5 text-primary/70" />
+              <h3 className="text-lg font-semibold">Security</h3>
+            </div>
+            <p className="text-sm text-muted-foreground/70 leading-relaxed mb-5">
+              Sentinel ships with every project &mdash; a built-in security layer with WAF,
+              rate limiting, brute-force protection, anomaly detection, IP geolocation, and a real-time threat dashboard.
+            </p>
+            <div className="rounded-lg border border-border/30 bg-accent/20 p-4 space-y-2">
+              {[
+                { label: 'WAF Protection', status: 'active', color: 'bg-emerald-500/20 text-emerald-400/60' },
+                { label: 'Rate Limiting', status: 'active', color: 'bg-emerald-500/20 text-emerald-400/60' },
+                { label: 'Brute-Force Guard', status: 'active', color: 'bg-emerald-500/20 text-emerald-400/60' },
+                { label: 'Threats Blocked', status: '1,247', color: 'bg-red-500/15 text-red-400/60' },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center justify-between text-xs">
+                  <span className="text-foreground/30 font-mono">{item.label}</span>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${item.color}`}>
+                    {item.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Performance Monitoring */}
+          <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+            <div className="flex items-center gap-2.5 mb-2">
+              <Gauge className="h-4.5 w-4.5 text-primary/70" />
+              <h3 className="text-lg font-semibold">Performance Monitoring</h3>
+            </div>
+            <p className="text-sm text-muted-foreground/70 leading-relaxed mb-5">
+              Pulse gives you self-hosted observability: request tracing, database query monitoring,
+              runtime metrics, error tracking, health checks, alerting, and Prometheus export.
+            </p>
+            <div className="rounded-lg border border-border/30 bg-accent/20 p-4 space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-foreground/30">Avg Response</span>
+                <span className="text-emerald-400/60">12ms</span>
+              </div>
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-foreground/30">Requests/sec</span>
+                <span className="text-blue-400/60">2,841</span>
+              </div>
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-foreground/30">Error Rate</span>
+                <span className="text-emerald-400/60">0.02%</span>
+              </div>
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-foreground/30">Memory</span>
+                <span className="text-foreground/25">48 MB</span>
+              </div>
+              {/* Mini chart */}
+              <div className="flex items-end gap-0.5 h-6 pt-1">
+                {[40, 55, 45, 60, 50, 70, 65, 80, 60, 75, 85, 70, 90, 75, 80].map((h, i) => (
+                  <div key={i} className="flex-1 bg-primary/15 rounded-t-sm" style={{ height: `${h}%` }} />
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* And much more */}
           <div className="rounded-xl border border-border/40 bg-card/50 p-6 flex flex-col items-center justify-center text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 border border-primary/15 mb-4">
@@ -485,8 +646,8 @@ export default function HomePage() {
             <h3 className="text-lg font-semibold mb-2">And much more</h3>
             <p className="text-sm text-muted-foreground/70 leading-relaxed max-w-sm">
               Redis caching with middleware, AI integration (Claude + OpenAI with streaming),
-              Sentinel security (WAF, rate limiting, threat monitoring), Pulse observability,
-              and full Docker setup &mdash; all built in.
+              multi-step form wizards, GORM Studio, Docker setup, dark/light themes,
+              and shared Zod schemas across frontend and backend &mdash; all built in.
             </p>
           </div>
         </div>
