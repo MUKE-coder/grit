@@ -306,7 +306,7 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 - [x] Dark theme (default) matching GORM Studio:
   - Background: `#0a0a0f`, `#111118`, `#1a1a24`
   - Accent: `#6c5ce7`
-  - Fonts: DM Sans + JetBrains Mono
+  - Fonts: Onest + JetBrains Mono
 - [x] Light theme option
 - [x] Theme toggle in sidebar
 - [x] CRM-inspired aesthetic:

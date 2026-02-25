@@ -159,7 +159,7 @@ project-root/
 ```
 
 **Fonts:**
-- UI: `DM Sans` (weights: 400, 500, 600, 700)
+- UI: `Onest` (weights: 400, 500, 600, 700)
 - Code: `JetBrains Mono` (weights: 400, 500, 600)
 
 **Design Feel:** Premium CRM / dark mode SaaS tool. Not generic Bootstrap. Not Material Design. Think Linear, Vercel Dashboard, or Raycast — dark, polished, fast.

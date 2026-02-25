@@ -291,7 +291,7 @@ export const docsMetadata: Record<string, DocPage> = {
   '/docs/design/theme': {
     title: 'Theme',
     description:
-      'Grit design system: dark mode default, color palette, typography (DM Sans + JetBrains Mono), and component styling with Tailwind CSS.',
+      'Grit design system: dark mode default, color palette, typography (Onest + JetBrains Mono), and component styling with Tailwind CSS.',
   },
 
   // Tutorials

@@ -255,7 +255,7 @@ export default function ThemePage() {
                     </thead>
                     <tbody className="text-muted-foreground">
                       <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-medium text-foreground/90">DM Sans</td>
+                        <td className="px-4 py-2.5 font-medium text-foreground/90">Onest</td>
                         <td className="px-4 py-2.5">UI elements: headings, body text, labels, buttons</td>
                         <td className="px-4 py-2.5 font-mono text-xs">400, 500, 600, 700</td>
                       </tr>
@@ -275,11 +275,11 @@ export default function ThemePage() {
                   Fonts are loaded via Google Fonts in the root layout. Next.js automatically optimizes
                   font loading with <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">next/font</code>:
                 </p>
-                <CodeBlock language="tsx" filename="apps/web/app/layout.tsx" code={`import { DM_Sans, JetBrains_Mono } from 'next/font/google'
+                <CodeBlock language="tsx" filename="apps/web/app/layout.tsx" code={`import { Onest, JetBrains_Mono } from 'next/font/google'
 
-const dmSans = DM_Sans({
+const onest = Onest({
   subsets: ['latin'],
-  variable: '--font-sans',
+  variable: '--font-onest',
   weight: ['400', '500', '600', '700'],
 })
 

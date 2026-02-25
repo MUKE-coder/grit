@@ -117,7 +117,7 @@ Build the Next.js app inside `apps/web/`:
 - Tailwind CSS configured
 - shadcn/ui initialized (install: button, input, card, label, toast, dropdown-menu, avatar, sheet, separator)
 - Dark theme as default using CSS variables from CLAUDE.md design system
-- DM Sans + JetBrains Mono fonts from Google Fonts
+- Onest + JetBrains Mono fonts from Google Fonts
 
 **API Client (`lib/api-client.ts`):**
 - Axios instance with base URL from env (NEXT_PUBLIC_API_URL)

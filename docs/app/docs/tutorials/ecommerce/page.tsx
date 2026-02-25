@@ -723,7 +723,7 @@ func HandleOrderConfirmation(mailer *mail.Mailer) asynq.HandlerFunc {
                 <CodeBlock language="markup" filename="apps/api/internal/mail/templates/order-confirmation.html" code={`<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
-<body style="font-family: 'DM Sans', sans-serif; background: #0a0a0f; color: #e8e8f0; padding: 40px;">
+<body style="font-family: 'Onest', sans-serif; background: #0a0a0f; color: #e8e8f0; padding: 40px;">
   <div style="max-width: 500px; margin: 0 auto; background: #111118; border-radius: 12px; padding: 32px; border: 1px solid #2a2a3a;">
     <h2 style="color: #00b894; margin-top: 0;">Order Confirmed</h2>
     <p>Hi {{.Name}},</p>

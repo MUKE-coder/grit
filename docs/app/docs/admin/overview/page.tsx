@@ -241,7 +241,7 @@ export default defineResource({
                 <li><strong>Beautiful empty states</strong> &mdash; when a resource has no data, you see a polished illustration with a call to action, not a blank page.</li>
                 <li><strong>Polished loading states</strong> &mdash; skeleton loaders match the exact layout of the content they replace.</li>
                 <li><strong>Subtle animations</strong> &mdash; hover effects, transitions, and micro-interactions make the interface feel alive.</li>
-                <li><strong>Typography hierarchy</strong> &mdash; DM Sans for UI text, JetBrains Mono for code and data, with carefully chosen font weights and sizes.</li>
+                <li><strong>Typography hierarchy</strong> &mdash; Onest for UI text, JetBrains Mono for code and data, with carefully chosen font weights and sizes.</li>
               </ul>
             </div>
 

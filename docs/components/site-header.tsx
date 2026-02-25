@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Github, Youtube, Linkedin, Globe, Sun, Moon } from 'lucide-react'
+import { Github, Youtube, Linkedin, Globe, Sun, Moon, Heart } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { SearchDialog } from '@/components/search-dialog'
@@ -37,12 +37,15 @@ export function SiteHeader() {
           {[
             { label: 'Docs', href: '/docs' },
             { label: 'Course', href: '/course' },
+            { label: 'GritCMS', href: 'https://gritcms.com', external: true },
+            { label: 'Hire Us', href: '/hire' },
             { label: 'Tutorials', href: '/docs/tutorials/blog' },
             { label: 'Playground', href: '/playground' },
           ].map((item) => (
             <Link
               key={item.label}
               href={item.href}
+              {...('external' in item ? { target: '_blank', rel: 'noreferrer' } : {})}
               className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-accent/50"
             >
               {item.label}
@@ -88,6 +91,12 @@ export function SiteHeader() {
             <Link href="https://github.com/MUKE-coder/grit" target="_blank" rel="noreferrer">
               <Github className="h-4 w-4" />
               <span className="sr-only">GitHub</span>
+            </Link>
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-pink-500/70 hover:text-pink-500" asChild>
+            <Link href="https://github.com/sponsors/MUKE-coder" target="_blank" rel="noreferrer">
+              <Heart className="h-4 w-4" />
+              <span className="sr-only">Sponsor</span>
             </Link>
           </Button>
 

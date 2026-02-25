@@ -672,7 +672,7 @@ docker compose up -d    # Start all services
 
 ### Fonts
 
-- **UI:** DM Sans (400, 500, 600, 700)
+- **UI:** Onest (400, 500, 600, 700)
 - **Code:** JetBrains Mono (400, 500, 600)
 
 ---

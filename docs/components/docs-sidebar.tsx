@@ -21,6 +21,7 @@ import {
   GraduationCap,
 } from 'lucide-react'
 import { useState } from 'react'
+import { SidebarBanners } from '@/components/sidebar-banners'
 
 interface NavItem {
   title: string
@@ -243,6 +244,7 @@ export function DocsSidebar() {
           <NavSection key={item.title} item={item} />
         ))}
       </nav>
+      <SidebarBanners />
     </aside>
   )
 }

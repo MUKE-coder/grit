@@ -608,7 +608,7 @@ Once Grit has adoption, open a marketplace for community-built plugins:
 | **npm Scope** | `@grit/` |
 | **Go Module** | `github.com/MUKE-coder/grit` |
 | **Color Palette** | Primary: `#6c5ce7` (purple), Dark: `#0a0a0f`, Success: `#00b894`, Danger: `#ff6b6b` |
-| **Fonts** | DM Sans (UI), JetBrains Mono (code) |
+| **Fonts** | Onest (UI), JetBrains Mono (code) |
 | **Theme** | Dark-first, premium, CRM-inspired |
 
 ---

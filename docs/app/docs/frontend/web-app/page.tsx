@@ -93,7 +93,7 @@ export default function WebAppPage() {
                 <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">Root Layout</h3>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   The root layout wraps the entire app with the Providers component, which sets up React Query
-                  and the theme. The DM Sans font is loaded via Google Fonts and JetBrains Mono is used
+                  and the theme. The Onest font is loaded via Google Fonts and JetBrains Mono is used
                   for code elements.
                 </p>
 
@@ -480,7 +480,7 @@ const config: Config = {
         danger: "var(--danger)",
       },
       fontFamily: {
-        sans: ["DM Sans", "system-ui", "sans-serif"],
+        sans: ["Onest", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
     },
