@@ -29,7 +29,7 @@ export function SidebarSponsorBanner() {
 /** Fixed right-side banners visible on wide screens */
 export function RightSideBanners() {
   return (
-    <aside className="fixed top-14 right-0 z-30 hidden 2xl:block w-64 h-[calc(100vh-3.5rem)] overflow-y-auto py-8 pr-6 pl-4">
+    <aside className="fixed top-14 right-0 z-30 hidden xl:block w-52 2xl:w-64 h-[calc(100vh-3.5rem)] overflow-y-auto py-8 pr-4 pl-3 2xl:pr-6 2xl:pl-4">
       <div className="space-y-3">
         {/* GritCMS Banner */}
         <Link
