@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Loader2, CheckCircle2, Mail } from 'lucide-react'
 
-const GOOGLE_SCRIPT_URL = process.env.NEXT_PUBLIC_WAITLIST_URL || ''
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwyfriICvROwcecMLoK61XIadB13FsYxf_AglVDX4jP79XKzpgj0sm2YIRJHgOmUeoS/exec'
 
 export function WaitlistForm() {
   const [name, setName] = useState('')
@@ -20,14 +20,16 @@ export function WaitlistForm() {
     setErrorMsg('')
 
     try {
+      const formData = new URLSearchParams()
+      formData.append('name', name.trim())
+      formData.append('email', email.trim())
+
       await fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), email: email.trim() }),
+        body: formData,
       })
 
-      // no-cors means we can't read the response, but the request goes through
       setStatus('success')
       setName('')
       setEmail('')
