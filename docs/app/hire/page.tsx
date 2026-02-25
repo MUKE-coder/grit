@@ -265,8 +265,8 @@ export default function HirePage() {
             <Link href="https://gritcms.com" target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">
               GritCMS
             </Link>
-            <Link href="https://github.com/sponsors/MUKE-coder" target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">
-              Sponsor
+            <Link href="/donate" className="hover:text-foreground transition-colors">
+              Support
             </Link>
           </div>
         </div>

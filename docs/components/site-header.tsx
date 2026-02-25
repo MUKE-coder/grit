@@ -94,9 +94,9 @@ export function SiteHeader() {
             </Link>
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-pink-500/70 hover:text-pink-500" asChild>
-            <Link href="https://github.com/sponsors/MUKE-coder" target="_blank" rel="noreferrer">
+            <Link href="/donate">
               <Heart className="h-4 w-4" />
-              <span className="sr-only">Sponsor</span>
+              <span className="sr-only">Support Grit</span>
             </Link>
           </Button>
 

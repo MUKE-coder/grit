@@ -473,117 +473,120 @@ export function Sidebar({ user, collapsed, onToggle, mobileOpen, onMobileClose }
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-        {navItems.map((item) => {
-          const Icon = getIcon(item.icon);
-          const isActive = item.href === "/dashboard"
-            ? pathname === "/dashboard"
-            : pathname.startsWith(item.href);
+      {/* Scrollable content: nav + bottom controls flow together */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Navigation */}
+        <nav className="p-3 space-y-1">
+          {navItems.map((item) => {
+            const Icon = getIcon(item.icon);
+            const isActive = item.href === "/dashboard"
+              ? pathname === "/dashboard"
+              : pathname.startsWith(item.href);
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onMobileClose}
-              title={collapsed ? item.label : undefined}
-              className={` + "`" + `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-accent/10 text-accent"
-                  : "text-text-secondary hover:bg-bg-hover hover:text-foreground"
-              } ${collapsed ? "justify-center" : ""}` + "`" + `}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
-          );
-        })}
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onMobileClose}
+                title={collapsed ? item.label : undefined}
+                className={` + "`" + `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-accent/10 text-accent"
+                    : "text-text-secondary hover:bg-bg-hover hover:text-foreground"
+                } ${collapsed ? "justify-center" : ""}` + "`" + `}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {!collapsed && <span>{item.label}</span>}
+              </Link>
+            );
+          })}
 
-        {/* Profile link */}
-        {(() => {
-          const ProfileIcon = getIcon(profileItem.icon);
-          const isProfileActive = pathname === profileItem.href;
-          return (
-            <Link
-              href={profileItem.href}
-              onClick={onMobileClose}
-              title={collapsed ? profileItem.label : undefined}
-              className={` + "`" + `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                isProfileActive
-                  ? "bg-accent/10 text-accent"
-                  : "text-text-secondary hover:bg-bg-hover hover:text-foreground"
-              } ${collapsed ? "justify-center" : ""}` + "`" + `}
-            >
-              <ProfileIcon className="h-4 w-4 shrink-0" />
-              {!collapsed && <span>{profileItem.label}</span>}
-            </Link>
-          );
-        })()}
+          {/* Profile link */}
+          {(() => {
+            const ProfileIcon = getIcon(profileItem.icon);
+            const isProfileActive = pathname === profileItem.href;
+            return (
+              <Link
+                href={profileItem.href}
+                onClick={onMobileClose}
+                title={collapsed ? profileItem.label : undefined}
+                className={` + "`" + `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  isProfileActive
+                    ? "bg-accent/10 text-accent"
+                    : "text-text-secondary hover:bg-bg-hover hover:text-foreground"
+                } ${collapsed ? "justify-center" : ""}` + "`" + `}
+              >
+                <ProfileIcon className="h-4 w-4 shrink-0" />
+                {!collapsed && <span>{profileItem.label}</span>}
+              </Link>
+            );
+          })()}
 
-        {/* System section */}
-        {isAdmin && (
-          <>
-            {!collapsed && (
-              <p className="px-3 mt-6 mb-2 text-xs font-semibold text-text-muted uppercase tracking-wider">
-                System
-              </p>
+          {/* System section */}
+          {isAdmin && (
+            <>
+              {!collapsed && (
+                <p className="px-3 mt-6 mb-2 text-xs font-semibold text-text-muted uppercase tracking-wider">
+                  System
+                </p>
+              )}
+              {collapsed && <div className="my-3 mx-3 border-t border-border" />}
+              {systemItems.map((item) => {
+                const Icon = getIcon(item.icon);
+                const isActive = pathname.startsWith(item.href);
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onMobileClose}
+                    title={collapsed ? item.label : undefined}
+                    className={` + "`" + `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-accent/10 text-accent"
+                        : "text-text-secondary hover:bg-bg-hover hover:text-foreground"
+                    } ${collapsed ? "justify-center" : ""}` + "`" + `}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    {!collapsed && <span>{item.label}</span>}
+                  </Link>
+                );
+              })}
+            </>
+          )}
+        </nav>
+
+        {/* Bottom section - flows right after nav items */}
+        <div className="border-t border-border p-3 space-y-2">
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            className={` + "`" + `flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors ${collapsed ? "justify-center" : ""}` + "`" + `}
+            title={collapsed ? (theme === "dark" ? "Light mode" : "Dark mode") : undefined}
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4 shrink-0" />
+            ) : (
+              <Moon className="h-4 w-4 shrink-0" />
             )}
-            {collapsed && <div className="my-3 mx-3 border-t border-border" />}
-            {systemItems.map((item) => {
-              const Icon = getIcon(item.icon);
-              const isActive = pathname.startsWith(item.href);
+            {!collapsed && <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
+          </button>
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onMobileClose}
-                  title={collapsed ? item.label : undefined}
-                  className={` + "`" + `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-accent/10 text-accent"
-                      : "text-text-secondary hover:bg-bg-hover hover:text-foreground"
-                  } ${collapsed ? "justify-center" : ""}` + "`" + `}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span>{item.label}</span>}
-                </Link>
-              );
-            })}
-          </>
-        )}
-      </nav>
+          {/* Collapse toggle (desktop only) */}
+          <button
+            onClick={onToggle}
+            className="hidden lg:flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors justify-center"
+          >
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </button>
 
-      {/* Bottom section */}
-      <div className="border-t border-border p-3 space-y-2">
-        {/* Theme toggle */}
-        <button
-          onClick={toggleTheme}
-          className={` + "`" + `flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors ${collapsed ? "justify-center" : ""}` + "`" + `}
-          title={collapsed ? (theme === "dark" ? "Light mode" : "Dark mode") : undefined}
-        >
-          {theme === "dark" ? (
-            <Sun className="h-4 w-4 shrink-0" />
-          ) : (
-            <Moon className="h-4 w-4 shrink-0" />
-          )}
-          {!collapsed && <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
-        </button>
-
-        {/* Collapse toggle (desktop only) */}
-        <button
-          onClick={onToggle}
-          className="hidden lg:flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors justify-center"
-        >
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
-        </button>
-
-        {/* User avatar menu */}
-        <UserMenu user={user} collapsed={collapsed} fullName={fullName} />
+          {/* User avatar menu */}
+          <UserMenu user={user} collapsed={collapsed} fullName={fullName} />
+        </div>
       </div>
     </>
   );

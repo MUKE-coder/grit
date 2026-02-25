@@ -57,7 +57,7 @@ export default function ChangelogPage() {
                     <strong>Monetization banners</strong> &mdash; Docs sidebar now shows promotional cards for{' '}
                     <a href="https://gritcms.com" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">GritCMS</a>,
                     developer hiring services, and{' '}
-                    <a href="https://github.com/sponsors/MUKE-coder" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a>{' '}
+                    <Link href="/donate" className="text-primary hover:underline">donations</Link>{' '}
                     &mdash; visible on every documentation page.
                   </li>
                   <li>

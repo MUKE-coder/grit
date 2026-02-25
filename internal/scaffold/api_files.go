@@ -128,7 +128,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gorilla/sessions"
 	"github.com/markbates/goth"
+	"github.com/markbates/goth/gothic"
 	gothGithub "github.com/markbates/goth/providers/github"
 	"github.com/markbates/goth/providers/google"
 
@@ -211,7 +213,7 @@ func main() {
 	}
 
 	// OAuth2 social login providers
-	os.Setenv("SESSION_SECRET", cfg.JWTSecret)
+	gothic.Store = sessions.NewCookieStore([]byte(cfg.JWTSecret))
 	var oauthProviders []goth.Provider
 	if cfg.GoogleClientID != "" {
 		oauthProviders = append(oauthProviders, google.New(
