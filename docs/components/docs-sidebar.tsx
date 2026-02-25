@@ -52,6 +52,7 @@ const navItems: NavItem[] = [
       { title: 'Project Structure', href: '/docs/getting-started/project-structure' },
       { title: 'Configuration', href: '/docs/getting-started/configuration' },
       { title: 'Troubleshooting', href: '/docs/getting-started/troubleshooting' },
+      { title: 'CLI Cheatsheet', href: '/docs/getting-started/cli-cheatsheet' },
     ],
   },
   {

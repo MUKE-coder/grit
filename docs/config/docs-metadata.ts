@@ -47,6 +47,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Common issues and solutions when working with Grit projects, including Docker, database, and build errors.',
   },
+  '/docs/getting-started/cli-cheatsheet': {
+    title: 'CLI Cheatsheet',
+    description:
+      'Complete Grit CLI reference: every command, flag, and field type. Quick-copy recipes for scaffolding, code generation, migrations, seeding, and more.',
+  },
 
   // Prerequisites
   '/docs/prerequisites/golang': {
