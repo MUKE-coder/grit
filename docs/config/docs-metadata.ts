@@ -103,6 +103,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Implement JWT authentication in Grit: login, register, token refresh, password hashing with bcrypt, and protected routes.',
   },
+  '/docs/backend/oauth': {
+    title: 'Social Login (OAuth2)',
+    description:
+      'Set up Google and GitHub OAuth2 social login in Grit: provider configuration, callback URLs, account linking, and production deployment.',
+  },
   '/docs/backend/handlers': {
     title: 'Handlers',
     description:

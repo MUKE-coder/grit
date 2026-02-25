@@ -75,6 +75,7 @@ const navItems: NavItem[] = [
       { title: 'Services', href: '/docs/backend/services' },
       { title: 'Middleware', href: '/docs/backend/middleware' },
       { title: 'Authentication', href: '/docs/backend/authentication' },
+      { title: 'Social Login (OAuth2)', href: '/docs/backend/oauth' },
       { title: 'API Response Format', href: '/docs/backend/response-format' },
       { title: 'Migrations', href: '/docs/backend/migrations' },
       { title: 'Seeders', href: '/docs/backend/seeders' },
