@@ -50,7 +50,7 @@ export default function HirePage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button size="lg" className="glow-purple-sm" asChild>
-                <Link href="mailto:mukecoder@gmail.com">
+                <Link href="mailto:desishub.info@gmail.com">
                   <Mail className="mr-2 h-4 w-4" />
                   Get in Touch
                 </Link>
@@ -223,9 +223,9 @@ export default function HirePage() {
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Button size="lg" className="glow-purple-sm" asChild>
-                  <Link href="mailto:mukecoder@gmail.com">
+                  <Link href="mailto:desishub.info@gmail.com">
                     <Mail className="mr-2 h-4 w-4" />
-                    mukecoder@gmail.com
+                    desishub.info@gmail.com
                   </Link>
                 </Button>
               </div>
