@@ -1,7 +1,13 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { ExternalLink, Heart, Users } from 'lucide-react'
+
+/** Pages that have their own right sidebar (e.g. TableOfContents) */
+const PAGES_WITH_RIGHT_SIDEBAR = [
+  '/docs/prerequisites/golang',
+]
 
 /** Compact sponsor link for the left sidebar bottom */
 export function SidebarSponsorBanner() {
@@ -28,6 +34,10 @@ export function SidebarSponsorBanner() {
 
 /** Fixed right-side banners visible on wide screens */
 export function RightSideBanners() {
+  const pathname = usePathname()
+
+  if (PAGES_WITH_RIGHT_SIDEBAR.includes(pathname)) return null
+
   return (
     <aside className="fixed top-14 right-0 z-30 hidden xl:block w-52 2xl:w-64 h-[calc(100vh-3.5rem)] overflow-y-auto py-8 pr-4 pl-3 2xl:pr-6 2xl:pl-4">
       <div className="space-y-3">
