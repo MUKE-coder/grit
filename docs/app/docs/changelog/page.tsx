@@ -28,10 +28,95 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v1.0.0 */}
+            {/* v1.1.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v1.1.0
+                </span>
+                <span className="text-sm text-muted-foreground">February 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>Default font changed to Onest</strong> &mdash; New projects scaffolded with{' '}
+                    <code>grit new</code> now use the{' '}
+                    <a href="https://fonts.google.com/specimen/Onest" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Onest</a>{' '}
+                    Google Font for all UI text instead of DM Sans. JetBrains Mono remains the code font.
+                    The font is loaded via <code>next/font/google</code> with weights 400, 500, 600, and 700.
+                  </li>
+                  <li>
+                    <strong>Hire Us page</strong> &mdash; New{' '}
+                    <Link href="/hire" className="text-primary hover:underline">/hire</Link>{' '}
+                    page for professional Grit development services. Includes service offerings,
+                    tech stack overview, and contact CTA.
+                  </li>
+                  <li>
+                    <strong>Monetization banners</strong> &mdash; Docs sidebar now shows promotional cards for{' '}
+                    <a href="https://gritcms.com" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">GritCMS</a>,
+                    developer hiring services, and{' '}
+                    <a href="https://github.com/sponsors/MUKE-coder" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a>{' '}
+                    &mdash; visible on every documentation page.
+                  </li>
+                  <li>
+                    <strong>Grit Fullstack Course page</strong> &mdash; New{' '}
+                    <Link href="/course" className="text-primary hover:underline">/course</Link>{' '}
+                    page with a 10-module curriculum covering Go, React, Next.js, and the full Grit stack.
+                  </li>
+                </ul>
+
+                <h3>Improvements</h3>
+                <ul>
+                  <li>
+                    Top navigation now includes GritCMS, Hire Us, and a Sponsor heart icon for quick access
+                    to all revenue channels.
+                  </li>
+                  <li>
+                    <code>richtext</code> added to the FieldType union for better type safety in the code generator.
+                  </li>
+                </ul>
+
+                <h3>Bug Fixes</h3>
+                <ul>
+                  <li>
+                    <strong>OAuth callback fix</strong> &mdash; Fixed <code>TokenPair</code> struct field access
+                    in the social login callback handler (was using map indexing instead of struct fields).
+                  </li>
+                  <li>
+                    <strong>Course waitlist fix</strong> &mdash; Fixed Google Sheets submission to use
+                    form-encoded data instead of JSON.
+                  </li>
+                </ul>
+
+                <h3>Documentation</h3>
+                <ul>
+                  <li>
+                    New{' '}
+                    <Link href="/docs/getting-started/cli-cheatsheet" className="text-primary hover:underline">CLI Cheatsheet</Link>{' '}
+                    page &mdash; complete reference for all Grit CLI commands with flags, field types,
+                    generated files, common workflows, and full command tree.
+                  </li>
+                  <li>
+                    New{' '}
+                    <Link href="/docs/backend/oauth" className="text-primary hover:underline">Social Login (OAuth2)</Link>{' '}
+                    setup guide for Google and GitHub authentication.
+                  </li>
+                  <li>
+                    Updated Docker Cheat Sheet with force remove commands for containers and volumes.
+                  </li>
+                  <li>
+                    Updated AI skill guide with social login (OAuth2) section.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v1.0.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v1.0.0
                 </span>
                 <span className="text-sm text-muted-foreground">February 24, 2026</span>
