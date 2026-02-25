@@ -489,6 +489,14 @@ export default function DockerCheatSheetPage() {
                       cmd: "docker volume rm <volume-name>",
                       desc: "Remove a specific volume by name",
                     },
+                    {
+                      cmd: "docker rm -f $(docker ps -aq)",
+                      desc: "Force remove ALL containers (running and stopped)",
+                    },
+                    {
+                      cmd: "docker volume rm -f $(docker volume ls -q)",
+                      desc: "Force remove ALL volumes (DELETES ALL DATA)",
+                    },
                   ].map((item) => (
                     <div
                       key={item.cmd}
