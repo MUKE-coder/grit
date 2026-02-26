@@ -2,7 +2,7 @@ package scaffold
 
 func adminUseSystem() string {
 	return `import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, uploadFile } from "@/lib/api-client";
 
 // ── Jobs ────────────────────────────────────────────────────────
 
@@ -113,12 +113,8 @@ export function useUploadFile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append("file", file);
-      const { data } = await apiClient.post("/api/uploads", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      return data.data as Upload;
+      const result = await uploadFile(file);
+      return result.data as Upload;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "uploads"] });

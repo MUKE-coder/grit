@@ -53,6 +53,7 @@ const navItems: NavItem[] = [
       { title: 'Project Structure', href: '/docs/getting-started/project-structure' },
       { title: 'Configuration', href: '/docs/getting-started/configuration' },
       { title: 'Troubleshooting', href: '/docs/getting-started/troubleshooting' },
+      { title: 'Create without Docker', href: '/docs/getting-started/create-without-docker' },
       { title: 'CLI Cheatsheet', href: '/docs/getting-started/cli-cheatsheet' },
     ],
   },

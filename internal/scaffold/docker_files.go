@@ -108,19 +108,23 @@ func dockerComposeProd(opts Options) string {
       dockerfile: Dockerfile
     container_name: %s-api
     restart: unless-stopped
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
+    env_file:
+      - .env
     environment:
       APP_ENV: production
-      DATABASE_URL: postgres://grit:grit@postgres:5432/%s?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER:-grit}:${POSTGRES_PASSWORD}@postgres:5432/%s?sslmode=disable
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET}
+      MINIO_ENDPOINT: http://minio:9000
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-`, name, name)
+    networks:
+      - %s
+`, name, name, name)
 
 	if opts.ShouldIncludeWeb() {
 		result += fmt.Sprintf(`
@@ -128,13 +132,15 @@ func dockerComposeProd(opts Options) string {
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost:8080}
     container_name: %s-web
     restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      NEXT_PUBLIC_API_URL: http://api:8080
-`, name)
+    expose:
+      - "3000"
+    networks:
+      - %s
+`, name, name)
 	}
 
 	if opts.ShouldIncludeAdmin() {
@@ -143,13 +149,15 @@ func dockerComposeProd(opts Options) string {
     build:
       context: .
       dockerfile: apps/admin/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost:8080}
     container_name: %s-admin
     restart: unless-stopped
-    ports:
-      - "3001:3000"
-    environment:
-      NEXT_PUBLIC_API_URL: http://api:8080
-`, name)
+    expose:
+      - "3000"
+    networks:
+      - %s
+`, name, name)
 	}
 
 	if opts.ShouldIncludeDocs() {
@@ -160,9 +168,11 @@ func dockerComposeProd(opts Options) string {
       dockerfile: apps/docs/Dockerfile
     container_name: %s-docs
     restart: unless-stopped
-    ports:
-      - "3002:3002"
-`, name)
+    expose:
+      - "3002"
+    networks:
+      - %s
+`, name, name)
 	}
 
 	result += fmt.Sprintf(`
@@ -170,17 +180,21 @@ func dockerComposeProd(opts Options) string {
     image: postgres:16-alpine
     container_name: %s-postgres
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: grit
-      POSTGRES_PASSWORD: grit
+      POSTGRES_USER: ${POSTGRES_USER:-grit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: %s
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U grit"]
+      test: ["CMD-SHELL", "pg_isready -U grit -d %s"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - %s
 
   redis:
     image: redis:7-alpine
@@ -193,18 +207,40 @@ func dockerComposeProd(opts Options) string {
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - %s
+
+  minio:
+    image: minio/minio
+    container_name: %s-minio
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - minio-data:/data
+    networks:
+      - %s
+    command: server /data --console-address ":9001"
+
+networks:
+  %s:
+    driver: bridge
 
 volumes:
   postgres-data:
   redis-data:
-`, name, name, name)
+  minio-data:
+`, name, name, name, name, name, name, name, name, name)
 
 	return result
 }
 
 func dockerfileAPI() string {
 	return `# Build stage
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
@@ -257,6 +293,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/%s/node_modules ./apps/%s/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
+
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 RUN pnpm --filter %s build
 

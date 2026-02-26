@@ -28,10 +28,69 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v1.1.0 */}
+            {/* v1.3.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v1.3.0
+                </span>
+                <span className="text-sm text-muted-foreground">February 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>Presigned URL uploads</strong> &mdash; File uploads now bypass the API server entirely.
+                    The browser gets a presigned PUT URL, uploads directly to S3/R2/MinIO, then records the upload
+                    in the database. This fixes file uploads breaking behind reverse proxies (Dokploy/Traefik/Nginx)
+                    due to request body size limits and timeouts. Includes progress tracking via XHR.
+                  </li>
+                  <li>
+                    <strong>Error pages for scaffolded apps</strong> &mdash; New <code>grit new</code> projects now include{' '}
+                    <code>error.tsx</code>, <code>not-found.tsx</code>, and <code>global-error.tsx</code> for both
+                    admin and web apps. Errors are displayed with styled UI instead of the default Next.js error page.
+                  </li>
+                  <li>
+                    <strong>Production-ready Docker config</strong> &mdash; <code>docker-compose.prod.yml</code> now uses{' '}
+                    <code>expose</code> instead of <code>ports</code>, <code>env_file</code> for secrets, MinIO service,
+                    named bridge network, build args for <code>NEXT_PUBLIC_API_URL</code>, and Go 1.24.
+                  </li>
+                  <li>
+                    <strong>Sentinel ExcludePaths</strong> &mdash; Pulse, GORM Studio, Sentinel, and API docs paths are
+                    now excluded from rate limiting by default, fixing Pulse health checks triggering rate limits.
+                  </li>
+                </ul>
+
+                <h3>Documentation</h3>
+                <ul>
+                  <li>
+                    New{' '}
+                    <Link href="/docs/getting-started/create-without-docker" className="text-primary hover:underline">Create without Docker</Link>{' '}
+                    guide &mdash; set up a Grit project using Neon, Upstash, Cloudflare R2, and Resend instead of Docker.
+                  </li>
+                </ul>
+
+                <h3>Infrastructure</h3>
+                <ul>
+                  <li>
+                    Scaffold Dockerfile updated from Go 1.23 to Go 1.24
+                  </li>
+                  <li>
+                    Next.js Dockerfile now accepts <code>NEXT_PUBLIC_API_URL</code> as a build argument
+                  </li>
+                  <li>
+                    <code>.env</code> template includes Docker Compose production variables (<code>POSTGRES_USER</code>,{' '}
+                    <code>POSTGRES_PASSWORD</code>, <code>POSTGRES_DB</code>, <code>API_URL</code>)
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v1.1.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v1.1.0
                 </span>
                 <span className="text-sm text-muted-foreground">February 25, 2026</span>

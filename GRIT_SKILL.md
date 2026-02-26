@@ -118,6 +118,9 @@ myapp/
 │   ├── web/                      # Next.js main frontend
 │   │   ├── app/
 │   │   │   ├── layout.tsx             # Root layout + providers
+│   │   │   ├── error.tsx              # Error boundary (client component)
+│   │   │   ├── not-found.tsx          # Custom 404 page
+│   │   │   ├── global-error.tsx       # Root error boundary (replaces entire HTML)
 │   │   │   ├── (auth)/               # Auth pages (login, register, forgot-password, callback)
 │   │   │   └── (dashboard)/          # Protected pages with sidebar
 │   │   ├── components/ui/            # shadcn/ui components
@@ -130,6 +133,9 @@ myapp/
 │       ├── app/
 │       │   ├── layout.tsx             # Admin shell (sidebar + navbar)
 │       │   ├── page.tsx               # Dashboard with widgets
+│       │   ├── error.tsx              # Error boundary (client component)
+│       │   ├── not-found.tsx          # Custom 404 page
+│       │   ├── global-error.tsx       # Root error boundary (replaces entire HTML)
 │       │   ├── resources/             # Resource pages (auto-generated)
 │       │   │   └── users/page.tsx
 │       │   └── system/               # System management pages
@@ -899,6 +905,7 @@ Grit ships with [Sentinel](https://github.com/MUKE-coder/sentinel), a production
 - **IP Geolocation** — Country-level blocking
 - **Security Headers** — HSTS, CSP, X-Frame-Options
 - **Dashboard** — Real-time threat monitoring at `/sentinel/ui`
+- **ExcludePaths** — `/pulse/*`, `/studio/*`, `/sentinel/*`, `/docs/*` are excluded from rate limiting by default
 
 Enabled by default. Disable with `SENTINEL_ENABLED=false`.
 
@@ -985,6 +992,8 @@ PULSE_PASSWORD=pulse
 
 ## Docker Services
 
+### Development
+
 ```bash
 docker compose up -d    # Start all services
 ```
@@ -995,6 +1004,20 @@ docker compose up -d    # Start all services
 | Redis | 6379 | Cache + job queue |
 | MinIO | 9000/9001 | Local S3 storage |
 | Mailhog | 1025/8025 | Email testing |
+
+### Production (`docker-compose.prod.yml`)
+
+The production compose file uses `expose` instead of `ports` (services communicate via Docker network, not host ports), `env_file` for secrets, a named bridge network, and includes a MinIO service. Next.js Dockerfiles accept `NEXT_PUBLIC_API_URL` as a build arg.
+
+### Deploy without Docker
+
+You can also run Grit without Docker by using cloud services:
+- **Database:** Neon (PostgreSQL) — `neon.tech`
+- **Redis:** Upstash — `upstash.com`
+- **Storage:** Cloudflare R2 or Backblaze B2
+- **Email:** Resend — `resend.com`
+
+Copy `.env.cloud.example` to `.env` and fill in your cloud credentials.
 
 ---
 

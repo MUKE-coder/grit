@@ -17,6 +17,9 @@ func writeWebFiles(root string, opts Options) error {
 		filepath.Join(webRoot, "app", "globals.css"):                  webGlobalCSS(),
 		filepath.Join(webRoot, "app", "layout.tsx"):                   webRootLayout(opts),
 		filepath.Join(webRoot, "app", "page.tsx"):                     webLandingPage(opts),
+		filepath.Join(webRoot, "app", "error.tsx"):                    webErrorPage(),
+		filepath.Join(webRoot, "app", "not-found.tsx"):                webNotFoundPage(),
+		filepath.Join(webRoot, "app", "global-error.tsx"):             webGlobalErrorPage(),
 		filepath.Join(webRoot, "lib", "utils.ts"):                     webUtils(),
 		filepath.Join(webRoot, "components", "navbar.tsx"):            webNavbar(opts),
 		filepath.Join(webRoot, "components", "footer.tsx"):            webFooter(opts),
@@ -1119,6 +1122,127 @@ export default function BlogDetailPage() {
         </Link>
       </div>
     </article>
+  );
+}
+`
+}
+
+func webErrorPage() string {
+	return `"use client";
+
+import { useEffect } from "react";
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center px-4">
+      <div className="w-full max-w-md text-center">
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 border border-red-500/20">
+          <svg className="h-8 w-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h2 className="mb-2 text-2xl font-bold text-foreground">Something went wrong</h2>
+        <p className="mb-6 text-muted-foreground">
+          An unexpected error occurred. You can try again or go back.
+        </p>
+        {error.digest && (
+          <p className="mb-4 text-xs text-muted-foreground/60 font-mono">Error ID: {error.digest}</p>
+        )}
+        <div className="flex gap-3 justify-center">
+          <button
+            onClick={() => window.history.back()}
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-accent/50 transition-colors"
+          >
+            Go Back
+          </button>
+          <button
+            onClick={reset}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+`
+}
+
+func webNotFoundPage() string {
+	return `import Link from "next/link";
+
+export default function NotFound() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center px-4">
+      <div className="w-full max-w-md text-center">
+        <p className="mb-4 text-7xl font-bold text-primary">404</p>
+        <h2 className="mb-2 text-2xl font-bold text-foreground">Page not found</h2>
+        <p className="mb-8 text-muted-foreground">
+          The page you&apos;re looking for doesn&apos;t exist or has been moved.
+        </p>
+        <div className="flex gap-3 justify-center">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            Home
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+`
+}
+
+func webGlobalErrorPage() string {
+	return `"use client";
+
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <html lang="en" className="dark">
+      <body style={{ minHeight: "100vh", backgroundColor: "#0a0a0f", fontFamily: "system-ui, sans-serif", margin: 0 }}>
+        <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
+          <div style={{ maxWidth: "28rem", textAlign: "center" }}>
+            <div style={{ margin: "0 auto 1.5rem", display: "flex", height: "4rem", width: "4rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px", backgroundColor: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
+              <svg style={{ height: "2rem", width: "2rem", color: "#f87171" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 style={{ marginBottom: "0.5rem", fontSize: "1.5rem", fontWeight: 700, color: "#e8e8f0" }}>Application Error</h2>
+            <p style={{ marginBottom: "1.5rem", color: "#9090a8" }}>
+              A critical error occurred. Please try refreshing the page.
+            </p>
+            {error.digest && (
+              <p style={{ marginBottom: "1rem", fontSize: "0.75rem", color: "#606078", fontFamily: "monospace" }}>Error ID: {error.digest}</p>
+            )}
+            <button
+              onClick={reset}
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.5rem", backgroundColor: "#6c5ce7", padding: "0.625rem 1.25rem", fontSize: "0.875rem", fontWeight: 500, color: "white", border: "none", cursor: "pointer" }}
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </body>
+    </html>
   );
 }
 `

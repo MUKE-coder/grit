@@ -12,7 +12,7 @@ import { useMe } from "@/hooks/use-auth";
 import { useUpdateProfile, useChangePassword } from "@/hooks/use-profile";
 import { User, Briefcase, Lock, Trash2, Save, Loader2, Upload } from "@/lib/icons";
 import { DeleteAccountDialog } from "@/components/profile/delete-account-dialog";
-import { apiClient } from "@/lib/api-client";
+import { uploadFile } from "@/lib/api-client";
 
 const PersonalInfoSchema = z.object({
   first_name: z.string().min(2, "First name must be at least 2 characters"),
@@ -56,10 +56,8 @@ export default function ProfilePage() {
     if (!file) return;
     setAvatarUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const { data } = await apiClient.post("/api/uploads", formData);
-      const url = data.data?.url || data.url;
+      const result = await uploadFile(file);
+      const url = (result.data as Record<string, unknown>)?.url as string;
       if (url) {
         updateProfile.mutate({ avatar: url });
       }

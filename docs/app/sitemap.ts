@@ -18,6 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/docs/getting-started/philosophy', priority: 0.5, changeFrequency: 'yearly' as const },
     { path: '/docs/getting-started/project-structure', priority: 0.7, changeFrequency: 'monthly' as const },
     { path: '/docs/getting-started/troubleshooting', priority: 0.6, changeFrequency: 'monthly' as const },
+    { path: '/docs/getting-started/create-without-docker', priority: 0.7, changeFrequency: 'monthly' as const },
 
     // Prerequisites
     { path: '/docs/prerequisites/golang', priority: 0.8, changeFrequency: 'monthly' as const },

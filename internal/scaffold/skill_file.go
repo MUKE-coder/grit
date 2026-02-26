@@ -126,6 +126,9 @@ After running %[1]s new %[2]s%[1]s, you get:
 │   ├── web/                      # SaaS landing page (Next.js)
 │   │   ├── app/
 │   │   │   ├── layout.tsx             # Root layout
+│   │   │   ├── error.tsx              # Error boundary (client component)
+│   │   │   ├── not-found.tsx          # Custom 404 page
+│   │   │   ├── global-error.tsx       # Root error boundary (replaces entire HTML)
 │   │   │   └── page.tsx               # Landing page with hero, features, CTA
 │   │   └── lib/
 │   │       └── utils.ts               # Utility functions
@@ -134,6 +137,9 @@ After running %[1]s new %[2]s%[1]s, you get:
 │       ├── app/
 │       │   ├── layout.tsx             # Root layout (Providers, no sidebar)
 │       │   ├── page.tsx               # Redirect to /dashboard or /login
+│       │   ├── error.tsx              # Error boundary (client component)
+│       │   ├── not-found.tsx          # Custom 404 page
+│       │   ├── global-error.tsx       # Root error boundary (replaces entire HTML)
 │       │   ├── (auth)/               # Auth pages (no sidebar)
 │       │   │   ├── login/page.tsx
 │       │   │   ├── sign-up/page.tsx
@@ -577,6 +583,7 @@ Built-in security suite powered by [Sentinel](https://github.com/MUKE-coder/sent
 - **Brute-Force Protection** — Account lockout after failed logins
 - **Anomaly Detection** — Unusual traffic pattern alerts
 - **Dashboard** — Real-time threat monitoring at %[1]s/sentinel/ui%[1]s
+- **ExcludePaths** — %[1]s/pulse/*%[1]s, %[1]s/studio/*%[1]s, %[1]s/sentinel/*%[1]s, %[1]s/docs/*%[1]s are excluded from rate limiting by default
 
 Enabled by default. Disable with %[1]sSENTINEL_ENABLED=false%[1]s.
 
@@ -632,6 +639,8 @@ PULSE_PASSWORD=pulse
 
 ## Docker Services
 
+### Development
+
 %[1]sash
 docker compose up -d    # Start all services
 %[1]s
@@ -642,6 +651,20 @@ docker compose up -d    # Start all services
 | Redis | 6379 | Cache + job queue |
 | MinIO | 9000/9001 | Local S3 storage |
 | Mailhog | 1025/8025 | Email testing |
+
+### Production (%[1]sdocker-compose.prod.yml%[1]s)
+
+The production compose file uses %[1]sexpose%[1]s instead of %[1]sports%[1]s (services communicate via Docker network, not host ports), %[1]senv_file%[1]s for secrets, a named bridge network, and includes a MinIO service. Next.js Dockerfiles accept %[1]sNEXT_PUBLIC_API_URL%[1]s as a build arg.
+
+### Deploy without Docker
+
+You can run Grit without Docker by using cloud services:
+- **Database:** Neon (PostgreSQL) — %[1]sneon.tech%[1]s
+- **Redis:** Upstash — %[1]supstash.com%[1]s
+- **Storage:** Cloudflare R2 or Backblaze B2
+- **Email:** Resend — %[1]sresend.com%[1]s
+
+Copy %[1]s.env.cloud.example%[1]s to %[1]s.env%[1]s and fill in your cloud credentials.
 
 ---
 

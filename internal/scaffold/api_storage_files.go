@@ -185,6 +185,20 @@ func (s *Storage) GetSignedURL(ctx context.Context, key string, duration time.Du
 	}
 	return result.URL, nil
 }
+
+// PresignPutURL generates a pre-signed PUT URL for direct browser upload.
+func (s *Storage) PresignPutURL(ctx context.Context, key, contentType string) (string, error) {
+	presigner := s3.NewPresignClient(s.client)
+	result, err := presigner.PresignPutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(s.bucket),
+		Key:         aws.String(key),
+		ContentType: aws.String(contentType),
+	}, s3.WithPresignExpires(1*time.Hour))
+	if err != nil {
+		return "", fmt.Errorf("generating presigned PUT URL for %q: %w", key, err)
+	}
+	return result.URL, nil
+}
 `
 }
 
@@ -517,6 +531,107 @@ func (h *UploadHandler) Delete(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Upload deleted successfully",
+	})
+}
+
+// Presign generates a presigned PUT URL for direct browser-to-storage upload.
+func (h *UploadHandler) Presign(c *gin.Context) {
+	if h.Storage == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": gin.H{"code": "STORAGE_UNAVAILABLE", "message": "File storage is not configured"},
+		})
+		return
+	}
+
+	var req struct {
+		Filename    string ` + "`" + `json:"filename" binding:"required"` + "`" + `
+		ContentType string ` + "`" + `json:"content_type" binding:"required"` + "`" + `
+		FileSize    int64  ` + "`" + `json:"file_size" binding:"required"` + "`" + `
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
+		})
+		return
+	}
+
+	if !AllowedMimeTypes[req.ContentType] {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "File type not allowed"},
+		})
+		return
+	}
+
+	if req.FileSize > MaxUploadSize {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{"code": "FILE_TOO_LARGE", "message": fmt.Sprintf("File size exceeds maximum of %d MB", MaxUploadSize/(1<<20))},
+		})
+		return
+	}
+
+	ext := filepath.Ext(req.Filename)
+	filename := fmt.Sprintf("%d-%s%s", time.Now().UnixNano(), strings.TrimSuffix(filepath.Base(req.Filename), ext), ext)
+	key := fmt.Sprintf("uploads/%s/%s", time.Now().Format("2006/01"), filename)
+
+	presignedURL, err := h.Storage.PresignPutURL(c.Request.Context(), key, req.ContentType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "PRESIGN_FAILED", "message": "Failed to generate upload URL"},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"presigned_url": presignedURL,
+			"key":           key,
+			"public_url":    h.Storage.GetURL(key),
+		},
+	})
+}
+
+// CompleteUpload records a file that was uploaded directly to storage via presigned URL.
+func (h *UploadHandler) CompleteUpload(c *gin.Context) {
+	var req struct {
+		Key         string ` + "`" + `json:"key" binding:"required"` + "`" + `
+		Filename    string ` + "`" + `json:"filename" binding:"required"` + "`" + `
+		ContentType string ` + "`" + `json:"content_type" binding:"required"` + "`" + `
+		Size        int64  ` + "`" + `json:"size" binding:"required"` + "`" + `
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
+		})
+		return
+	}
+
+	userID, _ := c.Get("user_id")
+
+	upload := models.Upload{
+		Filename:     filepath.Base(req.Key),
+		OriginalName: req.Filename,
+		MimeType:     req.ContentType,
+		Size:         req.Size,
+		Path:         req.Key,
+		URL:          h.Storage.GetURL(req.Key),
+		UserID:       userID.(uint),
+	}
+
+	if err := h.DB.Create(&upload).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to save upload record"},
+		})
+		return
+	}
+
+	// Enqueue image processing job if it's an image
+	if h.Jobs != nil && storage.IsImageMimeType(req.ContentType) {
+		_ = h.Jobs.EnqueueProcessImage(upload.ID, req.Key, req.ContentType)
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"data":    upload,
+		"message": "Upload recorded successfully",
 	})
 }
 `

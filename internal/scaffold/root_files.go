@@ -59,6 +59,12 @@ OAUTH_FRONTEND_URL=http://localhost:3001
 # Redis
 REDIS_URL=redis://localhost:6379
 
+# Docker Compose — Production (used by docker-compose.prod.yml)
+POSTGRES_USER=grit
+POSTGRES_PASSWORD=change-me-in-production
+POSTGRES_DB=%s
+API_URL=http://localhost:8080
+
 # Storage — Which provider to use: minio, r2, b2
 STORAGE_DRIVER=minio
 
@@ -111,7 +117,7 @@ SENTINEL_ENABLED=true
 SENTINEL_USERNAME=admin
 SENTINEL_PASSWORD=sentinel
 SENTINEL_SECRET_KEY=change-me-in-production
-`, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
+`, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 
 func envExampleFile(opts Options) string {
@@ -140,6 +146,12 @@ OAUTH_FRONTEND_URL=http://localhost:3001  # Where to redirect after OAuth
 
 # Redis — Cache and job queue
 REDIS_URL=redis://localhost:6379
+
+# Docker Compose — Production overrides (used by docker-compose.prod.yml)
+POSTGRES_USER=grit                   # Postgres user (shared with DATABASE_URL)
+POSTGRES_PASSWORD=change-me          # MUST change for production
+POSTGRES_DB=myapp                    # Database name
+API_URL=https://api.example.com      # Public API URL (baked into Next.js at build time)
 
 # Storage — Active driver: minio, r2, or b2
 STORAGE_DRIVER=minio                 # Change to "r2" or "b2" to switch providers

@@ -1982,6 +1982,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 					"/api/auth/login":    {Requests: 5, Window: 15 * time.Minute},
 					"/api/auth/register": {Requests: 3, Window: 15 * time.Minute},
 				},
+				ExcludePaths: []string{"/pulse/*", "/studio/*", "/sentinel/*", "/docs/*"},
 			},
 			AuthShield: sentinel.AuthShieldConfig{
 				Enabled:    true,
@@ -2134,6 +2135,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 
 		// File uploads
 		protected.POST("/uploads", uploadHandler.Create)
+		protected.POST("/uploads/presign", uploadHandler.Presign)
+		protected.POST("/uploads/complete", uploadHandler.CompleteUpload)
 		protected.GET("/uploads", uploadHandler.List)
 		protected.GET("/uploads/:id", uploadHandler.GetByID)
 		protected.DELETE("/uploads/:id", uploadHandler.Delete)

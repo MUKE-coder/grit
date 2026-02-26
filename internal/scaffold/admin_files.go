@@ -178,6 +178,11 @@ func writeAdminFiles(root string, opts Options) error {
 		// Root redirect page
 		filepath.Join(adminRoot, "app", "page.tsx"): adminRedirectPage(),
 
+		// Error pages
+		filepath.Join(adminRoot, "app", "error.tsx"):        adminErrorPage(),
+		filepath.Join(adminRoot, "app", "not-found.tsx"):    adminNotFoundPage(),
+		filepath.Join(adminRoot, "app", "global-error.tsx"): adminGlobalErrorPage(),
+
 		// Auth pages — (auth) route group (style variant)
 		filepath.Join(adminRoot, "app", "(auth)", "login", "page.tsx"):           adminLoginPageForStyle(opts.Style),
 		filepath.Join(adminRoot, "app", "(auth)", "sign-up", "page.tsx"):         adminSignUpPageForStyle(opts.Style),
@@ -773,6 +778,53 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/**
+ * Upload a file via presigned URL (browser uploads directly to storage).
+ * 1. POST /api/uploads/presign → get presigned PUT URL
+ * 2. XHR PUT to presigned URL (direct to R2/S3/MinIO)
+ * 3. POST /api/uploads/complete → record in DB
+ */
+export async function uploadFile(
+  file: File,
+  _endpoint = "/api/uploads",
+  onProgress?: (percent: number) => void
+): Promise<{ data: Record<string, unknown>; message: string }> {
+  // Step 1: Get presigned URL from API
+  const { data: presignRes } = await apiClient.post("/api/uploads/presign", {
+    filename: file.name,
+    content_type: file.type,
+    file_size: file.size,
+  });
+  const { presigned_url, key } = presignRes.data;
+
+  // Step 2: Upload directly to storage via XHR PUT (bypasses API server)
+  await new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    if (onProgress) {
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+      };
+    }
+    xhr.onload = () =>
+      xhr.status >= 200 && xhr.status < 300
+        ? resolve()
+        : reject(new Error(` + "`" + `Storage upload failed: ${xhr.status}` + "`" + `));
+    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.open("PUT", presigned_url);
+    xhr.setRequestHeader("Content-Type", file.type);
+    xhr.send(file);
+  });
+
+  // Step 3: Record the upload in the database
+  const { data: completeRes } = await apiClient.post("/api/uploads/complete", {
+    key,
+    filename: file.name,
+    content_type: file.type,
+    size: file.size,
+  });
+  return completeRes;
+}
 `
 }
 
@@ -1304,6 +1356,127 @@ export default function ForgotPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+`
+}
+
+func adminErrorPage() string {
+	return `"use client";
+
+import { useEffect } from "react";
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="w-full max-w-md text-center">
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-danger/10 border border-danger/20">
+          <svg className="h-8 w-8 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h2 className="mb-2 text-2xl font-bold text-foreground">Something went wrong</h2>
+        <p className="mb-6 text-text-secondary">
+          An unexpected error occurred. You can try again or go back.
+        </p>
+        {error.digest && (
+          <p className="mb-4 text-xs text-text-muted font-mono">Error ID: {error.digest}</p>
+        )}
+        <div className="flex gap-3 justify-center">
+          <button
+            onClick={() => window.history.back()}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-bg-secondary px-4 py-2.5 text-sm font-medium text-foreground hover:bg-bg-tertiary transition-colors"
+          >
+            Go Back
+          </button>
+          <button
+            onClick={reset}
+            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+`
+}
+
+func adminNotFoundPage() string {
+	return `import Link from "next/link";
+
+export default function NotFound() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="w-full max-w-md text-center">
+        <p className="mb-4 text-7xl font-bold text-accent">404</p>
+        <h2 className="mb-2 text-2xl font-bold text-foreground">Page not found</h2>
+        <p className="mb-8 text-text-secondary">
+          The page you&apos;re looking for doesn&apos;t exist or has been moved.
+        </p>
+        <div className="flex gap-3 justify-center">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+          >
+            Dashboard
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+`
+}
+
+func adminGlobalErrorPage() string {
+	return `"use client";
+
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <html lang="en" className="dark">
+      <body style={{ minHeight: "100vh", backgroundColor: "#0a0a0f", fontFamily: "system-ui, sans-serif", margin: 0 }}>
+        <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
+          <div style={{ maxWidth: "28rem", textAlign: "center" }}>
+            <div style={{ margin: "0 auto 1.5rem", display: "flex", height: "4rem", width: "4rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px", backgroundColor: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
+              <svg style={{ height: "2rem", width: "2rem", color: "#f87171" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 style={{ marginBottom: "0.5rem", fontSize: "1.5rem", fontWeight: 700, color: "#e8e8f0" }}>Application Error</h2>
+            <p style={{ marginBottom: "1.5rem", color: "#9090a8" }}>
+              A critical error occurred. Please try refreshing the page.
+            </p>
+            {error.digest && (
+              <p style={{ marginBottom: "1rem", fontSize: "0.75rem", color: "#606078", fontFamily: "monospace" }}>Error ID: {error.digest}</p>
+            )}
+            <button
+              onClick={reset}
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.5rem", backgroundColor: "#6c5ce7", padding: "0.625rem 1.25rem", fontSize: "0.875rem", fontWeight: 500, color: "white", border: "none", cursor: "pointer" }}
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </body>
+    </html>
   );
 }
 `
