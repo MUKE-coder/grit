@@ -37,11 +37,8 @@ export function SiteHeader() {
           {[
             { label: 'Docs', href: '/docs' },
             { label: 'Showcase', href: '/showcase' },
-            { label: 'Course', href: '/course' },
             { label: 'GritCMS', href: 'https://gritcms.com', external: true },
             { label: 'Hire Us', href: '/hire' },
-            { label: 'Tutorials', href: '/docs/tutorials/blog' },
-            { label: 'Playground', href: '/playground' },
           ].map((item) => (
             <Link
               key={item.label}

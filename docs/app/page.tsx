@@ -897,8 +897,10 @@ export default function HomePage() {
           <div className="flex items-center gap-6">
             {[
               { label: 'Docs', href: '/docs' },
-              { label: 'Tutorials', href: '/docs/tutorials/learn' },
-              { label: 'Quick Start', href: '/docs/getting-started/quick-start' },
+              { label: 'Showcase', href: '/showcase' },
+              { label: 'Tutorials', href: '/docs/tutorials/blog' },
+              { label: 'Course', href: '/course' },
+              { label: 'Playground', href: '/playground' },
               { label: 'GitHub', href: 'https://github.com/MUKE-coder/grit' },
             ].map((link) => (
               <Link
