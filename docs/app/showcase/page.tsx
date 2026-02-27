@@ -7,6 +7,8 @@ import {
   Layers,
   ArrowRight,
   Sparkles,
+  Box,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
@@ -34,6 +36,8 @@ interface ShowcaseProject {
   tags: string[];
   stats: {
     tables: string;
+    models: string;
+    goroutines: string;
     modules: string;
     highlights: string[];
   };
@@ -50,7 +54,9 @@ const projects: ShowcaseProject[] = [
     image: "/showcase/gritcms.png",
     tags: ["SaaS", "CMS", "E-Commerce", "Email Marketing", "LMS"],
     stats: {
-      tables: "45+",
+      tables: "67",
+      models: "64",
+      goroutines: "27",
       modules: "8+",
       highlights: [
         "Website & blog builder",
@@ -249,6 +255,34 @@ export default function ShowcasePage() {
                           </div>
                           <div className="text-xs text-muted-foreground">
                             Database Tables
+                          </div>
+                        </div>
+                      </div>
+                      <div className="h-px bg-border/40" />
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+                          <Box className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-foreground">
+                            {project.stats.models}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Registered Models
+                          </div>
+                        </div>
+                      </div>
+                      <div className="h-px bg-border/40" />
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20">
+                          <Zap className="h-5 w-5 text-amber-500" />
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-foreground">
+                            {project.stats.goroutines}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Active Goroutines
                           </div>
                         </div>
                       </div>
