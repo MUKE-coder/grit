@@ -1982,6 +1982,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 					"/api/auth/login":    {Requests: 5, Window: 15 * time.Minute},
 					"/api/auth/register": {Requests: 3, Window: 15 * time.Minute},
 				},
+				ExcludeRoutes: []string{"/pulse/*", "/studio/*", "/sentinel/*", "/docs/*"},
 			},
 			AuthShield: sentinel.AuthShieldConfig{
 				Enabled:    true,
