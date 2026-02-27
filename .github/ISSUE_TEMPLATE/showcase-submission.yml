@@ -1,0 +1,115 @@
+name: Showcase Submission
+description: Submit your Grit-powered app to the showcase
+title: "[Showcase] "
+labels: ["showcase"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for submitting your project to the Grit showcase! Fill out the details below and we'll review it for inclusion at [gritframework.dev/showcase](https://gritframework.dev/showcase).
+
+  - type: input
+    id: project-name
+    attributes:
+      label: Project Name
+      placeholder: e.g. GritCMS
+    validations:
+      required: true
+
+  - type: input
+    id: project-url
+    attributes:
+      label: Live URL
+      description: The public URL where we can see your app in action.
+      placeholder: https://example.com
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A short summary of what your app does (1-3 sentences).
+      placeholder: An all-in-one business platform with email marketing, course hosting, and community spaces.
+    validations:
+      required: true
+
+  - type: textarea
+    id: modules
+    attributes:
+      label: Modules & Capabilities
+      description: List the main features/modules of your app.
+      placeholder: |
+        - User authentication & RBAC
+        - Blog & content management
+        - E-commerce with Stripe payments
+        - Email campaigns
+    validations:
+      required: true
+
+  - type: input
+    id: tables
+    attributes:
+      label: Database Tables
+      description: Approximate number of database tables.
+      placeholder: e.g. 45+
+    validations:
+      required: true
+
+  - type: input
+    id: modules-count
+    attributes:
+      label: Number of Modules
+      description: Approximate number of feature modules.
+      placeholder: e.g. 8+
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: What best describes your app?
+      multiple: true
+      options:
+        - SaaS
+        - CMS
+        - E-Commerce
+        - LMS / Education
+        - Community / Forum
+        - Blog / Publishing
+        - Dashboard / Analytics
+        - Internal Tool
+        - Marketplace
+        - Portfolio / Agency
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: Drag and drop a screenshot of your app (16:9 ratio preferred, minimum 1280px wide).
+      placeholder: Drag your screenshot here...
+    validations:
+      required: true
+
+  - type: textarea
+    id: tech-stack
+    attributes:
+      label: Additional Tech Stack
+      description: Any notable additions beyond the default Grit stack (Go, Gin, GORM, React, Next.js, Tailwind CSS).
+      placeholder: e.g. Stripe, Cloudflare R2, Redis, WebSockets
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: My app is live and publicly accessible
+          required: true
+        - label: My app is built with the Grit framework
+          required: true
+        - label: I have permission to share this project publicly
+          required: true
