@@ -87,10 +87,19 @@ body:
       required: true
 
   - type: textarea
+    id: thumbnail
+    attributes:
+      label: Project Thumbnail
+      description: A square logo or icon for your project (1:1 ratio, minimum 200x200px). This appears in the showcase grid.
+      placeholder: Drag your thumbnail/logo here...
+    validations:
+      required: true
+
+  - type: textarea
     id: screenshot
     attributes:
-      label: Screenshot
-      description: Drag and drop a screenshot of your app (16:9 ratio preferred, minimum 1280px wide).
+      label: Project Screenshot
+      description: A full screenshot of your app's main page or dashboard (16:9 ratio preferred, minimum 1280px wide). This is the hero image on your showcase card.
       placeholder: Drag your screenshot here...
     validations:
       required: true
