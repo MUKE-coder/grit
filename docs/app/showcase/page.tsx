@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
+import { ShowcaseGrid, type ShowcaseProject } from "@/components/showcase-grid";
 
 export const metadata: Metadata = {
   title: "Showcase | Grit",
@@ -26,24 +27,6 @@ export const metadata: Metadata = {
 };
 
 // ── Showcase data ──────────────────────────────────────────────
-
-interface ShowcaseProject {
-  name: string;
-  url: string;
-  description: string;
-  longDescription: string;
-  image: string;
-  tags: string[];
-  techStack: string[];
-  stats: {
-    tables: string;
-    models: string;
-    goroutines: string;
-    modules: string;
-    highlights: string[];
-  };
-  featured?: boolean;
-}
 
 const projects: ShowcaseProject[] = [
   {
@@ -105,223 +88,10 @@ const projects: ShowcaseProject[] = [
   },
 ];
 
-// ── Shared project card ─────────────────────────────────────────
-
-function ProjectCard({ project }: { project: ShowcaseProject }) {
-  return (
-    <div className="rounded-2xl border border-border/60 bg-card/50 overflow-hidden">
-      {/* Screenshot */}
-      <div className="relative aspect-[16/8] bg-accent/30 border-b border-border/40 overflow-hidden group">
-        <img
-          src={project.image}
-          alt={`${project.name} screenshot`}
-          className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.02]"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
-        <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                {project.name}
-              </h2>
-              {project.featured && (
-                <span className="inline-flex items-center rounded-full bg-primary/20 border border-primary/30 px-2.5 py-0.5 text-[10px] font-mono font-medium text-primary uppercase tracking-wider">
-                  Featured
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-foreground/70">
-              {project.description}
-            </p>
-          </div>
-          <Button
-            size="sm"
-            className="hidden md:inline-flex h-8 px-3 text-xs bg-primary/90 hover:bg-primary shrink-0"
-            asChild
-          >
-            <Link
-              href={project.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Visit Site
-              <ExternalLink className="ml-1.5 h-3 w-3" />
-            </Link>
-          </Button>
-        </div>
-      </div>
-
-      {/* Details */}
-      <div className="p-6 md:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left: Description + Tags + Modules */}
-          <div className="lg:col-span-2 space-y-6">
-            <p className="text-muted-foreground leading-relaxed">
-              {project.longDescription}
-            </p>
-
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2">
-              {project.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center rounded-md bg-accent/60 border border-border/40 px-2.5 py-1 text-xs font-medium text-muted-foreground"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-
-            {/* Modules list */}
-            <div>
-              <h3 className="text-sm font-semibold text-foreground mb-3">
-                Modules &amp; Capabilities
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {project.stats.highlights.map((item) => (
-                  <div
-                    key={item}
-                    className="flex items-center gap-2 text-sm text-muted-foreground"
-                  >
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary/60 shrink-0" />
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Mobile visit button */}
-            <div className="md:hidden">
-              <Button
-                size="sm"
-                className="h-9 px-4 text-sm bg-primary/90 hover:bg-primary w-full"
-                asChild
-              >
-                <Link
-                  href={project.url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Visit {project.name}
-                  <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-
-          {/* Right: Stats + Tech Stack */}
-          <div className="space-y-4">
-            <div className="rounded-xl border border-border/60 bg-accent/30 p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-4">
-                Project Scale
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
-                    <Database className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-foreground">
-                      {project.stats.tables}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Database Tables
-                    </div>
-                  </div>
-                </div>
-                <div className="h-px bg-border/40" />
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
-                    <Box className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-foreground">
-                      {project.stats.models}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Registered Models
-                    </div>
-                  </div>
-                </div>
-                {project.stats.goroutines && (
-                  <>
-                    <div className="h-px bg-border/40" />
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20">
-                        <Zap className="h-5 w-5 text-amber-500" />
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-foreground">
-                          {project.stats.goroutines}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Active Goroutines
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-                <div className="h-px bg-border/40" />
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
-                    <Layers className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-foreground">
-                      {project.stats.modules}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Feature Modules
-                    </div>
-                  </div>
-                </div>
-                <div className="h-px bg-border/40" />
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                    <Globe className="h-5 w-5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-foreground">
-                      Live in Production
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      <Link
-                        href={project.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        {project.url.replace("https://", "")}
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-border/60 bg-accent/30 p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-2">
-                Tech Stack
-              </h3>
-              <div className="flex flex-wrap gap-1.5">
-                {project.techStack.map((tech) => (
-                  <span
-                    key={tech}
-                    className="inline-flex items-center rounded-md bg-background/60 border border-border/40 px-2 py-0.5 text-[11px] font-mono text-muted-foreground"
-                  >
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Page ────────────────────────────────────────────────────────
+
+const featured = projects.filter((p) => p.featured);
+const rest = projects.filter((p) => !p.featured);
 
 export default function ShowcasePage() {
   return (
@@ -380,12 +150,188 @@ export default function ShowcasePage() {
         </div>
       </section>
 
-      {/* All projects */}
-      <div className="container max-w-screen-xl px-6 space-y-10 pb-16">
-        {projects.map((project) => (
-          <ProjectCard key={project.name} project={project} />
-        ))}
-      </div>
+      {/* Featured project */}
+      {featured.map((project) => (
+        <section key={project.name} className="container max-w-screen-xl px-6 pb-16">
+          <div className="rounded-2xl border border-border/60 bg-card/50 overflow-hidden">
+            {/* Screenshot */}
+            <div className="relative aspect-[16/8] bg-accent/30 border-b border-border/40 overflow-hidden group">
+              <img
+                src={project.image}
+                alt={`${project.name} screenshot`}
+                className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.02]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+              <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                      {project.name}
+                    </h2>
+                    <span className="inline-flex items-center rounded-full bg-primary/20 border border-primary/30 px-2.5 py-0.5 text-[10px] font-mono font-medium text-primary uppercase tracking-wider">
+                      Featured
+                    </span>
+                  </div>
+                  <p className="text-sm text-foreground/70">
+                    {project.description}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  className="hidden md:inline-flex h-8 px-3 text-xs bg-primary/90 hover:bg-primary shrink-0"
+                  asChild
+                >
+                  <Link href={project.url} target="_blank" rel="noreferrer">
+                    Visit Site
+                    <ExternalLink className="ml-1.5 h-3 w-3" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Details */}
+            <div className="p-6 md:p-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left */}
+                <div className="lg:col-span-2 space-y-6">
+                  <p className="text-muted-foreground leading-relaxed">
+                    {project.longDescription}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {project.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center rounded-md bg-accent/60 border border-border/40 px-2.5 py-1 text-xs font-medium text-muted-foreground"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground mb-3">
+                      Modules &amp; Capabilities
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {project.stats.highlights.map((item) => (
+                        <div
+                          key={item}
+                          className="flex items-center gap-2 text-sm text-muted-foreground"
+                        >
+                          <div className="h-1.5 w-1.5 rounded-full bg-primary/60 shrink-0" />
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="md:hidden">
+                    <Button
+                      size="sm"
+                      className="h-9 px-4 text-sm bg-primary/90 hover:bg-primary w-full"
+                      asChild
+                    >
+                      <Link href={project.url} target="_blank" rel="noreferrer">
+                        Visit {project.name}
+                        <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Right: Stats */}
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-border/60 bg-accent/30 p-5">
+                    <h3 className="text-sm font-semibold text-foreground mb-4">
+                      Project Scale
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+                          <Database className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-foreground">{project.stats.tables}</div>
+                          <div className="text-xs text-muted-foreground">Database Tables</div>
+                        </div>
+                      </div>
+                      <div className="h-px bg-border/40" />
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+                          <Box className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-foreground">{project.stats.models}</div>
+                          <div className="text-xs text-muted-foreground">Registered Models</div>
+                        </div>
+                      </div>
+                      {project.stats.goroutines && (
+                        <>
+                          <div className="h-px bg-border/40" />
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20">
+                              <Zap className="h-5 w-5 text-amber-500" />
+                            </div>
+                            <div>
+                              <div className="text-2xl font-bold text-foreground">{project.stats.goroutines}</div>
+                              <div className="text-xs text-muted-foreground">Active Goroutines</div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      <div className="h-px bg-border/40" />
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+                          <Layers className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-foreground">{project.stats.modules}</div>
+                          <div className="text-xs text-muted-foreground">Feature Modules</div>
+                        </div>
+                      </div>
+                      <div className="h-px bg-border/40" />
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                          <Globe className="h-5 w-5 text-emerald-500" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-foreground">Live in Production</div>
+                          <div className="text-xs text-muted-foreground">
+                            <Link href={project.url} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                              {project.url.replace("https://", "")}
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-border/60 bg-accent/30 p-5">
+                    <h3 className="text-sm font-semibold text-foreground mb-2">Tech Stack</h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {project.techStack.map((tech) => (
+                        <span
+                          key={tech}
+                          className="inline-flex items-center rounded-md bg-background/60 border border-border/40 px-2 py-0.5 text-[11px] font-mono text-muted-foreground"
+                        >
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      ))}
+
+      {/* Community projects grid */}
+      {rest.length > 0 && (
+        <section className="container max-w-screen-xl px-6 pb-16">
+          <h2 className="text-2xl font-bold text-foreground mb-8">
+            Community Projects
+          </h2>
+          <ShowcaseGrid projects={rest} />
+        </section>
+      )}
 
       {/* CTA */}
       <section className="container max-w-screen-xl px-6 pb-24">
