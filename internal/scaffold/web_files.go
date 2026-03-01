@@ -28,6 +28,7 @@ func writeWebFiles(root string, opts Options) error {
 		filepath.Join(webRoot, "hooks", "use-blogs.ts"):               webUseBlogsHook(),
 		filepath.Join(webRoot, "app", "blog", "page.tsx"):             webBlogListPage(),
 		filepath.Join(webRoot, "app", "blog", "[slug]", "page.tsx"):   webBlogDetailPage(),
+		filepath.Join(webRoot, "public", ".gitkeep"):                   "",
 	}
 
 	for path, content := range files {
