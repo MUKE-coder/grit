@@ -86,6 +86,35 @@ const projects: ShowcaseProject[] = [
       ],
     },
   },
+  {
+    name: "DGateway",
+    url: "https://dgateway.desispay.com",
+    description: "Unified payment aggregation for East Africa",
+    longDescription:
+      "A unified payment aggregation platform for East Africa. Businesses integrate once through a single REST API and instantly gain access to MTN Mobile Money, Airtel Money, card payments via Stripe, and PesaPal — without managing multiple provider integrations. Includes a full merchant admin dashboard for managing apps, API keys, transactions, withdrawals, webhooks, and teams.",
+    image: "/showcase/dgateway-wide.png",
+    tags: ["FinTech", "Payments", "SaaS", "API Platform"],
+    techStack: ["Go", "Gin", "GORM", "React", "Next.js 15", "Tailwind CSS", "PostgreSQL", "Turborepo", "Stripe", "PesaPal", "MTN MoMo", "Airtel Money", "Resend", "Dokploy"],
+    stats: {
+      tables: "11",
+      models: "11",
+      goroutines: "",
+      modules: "12",
+      highlights: [
+        "Payment collection (mobile money & card)",
+        "Disbursements to mobile wallets",
+        "Multi-provider routing (MTN, Airtel, Stripe, PesaPal)",
+        "App management with isolated API keys",
+        "Webhook delivery with signed payloads",
+        "Transaction ledger & status tracking",
+        "Withdrawal requests & payout management",
+        "Team invitations with RBAC",
+        "CORS domain management per app",
+        "Blog & content management",
+        "Public landing page & API docs",
+      ],
+    },
+  },
 ];
 
 // ── Page ────────────────────────────────────────────────────────
