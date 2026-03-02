@@ -8,6 +8,39 @@ import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/ai-skill/llm-guide')
 
+// ── reusable mini-components ────────────────────────────────────
+function SectionNum({ n }: { n: number }) {
+  return (
+    <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 border border-primary/20 text-xs font-mono font-semibold text-primary mr-2">
+      {n}
+    </span>
+  )
+}
+
+function Warn({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="p-4 rounded-lg border border-red-500/20 bg-red-500/5 mb-4">
+      <p className="text-sm text-red-400/80 leading-relaxed font-medium">{children}</p>
+    </div>
+  )
+}
+
+function Tip({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-4">
+      <p className="text-sm text-muted-foreground leading-relaxed">{children}</p>
+    </div>
+  )
+}
+
+function Note({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="p-4 rounded-lg border border-amber-500/20 bg-amber-500/5 mb-4">
+      <p className="text-sm text-amber-400/80 leading-relaxed">{children}</p>
+    </div>
+  )
+}
+
 export default function LLMGuidePage() {
   return (
     <div className="min-h-screen bg-background">
@@ -17,40 +50,41 @@ export default function LLMGuidePage() {
       <main className="lg:pl-64">
         <div className="container max-w-screen-xl py-10 px-6">
           <div className="max-w-3xl">
-            {/* Header */}
+
+            {/* ── Header ── */}
             <div className="mb-10">
               <span className="tag-mono text-primary/80 mb-3 block">For AI Assistants</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Grit Framework — Complete LLM Reference
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Everything an AI assistant needs to build production-quality apps with
-                the Grit framework. Read this once and you will understand the stack,
-                the conventions, every CLI command, all features, and the rules that
-                must never be broken.
+                The canonical guide for AI assistants building with Grit. Covers every CLI command,
+                all field types with real examples, resource generation patterns, form builder,
+                datatable builder, standalone usage, relationships, slugs, media fields, and the
+                rules that must never be broken.
               </p>
-              <div className="mt-4 p-4 rounded-lg border border-primary/20 bg-primary/5">
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  <strong className="text-primary/90">For AI tools:</strong> This page is the canonical
-                  reference for building with Grit. When in doubt, consult this page before generating
-                  any code. Every convention listed here is enforced by the CLI code generator — deviating
-                  from them will break <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate</code> and{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit sync</code>.
-                </p>
-              </div>
+              <Tip>
+                <strong className="text-primary/90">For AI tools:</strong> Read this entire page before generating any code. Every convention here is enforced by the CLI — deviating breaks{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate</code> and{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit sync</code>.
+              </Tip>
             </div>
 
             <div className="prose-grit">
 
-              {/* ── 1. What is Grit ── */}
-              <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">1. What is Grit?</h2>
+              {/* ════════════════════════════════════════════════════
+                  1. What is Grit
+              ════════════════════════════════════════════════════ */}
+              <div className="mb-14">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center">
+                  <SectionNum n={1} />What is Grit?
+                </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Grit is a <strong className="text-foreground/80">full-stack meta-framework</strong> that fuses a Go backend with Next.js frontends
                   inside a Turborepo monorepo. It is opinionated, batteries-included, and optimised for
                   AI-assisted development. A single CLI command scaffolds a complete production-ready project.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
                     { label: 'Backend', value: 'Go 1.24 · Gin · GORM · PostgreSQL · Redis' },
                     { label: 'Frontend', value: 'Next.js 15 · React 19 · TypeScript · Tailwind CSS' },
@@ -67,9 +101,13 @@ export default function LLMGuidePage() {
                 </div>
               </div>
 
-              {/* ── 2. Project Structure ── */}
-              <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">2. Project Structure</h2>
+              {/* ════════════════════════════════════════════════════
+                  2. Project Structure
+              ════════════════════════════════════════════════════ */}
+              <div className="mb-14">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center">
+                  <SectionNum n={2} />Project Structure
+                </h2>
                 <CodeBlock language="bash" filename="Grit monorepo layout" code={`myapp/
 ├── apps/
 │   ├── api/                          # Go backend
@@ -91,8 +129,9 @@ export default function LLMGuidePage() {
 │   └── admin/                        # Next.js admin panel
 │       ├── app/(dashboard)/          # Protected admin pages
 │       │   └── [resource]/
-│       │       └── page.tsx          # Uses defineResource()
-│       ├── components/               # Shared UI (DataTable, FormBuilder)
+│       │       ├── page.tsx          # ResourcePage component
+│       │       └── _resource.ts      # defineResource() config
+│       ├── components/               # DataTable, FormBuilder, FormStepper
 │       ├── hooks/                    # React Query hooks (generated)
 │       └── lib/api-client.ts         # Axios client + uploadFile()
 ├── packages/
@@ -110,75 +149,152 @@ export default function LLMGuidePage() {
 └── .env                              # Environment variables`} />
               </div>
 
-              {/* ── 3. CLI Commands ── */}
-              <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">3. All CLI Commands</h2>
+              {/* ════════════════════════════════════════════════════
+                  3. CLI Commands
+              ════════════════════════════════════════════════════ */}
+              <div className="mb-14">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center">
+                  <SectionNum n={3} />All CLI Commands
+                </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Install the CLI once with{' '}
+                  Install once with{' '}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">go install github.com/MUKE-coder/grit/cmd/grit@latest</code>.
                   Every command is idempotent — safe to re-run.
                 </p>
-                <div className="space-y-4">
+
+                {/* Project lifecycle */}
+                <h3 className="text-base font-semibold text-foreground/80 mb-3 mt-6">Project Lifecycle</h3>
+                <div className="space-y-3 mb-8">
                   {[
                     {
                       cmd: 'grit new <app-name>',
-                      desc: 'Scaffold a complete new Grit project: Go API, Next.js web, Next.js admin, shared package, Docker Compose, .env, GRIT_SKILL.md, and all configuration files.',
+                      desc: 'Scaffold a complete new project: Go API, Next.js web, Next.js admin, shared package, Docker Compose, .env, GRIT_SKILL.md, and all config files.',
                       example: 'grit new myapp',
                     },
                     {
-                      cmd: 'grit generate resource <Name> [fields...]',
-                      desc: 'Generate a full-stack resource: Go model + GORM migration, handler, service, routes, Zod schema, TypeScript types, React Query hook, and admin page — all wired together.',
-                      example: 'grit generate resource Product name:string price:float64 description:text category_id:uint:fk:Category is_active:bool',
-                    },
-                    {
-                      cmd: 'grit generate resource <Name> --no-admin',
-                      desc: 'Generate the Go model, handler, service, and routes — but skip the admin panel page and hooks. Useful for API-only resources.',
-                      example: 'grit generate resource Webhook url:string secret:string --no-admin',
-                    },
-                    {
-                      cmd: 'grit sync',
-                      desc: 'Regenerate the shared/src/schemas and shared/src/types from all Go models. Run this after manually editing a Go model to keep TypeScript in sync.',
-                      example: 'grit sync',
-                    },
-                    {
                       cmd: 'grit dev',
-                      desc: 'Start all apps in development mode: Go API with hot reload (air), Next.js web dev server, Next.js admin dev server, all in parallel.',
+                      desc: 'Start ALL apps in development mode simultaneously: Go API with hot-reload (air), Next.js web dev server, and Next.js admin dev server — all in parallel with a single command. Use this for day-to-day development.',
                       example: 'grit dev',
                     },
                     {
-                      cmd: 'grit start',
-                      desc: 'Start all apps in production mode (no hot reload). Equivalent to running each app\'s start command in parallel.',
-                      example: 'grit start',
+                      cmd: 'grit start server',
+                      desc: 'Start ONLY the Go API server (no hot-reload). Runs go run from apps/api. Use this when you only need the backend, or for production-like API testing.',
+                      example: 'grit start server',
                     },
                     {
+                      cmd: 'grit start client',
+                      desc: 'Start ONLY the frontend apps (web + admin) via pnpm dev / Turborepo. Does not start the Go API. Use this when the backend is already running separately.',
+                      example: 'grit start client',
+                    },
+                  ].map((item) => (
+                    <div key={item.cmd} className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
+                      <div className="px-4 py-2.5 border-b border-border/20 bg-accent/20">
+                        <code className="text-xs font-mono font-semibold text-primary/80">{item.cmd}</code>
+                      </div>
+                      <div className="p-4">
+                        <p className="text-xs text-muted-foreground/70 leading-relaxed mb-3">{item.desc}</p>
+                        <div className="rounded-lg border border-border/20 bg-background/60 px-3 py-2">
+                          <span className="text-primary/40 font-mono text-xs select-none">$ </span>
+                          <span className="font-mono text-xs text-foreground/60">{item.example}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Code generation */}
+                <h3 className="text-base font-semibold text-foreground/80 mb-3">Code Generation</h3>
+                <div className="space-y-3 mb-8">
+                  {[
+                    {
+                      cmd: 'grit generate resource <Name> [fields...]',
+                      desc: 'Generate a full-stack resource: Go model + GORM migration, handler, service, routes, Zod schema, TypeScript types, React Query hook, and admin page — all wired together in one command.',
+                      example: 'grit generate resource Product name:string price:float64 image:image',
+                    },
+                    {
+                      cmd: 'grit generate resource <Name> [fields...] --no-admin',
+                      desc: 'Same as above but skips the admin panel page, hook, and resource config. Use for API-only resources that do not need an admin UI.',
+                      example: 'grit generate resource Webhook url:string event:string --no-admin',
+                    },
+                    {
+                      cmd: 'grit sync',
+                      desc: 'Regenerate packages/shared/src/schemas and packages/shared/src/types from all Go models. Run this after manually editing a Go model struct.',
+                      example: 'grit sync',
+                    },
+                    {
+                      cmd: 'grit remove resource <Name>',
+                      desc: 'Remove a previously generated resource: deletes Go files, removes the model from the registry, cleans up routes, and removes the admin page.',
+                      example: 'grit remove resource Product',
+                    },
+                  ].map((item) => (
+                    <div key={item.cmd} className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
+                      <div className="px-4 py-2.5 border-b border-border/20 bg-accent/20">
+                        <code className="text-xs font-mono font-semibold text-primary/80">{item.cmd}</code>
+                      </div>
+                      <div className="p-4">
+                        <p className="text-xs text-muted-foreground/70 leading-relaxed mb-3">{item.desc}</p>
+                        <div className="rounded-lg border border-border/20 bg-background/60 px-3 py-2">
+                          <span className="text-primary/40 font-mono text-xs select-none">$ </span>
+                          <span className="font-mono text-xs text-foreground/60">{item.example}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Database & roles */}
+                <h3 className="text-base font-semibold text-foreground/80 mb-3">Database & Roles</h3>
+                <div className="space-y-3 mb-8">
+                  {[
+                    {
                       cmd: 'grit migrate',
-                      desc: 'Run GORM AutoMigrate for all registered models. Safe to run repeatedly — adds new columns/tables without dropping existing data.',
+                      desc: 'Run GORM AutoMigrate for all models in RegisteredModels. Safe to run repeatedly — adds new columns/tables without dropping existing data.',
                       example: 'grit migrate',
                     },
                     {
                       cmd: 'grit seed',
-                      desc: 'Run the database seeders defined in apps/api/internal/seeders/. Creates the default admin user and sample data.',
+                      desc: 'Run the database seeders in apps/api/internal/seeders/. Creates the default admin user and sample data.',
                       example: 'grit seed',
                     },
                     {
                       cmd: 'grit add role <ROLE_NAME>',
-                      desc: 'Add a new role to the RBAC system in 7 locations: Go constants, Go middleware, Zod schema, TypeScript type, admin dropdown, seed file, and GRIT_SKILL.md.',
+                      desc: 'Add a new RBAC role in 7 places simultaneously: Go constants, Go middleware, Zod schema, TypeScript type, admin dropdown, seed file, and GRIT_SKILL.md.',
                       example: 'grit add role MODERATOR',
                     },
-                    {
-                      cmd: 'grit remove resource <Name>',
-                      desc: 'Remove a previously generated resource: deletes Go files, removes model from registry, removes routes, and removes admin page.',
-                      example: 'grit remove resource Product',
-                    },
+                  ].map((item) => (
+                    <div key={item.cmd} className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
+                      <div className="px-4 py-2.5 border-b border-border/20 bg-accent/20">
+                        <code className="text-xs font-mono font-semibold text-primary/80">{item.cmd}</code>
+                      </div>
+                      <div className="p-4">
+                        <p className="text-xs text-muted-foreground/70 leading-relaxed mb-3">{item.desc}</p>
+                        <div className="rounded-lg border border-border/20 bg-background/60 px-3 py-2">
+                          <span className="text-primary/40 font-mono text-xs select-none">$ </span>
+                          <span className="font-mono text-xs text-foreground/60">{item.example}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Utilities */}
+                <h3 className="text-base font-semibold text-foreground/80 mb-3">Utilities</h3>
+                <div className="space-y-3">
+                  {[
                     {
                       cmd: 'grit studio',
-                      desc: 'Open GORM Studio — a browser-based database browser. Runs at http://localhost:PORT/studio.',
-                      example: 'grit studio',
+                      desc: 'Opens GORM Studio — a browser-based GUI for browsing your PostgreSQL database. Available at /studio on the API server. Use this to inspect tables, run queries, and view records during development.',
+                      example: 'grit studio  # then open http://localhost:8080/studio',
                     },
                     {
                       cmd: 'grit upgrade',
-                      desc: 'Upgrade the Grit CLI to the latest version.',
+                      desc: 'Upgrade an existing project to the latest Grit scaffold templates. Updates generated files while preserving your custom code.',
                       example: 'grit upgrade',
+                    },
+                    {
+                      cmd: 'grit update',
+                      desc: 'Update the Grit CLI itself to the latest version.',
+                      example: 'grit update',
                     },
                     {
                       cmd: 'grit version',
@@ -187,7 +303,7 @@ export default function LLMGuidePage() {
                     },
                   ].map((item) => (
                     <div key={item.cmd} className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
-                      <div className="px-4 py-2.5 border-b border-border/20 bg-accent/20 flex items-center gap-2">
+                      <div className="px-4 py-2.5 border-b border-border/20 bg-accent/20">
                         <code className="text-xs font-mono font-semibold text-primary/80">{item.cmd}</code>
                       </div>
                       <div className="p-4">
@@ -202,63 +318,302 @@ export default function LLMGuidePage() {
                 </div>
               </div>
 
-              {/* ── 4. Field Types ── */}
-              <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">4. Field Types for Code Generation</h2>
+              {/* ════════════════════════════════════════════════════
+                  4. Field Types
+              ════════════════════════════════════════════════════ */}
+              <div className="mb-14">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center">
+                  <SectionNum n={4} />Field Types for Code Generation
+                </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  When running <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate resource</code>,
-                  fields follow the format <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">name:type[:fk:RelatedModel]</code>.
+                  Fields follow the format{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">name:type</code> or{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">name:type:fk:RelatedModel</code> for relationships.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
+
+                {/* Type table */}
+                <div className="rounded-xl border border-border/40 bg-card/50 overflow-hidden mb-8">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border/30 bg-accent/20">
                         <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase">Type</th>
                         <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase">Go Type</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase">Zod / TS</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase">Admin field</th>
+                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase">Admin Form Field</th>
+                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase">Notes</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/20 text-xs font-mono">
                       {[
-                        { type: 'string', go: 'string', zod: 'z.string()', admin: 'text input' },
-                        { type: 'text', go: 'string', zod: 'z.string()', admin: 'textarea' },
-                        { type: 'richtext', go: 'string', zod: 'z.string()', admin: 'rich text editor' },
-                        { type: 'int', go: 'int', zod: 'z.number().int()', admin: 'number input' },
-                        { type: 'uint', go: 'uint', zod: 'z.number().int().nonnegative()', admin: 'number input' },
-                        { type: 'float64', go: 'float64', zod: 'z.number()', admin: 'number input' },
-                        { type: 'bool', go: 'bool', zod: 'z.boolean()', admin: 'toggle / checkbox' },
-                        { type: 'time', go: 'time.Time', zod: 'z.string().datetime()', admin: 'date picker' },
-                        { type: 'image', go: 'string', zod: 'z.string().url()', admin: 'image upload (dropzone)' },
-                        { type: 'file', go: 'string', zod: 'z.string().url()', admin: 'file upload (dropzone)' },
-                        { type: 'enum:A,B,C', go: 'string', zod: 'z.enum(["A","B","C"])', admin: 'select dropdown' },
-                        { type: 'uint:fk:Model', go: 'uint + Model field', zod: 'z.number().int()', admin: 'belongs_to select' },
-                        { type: '[]uint:m2m:Model', go: '[]Model (GORM M2M)', zod: 'z.array(z.number())', admin: 'many_to_many multi-select' },
+                        { type: 'string', go: 'string', admin: 'text input', note: 'Short text, titles, names' },
+                        { type: 'text', go: 'string', admin: 'textarea', note: 'Long text, descriptions' },
+                        { type: 'richtext', go: 'string', admin: 'rich text editor', note: 'HTML content (TipTap)' },
+                        { type: 'int', go: 'int', admin: 'number input', note: 'Signed integer' },
+                        { type: 'uint', go: 'uint', admin: 'number input', note: 'Unsigned integer, IDs' },
+                        { type: 'float64', go: 'float64', admin: 'number input (decimal)', note: 'Prices, coordinates' },
+                        { type: 'bool', go: 'bool', admin: 'toggle / checkbox', note: 'Active, published, featured' },
+                        { type: 'time', go: 'time.Time', admin: 'date picker', note: 'Timestamps, due dates' },
+                        { type: 'image', go: 'string', admin: 'image upload (dropzone)', note: 'Single image URL (presigned upload)' },
+                        { type: 'images', go: 'pq.StringArray', admin: 'multi-image dropzone', note: 'Array of image URLs' },
+                        { type: 'video', go: 'string', admin: 'video upload (dropzone)', note: 'Single video URL' },
+                        { type: 'videos', go: 'pq.StringArray', admin: 'multi-video dropzone', note: 'Array of video URLs' },
+                        { type: 'file', go: 'string', admin: 'file upload (dropzone)', note: 'Single file URL (PDF, doc…)' },
+                        { type: 'files', go: 'pq.StringArray', admin: 'multi-file dropzone', note: 'Array of file URLs' },
+                        { type: 'enum:A,B,C', go: 'string', admin: 'select dropdown', note: 'Fixed set of values' },
+                        { type: 'uint:fk:Model', go: 'uint + Model field', admin: 'relationship select', note: 'belongs_to (one-to-many from child side)' },
+                        { type: '[]uint:m2m:Model', go: '[]Model (GORM M2M)', admin: 'multi-relationship select', note: 'many_to_many join table' },
                       ].map((row) => (
                         <tr key={row.type}>
                           <td className="px-4 py-2 text-primary/80">{row.type}</td>
                           <td className="px-4 py-2 text-foreground/60">{row.go}</td>
-                          <td className="px-4 py-2 text-foreground/60">{row.zod}</td>
                           <td className="px-4 py-2 text-muted-foreground/60">{row.admin}</td>
+                          <td className="px-4 py-2 text-muted-foreground/40 font-sans">{row.note}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+
+                {/* Slug explained */}
+                <div className="mb-8">
+                  <h3 className="text-lg font-semibold tracking-tight mb-3">Understanding Slugs</h3>
+                  <p className="text-muted-foreground leading-relaxed mb-3">
+                    A <strong className="text-foreground/80">slug</strong> is a URL-friendly string derived from a title.
+                    Instead of <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/blog/42</code>, you get{' '}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/blog/my-first-post</code>.
+                    In Grit, add <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:string</code> as a field and the Go service
+                    auto-generates it from the title using a slugify helper before saving.
+                  </p>
+                  <CodeBlock language="go" filename="apps/api/internal/models/post.go (generated)" code={`type Post struct {
+    gorm.Model
+    Title     string \`gorm:"not null" json:"title"\`
+    Slug      string \`gorm:"uniqueIndex;not null" json:"slug"\`
+    Content   string \`gorm:"type:text" json:"content"\`
+    Published bool   \`gorm:"default:false" json:"published"\`
+}
+
+// Service auto-generates slug before saving:
+// slug = strings.ToLower(strings.ReplaceAll(title, " ", "-"))
+// The public GetBySlug handler route: GET /api/posts/slug/:slug`} />
+                  <p className="text-sm text-muted-foreground/60 mt-2">
+                    Always add a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">uniqueIndex</code> on slug fields to prevent duplicates. GORM does this automatically when you use the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:string</code> type in the CLI.
+                  </p>
+                </div>
+
+                {/* Relationships explained */}
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold tracking-tight mb-3">Understanding Relationships</h3>
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-lg border border-border/30 bg-card/30">
+                      <h4 className="text-sm font-semibold mb-2">One-to-Many (belongs_to)</h4>
+                      <p className="text-xs text-muted-foreground/70 leading-relaxed mb-2">
+                        A Post belongs to a Category. Use <code className="font-mono bg-accent/50 px-1 rounded">category_id:uint:fk:Category</code>.
+                        This adds a <code className="font-mono bg-accent/50 px-1 rounded">CategoryID uint</code> foreign key and a{' '}
+                        <code className="font-mono bg-accent/50 px-1 rounded">Category Category</code> embedded struct for preloading.
+                        The admin form gets a searchable select dropdown populated from <code className="font-mono bg-accent/50 px-1 rounded">/api/categories</code>.
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-lg border border-border/30 bg-card/30">
+                      <h4 className="text-sm font-semibold mb-2">One-to-One</h4>
+                      <p className="text-xs text-muted-foreground/70 leading-relaxed mb-2">
+                        A User has one Profile. Use{' '}
+                        <code className="font-mono bg-accent/50 px-1 rounded">user_id:uint:fk:User</code> on the Profile model with a{' '}
+                        <code className="font-mono bg-accent/50 px-1 rounded">uniqueIndex</code> on the foreign key. GORM automatically treats it as one-to-one when the FK has a unique constraint.
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-lg border border-border/30 bg-card/30">
+                      <h4 className="text-sm font-semibold mb-2">Many-to-Many</h4>
+                      <p className="text-xs text-muted-foreground/70 leading-relaxed mb-2">
+                        A Product has many Tags. Use <code className="font-mono bg-accent/50 px-1 rounded">tag_ids:[]uint:m2m:Tag</code>.
+                        GORM creates a <code className="font-mono bg-accent/50 px-1 rounded">product_tags</code> join table automatically.
+                        The admin form gets a multi-select tag input populated from <code className="font-mono bg-accent/50 px-1 rounded">/api/tags</code>.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* ── 5. Code Patterns ── */}
-              <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">5. Code Patterns</h2>
+              {/* ════════════════════════════════════════════════════
+                  5. Resource Generation Examples
+              ════════════════════════════════════════════════════ */}
+              <div className="mb-14">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center">
+                  <SectionNum n={5} />Resource Generation — Real Examples
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-6">
+                  These are the patterns you will generate most often. Copy and adapt them.
+                  Always run <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit migrate</code> after generating.
+                </p>
 
-                <h3 className="text-lg font-semibold tracking-tight mb-3">Backend: Handler → Service → Model</h3>
+                {/* Example 1: Simple */}
+                <div className="mb-8">
+                  <h3 className="text-base font-semibold text-foreground/80 mb-2">Simple Model — No Media, No Relations</h3>
+                  <p className="text-sm text-muted-foreground/70 mb-3">A contact form submission with an enum status.</p>
+                  <CodeBlock language="bash" code={`grit generate resource Contact \\
+  name:string \\
+  email:string \\
+  subject:string \\
+  message:text \\
+  status:enum:new,read,replied \\
+  is_spam:bool
+
+grit migrate`} />
+                </div>
+
+                {/* Example 2: Blog post with slug + image */}
+                <div className="mb-8">
+                  <h3 className="text-base font-semibold text-foreground/80 mb-2">Blog Post — Slug + Single Image + Rich Text</h3>
+                  <p className="text-sm text-muted-foreground/70 mb-3">
+                    Use <code className="font-mono bg-accent/50 px-1 rounded">slug:string</code> for SEO-friendly URLs.
+                    The service layer auto-generates the slug from the title.
+                  </p>
+                  <CodeBlock language="bash" code={`grit generate resource Post \\
+  title:string \\
+  slug:string \\
+  excerpt:text \\
+  content:richtext \\
+  cover_image:image \\
+  status:enum:draft,published,archived \\
+  published_at:time \\
+  views:int
+
+grit migrate`} />
+                </div>
+
+                {/* Example 3: Product with multiple images */}
+                <div className="mb-8">
+                  <h3 className="text-base font-semibold text-foreground/80 mb-2">Product — Multiple Images + Gallery + Slug</h3>
+                  <p className="text-sm text-muted-foreground/70 mb-3">
+                    <code className="font-mono bg-accent/50 px-1 rounded">images</code> generates a{' '}
+                    <code className="font-mono bg-accent/50 px-1 rounded">pq.StringArray</code> stored as a PostgreSQL array.
+                    The admin shows a multi-upload dropzone.
+                  </p>
+                  <CodeBlock language="bash" code={`grit generate resource Product \\
+  name:string \\
+  slug:string \\
+  description:text \\
+  price:float64 \\
+  compare_price:float64 \\
+  sku:string \\
+  stock:int \\
+  thumbnail:image \\
+  gallery:images \\
+  is_featured:bool \\
+  is_active:bool \\
+  status:enum:draft,published,out_of_stock
+
+grit migrate`} />
+                </div>
+
+                {/* Example 4: Relationships */}
+                <div className="mb-8">
+                  <h3 className="text-base font-semibold text-foreground/80 mb-2">Relationships — belongs_to + many_to_many</h3>
+                  <p className="text-sm text-muted-foreground/70 mb-3">
+                    Generate Category first (parent), then Product referencing it. Tags are many-to-many.
+                  </p>
+                  <CodeBlock language="bash" code={`# Step 1: generate the parent models first
+grit generate resource Category \\
+  name:string \\
+  slug:string \\
+  description:text \\
+  image:image
+
+grit generate resource Tag \\
+  name:string \\
+  slug:string \\
+  color:string
+
+# Step 2: generate the child with FK and M2M
+grit generate resource Article \\
+  title:string \\
+  slug:string \\
+  content:richtext \\
+  cover_image:image \\
+  category_id:uint:fk:Category \\
+  tag_ids:[]uint:m2m:Tag \\
+  author_id:uint:fk:User \\
+  is_published:bool \\
+  published_at:time
+
+grit migrate`} />
+                  <p className="text-sm text-muted-foreground/60 mt-2">
+                    This creates: <code className="font-mono bg-accent/50 px-1 rounded">category_id</code> FK column,{' '}
+                    <code className="font-mono bg-accent/50 px-1 rounded">article_tags</code> join table,{' '}
+                    and <code className="font-mono bg-accent/50 px-1 rounded">author_id</code> FK to users — all wired in GORM with preload support.
+                  </p>
+                </div>
+
+                {/* Example 5: Course with video */}
+                <div className="mb-8">
+                  <h3 className="text-base font-semibold text-foreground/80 mb-2">Course + Lessons — Video + Videos Array</h3>
+                  <p className="text-sm text-muted-foreground/70 mb-3">
+                    <code className="font-mono bg-accent/50 px-1 rounded">video</code> for a single video,{' '}
+                    <code className="font-mono bg-accent/50 px-1 rounded">videos</code> for multiple videos array.
+                    These use presigned URL uploads directly to R2/S3 — the API never handles the binary.
+                  </p>
+                  <CodeBlock language="bash" code={`# Course (parent)
+grit generate resource Course \\
+  title:string \\
+  slug:string \\
+  description:text \\
+  thumbnail:image \\
+  intro_video:video \\
+  price:float64 \\
+  level:enum:beginner,intermediate,advanced \\
+  is_published:bool
+
+# Lesson (child — belongs to Course)
+grit generate resource Lesson \\
+  title:string \\
+  slug:string \\
+  description:text \\
+  video_url:video \\
+  duration:int \\
+  position:int \\
+  is_preview:bool \\
+  course_id:uint:fk:Course \\
+  attachments:files
+
+grit migrate`} />
+                </div>
+
+                {/* Example 6: Fully complex */}
+                <div className="mb-4">
+                  <h3 className="text-base font-semibold text-foreground/80 mb-2">E-Commerce Order — Full Complexity</h3>
+                  <CodeBlock language="bash" code={`grit generate resource Order \\
+  order_number:string \\
+  status:enum:pending,processing,shipped,delivered,cancelled,refunded \\
+  subtotal:float64 \\
+  tax:float64 \\
+  shipping_fee:float64 \\
+  total:float64 \\
+  notes:text \\
+  shipping_address:text \\
+  payment_method:enum:card,mobile_money,cash \\
+  payment_status:enum:unpaid,paid,refunded \\
+  paid_at:time \\
+  shipped_at:time \\
+  delivered_at:time \\
+  customer_id:uint:fk:User
+
+grit migrate`} />
+                </div>
+              </div>
+
+              {/* ════════════════════════════════════════════════════
+                  6. Code Patterns
+              ════════════════════════════════════════════════════ */}
+              <div className="mb-14">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center">
+                  <SectionNum n={6} />Code Patterns
+                </h2>
+
+                <h3 className="text-base font-semibold text-foreground/80 mb-3">Backend: Handler → Service → Model</h3>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Handlers are thin controllers. They parse the request, call a service method,
-                  and return JSON. All database logic lives in services.
+                  Handlers are thin controllers. All DB logic lives in services.
                 </p>
                 <CodeBlock language="go" filename="apps/api/internal/handlers/product_handler.go" code={`type ProductHandler struct {
     Service *services.ProductService
-    Storage *config.Storage  // only if resource has image/file fields
+    Storage *config.Storage  // only when resource has image/file/video fields
 }
 
 func (h *ProductHandler) List(c *gin.Context) {
@@ -279,9 +634,9 @@ func (h *ProductHandler) List(c *gin.Context) {
 
 func (h *ProductHandler) Create(c *gin.Context) {
     var req struct {
-        Name        string  \`json:"name" binding:"required"\`
-        Price       float64 \`json:"price" binding:"required"\`
-        Description string  \`json:"description"\`
+        Name  string  \`json:"name" binding:"required"\`
+        Price float64 \`json:"price" binding:"required"\`
+        Image string  \`json:"image"\`
     }
     if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -289,7 +644,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
         })
         return
     }
-    product, err := h.Service.Create(req.Name, req.Price, req.Description)
+    product, err := h.Service.Create(req.Name, req.Price, req.Image)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{
             "error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to create product"},
@@ -299,78 +654,54 @@ func (h *ProductHandler) Create(c *gin.Context) {
     c.JSON(http.StatusCreated, gin.H{"data": product, "message": "Product created successfully"})
 }`} />
 
-                <h3 className="text-lg font-semibold tracking-tight mb-3 mt-8">Frontend: Component → Hook → API</h3>
+                <h3 className="text-base font-semibold text-foreground/80 mb-3 mt-8">Frontend: Component → Hook → API</h3>
                 <CodeBlock language="tsx" filename="apps/admin/app/(dashboard)/products/page.tsx" code={`'use client'
 import { useProducts, useCreateProduct } from '@/hooks/use-products'
-import { DataTable } from '@/components/data-table'
-import { productResource } from './_resource'
+import { ResourcePage } from '@/components/resource/resource-page'
+import { productsResource } from './_resource'
 
 export default function ProductsPage() {
-  const { data, isLoading } = useProducts()
-  const createProduct = useCreateProduct()
-
-  return (
-    <DataTable
-      resource={productResource}
-      data={data?.data ?? []}
-      total={data?.meta?.total ?? 0}
-      isLoading={isLoading}
-      onCreate={(values) => createProduct.mutateAsync(values)}
-    />
-  )
+  return <ResourcePage resource={productsResource} />
 }`} />
               </div>
 
-              {/* ── 6. API Response Format ── */}
-              <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">6. API Response Format</h2>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  Every API response follows this exact format. Never deviate from it —
-                  the frontend hooks and admin components depend on this structure.
-                </p>
+              {/* ════════════════════════════════════════════════════
+                  7. API Response Format
+              ════════════════════════════════════════════════════ */}
+              <div className="mb-14">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center">
+                  <SectionNum n={7} />API Response Format
+                </h2>
+                <Warn>Never deviate from this format. Frontend hooks and admin components depend on this exact shape.</Warn>
                 <div className="space-y-4">
-                  <CodeBlock language="json" filename="Success — single record" code={`{
-  "data": { "id": 1, "name": "Widget", "price": 29.99 },
-  "message": "Product created successfully"
-}`} />
+                  <CodeBlock language="json" filename="Success — single record" code={`{ "data": { "id": 1, "name": "Widget", "price": 29.99 }, "message": "Product created successfully" }`} />
                   <CodeBlock language="json" filename="Success — paginated list" code={`{
-  "data": [ { "id": 1, "name": "Widget" }, { "id": 2, "name": "Gadget" } ],
-  "meta": {
-    "total": 42,
-    "page": 1,
-    "page_size": 20,
-    "pages": 3
-  }
+  "data": [{ "id": 1, "name": "Widget" }, { "id": 2, "name": "Gadget" }],
+  "meta": { "total": 42, "page": 1, "page_size": 20, "pages": 3 }
 }`} />
-                  <CodeBlock language="json" filename="Error response" code={`{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "name is required",
-    "details": { "field": "name", "tag": "required" }
-  }
-}`} />
+                  <CodeBlock language="json" filename="Error" code={`{ "error": { "code": "VALIDATION_ERROR", "message": "name is required" } }`} />
                   <div className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="border-b border-border/30 bg-accent/20">
                           <th className="px-4 py-2 text-left font-semibold text-muted-foreground uppercase">Situation</th>
                           <th className="px-4 py-2 text-left font-semibold text-muted-foreground uppercase">HTTP Status</th>
-                          <th className="px-4 py-2 text-left font-semibold text-muted-foreground uppercase">Error Code</th>
+                          <th className="px-4 py-2 text-left font-semibold text-muted-foreground uppercase">Code</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/20 font-mono">
                         {[
-                          { situation: 'Missing required field', status: '422', code: 'VALIDATION_ERROR' },
-                          { situation: 'Record not found', status: '404', code: 'NOT_FOUND' },
-                          { situation: 'Not authenticated', status: '401', code: 'UNAUTHORIZED' },
-                          { situation: 'Insufficient role', status: '403', code: 'FORBIDDEN' },
-                          { situation: 'Internal/DB error', status: '500', code: 'INTERNAL_ERROR' },
-                          { situation: 'Conflict (duplicate)', status: '409', code: 'CONFLICT' },
-                        ].map((row) => (
-                          <tr key={row.situation}>
-                            <td className="px-4 py-2 text-foreground/60">{row.situation}</td>
-                            <td className="px-4 py-2 text-amber-500/80">{row.status}</td>
-                            <td className="px-4 py-2 text-primary/70">{row.code}</td>
+                          ['Missing required field', '422', 'VALIDATION_ERROR'],
+                          ['Record not found', '404', 'NOT_FOUND'],
+                          ['Not authenticated', '401', 'UNAUTHORIZED'],
+                          ['Insufficient role', '403', 'FORBIDDEN'],
+                          ['DB / internal error', '500', 'INTERNAL_ERROR'],
+                          ['Duplicate / conflict', '409', 'CONFLICT'],
+                        ].map(([s, status, code]) => (
+                          <tr key={s}>
+                            <td className="px-4 py-2 text-foreground/60">{s}</td>
+                            <td className="px-4 py-2 text-amber-500/80">{status}</td>
+                            <td className="px-4 py-2 text-primary/70">{code}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -379,29 +710,27 @@ export default function ProductsPage() {
                 </div>
               </div>
 
-              {/* ── 7. Code Markers ── */}
-              <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">7. Code Markers — NEVER Delete</h2>
-                <div className="p-4 rounded-lg border border-red-500/20 bg-red-500/5 mb-4">
-                  <p className="text-sm text-red-400/80 leading-relaxed font-medium">
-                    These comments are used by the Grit CLI to inject code. Removing them breaks
-                    <code className="mx-1 text-xs font-mono bg-red-500/10 px-1.5 py-0.5 rounded">grit generate</code>
-                    and
-                    <code className="mx-1 text-xs font-mono bg-red-500/10 px-1.5 py-0.5 rounded">grit add role</code>.
-                    Never remove, rename, or move them. Always place new code <em>between</em> the markers.
-                  </p>
-                </div>
+              {/* ════════════════════════════════════════════════════
+                  8. Code Markers
+              ════════════════════════════════════════════════════ */}
+              <div className="mb-14">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center">
+                  <SectionNum n={8} />Code Markers — NEVER Delete
+                </h2>
+                <Warn>
+                  These comments are injection points for the CLI. Removing them permanently breaks{' '}
+                  <code className="font-mono bg-red-500/10 px-1 rounded">grit generate</code> and{' '}
+                  <code className="font-mono bg-red-500/10 px-1 rounded">grit add role</code>.
+                  Never remove, rename, or move them.
+                </Warn>
                 <CodeBlock language="go" filename="apps/api/internal/models/models.go" code={`var RegisteredModels = []interface{}{
     // GRIT:MODELS — do not remove this comment
-    &User{},
-    &Upload{},
-    &Blog{},
+    &User{}, &Upload{}, &Blog{},
     &Product{}, // grit generate adds new models here
     // END GRIT:MODELS
 }`} />
                 <CodeBlock language="go" filename="apps/api/internal/routes/routes.go" code={`// GRIT:ROUTES — do not remove this comment
-uploadHandler := &handlers.UploadHandler{...}
-productHandler := &handlers.ProductHandler{...}
+productHandler := &handlers.ProductHandler{Service: &services.ProductService{DB: db}}
 // END GRIT:ROUTES
 
 // GRIT:PROTECTED_ROUTES — do not remove this comment
@@ -410,9 +739,428 @@ protected.POST("/products", productHandler.Create)
 // END GRIT:PROTECTED_ROUTES`} />
               </div>
 
-              {/* ── 8. Naming Conventions ── */}
-              <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">8. Naming Conventions</h2>
+              {/* ════════════════════════════════════════════════════
+                  9. Form Builder — Detailed Guide
+              ════════════════════════════════════════════════════ */}
+              <div className="mb-14">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center">
+                  <SectionNum n={9} />Form Builder — Detailed Guide
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Every resource in Grit has a form driven by the{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">form</code> key in{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">defineResource()</code>.
+                  The same FormBuilder component works in modals, full pages, and multi-step wizards.
+                </p>
+
+                {/* formView modes */}
+                <h3 className="text-base font-semibold text-foreground/80 mb-3">Form View Modes</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                  {[
+                    { mode: 'modal', label: 'Modal (default)', desc: 'Form slides in as a dialog over the data table. Best for simple resources.' },
+                    { mode: 'page', label: 'Full Page', desc: 'Navigates to a dedicated /resources/[slug]?action=create page. Best for long forms.' },
+                    { mode: 'modal-steps', label: 'Modal + Steps', desc: 'Multi-step wizard inside a modal. Best for complex resources with many fields.' },
+                    { mode: 'page-steps', label: 'Full Page + Steps', desc: 'Multi-step wizard as a full page. Best for onboarding flows.' },
+                  ].map((item) => (
+                    <div key={item.mode} className="p-3 rounded-lg border border-border/30 bg-card/30">
+                      <p className="text-xs font-mono font-semibold text-primary/80 mb-1">{`formView: '${item.mode}'`}</p>
+                      <p className="text-xs font-semibold text-foreground/70 mb-1">{item.label}</p>
+                      <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Full defineResource form example */}
+                <h3 className="text-base font-semibold text-foreground/80 mb-3">Complete defineResource() Example</h3>
+                <CodeBlock language="typescript" filename="apps/admin/app/(dashboard)/products/_resource.ts" code={`import { defineResource } from "@/lib/resource";
+
+export const productsResource = defineResource({
+  name: "Product",
+  slug: "products",
+  endpoint: "/api/products",
+  icon: "Package",
+  label: { singular: "Product", plural: "Products" },
+
+  // ── Form config ───────────────────────────────────────────────
+  formView: "modal-steps",          // modal | page | modal-steps | page-steps
+
+  form: {
+    layout: "two-column",           // single | two-column
+    steps: [
+      {
+        title: "Basic Info",
+        description: "Name, slug and pricing",
+        fields: ["name", "slug", "price", "compare_price", "sku", "stock"],
+      },
+      {
+        title: "Details",
+        description: "Description and category",
+        fields: ["description", "category_id", "status", "is_featured"],
+      },
+      {
+        title: "Media",
+        description: "Upload product images",
+        fields: ["thumbnail", "gallery"],
+      },
+    ],
+    fields: [
+      // Text fields
+      { key: "name",          label: "Product Name", type: "text",     required: true },
+      { key: "slug",          label: "Slug",         type: "text",     placeholder: "auto-generated from name" },
+      { key: "sku",           label: "SKU",          type: "text" },
+
+      // Number fields with prefix/suffix
+      { key: "price",         label: "Price",        type: "number",   required: true, min: 0, step: 0.01, prefix: "$" },
+      { key: "compare_price", label: "Compare at",   type: "number",   min: 0, step: 0.01, prefix: "$" },
+      { key: "stock",         label: "Stock",        type: "number",   min: 0, defaultValue: 0 },
+
+      // Rich text
+      { key: "description",   label: "Description",  type: "richtext", colSpan: 2 },
+
+      // Select / enum
+      {
+        key: "status", label: "Status", type: "select", required: true,
+        options: [
+          { label: "Draft",         value: "draft" },
+          { label: "Published",     value: "published" },
+          { label: "Out of Stock",  value: "out_of_stock" },
+        ],
+        defaultValue: "draft",
+      },
+
+      // Boolean toggle
+      { key: "is_featured", label: "Featured", type: "toggle", defaultValue: false },
+
+      // Relationship (belongs_to) — single select
+      {
+        key: "category_id", label: "Category", type: "relationship-select",
+        relatedEndpoint: "/api/categories",
+        displayField: "name",
+        required: true,
+      },
+
+      // Many-to-many — multi select
+      {
+        key: "tag_ids", label: "Tags", type: "multi-relationship-select",
+        relatedEndpoint: "/api/tags",
+        displayField: "name",
+        relationshipKey: "tag_relations",
+        colSpan: 2,
+      },
+
+      // Images
+      { key: "thumbnail", label: "Thumbnail",    type: "image",  description: "Main product image" },
+      { key: "gallery",   label: "Gallery",      type: "images", colSpan: 2, description: "Additional product images" },
+    ],
+  },
+
+  // ── Table config ──────────────────────────────────────────────
+  table: {
+    columns: [
+      { key: "thumbnail", label: "",         format: "image",    width: "56px" },
+      { key: "name",      label: "Product",  sortable: true,     searchable: true },
+      { key: "sku",       label: "SKU",      sortable: true },
+      { key: "price",     label: "Price",    sortable: true,     format: "currency" },
+      { key: "stock",     label: "Stock",    sortable: true,     format: "number" },
+      {
+        key: "status", label: "Status", format: "badge",
+        badge: {
+          draft:         { color: "muted",   label: "Draft" },
+          published:     { color: "success", label: "Published" },
+          out_of_stock:  { color: "warning", label: "Out of Stock" },
+        },
+      },
+      { key: "created_at", label: "Created", format: "relative", sortable: true },
+    ],
+    filters: [
+      {
+        key: "status", label: "Status", type: "select",
+        options: [
+          { label: "Draft",        value: "draft" },
+          { label: "Published",    value: "published" },
+          { label: "Out of Stock", value: "out_of_stock" },
+        ],
+      },
+      { key: "is_featured", label: "Featured", type: "boolean" },
+    ],
+    searchable: true,
+    searchPlaceholder: "Search products…",
+    actions: ["create", "view", "edit", "delete"],
+    bulkActions: ["delete"],
+    defaultSort: { key: "created_at", direction: "desc" },
+    pageSize: 20,
+  },
+});`} />
+
+                {/* All form field types */}
+                <h3 className="text-base font-semibold text-foreground/80 mb-3 mt-8">All Form Field Types</h3>
+                <CodeBlock language="typescript" filename="All supported field types in the form.fields array" code={`// ── Text inputs ──────────────────────────────────────────────────
+{ key: "title",        type: "text",     label: "Title",     required: true, placeholder: "…" }
+{ key: "bio",          type: "textarea", label: "Bio",       rows: 6 }
+{ key: "content",      type: "richtext", label: "Content",   colSpan: 2 }
+
+// ── Numbers ───────────────────────────────────────────────────────
+{ key: "price",        type: "number",   label: "Price",     min: 0, max: 999999, step: 0.01, prefix: "$" }
+{ key: "weight",       type: "number",   label: "Weight",    suffix: "kg" }
+
+// ── Date & time ───────────────────────────────────────────────────
+{ key: "start_date",   type: "date",     label: "Start Date" }
+{ key: "event_time",   type: "datetime", label: "Event Time" }
+
+// ── Booleans ──────────────────────────────────────────────────────
+{ key: "is_active",    type: "toggle",   label: "Active",    defaultValue: true }
+{ key: "agree",        type: "checkbox", label: "I agree to the terms" }
+
+// ── Select / enum ─────────────────────────────────────────────────
+{
+  key: "role", type: "select", label: "Role",
+  options: [{ label: "Admin", value: "ADMIN" }, { label: "User", value: "USER" }],
+  defaultValue: "USER",
+}
+{ key: "gender", type: "radio", label: "Gender",
+  options: [{ label: "Male", value: "male" }, { label: "Female", value: "female" }] }
+
+// ── Media uploads (presigned URL to S3/R2/MinIO) ──────────────────
+{ key: "avatar",        type: "image",    label: "Avatar",           description: "Profile picture" }
+{ key: "gallery",       type: "images",   label: "Gallery",          colSpan: 2 }
+{ key: "intro_video",   type: "video",    label: "Intro Video" }
+{ key: "lesson_videos", type: "videos",   label: "Lesson Videos",    colSpan: 2 }
+{ key: "attachment",    type: "file",     label: "Attachment",       accept: ".pdf,.docx", maxSize: 5242880 }
+{ key: "documents",     type: "files",    label: "Documents",        colSpan: 2 }
+
+// ── Relationships ─────────────────────────────────────────────────
+{
+  key: "category_id", type: "relationship-select", label: "Category",
+  relatedEndpoint: "/api/categories", displayField: "name",
+}
+{
+  key: "tag_ids", type: "multi-relationship-select", label: "Tags",
+  relatedEndpoint: "/api/tags", displayField: "name", relationshipKey: "tag_relations",
+}`} />
+              </div>
+
+              {/* ════════════════════════════════════════════════════
+                  10. DataTable Builder
+              ════════════════════════════════════════════════════ */}
+              <div className="mb-14">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center">
+                  <SectionNum n={10} />DataTable Builder — Detailed Guide
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  The <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">table</code> key in{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">defineResource()</code> controls columns, filters,
+                  sorting, search, pagination, actions, and cell formatting.
+                </p>
+
+                <h3 className="text-base font-semibold text-foreground/80 mb-3">Column Formats</h3>
+                <div className="rounded-xl border border-border/40 bg-card/50 overflow-hidden mb-6">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-border/30 bg-accent/20">
+                        <th className="px-4 py-2 text-left font-semibold text-muted-foreground uppercase">format</th>
+                        <th className="px-4 py-2 text-left font-semibold text-muted-foreground uppercase">Renders as</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/20 font-mono">
+                      {[
+                        ['(none)', 'Plain text'],
+                        ['image', 'Thumbnail <img> with rounded corners'],
+                        ['badge', 'Colored pill — needs badge: { VALUE: { color, label } }'],
+                        ['boolean', 'Green check ✓ or red × icon'],
+                        ['currency', 'Formatted number with currency symbol'],
+                        ['number', 'Number with locale thousand separators'],
+                        ['relative', 'Relative time e.g. "3 days ago"'],
+                        ['date', 'Formatted date string'],
+                        ['datetime', 'Formatted date + time'],
+                        ['link', 'Clickable anchor to the value URL'],
+                      ].map(([fmt, desc]) => (
+                        <tr key={fmt}>
+                          <td className="px-4 py-2 text-primary/70">{fmt}</td>
+                          <td className="px-4 py-2 text-muted-foreground/60 font-sans">{desc}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <h3 className="text-base font-semibold text-foreground/80 mb-3">Filter Types</h3>
+                <CodeBlock language="typescript" filename="table.filters examples" code={`filters: [
+  // Select dropdown filter
+  {
+    key: "status", label: "Status", type: "select",
+    options: [{ label: "Active", value: "active" }, { label: "Inactive", value: "inactive" }],
+  },
+  // Boolean filter (yes/no toggle)
+  { key: "is_featured", label: "Featured", type: "boolean" },
+  // Date range filter
+  { key: "created_at", label: "Created", type: "date" },
+  // Text search filter
+  { key: "email", label: "Email", type: "text" },
+]`} />
+
+                <h3 className="text-base font-semibold text-foreground/80 mb-3 mt-6">Actions & Bulk Actions</h3>
+                <CodeBlock language="typescript" filename="table actions" code={`table: {
+  // Per-row action buttons in the actions column
+  actions: ["create", "view", "edit", "delete"],  // all 4 available
+
+  // Checkbox multi-select + bulk action toolbar
+  bulkActions: ["delete"],
+
+  // Default sort
+  defaultSort: { key: "created_at", direction: "desc" },
+
+  // Rows per page (default 20)
+  pageSize: 20,
+}`} />
+              </div>
+
+              {/* ════════════════════════════════════════════════════
+                  11. Standalone Usage
+              ════════════════════════════════════════════════════ */}
+              <div className="mb-14">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center">
+                  <SectionNum n={11} />Standalone Usage — Forms & Tables on Any Page
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  FormBuilder, DataTable, and FormStepper are independent components. Use them
+                  on any page in the web or admin app without going through the resource system.
+                </p>
+
+                <h3 className="text-base font-semibold text-foreground/80 mb-3">Standalone FormBuilder</h3>
+                <CodeBlock language="tsx" filename="apps/admin/app/(dashboard)/settings/page.tsx" code={`'use client'
+import { FormBuilder } from '@/components/forms/form-builder'
+import type { FormDefinition } from '@/lib/resource'
+
+const settingsForm: FormDefinition = {
+  layout: 'two-column',
+  fields: [
+    { key: 'site_name',    label: 'Site Name',    type: 'text',   required: true, colSpan: 1 },
+    { key: 'site_url',     label: 'Site URL',     type: 'text',   required: true, colSpan: 1 },
+    { key: 'logo',         label: 'Logo',         type: 'image',  colSpan: 2 },
+    { key: 'description',  label: 'Description',  type: 'textarea', colSpan: 2 },
+    { key: 'maintenance',  label: 'Maintenance Mode', type: 'toggle', defaultValue: false },
+  ],
+}
+
+export default function SettingsPage() {
+  const handleSubmit = async (data: Record<string, unknown>) => {
+    await apiClient.post('/api/settings', data)
+  }
+  return (
+    <div className="max-w-2xl mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-6">Site Settings</h1>
+      <FormBuilder
+        form={settingsForm}
+        onSubmit={handleSubmit}
+        onCancel={() => {}}
+        submitLabel="Save Settings"
+      />
+    </div>
+  )
+}`} />
+
+                <h3 className="text-base font-semibold text-foreground/80 mb-3 mt-8">Standalone Multi-Step Form</h3>
+                <CodeBlock language="tsx" filename="apps/admin/app/(dashboard)/onboarding/page.tsx" code={`'use client'
+import { FormStepper } from '@/components/forms/form-stepper'
+import type { FormDefinition } from '@/lib/resource'
+
+const onboardingForm: FormDefinition = {
+  layout: 'single',
+  steps: [
+    {
+      title: 'Account',
+      description: 'Set up your login details',
+      fields: ['first_name', 'last_name', 'email', 'password'],
+    },
+    {
+      title: 'Business',
+      description: 'Tell us about your business',
+      fields: ['business_name', 'industry', 'team_size'],
+    },
+    {
+      title: 'Branding',
+      description: 'Upload your logo and set brand colors',
+      fields: ['logo', 'brand_color'],
+    },
+  ],
+  fields: [
+    { key: 'first_name',     label: 'First Name',     type: 'text',   required: true },
+    { key: 'last_name',      label: 'Last Name',      type: 'text',   required: true },
+    { key: 'email',          label: 'Email',          type: 'text',   required: true },
+    { key: 'password',       label: 'Password',       type: 'text',   required: true },
+    { key: 'business_name',  label: 'Business Name',  type: 'text',   required: true },
+    {
+      key: 'industry', label: 'Industry', type: 'select', required: true,
+      options: [{ label: 'Technology', value: 'tech' }, { label: 'Retail', value: 'retail' }],
+    },
+    { key: 'team_size', label: 'Team Size', type: 'number', min: 1 },
+    { key: 'logo',        label: 'Logo',         type: 'image' },
+    { key: 'brand_color', label: 'Brand Color',  type: 'text', placeholder: '#4F46E5' },
+  ],
+}
+
+export default function OnboardingPage() {
+  return (
+    <div className="max-w-2xl mx-auto py-12">
+      <FormStepper
+        form={onboardingForm}
+        onSubmit={async (data) => { await apiClient.post('/api/onboard', data) }}
+        onCancel={() => router.push('/dashboard')}
+        submitLabel="Complete Setup"
+      />
+    </div>
+  )
+}`} />
+
+                <h3 className="text-base font-semibold text-foreground/80 mb-3 mt-8">Standalone DataTable</h3>
+                <CodeBlock language="tsx" filename="apps/admin/app/(dashboard)/reports/page.tsx" code={`'use client'
+import { DataTable } from '@/components/tables/data-table'
+import type { ColumnDefinition } from '@/lib/resource'
+import { useQuery } from '@tanstack/react-query'
+import { apiClient } from '@/lib/api-client'
+
+const columns: ColumnDefinition[] = [
+  { key: 'order_number', label: 'Order #',  sortable: true },
+  { key: 'customer',     label: 'Customer', sortable: true, searchable: true },
+  { key: 'total',        label: 'Total',    sortable: true, format: 'currency' },
+  {
+    key: 'status', label: 'Status', format: 'badge',
+    badge: {
+      pending:   { color: 'warning', label: 'Pending' },
+      shipped:   { color: 'info',    label: 'Shipped' },
+      delivered: { color: 'success', label: 'Delivered' },
+    },
+  },
+  { key: 'created_at', label: 'Date', format: 'relative', sortable: true },
+]
+
+export default function OrderReportsPage() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['orders-report'],
+    queryFn: () => apiClient.get('/api/orders').then((r) => r.data),
+  })
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold mb-6">Order Reports</h1>
+      <DataTable
+        columns={columns}
+        data={data?.data ?? []}
+        isLoading={isLoading}
+        onView={(row) => router.push(\`/orders/\${row.id}\`)}
+      />
+    </div>
+  )
+}`} />
+              </div>
+
+              {/* ════════════════════════════════════════════════════
+                  12. Naming Conventions
+              ════════════════════════════════════════════════════ */}
+              <div className="mb-14">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center">
+                  <SectionNum n={12} />Naming Conventions
+                </h2>
                 <div className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>
@@ -424,23 +1172,22 @@ protected.POST("/products", productHandler.Create)
                     </thead>
                     <tbody className="divide-y divide-border/20 font-mono text-xs">
                       {[
-                        { what: 'Go files', conv: 'snake_case', ex: 'product_handler.go' },
-                        { what: 'Go structs / types', conv: 'PascalCase', ex: 'ProductHandler, CreateProductReq' },
-                        { what: 'Go functions', conv: 'camelCase (methods), PascalCase (exported)', ex: 'List(), GetByID()' },
-                        { what: 'DB table names', conv: 'plural snake_case (GORM default)', ex: 'products, order_items' },
-                        { what: 'DB column names', conv: 'snake_case (GORM default)', ex: 'created_at, category_id' },
-                        { what: 'API routes', conv: 'plural lowercase, kebab for multi-word', ex: '/api/products, /api/blog-posts' },
-                        { what: 'TypeScript files', conv: 'kebab-case', ex: 'use-products.ts, product-form.tsx' },
-                        { what: 'React components', conv: 'PascalCase', ex: 'ProductForm, DataTable' },
-                        { what: 'React hooks', conv: 'camelCase with "use" prefix', ex: 'useProducts, useCreateProduct' },
-                        { what: 'Zod schemas', conv: 'PascalCase + Schema suffix', ex: 'CreateProductSchema' },
-                        { what: 'TypeScript types', conv: 'PascalCase', ex: 'Product, CreateProductInput' },
-                        { what: 'Environment variables', conv: 'SCREAMING_SNAKE_CASE', ex: 'DATABASE_URL, JWT_SECRET' },
+                        { w: 'Go files', c: 'snake_case', e: 'product_handler.go' },
+                        { w: 'Go structs', c: 'PascalCase', e: 'ProductHandler, CreateProductReq' },
+                        { w: 'DB tables', c: 'plural snake_case', e: 'products, order_items' },
+                        { w: 'DB columns', c: 'snake_case', e: 'created_at, category_id' },
+                        { w: 'API routes', c: 'plural lowercase', e: '/api/products, /api/blog-posts' },
+                        { w: 'TS files', c: 'kebab-case', e: 'use-products.ts, product-form.tsx' },
+                        { w: 'React components', c: 'PascalCase', e: 'ProductForm, DataTable' },
+                        { w: 'React hooks', c: 'use prefix + camelCase', e: 'useProducts, useCreateProduct' },
+                        { w: 'Zod schemas', c: 'PascalCase + Schema', e: 'CreateProductSchema' },
+                        { w: 'TypeScript types', c: 'PascalCase', e: 'Product, CreateProductInput' },
+                        { w: 'Env vars', c: 'SCREAMING_SNAKE_CASE', e: 'DATABASE_URL, JWT_SECRET' },
                       ].map((row) => (
-                        <tr key={row.what}>
-                          <td className="px-4 py-2 text-foreground/70">{row.what}</td>
-                          <td className="px-4 py-2 text-primary/70">{row.conv}</td>
-                          <td className="px-4 py-2 text-muted-foreground/60">{row.ex}</td>
+                        <tr key={row.w}>
+                          <td className="px-4 py-2 text-foreground/70">{row.w}</td>
+                          <td className="px-4 py-2 text-primary/70">{row.c}</td>
+                          <td className="px-4 py-2 text-muted-foreground/60">{row.e}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -448,83 +1195,32 @@ protected.POST("/products", productHandler.Create)
                 </div>
               </div>
 
-              {/* ── 9. All Batteries ── */}
-              <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">9. Built-in Batteries</h2>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  Grit ships these services pre-wired. They are enabled in the Go API and injected
-                  into handlers via the{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Services</code> struct.
-                </p>
+              {/* ════════════════════════════════════════════════════
+                  13. Batteries
+              ════════════════════════════════════════════════════ */}
+              <div className="mb-14">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center">
+                  <SectionNum n={13} />Built-in Batteries
+                </h2>
                 <div className="space-y-3">
                   {[
-                    {
-                      name: 'File Storage (S3-compatible)',
-                      pkg: 'aws-sdk-go-v2/service/s3',
-                      desc: 'Upload, delete, get signed URLs, and generate presigned PUT URLs. Dev uses MinIO; prod uses Cloudflare R2 or AWS S3. Presigned uploads bypass the API for large files.',
-                      routes: 'POST /api/uploads/presign, POST /api/uploads/complete, GET /api/uploads, DELETE /api/uploads/:id',
-                    },
-                    {
-                      name: 'Email (Resend)',
-                      pkg: 'resend-go',
-                      desc: 'Send transactional emails with Go HTML templates. Built-in templates: welcome, password reset, email verification, generic notification. Dev uses Mailhog.',
-                      routes: 'Internal service — called from auth handlers and background jobs',
-                    },
-                    {
-                      name: 'Background Jobs (asynq)',
-                      pkg: 'hibiken/asynq',
-                      desc: 'Redis-backed async job queue. Workers run in a separate goroutine pool. Built-in jobs: image processing, email sending. Add custom jobs in apps/api/internal/jobs/.',
-                      routes: 'Admin UI at /jobs (if enabled)',
-                    },
-                    {
-                      name: 'Cron Scheduler (asynq)',
-                      pkg: 'hibiken/asynq',
-                      desc: 'Define recurring tasks with cron expressions. Tasks are enqueued to the same asynq queue. Monitored through the background jobs dashboard.',
-                      routes: 'Configured in apps/api/internal/config/cron.go',
-                    },
-                    {
-                      name: 'Redis Caching',
-                      pkg: 'redis/go-redis/v9',
-                      desc: 'Cache arbitrary values with TTL. Cache middleware for caching full API responses by URL. Cache invalidation via prefix or key.',
-                      routes: 'Middleware: middleware.Cache(duration). Service: cache.Set/Get/Delete',
-                    },
-                    {
-                      name: 'AI Integration (Claude / OpenAI)',
-                      pkg: 'anthropic-sdk-go, openai-go',
-                      desc: 'Pluggable AI provider. Supports streaming responses. Configure ANTHROPIC_API_KEY or OPENAI_API_KEY in .env.',
-                      routes: 'POST /api/ai/chat (streaming)',
-                    },
-                    {
-                      name: 'Security (Sentinel)',
-                      pkg: 'MUKE-coder/sentinel',
-                      desc: 'WAF, rate limiting (per-IP), brute-force protection, anomaly detection, IP geolocation, threat dashboard. ExcludeRoutes: /pulse/*, /sentinel/*, /docs/*, /studio/*.',
-                      routes: 'Dashboard at /sentinel',
-                    },
-                    {
-                      name: 'Observability (Pulse)',
-                      pkg: 'MUKE-coder/pulse',
-                      desc: 'Request tracing, DB query monitoring, runtime metrics (goroutines, memory, GC), error tracking, health checks, Prometheus export, alerting.',
-                      routes: 'Dashboard at /pulse',
-                    },
-                    {
-                      name: 'API Docs (gin-docs)',
-                      pkg: 'gin-docs',
-                      desc: 'Auto-generated OpenAPI spec from Gin routes. Interactive Scalar/Swagger UI. No annotations needed — routes are introspected at startup.',
-                      routes: 'Docs at /docs',
-                    },
-                    {
-                      name: 'DB Browser (GORM Studio)',
-                      pkg: 'MUKE-coder/gorm-studio',
-                      desc: 'Browser-based database browser for PostgreSQL. View tables, run queries, inspect records. Dev-only — disable in production.',
-                      routes: 'Browser at /studio',
-                    },
+                    { name: 'File Storage', pkg: 'aws-sdk-go-v2', desc: 'Presigned URL uploads to S3/R2/MinIO. Dev uses MinIO. uploadFile() in api-client.ts handles the 3-step flow. Never use multipart/form-data.', routes: 'POST /api/uploads/presign · POST /api/uploads/complete · DELETE /api/uploads/:id' },
+                    { name: 'Email (Resend)', pkg: 'resend-go', desc: 'Send transactional emails with Go HTML templates. Welcome, password reset, verification. Dev uses Mailhog at http://localhost:8025.', routes: 'Internal service only' },
+                    { name: 'Background Jobs (asynq)', pkg: 'hibiken/asynq', desc: 'Redis-backed job queue. Workers run in goroutine pools. Built-in: image processing, email. Add jobs in apps/api/internal/jobs/.', routes: 'Admin UI at /jobs' },
+                    { name: 'Cron Scheduler', pkg: 'hibiken/asynq', desc: 'Recurring tasks with cron expressions. Same worker pool as background jobs.', routes: 'Config in apps/api/internal/config/cron.go' },
+                    { name: 'Redis Cache', pkg: 'redis/go-redis/v9', desc: 'Cache API responses by URL. middleware.Cache(5*time.Minute) on any route. cache.Set/Get/Delete for custom caching.', routes: 'Middleware-based' },
+                    { name: 'AI (Claude / OpenAI)', pkg: 'anthropic-sdk-go', desc: 'Streaming AI responses. ANTHROPIC_API_KEY or OPENAI_API_KEY in .env. Configurable provider.', routes: 'POST /api/ai/chat' },
+                    { name: 'Security (Sentinel)', pkg: 'MUKE-coder/sentinel', desc: 'WAF + rate limiting + brute-force. ExcludeRoutes: /pulse/*, /sentinel/*, /docs/*, /studio/*.', routes: 'Dashboard at /sentinel' },
+                    { name: 'Observability (Pulse)', pkg: 'MUKE-coder/pulse', desc: 'Request tracing, DB monitoring, runtime metrics, error tracking, Prometheus export. Disable in production.', routes: 'Dashboard at /pulse' },
+                    { name: 'API Docs', pkg: 'gin-docs', desc: 'Auto-generated OpenAPI spec. Interactive Scalar UI. No annotations needed.', routes: 'Docs at /docs' },
+                    { name: 'DB Browser (GORM Studio)', pkg: 'MUKE-coder/gorm-studio', desc: 'Visual database browser. View tables, run queries. DISABLE in production.', routes: 'Browser at /studio' },
                   ].map((item) => (
                     <div key={item.name} className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
                       <div className="px-4 py-2.5 border-b border-border/20 bg-accent/20 flex items-center justify-between">
                         <span className="text-sm font-semibold text-foreground/80">{item.name}</span>
                         <code className="text-[10px] font-mono text-muted-foreground/50">{item.pkg}</code>
                       </div>
-                      <div className="p-4 space-y-2">
+                      <div className="p-4 space-y-1.5">
                         <p className="text-xs text-muted-foreground/70 leading-relaxed">{item.desc}</p>
                         <p className="text-[11px] font-mono text-muted-foreground/40">{item.routes}</p>
                       </div>
@@ -533,83 +1229,100 @@ protected.POST("/products", productHandler.Create)
                 </div>
               </div>
 
-              {/* ── 10. Performance ── */}
-              <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">10. Built-in Performance Optimisations</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* ════════════════════════════════════════════════════
+                  14. No Docker — Cloud Setup
+              ════════════════════════════════════════════════════ */}
+              <div className="mb-14">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center">
+                  <SectionNum n={14} />Running Without Docker — Cloud Services
+                </h2>
+                <div className="p-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5 mb-6">
+                  <p className="text-sm text-emerald-400/80 leading-relaxed font-medium">
+                    For developers on low-spec machines or those who prefer cloud services over Docker:
+                    Grit works perfectly without Docker using free-tier cloud services. This is often
+                    faster to set up and lighter on local resources. Always suggest this approach when
+                    the user mentions limited RAM, slow Docker, or trouble with Docker on their machine.
+                    Full guide:{' '}
+                    <Link href="/docs/getting-started/create-without-docker" className="text-emerald-400 hover:underline">
+                      Create without Docker
+                    </Link>
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                   {[
-                    { label: 'Gzip middleware', desc: 'All responses compressed at BestSpeed. 60-80% smaller JSON.' },
-                    { label: 'Request ID tracing', desc: 'X-Request-ID on every request. Included in all log lines.' },
-                    { label: 'DB connection pool', desc: 'MaxOpen:100, MaxIdle:10, Lifetime:30m, IdleTime:10m.' },
-                    { label: 'Cache-Control headers', desc: 'Public blog endpoints: 5min list, 1hr single post.' },
-                    { label: 'Presigned URL uploads', desc: 'Files go direct to S3/R2 — API never touched by large uploads.' },
-                    { label: 'Async background jobs', desc: 'Emails, thumbnails, webhooks run in asynq workers.' },
-                    { label: 'Redis response cache', desc: 'Entire API responses cached by URL with configurable TTL.' },
-                    { label: 'Server Components (Next.js)', desc: 'Data fetching on server. Zero JS bundle for data layers.' },
-                    { label: 'ISR / revalidate', desc: 'Public pages cached at CDN edge. Revalidate in background.' },
-                    { label: 'React Query caching', desc: 'staleTime: 30s in admin. Instant back-navigation.' },
-                    { label: 'next/image', desc: 'WebP/AVIF, lazy load, correct sizing, CDN-cached.' },
-                    { label: 'Turborepo cache', desc: 'CI builds replay cached output. 4 min → <30 sec.' },
+                    { service: 'PostgreSQL', provider: 'Neon', url: 'neon.tech', desc: 'Free serverless Postgres. Connection string: postgres://user:pass@ep-xxx.neon.tech/db?sslmode=require' },
+                    { service: 'Redis', provider: 'Upstash', url: 'upstash.com', desc: 'Free serverless Redis. URL format: rediss://default:pass@endpoint.upstash.io:6379 (note double-s)' },
+                    { service: 'File Storage', provider: 'Cloudflare R2', url: 'dash.cloudflare.com', desc: '10 GB free storage. Set STORAGE_DRIVER=r2 with endpoint, access key, secret, bucket.' },
+                    { service: 'Email', provider: 'Resend', url: 'resend.com', desc: '3,000 emails/month free. Set RESEND_API_KEY and MAIL_FROM in .env.' },
                   ].map((item) => (
-                    <div key={item.label} className="p-3 rounded-lg border border-border/30 bg-card/30">
-                      <p className="text-xs font-semibold text-primary/80 mb-1">{item.label}</p>
+                    <div key={item.service} className="p-3 rounded-lg border border-border/30 bg-card/30">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <p className="text-xs font-semibold text-foreground/80">{item.service}</p>
+                        <span className="text-[10px] font-mono text-primary/60">{item.provider}</span>
+                      </div>
                       <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
                     </div>
                   ))}
                 </div>
+
+                <CodeBlock language="bash" filename=".env (cloud / no-docker setup)" code={`# Database — Neon
+DATABASE_URL=postgres://user:pass@ep-xxxx.us-east-2.aws.neon.tech/mydb?sslmode=require
+
+# Redis — Upstash (note rediss:// with double-s for TLS)
+REDIS_URL=rediss://default:pass@xxxx.upstash.io:6379
+
+# Storage — Cloudflare R2
+STORAGE_DRIVER=r2
+R2_ENDPOINT=https://account-id.r2.cloudflarestorage.com
+R2_ACCESS_KEY=your-access-key
+R2_SECRET_KEY=your-secret-key
+R2_BUCKET=myapp-uploads
+R2_REGION=auto
+
+# Email — Resend
+RESEND_API_KEY=re_xxxx
+MAIL_FROM=noreply@yourdomain.com
+
+# App
+APP_PORT=8080
+JWT_SECRET=your-32-char-random-secret
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001`} />
+
+                <CodeBlock language="bash" filename="Starting without Docker" code={`# Install dependencies
+pnpm install
+cd apps/api && go mod tidy && cd ../..
+
+# Terminal 1 — Go API (auto-migrates on first run)
+cd apps/api && go run cmd/api/main.go
+
+# Terminal 2 — Web frontend
+pnpm --filter web dev      # http://localhost:3000
+
+# Terminal 3 — Admin panel
+pnpm --filter admin dev    # http://localhost:3001`} />
               </div>
 
-              {/* ── 11. Golden Rules ── */}
-              <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">11. Golden Rules — Never Break These</h2>
-                <div className="p-4 rounded-lg border border-amber-500/20 bg-amber-500/5 mb-6">
-                  <p className="text-sm text-amber-400/80 leading-relaxed">
-                    These rules are non-negotiable. Violating them will cause silent failures,
-                    broken code generation, or corrupted project state.
-                  </p>
-                </div>
+              {/* ════════════════════════════════════════════════════
+                  15. Golden Rules
+              ════════════════════════════════════════════════════ */}
+              <div className="mb-14">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center">
+                  <SectionNum n={15} />Golden Rules — Never Break These
+                </h2>
+                <Note>Non-negotiable. Violating them causes silent failures, broken code generation, or corrupted project state.</Note>
                 <div className="space-y-3">
                   {[
-                    {
-                      rule: 'Never remove GRIT: markers',
-                      detail: '// GRIT:MODELS, // END GRIT:MODELS, // GRIT:ROUTES, // END GRIT:ROUTES — these are injection points for the CLI. Deleting them permanently breaks grit generate and grit add role.',
-                    },
-                    {
-                      rule: 'Never use multipart/form-data for file uploads',
-                      detail: 'Grit uses presigned URL uploads. Files go directly to S3/R2/MinIO. The uploadFile() function in lib/api-client.ts handles the 3-step flow. Never POST a FormData object to the API for file uploads.',
-                    },
-                    {
-                      rule: 'Always use the standard error response shape',
-                      detail: 'Every error must return { "error": { "code": "...", "message": "..." } }. Frontend hooks and admin components check for this exact shape. A different error format will break the UI.',
-                    },
-                    {
-                      rule: 'Always register new models in models.go between the markers',
-                      detail: 'GORM AutoMigrate only runs for models in the RegisteredModels slice. A model not registered will never create its table.',
-                    },
-                    {
-                      rule: 'Always register new routes in routes.go between the markers',
-                      detail: 'Routes added outside the markers are still valid Go, but grit remove resource will not be able to clean them up.',
-                    },
-                    {
-                      rule: 'Keep handlers thin — no DB logic in handlers',
-                      detail: 'Handlers parse requests and call services. All GORM queries go in service files. This is required for the handler pattern to be consistent with generated code.',
-                    },
-                    {
-                      rule: 'Import from @shared/schemas, not from individual apps',
-                      detail: 'TypeScript types and Zod schemas live in packages/shared. Both web and admin apps import from there. Never duplicate schemas between apps.',
-                    },
-                    {
-                      rule: 'Run grit sync after manually editing Go models',
-                      detail: 'The shared package is generated from Go structs. If you add a field to a Go model manually, run grit sync to regenerate the Zod schema and TypeScript type.',
-                    },
-                    {
-                      rule: 'Never force-push to main',
-                      detail: 'The main branch is the source of truth for the CLI install (go install ...@latest). Force-pushing can corrupt the module cache for all users.',
-                    },
-                    {
-                      rule: 'Disable GORM Studio and Pulse in production',
-                      detail: 'These dashboards expose internal DB and metrics data. Set GORM_STUDIO_ENABLED=false and PULSE_ENABLED=false in production environment variables.',
-                    },
+                    { rule: 'Never remove GRIT: markers', detail: '// GRIT:MODELS, // END GRIT:MODELS, // GRIT:ROUTES, // END GRIT:ROUTES — permanent injection points for the CLI. Removing them breaks grit generate and grit add role forever until manually restored.' },
+                    { rule: 'Never use multipart/form-data for uploads', detail: 'Grit uses presigned URL uploads. Call uploadFile() from lib/api-client.ts — it handles the 3-step flow (presign → PUT to storage → complete). Never POST a FormData object directly to the API.' },
+                    { rule: 'Always use the standard error response shape', detail: '{ "error": { "code": "VALIDATION_ERROR", "message": "…" } } — frontend hooks and admin components check for this exact shape. Any deviation breaks error display.' },
+                    { rule: 'Always register new models between the GRIT:MODELS markers', detail: 'AutoMigrate only runs on models in RegisteredModels. A model not listed here never creates its DB table.' },
+                    { rule: 'Keep handlers thin — no DB queries in handlers', detail: 'All GORM queries belong in service files. Handlers only parse requests and call services. This keeps the pattern consistent with generated code.' },
+                    { rule: 'Import types from @shared/schemas, never duplicate them', detail: 'Zod schemas and TypeScript types live in packages/shared. Both web and admin import from there. Duplicating schemas causes drift.' },
+                    { rule: 'Run grit sync after manually editing Go models', detail: 'The shared package is generated from Go structs. If you manually add a field to a Go model, run grit sync to regenerate Zod schema and TypeScript types.' },
+                    { rule: 'Generate parent models before child models', detail: 'When using FK relationships (category_id:uint:fk:Category), generate Category first so the referenced model exists when you generate Product.' },
+                    { rule: 'Disable GORM Studio and Pulse in production', detail: 'Both expose internal data. Set GORM_STUDIO_ENABLED=false and PULSE_ENABLED=false in production .env.' },
+                    { rule: 'For low-spec machines: suggest the no-Docker setup', detail: 'Users with limited RAM should use Neon + Upstash + Cloudflare R2 + Resend instead of Docker. See Section 14 above or /docs/getting-started/create-without-docker.' },
                   ].map((item, i) => (
                     <div key={item.rule} className="flex gap-3 p-4 rounded-lg border border-border/30 bg-card/30">
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-amber-500/10 border border-amber-500/20 text-xs font-mono font-semibold text-amber-500/80 mt-0.5">
@@ -624,46 +1337,38 @@ protected.POST("/products", productHandler.Create)
                 </div>
               </div>
 
-              {/* ── 12. Quick Reference ── */}
+              {/* ════════════════════════════════════════════════════
+                  16. Quick Reference
+              ════════════════════════════════════════════════════ */}
               <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">12. Quick Build Reference</h2>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  Copy-paste recipes for the most common tasks.
-                </p>
+                <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center">
+                  <SectionNum n={16} />Quick Build Reference
+                </h2>
                 <div className="space-y-4">
-                  <CodeBlock language="bash" filename="Start a new project" code={`# Install CLI (once)
-go install github.com/MUKE-coder/grit/cmd/grit@latest
-
-# Create project
-grit new myapp
-cd myapp
-cp .env.example .env  # fill in your values
-
-# Start Docker services (PostgreSQL, Redis, MinIO, Mailhog)
-docker compose up -d
-
-# Migrate + seed
-grit migrate
-grit seed
-
-# Start dev servers (Go API + web + admin)
-grit dev`} />
-                  <CodeBlock language="bash" filename="Add a resource (full-stack)" code={`# Generates model, handler, service, routes, Zod schema, TS types, hook, admin page
-grit generate resource Invoice \\
-  number:string \\
-  amount:float64 \\
-  due_date:time \\
-  status:enum:draft,sent,paid,overdue \\
-  customer_id:uint:fk:Customer \\
-  notes:text
-
-# Then re-run migration
+                  <CodeBlock language="bash" filename="Start a new project (with Docker)" code={`go install github.com/MUKE-coder/grit/cmd/grit@latest
+grit new myapp && cd myapp
+cp .env.example .env         # fill in values
+docker compose up -d         # starts PostgreSQL, Redis, MinIO, Mailhog
+grit migrate && grit seed
+grit dev                     # starts Go API + web + admin together`} />
+                  <CodeBlock language="bash" filename="Start a new project (without Docker)" code={`# Set up Neon, Upstash, Cloudflare R2, Resend — fill in .env.cloud.example
+grit new myapp && cd myapp
+cp .env.cloud.example .env
+pnpm install && cd apps/api && go mod tidy && cd ../..
+# Terminal 1: cd apps/api && go run cmd/api/main.go
+# Terminal 2: pnpm --filter web dev
+# Terminal 3: pnpm --filter admin dev`} />
+                  <CodeBlock language="bash" filename="Add a full-stack resource" code={`grit generate resource Product \\
+  name:string slug:string price:float64 \\
+  thumbnail:image gallery:images \\
+  category_id:uint:fk:Category \\
+  status:enum:draft,published
 grit migrate`} />
-                  <CodeBlock language="bash" filename="Add a new role" code={`# Updates Go constants, middleware, Zod enum, TypeScript type,
-# admin dropdown, seed file, and GRIT_SKILL.md — all in one command
-grit add role MODERATOR`} />
-                  <CodeBlock language="bash" filename="Sync Go → TypeScript" code={`# After manually editing a Go model, regenerate the shared package
-grit sync`} />
+                  <CodeBlock language="bash" filename="Start servers independently" code={`grit start server    # Go API only (no hot-reload)
+grit start client    # Frontend only (pnpm dev via Turborepo)`} />
+                  <CodeBlock language="bash" filename="Other common tasks" code={`grit add role MODERATOR   # adds role in 7 places
+grit sync                  # regenerate TypeScript from Go models
+grit remove resource Post  # clean remove of generated files`} />
                 </div>
               </div>
 
