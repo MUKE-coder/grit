@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
@@ -68,6 +68,22 @@ export default function LLMGuidePage() {
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate</code> and{' '}
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit sync</code>.
               </Tip>
+              <div className="flex items-center justify-between p-4 rounded-xl border border-border/40 bg-card/50 mb-6">
+                <div>
+                  <p className="text-sm font-semibold text-foreground/80">Prefer a PDF?</p>
+                  <p className="text-xs text-muted-foreground/60">Download the Grit Handbook for offline reading and printing</p>
+                </div>
+                <a
+                  href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfeHHJl34ZKSqNhOvVj6p9rg3Icmo05TAEwQ4a"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button size="sm" variant="outline" className="shrink-0 gap-1.5 ml-4">
+                    <Download className="h-3.5 w-3.5" />
+                    Download PDF
+                  </Button>
+                </a>
+              </div>
             </div>
 
             <div className="prose-grit">

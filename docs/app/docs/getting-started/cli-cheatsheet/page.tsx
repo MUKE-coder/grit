@@ -61,12 +61,22 @@ export default function CLICheatsheetPage() {
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 CLI Cheatsheet
               </h1>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-lg text-muted-foreground leading-relaxed mb-6">
                 Every command the Grit CLI offers in one place. Bookmark this
                 page or print it out &mdash; it&apos;s your pocket reference for
                 scaffolding projects, generating resources, running migrations,
                 and everything in between.
               </p>
+              <a
+                href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfeHHJl34ZKSqNhOvVj6p9rg3Icmo05TAEwQ4a"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button size="sm" className="gap-1.5">
+                  <Download className="h-3.5 w-3.5" />
+                  Download Grit Handbook PDF
+                </Button>
+              </a>
             </div>
 
             {/* Quick-reference table */}

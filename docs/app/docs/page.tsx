@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, Rocket, Terminal, Layers, Zap, Shield, Code2, Database, Server, Gauge, CheckCircle2, X, Minus } from 'lucide-react'
+import { ArrowRight, Rocket, Terminal, Layers, Zap, Shield, Code2, Database, Server, Gauge, CheckCircle2, X, Minus, Download, BookOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SiteHeader } from '@/components/site-header'
@@ -49,6 +49,29 @@ export default function DocsIntroductionPage() {
                   {pill.label}
                 </span>
               ))}
+            </div>
+
+            {/* Handbook download banner */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-5 rounded-xl border border-primary/20 bg-primary/5 mb-10">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+                  <BookOpen className="h-4 w-4 text-primary/70" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground/80">Grit Developer Handbook</p>
+                  <p className="text-xs text-muted-foreground/60">The complete Grit reference — printable PDF for offline reading</p>
+                </div>
+              </div>
+              <a
+                href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfeHHJl34ZKSqNhOvVj6p9rg3Icmo05TAEwQ4a"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button size="sm" className="shrink-0 gap-1.5">
+                  <Download className="h-3.5 w-3.5" />
+                  Download PDF
+                </Button>
+              </a>
             </div>
 
             {/* Built for Builders */}

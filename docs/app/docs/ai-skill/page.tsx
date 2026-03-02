@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
@@ -23,11 +23,21 @@ export default function AISkillPage() {
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 LLM Skill Guide
               </h1>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-lg text-muted-foreground leading-relaxed mb-6">
                 Teach AI assistants to understand your Grit project. Drop a single file
                 into your project root and your AI can generate resources, write handlers,
                 and follow Grit conventions perfectly.
               </p>
+              <a
+                href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfeHHJl34ZKSqNhOvVj6p9rg3Icmo05TAEwQ4a"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button size="sm" variant="outline" className="gap-1.5 border-primary/20 text-primary/80 hover:bg-primary/10 hover:text-primary">
+                  <Download className="h-3.5 w-3.5" />
+                  Download Grit Handbook PDF
+                </Button>
+              </a>
             </div>
 
             <div className="prose-grit">

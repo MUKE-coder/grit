@@ -19,6 +19,7 @@ import {
   Wand2,
   FileText,
   GraduationCap,
+  Download,
 } from 'lucide-react'
 import { useState } from 'react'
 import { SidebarSponsorBanner, RightSideBanners } from '@/components/sidebar-banners'
@@ -248,6 +249,19 @@ export function DocsSidebar() {
             <NavSection key={item.title} item={item} />
           ))}
         </nav>
+        {/* Handbook download */}
+        <div className="px-4 mt-4 mb-2">
+          <a
+            href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfeHHJl34ZKSqNhOvVj6p9rg3Icmo05TAEwQ4a"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <div className="flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/8 px-3 py-2.5 text-xs font-medium text-primary/80 hover:bg-primary/15 hover:text-primary transition-colors cursor-pointer">
+              <Download className="h-3.5 w-3.5 shrink-0" />
+              <span>Download Handbook PDF</span>
+            </div>
+          </a>
+        </div>
         <SidebarSponsorBanner />
       </aside>
       <RightSideBanners />
