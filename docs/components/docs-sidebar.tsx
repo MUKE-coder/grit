@@ -67,6 +67,7 @@ const navItems: NavItem[] = [
       { title: 'Type System', href: '/docs/concepts/type-system' },
       { title: 'Naming Conventions', href: '/docs/concepts/naming-conventions' },
       { title: 'Style Variants', href: '/docs/concepts/styles' },
+      { title: 'Performance', href: '/docs/concepts/performance' },
     ],
   },
   {
@@ -166,6 +167,7 @@ const navItems: NavItem[] = [
     icon: <Lightbulb className="h-3.5 w-3.5" />,
     items: [
       { title: 'LLM Skill Guide', href: '/docs/ai-skill' },
+      { title: 'Complete LLM Reference', href: '/docs/ai-skill/llm-guide' },
     ],
   },
   {

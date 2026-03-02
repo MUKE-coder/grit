@@ -106,6 +106,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'How Grit shares types between Go and TypeScript: Go structs to Zod schemas to TypeScript interfaces, keeping frontend and backend in sync.',
   },
+  '/docs/concepts/performance': {
+    title: 'Performance',
+    description:
+      'All performance optimisations built into every Grit project: Gzip, Request ID, connection pool tuning, Cache-Control, presigned uploads, background jobs, Redis caching, Server Components, ISR, React Query, next/image, and Turborepo.',
+  },
 
   // Backend
   '/docs/backend/authentication': {
@@ -346,6 +351,11 @@ export const docsMetadata: Record<string, DocPage> = {
     title: 'AI Skill',
     description:
       'The Grit AI skill: teach AI assistants about Grit conventions, architecture, and code patterns for better code generation.',
+  },
+  '/docs/ai-skill/llm-guide': {
+    title: 'Complete LLM Reference',
+    description:
+      'The complete Grit reference for AI assistants and LLMs: framework overview, full project structure, every CLI command, all field types, code patterns, API conventions, code markers, naming rules, all batteries, performance features, and the golden rules never to break.',
   },
 
   // Changelog

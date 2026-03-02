@@ -28,10 +28,75 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v1.3.0 */}
+            {/* v1.4.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v1.4.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>Gzip response compression</strong> &mdash; All API responses are now
+                    compressed automatically via a custom <code>Gzip()</code> middleware using the Go
+                    standard library <code>compress/gzip</code> at <code>BestSpeed</code>.
+                    JSON payloads shrink by 60–80%, reducing bandwidth on paginated list endpoints
+                    with zero external dependencies.
+                  </li>
+                  <li>
+                    <strong>Request ID tracing</strong> &mdash; A <code>RequestID()</code> middleware
+                    injects a unique <code>X-Request-ID</code> header on every request (echoes the
+                    upstream header or generates a nanosecond-based ID). The ID is stored in Gin
+                    context and included in every structured log line for end-to-end request tracing.
+                  </li>
+                  <li>
+                    <strong>Database connection pool tuning</strong> &mdash; The scaffold now sets
+                    four GORM pool parameters: <code>MaxIdleConns(10)</code>,{' '}
+                    <code>MaxOpenConns(100)</code>, <code>ConnMaxLifetime(30m)</code>, and{' '}
+                    <code>ConnMaxIdleTime(10m)</code>. This prevents stale connections after network
+                    interruptions and avoids connection exhaustion under load.
+                  </li>
+                  <li>
+                    <strong>Cache-Control headers on public blog endpoints</strong> &mdash; The{' '}
+                    <code>ListPublished</code> handler now returns{' '}
+                    <code>Cache-Control: public, max-age=300</code> (5 minutes) and{' '}
+                    <code>GetBySlug</code> returns <code>Cache-Control: public, max-age=3600</code>{' '}
+                    (1 hour). CDNs and edge caches can now serve public blog content without hitting
+                    the Go API.
+                  </li>
+                </ul>
+
+                <h3>Documentation</h3>
+                <ul>
+                  <li>
+                    New{' '}
+                    <Link href="/docs/concepts/performance" className="text-primary hover:underline">Performance</Link>{' '}
+                    page &mdash; comprehensive guide to all backend (Go/API) and frontend (Next.js)
+                    performance optimisations that ship with every Grit project out of the box.
+                    Covers Gzip, Request ID, connection pool, Cache-Control, presigned uploads,
+                    background jobs, Redis caching, Server Components, ISR, React Query, next/image,
+                    Turborepo, and code splitting.
+                  </li>
+                  <li>
+                    New{' '}
+                    <Link href="/docs/ai-skill/llm-guide" className="text-primary hover:underline">Complete LLM Reference</Link>{' '}
+                    page &mdash; a dedicated machine-readable guide that teaches AI assistants
+                    everything about Grit: project structure, all CLI commands, every field type,
+                    code patterns, API response format, code markers, naming conventions, all
+                    batteries, performance features, and the golden rules that must never be broken.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v1.3.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v1.3.0
                 </span>
                 <span className="text-sm text-muted-foreground">February 26, 2026</span>
