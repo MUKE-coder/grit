@@ -168,13 +168,8 @@ export default function LLMGuidePage() {
                   {[
                     {
                       cmd: 'grit new <app-name>',
-                      desc: 'Scaffold a complete new project: Go API, Next.js web, Next.js admin, shared package, Docker Compose, .env, GRIT_SKILL.md, and all config files.',
+                      desc: 'Scaffold a complete new project: Go API, Next.js web, Next.js admin, shared package, Docker Compose, .env, GRIT_SKILL.md, and all config files. Flags: --full (default, all apps), --api (API only, no frontend), --mobile (include Expo mobile app), --style default|modern|minimal|glass.',
                       example: 'grit new myapp',
-                    },
-                    {
-                      cmd: 'grit dev',
-                      desc: 'Start ALL apps in development mode simultaneously: Go API with hot-reload (air), Next.js web dev server, and Next.js admin dev server — all in parallel with a single command. Use this for day-to-day development.',
-                      example: 'grit dev',
                     },
                     {
                       cmd: 'grit start server',
@@ -202,19 +197,21 @@ export default function LLMGuidePage() {
                   ))}
                 </div>
 
+                <Warn>
+                  There is no <code className="font-mono bg-red-500/10 px-1 rounded">grit dev</code> command — it does not exist. Run the API and frontend in separate terminals:{' '}
+                  <code className="font-mono bg-red-500/10 px-1 rounded">grit start server</code> in Terminal 1,
+                  then <code className="font-mono bg-red-500/10 px-1 rounded">grit start client</code> in Terminal 2.
+                  Alternatively, <code className="font-mono bg-red-500/10 px-1 rounded">pnpm dev</code> from the project root starts all apps via Turborepo.
+                </Warn>
+
                 {/* Code generation */}
                 <h3 className="text-base font-semibold text-foreground/80 mb-3">Code Generation</h3>
                 <div className="space-y-3 mb-8">
                   {[
                     {
-                      cmd: 'grit generate resource <Name> [fields...]',
-                      desc: 'Generate a full-stack resource: Go model + GORM migration, handler, service, routes, Zod schema, TypeScript types, React Query hook, and admin page — all wired together in one command.',
-                      example: 'grit generate resource Product name:string price:float64 image:image',
-                    },
-                    {
-                      cmd: 'grit generate resource <Name> [fields...] --no-admin',
-                      desc: 'Same as above but skips the admin panel page, hook, and resource config. Use for API-only resources that do not need an admin UI.',
-                      example: 'grit generate resource Webhook url:string event:string --no-admin',
+                      cmd: 'grit generate resource <Name> --fields "field:type,..."',
+                      desc: 'Generate a full-stack resource: Go model + GORM migration, handler, service, routes, Zod schema, TypeScript types, React Query hook, and admin page — all wired together. Fields are comma-separated name:type pairs. Special types: slug:slug (auto-generated from title), image/images/video/videos/file/files (presigned upload), enum:A,B,C (select), uint:fk:Model (belongs_to), []uint:m2m:Model (many_to_many). Extra flags: --from schema.yaml (fields from YAML), -i / --interactive (prompt per field), --roles "ADMIN,EDITOR" (restrict to roles).',
+                      example: 'grit generate resource Product --fields "name:string,slug:slug,price:float64,image:image"',
                     },
                     {
                       cmd: 'grit sync',
@@ -248,8 +245,8 @@ export default function LLMGuidePage() {
                   {[
                     {
                       cmd: 'grit migrate',
-                      desc: 'Run GORM AutoMigrate for all models in RegisteredModels. Safe to run repeatedly — adds new columns/tables without dropping existing data.',
-                      example: 'grit migrate',
+                      desc: 'Run GORM AutoMigrate for all models in RegisteredModels. Safe to run repeatedly — adds new columns/tables without dropping existing data. Use --fresh to drop all tables first and start clean (WARNING: destroys all data — development only).',
+                      example: 'grit migrate          # safe incremental\ngrit migrate --fresh  # drop + recreate all tables',
                     },
                     {
                       cmd: 'grit seed',
@@ -282,18 +279,13 @@ export default function LLMGuidePage() {
                 <div className="space-y-3">
                   {[
                     {
-                      cmd: 'grit studio',
-                      desc: 'Opens GORM Studio — a browser-based GUI for browsing your PostgreSQL database. Available at /studio on the API server. Use this to inspect tables, run queries, and view records during development.',
-                      example: 'grit studio  # then open http://localhost:8080/studio',
-                    },
-                    {
                       cmd: 'grit upgrade',
-                      desc: 'Upgrade an existing project to the latest Grit scaffold templates. Updates generated files while preserving your custom code.',
-                      example: 'grit upgrade',
+                      desc: 'Regenerates framework scaffold files (admin panel, web app, shared package configs) in the current project while preserving your custom resource code. Run this after a new Grit release to pull in updated templates. Use --force to skip confirmation prompts. This upgrades PROJECT FILES — not the CLI binary.',
+                      example: 'grit upgrade\ngrit upgrade --force',
                     },
                     {
                       cmd: 'grit update',
-                      desc: 'Update the Grit CLI itself to the latest version.',
+                      desc: 'Removes the current Grit CLI binary from $GOPATH/bin and reinstalls the latest version from GitHub via go install. Use this to update the grit TOOL ITSELF — not the project files (use grit upgrade for that).',
                       example: 'grit update',
                     },
                     {
@@ -345,6 +337,7 @@ export default function LLMGuidePage() {
                     <tbody className="divide-y divide-border/20 text-xs font-mono">
                       {[
                         { type: 'string', go: 'string', admin: 'text input', note: 'Short text, titles, names' },
+                        { type: 'slug', go: 'string (uniqueIndex)', admin: 'text input (auto-generated)', note: 'URL-friendly slug auto-generated from title on save' },
                         { type: 'text', go: 'string', admin: 'textarea', note: 'Long text, descriptions' },
                         { type: 'richtext', go: 'string', admin: 'rich text editor', note: 'HTML content (TipTap)' },
                         { type: 'int', go: 'int', admin: 'number input', note: 'Signed integer' },
@@ -380,8 +373,8 @@ export default function LLMGuidePage() {
                     A <strong className="text-foreground/80">slug</strong> is a URL-friendly string derived from a title.
                     Instead of <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/blog/42</code>, you get{' '}
                     <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/blog/my-first-post</code>.
-                    In Grit, add <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:string</code> as a field and the Go service
-                    auto-generates it from the title using a slugify helper before saving.
+                    In Grit, use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:slug</code> (not <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:string</code>) as the field type.
+                    The Go service auto-generates the slug from the title using a slugify helper before saving, and GORM adds a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">uniqueIndex</code> automatically.
                   </p>
                   <CodeBlock language="go" filename="apps/api/internal/models/post.go (generated)" code={`type Post struct {
     gorm.Model
@@ -395,7 +388,7 @@ export default function LLMGuidePage() {
 // slug = strings.ToLower(strings.ReplaceAll(title, " ", "-"))
 // The public GetBySlug handler route: GET /api/posts/slug/:slug`} />
                   <p className="text-sm text-muted-foreground/60 mt-2">
-                    Always add a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">uniqueIndex</code> on slug fields to prevent duplicates. GORM does this automatically when you use the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:string</code> type in the CLI.
+                    Always use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:slug</code> (not <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:string</code>) — the dedicated type adds a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">uniqueIndex</code> and wires up auto-generation from the title automatically.
                   </p>
                 </div>
 
@@ -449,12 +442,7 @@ export default function LLMGuidePage() {
                   <h3 className="text-base font-semibold text-foreground/80 mb-2">Simple Model — No Media, No Relations</h3>
                   <p className="text-sm text-muted-foreground/70 mb-3">A contact form submission with an enum status.</p>
                   <CodeBlock language="bash" code={`grit generate resource Contact \\
-  name:string \\
-  email:string \\
-  subject:string \\
-  message:text \\
-  status:enum:new,read,replied \\
-  is_spam:bool
+  --fields "name:string,email:string,subject:string,message:text,status:enum:new,read,replied,is_spam:bool"
 
 grit migrate`} />
                 </div>
@@ -467,14 +455,7 @@ grit migrate`} />
                     The service layer auto-generates the slug from the title.
                   </p>
                   <CodeBlock language="bash" code={`grit generate resource Post \\
-  title:string \\
-  slug:string \\
-  excerpt:text \\
-  content:richtext \\
-  cover_image:image \\
-  status:enum:draft,published,archived \\
-  published_at:time \\
-  views:int
+  --fields "title:string,slug:slug,excerpt:text,content:richtext,cover_image:image,status:enum:draft,published,archived,published_at:time,views:int"
 
 grit migrate`} />
                 </div>
@@ -488,18 +469,7 @@ grit migrate`} />
                     The admin shows a multi-upload dropzone.
                   </p>
                   <CodeBlock language="bash" code={`grit generate resource Product \\
-  name:string \\
-  slug:string \\
-  description:text \\
-  price:float64 \\
-  compare_price:float64 \\
-  sku:string \\
-  stock:int \\
-  thumbnail:image \\
-  gallery:images \\
-  is_featured:bool \\
-  is_active:bool \\
-  status:enum:draft,published,out_of_stock
+  --fields "name:string,slug:slug,description:text,price:float64,compare_price:float64,sku:string,stock:int,thumbnail:image,gallery:images,is_featured:bool,is_active:bool,status:enum:draft,published,out_of_stock"
 
 grit migrate`} />
                 </div>
@@ -510,29 +480,13 @@ grit migrate`} />
                   <p className="text-sm text-muted-foreground/70 mb-3">
                     Generate Category first (parent), then Product referencing it. Tags are many-to-many.
                   </p>
-                  <CodeBlock language="bash" code={`# Step 1: generate the parent models first
-grit generate resource Category \\
-  name:string \\
-  slug:string \\
-  description:text \\
-  image:image
+                  <CodeBlock language="bash" code={`# Step 1: generate parent models first
+grit generate resource Category --fields "name:string,slug:slug,description:text,image:image"
+grit generate resource Tag --fields "name:string,slug:slug,color:string"
 
-grit generate resource Tag \\
-  name:string \\
-  slug:string \\
-  color:string
-
-# Step 2: generate the child with FK and M2M
+# Step 2: generate the child with FK (belongs_to) and M2M (many_to_many)
 grit generate resource Article \\
-  title:string \\
-  slug:string \\
-  content:richtext \\
-  cover_image:image \\
-  category_id:uint:fk:Category \\
-  tag_ids:[]uint:m2m:Tag \\
-  author_id:uint:fk:User \\
-  is_published:bool \\
-  published_at:time
+  --fields "title:string,slug:slug,content:richtext,cover_image:image,category_id:uint:fk:Category,tag_ids:[]uint:m2m:Tag,author_id:uint:fk:User,is_published:bool,published_at:time"
 
 grit migrate`} />
                   <p className="text-sm text-muted-foreground/60 mt-2">
@@ -552,26 +506,11 @@ grit migrate`} />
                   </p>
                   <CodeBlock language="bash" code={`# Course (parent)
 grit generate resource Course \\
-  title:string \\
-  slug:string \\
-  description:text \\
-  thumbnail:image \\
-  intro_video:video \\
-  price:float64 \\
-  level:enum:beginner,intermediate,advanced \\
-  is_published:bool
+  --fields "title:string,slug:slug,description:text,thumbnail:image,intro_video:video,price:float64,level:enum:beginner,intermediate,advanced,is_published:bool"
 
-# Lesson (child — belongs to Course)
+# Lesson (child — belongs to Course via course_id:uint:fk:Course)
 grit generate resource Lesson \\
-  title:string \\
-  slug:string \\
-  description:text \\
-  video_url:video \\
-  duration:int \\
-  position:int \\
-  is_preview:bool \\
-  course_id:uint:fk:Course \\
-  attachments:files
+  --fields "title:string,slug:slug,description:text,video_url:video,duration:int,position:int,is_preview:bool,course_id:uint:fk:Course,attachments:files"
 
 grit migrate`} />
                 </div>
@@ -580,20 +519,7 @@ grit migrate`} />
                 <div className="mb-4">
                   <h3 className="text-base font-semibold text-foreground/80 mb-2">E-Commerce Order — Full Complexity</h3>
                   <CodeBlock language="bash" code={`grit generate resource Order \\
-  order_number:string \\
-  status:enum:pending,processing,shipped,delivered,cancelled,refunded \\
-  subtotal:float64 \\
-  tax:float64 \\
-  shipping_fee:float64 \\
-  total:float64 \\
-  notes:text \\
-  shipping_address:text \\
-  payment_method:enum:card,mobile_money,cash \\
-  payment_status:enum:unpaid,paid,refunded \\
-  paid_at:time \\
-  shipped_at:time \\
-  delivered_at:time \\
-  customer_id:uint:fk:User
+  --fields "order_number:string,status:enum:pending,processing,shipped,delivered,cancelled,refunded,subtotal:float64,tax:float64,shipping_fee:float64,total:float64,notes:text,shipping_address:text,payment_method:enum:card,mobile_money,cash,payment_status:enum:unpaid,paid,refunded,paid_at:time,shipped_at:time,delivered_at:time,customer_id:uint:fk:User"
 
 grit migrate`} />
                 </div>
@@ -1347,10 +1273,13 @@ pnpm --filter admin dev    # http://localhost:3001`} />
                 <div className="space-y-4">
                   <CodeBlock language="bash" filename="Start a new project (with Docker)" code={`go install github.com/MUKE-coder/grit/cmd/grit@latest
 grit new myapp && cd myapp
-cp .env.example .env         # fill in values
-docker compose up -d         # starts PostgreSQL, Redis, MinIO, Mailhog
+cp .env.example .env          # fill in values
+docker compose up -d          # starts PostgreSQL, Redis, MinIO, Mailhog
 grit migrate && grit seed
-grit dev                     # starts Go API + web + admin together`} />
+# Terminal 1 — Go API:
+grit start server
+# Terminal 2 — Next.js web + admin:
+grit start client`} />
                   <CodeBlock language="bash" filename="Start a new project (without Docker)" code={`# Set up Neon, Upstash, Cloudflare R2, Resend — fill in .env.cloud.example
 grit new myapp && cd myapp
 cp .env.cloud.example .env
@@ -1359,10 +1288,7 @@ pnpm install && cd apps/api && go mod tidy && cd ../..
 # Terminal 2: pnpm --filter web dev
 # Terminal 3: pnpm --filter admin dev`} />
                   <CodeBlock language="bash" filename="Add a full-stack resource" code={`grit generate resource Product \\
-  name:string slug:string price:float64 \\
-  thumbnail:image gallery:images \\
-  category_id:uint:fk:Category \\
-  status:enum:draft,published
+  --fields "name:string,slug:slug,price:float64,thumbnail:image,gallery:images,category_id:uint:fk:Category,status:enum:draft,published"
 grit migrate`} />
                   <CodeBlock language="bash" filename="Start servers independently" code={`grit start server    # Go API only (no hot-reload)
 grit start client    # Frontend only (pnpm dev via Turborepo)`} />
