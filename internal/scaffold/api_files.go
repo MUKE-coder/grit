@@ -541,6 +541,7 @@ func apiDatabaseGo() string {
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -567,6 +568,8 @@ func Connect(dsn string) (*gorm.DB, error) {
 	// Connection pool settings
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(30 * time.Minute)
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
 
 	log.Println("Database connected successfully")
 	return db, nil
@@ -1877,13 +1880,66 @@ func apiLoggerMiddlewareGo() string {
 	return `package middleware
 
 import (
+	"compress/gzip"
+	"fmt"
 	"log"
+	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-// Logger creates a structured JSON logging middleware.
+// RequestID injects a unique X-Request-ID header into every request and
+// stores it in the context for downstream logging and tracing.
+func RequestID() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		requestID := c.GetHeader("X-Request-ID")
+		if requestID == "" {
+			requestID = fmt.Sprintf("%d-%d", time.Now().UnixNano(), rand.Int63())
+		}
+		c.Set("request_id", requestID)
+		c.Header("X-Request-ID", requestID)
+		c.Next()
+	}
+}
+
+// Gzip compresses responses using gzip encoding when the client supports it.
+func Gzip() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !strings.Contains(c.GetHeader("Accept-Encoding"), "gzip") {
+			c.Next()
+			return
+		}
+
+		gz, err := gzip.NewWriterLevel(c.Writer, gzip.BestSpeed)
+		if err != nil {
+			c.Next()
+			return
+		}
+		defer gz.Close()
+
+		c.Header("Content-Encoding", "gzip")
+		c.Header("Vary", "Accept-Encoding")
+		c.Writer = &gzipResponseWriter{ResponseWriter: c.Writer, Writer: gz}
+		c.Next()
+	}
+}
+
+type gzipResponseWriter struct {
+	gin.ResponseWriter
+	Writer *gzip.Writer
+}
+
+func (g *gzipResponseWriter) Write(data []byte) (int, error) {
+	return g.Writer.Write(data)
+}
+
+func (g *gzipResponseWriter) WriteString(s string) (int, error) {
+	return g.Writer.Write([]byte(s))
+}
+
+// Logger creates a structured logging middleware with request ID correlation.
 func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
@@ -1896,17 +1952,19 @@ func Logger() gin.HandlerFunc {
 		status := c.Writer.Status()
 		method := c.Request.Method
 		clientIP := c.ClientIP()
+		requestID, _ := c.Get("request_id")
 
 		if query != "" {
 			path = path + "?" + query
 		}
 
-		log.Printf("[%d] %s %s | %s | %v",
+		log.Printf("[%d] %s %s | %s | %v | id=%v",
 			status,
 			method,
 			path,
 			clientIP,
 			latency,
+			requestID,
 		)
 	}
 }
@@ -1959,9 +2017,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	r := gin.New()
 
 	// Global middleware
+	r.Use(middleware.RequestID())
 	r.Use(middleware.Logger())
 	r.Use(gin.Recovery())
 	r.Use(middleware.CORS(cfg.CORSOrigins))
+	r.Use(middleware.Gzip())
 
 	// Mount Sentinel security suite (WAF, rate limiting, auth shield, anomaly detection)
 	if cfg.SentinelEnabled {
