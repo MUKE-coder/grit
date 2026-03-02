@@ -395,31 +395,114 @@ export default function LLMGuidePage() {
                 {/* Relationships explained */}
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold tracking-tight mb-3">Understanding Relationships</h3>
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-lg border border-border/30 bg-card/30">
-                      <h4 className="text-sm font-semibold mb-2">One-to-Many (belongs_to)</h4>
-                      <p className="text-xs text-muted-foreground/70 leading-relaxed mb-2">
-                        A Post belongs to a Category. Use <code className="font-mono bg-accent/50 px-1 rounded">category_id:uint:fk:Category</code>.
-                        This adds a <code className="font-mono bg-accent/50 px-1 rounded">CategoryID uint</code> foreign key and a{' '}
-                        <code className="font-mono bg-accent/50 px-1 rounded">Category Category</code> embedded struct for preloading.
-                        The admin form gets a searchable select dropdown populated from <code className="font-mono bg-accent/50 px-1 rounded">/api/categories</code>.
-                      </p>
+
+                  {/* Syntax summary */}
+                  <div className="rounded-xl border border-border/40 bg-card/50 overflow-hidden mb-5">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-border/30 bg-accent/20">
+                          <th className="px-4 py-2 text-left font-semibold text-muted-foreground uppercase">Type</th>
+                          <th className="px-4 py-2 text-left font-semibold text-muted-foreground uppercase">Syntax</th>
+                          <th className="px-4 py-2 text-left font-semibold text-muted-foreground uppercase">Admin Field</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/20 font-mono">
+                        <tr>
+                          <td className="px-4 py-2 text-foreground/70 font-sans">One-to-Many (belongs_to)</td>
+                          <td className="px-4 py-2 text-primary/80">fieldname_id:uint:fk:ModelName</td>
+                          <td className="px-4 py-2 text-muted-foreground/60 font-sans">Searchable single select</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2 text-foreground/70 font-sans">One-to-One (has_one)</td>
+                          <td className="px-4 py-2 text-primary/80">fieldname_id:uint:fk:ModelName</td>
+                          <td className="px-4 py-2 text-muted-foreground/60 font-sans">Searchable single select</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2 text-foreground/70 font-sans">Many-to-Many</td>
+                          <td className="px-4 py-2 text-primary/80">fieldname_ids:[]uint:m2m:ModelName</td>
+                          <td className="px-4 py-2 text-muted-foreground/60 font-sans">Multi-select tag input</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* One-to-Many */}
+                    <div className="rounded-xl border border-border/30 bg-card/30 overflow-hidden">
+                      <div className="px-4 py-2.5 border-b border-border/20 bg-accent/20">
+                        <h4 className="text-sm font-semibold">One-to-Many (belongs_to)</h4>
+                      </div>
+                      <div className="p-4 space-y-3">
+                        <p className="text-xs text-muted-foreground/70 leading-relaxed">
+                          A child record belongs to one parent. Syntax:{' '}
+                          <code className="font-mono bg-accent/50 px-1 rounded">fieldname_id:uint:fk:ModelName</code>.
+                          Use the parent model name in PascalCase after <code className="font-mono bg-accent/50 px-1 rounded">fk:</code>.
+                          This adds a <code className="font-mono bg-accent/50 px-1 rounded">CategoryID uint</code> FK column and a{' '}
+                          <code className="font-mono bg-accent/50 px-1 rounded">Category Category</code> preload field to the struct.
+                          The admin form renders a <strong>searchable single-select dropdown</strong> populated from <code className="font-mono bg-accent/50 px-1 rounded">/api/categories</code>.
+                        </p>
+                        <CodeBlock language="bash" filename="Example — Post belongs to Category" code={`# 1. Generate the parent first
+grit generate resource Category --fields "name:string,slug:slug,description:text"
+
+# 2. Generate the child referencing it
+grit generate resource Post \\
+  --fields "title:string,slug:slug,content:richtext,category_id:uint:fk:Category,is_published:bool"
+
+grit migrate`} />
+                      </div>
                     </div>
-                    <div className="p-4 rounded-lg border border-border/30 bg-card/30">
-                      <h4 className="text-sm font-semibold mb-2">One-to-One</h4>
-                      <p className="text-xs text-muted-foreground/70 leading-relaxed mb-2">
-                        A User has one Profile. Use{' '}
-                        <code className="font-mono bg-accent/50 px-1 rounded">user_id:uint:fk:User</code> on the Profile model with a{' '}
-                        <code className="font-mono bg-accent/50 px-1 rounded">uniqueIndex</code> on the foreign key. GORM automatically treats it as one-to-one when the FK has a unique constraint.
-                      </p>
+
+                    {/* One-to-One */}
+                    <div className="rounded-xl border border-border/30 bg-card/30 overflow-hidden">
+                      <div className="px-4 py-2.5 border-b border-border/20 bg-accent/20">
+                        <h4 className="text-sm font-semibold">One-to-One (has_one)</h4>
+                      </div>
+                      <div className="p-4 space-y-3">
+                        <p className="text-xs text-muted-foreground/70 leading-relaxed">
+                          Exactly one child per parent. Uses the <strong>same FK syntax</strong> as belongs_to —{' '}
+                          <code className="font-mono bg-accent/50 px-1 rounded">fieldname_id:uint:fk:ModelName</code> — but the CLI automatically adds a{' '}
+                          <code className="font-mono bg-accent/50 px-1 rounded">uniqueIndex</code> on the FK column.
+                          GORM treats it as one-to-one when the FK has a unique constraint.
+                          The admin form also renders a single-select dropdown (same as belongs_to).
+                        </p>
+                        <CodeBlock language="bash" filename="Example — Profile has one User" code={`# 1. User model already exists (built in)
+
+# 2. Generate Profile with a unique FK to User
+grit generate resource Profile \\
+  --fields "bio:text,avatar:image,website:string,user_id:uint:fk:User"
+
+# The CLI adds uniqueIndex on user_id automatically for one-to-one FK fields
+
+grit migrate`} />
+                      </div>
                     </div>
-                    <div className="p-4 rounded-lg border border-border/30 bg-card/30">
-                      <h4 className="text-sm font-semibold mb-2">Many-to-Many</h4>
-                      <p className="text-xs text-muted-foreground/70 leading-relaxed mb-2">
-                        A Product has many Tags. Use <code className="font-mono bg-accent/50 px-1 rounded">tag_ids:[]uint:m2m:Tag</code>.
-                        GORM creates a <code className="font-mono bg-accent/50 px-1 rounded">product_tags</code> join table automatically.
-                        The admin form gets a multi-select tag input populated from <code className="font-mono bg-accent/50 px-1 rounded">/api/tags</code>.
-                      </p>
+
+                    {/* Many-to-Many */}
+                    <div className="rounded-xl border border-border/30 bg-card/30 overflow-hidden">
+                      <div className="px-4 py-2.5 border-b border-border/20 bg-accent/20">
+                        <h4 className="text-sm font-semibold">Many-to-Many</h4>
+                      </div>
+                      <div className="p-4 space-y-3">
+                        <p className="text-xs text-muted-foreground/70 leading-relaxed">
+                          A record can belong to many of another, and vice versa. Syntax:{' '}
+                          <code className="font-mono bg-accent/50 px-1 rounded">fieldname_ids:[]uint:m2m:ModelName</code>.
+                          Key differences from belongs_to: the field name is <strong>plural</strong> (e.g. <code className="font-mono bg-accent/50 px-1 rounded">tag_ids</code>),
+                          the type prefix is <code className="font-mono bg-accent/50 px-1 rounded">[]uint</code> (not <code className="font-mono bg-accent/50 px-1 rounded">uint</code>),
+                          and the keyword is <code className="font-mono bg-accent/50 px-1 rounded">m2m</code> (not <code className="font-mono bg-accent/50 px-1 rounded">fk</code>).
+                          GORM creates a join table automatically (e.g. <code className="font-mono bg-accent/50 px-1 rounded">product_tags</code>).
+                          The admin form renders a <strong>multi-select tag input</strong> populated from <code className="font-mono bg-accent/50 px-1 rounded">/api/tags</code>.
+                        </p>
+                        <CodeBlock language="bash" filename="Example — Product has many Tags" code={`# 1. Generate the related model first
+grit generate resource Tag --fields "name:string,slug:slug,color:string"
+
+# 2. Generate Product with M2M relationship
+grit generate resource Product \\
+  --fields "name:string,slug:slug,price:float64,thumbnail:image,tag_ids:[]uint:m2m:Tag,is_active:bool"
+
+# GORM auto-creates the product_tags join table
+
+grit migrate`} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -451,8 +534,8 @@ grit migrate`} />
                 <div className="mb-8">
                   <h3 className="text-base font-semibold text-foreground/80 mb-2">Blog Post — Slug + Single Image + Rich Text</h3>
                   <p className="text-sm text-muted-foreground/70 mb-3">
-                    Use <code className="font-mono bg-accent/50 px-1 rounded">slug:string</code> for SEO-friendly URLs.
-                    The service layer auto-generates the slug from the title.
+                    Use <code className="font-mono bg-accent/50 px-1 rounded">slug:slug</code> for SEO-friendly URLs.
+                    The service layer auto-generates the slug from the title on save.
                   </p>
                   <CodeBlock language="bash" code={`grit generate resource Post \\
   --fields "title:string,slug:slug,excerpt:text,content:richtext,cover_image:image,status:enum:draft,published,archived,published_at:time,views:int"
