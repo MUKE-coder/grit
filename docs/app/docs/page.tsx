@@ -51,6 +51,27 @@ export default function DocsIntroductionPage() {
               ))}
             </div>
 
+            {/* YouTube intro video */}
+            <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden mb-10 shadow-lg">
+              <div className="px-4 py-2.5 border-b border-border/30 bg-accent/20 flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                </div>
+                <span className="ml-2 text-[11px] font-mono text-muted-foreground/50">What is Grit?</span>
+              </div>
+              <div className="aspect-video">
+                <iframe
+                  src="https://www.youtube.com/embed/F-6ZEJLy8Yc"
+                  title="What is Grit Framework?"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+
             {/* Handbook download banner */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-5 rounded-xl border border-primary/20 bg-primary/5 mb-10">
               <div className="flex items-center gap-3 flex-1">
