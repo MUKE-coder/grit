@@ -87,6 +87,7 @@ export const RegisterSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string(),
+  macAddress: z.string().optional(), // optional — passed by client if available
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -157,6 +158,8 @@ func sharedUserTypes() string {
   active: boolean;
   provider: string;
   email_verified_at: string | null;
+  ip_address: string;
+  mac_address: string;
   created_at: string;
   updated_at: string;
 }
@@ -171,6 +174,7 @@ export interface RegisterRequest {
   last_name: string;
   email: string;
   password: string;
+  mac_address?: string; // optional — provided by client if obtainable
 }
 
 export interface AuthResponse {

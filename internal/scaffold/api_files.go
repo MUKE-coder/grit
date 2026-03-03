@@ -613,6 +613,8 @@ type User struct {
 	GoogleID        string         ` + "`" + `gorm:"size:255" json:"-"` + "`" + `
 	GithubID        string         ` + "`" + `gorm:"size:255" json:"-"` + "`" + `
 	EmailVerifiedAt *time.Time     ` + "`" + `json:"email_verified_at"` + "`" + `
+	IPAddress       string         ` + "`" + `gorm:"size:45" json:"ip_address"` + "`" + `
+	MACAddress      string         ` + "`" + `gorm:"size:50" json:"mac_address"` + "`" + `
 	CreatedAt       time.Time      ` + "`" + `json:"created_at"` + "`" + `
 	UpdatedAt       time.Time      ` + "`" + `json:"updated_at"` + "`" + `
 	DeletedAt       gorm.DeletedAt ` + "`" + `gorm:"index" json:"-"` + "`" + `
@@ -841,10 +843,11 @@ type AuthHandler struct {
 }
 
 type registerRequest struct {
-	FirstName string ` + "`" + `json:"first_name" binding:"required,min=2"` + "`" + `
-	LastName  string ` + "`" + `json:"last_name" binding:"required,min=2"` + "`" + `
-	Email     string ` + "`" + `json:"email" binding:"required,email"` + "`" + `
-	Password  string ` + "`" + `json:"password" binding:"required,min=8"` + "`" + `
+	FirstName  string ` + "`" + `json:"first_name" binding:"required,min=2"` + "`" + `
+	LastName   string ` + "`" + `json:"last_name" binding:"required,min=2"` + "`" + `
+	Email      string ` + "`" + `json:"email" binding:"required,email"` + "`" + `
+	Password   string ` + "`" + `json:"password" binding:"required,min=8"` + "`" + `
+	MACAddress string ` + "`" + `json:"mac_address"` + "`" + ` // optional — provided by client if available
 }
 
 type loginRequest struct {
@@ -891,12 +894,14 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	user := models.User{
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-		Email:     req.Email,
-		Password:  req.Password,
-		Role:      models.RoleUser,
-		Active:    true,
+		FirstName:  req.FirstName,
+		LastName:   req.LastName,
+		Email:      req.Email,
+		Password:   req.Password,
+		Role:       models.RoleUser,
+		Active:     true,
+		IPAddress:  c.ClientIP(),
+		MACAddress: req.MACAddress,
 	}
 
 	if err := h.DB.Create(&user).Error; err != nil {
@@ -1193,6 +1198,7 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 				Provider:        provider,
 				Active:          true,
 				EmailVerifiedAt: &now,
+				IPAddress:       c.ClientIP(),
 			}
 
 			if provider == "google" {
