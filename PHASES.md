@@ -457,6 +457,9 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 - [x] Go CLI/generator tests:
   - Unit tests for `internal/generate` package (pluralize, field types, definition parsing)
   - 31 test cases covering GoType, TSType, ZodType, GORMTag, field helpers, FKColumnName, RelatedModelName, UIHelpers, ParseInlineFields, LoadFromYAML, ValidFieldTypes
+- [x] Go CLI/scaffold tests:
+  - 13 tests for `internal/scaffold` package — ValidateProjectName, ValidateStyle, ShouldInclude* helpers, createDirectories (api-only/default/full modes), writeAPIFiles (module substitution, key files exist), writeFile helper
+  - Fixed pre-existing build errors: `%3C` URL-encoding in `fmt.Sprintf` template, trailing `\n` in `color.Println` calls
 - [ ] Go API tests:
   - Integration tests for handlers
   - Auth flow tests

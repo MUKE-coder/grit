@@ -57,6 +57,7 @@
 ### What's In Progress / Phase 5
 - [x] Documentation site (`docs/`) — comprehensive, covers all phases
 - [x] Tests: 31 unit tests for `internal/generate` (pluralize, field types, definition parsing) — all passing
+- [x] Tests: 13 unit tests for `internal/scaffold` (ValidateProjectName, ValidateStyle, ShouldInclude* helpers, createDirectories, writeAPIFiles, writeFile) — all passing
 - [x] CI/CD: GitHub Actions `ci.yml` (test + race + coverage + cross-platform build) + `release.yml` (tag-triggered release)
 - [ ] Go API integration tests (handlers, auth flow, SQLite in-memory)
 - [ ] Frontend component + E2E tests
@@ -286,4 +287,4 @@ When starting a new session:
 
 ---
 
-*Last context update: 2026-02-11 — Phase 3 complete. Admin panel with runtime resource definitions, advanced DataTable, FormBuilder, dashboard widgets, theme toggle, Lucide icons, resource registry.*
+*Last context update: 2026-03-03 — Phase 5 in progress. Tests: 44 tests total (31 generate + 13 scaffold), all passing. CI/CD workflows complete. Build errors fixed (SVG %3C escaping in admin_style_glass.go, trailing \\n in cmd/grit/main.go).*

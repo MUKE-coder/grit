@@ -302,9 +302,9 @@ func migrateCmd() *cobra.Command {
 
 			purple := color.New(color.FgHiMagenta, color.Bold)
 			if fresh {
-				purple.Println("\n  Running fresh migration (drop + re-migrate)...\n")
+				purple.Println("\n  Running fresh migration (drop + re-migrate)...")
 			} else {
-				purple.Println("\n  Running database migrations...\n")
+				purple.Println("\n  Running database migrations...")
 			}
 
 			return c.Run()
@@ -336,7 +336,7 @@ func seedCmd() *cobra.Command {
 			c.Stdin = os.Stdin
 
 			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Println("\n  Seeding database...\n")
+			purple.Println("\n  Seeding database...")
 
 			return c.Run()
 		},
@@ -468,7 +468,7 @@ func startClientCmd() *cobra.Command {
 			}
 
 			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Println("\n  Starting client apps...\n")
+			purple.Println("\n  Starting client apps...")
 
 			c := exec.Command("pnpm", "dev")
 			c.Dir = root
@@ -493,7 +493,7 @@ func startServerCmd() *cobra.Command {
 			}
 
 			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Println("\n  Starting API server...\n")
+			purple.Println("\n  Starting API server...")
 
 			c := exec.Command("go", "run", "cmd/server/main.go")
 			c.Dir = apiDir
