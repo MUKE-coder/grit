@@ -460,6 +460,10 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 - [x] Go CLI/scaffold tests:
   - 13 tests for `internal/scaffold` package — ValidateProjectName, ValidateStyle, ShouldInclude* helpers, createDirectories (api-only/default/full modes), writeAPIFiles (module substitution, key files exist), writeFile helper
   - Fixed pre-existing build errors: `%3C` URL-encoding in `fmt.Sprintf` template, trailing `\n` in `color.Println` calls
+- [x] Go CLI/generator inject + sync tests:
+  - `inject_test.go`: injectBefore (inserts before marker, marker-not-found, idempotent, missing file), injectInline (inserts inline, errors), guessLucideIcon (12 name→icon cases)
+  - `sync_test.go`: goTypeToTS (15 type mappings), goTypeToZod (10 type+tag combos), extractTag (7 cases incl. omitempty), isAutoField, buildTSType, buildZodSchema (auto fields excluded, .optional() in update schema), parseGoStructs (simple struct, multiple structs, invalid Go file, missing file), round-trip test
+  - 68 total test cases (including subtests) — all passing
 - [ ] Go API tests:
   - Integration tests for handlers
   - Auth flow tests

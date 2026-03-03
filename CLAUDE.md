@@ -58,6 +58,7 @@
 - [x] Documentation site (`docs/`) — comprehensive, covers all phases
 - [x] Tests: 31 unit tests for `internal/generate` (pluralize, field types, definition parsing) — all passing
 - [x] Tests: 13 unit tests for `internal/scaffold` (ValidateProjectName, ValidateStyle, ShouldInclude* helpers, createDirectories, writeAPIFiles, writeFile) — all passing
+- [x] Tests: inject + sync tests for `internal/generate` (injectBefore, injectInline, guessLucideIcon, goTypeToTS, goTypeToZod, extractTag, isAutoField, buildTSType, buildZodSchema, parseGoStructs, round-trip) — 68 total test cases all passing
 - [x] CI/CD: GitHub Actions `ci.yml` (test + race + coverage + cross-platform build) + `release.yml` (tag-triggered release)
 - [ ] Go API integration tests (handlers, auth flow, SQLite in-memory)
 - [ ] Frontend component + E2E tests
