@@ -36,9 +36,9 @@
 
 <!-- UPDATE THIS SECTION AS PHASES ARE COMPLETED -->
 
-**Current Phase:** Phase 4 — Batteries
-**Status:** Complete
-**Last Updated:** 2026-02-11
+**Current Phase:** Phase 5 — Polish & Launch
+**Status:** In Progress
+**Last Updated:** 2026-03-03
 
 ### What's Been Built
 - [x] CLI Scaffolder (`grit new <project-name>` with `--api` flag, name validation, ASCII art)
@@ -54,11 +54,14 @@
 - [x] Phase 3 — Admin Panel: runtime resource definitions via `defineResource()`, advanced DataTable (sort, filter, select, pagination), FormBuilder (8 field types), dashboard widgets (stats, charts, activity), collapsible sidebar with Lucide icons, dark/light theme toggle, resource registry
 - [x] Phase 4 — Batteries: Redis cache service + middleware, S3 file storage (MinIO/R2/B2) + image processing + upload handler, Resend email service + 4 HTML templates, asynq background jobs (email/image/cleanup workers) + admin dashboard, asynq cron scheduler, AI integration (Claude + OpenAI with streaming), admin System pages (Jobs, Files, Cron, Mail Preview)
 
-### What's In Progress
-- Nothing — Phase 4 complete
-
-### What's Next
-- [ ] Phase 5: Polish & Launch (docs, tests, performance)
+### What's In Progress / Phase 5
+- [x] Documentation site (`docs/`) — comprehensive, covers all phases
+- [x] Tests: 31 unit tests for `internal/generate` (pluralize, field types, definition parsing) — all passing
+- [x] CI/CD: GitHub Actions `ci.yml` (test + race + coverage + cross-platform build) + `release.yml` (tag-triggered release)
+- [ ] Go API integration tests (handlers, auth flow, SQLite in-memory)
+- [ ] Frontend component + E2E tests
+- [ ] Performance optimizations
+- [ ] Public launch (README GIF, blog posts, Product Hunt, etc.)
 
 ---
 

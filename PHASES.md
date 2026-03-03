@@ -454,8 +454,10 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 
 ### 5.2 Testing
 
+- [x] Go CLI/generator tests:
+  - Unit tests for `internal/generate` package (pluralize, field types, definition parsing)
+  - 31 test cases covering GoType, TSType, ZodType, GORMTag, field helpers, FKColumnName, RelatedModelName, UIHelpers, ParseInlineFields, LoadFromYAML, ValidFieldTypes
 - [ ] Go API tests:
-  - Unit tests for services
   - Integration tests for handlers
   - Auth flow tests
   - Database tests (SQLite in-memory)
@@ -463,12 +465,9 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
   - Component tests (React Testing Library)
   - Hook tests
   - E2E tests (Playwright) for auth flow and admin panel
-- [ ] CLI tests:
-  - Scaffold command output validation
-  - Generate command output validation
-- [ ] CI/CD:
-  - GitHub Actions for Go tests, frontend tests, linting
-  - Automated build verification
+- [x] CI/CD:
+  - GitHub Actions `ci.yml` — test + race detector + coverage + cross-platform build (linux/darwin/windows × amd64/arm64)
+  - GitHub Actions `release.yml` — tag-triggered release with binaries + auto release notes
 
 ### 5.3 Performance
 
