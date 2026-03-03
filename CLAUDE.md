@@ -59,10 +59,12 @@
 - [x] Tests: 31 unit tests for `internal/generate` (pluralize, field types, definition parsing) — all passing
 - [x] Tests: 13 unit tests for `internal/scaffold` (ValidateProjectName, ValidateStyle, ShouldInclude* helpers, createDirectories, writeAPIFiles, writeFile) — all passing
 - [x] Tests: inject + sync tests for `internal/generate` (injectBefore, injectInline, guessLucideIcon, goTypeToTS, goTypeToZod, extractTag, isAutoField, buildTSType, buildZodSchema, parseGoStructs, round-trip) — 68 total test cases all passing
+- [x] Benchmarks: `bench_test.go` — 7 BenchmarkXxx functions for Pluralize, GoType, ZodType, GORMTag, ParseInlineFields, injectBefore, goTypeToTS
+- [x] Performance: gzip compression + connection pooling + request ID tracing + Sentinel rate limiting — all baked into scaffolded API templates
+- [x] README.md: Full CLI reference, all 4 phases documented, field types table, tech stack table
 - [x] CI/CD: GitHub Actions `ci.yml` (test + race + coverage + cross-platform build) + `release.yml` (tag-triggered release)
 - [ ] Go API integration tests (handlers, auth flow, SQLite in-memory)
 - [ ] Frontend component + E2E tests
-- [ ] Performance optimizations
 - [ ] Public launch (README GIF, blog posts, Product Hunt, etc.)
 
 ---
@@ -288,4 +290,4 @@ When starting a new session:
 
 ---
 
-*Last context update: 2026-03-03 — Phase 5 in progress. Tests: 44 tests total (31 generate + 13 scaffold), all passing. CI/CD workflows complete. Build errors fixed (SVG %3C escaping in admin_style_glass.go, trailing \\n in cmd/grit/main.go).*
+*Last context update: 2026-03-03 — Phase 5 in progress. Tests: 68 test cases passing (generate: definition/field/pluralize/inject/sync + scaffold: options/dirs/files). Benchmarks added. Performance items complete (gzip, connection pooling, rate limiting). README fully updated with Phases 1-4 features.*

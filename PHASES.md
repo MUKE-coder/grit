@@ -478,17 +478,17 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 
 ### 5.3 Performance
 
-- [ ] Go API:
-  - Connection pooling optimization
-  - Query optimization (preloading, indexes)
-  - Response compression (gzip)
-  - Caching headers
+- [x] Go API:
+  - Connection pooling: `SetMaxIdleConns(10)`, `SetMaxOpenConns(100)`, `SetConnMaxLifetime(30m)` in scaffolded `database.go`
+  - Response compression: `Gzip()` middleware (gzip.BestSpeed + Vary header) in all scaffolded APIs
+  - Request ID tracing: `RequestID()` middleware for log correlation across requests
+  - Rate limiting: Sentinel — per-IP (100 req/min) + per-route limits on auth endpoints
+  - Benchmarks: 7 `BenchmarkXxx` functions in `internal/generate/bench_test.go` — run with `go test -bench=.`
 - [ ] Frontend:
-  - Image optimization
-  - Bundle analysis and code splitting
-  - Lazy loading for admin panel routes
-- [ ] Benchmarks:
-  - API response times
+  - Image optimization (Next.js `<Image>` — already in web app template)
+  - Bundle analysis and code splitting (admin lazy routes)
+- [ ] Additional benchmarks:
+  - API response time benchmarks (httptest-based)
   - Concurrent connection handling
   - Comparison with Laravel/Next.js
 
