@@ -16,7 +16,7 @@ import (
 	"github.com/MUKE-coder/grit/v2/internal/scaffold"
 )
 
-var version = "2.0.0"
+var version = "2.2.0"
 
 func main() {
 	rootCmd := &cobra.Command{

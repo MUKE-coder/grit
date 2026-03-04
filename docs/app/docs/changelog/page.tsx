@@ -28,10 +28,39 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v2.1.0 */}
+            {/* v2.2.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v2.2.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Fixes</h3>
+                <ul>
+                  <li>
+                    <strong>Desktop auth hook file extension</strong> &mdash; Renamed the scaffolded{' '}
+                    <code>use-auth.ts</code> to <code>use-auth.tsx</code> so TypeScript correctly handles
+                    the JSX in <code>&lt;AuthContext.Provider&gt;</code>. Previously, <code>grit new-desktop</code>{' '}
+                    projects would fail to compile with <code>TS1005: {`'>'`} expected</code> errors.
+                  </li>
+                </ul>
+
+                <h3>Documentation</h3>
+                <ul>
+                  <li>
+                    Added Desktop Handbook PDF download links to all 8 desktop documentation pages.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v2.1.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v2.1.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 4, 2026</span>
