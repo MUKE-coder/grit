@@ -275,7 +275,7 @@ docker compose version`} className="mb-0" />
             </div>
 
             <div className="mb-4">
-              <CodeBlock terminal code="go install github.com/MUKE-coder/grit/cmd/grit@latest" className="mb-0 glow-purple-sm" />
+              <CodeBlock terminal code="go install github.com/MUKE-coder/grit/v2/cmd/grit@latest" className="mb-0 glow-purple-sm" />
             </div>
 
             <div className="prose-grit">

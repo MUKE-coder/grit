@@ -7,7 +7,7 @@ Grit is a full-stack meta-framework that fuses Go (Gin + GORM) with Next.js (Rea
 ## Install
 
 ```bash
-go install github.com/MUKE-coder/grit/cmd/grit@latest
+go install github.com/MUKE-coder/grit/v2/cmd/grit@latest
 ```
 
 To remove a previous version first:

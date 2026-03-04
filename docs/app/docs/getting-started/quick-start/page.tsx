@@ -93,7 +93,7 @@ export default function QuickStartPage() {
                   anywhere on your system.
                 </p>
               </div>
-              <CodeBlock terminal code="go install github.com/MUKE-coder/grit/cmd/grit@latest" className="mb-0 glow-purple-sm" />
+              <CodeBlock terminal code="go install github.com/MUKE-coder/grit/v2/cmd/grit@latest" className="mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>
                   Verify the installation by running <code>grit --help</code>.

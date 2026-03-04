@@ -1,4 +1,4 @@
-module github.com/MUKE-coder/grit
+module github.com/MUKE-coder/grit/v2
 
 go 1.24.2
 

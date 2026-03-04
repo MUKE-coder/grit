@@ -369,6 +369,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Prerequisites, scaffolding, and development workflow for Grit desktop apps using Wails, Go, and React.',
   },
+  '/docs/desktop/first-app': {
+    title: 'Your First Desktop App',
+    description:
+      'Step-by-step tutorial: build a Task Manager desktop app with Grit and Wails. Scaffold, generate resources, browse with GORM Studio, and compile for distribution.',
+  },
   '/docs/desktop/resource-generation': {
     title: 'Desktop Resource Generation',
     description:
@@ -378,6 +383,16 @@ export const docsMetadata: Record<string, DocPage> = {
     title: 'Building & Distribution',
     description:
       'Compile Grit desktop apps into native executables. Cross-platform builds, NSIS installers, and distribution tips.',
+  },
+  '/docs/desktop/pos-app': {
+    title: 'Build a POS App',
+    description:
+      'Advanced tutorial: build a Point of Sale desktop application with Grit Desktop. Product catalog, sales transactions, receipts, inventory tracking, and daily reports in a single native binary.',
+  },
+  '/docs/desktop/llm-reference': {
+    title: 'Desktop LLM Reference',
+    description:
+      'The complete Grit Desktop reference for AI assistants and LLMs: architecture, Wails bindings, CLI commands, resource generation, field types, code markers, DataTable, FormBuilder, building executables, and the golden rules.',
   },
 
   // Changelog

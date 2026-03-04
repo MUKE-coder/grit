@@ -174,7 +174,7 @@ export default function LLMGuidePage() {
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Install once with{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">go install github.com/MUKE-coder/grit/cmd/grit@latest</code>.
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">go install github.com/MUKE-coder/grit/v2/cmd/grit@latest</code>.
                   Every command is idempotent — safe to re-run.
                 </p>
 
@@ -1370,7 +1370,7 @@ pnpm --filter admin dev    # http://localhost:3001`} />
                   <SectionNum n={16} />Quick Build Reference
                 </h2>
                 <div className="space-y-4">
-                  <CodeBlock language="bash" filename="Start a new project (with Docker)" code={`go install github.com/MUKE-coder/grit/cmd/grit@latest
+                  <CodeBlock language="bash" filename="Start a new project (with Docker)" code={`go install github.com/MUKE-coder/grit/v2/cmd/grit@latest
 grit new myapp && cd myapp
 cp .env.example .env          # fill in values
 docker compose up -d          # starts PostgreSQL, Redis, MinIO, Mailhog

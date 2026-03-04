@@ -11,9 +11,9 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
-	"github.com/MUKE-coder/grit/internal/generate"
-	"github.com/MUKE-coder/grit/internal/project"
-	"github.com/MUKE-coder/grit/internal/scaffold"
+	"github.com/MUKE-coder/grit/v2/internal/generate"
+	"github.com/MUKE-coder/grit/v2/internal/project"
+	"github.com/MUKE-coder/grit/v2/internal/scaffold"
 )
 
 var version = "2.0.0"
@@ -431,7 +431,7 @@ func updateCmd() *cobra.Command {
 			}
 
 			spinner.Println("  → Installing latest version...")
-			c := exec.Command("go", "install", "github.com/MUKE-coder/grit/cmd/grit@latest")
+			c := exec.Command("go", "install", "github.com/MUKE-coder/grit/v2/cmd/grit@latest")
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
 			if err := c.Run(); err != nil {

@@ -3,7 +3,7 @@ package generate
 import (
 	"fmt"
 
-	"github.com/MUKE-coder/grit/internal/project"
+	"github.com/MUKE-coder/grit/v2/internal/project"
 )
 
 // DesktopGenerator holds context for generating a resource in a desktop project.

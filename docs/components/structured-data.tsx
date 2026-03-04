@@ -86,7 +86,7 @@ export function FAQPageSchema() {
             name: 'How do I install Grit?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'Install Grit with: go install github.com/MUKE-coder/grit/cmd/grit@latest. Then run "grit new my-project" to scaffold a full-stack project. You need Go 1.21+, Node.js 18+, and pnpm installed.',
+              text: 'Install Grit with: go install github.com/MUKE-coder/grit/v2/cmd/grit@latest. Then run "grit new my-project" to scaffold a full-stack project. You need Go 1.21+, Node.js 18+, and pnpm installed.',
             },
           },
           {

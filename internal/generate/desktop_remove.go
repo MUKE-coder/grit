@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/MUKE-coder/grit/internal/project"
+	"github.com/MUKE-coder/grit/v2/internal/project"
 )
 
 // removeGoFuncBlock removes a Go function block starting with the given signature
