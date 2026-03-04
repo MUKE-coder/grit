@@ -28,10 +28,82 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v1.4.0 */}
+            {/* v2.0.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v2.0.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>Native desktop apps (Wails)</strong> &mdash; New <code>grit new-desktop</code> command
+                    scaffolds a complete desktop application with Go backend, React frontend (Vite + React Router +
+                    TanStack Query), SQLite database, JWT authentication, blog and contact CRUD, PDF/Excel export,
+                    custom title bar, dark theme, and GORM Studio. Compiles to a single native executable for
+                    Windows, macOS, and Linux. See{' '}
+                    <Link href="/docs/desktop" className="text-primary hover:underline">Desktop docs</Link>.
+                  </li>
+                  <li>
+                    <strong>Desktop resource generation</strong> &mdash; <code>grit generate resource</code> now
+                    works inside desktop projects. Generates Go model, service, React list page, and form page,
+                    then injects code into 12 locations (db.go, main.go, app.go, types.go, App.tsx, sidebar.tsx,
+                    studio/main.go) using <code>grit:</code> markers. See{' '}
+                    <Link href="/docs/desktop/resource-generation" className="text-primary hover:underline">Desktop Resource Generation</Link>.
+                  </li>
+                  <li>
+                    <strong>Project type auto-detection</strong> &mdash; All CLI commands now auto-detect whether
+                    you are inside a web (Turborepo) or desktop (Wails) project. No flags needed.
+                  </li>
+                  <li>
+                    <strong><code>grit start</code> for desktop</strong> &mdash; Running <code>grit start</code>{' '}
+                    inside a desktop project launches <code>wails dev</code> with hot-reload for both Go and React.
+                  </li>
+                  <li>
+                    <strong><code>grit compile</code></strong> &mdash; New command that runs <code>wails build</code>{' '}
+                    to produce a distributable native binary.
+                  </li>
+                  <li>
+                    <strong><code>grit studio</code></strong> &mdash; New command that launches GORM Studio. For
+                    desktop projects it starts a standalone server on port 4000. For web projects it opens the
+                    browser to the embedded Studio route.
+                  </li>
+                  <li>
+                    <strong><code>grit remove resource</code> for desktop</strong> &mdash; Removes a previously
+                    generated desktop resource, deleting files and reversing all 12 marker injections.
+                  </li>
+                  <li>
+                    <strong>Grit UI component registry (91 components)</strong> &mdash; Every scaffolded web
+                    project now includes a shadcn-compatible component registry with 91 pre-built components
+                    across 5 categories: marketing (14), auth (10), SaaS (30), ecommerce (20), and layout (18).
+                    Install via <code>npx shadcn@latest add</code> from <code>/r</code> endpoints.
+                  </li>
+                </ul>
+
+                <h3>Documentation</h3>
+                <ul>
+                  <li>
+                    New{' '}
+                    <Link href="/docs/desktop" className="text-primary hover:underline">Desktop (Wails)</Link>{' '}
+                    section &mdash; 4 pages covering overview, getting started, resource generation, and building/distribution.
+                  </li>
+                  <li>
+                    Updated{' '}
+                    <Link href="/docs/ai-skill/llm-guide" className="text-primary hover:underline">LLM Reference</Link>{' '}
+                    with complete desktop section: project structure, CLI commands, markers, and architecture comparison.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v1.4.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v1.4.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 2, 2026</span>
