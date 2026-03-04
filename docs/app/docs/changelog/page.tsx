@@ -28,10 +28,33 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v2.2.0 */}
+            {/* v2.3.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v2.3.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 5, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Fixes</h3>
+                <ul>
+                  <li>
+                    <strong>Desktop build script</strong> &mdash; Removed <code>tsc</code> from the frontend
+                    build script. TanStack Router{`'`}s Vite plugin generates <code>routeTree.gen.ts</code> during
+                    the Vite build, so running <code>tsc</code> before Vite caused{' '}
+                    <code>Cannot find module {`'`}./routeTree.gen{`'`}</code> errors. Vite handles type-stripping
+                    via esbuild.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v2.2.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v2.2.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 4, 2026</span>
