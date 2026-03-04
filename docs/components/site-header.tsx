@@ -6,6 +6,7 @@ import { Github, Youtube, Linkedin, Globe, Sun, Moon, Heart } from 'lucide-react
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { SearchDialog } from '@/components/search-dialog'
+import { MobileNav } from '@/components/docs-sidebar'
 
 export function SiteHeader() {
   const { theme, setTheme } = useTheme()
@@ -16,6 +17,9 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-2xl">
       <div className="container flex h-14 max-w-screen-2xl items-center px-6">
+        {/* Mobile menu */}
+        <MobileNav />
+
         {/* Logo */}
         <div className="mr-8 flex items-center">
           <Link href="/" className="flex items-center gap-2 group">

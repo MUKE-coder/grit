@@ -21,9 +21,18 @@ import {
   GraduationCap,
   Download,
   Monitor,
+  Menu,
 } from 'lucide-react'
 import { useState } from 'react'
 import { SidebarSponsorBanner, RightSideBanners } from '@/components/sidebar-banners'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
+import { Button } from '@/components/ui/button'
 
 interface NavItem {
   title: string
@@ -281,5 +290,138 @@ export function DocsSidebar() {
       </aside>
       <RightSideBanners />
     </>
+  )
+}
+
+/* ── Mobile Navigation Sheet ─────────────────────────────────── */
+
+function MobileNavSection({ item, onNavigate }: { item: NavItem; onNavigate: () => void }) {
+  const [isOpen, setIsOpen] = useState(true)
+  const pathname = usePathname()
+
+  if (!item.items) {
+    return (
+      <Link
+        href={item.href || '#'}
+        onClick={onNavigate}
+        className={cn(
+          'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-all',
+          pathname === item.href
+            ? 'bg-primary/10 text-primary font-medium'
+            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+        )}
+      >
+        {item.icon}
+        {item.title}
+      </Link>
+    )
+  }
+
+  return (
+    <div className="mb-1">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-[13px] font-medium text-foreground/80 hover:bg-accent/30 transition-colors"
+      >
+        <div className="flex items-center gap-2.5">
+          <span className="text-muted-foreground/60">{item.icon}</span>
+          {item.title}
+        </div>
+        <ChevronRight
+          className={cn(
+            'h-3 w-3 text-muted-foreground/40 transition-transform duration-200',
+            isOpen && 'rotate-90'
+          )}
+        />
+      </button>
+      {isOpen && (
+        <div className="mt-0.5 space-y-0.5 ml-3 pl-3 border-l border-border/30">
+          {item.items.map((subItem) => (
+            <Link
+              key={subItem.href}
+              href={subItem.href || '#'}
+              onClick={onNavigate}
+              className={cn(
+                'block rounded-md px-2.5 py-1.5 text-[13px] transition-all',
+                pathname === subItem.href
+                  ? 'text-primary font-medium bg-primary/5'
+                  : 'text-muted-foreground/70 hover:text-foreground hover:bg-accent/30'
+              )}
+            >
+              {subItem.title}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function MobileNav() {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground lg:hidden"
+        >
+          <Menu className="h-4 w-4" />
+          <span className="sr-only">Toggle navigation menu</span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-72 p-0 bg-background border-border/30">
+        <SheetHeader className="px-4 py-3 border-b border-border/30">
+          <SheetTitle className="flex items-center gap-2 text-left">
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/15 border border-primary/20">
+              <span className="text-primary font-mono font-bold text-[10px]">G</span>
+            </div>
+            <span className="text-sm font-semibold tracking-tight">Grit Docs</span>
+          </SheetTitle>
+        </SheetHeader>
+        <div className="overflow-y-auto h-[calc(100vh-3.5rem)] py-4">
+          {/* Top-level nav links (Docs, Showcase, etc.) */}
+          <div className="px-4 mb-4 space-y-1">
+            {[
+              { label: 'Docs', href: '/docs' },
+              { label: 'Showcase', href: '/showcase' },
+              { label: 'GritCMS', href: 'https://gritcms.com' },
+              { label: 'Hire Us', href: '/hire' },
+            ].map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className="block rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+          <div className="mx-4 mb-3 border-t border-border/30" />
+          {/* Full sidebar nav */}
+          <nav className="space-y-1 px-4">
+            {navItems.map((item) => (
+              <MobileNavSection key={item.title} item={item} onNavigate={() => setOpen(false)} />
+            ))}
+          </nav>
+          {/* Handbook download */}
+          <div className="px-4 mt-4 mb-2">
+            <a
+              href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfeHHJl34ZKSqNhOvVj6p9rg3Icmo05TAEwQ4a"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <div className="flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/8 px-3 py-2.5 text-xs font-medium text-primary/80 hover:bg-primary/15 hover:text-primary transition-colors cursor-pointer">
+                <Download className="h-3.5 w-3.5 shrink-0" />
+                <span>Download Handbook PDF</span>
+              </div>
+            </a>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   )
 }

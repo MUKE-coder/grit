@@ -450,7 +450,7 @@ db.Preload("User").Preload("Comments").Find(&posts)`} />
                   replacement. Add the SQLite driver and swap the connection:
                 </p>
                 <CodeBlock filename="SQLite connection" code={`import (
-    "gorm.io/driver/sqlite"
+    "github.com/glebarez/sqlite"
     "gorm.io/gorm"
 )
 

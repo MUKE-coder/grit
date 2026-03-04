@@ -49,7 +49,7 @@ go 1.21
 require (
 	github.com/wailsapp/wails/v2 v2.9.1
 	gorm.io/gorm v1.25.12
-	gorm.io/driver/sqlite v1.5.7
+	github.com/glebarez/sqlite v1.11.0
 	gorm.io/driver/postgres v1.5.11
 	golang.org/x/crypto v0.31.0
 	github.com/jung-kurt/gofpdf v1.16.2

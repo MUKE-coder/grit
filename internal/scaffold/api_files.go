@@ -78,7 +78,7 @@ require (
 
 require (
 	github.com/stretchr/testify v1.9.0
-	gorm.io/driver/sqlite v1.5.5
+	github.com/glebarez/sqlite v1.11.0
 )
 `, opts.ProjectName)
 }
