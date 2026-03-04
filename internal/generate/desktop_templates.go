@@ -308,8 +308,8 @@ func (g *DesktopGenerator) buildDesktopSearchWhere() string {
 	return "\"" + clause + "\"" + args
 }
 
-// writeDesktopListPage generates frontend/src/pages/<plural>/index.tsx.
-func (g *DesktopGenerator) writeDesktopListPage(names Names) error {
+// writeDesktopListRoute generates frontend/src/routes/_layout/<plural>.index.tsx.
+func (g *DesktopGenerator) writeDesktopListRoute(names Names) error {
 	// Build table header columns (skip slug fields)
 	headerCols := ""
 	colCount := 0
@@ -327,8 +327,7 @@ func (g *DesktopGenerator) writeDesktopListPage(names Names) error {
 	// Add Actions column
 	colCount += 1 // for actions
 
-	totalColSpan := fmt.Sprintf("%d", colCount+1) // +1 for actions column... actually colCount already includes actions
-	totalColSpan = fmt.Sprintf("%d", colCount)
+	totalColSpan := fmt.Sprintf("%d", colCount)
 
 	// Build table body cells
 	bodyCells := ""
@@ -373,15 +372,19 @@ func (g *DesktopGenerator) writeDesktopListPage(names Names) error {
 	exportPDFFunc := "Export" + names.PluralPascal + "PDF"
 	exportExcelFunc := "Export" + names.PluralPascal + "Excel"
 
-	content := "import { useState } from \"react\";\n"
-	content += "import { useNavigate } from \"react-router-dom\";\n"
+	content := "import { createFileRoute, useNavigate } from \"@tanstack/react-router\";\n"
+	content += "import { useState } from \"react\";\n"
 	content += "import { useQuery, useMutation, useQueryClient } from \"@tanstack/react-query\";\n"
 	content += "import { Plus, Pencil, Trash2, FileDown, FileSpreadsheet, Search } from \"lucide-react\";\n"
 	content += "import { toast } from \"sonner\";\n"
 	content += "// @ts-ignore\n"
 	content += "import { " + getFunc + ", " + deleteFunc + ", " + exportPDFFunc + ", " + exportExcelFunc + " } from \"../../../wailsjs/go/main/App\";\n"
 	content += "\n"
-	content += "export default function " + names.PluralPascal + "ListPage() {\n"
+	content += "export const Route = createFileRoute(\"/_layout/" + names.Plural + "/\")({\n"
+	content += "  component: " + names.PluralPascal + "ListPage,\n"
+	content += "});\n"
+	content += "\n"
+	content += "function " + names.PluralPascal + "ListPage() {\n"
 	content += "  const navigate = useNavigate();\n"
 	content += "  const queryClient = useQueryClient();\n"
 	content += "  const [page, setPage] = useState(1);\n"
@@ -453,7 +456,7 @@ func (g *DesktopGenerator) writeDesktopListPage(names Names) error {
 	content += "            Excel\n"
 	content += "          </button>\n"
 	content += "          <button\n"
-	content += "            onClick={() => navigate(\"/" + names.Plural + "/new\")}\n"
+	content += "            onClick={() => navigate({ to: \"/" + names.Plural + "/new\" })}\n"
 	content += "            className=\"flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-accent hover:bg-accent/90 rounded-lg transition-colors\"\n"
 	content += "          >\n"
 	content += "            <Plus size={16} />\n"
@@ -499,7 +502,7 @@ func (g *DesktopGenerator) writeDesktopListPage(names Names) error {
 	content += "                  <td className=\"px-4 py-3 text-right\">\n"
 	content += "                    <div className=\"flex items-center justify-end gap-1\">\n"
 	content += "                      <button\n"
-	content += "                        onClick={() => navigate(\"/" + names.Plural + "/\" + item.id + \"/edit\")}\n"
+	content += "                        onClick={() => navigate({ to: \"/" + names.Plural + "/$id/edit\", params: { id: String(item.id) } })}\n"
 	content += "                        className=\"p-1.5 rounded text-text-secondary hover:text-foreground hover:bg-bg-hover transition-colors\"\n"
 	content += "                      >\n"
 	content += "                        <Pencil size={14} />\n"
@@ -546,14 +549,182 @@ func (g *DesktopGenerator) writeDesktopListPage(names Names) error {
 	content += "  );\n"
 	content += "}\n"
 
-	path := filepath.Join(g.Root, "frontend", "src", "pages", names.Plural, "index.tsx")
+	path := filepath.Join(g.Root, "frontend", "src", "routes", "_layout", names.Plural+".index.tsx")
 	return writeFileWithDirs(path, content)
 }
 
-// writeDesktopFormPage generates frontend/src/pages/<plural>/form.tsx.
-func (g *DesktopGenerator) writeDesktopFormPage(names Names) error {
-	// Build state declarations
-	stateDecls := ""
+// writeDesktopNewRoute generates frontend/src/routes/_layout/<plural>.new.tsx.
+func (g *DesktopGenerator) writeDesktopNewRoute(names Names) error {
+	stateDecls, inputFields, formFields := g.buildFormHelpers(names)
+
+	createFunc := "Create" + names.Pascal
+
+	content := "import { createFileRoute, useNavigate } from \"@tanstack/react-router\";\n"
+	content += "import { useState } from \"react\";\n"
+	content += "import { toast } from \"sonner\";\n"
+	content += "// @ts-ignore\n"
+	content += "import { " + createFunc + " } from \"../../../wailsjs/go/main/App\";\n"
+	content += "\n"
+	content += "export const Route = createFileRoute(\"/_layout/" + names.Plural + "/new\")({\n"
+	content += "  component: " + names.Pascal + "NewPage,\n"
+	content += "});\n"
+	content += "\n"
+	content += "function " + names.Pascal + "NewPage() {\n"
+	content += "  const navigate = useNavigate();\n"
+	content += "\n"
+	content += stateDecls
+	content += "  const [loading, setLoading] = useState(false);\n"
+	content += "\n"
+	content += "  const handleSubmit = async (e: React.FormEvent) => {\n"
+	content += "    e.preventDefault();\n"
+	content += "    setLoading(true);\n"
+	content += "    try {\n"
+	content += "      await " + createFunc + "({\n"
+	content += inputFields
+	content += "      });\n"
+	content += "      toast.success(\"" + names.Pascal + " created\");\n"
+	content += "      navigate({ to: \"/" + names.Plural + "\" });\n"
+	content += "    } catch (err: any) {\n"
+	content += "      toast.error(err?.message || \"Failed to create " + names.Lower + "\");\n"
+	content += "    } finally {\n"
+	content += "      setLoading(false);\n"
+	content += "    }\n"
+	content += "  };\n"
+	content += "\n"
+	content += "  return (\n"
+	content += "    <div className=\"max-w-2xl\">\n"
+	content += "      <h1 className=\"text-2xl font-bold text-foreground mb-1\">New " + names.Pascal + "</h1>\n"
+	content += "      <p className=\"text-sm text-text-secondary mb-6\">Create a new " + names.Lower + "</p>\n"
+	content += "\n"
+	content += "      <form onSubmit={handleSubmit} className=\"space-y-5\">\n"
+	content += "        <div className=\"bg-bg-elevated border border-border rounded-xl p-6 space-y-4\">\n"
+	content += formFields
+	content += "        </div>\n"
+	content += "\n"
+	content += "        <div className=\"flex items-center gap-3\">\n"
+	content += "          <button\n"
+	content += "            type=\"submit\"\n"
+	content += "            disabled={loading}\n"
+	content += "            className=\"px-6 py-2.5 text-sm font-medium text-white bg-accent hover:bg-accent/90 rounded-lg transition-colors disabled:opacity-50\"\n"
+	content += "          >\n"
+	content += "            {loading ? \"Creating...\" : \"Create " + names.Pascal + "\"}\n"
+	content += "          </button>\n"
+	content += "          <button\n"
+	content += "            type=\"button\"\n"
+	content += "            onClick={() => navigate({ to: \"/" + names.Plural + "\" })}\n"
+	content += "            className=\"px-6 py-2.5 text-sm font-medium text-text-secondary bg-bg-elevated border border-border rounded-lg hover:bg-bg-hover transition-colors\"\n"
+	content += "          >\n"
+	content += "            Cancel\n"
+	content += "          </button>\n"
+	content += "        </div>\n"
+	content += "      </form>\n"
+	content += "    </div>\n"
+	content += "  );\n"
+	content += "}\n"
+
+	path := filepath.Join(g.Root, "frontend", "src", "routes", "_layout", names.Plural+".new.tsx")
+	return writeFileWithDirs(path, content)
+}
+
+// writeDesktopEditRoute generates frontend/src/routes/_layout/<plural>.$id.edit.tsx.
+func (g *DesktopGenerator) writeDesktopEditRoute(names Names) error {
+	stateDecls, inputFields, formFields := g.buildFormHelpers(names)
+	fetchAssignments := g.buildFetchAssignments()
+
+	getFunc := "Get" + names.Pascal
+	updateFunc := "Update" + names.Pascal
+
+	content := "import { createFileRoute, useNavigate } from \"@tanstack/react-router\";\n"
+	content += "import { useState, useEffect } from \"react\";\n"
+	content += "import { toast } from \"sonner\";\n"
+	content += "// @ts-ignore\n"
+	content += "import { " + getFunc + ", " + updateFunc + " } from \"../../../wailsjs/go/main/App\";\n"
+	content += "\n"
+	content += "export const Route = createFileRoute(\"/_layout/" + names.Plural + "/$id/edit\")({\n"
+	content += "  component: " + names.Pascal + "EditPage,\n"
+	content += "});\n"
+	content += "\n"
+	content += "function " + names.Pascal + "EditPage() {\n"
+	content += "  const { id } = Route.useParams();\n"
+	content += "  const navigate = useNavigate();\n"
+	content += "\n"
+	content += stateDecls
+	content += "  const [loading, setLoading] = useState(false);\n"
+	content += "  const [fetching, setFetching] = useState(true);\n"
+	content += "\n"
+	content += "  useEffect(() => {\n"
+	content += "    " + getFunc + "(Number(id))\n"
+	content += "      .then((data: any) => {\n"
+	content += fetchAssignments
+	content += "      })\n"
+	content += "      .catch((err: any) => {\n"
+	content += "        toast.error(err?.message || \"Failed to load " + names.Lower + "\");\n"
+	content += "        navigate({ to: \"/" + names.Plural + "\" });\n"
+	content += "      })\n"
+	content += "      .finally(() => setFetching(false));\n"
+	content += "  }, [id, navigate]);\n"
+	content += "\n"
+	content += "  const handleSubmit = async (e: React.FormEvent) => {\n"
+	content += "    e.preventDefault();\n"
+	content += "    setLoading(true);\n"
+	content += "    try {\n"
+	content += "      await " + updateFunc + "(Number(id), {\n"
+	content += inputFields
+	content += "      });\n"
+	content += "      toast.success(\"" + names.Pascal + " updated\");\n"
+	content += "      navigate({ to: \"/" + names.Plural + "\" });\n"
+	content += "    } catch (err: any) {\n"
+	content += "      toast.error(err?.message || \"Failed to update " + names.Lower + "\");\n"
+	content += "    } finally {\n"
+	content += "      setLoading(false);\n"
+	content += "    }\n"
+	content += "  };\n"
+	content += "\n"
+	content += "  if (fetching) {\n"
+	content += "    return (\n"
+	content += "      <div className=\"flex items-center justify-center py-20\">\n"
+	content += "        <div className=\"w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin\" />\n"
+	content += "      </div>\n"
+	content += "    );\n"
+	content += "  }\n"
+	content += "\n"
+	content += "  return (\n"
+	content += "    <div className=\"max-w-2xl\">\n"
+	content += "      <h1 className=\"text-2xl font-bold text-foreground mb-1\">Edit " + names.Pascal + "</h1>\n"
+	content += "      <p className=\"text-sm text-text-secondary mb-6\">Update the " + names.Lower + " details below</p>\n"
+	content += "\n"
+	content += "      <form onSubmit={handleSubmit} className=\"space-y-5\">\n"
+	content += "        <div className=\"bg-bg-elevated border border-border rounded-xl p-6 space-y-4\">\n"
+	content += formFields
+	content += "        </div>\n"
+	content += "\n"
+	content += "        <div className=\"flex items-center gap-3\">\n"
+	content += "          <button\n"
+	content += "            type=\"submit\"\n"
+	content += "            disabled={loading}\n"
+	content += "            className=\"px-6 py-2.5 text-sm font-medium text-white bg-accent hover:bg-accent/90 rounded-lg transition-colors disabled:opacity-50\"\n"
+	content += "          >\n"
+	content += "            {loading ? \"Saving...\" : \"Update " + names.Pascal + "\"}\n"
+	content += "          </button>\n"
+	content += "          <button\n"
+	content += "            type=\"button\"\n"
+	content += "            onClick={() => navigate({ to: \"/" + names.Plural + "\" })}\n"
+	content += "            className=\"px-6 py-2.5 text-sm font-medium text-text-secondary bg-bg-elevated border border-border rounded-lg hover:bg-bg-hover transition-colors\"\n"
+	content += "          >\n"
+	content += "            Cancel\n"
+	content += "          </button>\n"
+	content += "        </div>\n"
+	content += "      </form>\n"
+	content += "    </div>\n"
+	content += "  );\n"
+	content += "}\n"
+
+	path := filepath.Join(g.Root, "frontend", "src", "routes", "_layout", names.Plural+".$id.edit.tsx")
+	return writeFileWithDirs(path, content)
+}
+
+// buildFormHelpers extracts shared state declarations, input fields, and form fields for new/edit routes.
+func (g *DesktopGenerator) buildFormHelpers(names Names) (stateDecls, inputFields, formFields string) {
 	for _, f := range g.Definition.Fields {
 		if f.IsSlug() {
 			continue
@@ -571,29 +742,6 @@ func (g *DesktopGenerator) writeDesktopFormPage(names Names) error {
 		}
 	}
 
-	// Build fetch assignments for edit mode
-	fetchAssignments := ""
-	for _, f := range g.Definition.Fields {
-		if f.IsSlug() {
-			continue
-		}
-		setter := "set" + toPascalCase(f.Name)
-		jsonName := toSnakeCase(f.Name)
-
-		switch f.FormFieldType() {
-		case "number":
-			fetchAssignments += "          " + setter + "(data." + jsonName + " || 0);\n"
-		case "toggle":
-			fetchAssignments += "          " + setter + "(data." + jsonName + " || false);\n"
-		case "date", "datetime":
-			fetchAssignments += "          " + setter + "(data." + jsonName + " ? data." + jsonName + ".slice(0, 10) : \"\");\n"
-		default:
-			fetchAssignments += "          " + setter + "(data." + jsonName + " || \"\");\n"
-		}
-	}
-
-	// Build input object for submit
-	inputFields := ""
 	for _, f := range g.Definition.Fields {
 		if f.IsSlug() {
 			continue
@@ -609,8 +757,6 @@ func (g *DesktopGenerator) writeDesktopFormPage(names Names) error {
 		}
 	}
 
-	// Build form field elements
-	formFields := ""
 	for _, f := range g.Definition.Fields {
 		if f.IsSlug() {
 			continue
@@ -709,106 +855,29 @@ func (g *DesktopGenerator) writeDesktopFormPage(names Names) error {
 		}
 	}
 
-	// Wails function names
-	getFunc := "Get" + names.Pascal
-	createFunc := "Create" + names.Pascal
-	updateFunc := "Update" + names.Pascal
+	return stateDecls, inputFields, formFields
+}
 
-	content := "import { useState, useEffect } from \"react\";\n"
-	content += "import { useNavigate, useParams } from \"react-router-dom\";\n"
-	content += "import { toast } from \"sonner\";\n"
-	content += "// @ts-ignore\n"
-	content += "import { " + getFunc + ", " + createFunc + ", " + updateFunc + " } from \"../../../wailsjs/go/main/App\";\n"
-	content += "\n"
-	content += "export default function " + names.Pascal + "FormPage() {\n"
-	content += "  const { id } = useParams();\n"
-	content += "  const navigate = useNavigate();\n"
-	content += "  const isEditing = Boolean(id);\n"
-	content += "\n"
-	content += stateDecls
-	content += "  const [loading, setLoading] = useState(false);\n"
-	content += "  const [fetching, setFetching] = useState(false);\n"
-	content += "\n"
-	content += "  useEffect(() => {\n"
-	content += "    if (isEditing && id) {\n"
-	content += "      setFetching(true);\n"
-	content += "      " + getFunc + "(Number(id))\n"
-	content += "        .then((data: any) => {\n"
-	content += fetchAssignments
-	content += "        })\n"
-	content += "        .catch((err: any) => {\n"
-	content += "          toast.error(err?.message || \"Failed to load " + names.Lower + "\");\n"
-	content += "          navigate(\"/" + names.Plural + "\");\n"
-	content += "        })\n"
-	content += "        .finally(() => setFetching(false));\n"
-	content += "    }\n"
-	content += "  }, [id, isEditing, navigate]);\n"
-	content += "\n"
-	content += "  const handleSubmit = async (e: React.FormEvent) => {\n"
-	content += "    e.preventDefault();\n"
-	content += "    setLoading(true);\n"
-	content += "    try {\n"
-	content += "      const input = {\n"
-	content += inputFields
-	content += "      };\n"
-	content += "      if (isEditing && id) {\n"
-	content += "        await " + updateFunc + "(Number(id), input);\n"
-	content += "        toast.success(\"" + names.Pascal + " updated\");\n"
-	content += "      } else {\n"
-	content += "        await " + createFunc + "(input);\n"
-	content += "        toast.success(\"" + names.Pascal + " created\");\n"
-	content += "      }\n"
-	content += "      navigate(\"/" + names.Plural + "\");\n"
-	content += "    } catch (err: any) {\n"
-	content += "      toast.error(err?.message || \"Failed to save " + names.Lower + "\");\n"
-	content += "    } finally {\n"
-	content += "      setLoading(false);\n"
-	content += "    }\n"
-	content += "  };\n"
-	content += "\n"
-	content += "  if (fetching) {\n"
-	content += "    return (\n"
-	content += "      <div className=\"flex items-center justify-center py-20\">\n"
-	content += "        <div className=\"w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin\" />\n"
-	content += "      </div>\n"
-	content += "    );\n"
-	content += "  }\n"
-	content += "\n"
-	content += "  return (\n"
-	content += "    <div className=\"max-w-2xl\">\n"
-	content += "      <h1 className=\"text-2xl font-bold text-foreground mb-1\">\n"
-	content += "        {isEditing ? \"Edit " + names.Pascal + "\" : \"New " + names.Pascal + "\"}\n"
-	content += "      </h1>\n"
-	content += "      <p className=\"text-sm text-text-secondary mb-6\">\n"
-	content += "        {isEditing ? \"Update the " + names.Lower + " details below\" : \"Create a new " + names.Lower + "\"}\n"
-	content += "      </p>\n"
-	content += "\n"
-	content += "      <form onSubmit={handleSubmit} className=\"space-y-5\">\n"
-	content += "        <div className=\"bg-bg-elevated border border-border rounded-xl p-6 space-y-4\">\n"
-	content += formFields
-	content += "        </div>\n"
-	content += "\n"
-	content += "        <div className=\"flex items-center gap-3\">\n"
-	content += "          <button\n"
-	content += "            type=\"submit\"\n"
-	content += "            disabled={loading}\n"
-	content += "            className=\"px-6 py-2.5 text-sm font-medium text-white bg-accent hover:bg-accent/90 rounded-lg transition-colors disabled:opacity-50\"\n"
-	content += "          >\n"
-	content += "            {loading ? \"Saving...\" : (isEditing ? \"Update " + names.Pascal + "\" : \"Create " + names.Pascal + "\")}\n"
-	content += "          </button>\n"
-	content += "          <button\n"
-	content += "            type=\"button\"\n"
-	content += "            onClick={() => navigate(\"/" + names.Plural + "\")}\n"
-	content += "            className=\"px-6 py-2.5 text-sm font-medium text-text-secondary bg-bg-elevated border border-border rounded-lg hover:bg-bg-hover transition-colors\"\n"
-	content += "          >\n"
-	content += "            Cancel\n"
-	content += "          </button>\n"
-	content += "        </div>\n"
-	content += "      </form>\n"
-	content += "    </div>\n"
-	content += "  );\n"
-	content += "}\n"
+// buildFetchAssignments generates the setter calls for populating form state from fetched data.
+func (g *DesktopGenerator) buildFetchAssignments() string {
+	fetchAssignments := ""
+	for _, f := range g.Definition.Fields {
+		if f.IsSlug() {
+			continue
+		}
+		setter := "set" + toPascalCase(f.Name)
+		jsonName := toSnakeCase(f.Name)
 
-	path := filepath.Join(g.Root, "frontend", "src", "pages", names.Plural, "form.tsx")
-	return writeFileWithDirs(path, content)
+		switch f.FormFieldType() {
+		case "number":
+			fetchAssignments += "        " + setter + "(data." + jsonName + " || 0);\n"
+		case "toggle":
+			fetchAssignments += "        " + setter + "(data." + jsonName + " || false);\n"
+		case "date", "datetime":
+			fetchAssignments += "        " + setter + "(data." + jsonName + " ? data." + jsonName + ".slice(0, 10) : \"\");\n"
+		default:
+			fetchAssignments += "        " + setter + "(data." + jsonName + " || \"\");\n"
+		}
+	}
+	return fetchAssignments
 }

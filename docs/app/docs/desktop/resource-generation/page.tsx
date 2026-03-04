@@ -26,7 +26,7 @@ export default function DesktopResourceGenerationPage() {
               <p className="text-xl text-muted-foreground leading-relaxed">
                 Generate full-stack CRUD resources for desktop apps. One command
                 creates Go models, services, React pages, and injects code into
-                12 locations.
+                10 locations.
               </p>
             </div>
 
@@ -48,7 +48,7 @@ export default function DesktopResourceGenerationPage() {
             {/* What Gets Created */}
             <div className="prose-grit mb-10 mt-10">
               <h2>Files Created</h2>
-              <p>Four new files are generated:</p>
+              <p>Five new files are generated:</p>
             </div>
 
             <div className="space-y-3 mb-10">
@@ -62,12 +62,16 @@ export default function DesktopResourceGenerationPage() {
                   desc: "Service with List, ListAll, GetByID, Create, Update, Delete",
                 },
                 {
-                  file: "frontend/src/pages/products/index.tsx",
-                  desc: "List page with search, pagination, PDF/Excel export, edit/delete",
+                  file: "frontend/src/routes/_layout/products.index.tsx",
+                  desc: "List route with search, pagination, PDF/Excel export, edit/delete",
                 },
                 {
-                  file: "frontend/src/pages/products/form.tsx",
-                  desc: "Create/edit form with field-type-based inputs",
+                  file: "frontend/src/routes/_layout/products.new.tsx",
+                  desc: "Create form route with field-type-based inputs",
+                },
+                {
+                  file: "frontend/src/routes/_layout/products.$id.edit.tsx",
+                  desc: "Edit form route with pre-filled fields",
                 },
               ].map((item) => (
                 <div
@@ -88,7 +92,7 @@ export default function DesktopResourceGenerationPage() {
             <div className="prose-grit mb-10">
               <h2>Automatic Injections</h2>
               <p>
-                In addition to new files, code is injected into 12 locations in
+                In addition to new files, code is injected into 10 locations in
                 existing files using <code>grit:</code> markers:
               </p>
             </div>
@@ -113,8 +117,6 @@ export default function DesktopResourceGenerationPage() {
                     ["app.go", "// grit:methods", "7 bound methods (CRUD + export)"],
                     ["types.go", "// grit:input-types", "Input struct"],
                     ["cmd/studio/main.go", "// grit:studio-models", "Model in Studio"],
-                    ["App.tsx", "// grit:page-imports", "Page imports"],
-                    ["App.tsx", "{/* grit:routes */}", "3 Route elements"],
                     ["sidebar.tsx", "// grit:nav-icons + nav", "Nav icon + item"],
                   ].map(([file, marker, what]) => (
                     <tr key={marker}>
@@ -197,12 +199,130 @@ export default function DesktopResourceGenerationPage() {
 
             <CodeBlock terminal code="grit remove resource Product" />
 
-            <div className="prose-grit mt-6">
+            <div className="prose-grit mt-6 mb-10">
               <p>
-                This deletes the model, service, and page files, and removes all
+                This deletes the model, service, and route files, and removes all
                 injected code from existing files. The <code>grit:</code> markers
                 remain intact for future generation.
               </p>
+            </div>
+
+            {/* TanStack Router Route Files */}
+            <div className="prose-grit mb-10">
+              <h2>How Route Files Work (TanStack Router)</h2>
+              <p>
+                Grit Desktop uses{" "}
+                <a href="https://tanstack.com/router" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">TanStack Router</a>{" "}
+                with file-based routing. Each generated resource creates three route
+                files that are automatically discovered by the TanStack Router Vite
+                plugin — no centralized route registry needed.
+              </p>
+            </div>
+
+            <div className="space-y-3 mb-10">
+              {[
+                {
+                  file: "routes/_layout/products.index.tsx",
+                  route: "/_layout/products/",
+                  desc: "The list route. Exports Route via createFileRoute. Uses useQuery to fetch data and renders a DataTable with search, pagination, and export buttons.",
+                },
+                {
+                  file: "routes/_layout/products.new.tsx",
+                  route: "/_layout/products/new",
+                  desc: "The create form route. Uses useNavigate() for navigation after successful creation. No params needed.",
+                },
+                {
+                  file: "routes/_layout/products.$id.edit.tsx",
+                  route: "/_layout/products/$id/edit",
+                  desc: "The edit form route. Uses Route.useParams() to get the typed $id parameter. Fetches the existing record and pre-fills the form.",
+                },
+              ].map((item) => (
+                <div
+                  key={item.file}
+                  className="rounded-lg border border-border bg-card p-4"
+                >
+                  <code className="text-sm font-semibold text-primary">
+                    {item.file}
+                  </code>
+                  <p className="text-xs font-mono text-muted-foreground/60 mt-1">
+                    Route path: {item.route}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {item.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="prose-grit mb-10">
+              <h3>Route File Structure</h3>
+              <p>
+                Every generated route file follows this pattern:
+              </p>
+            </div>
+
+            <CodeBlock
+              language="tsx"
+              filename="routes/_layout/products.index.tsx"
+              code={`import { createFileRoute } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/_layout/products/")({
+  component: ProductsPage,
+});
+
+function ProductsPage() {
+  // ... list page with DataTable, search, pagination
+}`}
+            />
+
+            <div className="prose-grit mt-6 mb-10">
+              <p>
+                For the edit route, <code>Route.useParams()</code> provides type-safe
+                access to the <code>$id</code> parameter:
+              </p>
+            </div>
+
+            <CodeBlock
+              language="tsx"
+              filename="routes/_layout/products.$id.edit.tsx"
+              code={`import { createFileRoute, useNavigate } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/_layout/products/$id/edit")({
+  component: EditProductPage,
+});
+
+function EditProductPage() {
+  const { id } = Route.useParams();
+  const navigate = useNavigate();
+
+  // Fetch product by ID, pre-fill form
+  // On save: navigate({ to: "/products" })
+}`}
+            />
+
+            <div className="prose-grit mt-6">
+              <p>
+                Key differences from React Router:
+              </p>
+              <ul>
+                <li>
+                  <strong>No centralized routes</strong> — route files are auto-discovered
+                  by the Vite plugin. Adding a resource just creates files.
+                </li>
+                <li>
+                  <strong>Type-safe params</strong> — <code>Route.useParams()</code> returns
+                  typed params scoped to the current route, not a generic <code>useParams()</code>.
+                </li>
+                <li>
+                  <strong>Object-based navigate</strong> — use{" "}
+                  <code>{"navigate({ to: \"/products\" })"}</code> instead of{" "}
+                  <code>{"navigate(\"/products\")"}</code>.
+                </li>
+                <li>
+                  <strong>Hash history</strong> — desktop apps use <code>createHashHistory()</code>{" "}
+                  so routing works from disk without a web server.
+                </li>
+              </ul>
             </div>
           </div>
         </div>

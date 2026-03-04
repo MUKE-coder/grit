@@ -95,32 +95,7 @@ func (g *DesktopGenerator) injectDesktopAll(names Names) error {
 		fmt.Println("  ✓ Injected into cmd/studio/main.go")
 	}
 
-	// 10. Inject page imports — App.tsx
-	appTsx := filepath.Join(g.Root, "frontend", "src", "App.tsx")
-	if fileExists(appTsx) {
-		imports := fmt.Sprintf("import %sListPage from \"./pages/%s/index\";\nimport %sFormPage from \"./pages/%s/form\";",
-			names.Pascal, names.Plural, names.Pascal, names.Plural)
-		if err := injectBefore(appTsx, "// grit:page-imports", imports); err != nil {
-			return fmt.Errorf("injecting page imports into App.tsx: %w", err)
-		}
-		fmt.Println("  ✓ Injected into App.tsx (imports)")
-	}
-
-	// 11. Inject routes — App.tsx
-	if fileExists(appTsx) {
-		routes := fmt.Sprintf("          <Route path=\"/%s\" element={<%sListPage />} />\n"+
-			"          <Route path=\"/%s/new\" element={<%sFormPage />} />\n"+
-			"          <Route path=\"/%s/:id/edit\" element={<%sFormPage />} />",
-			names.Plural, names.Pascal,
-			names.Plural, names.Pascal,
-			names.Plural, names.Pascal)
-		if err := injectBefore(appTsx, "{/* grit:routes */}", routes); err != nil {
-			return fmt.Errorf("injecting routes into App.tsx: %w", err)
-		}
-		fmt.Println("  ✓ Injected into App.tsx (routes)")
-	}
-
-	// 12. Inject sidebar — sidebar.tsx
+	// 10. Inject sidebar — sidebar.tsx
 	sidebarFile := filepath.Join(g.Root, "frontend", "src", "components", "layout", "sidebar.tsx")
 	if fileExists(sidebarFile) {
 		iconName := guessLucideIcon(names.Pascal)

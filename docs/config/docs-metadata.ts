@@ -377,7 +377,7 @@ export const docsMetadata: Record<string, DocPage> = {
   '/docs/desktop/resource-generation': {
     title: 'Desktop Resource Generation',
     description:
-      'Generate full-stack CRUD resources for desktop apps. Models, services, React pages, and 12 automatic code injections.',
+      'Generate full-stack CRUD resources for desktop apps. Models, services, TanStack Router route files, and 10 automatic code injections.',
   },
   '/docs/desktop/building': {
     title: 'Building & Distribution',
@@ -388,6 +388,11 @@ export const docsMetadata: Record<string, DocPage> = {
     title: 'Build a POS App',
     description:
       'Advanced tutorial: build a Point of Sale desktop application with Grit Desktop. Product catalog, sales transactions, receipts, inventory tracking, and daily reports in a single native binary.',
+  },
+  '/docs/desktop/project-ideas': {
+    title: '20 Desktop Project Ideas',
+    description:
+      'Ready-to-build desktop application ideas with Grit and Wails. Each project includes resources, field definitions, and grit generate commands to get started immediately.',
   },
   '/docs/desktop/llm-reference': {
     title: 'Desktop LLM Reference',

@@ -73,6 +73,7 @@ vendor/
 # Node
 node_modules/
 frontend/dist/
+frontend/src/routeTree.gen.ts
 
 # Wails
 build/bin/

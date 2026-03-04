@@ -40,8 +40,7 @@ func desktopPackageJSON(opts DesktopOptions) string {
   "dependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router": "^7.0.0",
-    "react-router-dom": "^7.0.0",
+    "@tanstack/react-router": "^1.95.0",
     "@tanstack/react-query": "^5.62.0",
     "react-hook-form": "^7.54.0",
     "@hookform/resolvers": "^4.1.0",
@@ -60,7 +59,8 @@ func desktopPackageJSON(opts DesktopOptions) string {
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.7.0",
-    "vite": "^6.0.0"
+    "vite": "^6.0.0",
+    "@tanstack/router-plugin": "^1.95.0"
   }
 }
 `, opts.ProjectName)
@@ -69,10 +69,11 @@ func desktopPackageJSON(opts DesktopOptions) string {
 func desktopViteConfig() string {
 	return `import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 import path from "path";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [TanStackRouterVite(), react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -171,16 +172,29 @@ func desktopIndexHTML() string {
 func desktopMainTSX() string {
 	return `import React from "react";
 import ReactDOM from "react-dom/client";
+import { RouterProvider, createRouter, createHashHistory } from "@tanstack/react-router";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/query-client";
-import App from "./App";
+import { AuthProvider } from "./hooks/use-auth";
+import { routeTree } from "./routeTree.gen";
 import "./index.css";
+
+const hashHistory = createHashHistory();
+const router = createRouter({ routeTree, history: hashHistory });
+
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: typeof router;
+  }
+}
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </AuthProvider>
   </React.StrictMode>
 );
 `

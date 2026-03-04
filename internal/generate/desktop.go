@@ -75,17 +75,23 @@ func (g *DesktopGenerator) Run() error {
 	}
 	fmt.Printf("  ✓ internal/service/%s.go\n", names.Snake)
 
-	// 3. Write frontend list page
-	if err := g.writeDesktopListPage(names); err != nil {
-		return fmt.Errorf("writing list page: %w", err)
+	// 3. Write frontend list route
+	if err := g.writeDesktopListRoute(names); err != nil {
+		return fmt.Errorf("writing list route: %w", err)
 	}
-	fmt.Printf("  ✓ frontend/src/pages/%s/index.tsx\n", names.Plural)
+	fmt.Printf("  ✓ frontend/src/routes/_layout/%s.index.tsx\n", names.Plural)
 
-	// 4. Write frontend form page
-	if err := g.writeDesktopFormPage(names); err != nil {
-		return fmt.Errorf("writing form page: %w", err)
+	// 4. Write frontend new route
+	if err := g.writeDesktopNewRoute(names); err != nil {
+		return fmt.Errorf("writing new route: %w", err)
 	}
-	fmt.Printf("  ✓ frontend/src/pages/%s/form.tsx\n", names.Plural)
+	fmt.Printf("  ✓ frontend/src/routes/_layout/%s.new.tsx\n", names.Plural)
+
+	// 5. Write frontend edit route
+	if err := g.writeDesktopEditRoute(names); err != nil {
+		return fmt.Errorf("writing edit route: %w", err)
+	}
+	fmt.Printf("  ✓ frontend/src/routes/_layout/%s.$id.edit.tsx\n", names.Plural)
 
 	fmt.Println()
 	fmt.Println("  Injecting into existing files...")

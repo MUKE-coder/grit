@@ -9,8 +9,8 @@ func writeDesktopFrontendLayoutFiles(root string, opts DesktopOptions) error {
 	files := map[string]string{
 		filepath.Join(root, "frontend", "src", "components", "layout", "title-bar.tsx"):       desktopTitleBar(),
 		filepath.Join(root, "frontend", "src", "components", "layout", "sidebar.tsx"):          desktopSidebar(),
-		filepath.Join(root, "frontend", "src", "components", "layout", "app-layout.tsx"):       desktopAppLayout(),
 		filepath.Join(root, "frontend", "src", "components", "layout", "draggable-window.tsx"): desktopDraggableWindow(),
+		filepath.Join(root, "frontend", "src", "routes", "_layout.tsx"):                        desktopLayoutRoute(),
 	}
 
 	for path, content := range files {
@@ -76,7 +76,7 @@ export default function TitleBar() {
 
 func desktopSidebar() string {
 	return `import { useState, useEffect } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "@tanstack/react-router";
 import {
   LayoutDashboard, FileText, Users, ChevronLeft, ChevronRight, LogOut,
   // grit:nav-icons
@@ -104,7 +104,7 @@ export default function Sidebar() {
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    navigate({ to: "/login" });
   };
 
   const isActive = (path: string) => {
@@ -164,20 +164,24 @@ export default function Sidebar() {
 `
 }
 
-func desktopAppLayout() string {
-	return `import { useEffect } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
-import { useAuth } from "../../hooks/use-auth";
-import TitleBar from "./title-bar";
-import Sidebar from "./sidebar";
+func desktopLayoutRoute() string {
+	return `import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { useAuth } from "../hooks/use-auth";
+import TitleBar from "../components/layout/title-bar";
+import Sidebar from "../components/layout/sidebar";
 
-export default function AppLayout() {
+export const Route = createFileRoute("/_layout")({
+  component: LayoutComponent,
+});
+
+function LayoutComponent() {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      navigate("/login");
+      navigate({ to: "/login" });
     }
   }, [isAuthenticated, isLoading, navigate]);
 

@@ -101,8 +101,7 @@ func createDesktopDirectories(root string) error {
 		// Frontend
 		filepath.Join(root, "frontend", "src", "components", "ui"),
 		filepath.Join(root, "frontend", "src", "components", "layout"),
-		filepath.Join(root, "frontend", "src", "pages", "blogs"),
-		filepath.Join(root, "frontend", "src", "pages", "contacts"),
+		filepath.Join(root, "frontend", "src", "routes", "_layout"),
 		filepath.Join(root, "frontend", "src", "hooks"),
 		filepath.Join(root, "frontend", "src", "lib"),
 	}

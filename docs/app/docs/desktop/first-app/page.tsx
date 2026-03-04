@@ -188,9 +188,11 @@ export default function DesktopFirstAppPage() {
 │       └── types.go         # Shared request/response types
 ├── frontend/
 │   ├── src/
-│   │   ├── App.tsx           # React Router setup
-│   │   ├── main.tsx          # React entry point
-│   │   ├── pages/            # Page components
+│   │   ├── main.tsx          # React entry point (TanStack Router)
+│   │   ├── routes/           # File-based routes (TanStack Router)
+│   │   │   ├── __root.tsx    # Root route
+│   │   │   ├── _layout.tsx   # Auth guard + sidebar layout
+│   │   │   └── _layout/      # Protected page routes
 │   │   ├── components/       # Reusable UI components
 │   │   ├── hooks/            # TanStack Query hooks
 │   │   └── lib/              # Utilities
@@ -215,7 +217,7 @@ export default function DesktopFirstAppPage() {
                   },
                   {
                     label: "React frontend with Vite",
-                    desc: "A full React app with Tailwind CSS, React Router, TanStack Query, and pre-built pages.",
+                    desc: "A full React app with Tailwind CSS, TanStack Router, TanStack Query, and pre-built pages.",
                   },
                   {
                     label: "SQLite database",
@@ -412,7 +414,7 @@ wails dev`}
               />
 
               <div className="prose-grit mb-4">
-                <p>This single command creates 4 new files:</p>
+                <p>This single command creates 5 new files:</p>
               </div>
 
               <div className="space-y-3 mb-6">
@@ -426,12 +428,16 @@ wails dev`}
                     desc: "Service with List, ListAll, GetByID, Create, Update, Delete methods",
                   },
                   {
-                    file: "frontend/src/pages/tasks/index.tsx",
-                    desc: "List page with search, pagination, edit/delete, PDF and Excel export",
+                    file: "frontend/src/routes/_layout/tasks.index.tsx",
+                    desc: "List route with search, pagination, edit/delete, PDF and Excel export",
                   },
                   {
-                    file: "frontend/src/pages/tasks/form.tsx",
-                    desc: "Create/edit form with inputs mapped to each field type",
+                    file: "frontend/src/routes/_layout/tasks.new.tsx",
+                    desc: "Create form route with inputs mapped to each field type",
+                  },
+                  {
+                    file: "frontend/src/routes/_layout/tasks.$id.edit.tsx",
+                    desc: "Edit form route with pre-filled field values",
                   },
                 ].map((item) => (
                   <div
@@ -450,7 +456,7 @@ wails dev`}
 
               <div className="prose-grit mb-4">
                 <p>
-                  It also injects code into 12 locations in existing files using{" "}
+                  It also injects code into 10 locations in existing files using{" "}
                   <code>grit:</code> markers:
                 </p>
               </div>
@@ -475,8 +481,6 @@ wails dev`}
                       ["app.go", "// grit:methods", "7 bound methods (CRUD + export)"],
                       ["types.go", "// grit:input-types", "TaskInput struct"],
                       ["cmd/studio/main.go", "// grit:studio-models", "Task model in Studio"],
-                      ["App.tsx", "// grit:page-imports", "Task page imports"],
-                      ["App.tsx", "{/* grit:routes */}", "3 Route elements"],
                       ["sidebar.tsx", "// grit:nav-icons + nav", "Nav icon + sidebar item"],
                     ].map(([file, marker, what]) => (
                       <tr key={marker}>
@@ -510,6 +514,74 @@ wails dev`}
 }`}
                 className="mb-0"
               />
+            </div>
+
+            {/* Understanding the Generated Routes */}
+            <div className="mb-10">
+              <div className="prose-grit mb-4">
+                <h3>Understanding the Generated Route Files</h3>
+                <p>
+                  The three frontend files are{" "}
+                  <a href="https://tanstack.com/router" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">TanStack Router</a>{" "}
+                  route files. Each file exports a <code>Route</code> constant
+                  created with <code>createFileRoute()</code>. The TanStack Router
+                  Vite plugin auto-discovers these files — no import or route
+                  registry update is needed.
+                </p>
+              </div>
+
+              <CodeBlock
+                language="tsx"
+                filename="frontend/src/routes/_layout/tasks.index.tsx"
+                code={`import { createFileRoute } from "@tanstack/react-router";
+
+// This line registers the route at /_layout/tasks/
+export const Route = createFileRoute("/_layout/tasks/")({
+  component: TasksPage,
+});
+
+function TasksPage() {
+  // DataTable with search, pagination, PDF/Excel export
+  // Calls ListTasks() via Wails bindings
+}`}
+                className="mb-4"
+              />
+
+              <div className="prose-grit mb-4">
+                <p>
+                  The edit route uses <code>Route.useParams()</code> for type-safe
+                  parameter access. The <code>$id</code> in the filename becomes a
+                  typed parameter:
+                </p>
+              </div>
+
+              <CodeBlock
+                language="tsx"
+                filename="frontend/src/routes/_layout/tasks.$id.edit.tsx"
+                code={`import { createFileRoute, useNavigate } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/_layout/tasks/$id/edit")({
+  component: EditTaskPage,
+});
+
+function EditTaskPage() {
+  const { id } = Route.useParams(); // typed string
+  const navigate = useNavigate();
+
+  // Fetch task by ID, populate form
+  // On save: navigate({ to: "/tasks" })
+}`}
+                className="mb-4"
+              />
+
+              <div className="prose-grit mb-0">
+                <p>
+                  Navigation uses TanStack Router&apos;s object syntax:{" "}
+                  <code>{"navigate({ to: \"/tasks\" })"}</code> instead of{" "}
+                  <code>{"navigate(\"/tasks\")"}</code>. All routes, params, and
+                  navigation calls are validated by TypeScript at compile time.
+                </p>
+              </div>
             </div>
 
             {/* Step 6: Test the Task Manager */}
@@ -624,7 +696,7 @@ wails dev`}
 
               <div className="prose-grit mb-4">
                 <p>
-                  This creates 4 more files and injects into the same 12
+                  This creates 5 more files and injects into the same 10
                   locations. Your app now has:
                 </p>
               </div>

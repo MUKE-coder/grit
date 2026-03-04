@@ -166,6 +166,7 @@ const navItems: NavItem[] = [
       { title: 'Build a POS App', href: '/docs/desktop/pos-app' },
       { title: 'Resource Generation', href: '/docs/desktop/resource-generation' },
       { title: 'Building & Distribution', href: '/docs/desktop/building' },
+      { title: '20 Project Ideas', href: '/docs/desktop/project-ideas' },
       { title: 'LLM Reference', href: '/docs/desktop/llm-reference' },
     ],
   },

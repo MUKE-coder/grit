@@ -80,13 +80,20 @@ func RemoveDesktopResource(name string) error {
 		}
 	}
 
-	// Delete frontend page directory
-	pageDir := filepath.Join(root, "frontend", "src", "pages", names.Plural)
-	if _, err := os.Stat(pageDir); err == nil {
-		if err := os.RemoveAll(pageDir); err != nil {
-			return fmt.Errorf("deleting %s: %w", pageDir, err)
+	// Delete frontend route files
+	routeFiles := []string{
+		filepath.Join(root, "frontend", "src", "routes", "_layout", names.Plural+".index.tsx"),
+		filepath.Join(root, "frontend", "src", "routes", "_layout", names.Plural+".new.tsx"),
+		filepath.Join(root, "frontend", "src", "routes", "_layout", names.Plural+".$id.edit.tsx"),
+	}
+	for _, f := range routeFiles {
+		if _, err := os.Stat(f); err == nil {
+			if err := os.Remove(f); err != nil {
+				return fmt.Errorf("deleting %s: %w", f, err)
+			}
+			rel, _ := filepath.Rel(root, f)
+			fmt.Printf("  ✗ %s\n", rel)
 		}
-		fmt.Printf("  ✗ frontend/src/pages/%s/\n", names.Plural)
 	}
 
 	fmt.Println()
@@ -163,20 +170,7 @@ func RemoveDesktopResource(name string) error {
 		removeLinesContaining(studioFile, fmt.Sprintf("&models.%s{}", names.Pascal))
 	}
 
-	// 10. Remove page imports — App.tsx
-	appTsx := filepath.Join(root, "frontend", "src", "App.tsx")
-	if fileExists(appTsx) {
-		removeLinesContaining(appTsx, fmt.Sprintf("pages/%s/", names.Plural))
-	}
-
-	// 11. Remove routes — App.tsx
-	if fileExists(appTsx) {
-		removeLinesContaining(appTsx, fmt.Sprintf("path=\"/%s\"", names.Plural))
-		removeLinesContaining(appTsx, fmt.Sprintf("path=\"/%s/new\"", names.Plural))
-		removeLinesContaining(appTsx, fmt.Sprintf("path=\"/%s/:id/edit\"", names.Plural))
-	}
-
-	// 12. Remove sidebar nav — sidebar.tsx
+	// 10. Remove sidebar nav — sidebar.tsx
 	sidebarFile := filepath.Join(root, "frontend", "src", "components", "layout", "sidebar.tsx")
 	if fileExists(sidebarFile) {
 		removeLinesContaining(sidebarFile, fmt.Sprintf("path: \"/%s\"", names.Plural))

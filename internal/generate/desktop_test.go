@@ -188,9 +188,9 @@ func TestWriteDesktopService(t *testing.T) {
 	}
 }
 
-// ── Desktop List Page ───────────────────────────────────────────────────────
+// ── Desktop List Route ──────────────────────────────────────────────────────
 
-func TestWriteDesktopListPage(t *testing.T) {
+func TestWriteDesktopListRoute(t *testing.T) {
 	root := t.TempDir()
 
 	g := &DesktopGenerator{
@@ -207,18 +207,19 @@ func TestWriteDesktopListPage(t *testing.T) {
 	}
 	names := BuildNames(g.Definition)
 
-	if err := g.writeDesktopListPage(names); err != nil {
-		t.Fatalf("writeDesktopListPage: %v", err)
+	if err := g.writeDesktopListRoute(names); err != nil {
+		t.Fatalf("writeDesktopListRoute: %v", err)
 	}
 
-	data, err := os.ReadFile(filepath.Join(root, "frontend", "src", "pages", "products", "index.tsx"))
+	data, err := os.ReadFile(filepath.Join(root, "frontend", "src", "routes", "_layout", "products.index.tsx"))
 	if err != nil {
-		t.Fatalf("list page not created: %v", err)
+		t.Fatalf("list route not created: %v", err)
 	}
 	content := string(data)
 
 	for _, want := range []string{
-		"ProductsListPage",
+		"createFileRoute",
+		"/_layout/products/",
 		"GetProducts",
 		"DeleteProduct",
 		"ExportProductsPDF",
@@ -229,14 +230,14 @@ func TestWriteDesktopListPage(t *testing.T) {
 		"lucide-react",
 	} {
 		if !strings.Contains(content, want) {
-			t.Errorf("list page missing %q", want)
+			t.Errorf("list route missing %q", want)
 		}
 	}
 }
 
-// ── Desktop Form Page ───────────────────────────────────────────────────────
+// ── Desktop New Route ───────────────────────────────────────────────────────
 
-func TestWriteDesktopFormPage(t *testing.T) {
+func TestWriteDesktopNewRoute(t *testing.T) {
 	root := t.TempDir()
 
 	g := &DesktopGenerator{
@@ -253,29 +254,81 @@ func TestWriteDesktopFormPage(t *testing.T) {
 	}
 	names := BuildNames(g.Definition)
 
-	if err := g.writeDesktopFormPage(names); err != nil {
-		t.Fatalf("writeDesktopFormPage: %v", err)
+	if err := g.writeDesktopNewRoute(names); err != nil {
+		t.Fatalf("writeDesktopNewRoute: %v", err)
 	}
 
-	data, err := os.ReadFile(filepath.Join(root, "frontend", "src", "pages", "products", "form.tsx"))
+	data, err := os.ReadFile(filepath.Join(root, "frontend", "src", "routes", "_layout", "products.new.tsx"))
 	if err != nil {
-		t.Fatalf("form page not created: %v", err)
+		t.Fatalf("new route not created: %v", err)
 	}
 	content := string(data)
 
 	for _, want := range []string{
-		"ProductFormPage",
-		"GetProduct",
+		"createFileRoute",
+		"/_layout/products/new",
 		"CreateProduct",
-		"UpdateProduct",
-		"useParams",
-		"isEditing",
 		"handleSubmit",
 		"type=\"number\"",
 		"wailsjs/go/main/App",
 	} {
 		if !strings.Contains(content, want) {
-			t.Errorf("form page missing %q", want)
+			t.Errorf("new route missing %q", want)
+		}
+	}
+
+	// New route should NOT have GetProduct or useParams
+	for _, noWant := range []string{
+		"GetProduct",
+		"useParams",
+	} {
+		if strings.Contains(content, noWant) {
+			t.Errorf("new route should not contain %q", noWant)
+		}
+	}
+}
+
+// ── Desktop Edit Route ──────────────────────────────────────────────────────
+
+func TestWriteDesktopEditRoute(t *testing.T) {
+	root := t.TempDir()
+
+	g := &DesktopGenerator{
+		Root:   root,
+		Module: "test-app",
+		Definition: &ResourceDefinition{
+			Name: "product",
+			Fields: []Field{
+				{Name: "name", Type: "string"},
+				{Name: "price", Type: "float"},
+				{Name: "published", Type: "bool"},
+			},
+		},
+	}
+	names := BuildNames(g.Definition)
+
+	if err := g.writeDesktopEditRoute(names); err != nil {
+		t.Fatalf("writeDesktopEditRoute: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(root, "frontend", "src", "routes", "_layout", "products.$id.edit.tsx"))
+	if err != nil {
+		t.Fatalf("edit route not created: %v", err)
+	}
+	content := string(data)
+
+	for _, want := range []string{
+		"createFileRoute",
+		"/_layout/products/$id/edit",
+		"GetProduct",
+		"UpdateProduct",
+		"Route.useParams",
+		"handleSubmit",
+		"type=\"number\"",
+		"wailsjs/go/main/App",
+	} {
+		if !strings.Contains(content, want) {
+			t.Errorf("edit route missing %q", want)
 		}
 	}
 }
@@ -335,15 +388,6 @@ func TestDesktopInjectAll(t *testing.T) {
 	// Verify studio
 	assertFileContains(t, filepath.Join(root, "cmd", "studio", "main.go"), "&models.Product{},")
 
-	// Verify App.tsx
-	appTsxContent := readFileStr(t, filepath.Join(root, "frontend", "src", "App.tsx"))
-	if !strings.Contains(appTsxContent, "import ProductListPage") {
-		t.Error("App.tsx missing import")
-	}
-	if !strings.Contains(appTsxContent, "path=\"/products\"") {
-		t.Error("App.tsx missing route")
-	}
-
 	// Verify sidebar.tsx
 	assertFileContains(t, filepath.Join(root, "frontend", "src", "components", "layout", "sidebar.tsx"),
 		"path: \"/products\"")
@@ -361,7 +405,6 @@ func TestDesktopInjectAndRemoveRoundtrip(t *testing.T) {
 		filepath.Join(root, "main.go"),
 		filepath.Join(root, "app.go"),
 		filepath.Join(root, "internal", "models", "types.go"),
-		filepath.Join(root, "frontend", "src", "App.tsx"),
 		filepath.Join(root, "frontend", "src", "components", "layout", "sidebar.tsx"),
 	}
 	for _, f := range files {
@@ -433,12 +476,6 @@ func TestDesktopInjectAndRemoveRoundtrip(t *testing.T) {
 	typesFile := filepath.Join(root, "internal", "models", "types.go")
 	removeLineBlock(typesFile, "type ProductInput struct {", "}")
 
-	appTsx := filepath.Join(root, "frontend", "src", "App.tsx")
-	removeLinesContaining(appTsx, "pages/products/")
-	removeLinesContaining(appTsx, "path=\"/products\"")
-	removeLinesContaining(appTsx, "path=\"/products/new\"")
-	removeLinesContaining(appTsx, "path=\"/products/:id/edit\"")
-
 	sidebarFile := filepath.Join(root, "frontend", "src", "components", "layout", "sidebar.tsx")
 	removeLinesContaining(sidebarFile, "path: \"/products\"")
 
@@ -477,7 +514,7 @@ func setupDesktopProject(t *testing.T) string {
 		filepath.Join(root, "internal", "service"),
 		filepath.Join(root, "cmd", "studio"),
 		filepath.Join(root, "frontend", "src", "components", "layout"),
-		filepath.Join(root, "frontend", "src", "pages"),
+		filepath.Join(root, "frontend", "src", "routes", "_layout"),
 	}
 	for _, d := range dirs {
 		os.MkdirAll(d, 0755)
@@ -540,20 +577,6 @@ func main() {
 		&models.User{},
 		// grit:studio-models
 	)
-}
-`)
-
-	// App.tsx with markers
-	writeDesktopTestFile(t, filepath.Join(root, "frontend", "src", "App.tsx"), `import DashboardPage from "./pages/dashboard";
-// grit:page-imports
-
-export default function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<DashboardPage />} />
-      {/* grit:routes */}
-    </Routes>
-  );
 }
 `)
 

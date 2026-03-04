@@ -1207,14 +1207,16 @@ myapp/
 │   └── service/               # Service layer (auth, blog, contact, export)
 ├── cmd/studio/main.go         # Standalone database browser (port 4000)
 └── frontend/
-    ├── package.json           # React + Vite + TanStack Query
+    ├── package.json           # React + Vite + TanStack Router + TanStack Query
     ├── src/
-    │   ├── App.tsx            # HashRouter + routes
     │   ├── index.css          # Grit dark theme
     │   ├── components/
     │   │   ├── layout/        # TitleBar, Sidebar, AppLayout
     │   │   └── ui/            # Button, Input, Card, Select, etc.
-    │   ├── pages/             # Login, Register, Dashboard, Blogs, Contacts
+    │   ├── routes/            # File-based routes (TanStack Router)
+    │   │   ├── __root.tsx     # Root route
+    │   │   ├── _layout.tsx    # Auth guard + sidebar layout
+    │   │   └── _layout/       # Protected page routes
     │   ├── hooks/             # useAuth, useTheme
     │   └── lib/               # utils, query-client
     └── wailsjs/               # Auto-generated Go bindings (by Wails)
@@ -1225,9 +1227,9 @@ myapp/
 | Aspect | Web (`grit new`) | Desktop (`grit new-desktop`) |
 |--------|-------------------|------------------------------|
 | Backend | Gin HTTP server | Wails Go bindings (direct function calls) |
-| Frontend | Next.js (App Router) | Vite + React (HashRouter) |
+| Frontend | Next.js (App Router) | Vite + React + TanStack Router (file-based) |
 | Database | PostgreSQL | SQLite (default) or Postgres |
-| Routing | BrowserRouter | HashRouter |
+| Routing | BrowserRouter | Hash history (createHashHistory) |
 | API calls | fetch / axios | `wailsjs/go/main/App` imports |
 | Structure | Turbo monorepo | Single Go module |
 | Auth | JWT tokens | Local session (bcrypt) |
@@ -1253,10 +1255,11 @@ grit generate resource Product --fields "name:string,price:float,published:bool"
 **Files created:**
 - `internal/models/product.go` — GORM model struct
 - `internal/service/product.go` — Service with List, ListAll, GetByID, Create, Update, Delete
-- `frontend/src/pages/products/index.tsx` — List page with search, pagination, export
-- `frontend/src/pages/products/form.tsx` — Create/edit form
+- `frontend/src/routes/_layout/products.index.tsx` — List route with search, pagination, export
+- `frontend/src/routes/_layout/products.new.tsx` — Create form route
+- `frontend/src/routes/_layout/products.$id.edit.tsx` — Edit form route
 
-**Injections (12 total):**
+**Injections (10 total):**
 1. `db.go` — `&models.Product{}` in AutoMigrate (`// grit:models`)
 2. `main.go` — Service initialization (`// grit:service-init`)
 3. `main.go` — Service passed to NewApp (`/* grit:app-args */`)
@@ -1266,9 +1269,7 @@ grit generate resource Product --fields "name:string,price:float,published:bool"
 7. `app.go` — 7 bound methods: Get, GetAll, Create, Update, Delete, ExportPDF, ExportExcel (`// grit:methods`)
 8. `types.go` — Input struct (`// grit:input-types`)
 9. `cmd/studio/main.go` — Model in Studio AutoMigrate (`// grit:studio-models`)
-10. `App.tsx` — Page imports (`// grit:page-imports`)
-11. `App.tsx` — Route elements (`{/* grit:routes */}`)
-12. `sidebar.tsx` — Nav icon + nav item (`// grit:nav-icons`, `// grit:nav`)
+10. `sidebar.tsx` — Nav icon + nav item (`// grit:nav-icons`, `// grit:nav`)
 
 **Remove:**
 ```bash
@@ -1291,8 +1292,6 @@ These markers are inserted by `grit new-desktop` and used by `grit generate reso
 | `app.go` | `// grit:methods` | Line before |
 | `internal/models/types.go` | `// grit:input-types` | Line before |
 | `cmd/studio/main.go` | `// grit:studio-models` | Line before |
-| `frontend/src/App.tsx` | `// grit:page-imports` | Line before |
-| `frontend/src/App.tsx` | `{/* grit:routes */}` | Line before |
 | `frontend/src/components/layout/sidebar.tsx` | `// grit:nav-icons` | Line before |
 | `frontend/src/components/layout/sidebar.tsx` | `// grit:nav` | Line before |
 

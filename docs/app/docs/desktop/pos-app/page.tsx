@@ -133,6 +133,7 @@ export default function DesktopPosAppPage() {
                 { name: "Go", desc: "Backend logic, services, data layer" },
                 { name: "Wails v2", desc: "Desktop runtime, Go-JS bridge" },
                 { name: "React + Vite", desc: "Frontend UI with hot reload" },
+                { name: "TanStack Router", desc: "File-based routing with type-safe params" },
                 { name: "SQLite (GORM)", desc: "Embedded local database" },
                 { name: "Tailwind CSS", desc: "Utility-first styling" },
                 { name: "Grit CLI", desc: "Scaffolding and code generation" },
@@ -288,7 +289,7 @@ cd pos-system`}
                 <p>
                   Run these five commands to generate the entire data layer,
                   service layer, and frontend pages. Each command creates 4 new
-                  files and performs 12 code injections.
+                  files and performs 10 code injections.
                 </p>
               </div>
               <CodeBlock
@@ -314,8 +315,8 @@ grit generate resource Expense --fields "description:string,amount:float,categor
                 {[
                   { count: "5", label: "GORM models" },
                   { count: "5", label: "Service files" },
-                  { count: "10", label: "React pages" },
-                  { count: "60", label: "Code injections" },
+                  { count: "15", label: "React routes" },
+                  { count: "50", label: "Code injections" },
                   { count: "7", label: "Files modified" },
                   { count: "20", label: "New files total" },
                 ].map((stat) => (
@@ -335,11 +336,11 @@ grit generate resource Expense --fields "description:string,amount:float,categor
 
               <div className="prose-grit mb-0">
                 <p>
-                  The 60 injections span across <code>db.go</code>,{" "}
+                  The 50 injections span across <code>db.go</code>,{" "}
                   <code>main.go</code>, <code>app.go</code>,{" "}
                   <code>types.go</code>, <code>cmd/studio/main.go</code>,{" "}
-                  <code>App.tsx</code>, and <code>sidebar.tsx</code>. Every
-                  resource gets its own sidebar entry, route definitions, and
+                  and <code>sidebar.tsx</code>. Every
+                  resource gets its own sidebar entry, route file, and
                   bound methods automatically.
                 </p>
                 <blockquote>
@@ -347,7 +348,7 @@ grit generate resource Expense --fields "description:string,amount:float,categor
                   <Link href="/docs/desktop/resource-generation" className="text-primary hover:underline">
                     Resource Generation
                   </Link>{" "}
-                  reference page for the complete 12-marker table.
+                  reference page for the complete 10-marker table.
                 </blockquote>
               </div>
             </div>
@@ -850,13 +851,22 @@ export default function POSPage() {
               />
               <div className="prose-grit mb-0">
                 <p>
-                  Register this page in <code>App.tsx</code> by adding a route:
+                  To register this page, create a route file at{" "}
+                  <code>frontend/src/routes/_layout/pos.index.tsx</code> and
+                  wrap the component with <code>createFileRoute</code>:
                 </p>
               </div>
               <CodeBlock
                 language="tsx"
-                filename="frontend/src/App.tsx"
-                code={`<Route path="/pos" element={<POSPage />} />`}
+                filename="frontend/src/routes/_layout/pos.index.tsx"
+                code={`// frontend/src/routes/_layout/pos.index.tsx
+import { createFileRoute } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/_layout/pos/")({
+  component: POSPage,
+});
+
+// ... POSPage component from above`}
                 className="mb-4"
               />
               <div className="prose-grit mb-0">
@@ -1312,17 +1322,19 @@ wails build -platform linux/amd64`}
 │       └── types.go               # Input structs + DailyReport
 ├── frontend/
 │   └── src/
-│       ├── App.tsx                 # Routes (products, customers, sales, pos...)
 │       ├── components/
 │       │   ├── sidebar.tsx         # Navigation with all resources
 │       │   └── barcode-scanner.tsx # Barcode input component
-│       └── pages/
-│           ├── products/           # Product list + form
-│           ├── customers/          # Customer list + form
-│           ├── sales/              # Sales list + form
-│           ├── sale-items/         # SaleItem list + form
-│           ├── expenses/           # Expense list + form
-│           └── pos/                # Quick Sale checkout page
+│       ├── routes/
+│       │   ├── __root.tsx         # Root route
+│       │   ├── _layout.tsx        # Auth guard + sidebar
+│       │   └── _layout/           # Protected routes
+│       │       ├── products.index.tsx
+│       │       ├── customers.index.tsx
+│       │       ├── sales.index.tsx
+│       │       ├── sale-items.index.tsx
+│       │       ├── expenses.index.tsx
+│       │       └── pos.index.tsx  # Quick Sale checkout
 └── cmd/
     └── studio/
         └── main.go                # GORM Studio (7 models registered)`}

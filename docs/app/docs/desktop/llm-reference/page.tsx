@@ -119,7 +119,7 @@ export default function DesktopLLMReferencePage() {
                     {
                       label: "Frontend",
                       value:
-                        "Vite + React + React Router + TanStack Query + Tailwind CSS",
+                        "Vite + React + TanStack Router (file-based) + TanStack Query + Tailwind CSS",
                     },
                     {
                       label: "Database",
@@ -341,7 +341,7 @@ export default function DesktopLLMReferencePage() {
                     {
                       step: "2",
                       title: "React Frontend (frontend/)",
-                      desc: "A Vite-powered React app with React Router for navigation and TanStack Query for state management. Calls Go functions via the generated Wails bindings — no fetch, no Axios, no HTTP.",
+                      desc: "A Vite-powered React app with TanStack Router (file-based routing) and TanStack Query for state management. Calls Go functions via the generated Wails bindings — no fetch, no Axios, no HTTP.",
                     },
                     {
                       step: "3",
@@ -422,15 +422,11 @@ export default function DesktopLLMReferencePage() {
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── App.tsx           # React Router setup + route definitions
-│   │   ├── main.tsx          # React entry point
-│   │   ├── pages/            # Page components (list + form per resource)
-│   │   │   ├── blogs/
-│   │   │   │   ├── index.tsx # Blog list page (DataTable)
-│   │   │   │   └── form.tsx  # Blog create/edit form (FormBuilder)
-│   │   │   └── contacts/
-│   │   │       ├── index.tsx # Contact list page
-│   │   │       └── form.tsx  # Contact form
+│   │   ├── main.tsx          # React entry point (TanStack Router)
+│   │   ├── routes/           # File-based routes (TanStack Router)
+│   │   │   ├── __root.tsx    # Root route
+│   │   │   ├── _layout.tsx   # Auth guard + sidebar layout
+│   │   │   └── _layout/      # Protected page routes
 │   │   ├── components/       # Shared UI: sidebar, title-bar, data-table, etc.
 │   │   │   └── sidebar.tsx   # App sidebar with navigation
 │   │   ├── hooks/            # TanStack Query hooks for Wails bindings
@@ -500,11 +496,11 @@ export default function DesktopLLMReferencePage() {
                         ],
                         [
                           'grit generate resource <Name> --fields "..."',
-                          "Generate a full-stack CRUD resource: Go model, service, React list page, React form page, plus 12 code injections",
+                          "Generate a full-stack CRUD resource: Go model, service, React list page, React form page, plus 10 code injections",
                         ],
                         [
                           "grit remove resource <Name>",
-                          "Remove a generated resource: deletes files and reverses all 12 injections. Markers stay intact.",
+                          "Remove a generated resource: deletes files and reverses all 10 injections. Markers stay intact.",
                         ],
                         [
                           "grit start",
@@ -744,12 +740,16 @@ export default function DesktopLLMReferencePage() {
                       desc: "Service with List (paginated), ListAll, GetByID, Create, Update, Delete methods. Returns PaginatedResult for list queries.",
                     },
                     {
-                      file: "frontend/src/pages/<plural>/index.tsx",
-                      desc: "List page with DataTable: search, pagination, sortable columns, edit/delete buttons, PDF/Excel export, and New button.",
+                      file: "frontend/src/routes/_layout/<plural>.index.tsx",
+                      desc: "List route — DataTable, search, pagination, PDF/Excel export",
                     },
                     {
-                      file: "frontend/src/pages/<plural>/form.tsx",
-                      desc: "Create/edit form with field-type-based inputs. Create mode (no ID param) and edit mode (with ID param, pre-fills data).",
+                      file: "frontend/src/routes/_layout/<plural>.new.tsx",
+                      desc: "Create form route — field-type-based inputs, validation, toast",
+                    },
+                    {
+                      file: "frontend/src/routes/_layout/<plural>.$id.edit.tsx",
+                      desc: "Edit form route — pre-fills from GetByID, type-safe params",
                     },
                   ].map((item) => (
                     <div
@@ -914,7 +914,7 @@ func (s *ProductService) Delete(id uint) error { ... }`}
                 </p>
                 <CodeBlock
                   language="tsx"
-                  filename="frontend/src/pages/products/index.tsx (column definition)"
+                  filename="frontend/src/routes/_layout/products.index.tsx (column definition)"
                   code={`const columns = [
   { accessorKey: "name", header: "Product Name" },
   {
@@ -1127,7 +1127,7 @@ func (a *App) ExportProductsExcel() ([]byte, error)`}
                 </p>
                 <CodeBlock
                   language="tsx"
-                  filename="frontend/src/pages/products/index.tsx (calling Go from React)"
+                  filename="frontend/src/routes/_layout/products.index.tsx (calling Go from React)"
                   code={`import { GetProducts, DeleteProduct, ExportProductsPDF, ExportProductsExcel } from "../../wailsjs/go/main/App";
 
 // In a component:
@@ -1339,7 +1339,7 @@ wails build -platform linux/amd64`}
                         [
                           "Frontend",
                           "Next.js (App Router)",
-                          "Vite + React + React Router",
+                          "Vite + React + TanStack Router",
                         ],
                         [
                           "Database",
@@ -1384,7 +1384,7 @@ wails build -platform linux/amd64`}
                         [
                           "Code generation markers",
                           "GRIT:MODELS, GRIT:ROUTES, etc.",
-                          "grit:models, grit:methods, grit:routes, etc.",
+                          "grit:models, grit:methods, grit:nav, etc.",
                         ],
                         [
                           "Admin panel",
@@ -1538,18 +1538,6 @@ wails build -platform linux/amd64`}
                           "Register model in GORM Studio",
                         ],
                         [
-                          "App.tsx",
-                          "// grit:page-imports",
-                          "line-before",
-                          "Import page components",
-                        ],
-                        [
-                          "App.tsx",
-                          "{/* grit:routes */}",
-                          "line-before",
-                          "Add Route elements (list, new, edit)",
-                        ],
-                        [
                           "sidebar.tsx",
                           "// grit:nav-icons + // grit:nav",
                           "line-before",
@@ -1677,15 +1665,17 @@ func NewApp(authService *service.AuthService, productService *service.ProductSer
                   />
                   <CodeBlock
                     language="tsx"
-                    filename="frontend/src/App.tsx — routes"
-                    code={`import ProductsPage from "./pages/products/index";
-import ProductForm from "./pages/products/form";
-// grit:page-imports
+                    filename="frontend/src/routes/_layout/products.index.tsx — route file"
+                    code={`import { createFileRoute } from "@tanstack/react-router";
+// ... component imports
 
-<Route path="/products" element={<ProductsPage />} />
-<Route path="/products/new" element={<ProductForm />} />
-<Route path="/products/edit/:id" element={<ProductForm />} />
-{/* grit:routes */}`}
+export const Route = createFileRoute("/_layout/products/")({
+  component: ProductsListPage,
+});
+
+function ProductsListPage() {
+  // ... list page with DataTable
+}`}
                   />
                   <CodeBlock
                     language="tsx"
@@ -1782,7 +1772,7 @@ func (a *App) GetProductBySKU(sku string) (*models.Product, error) {
                   />
                   <CodeBlock
                     language="tsx"
-                    filename="frontend/src/pages/products/lookup.tsx — call from React"
+                    filename="frontend/src/routes/_layout/products.lookup.tsx — call from React"
                     code={`import { GetProductBySKU } from "../../wailsjs/go/main/App";
 
 export default function ProductLookup() {
@@ -1878,8 +1868,8 @@ wails build -nsis`}
                     Example 6: Remove a Resource
                   </h3>
                   <p className="text-sm text-muted-foreground/70 mb-3">
-                    Cleanly remove a resource — deletes all 4 generated files
-                    and reverses all 12 injections. Markers stay intact for
+                    Cleanly remove a resource — deletes all generated files
+                    and reverses all 10 injections. Markers stay intact for
                     future generation.
                   </p>
                   <CodeBlock
@@ -1889,11 +1879,12 @@ wails build -nsis`}
 # Deletes:
 #   internal/models/supplier.go
 #   internal/service/supplier.go
-#   frontend/src/pages/suppliers/index.tsx
-#   frontend/src/pages/suppliers/form.tsx
+#   frontend/src/routes/_layout/suppliers.index.tsx
+#   frontend/src/routes/_layout/suppliers.new.tsx
+#   frontend/src/routes/_layout/suppliers.$id.edit.tsx
 #
 # Removes injected code from:
-#   db.go, main.go, app.go, types.go, studio/main.go, App.tsx, sidebar.tsx`}
+#   db.go, main.go, app.go, types.go, studio/main.go, sidebar.tsx`}
                   />
                 </div>
               </div>
@@ -1916,17 +1907,17 @@ wails build -nsis`}
                     {
                       rule: "Always use grit generate resource for new resources",
                       detail:
-                        "Never create model, service, or page files manually. The CLI handles 4 file creations + 12 injections in one atomic operation. Manual creation will miss injection points and break future generation/removal.",
+                        "Never create model, service, or page files manually. The CLI handles 5 file creations + 10 injections in one atomic operation. Manual creation will miss injection points and break future generation/removal.",
                     },
                     {
                       rule: "Never modify grit: markers",
                       detail:
-                        "The comments // grit:models, // grit:fields, // grit:methods, {/* grit:routes */}, etc. are permanent injection points. Do not remove, rename, reformat, or move them. They must stay exactly as scaffolded.",
+                        "The comments // grit:models, // grit:fields, // grit:methods, // grit:nav, etc. are permanent injection points. Do not remove, rename, reformat, or move them. They must stay exactly as scaffolded.",
                     },
                     {
                       rule: "Use grit remove resource to undo — never delete files manually",
                       detail:
-                        "Manual deletion leaves injected code orphaned in app.go, main.go, db.go, App.tsx, and sidebar.tsx. Always use grit remove resource <Name> which cleans up all 12 injection points.",
+                        "Manual deletion leaves injected code orphaned in app.go, main.go, db.go, and sidebar.tsx. Always use grit remove resource <Name> which cleans up all 10 injection points.",
                     },
                     {
                       rule: "Desktop uses SQLite, not PostgreSQL",
@@ -2099,7 +2090,7 @@ wails build -nsis  # Windows installer`}
                           "Auth is handled in Go methods — check JWT in service layer",
                         ],
                         [
-                          "Adding imports below // grit:page-imports",
+                          "Adding icon + nav item to sidebar.tsx",
                           "Add imports ABOVE the marker — inject goes before",
                         ],
                         [

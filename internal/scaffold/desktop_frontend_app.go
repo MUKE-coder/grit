@@ -7,8 +7,12 @@ import (
 
 func writeDesktopFrontendAppFiles(root string, opts DesktopOptions) error {
 	files := map[string]string{
-		filepath.Join(root, "frontend", "src", "App.tsx"):              desktopAppTSX(),
-		filepath.Join(root, "frontend", "src", "lib", "utils.ts"):     desktopUtilsTS(),
+		// Route files
+		filepath.Join(root, "frontend", "src", "routes", "__root.tsx"):   desktopRootRoute(),
+		filepath.Join(root, "frontend", "src", "routes", "login.tsx"):    desktopLoginRoute(),
+		filepath.Join(root, "frontend", "src", "routes", "register.tsx"): desktopRegisterRoute(),
+		// Utilities and hooks
+		filepath.Join(root, "frontend", "src", "lib", "utils.ts"):        desktopUtilsTS(),
 		filepath.Join(root, "frontend", "src", "lib", "query-client.ts"): desktopQueryClientTS(),
 		filepath.Join(root, "frontend", "src", "hooks", "use-auth.ts"):   desktopUseAuthHook(),
 		filepath.Join(root, "frontend", "src", "hooks", "use-theme.ts"):  desktopUseThemeHook(),
@@ -23,39 +27,20 @@ func writeDesktopFrontendAppFiles(root string, opts DesktopOptions) error {
 	return nil
 }
 
-func desktopAppTSX() string {
-	return `import { HashRouter, Routes, Route } from "react-router-dom";
-import { Toaster } from "sonner";
-import { AuthProvider } from "./hooks/use-auth";
-import AppLayout from "./components/layout/app-layout";
-import LoginPage from "./pages/login";
-import RegisterPage from "./pages/register";
-import DashboardPage from "./pages/dashboard";
-import BlogListPage from "./pages/blogs/index";
-import BlogFormPage from "./pages/blogs/form";
-import ContactListPage from "./pages/contacts/index";
-import ContactFormPage from "./pages/contacts/form";
-// grit:page-imports
+// ── Root Route (__root.tsx) ─────────────────────────────────────────────────
 
-export default function App() {
+func desktopRootRoute() string {
+	return `import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { Toaster } from "sonner";
+
+export const Route = createRootRoute({
+  component: RootLayout,
+});
+
+function RootLayout() {
   return (
-    <AuthProvider>
-      <HashRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/blogs" element={<BlogListPage />} />
-            <Route path="/blogs/new" element={<BlogFormPage />} />
-            <Route path="/blogs/:id/edit" element={<BlogFormPage />} />
-            <Route path="/contacts" element={<ContactListPage />} />
-            <Route path="/contacts/new" element={<ContactFormPage />} />
-            <Route path="/contacts/:id/edit" element={<ContactFormPage />} />
-            {/* grit:routes */}
-          </Route>
-        </Routes>
-      </HashRouter>
+    <>
+      <Outlet />
       <Toaster
         theme="dark"
         position="bottom-right"
@@ -67,11 +52,208 @@ export default function App() {
           },
         }}
       />
-    </AuthProvider>
+    </>
   );
 }
 `
 }
+
+// ── Login Route ─────────────────────────────────────────────────────────────
+
+func desktopLoginRoute() string {
+	return `import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { toast } from "sonner";
+import { useAuth } from "../hooks/use-auth";
+
+export const Route = createFileRoute("/login")({
+  component: LoginPage,
+});
+
+function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await login(email, password);
+      navigate({ to: "/" });
+    } catch (err: any) {
+      toast.error(err?.message || "Invalid credentials");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-foreground">Welcome Back</h1>
+          <p className="text-sm text-text-secondary mt-1">Sign in to your account</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4 bg-bg-elevated border border-border rounded-xl p-6">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@example.com"
+              required
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password"
+              required
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-accent hover:bg-accent/90 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50"
+          >
+            {loading ? "Signing in..." : "Sign In"}
+          </button>
+        </form>
+        <p className="text-center text-sm text-text-secondary mt-4">
+          {"Don't have an account? "}
+          <Link to="/register" className="text-accent hover:underline">Create one</Link>
+        </p>
+        <p className="text-center text-xs text-text-muted mt-2">Default: admin@example.com / admin123</p>
+      </div>
+    </div>
+  );
+}
+`
+}
+
+// ── Register Route ──────────────────────────────────────────────────────────
+
+func desktopRegisterRoute() string {
+	return `import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { toast } from "sonner";
+import { useAuth } from "../hooks/use-auth";
+
+export const Route = createFileRoute("/register")({
+  component: RegisterPage,
+});
+
+function RegisterPage() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { register } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    setLoading(true);
+    try {
+      await register(name, email, password);
+      navigate({ to: "/" });
+    } catch (err: any) {
+      toast.error(err?.message || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-foreground">Create Account</h1>
+          <p className="text-sm text-text-secondary mt-1">Get started with your new account</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4 bg-bg-elevated border border-border rounded-xl p-6">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              required
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+              required
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Confirm Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Repeat password"
+              required
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-accent hover:bg-accent/90 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50"
+          >
+            {loading ? "Creating account..." : "Create Account"}
+          </button>
+        </form>
+        <p className="text-center text-sm text-text-secondary mt-4">
+          {"Already have an account? "}
+          <Link to="/login" className="text-accent hover:underline">Sign in</Link>
+        </p>
+      </div>
+    </div>
+  );
+}
+`
+}
+
+// ── Utilities (unchanged) ───────────────────────────────────────────────────
 
 func desktopUtilsTS() string {
 	return `import { clsx, type ClassValue } from "clsx";

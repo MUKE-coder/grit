@@ -137,9 +137,11 @@ export default function DesktopGettingStartedPage() {
 │       └── types.go         # Shared request/response types
 ├── frontend/
 │   ├── src/
-│   │   ├── App.tsx           # React Router setup
-│   │   ├── main.tsx          # React entry point
-│   │   ├── pages/            # Page components
+│   │   ├── main.tsx          # React entry point (TanStack Router)
+│   │   ├── routes/           # File-based routes (TanStack Router)
+│   │   │   ├── __root.tsx    # Root route
+│   │   │   ├── _layout.tsx   # Auth guard + sidebar layout
+│   │   │   └── _layout/      # Protected page routes
 │   │   ├── components/       # Reusable UI components
 │   │   ├── hooks/            # TanStack Query hooks
 │   │   └── lib/              # Utilities
@@ -150,6 +152,87 @@ export default function DesktopGettingStartedPage() {
 └── cmd/
     └── studio/
         └── main.go           # GORM Studio standalone server`} className="mb-0" />
+            </div>
+
+            {/* How File-Based Routing Works */}
+            <div className="mb-10">
+              <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                How File-Based Routing Works
+              </h2>
+              <div className="prose-grit mb-4">
+                <p>
+                  Grit Desktop uses <a href="https://tanstack.com/router" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">TanStack Router</a> with
+                  file-based routing. Instead of a centralized route configuration, each page
+                  is a route file in <code>routes/</code>. The TanStack Router Vite plugin
+                  auto-discovers these files and generates a type-safe route tree.
+                </p>
+              </div>
+
+              <div className="overflow-x-auto mb-6">
+                <table className="w-full text-sm border border-border rounded-lg">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/50">
+                      <th className="text-left p-3 font-medium">File</th>
+                      <th className="text-left p-3 font-medium">URL</th>
+                      <th className="text-left p-3 font-medium">Purpose</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border text-muted-foreground">
+                    {[
+                      ['routes/__root.tsx', '(wrapper)', 'Root layout — wraps everything, renders Toaster'],
+                      ['routes/login.tsx', '/login', 'Login page (public)'],
+                      ['routes/register.tsx', '/register', 'Register page (public)'],
+                      ['routes/_layout.tsx', '(wrapper)', 'Auth guard + sidebar — no URL segment added'],
+                      ['routes/_layout/index.tsx', '/', 'Dashboard (protected)'],
+                      ['routes/_layout/blogs.index.tsx', '/blogs', 'Blog list page'],
+                      ['routes/_layout/blogs.new.tsx', '/blogs/new', 'Blog create form'],
+                      ['routes/_layout/blogs.$id.edit.tsx', '/blogs/:id/edit', 'Blog edit form'],
+                    ].map(([file, url, purpose]) => (
+                      <tr key={file}>
+                        <td className="p-3 font-mono text-xs">{file}</td>
+                        <td className="p-3 font-mono text-xs text-primary">{url}</td>
+                        <td className="p-3">{purpose}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="prose-grit mb-4">
+                <p>
+                  Key conventions:
+                </p>
+              </div>
+
+              <div className="space-y-2 mb-4">
+                {[
+                  'The __root.tsx file is the topmost layout. It renders an Outlet where child routes appear.',
+                  'Files prefixed with _ (like _layout.tsx) create pathless layouts — they wrap child routes without adding a URL segment.',
+                  'Dot notation in filenames creates nested paths: blogs.index.tsx becomes /blogs, blogs.$id.edit.tsx becomes /blogs/:id/edit.',
+                  'The $ prefix denotes dynamic parameters: $id in the filename becomes a typed route parameter accessible via Route.useParams().',
+                  'Each route file exports a Route constant created with createFileRoute() — this registers the route and its component.',
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-3 rounded-lg border border-border/30 bg-card/30 px-4 py-2.5"
+                  >
+                    <span className="text-sm font-mono text-primary/60 shrink-0 mt-0.5">
+                      {i + 1}.
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {item}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="prose-grit mb-0">
+                <blockquote>
+                  The route tree (<code>routeTree.gen.ts</code>) is auto-generated by the
+                  TanStack Router Vite plugin and gitignored. You never edit it manually.
+                  Just create or delete route files — the plugin handles the rest.
+                </blockquote>
+              </div>
             </div>
 
             {/* Step 3: Development */}

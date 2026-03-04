@@ -23,8 +23,7 @@ func TestCreateDesktopDirectories(t *testing.T) {
 		filepath.Join(root, "build"),
 		filepath.Join(root, "frontend", "src", "components", "ui"),
 		filepath.Join(root, "frontend", "src", "components", "layout"),
-		filepath.Join(root, "frontend", "src", "pages", "blogs"),
-		filepath.Join(root, "frontend", "src", "pages", "contacts"),
+		filepath.Join(root, "frontend", "src", "routes", "_layout"),
 		filepath.Join(root, "frontend", "src", "hooks"),
 		filepath.Join(root, "frontend", "src", "lib"),
 	}
@@ -250,27 +249,29 @@ func TestDesktopFrontendFiles(t *testing.T) {
 		filepath.Join("frontend", "index.html"),
 		filepath.Join("frontend", "src", "main.tsx"),
 		filepath.Join("frontend", "src", "index.css"),
-		filepath.Join("frontend", "src", "App.tsx"),
 		filepath.Join("frontend", "src", "lib", "utils.ts"),
 		filepath.Join("frontend", "src", "lib", "query-client.ts"),
 		filepath.Join("frontend", "src", "hooks", "use-auth.ts"),
 		filepath.Join("frontend", "src", "hooks", "use-theme.ts"),
 		filepath.Join("frontend", "src", "components", "layout", "title-bar.tsx"),
 		filepath.Join("frontend", "src", "components", "layout", "sidebar.tsx"),
-		filepath.Join("frontend", "src", "components", "layout", "app-layout.tsx"),
 		filepath.Join("frontend", "src", "components", "layout", "draggable-window.tsx"),
 		filepath.Join("frontend", "src", "components", "ui", "button.tsx"),
 		filepath.Join("frontend", "src", "components", "ui", "input.tsx"),
 		filepath.Join("frontend", "src", "components", "ui", "card.tsx"),
 		filepath.Join("frontend", "src", "components", "data-table.tsx"),
 		filepath.Join("frontend", "src", "components", "form-builder.tsx"),
-		filepath.Join("frontend", "src", "pages", "login.tsx"),
-		filepath.Join("frontend", "src", "pages", "register.tsx"),
-		filepath.Join("frontend", "src", "pages", "dashboard.tsx"),
-		filepath.Join("frontend", "src", "pages", "blogs", "index.tsx"),
-		filepath.Join("frontend", "src", "pages", "blogs", "form.tsx"),
-		filepath.Join("frontend", "src", "pages", "contacts", "index.tsx"),
-		filepath.Join("frontend", "src", "pages", "contacts", "form.tsx"),
+		filepath.Join("frontend", "src", "routes", "__root.tsx"),
+		filepath.Join("frontend", "src", "routes", "login.tsx"),
+		filepath.Join("frontend", "src", "routes", "register.tsx"),
+		filepath.Join("frontend", "src", "routes", "_layout.tsx"),
+		filepath.Join("frontend", "src", "routes", "_layout", "index.tsx"),
+		filepath.Join("frontend", "src", "routes", "_layout", "blogs.index.tsx"),
+		filepath.Join("frontend", "src", "routes", "_layout", "blogs.new.tsx"),
+		filepath.Join("frontend", "src", "routes", "_layout", "blogs.$id.edit.tsx"),
+		filepath.Join("frontend", "src", "routes", "_layout", "contacts.index.tsx"),
+		filepath.Join("frontend", "src", "routes", "_layout", "contacts.new.tsx"),
+		filepath.Join("frontend", "src", "routes", "_layout", "contacts.$id.edit.tsx"),
 	}
 
 	for _, f := range expected {
@@ -300,13 +301,25 @@ func TestDesktopFrontendFiles(t *testing.T) {
 		t.Error("title-bar.tsx missing --wails-draggable CSS property")
 	}
 
-	// Verify App.tsx uses HashRouter
-	appTsx, err := os.ReadFile(filepath.Join(root, "frontend", "src", "App.tsx"))
+	// Verify main.tsx uses TanStack Router with hash history
+	mainTsx, err := os.ReadFile(filepath.Join(root, "frontend", "src", "main.tsx"))
 	if err != nil {
-		t.Fatalf("reading App.tsx: %v", err)
+		t.Fatalf("reading main.tsx: %v", err)
 	}
-	if !strings.Contains(string(appTsx), "HashRouter") {
-		t.Error("App.tsx does not use HashRouter")
+	if !strings.Contains(string(mainTsx), "createRouter") {
+		t.Error("main.tsx does not use createRouter")
+	}
+	if !strings.Contains(string(mainTsx), "createHashHistory") {
+		t.Error("main.tsx does not use createHashHistory")
+	}
+
+	// Verify __root.tsx uses createRootRoute
+	rootRoute, err := os.ReadFile(filepath.Join(root, "frontend", "src", "routes", "__root.tsx"))
+	if err != nil {
+		t.Fatalf("reading __root.tsx: %v", err)
+	}
+	if !strings.Contains(string(rootRoute), "createRootRoute") {
+		t.Error("__root.tsx does not use createRootRoute")
 	}
 }
 
@@ -350,10 +363,6 @@ func TestDesktopMarkers(t *testing.T) {
 		},
 		filepath.Join(root, "internal", "models", "types.go"): {
 			"// grit:input-types",
-		},
-		filepath.Join(root, "frontend", "src", "App.tsx"): {
-			"// grit:page-imports",
-			"{/* grit:routes */}",
 		},
 		filepath.Join(root, "frontend", "src", "components", "layout", "sidebar.tsx"): {
 			"// grit:nav-icons",

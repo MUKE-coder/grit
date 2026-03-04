@@ -41,7 +41,7 @@ export default function DesktopOverviewPage() {
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Grit Desktop extends the framework beyond web applications. Using{' '}
                   <a href="https://wails.io" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Wails</a>,
-                  it combines a Go backend with a React frontend (Vite + React Router + TanStack Query)
+                  it combines a Go backend with a React frontend (Vite + TanStack Router + TanStack Query)
                   to produce native desktop apps for Windows, macOS, and Linux.
                 </p>
                 <CodeBlock terminal code="grit new-desktop myapp" className="mb-0 glow-purple-sm" />
@@ -65,7 +65,7 @@ export default function DesktopOverviewPage() {
                 <div className="space-y-3 mb-6">
                   {[
                     { step: '1', title: 'Go Backend (Wails Bindings)', desc: 'Business logic lives in Go structs. Methods on the App struct are automatically exposed to the frontend via Wails bindings. No HTTP server needed.' },
-                    { step: '2', title: 'React Frontend (Vite)', desc: 'A Vite-powered React app with React Router for navigation and TanStack Query for state management. Calls Go functions through the generated Wails bindings.' },
+                    { step: '2', title: 'React Frontend (Vite)', desc: 'A Vite-powered React app with TanStack Router (file-based routing) and TanStack Query for state management. Calls Go functions through the generated Wails bindings.' },
                     { step: '3', title: 'SQLite / PostgreSQL', desc: 'GORM handles the database layer. SQLite is the default for portable desktop apps. PostgreSQL is supported for networked setups.' },
                     { step: '4', title: 'Single Binary Output', desc: 'The entire application -- Go backend, React frontend, and all assets -- compiles into a single executable that you distribute.' },
                   ].map((item) => (
@@ -80,6 +80,46 @@ export default function DesktopOverviewPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* TanStack Router */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Routing with TanStack Router
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Grit Desktop uses{' '}
+                  <a href="https://tanstack.com/router" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">TanStack Router</a>{' '}
+                  with <strong className="text-foreground/80">file-based routing</strong>. Instead of declaring
+                  routes in a centralized file, each page is a self-contained route file in the{' '}
+                  <code>routes/</code> directory. The TanStack Router Vite plugin automatically discovers
+                  route files and generates a type-safe route tree at build time.
+                </p>
+                <div className="space-y-3 mb-6">
+                  {[
+                    { step: '1', title: 'File-Based Routes', desc: 'Each page is a file in routes/_layout/. The filename determines the URL: blogs.index.tsx maps to /blogs, blogs.$id.edit.tsx maps to /blogs/:id/edit. No route registry to maintain.' },
+                    { step: '2', title: 'Type-Safe Navigation', desc: 'Route params, search params, and navigation are fully typed. Route.useParams() returns typed params scoped to the current route. navigate({ to: "/blogs/$id/edit", params: { id } }) is validated at compile time.' },
+                    { step: '3', title: 'Pathless Layouts', desc: 'The _layout.tsx file creates a layout route (auth guard + sidebar) without adding a URL segment. All pages inside _layout/ inherit this wrapper automatically.' },
+                    { step: '4', title: 'Zero-Config for Generation', desc: 'When grit generate resource creates a new resource, it simply creates route files. No imports to add, no route registry to update. Deleting a resource just deletes the files.' },
+                  ].map((item) => (
+                    <div key={item.step} className="flex gap-3 p-3 rounded-lg border border-border/30 bg-card/30">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-xs font-mono font-semibold text-primary">
+                        {item.step}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{item.title}</p>
+                        <p className="text-xs text-muted-foreground/70 mt-0.5">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  TanStack Router uses{' '}
+                  <code>createHashHistory()</code> for desktop apps, so routes work correctly when
+                  the app is loaded from disk (no web server needed). The Vite plugin generates{' '}
+                  <code>routeTree.gen.ts</code> automatically — this file is gitignored and
+                  regenerated on every build.
+                </p>
               </div>
 
               {/* Features */}
@@ -141,7 +181,7 @@ export default function DesktopOverviewPage() {
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 text-xs font-medium">Frontend</td>
                         <td className="px-4 py-2.5 text-xs">Next.js (App Router)</td>
-                        <td className="px-4 py-2.5 text-xs">Vite + React + React Router</td>
+                        <td className="px-4 py-2.5 text-xs">Vite + React + TanStack Router</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 text-xs font-medium">Database</td>
