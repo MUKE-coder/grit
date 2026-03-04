@@ -3,6 +3,7 @@ import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from "@/components/code-block";
 import { getDocMetadata } from "@/config/docs-metadata";
+import { Download } from "lucide-react";
 
 export const metadata = getDocMetadata("/docs/desktop/resource-generation");
 
@@ -323,6 +324,22 @@ function EditProductPage() {
                   so routing works from disk without a web server.
                 </li>
               </ul>
+            </div>
+
+            {/* Desktop Handbook */}
+            <div className="mt-10">
+              <a
+                href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfpiJDPD3QgNG9hYzVFo5iLR0yrDPTJedWnBH7"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 rounded-lg border border-primary/25 bg-primary/5 px-5 py-4 hover:bg-primary/10 transition-colors group"
+              >
+                <Download className="h-5 w-5 text-primary/70 group-hover:text-primary shrink-0" />
+                <div>
+                  <span className="text-sm font-semibold text-foreground block">Download Desktop Handbook (PDF)</span>
+                  <span className="text-xs text-muted-foreground/60">Complete offline reference for Grit Desktop development</span>
+                </div>
+              </a>
             </div>
           </div>
         </div>

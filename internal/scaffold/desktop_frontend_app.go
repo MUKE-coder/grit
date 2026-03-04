@@ -14,7 +14,7 @@ func writeDesktopFrontendAppFiles(root string, opts DesktopOptions) error {
 		// Utilities and hooks
 		filepath.Join(root, "frontend", "src", "lib", "utils.ts"):        desktopUtilsTS(),
 		filepath.Join(root, "frontend", "src", "lib", "query-client.ts"): desktopQueryClientTS(),
-		filepath.Join(root, "frontend", "src", "hooks", "use-auth.ts"):   desktopUseAuthHook(),
+		filepath.Join(root, "frontend", "src", "hooks", "use-auth.tsx"):  desktopUseAuthHook(),
 		filepath.Join(root, "frontend", "src", "hooks", "use-theme.ts"):  desktopUseThemeHook(),
 	}
 

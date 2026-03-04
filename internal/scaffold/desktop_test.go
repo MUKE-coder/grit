@@ -251,7 +251,7 @@ func TestDesktopFrontendFiles(t *testing.T) {
 		filepath.Join("frontend", "src", "index.css"),
 		filepath.Join("frontend", "src", "lib", "utils.ts"),
 		filepath.Join("frontend", "src", "lib", "query-client.ts"),
-		filepath.Join("frontend", "src", "hooks", "use-auth.ts"),
+		filepath.Join("frontend", "src", "hooks", "use-auth.tsx"),
 		filepath.Join("frontend", "src", "hooks", "use-theme.ts"),
 		filepath.Join("frontend", "src", "components", "layout", "title-bar.tsx"),
 		filepath.Join("frontend", "src", "components", "layout", "sidebar.tsx"),
