@@ -118,6 +118,15 @@ myapp/
 - **Redis Caching** — Get/Set/Delete/Flush with cache middleware for GET responses
 - **AI Integration** — Claude and OpenAI APIs with SSE streaming
 
+### Desktop (Wails)
+- **`grit new-desktop <name>`** — Scaffold a native desktop app (Go + React + SQLite)
+- **Wails bindings** — Go functions directly callable from React (no HTTP)
+- **Auth, CRUD, Export** — Login/register, blog + contact CRUD, PDF/Excel export
+- **GORM Studio** — Standalone database browser at `cmd/studio`
+- **Resource generation** — `grit generate resource` works for desktop projects too
+- **Custom title bar** — Frameless window with draggable title bar
+- **Dark theme** — Grit dark theme with accent purple
+
 ### Security & Observability
 - **Sentinel** — WAF, rate limiting per IP/route, auth shield, anomaly detection at `/sentinel/ui`
 - **Pulse** — Request tracing, DB monitoring, metrics, health checks at `/pulse/ui/`
@@ -133,19 +142,23 @@ grit new <name> --api              # Go API only
 grit new <name> --mobile           # Mobile-first (API + Expo)
 grit new <name> --full             # Everything including Expo + docs site
 grit new <name> --style modern     # Admin style: default|modern|minimal|glass
+grit new-desktop <name>            # Native desktop app (Wails + Go + React)
 
-# Code generation
+# Code generation (works for both web and desktop projects)
 grit generate resource <Name>                      # Interactive field prompts
 grit generate resource <Name> --fields "..."      # Inline field definition
 grit generate resource <Name> --from post.yaml    # YAML definition file
 grit remove resource <Name>                       # Remove generated resource
 
-# Type sync
+# Type sync (web projects)
 grit sync                           # Go models -> TypeScript + Zod
 
 # Development
 grit dev                            # Start all frontend apps (pnpm dev)
 grit server                         # Start Go API server
+grit start                          # Auto-detect project type, start dev server
+grit compile                        # Build desktop executable (wails build)
+grit studio                         # Open database browser (web + desktop)
 
 # Database
 grit migrate                        # Run database migrations
@@ -153,7 +166,7 @@ grit migrate --fresh                # Drop + re-migrate
 grit seed                           # Run database seeder
 
 # Meta
-grit version                        # Print CLI version
+grit version                        # Print CLI version (2.0.0)
 ```
 
 ## Field Types (Code Generator)

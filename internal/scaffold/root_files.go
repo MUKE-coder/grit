@@ -409,7 +409,10 @@ func rootPackageJSON(opts Options) string {
 	scripts += `
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
-    "docker:logs": "docker compose logs -f"`
+    "docker:logs": "docker compose logs -f",
+    "test": "turbo test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"`
 
 	return fmt.Sprintf(`{
   "name": "%s",
@@ -418,6 +421,7 @@ func rootPackageJSON(opts Options) string {
 %s
   },
   "devDependencies": {
+    "@playwright/test": "^1.48.0",
     "turbo": "^2.0.0"
   },
   "packageManager": "pnpm@10.0.0"

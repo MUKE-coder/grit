@@ -38,7 +38,7 @@
 
 **Current Phase:** Phase 5 — Polish & Launch
 **Status:** In Progress
-**Last Updated:** 2026-03-03
+**Last Updated:** 2026-03-03 (Grit UI 91-component expansion)
 
 ### What's Been Built
 - [x] CLI Scaffolder (`grit new <project-name>` with `--api` flag, name validation, ASCII art)
@@ -63,9 +63,13 @@
 - [x] Performance: gzip compression + connection pooling + request ID tracing + Sentinel rate limiting — all baked into scaffolded API templates
 - [x] README.md: Full CLI reference, all 4 phases documented, field types table, tech stack table
 - [x] CI/CD: GitHub Actions `ci.yml` (test + race + coverage + cross-platform build) + `release.yml` (tag-triggered release)
-- [ ] Go API integration tests (handlers, auth flow, SQLite in-memory)
-- [ ] Frontend component + E2E tests
-- [ ] Public launch (README GIF, blog posts, Product Hunt, etc.)
+- [x] Go generator integration tests (Generator.Run() end-to-end: model/service/handler/schema/types creation + all injections, Names() variants, slug/belongs_to fields, role-restricted routes) — 56 total tests, all passing
+- [x] RemoveResource tests (removeLinesContaining, removeInlineText, removeLineBlock, removeSchemaExportBlock, generate+remove round-trip) — all passing
+- [x] Grit UI Component Registry: UIComponent model + UIRegistryHandler (GET /r.json, GET /r/:name.json, CRUD admin API) + 91-component catalog seeded (4 original + 87 new across marketing/auth/saas/ecommerce/layout) + packages/grit-ui/ shadcn-compatible package (registry.json + per-component JSON + TSX source files) + /components public browser in web scaffold
+- [x] Go API test templates scaffolded into generated projects: auth_test.go (6 tests: register success/validation/duplicate, login success/wrong-password/unknown), user_test.go (4 tests: auth guard, admin list, 404, success), bench_test.go (BenchmarkHealthCheck, BenchmarkAuthLogin, BenchmarkAuthRegister) — uses SQLite in-memory + testify
+- [x] Frontend test templates scaffolded: web/__tests__ (navbar, footer — Vitest + RTL), admin/__tests__ (login form, utils), e2e/ (auth.spec.ts, admin.spec.ts — Playwright), vitest.config.ts + playwright.config.ts — all wired into package.json scripts (test, test:watch, test:e2e)
+- [x] 30-day social media content: SOCIAL.md — LinkedIn + Twitter/X for Grit framework + Grit Cloud (launch/features/positioning/tutorials/Grit Cloud/community)
+- [ ] Public launch (execute SOCIAL.md plan, README GIF, Product Hunt listing)
 
 ---
 
@@ -290,4 +294,4 @@ When starting a new session:
 
 ---
 
-*Last context update: 2026-03-03 — Phase 5 in progress. Tests: 68 test cases passing (generate: definition/field/pluralize/inject/sync + scaffold: options/dirs/files). Benchmarks added. Performance items complete (gzip, connection pooling, rate limiting). README fully updated with Phases 1-4 features.*
+*Last context update: 2026-03-03 — Phase 5 nearly complete. All technical items done: Grit UI Registry, Go API tests, frontend test scaffolding (Vitest+RTL+Playwright), 30-day social content (SOCIAL.md). Only remaining: public launch execution. All Go tests passing (generate + scaffold packages).*

@@ -158,6 +158,12 @@ func Run(opts Options) error {
 		if err := writeSharedFiles(root, opts); err != nil {
 			return fmt.Errorf("writing shared files: %w", err)
 		}
+
+		// Write Grit UI component registry
+		spinner.Printf("  → Creating Grit UI component registry...\n")
+		if err := writeGritUIFiles(root, opts); err != nil {
+			return fmt.Errorf("writing Grit UI files: %w", err)
+		}
 	}
 
 	if opts.ShouldIncludeWeb() {
@@ -192,6 +198,14 @@ func Run(opts Options) error {
 		}
 	}
 
+	// Write frontend test files (Vitest + Playwright)
+	if opts.ShouldIncludeWeb() || opts.ShouldIncludeAdmin() {
+		spinner.Printf("  → Scaffolding frontend tests (Vitest + Playwright)...\n")
+		if err := writeFrontendTestFiles(root, opts); err != nil {
+			return fmt.Errorf("writing frontend test files: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -222,6 +236,7 @@ func createDirectories(root string, opts Options) error {
 		dirs = append(dirs,
 			filepath.Join(root, "apps", "web", "app"),
 			filepath.Join(root, "apps", "web", "lib"),
+			filepath.Join(root, "apps", "web", "__tests__"),
 		)
 	}
 
@@ -258,6 +273,19 @@ func createDirectories(root string, opts Options) error {
 			filepath.Join(root, "packages", "shared", "schemas"),
 			filepath.Join(root, "packages", "shared", "types"),
 			filepath.Join(root, "packages", "shared", "constants"),
+			filepath.Join(root, "packages", "grit-ui", "registry"),
+		)
+	}
+
+	if opts.ShouldIncludeWeb() || opts.ShouldIncludeAdmin() {
+		dirs = append(dirs,
+			filepath.Join(root, "e2e"),
+		)
+	}
+
+	if opts.ShouldIncludeAdmin() {
+		dirs = append(dirs,
+			filepath.Join(root, "apps", "admin", "__tests__"),
 		)
 	}
 

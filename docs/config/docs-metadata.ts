@@ -358,6 +358,28 @@ export const docsMetadata: Record<string, DocPage> = {
       'The complete Grit reference for AI assistants and LLMs: framework overview, full project structure, every CLI command, all field types, code patterns, API conventions, code markers, naming rules, all batteries, performance features, and the golden rules never to break.',
   },
 
+  // Desktop (Wails)
+  '/docs/desktop': {
+    title: 'Desktop App Development',
+    description:
+      'Build native desktop applications with Grit and Wails. Scaffold complete Wails projects with Go backend, React frontend, SQLite, authentication, and CRUD.',
+  },
+  '/docs/desktop/getting-started': {
+    title: 'Getting Started with Desktop',
+    description:
+      'Prerequisites, scaffolding, and development workflow for Grit desktop apps using Wails, Go, and React.',
+  },
+  '/docs/desktop/resource-generation': {
+    title: 'Desktop Resource Generation',
+    description:
+      'Generate full-stack CRUD resources for desktop apps. Models, services, React pages, and 12 automatic code injections.',
+  },
+  '/docs/desktop/building': {
+    title: 'Building & Distribution',
+    description:
+      'Compile Grit desktop apps into native executables. Cross-platform builds, NSIS installers, and distribution tips.',
+  },
+
   // Changelog
   '/docs/changelog': {
     title: 'Changelog',

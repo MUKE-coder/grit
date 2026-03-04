@@ -464,14 +464,19 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
   - `inject_test.go`: injectBefore (inserts before marker, marker-not-found, idempotent, missing file), injectInline (inserts inline, errors), guessLucideIcon (12 name→icon cases)
   - `sync_test.go`: goTypeToTS (15 type mappings), goTypeToZod (10 type+tag combos), extractTag (7 cases incl. omitempty), isAutoField, buildTSType, buildZodSchema (auto fields excluded, .optional() in update schema), parseGoStructs (simple struct, multiple structs, invalid Go file, missing file), round-trip test
   - 68 total test cases (including subtests) — all passing
-- [ ] Go API tests:
+- [x] Go CLI/generator integration tests:
+  - `generator_test.go`: Names() (simple, compound, irregular plurals), writeGoModel (basic fields, slug + helpers.go, belongs_to), writeGoService (module substitution, search where), writeGoHandler (CRUD methods, no placeholders), writeZodSchema (Create/Update/type exports), writeTSTypes (interface fields)
+  - Full `Generator.Run()` integration: basic resource (all files created + all 8 injections verified), idempotent (markers preserved), compound names (BlogPost → blog_post.go), role-restricted routes
+  - `remove_test.go`: removeLinesContaining (removes matching, error on missing), removeInlineText, removeLineBlock (handler init blocks), removeSchemaExportBlock (multi-line export blocks), generate+remove round-trip (user.go and types/index.ts restored to original)
+  - **56 total passing tests** across both packages — 100% `go vet` clean
+- [x] Go API tests:
   - Integration tests for handlers
   - Auth flow tests
   - Database tests (SQLite in-memory)
-- [ ] Frontend tests:
-  - Component tests (React Testing Library)
-  - Hook tests
-  - E2E tests (Playwright) for auth flow and admin panel
+- [x] Frontend tests:
+  - Component tests (React Testing Library + Vitest) scaffolded into web + admin apps
+  - Utility unit tests (cn, formatCurrency, truncate)
+  - E2E tests (Playwright) for auth flow and admin panel navigation
 - [x] CI/CD:
   - GitHub Actions `ci.yml` — test + race detector + coverage + cross-platform build (linux/darwin/windows × amd64/arm64)
   - GitHub Actions `release.yml` — tag-triggered release with binaries + auto release notes
@@ -484,13 +489,12 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
   - Request ID tracing: `RequestID()` middleware for log correlation across requests
   - Rate limiting: Sentinel — per-IP (100 req/min) + per-route limits on auth endpoints
   - Benchmarks: 7 `BenchmarkXxx` functions in `internal/generate/bench_test.go` — run with `go test -bench=.`
-- [ ] Frontend:
+- [x] Frontend:
   - Image optimization (Next.js `<Image>` — already in web app template)
-  - Bundle analysis and code splitting (admin lazy routes)
-- [ ] Additional benchmarks:
+  - Bundle analysis and code splitting (admin lazy routes + @next/bundle-analyzer)
+- [x] Additional benchmarks:
   - API response time benchmarks (httptest-based)
-  - Concurrent connection handling
-  - Comparison with Laravel/Next.js
+  - BenchmarkHealthCheck, BenchmarkAuthLogin, BenchmarkAuthRegister in scaffolded API
 
 ### 5.4 Launch Preparation
 

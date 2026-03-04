@@ -16,8 +16,12 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "cmd", "server", "main.go"):           apiMainGo(opts),
 		filepath.Join(apiRoot, "internal", "config", "config.go"):    apiConfigGo(),
 		filepath.Join(apiRoot, "internal", "database", "database.go"): apiDatabaseGo(),
-		filepath.Join(apiRoot, "internal", "models", "user.go"):      apiUserModelGo(),
-		filepath.Join(apiRoot, "internal", "models", "upload.go"):    apiUploadModelGo(),
+		filepath.Join(apiRoot, "internal", "models", "user.go"):               apiUserModelGo(),
+		filepath.Join(apiRoot, "internal", "models", "upload.go"):             apiUploadModelGo(),
+		filepath.Join(apiRoot, "internal", "models", "ui_component.go"):       apiUIComponentModelGo(),
+		filepath.Join(apiRoot, "internal", "models", "seed_ui_components.go"):          apiUIComponentSeedGo(),
+		filepath.Join(apiRoot, "internal", "models", "seed_ui_components_extended.go"): apiUIComponentSeedExtendedGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "ui_registry.go"):      apiUIRegistryHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "auth.go"):    apiAuthServiceGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "auth.go"):    apiAuthHandlerGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user.go"):    apiUserHandlerGo(),
@@ -26,6 +30,10 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "logger.go"): apiLoggerMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "routes", "routes.go"):    apiRoutesGo(),
 		filepath.Join(apiRoot, ".air.toml"):                          airConfig(),
+		// Test files — give the generated API a working test suite out of the box
+		filepath.Join(apiRoot, "internal", "handlers", "auth_test.go"):  apiAuthTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "user_test.go"):  apiUserTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "bench_test.go"): apiBenchTestGo(),
 	}
 
 	for path, content := range files {
@@ -66,6 +74,11 @@ require (
 	gorm.io/datatypes v1.2.7
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.25.12
+)
+
+require (
+	github.com/stretchr/testify v1.9.0
+	gorm.io/driver/sqlite v1.5.5
 )
 `, opts.ProjectName)
 }
@@ -645,6 +658,7 @@ func Models() []interface{} {
 		&User{},
 		&Upload{},
 		&Blog{},
+		&UIComponent{},
 		// grit:models
 	}
 }
@@ -2154,6 +2168,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	}
 	cronHandler := &handlers.CronHandler{}
 	blogHandler := handlers.NewBlogHandler(db)
+	uiRegistryHandler := handlers.NewUIRegistryHandler(db, cfg.AppURL)
 	// grit:handlers
 
 	// Health check
@@ -2163,6 +2178,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			"version": "0.1.0",
 		})
 	})
+
+	// Public Grit UI component registry (shadcn-compatible)
+	r.GET("/r.json", uiRegistryHandler.GetRegistry)
+	r.GET("/r/:name", uiRegistryHandler.GetComponent)
 
 	// Public blog routes (no auth required)
 	blogs := r.Group("/api/blogs")
@@ -2211,6 +2230,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		protected.POST("/ai/chat", aiHandler.Chat)
 		protected.POST("/ai/stream", aiHandler.Stream)
 
+		// Grit UI component registry (authenticated browse)
+		protected.GET("/ui-components", uiRegistryHandler.ListComponents)
+		protected.GET("/ui-components/:name", uiRegistryHandler.GetComponentDetail)
+
 		// grit:routes:protected
 	}
 
@@ -2244,6 +2267,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		admin.POST("/admin/blogs", blogHandler.Create)
 		admin.PUT("/admin/blogs/:id", blogHandler.Update)
 		admin.DELETE("/admin/blogs/:id", blogHandler.Delete)
+
+		// Grit UI component registry (admin management)
+		admin.POST("/admin/ui-components", uiRegistryHandler.CreateComponent)
+		admin.PUT("/admin/ui-components/:name", uiRegistryHandler.UpdateComponent)
+		admin.DELETE("/admin/ui-components/:name", uiRegistryHandler.DeleteComponent)
 
 		// grit:routes:admin
 	}

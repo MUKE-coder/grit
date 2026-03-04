@@ -305,7 +305,11 @@ func adminPackageJSON(opts Options) string {
     "dev": "next dev --port 3001",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "analyze": "ANALYZE=true next build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.0",
@@ -332,14 +336,20 @@ func adminPackageJSON(opts Options) string {
     "@repo/shared": "workspace:*"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.0",
+    "@vitejs/plugin-react": "^4.3.0",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.0",
+    "jsdom": "^25.0.0",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "vitest": "^2.0.0"
   }
 }
 `, opts.ProjectName)
@@ -352,6 +362,10 @@ const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
   transpilePackages: ["@repo/shared"],
+  // Uncomment and run "ANALYZE=true pnpm build" to inspect the bundle
+  // ...(process.env.ANALYZE === "true"
+  //   ? { ...require("@next/bundle-analyzer")({ enabled: true })(nextConfig) }
+  //   : {}),
 };
 
 export default nextConfig;

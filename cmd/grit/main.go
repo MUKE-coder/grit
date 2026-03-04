@@ -12,10 +12,11 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/MUKE-coder/grit/internal/generate"
+	"github.com/MUKE-coder/grit/internal/project"
 	"github.com/MUKE-coder/grit/internal/scaffold"
 )
 
-var version = "1.4.0"
+var version = "2.0.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -25,10 +26,13 @@ func main() {
 	}
 
 	rootCmd.AddCommand(newCmd())
+	rootCmd.AddCommand(newDesktopCmd())
 	rootCmd.AddCommand(generateCmd())
 	rootCmd.AddCommand(removeCmd())
 	rootCmd.AddCommand(addCmd())
 	rootCmd.AddCommand(startCmd())
+	rootCmd.AddCommand(compileCmd())
+	rootCmd.AddCommand(studioCmd())
 	rootCmd.AddCommand(syncCmd())
 	rootCmd.AddCommand(migrateCmd())
 	rootCmd.AddCommand(seedCmd())
@@ -246,6 +250,12 @@ func generateResourceCmd() *cobra.Command {
 				return fmt.Errorf("specify fields with --fields, --from, or use -i for interactive mode\n\nExamples:\n  grit generate resource Post --fields \"title:string,content:text,published:bool\"\n  grit generate resource Post --fields \"title:string,slug:string:unique,views:int\"\n  grit generate resource Post --from post.yaml\n  grit generate resource Post -i")
 			}
 
+			// Detect project type and dispatch
+			info, _ := project.DetectProject()
+			if info != nil && info.Type == project.ProjectDesktop {
+				return generate.RunDesktop(def)
+			}
+
 			gen, err := generate.NewGenerator(def)
 			if err != nil {
 				return err
@@ -447,13 +457,98 @@ func startCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Start development servers",
-		Long:  "Start the Go API server or frontend client apps for local development.",
+		Long:  "Start the Go API server or frontend client apps for local development. In a desktop project, runs wails dev.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			info, err := project.DetectProject()
+			if err != nil {
+				// Not inside a project — show subcommand help
+				return cmd.Help()
+			}
+			if info.Type == project.ProjectDesktop {
+				printLogo()
+				purple := color.New(color.FgHiMagenta, color.Bold)
+				purple.Println("\n  Starting Wails desktop app...")
+
+				c := exec.Command("wails", "dev")
+				c.Dir = info.Root
+				c.Stdout = os.Stdout
+				c.Stderr = os.Stderr
+				c.Stdin = os.Stdin
+				return c.Run()
+			}
+			// Web project — show subcommand help
+			return cmd.Help()
+		},
 	}
 
 	cmd.AddCommand(startClientCmd())
 	cmd.AddCommand(startServerCmd())
 
 	return cmd
+}
+
+func compileCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "compile",
+		Short: "Build desktop application executable",
+		Long:  "Compile the Wails desktop app into a distributable binary. Only available in desktop projects.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			info, err := project.DetectProject()
+			if err != nil {
+				return fmt.Errorf("not inside a Grit project: %w", err)
+			}
+			if info.Type != project.ProjectDesktop {
+				return fmt.Errorf("grit compile is only available in desktop projects (wails.json not found)")
+			}
+
+			printLogo()
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			purple.Println("\n  Building desktop executable...")
+
+			c := exec.Command("wails", "build")
+			c.Dir = info.Root
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			c.Stdin = os.Stdin
+			return c.Run()
+		},
+	}
+}
+
+func studioCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "studio",
+		Short: "Open GORM Studio database browser",
+		Long:  "Launch the database studio. For web projects, opens the browser. For desktop, starts a standalone studio server.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			info, err := project.DetectProject()
+			if err != nil {
+				return fmt.Errorf("not inside a Grit project: %w", err)
+			}
+
+			printLogo()
+
+			if info.Type == project.ProjectDesktop {
+				purple := color.New(color.FgHiMagenta, color.Bold)
+				purple.Println("\n  Starting GORM Studio...")
+
+				c := exec.Command("go", "run", "cmd/studio/main.go")
+				c.Dir = info.Root
+				c.Stdout = os.Stdout
+				c.Stderr = os.Stderr
+				c.Stdin = os.Stdin
+				return c.Run()
+			}
+
+			// Web project — open browser
+			gray := color.New(color.FgHiBlack)
+			gray.Println("\n  GORM Studio is available at http://localhost:8080/studio")
+			gray.Println("  Make sure your API server is running (grit start server)")
+
+			openURL("http://localhost:8080/studio")
+			return nil
+		},
+	}
 }
 
 func startClientCmd() *cobra.Command {
@@ -515,6 +610,17 @@ func syncCmd() *cobra.Command {
 			printLogo()
 			return generate.Sync()
 		},
+	}
+}
+
+func openURL(url string) {
+	switch runtime.GOOS {
+	case "windows":
+		exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		exec.Command("open", url).Start()
+	default:
+		exec.Command("xdg-open", url).Start()
 	}
 }
 
@@ -582,5 +688,67 @@ func printSuccess(name string, opts scaffold.Options) {
 	gray.Printf("  MinIO:       http://localhost:9001\n")
 	gray.Printf("  Mailhog:     http://localhost:8025\n")
 	gray.Println("  ─────────────────────────────────────")
+	fmt.Println()
+}
+
+func newDesktopCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "new-desktop <project-name>",
+		Short: "Create a new Wails desktop application",
+		Long:  "Scaffold a standalone desktop app with Go backend (Wails), React frontend, SQLite/PostgreSQL, and local auth.",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			projectName := args[0]
+
+			if err := scaffold.ValidateProjectName(projectName); err != nil {
+				return err
+			}
+
+			printLogo()
+
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			purple.Printf("\n  Creating new Grit desktop app: %s\n\n", projectName)
+
+			opts := scaffold.DesktopOptions{
+				ProjectName: projectName,
+			}
+
+			if err := scaffold.RunDesktop(opts); err != nil {
+				color.Red("\n  Error: %v\n", err)
+				return err
+			}
+
+			printDesktopSuccess(projectName)
+			return nil
+		},
+	}
+
+	return cmd
+}
+
+func printDesktopSuccess(name string) {
+	green := color.New(color.FgHiGreen, color.Bold)
+	white := color.New(color.FgWhite)
+	cyan := color.New(color.FgHiCyan)
+	gray := color.New(color.FgHiBlack)
+
+	fmt.Println()
+	green.Println("  ✓ Desktop app created successfully!")
+	fmt.Println()
+
+	white.Println("  Next steps:")
+	fmt.Println()
+	cyan.Printf("    cd %s\n", name)
+	cyan.Println("    wails dev")
+	fmt.Println()
+
+	gray.Println("  ─────────────────────────────────────")
+	gray.Printf("  Desktop App: http://localhost:34115\n")
+	gray.Printf("  Database:    SQLite (%s.db)\n", name)
+	gray.Println("  ─────────────────────────────────────")
+	fmt.Println()
+
+	gray.Println("  To build for production:")
+	cyan.Println("    wails build")
 	fmt.Println()
 }

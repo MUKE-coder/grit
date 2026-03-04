@@ -232,11 +232,14 @@ func TestCreateDirectories_Default(t *testing.T) {
 		t.Fatalf("createDirectories error: %v", err)
 	}
 
-	// Web and admin should be created
+	// Web and admin should be created (including test dirs)
 	for _, dir := range []string{
 		filepath.Join(root, "apps", "web", "app"),
+		filepath.Join(root, "apps", "web", "__tests__"),
 		filepath.Join(root, "apps", "admin", "app"),
+		filepath.Join(root, "apps", "admin", "__tests__"),
 		filepath.Join(root, "packages", "shared"),
+		filepath.Join(root, "e2e"),
 	} {
 		if _, err := os.Stat(dir); err != nil {
 			t.Errorf("expected directory %s was not created: %v", dir, err)
@@ -358,10 +361,74 @@ func TestWriteAPIFiles_KeyFilesExist(t *testing.T) {
 		filepath.Join(root, "apps", "api", "internal", "middleware", "cors.go"),
 		filepath.Join(root, "apps", "api", "internal", "middleware", "logger.go"),
 		filepath.Join(root, "apps", "api", "internal", "routes", "routes.go"),
+		// Test + bench files generated for the API
+		filepath.Join(root, "apps", "api", "internal", "handlers", "auth_test.go"),
+		filepath.Join(root, "apps", "api", "internal", "handlers", "user_test.go"),
+		filepath.Join(root, "apps", "api", "internal", "handlers", "bench_test.go"),
 	}
 	for _, f := range files {
 		if _, err := os.Stat(f); err != nil {
 			t.Errorf("expected file %s was not created: %v", f, err)
+		}
+	}
+}
+
+// ── writeFrontendTestFiles ────────────────────────────────────────────────────
+
+func TestWriteFrontendTestFiles_KeyFilesExist(t *testing.T) {
+	root := t.TempDir()
+	opts := Options{ProjectName: "acme"} // default mode: web + admin
+
+	if err := createDirectories(root, opts); err != nil {
+		t.Fatalf("createDirectories: %v", err)
+	}
+	if err := writeFrontendTestFiles(root, opts); err != nil {
+		t.Fatalf("writeFrontendTestFiles: %v", err)
+	}
+
+	files := []string{
+		// Web vitest
+		filepath.Join(root, "apps", "web", "vitest.config.ts"),
+		filepath.Join(root, "apps", "web", "vitest.setup.ts"),
+		filepath.Join(root, "apps", "web", "__tests__", "navbar.test.tsx"),
+		filepath.Join(root, "apps", "web", "__tests__", "footer.test.tsx"),
+		// Admin vitest
+		filepath.Join(root, "apps", "admin", "vitest.config.ts"),
+		filepath.Join(root, "apps", "admin", "vitest.setup.ts"),
+		filepath.Join(root, "apps", "admin", "__tests__", "login.test.tsx"),
+		filepath.Join(root, "apps", "admin", "__tests__", "utils.test.ts"),
+		// Playwright E2E
+		filepath.Join(root, "playwright.config.ts"),
+		filepath.Join(root, "e2e", "auth.spec.ts"),
+		filepath.Join(root, "e2e", "admin.spec.ts"),
+	}
+	for _, f := range files {
+		if _, err := os.Stat(f); err != nil {
+			t.Errorf("expected file %s was not created: %v", f, err)
+		}
+	}
+}
+
+func TestWriteFrontendTestFiles_APIOnly_NoFiles(t *testing.T) {
+	root := t.TempDir()
+	opts := Options{ProjectName: "acme", APIOnly: true}
+
+	if err := createDirectories(root, opts); err != nil {
+		t.Fatalf("createDirectories: %v", err)
+	}
+	if err := writeFrontendTestFiles(root, opts); err != nil {
+		t.Fatalf("writeFrontendTestFiles: %v", err)
+	}
+
+	// API-only mode: no frontend test files should be created
+	absent := []string{
+		filepath.Join(root, "playwright.config.ts"),
+		filepath.Join(root, "apps", "web", "vitest.config.ts"),
+		filepath.Join(root, "apps", "admin", "vitest.config.ts"),
+	}
+	for _, f := range absent {
+		if _, err := os.Stat(f); err == nil {
+			t.Errorf("file %s should not exist in API-only mode", f)
 		}
 	}
 }

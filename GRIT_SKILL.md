@@ -12,6 +12,7 @@ Grit is a full-stack meta-framework that combines **Go** (backend) + **React/Nex
 - A **Go API** with Gin + GORM + PostgreSQL
 - A **Next.js web app** with App Router + Tailwind + shadcn/ui
 - A **Filament-like admin panel** with resource definitions, DataTables, forms, and widgets
+- **Native desktop apps** with Wails (Go + React + SQLite) — `grit new-desktop`
 - **Social login** out of the box — Google + GitHub OAuth2 via Gothic, with account linking
 - **Batteries included**: file storage (S3), email (Resend), background jobs (asynq), cron, Redis caching, AI integration (Claude/OpenAI), security (Sentinel), observability (Pulse)
 - **Auto-generated API docs** via gin-docs — zero-annotation OpenAPI spec with interactive UI
@@ -41,7 +42,13 @@ grit sync
 # Add a new role to the project
 grit add role MODERATOR             # Injects into Go, Zod, TypeScript, admin
 
-# Development
+# Desktop projects
+grit new-desktop mydesktop          # Scaffold Wails + Go + React desktop app
+grit start                          # Auto-detect project type, run wails dev
+grit compile                        # Build native executable (wails build)
+grit studio                         # Open database browser (both web + desktop)
+
+# Development (web projects)
 grit dev                            # Start all services with hot-reload
 grit start server                   # Start Go API only
 grit start client                   # Start frontend only
@@ -1171,6 +1178,131 @@ grit sync
 ```
 
 Reads Go models in `apps/api/internal/models/` using AST parsing and generates TypeScript types + Zod schemas in `packages/shared/`. Useful when you manually add models without using `grit generate`.
+
+---
+
+## Desktop Projects (Wails)
+
+Grit v2.0 supports building **native desktop applications** using [Wails](https://wails.io/) — Go backend with React frontend compiled into a single executable.
+
+### Creating a Desktop Project
+
+```bash
+grit new-desktop myapp
+```
+
+This scaffolds:
+
+```
+myapp/
+├── main.go                    # Wails entry point
+├── app.go                     # App struct with bound methods
+├── wails.json                 # Wails configuration
+├── go.mod                     # Go module
+├── .env                       # Environment variables
+├── internal/
+│   ├── config/config.go       # Config loader (SQLite/Postgres)
+│   ├── db/db.go               # GORM connection + AutoMigrate
+│   ├── models/                # GORM models (user, blog, contact, types)
+│   └── service/               # Service layer (auth, blog, contact, export)
+├── cmd/studio/main.go         # Standalone database browser (port 4000)
+└── frontend/
+    ├── package.json           # React + Vite + TanStack Query
+    ├── src/
+    │   ├── App.tsx            # HashRouter + routes
+    │   ├── index.css          # Grit dark theme
+    │   ├── components/
+    │   │   ├── layout/        # TitleBar, Sidebar, AppLayout
+    │   │   └── ui/            # Button, Input, Card, Select, etc.
+    │   ├── pages/             # Login, Register, Dashboard, Blogs, Contacts
+    │   ├── hooks/             # useAuth, useTheme
+    │   └── lib/               # utils, query-client
+    └── wailsjs/               # Auto-generated Go bindings (by Wails)
+```
+
+### Desktop vs Web Architecture
+
+| Aspect | Web (`grit new`) | Desktop (`grit new-desktop`) |
+|--------|-------------------|------------------------------|
+| Backend | Gin HTTP server | Wails Go bindings (direct function calls) |
+| Frontend | Next.js (App Router) | Vite + React (HashRouter) |
+| Database | PostgreSQL | SQLite (default) or Postgres |
+| Routing | BrowserRouter | HashRouter |
+| API calls | fetch / axios | `wailsjs/go/main/App` imports |
+| Structure | Turbo monorepo | Single Go module |
+| Auth | JWT tokens | Local session (bcrypt) |
+| Deploy | Cloud / Docker | Native .exe / .app / binary |
+
+### Desktop CLI Commands
+
+```bash
+grit start         # Auto-detects desktop project, runs `wails dev`
+grit compile       # Builds native executable via `wails build`
+grit studio        # Opens GORM Studio at http://localhost:4000
+grit version       # Prints CLI version (2.0.0)
+```
+
+### Desktop Resource Generation
+
+Works the same as web, but generates desktop-specific files:
+
+```bash
+grit generate resource Product --fields "name:string,price:float,published:bool"
+```
+
+**Files created:**
+- `internal/models/product.go` — GORM model struct
+- `internal/service/product.go` — Service with List, ListAll, GetByID, Create, Update, Delete
+- `frontend/src/pages/products/index.tsx` — List page with search, pagination, export
+- `frontend/src/pages/products/form.tsx` — Create/edit form
+
+**Injections (12 total):**
+1. `db.go` — `&models.Product{}` in AutoMigrate (`// grit:models`)
+2. `main.go` — Service initialization (`// grit:service-init`)
+3. `main.go` — Service passed to NewApp (`/* grit:app-args */`)
+4. `app.go` — Service field on App struct (`// grit:fields`)
+5. `app.go` — Constructor parameter (`/* grit:constructor-params */`)
+6. `app.go` — Constructor assignment (`/* grit:constructor-assign */`)
+7. `app.go` — 7 bound methods: Get, GetAll, Create, Update, Delete, ExportPDF, ExportExcel (`// grit:methods`)
+8. `types.go` — Input struct (`// grit:input-types`)
+9. `cmd/studio/main.go` — Model in Studio AutoMigrate (`// grit:studio-models`)
+10. `App.tsx` — Page imports (`// grit:page-imports`)
+11. `App.tsx` — Route elements (`{/* grit:routes */}`)
+12. `sidebar.tsx` — Nav icon + nav item (`// grit:nav-icons`, `// grit:nav`)
+
+**Remove:**
+```bash
+grit remove resource Product
+```
+
+### Desktop Markers Reference
+
+These markers are inserted by `grit new-desktop` and used by `grit generate resource`:
+
+| File | Marker | Injection Type |
+|------|--------|---------------|
+| `internal/db/db.go` | `// grit:models` | Line before |
+| `main.go` | `// grit:service-init` | Line before |
+| `main.go` | `/* grit:app-args */` | Inline |
+| `app.go` | `// grit:imports` | Line before |
+| `app.go` | `// grit:fields` | Line before |
+| `app.go` | `/* grit:constructor-params */` | Inline |
+| `app.go` | `/* grit:constructor-assign */` | Inline |
+| `app.go` | `// grit:methods` | Line before |
+| `internal/models/types.go` | `// grit:input-types` | Line before |
+| `cmd/studio/main.go` | `// grit:studio-models` | Line before |
+| `frontend/src/App.tsx` | `// grit:page-imports` | Line before |
+| `frontend/src/App.tsx` | `{/* grit:routes */}` | Line before |
+| `frontend/src/components/layout/sidebar.tsx` | `// grit:nav-icons` | Line before |
+| `frontend/src/components/layout/sidebar.tsx` | `// grit:nav` | Line before |
+
+### Project Detection
+
+Grit CLI auto-detects project type:
+- **Desktop:** `wails.json` exists at project root
+- **Web:** `turbo.json` + `apps/api` directory exist at project root
+
+Commands like `grit start`, `grit studio`, and `grit generate resource` automatically adapt their behavior based on the detected project type.
 
 ---
 

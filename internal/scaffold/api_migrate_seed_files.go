@@ -180,6 +180,10 @@ func Seed(db *gorm.DB) error {
 		return fmt.Errorf("seeding blogs: %w", err)
 	}
 
+	// Seed Grit UI component registry (original 4 + 87 extended)
+	models.SeedUIComponents(db)
+	models.SeedUIComponentsExtended(db)
+
 	// grit:seeders
 
 	return nil

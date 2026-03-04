@@ -367,18 +367,34 @@ func adminResourcePage() string {
 
 import { useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import type { ResourceDefinition } from "@/lib/resource";
 import { useResource, useDeleteResource, useBulkDeleteResource } from "@/hooks/use-resource";
 import { DataTable } from "@/components/tables/data-table";
 import { TableToolbar } from "@/components/tables/table-toolbar";
 import { TablePagination } from "@/components/tables/table-pagination";
 import { TableFilters } from "@/components/tables/table-filters";
-import { FormModal } from "@/components/forms/form-modal";
-import { FormPage } from "@/components/forms/form-page";
-import { FormModalSteps } from "@/components/forms/form-modal-steps";
-import { FormPageSteps } from "@/components/forms/form-page-steps";
-import { ViewModal } from "@/components/resource/view-modal";
-import { ConfirmModal } from "@/components/ui/confirm-modal";
+
+// Lazy-load modal/form components — they are only shown conditionally and
+// would otherwise inflate the initial page bundle for every admin resource.
+const FormModal = dynamic(() =>
+  import("@/components/forms/form-modal").then((m) => m.FormModal)
+);
+const FormPage = dynamic(() =>
+  import("@/components/forms/form-page").then((m) => m.FormPage)
+);
+const FormModalSteps = dynamic(() =>
+  import("@/components/forms/form-modal-steps").then((m) => m.FormModalSteps)
+);
+const FormPageSteps = dynamic(() =>
+  import("@/components/forms/form-page-steps").then((m) => m.FormPageSteps)
+);
+const ViewModal = dynamic(() =>
+  import("@/components/resource/view-modal").then((m) => m.ViewModal)
+);
+const ConfirmModal = dynamic(() =>
+  import("@/components/ui/confirm-modal").then((m) => m.ConfirmModal)
+);
 
 interface ResourcePageProps {
   resource: ResourceDefinition;

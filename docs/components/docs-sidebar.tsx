@@ -20,6 +20,7 @@ import {
   FileText,
   GraduationCap,
   Download,
+  Monitor,
 } from 'lucide-react'
 import { useState } from 'react'
 import { SidebarSponsorBanner, RightSideBanners } from '@/components/sidebar-banners'
@@ -153,6 +154,16 @@ const navItems: NavItem[] = [
       { title: 'Build a SaaS', href: '/docs/tutorials/saas' },
       { title: 'Build an E-Commerce', href: '/docs/tutorials/ecommerce' },
       { title: 'Build a Product Catalog', href: '/docs/tutorials/product-catalog' },
+    ],
+  },
+  {
+    title: 'Desktop (Wails)',
+    icon: <Monitor className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Overview', href: '/docs/desktop' },
+      { title: 'Getting Started', href: '/docs/desktop/getting-started' },
+      { title: 'Resource Generation', href: '/docs/desktop/resource-generation' },
+      { title: 'Building & Distribution', href: '/docs/desktop/building' },
     ],
   },
   {
