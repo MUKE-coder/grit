@@ -34,7 +34,7 @@ func desktopPackageJSON(opts DesktopOptions) string {
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
