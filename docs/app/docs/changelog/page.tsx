@@ -28,10 +28,65 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v2.0.0 */}
+            {/* v2.1.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v2.1.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>TanStack Router for desktop</strong> &mdash; Migrated the desktop frontend from
+                    React Router to{' '}
+                    <a href="https://tanstack.com/router" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">TanStack Router</a>{' '}
+                    with file-based routing. Routes are auto-discovered by the Vite plugin &mdash; no centralized
+                    route registry. Uses <code>createHashHistory()</code> for Wails compatibility and{' '}
+                    <code>Route.useParams()</code> for type-safe params. Resource generation now creates 5 files
+                    (list, new, edit routes + model + service) and performs 10 injections (down from 12).
+                  </li>
+                  <li>
+                    <strong>Mobile navigation</strong> &mdash; Added a hamburger menu to the docs site header,
+                    visible below the <code>lg</code> breakpoint. Opens a Sheet sidebar with all navigation links.
+                    Auto-closes on link click.
+                  </li>
+                  <li>
+                    <strong>CGO-free SQLite</strong> &mdash; Replaced <code>gorm.io/driver/sqlite</code> (requires
+                    CGO) with <code>github.com/glebarez/sqlite</code> (pure Go) in all scaffold templates. Desktop
+                    apps now build and run without CGO or a C compiler.
+                  </li>
+                  <li>
+                    <strong>20 Desktop Project Ideas</strong> &mdash; New{' '}
+                    <Link href="/docs/desktop/project-ideas" className="text-primary hover:underline">project ideas page</Link>{' '}
+                    with 20 ready-to-build desktop app ideas across business, education, healthcare, logistics,
+                    and more. Each includes resources, field definitions, and <code>grit generate</code> commands.
+                  </li>
+                </ul>
+
+                <h3>Documentation</h3>
+                <ul>
+                  <li>
+                    Added TanStack Router explanations to all desktop doc pages: overview, getting started,
+                    first app, resource generation, and POS app.
+                  </li>
+                  <li>
+                    Updated{' '}
+                    <Link href="/docs/desktop/llm-reference" className="text-primary hover:underline">LLM Reference</Link>,{' '}
+                    <Link href="/docs/ai-skill" className="text-primary hover:underline">GRIT_SKILL.md</Link>, and
+                    database docs to reflect TanStack Router and CGO-free SQLite changes.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v2.0.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v2.0.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 4, 2026</span>
@@ -42,7 +97,7 @@ export default function ChangelogPage() {
                 <ul>
                   <li>
                     <strong>Native desktop apps (Wails)</strong> &mdash; New <code>grit new-desktop</code> command
-                    scaffolds a complete desktop application with Go backend, React frontend (Vite + React Router +
+                    scaffolds a complete desktop application with Go backend, React frontend (Vite + TanStack Router +
                     TanStack Query), SQLite database, JWT authentication, blog and contact CRUD, PDF/Excel export,
                     custom title bar, dark theme, and GORM Studio. Compiles to a single native executable for
                     Windows, macOS, and Linux. See{' '}
@@ -50,9 +105,9 @@ export default function ChangelogPage() {
                   </li>
                   <li>
                     <strong>Desktop resource generation</strong> &mdash; <code>grit generate resource</code> now
-                    works inside desktop projects. Generates Go model, service, React list page, and form page,
-                    then injects code into 12 locations (db.go, main.go, app.go, types.go, App.tsx, sidebar.tsx,
-                    studio/main.go) using <code>grit:</code> markers. See{' '}
+                    works inside desktop projects. Generates Go model, service, and TanStack Router route files
+                    (list, new, edit), then injects code into 10 locations (db.go, main.go, app.go, types.go,
+                    sidebar.tsx, studio/main.go) using <code>grit:</code> markers. See{' '}
                     <Link href="/docs/desktop/resource-generation" className="text-primary hover:underline">Desktop Resource Generation</Link>.
                   </li>
                   <li>
@@ -74,7 +129,7 @@ export default function ChangelogPage() {
                   </li>
                   <li>
                     <strong><code>grit remove resource</code> for desktop</strong> &mdash; Removes a previously
-                    generated desktop resource, deleting files and reversing all 12 marker injections.
+                    generated desktop resource, deleting files and reversing all 10 marker injections.
                   </li>
                   <li>
                     <strong>Grit UI component registry (91 components)</strong> &mdash; Every scaffolded web
@@ -89,7 +144,8 @@ export default function ChangelogPage() {
                   <li>
                     New{' '}
                     <Link href="/docs/desktop" className="text-primary hover:underline">Desktop (Wails)</Link>{' '}
-                    section &mdash; 4 pages covering overview, getting started, resource generation, and building/distribution.
+                    section &mdash; 8 pages covering overview, getting started, first app tutorial, POS app
+                    tutorial, resource generation, building/distribution, project ideas, and LLM reference.
                   </li>
                   <li>
                     Updated{' '}
