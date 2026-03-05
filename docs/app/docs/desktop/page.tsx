@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, Download } from 'lucide-react'
+import { ArrowRight, Download, Terminal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
@@ -50,6 +50,26 @@ export default function DesktopOverviewPage() {
                   PostgreSQL, JWT authentication, blog and contact CRUD, PDF and Excel export, a
                   custom title bar, dark theme, and GORM Studio for database browsing.
                 </p>
+              </div>
+
+              {/* Install */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Install Grit
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  You need <strong className="text-foreground/80">Go 1.21+</strong>,{' '}
+                  <strong className="text-foreground/80">Node.js 18+</strong>, and{' '}
+                  <a href="https://wails.io/docs/gettingstarted/installation" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Wails v2</a>{' '}
+                  installed. Then install the Grit CLI:
+                </p>
+                <CodeBlock terminal code="go install github.com/MUKE-coder/grit/v2/cmd/grit@latest" className="mb-4 glow-purple-sm" />
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Scaffold a new desktop app and start developing:
+                </p>
+                <CodeBlock terminal code={`grit new-desktop my-app
+cd my-app
+wails dev`} className="mb-0 glow-purple-sm" />
               </div>
 
               {/* Architecture */}
