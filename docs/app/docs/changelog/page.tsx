@@ -28,11 +28,11 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v2.3.0 */}
+            {/* v2.3.1 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
-                  v2.3.0
+                  v2.3.1
                 </span>
                 <span className="text-sm text-muted-foreground">March 5, 2026</span>
               </div>
@@ -46,6 +46,12 @@ export default function ChangelogPage() {
                     the Vite build, so running <code>tsc</code> before Vite caused{' '}
                     <code>Cannot find module {`'`}./routeTree.gen{`'`}</code> errors. Vite handles type-stripping
                     via esbuild.
+                  </li>
+                  <li>
+                    <strong>Title bar import path</strong> &mdash; Fixed the Wails binding import in{' '}
+                    <code>title-bar.tsx</code>. The file is at <code>src/components/layout/</code> (3 levels deep)
+                    but was using a 2-level relative path. Now correctly resolves to{' '}
+                    <code>../../../wailsjs/go/main/App</code>.
                   </li>
                 </ul>
               </div>
