@@ -1,6 +1,6 @@
 'use client'
 
-import React from "react"
+import React, { useRef, useEffect } from "react"
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -248,6 +248,7 @@ function NavSection({ item }: { item: NavItem }) {
             <Link
               key={subItem.href}
               href={subItem.href || '#'}
+              data-active={pathname === subItem.href ? 'true' : undefined}
               className={cn(
                 'block rounded-md px-2.5 py-1.5 text-[13px] transition-all',
                 pathname === subItem.href
@@ -265,9 +266,19 @@ function NavSection({ item }: { item: NavItem }) {
 }
 
 export function DocsSidebar() {
+  const sidebarRef = useRef<HTMLElement>(null)
+  const pathname = usePathname()
+
+  useEffect(() => {
+    const el = sidebarRef.current?.querySelector('[data-active="true"]')
+    if (el) {
+      el.scrollIntoView({ block: 'nearest', behavior: 'instant' })
+    }
+  }, [pathname])
+
   return (
     <>
-      <aside className="fixed top-14 z-30 hidden h-[calc(100vh-3.5rem)] w-64 shrink-0 overflow-y-auto border-r border-border/30 bg-background/80 backdrop-blur-xl py-6 lg:block">
+      <aside ref={sidebarRef} className="fixed top-14 z-30 hidden h-[calc(100vh-3.5rem)] w-64 shrink-0 overflow-y-auto border-r border-border/30 bg-background/80 backdrop-blur-xl py-6 lg:block">
         <nav className="space-y-1 px-4">
           {navItems.map((item) => (
             <NavSection key={item.title} item={item} />
