@@ -281,6 +281,7 @@ function BlogListPage() {
 func desktopBlogNewRoute() string {
 	return `import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "../../hooks/use-auth";
 // @ts-ignore
@@ -292,6 +293,7 @@ export const Route = createFileRoute("/_layout/blogs/new")({
 
 function BlogNewPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -313,6 +315,7 @@ function BlogNewPage() {
         author_id: user?.id || 1,
       });
       toast.success("Blog created");
+      await queryClient.invalidateQueries({ queryKey: ["blogs"] });
       navigate({ to: "/blogs" });
     } catch (err: any) {
       toast.error(err?.message || "Failed to create blog");
@@ -717,6 +720,7 @@ function ContactListPage() {
 func desktopContactNewRoute() string {
 	return `import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 // @ts-ignore
 import { CreateContact } from "../../../wailsjs/go/main/App";
@@ -727,6 +731,7 @@ export const Route = createFileRoute("/_layout/contacts/new")({
 
 function ContactNewPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -750,6 +755,7 @@ function ContactNewPage() {
         notes,
       });
       toast.success("Contact created");
+      await queryClient.invalidateQueries({ queryKey: ["contacts"] });
       navigate({ to: "/contacts" });
     } catch (err: any) {
       toast.error(err?.message || "Failed to create contact");

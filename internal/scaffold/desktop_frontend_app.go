@@ -63,8 +63,11 @@ function RootLayout() {
 func desktopLoginRoute() string {
 	return `import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { Minus, Square, X, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../hooks/use-auth";
+// @ts-ignore
+import { MinimiseWindow, ToggleMaximise, CloseApp } from "../../wailsjs/go/main/App";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -73,6 +76,7 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -91,48 +95,67 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-foreground">Welcome Back</h1>
-          <p className="text-sm text-text-secondary mt-1">Sign in to your account</p>
+    <div className="flex flex-col min-h-screen bg-background">
+      {/* Window Controls */}
+      <div className="flex items-center justify-end h-9 border-b border-border select-none shrink-0">
+        <div className="flex-1 h-full" style={{ "--wails-draggable": "drag" } as React.CSSProperties} />
+        <button onClick={() => MinimiseWindow()} className="h-9 w-10 flex items-center justify-center text-text-secondary hover:bg-bg-hover transition-colors"><Minus size={14} /></button>
+        <button onClick={() => ToggleMaximise()} className="h-9 w-10 flex items-center justify-center text-text-secondary hover:bg-bg-hover transition-colors"><Square size={12} /></button>
+        <button onClick={() => CloseApp()} className="h-9 w-10 flex items-center justify-center text-text-secondary hover:bg-danger hover:text-white transition-colors"><X size={14} /></button>
+      </div>
+
+      <div className="flex items-center justify-center flex-1">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-foreground">Welcome Back</h1>
+            <p className="text-sm text-text-secondary mt-1">Sign in to your account</p>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-4 bg-bg-elevated border border-border rounded-xl p-6">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@example.com"
+                required
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter password"
+                  required
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 pr-10 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-accent hover:bg-accent/90 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {loading ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
+          <p className="text-center text-sm text-text-secondary mt-4">
+            {"Don't have an account? "}
+            <Link to="/register" className="text-accent hover:underline">Create one</Link>
+          </p>
+          <p className="text-center text-xs text-text-muted mt-2">Default: admin@example.com / admin123</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4 bg-bg-elevated border border-border rounded-xl p-6">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@example.com"
-              required
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-              required
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-accent hover:bg-accent/90 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50"
-          >
-            {loading ? "Signing in..." : "Sign In"}
-          </button>
-        </form>
-        <p className="text-center text-sm text-text-secondary mt-4">
-          {"Don't have an account? "}
-          <Link to="/register" className="text-accent hover:underline">Create one</Link>
-        </p>
-        <p className="text-center text-xs text-text-muted mt-2">Default: admin@example.com / admin123</p>
       </div>
     </div>
   );
@@ -145,8 +168,11 @@ function LoginPage() {
 func desktopRegisterRoute() string {
 	return `import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { Minus, Square, X, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../hooks/use-auth";
+// @ts-ignore
+import { MinimiseWindow, ToggleMaximise, CloseApp } from "../../wailsjs/go/main/App";
 
 export const Route = createFileRoute("/register")({
   component: RegisterPage,
@@ -157,6 +183,8 @@ function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -183,69 +211,97 @@ function RegisterPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-foreground">Create Account</h1>
-          <p className="text-sm text-text-secondary mt-1">Get started with your new account</p>
+    <div className="flex flex-col min-h-screen bg-background">
+      {/* Window Controls */}
+      <div className="flex items-center justify-end h-9 border-b border-border select-none shrink-0">
+        <div className="flex-1 h-full" style={{ "--wails-draggable": "drag" } as React.CSSProperties} />
+        <button onClick={() => MinimiseWindow()} className="h-9 w-10 flex items-center justify-center text-text-secondary hover:bg-bg-hover transition-colors"><Minus size={14} /></button>
+        <button onClick={() => ToggleMaximise()} className="h-9 w-10 flex items-center justify-center text-text-secondary hover:bg-bg-hover transition-colors"><Square size={12} /></button>
+        <button onClick={() => CloseApp()} className="h-9 w-10 flex items-center justify-center text-text-secondary hover:bg-danger hover:text-white transition-colors"><X size={14} /></button>
+      </div>
+
+      <div className="flex items-center justify-center flex-1">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-foreground">Create Account</h1>
+            <p className="text-sm text-text-secondary mt-1">Get started with your new account</p>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-4 bg-bg-elevated border border-border rounded-xl p-6">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your name"
+                required
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  required
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 pr-10 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Confirm Password</label>
+              <div className="relative">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repeat password"
+                  required
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 pr-10 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-foreground transition-colors"
+                >
+                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-accent hover:bg-accent/90 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {loading ? "Creating account..." : "Create Account"}
+            </button>
+          </form>
+          <p className="text-center text-sm text-text-secondary mt-4">
+            {"Already have an account? "}
+            <Link to="/login" className="text-accent hover:underline">Sign in</Link>
+          </p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4 bg-bg-elevated border border-border rounded-xl p-6">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              required
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 6 characters"
-              required
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Repeat password"
-              required
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-accent hover:bg-accent/90 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50"
-          >
-            {loading ? "Creating account..." : "Create Account"}
-          </button>
-        </form>
-        <p className="text-center text-sm text-text-secondary mt-4">
-          {"Already have an account? "}
-          <Link to="/login" className="text-accent hover:underline">Sign in</Link>
-        </p>
       </div>
     </div>
   );
