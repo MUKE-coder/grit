@@ -28,30 +28,49 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v2.3.1 */}
+            {/* v2.4.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
-                  v2.3.1
+                  v2.4.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 5, 2026</span>
               </div>
 
               <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>Window controls on auth pages</strong> &mdash; Login and register pages now include
+                    minimize, maximize, and close buttons with a draggable title area, so users can move and
+                    manage the window before signing in.
+                  </li>
+                  <li>
+                    <strong>Show/hide password toggle</strong> &mdash; All password fields on login and register
+                    pages now have an eye icon toggle to reveal or hide the password text.
+                  </li>
+                </ul>
+
                 <h3>Fixes</h3>
                 <ul>
                   <li>
                     <strong>Desktop build script</strong> &mdash; Removed <code>tsc</code> from the frontend
                     build script. TanStack Router{`'`}s Vite plugin generates <code>routeTree.gen.ts</code> during
                     the Vite build, so running <code>tsc</code> before Vite caused{' '}
-                    <code>Cannot find module {`'`}./routeTree.gen{`'`}</code> errors. Vite handles type-stripping
-                    via esbuild.
+                    <code>Cannot find module {`'`}./routeTree.gen{`'`}</code> errors.
                   </li>
                   <li>
                     <strong>Title bar import path</strong> &mdash; Fixed the Wails binding import in{' '}
-                    <code>title-bar.tsx</code>. The file is at <code>src/components/layout/</code> (3 levels deep)
-                    but was using a 2-level relative path. Now correctly resolves to{' '}
-                    <code>../../../wailsjs/go/main/App</code>.
+                    <code>title-bar.tsx</code> from a 2-level to 3-level relative path.
+                  </li>
+                  <li>
+                    <strong>Auth hook file extension</strong> &mdash; Renamed <code>use-auth.ts</code> to{' '}
+                    <code>use-auth.tsx</code> so TypeScript handles the JSX correctly.
+                  </li>
+                  <li>
+                    <strong>Create resource cache refresh</strong> &mdash; Blog and contact create pages now
+                    invalidate the React Query cache before navigating back, so new records appear in the
+                    table immediately.
                   </li>
                 </ul>
               </div>
