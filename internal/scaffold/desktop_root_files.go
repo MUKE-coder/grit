@@ -56,6 +56,8 @@ require (
 	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/xuri/excelize/v2 v2.8.1
 	github.com/joho/godotenv v1.5.1
+	github.com/gin-gonic/gin v1.10.0
+	github.com/MUKE-coder/gorm-studio v1.0.1
 )
 `, opts.ProjectName)
 }
@@ -209,7 +211,7 @@ The app opens in a native window. Go changes trigger a rebuild; React changes ho
 │   └── bin/                  # Build output (.exe / .app / binary)
 │
 └── cmd/studio/
-    └── main.go               # GORM Studio server (port 4000)
+    └── main.go               # GORM Studio server (port 8080)
 {{BT}}
 
 ---
@@ -393,7 +395,7 @@ Browse your SQLite database visually:
 
 {{BT}}bash
 grit studio
-# Opens browser at http://localhost:4000
+# Opens browser at http://localhost:8080/studio
 {{BT}}
 
 ---
@@ -516,7 +518,7 @@ React Component
 │   │   └── lib/              # utils.ts, query-client.ts
 │   └── wailsjs/              # Auto-generated Wails TypeScript bindings
 ├── build/                    # appicon.png + build output (bin/)
-└── cmd/studio/main.go        # GORM Studio (port 4000)
+└── cmd/studio/main.go        # GORM Studio (port 8080)
 {{BT}}
 
 ---
@@ -530,7 +532,7 @@ React Component
 | {{B}}grit remove resource <Name>{{B}} | Remove resource (delete files + reverse injections) |
 | {{B}}grit start{{B}} | Start development mode (runs {{B}}wails dev{{B}}) |
 | {{B}}grit compile{{B}} | Build native executable (runs {{B}}wails build{{B}}) |
-| {{B}}grit studio{{B}} | Open GORM Studio on port 4000 |
+| {{B}}grit studio{{B}} | Open GORM Studio on port 8080 |
 
 **Desktop does NOT have**: {{B}}grit start server{{B}}, {{B}}grit start client{{B}}, {{B}}grit migrate{{B}}, or {{B}}grit seed{{B}}.
 GORM AutoMigrate runs on startup automatically.

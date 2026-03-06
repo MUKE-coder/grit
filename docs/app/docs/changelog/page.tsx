@@ -28,6 +28,27 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v2.6.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v2.6.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Fixes</h3>
+                <ul>
+                  <li>
+                    <strong>GORM Studio (Desktop)</strong> &mdash; Replaced the broken custom HTML studio with the real{' '}
+                    <code>gorm-studio</code> package. Desktop studio now runs on port 8080 at <code>/studio</code> using
+                    Gin + gorm-studio, matching the web scaffold. Auto-opens browser on launch.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v2.5.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

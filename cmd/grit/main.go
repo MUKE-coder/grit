@@ -16,7 +16,7 @@ import (
 	"github.com/MUKE-coder/grit/v2/internal/scaffold"
 )
 
-var version = "2.5.0"
+var version = "2.6.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -519,7 +519,7 @@ func studioCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "studio",
 		Short: "Open GORM Studio database browser",
-		Long:  "Launch the database studio. For web projects, opens the browser. For desktop, starts a standalone studio server.",
+		Long:  "Launch GORM Studio at http://localhost:8080/studio. For web projects, ensure your API server is running first. For desktop, starts the studio server and opens the browser.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			info, err := project.DetectProject()
 			if err != nil {
