@@ -28,6 +28,44 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v2.5.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v2.5.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>GRIT_SKILL.md</strong> &mdash; Desktop scaffolds now include a <code>GRIT_SKILL.md</code> file
+                    in the project root. This is a comprehensive AI reference (12 sections) covering architecture,
+                    CLI commands, resource generation, field types, code markers, golden rules, and common LLM mistakes
+                    &mdash; so AI assistants can work with the project correctly out of the box.
+                  </li>
+                  <li>
+                    <strong>Comprehensive README</strong> &mdash; The scaffolded <code>README.md</code> now includes a
+                    full project walkthrough, &ldquo;Adding a New Module&rdquo; guide, supported field types table,
+                    customization section (window size, title bar, database, app name), code markers reference,
+                    and a ready-to-use AI prompt for building a Task Manager app.
+                  </li>
+                </ul>
+
+                <h3>Fixes</h3>
+                <ul>
+                  <li>
+                    <strong>Dashboard stats cache</strong> &mdash; Dashboard statistics now update immediately after
+                    creating a blog or contact. Changed query keys from <code>[&quot;blogs-stats&quot;]</code> to{' '}
+                    <code>[&quot;blogs&quot;, &quot;stats&quot;]</code> so TanStack Query{`'`}s prefix matching
+                    invalidates dashboard queries when resources are created or deleted.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v2.4.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

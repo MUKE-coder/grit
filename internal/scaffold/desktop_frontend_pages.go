@@ -42,11 +42,11 @@ export const Route = createFileRoute("/_layout/")({
 function DashboardPage() {
   const { user } = useAuth();
   const { data: blogData } = useQuery({
-    queryKey: ["blogs-stats"],
+    queryKey: ["blogs", "stats"],
     queryFn: () => GetBlogs(1, 1000, ""),
   });
   const { data: contactData } = useQuery({
-    queryKey: ["contacts-stats"],
+    queryKey: ["contacts", "stats"],
     queryFn: () => GetContacts(1, 1000, ""),
   });
 

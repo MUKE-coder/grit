@@ -53,6 +53,7 @@ func TestDesktopRootFiles(t *testing.T) {
 		".env",
 		".env.example",
 		"README.md",
+		"GRIT_SKILL.md",
 	}
 
 	for _, f := range expected {
