@@ -157,7 +157,7 @@ wails dev`} className="mb-0 glow-purple-sm" />
                     { name: 'Contact CRUD', desc: 'Contact management with form validation and search' },
                     { name: 'PDF Export', desc: 'Export data tables to styled PDF documents' },
                     { name: 'Excel Export', desc: 'Export data to .xlsx spreadsheets' },
-                    { name: 'GORM Studio', desc: 'Built-in database browser at port 4000' },
+                    { name: 'GORM Studio', desc: 'Built-in database browser at localhost:8080/studio' },
                     { name: 'Custom Title Bar', desc: 'Frameless window with custom drag region and window controls' },
                     { name: 'Dark Theme', desc: 'Grit dark theme with Tailwind CSS and shadcn/ui components' },
                     { name: 'Resource Generation', desc: 'Generate new resources with grit generate resource' },

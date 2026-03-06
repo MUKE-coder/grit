@@ -139,7 +139,7 @@ export default function DesktopLLMReferencePage() {
                     {
                       label: "Dev Tools",
                       value:
-                        "GORM Studio (port 4000), hot-reload, PDF/Excel export",
+                        "GORM Studio (localhost:8080/studio), hot-reload, PDF/Excel export",
                     },
                   ].map((item) => (
                     <div
@@ -442,7 +442,7 @@ export default function DesktopLLMReferencePage() {
 │
 └── cmd/
     └── studio/
-        └── main.go           # GORM Studio standalone server (port 4000)`}
+        └── main.go           # GORM Studio server (port 8080)`}
                 />
 
                 <Note>
@@ -512,7 +512,7 @@ export default function DesktopLLMReferencePage() {
                         ],
                         [
                           "grit studio",
-                          "Open GORM Studio on port 4000 — visual SQLite database browser.",
+                          "Open GORM Studio at localhost:8080/studio — visual database browser.",
                         ],
                         [
                           "grit version",
@@ -2014,7 +2014,7 @@ grit generate resource Order --fields "customer_name:string,total:float,status:s
                     language="bash"
                     filename="Open GORM Studio"
                     code={`grit studio
-# Opens browser at http://localhost:4000`}
+# Opens browser at http://localhost:8080/studio`}
                   />
 
                   <CodeBlock

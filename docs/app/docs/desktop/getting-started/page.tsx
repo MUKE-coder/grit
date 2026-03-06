@@ -285,15 +285,18 @@ wails dev`} className="mb-0 glow-purple-sm" />
               <div className="prose-grit mb-4">
                 <p>
                   GORM Studio provides a visual database browser. For desktop projects, it
-                  runs as a separate process on port 4000 since there is no HTTP server
-                  embedded in the Wails app.
+                  starts a standalone Gin server with the{' '}
+                  <code>gorm-studio</code> package mounted at <code>/studio</code> on port 8080
+                  and automatically opens your browser.
                 </p>
               </div>
               <CodeBlock terminal code="grit studio" className="mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>
-                  Open <code>http://localhost:4000</code> in your browser to browse tables,
-                  run queries, and inspect your SQLite database visually.
+                  Your browser opens automatically at{' '}
+                  <code>http://localhost:8080/studio</code> where you can browse tables,
+                  inspect rows, and explore your SQLite database visually. This uses the same{' '}
+                  <code>gorm-studio</code> package as the web scaffold.
                 </p>
               </div>
             </div>
@@ -317,8 +320,8 @@ wails dev`} className="mb-0 glow-purple-sm" />
                   },
                   {
                     name: 'GORM Studio',
-                    url: 'http://localhost:4000',
-                    desc: 'Visual database browser',
+                    url: 'http://localhost:8080/studio',
+                    desc: 'Visual database browser (grit studio)',
                   },
                 ].map((item) => (
                   <div

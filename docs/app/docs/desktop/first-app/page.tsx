@@ -779,8 +779,8 @@ function EditTaskPage() {
 
               <div className="prose-grit mb-4">
                 <p>
-                  Then open{" "}
-                  <code>http://localhost:4000</code> in your browser. You can:
+                  Your browser opens automatically at{" "}
+                  <code>http://localhost:8080/studio</code>. You can:
                 </p>
               </div>
 
