@@ -509,54 +509,93 @@ CMD ["node", "apps/web/server.js"]`} />
                 </div>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   In the Dokploy dashboard, navigate to your Compose service and click the
-                  &quot;Environment&quot; tab. Add the following variables:
+                  &quot;Environment&quot; tab. Copy the template below, paste it in, and fill in
+                  your values. Every variable has a descriptive placeholder &mdash; replace anything
+                  that says <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">CHANGE_THIS</code> or <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">YOUR_</code>.
                 </p>
-                <CodeBlock filename=".env (Dokploy Environment tab)" code={`# Database
-DATABASE_URL=postgres://postgres:password@postgres:5432/gritapp?sslmode=disable
-DB_USER=postgres
-DB_PASSWORD=your-secure-password
-DB_NAME=gritapp
+                <CodeBlock language="bash" filename="Dokploy → Environment tab (paste this)" code={`# ═══════════════════════════════════════════════════════════════
+# GRIT CLOUD — Production Environment (Dokploy)
+# ═══════════════════════════════════════════════════════════════
 
-# Server
-PORT=8080
-APP_NAME=MyGritApp
-JWT_SECRET=your-jwt-secret-min-32-chars
-JWT_REFRESH_SECRET=your-refresh-secret-min-32-chars
+# App
+APP_NAME=gritcloud
+APP_ENV=production
+APP_PORT=8080
+APP_URL=https://api.yourdomain.com
 
-# Frontend URLs (use your actual domains)
-API_URL=https://api.yourdomain.com
-WEB_URL=https://yourdomain.com
-ADMIN_URL=https://admin.yourdomain.com
+# ─── Database (Docker Postgres service in Dokploy) ───────────
+# Create a Postgres service in Dokploy, then use the internal hostname.
+# Format: postgres://USER:PASSWORD@SERVICE_NAME:5432/DB_NAME?sslmode=disable
+DATABASE_URL=postgres://gritcloud:CHANGE_THIS_STRONG_PASSWORD@gritcloud-postgres:5432/gritcloud?sslmode=disable
 
-# Redis (service name as host)
-REDIS_URL=redis://redis:6379
+# ─── Redis (Docker Redis service in Dokploy) ─────────────────
+# Create a Redis service in Dokploy, then use the internal hostname.
+REDIS_URL=redis://gritcloud-redis:6379
 
-# Storage (MinIO — service name as host)
-STORAGE_ENDPOINT=http://minio:9000
-STORAGE_BUCKET=gritapp
-STORAGE_ACCESS_KEY=minioadmin
-STORAGE_SECRET_KEY=your-minio-secret
-STORAGE_REGION=us-east-1
-STORAGE_USE_SSL=false
+# ─── JWT Authentication ──────────────────────────────────────
+# Generate with: openssl rand -hex 32
+JWT_SECRET=CHANGE_THIS_GENERATE_WITH_OPENSSL_RAND_HEX_32
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=168h
 
-# Email (Resend)
-RESEND_API_KEY=re_xxxxx
+# ─── Storage (Cloudflare R2) ─────────────────────────────────
+STORAGE_DRIVER=r2
+R2_ENDPOINT=https://YOUR_CF_ACCOUNT_ID.r2.cloudflarestorage.com
+R2_ACCESS_KEY=YOUR_R2_ACCESS_KEY_ID
+R2_SECRET_KEY=YOUR_R2_SECRET_ACCESS_KEY
+R2_BUCKET=gritcloud-uploads
+R2_REGION=auto
+R2_PUBLIC_URL=https://pub-XXXX.r2.dev
+
+# ─── OAuth2 (Google + GitHub) ────────────────────────────────
+GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_CLIENT_SECRET
+GITHUB_CLIENT_ID=YOUR_GITHUB_CLIENT_ID
+GITHUB_CLIENT_SECRET=YOUR_GITHUB_CLIENT_SECRET
+GITHUB_WEBHOOK_SECRET=YOUR_GITHUB_WEBHOOK_SECRET
+OAUTH_FRONTEND_URL=https://cloud.yourdomain.com
+
+# ─── Email (Resend) ──────────────────────────────────────────
+RESEND_API_KEY=re_YOUR_RESEND_API_KEY
 MAIL_FROM=noreply@yourdomain.com
 
-# AI (optional)
+# ─── CORS (all frontend origins) ─────────────────────────────
+CORS_ORIGINS=https://yourdomain.com,https://cloud.yourdomain.com,https://ai.yourdomain.com
+
+# ─── AI Provider ─────────────────────────────────────────────
 AI_PROVIDER=claude
-AI_API_KEY=sk-ant-xxxxx
+AI_API_KEY=sk-ant-YOUR_CLAUDE_API_KEY
 AI_MODEL=claude-sonnet-4-5-20250929
 
-# Security (Sentinel)
-SENTINEL_ENABLED=true
-SENTINEL_USERNAME=admin
-SENTINEL_PASSWORD=your-sentinel-password
+# ─── Stripe Billing ──────────────────────────────────────────
+STRIPE_SECRET_KEY=sk_live_YOUR_STRIPE_SECRET_KEY
+STRIPE_PUBLISHABLE_KEY=pk_live_YOUR_STRIPE_PUBLISHABLE_KEY
+STRIPE_WEBHOOK_SECRET=whsec_YOUR_STRIPE_WEBHOOK_SECRET
+STRIPE_PRICE_STARTER=price_YOUR_STARTER_PRICE_ID
+STRIPE_PRICE_PRO=price_YOUR_PRO_PRICE_ID
+STRIPE_PRICE_BUSINESS=price_YOUR_BUSINESS_PRICE_ID
 
-# Observability (Pulse)
+# ─── GORM Studio (DB browser — disable or secure in prod) ───
+GORM_STUDIO_ENABLED=false
+GORM_STUDIO_USERNAME=admin
+GORM_STUDIO_PASSWORD=CHANGE_THIS_STRONG_PASSWORD
+
+# ─── Pulse (Performance monitoring) ──────────────────────────
 PULSE_ENABLED=true
 PULSE_USERNAME=admin
-PULSE_PASSWORD=your-pulse-password`} />
+PULSE_PASSWORD=CHANGE_THIS_STRONG_PASSWORD
+
+# ─── Sentinel (WAF / Rate limiting) ──────────────────────────
+SENTINEL_ENABLED=true
+SENTINEL_USERNAME=admin
+SENTINEL_PASSWORD=CHANGE_THIS_STRONG_PASSWORD
+SENTINEL_SECRET_KEY=CHANGE_THIS_GENERATE_WITH_OPENSSL_RAND_HEX_32
+
+# ─── Next.js Frontend Build-time Vars ────────────────────────
+# These are needed when building the Next.js apps (cloud, ai, web)
+NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+NEXT_PUBLIC_APP_URL=https://yourdomain.com
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_YOUR_STRIPE_PUBLISHABLE_KEY`} />
 
                 <div className="p-4 rounded-lg border border-[hsl(38,90%,50%)]/20 bg-[hsl(38,90%,50%)]/5 mt-4">
                   <p className="text-sm text-foreground/80 leading-relaxed">
