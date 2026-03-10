@@ -14,7 +14,7 @@ func writeDesktopRootFiles(root string, opts DesktopOptions) error {
 		filepath.Join(root, ".env"):           desktopEnvFile(opts),
 		filepath.Join(root, ".env.example"):   desktopEnvExample(opts),
 		filepath.Join(root, "README.md"):      desktopReadme(opts),
-		filepath.Join(root, "GRIT_SKILL.md"):  desktopGritSkill(opts),
+		filepath.Join(root, ".claude", "skills", "grit-desktop", "SKILL.md"): desktopGritSkill(opts),
 	}
 
 	for path, content := range files {
@@ -436,7 +436,7 @@ Copy this prompt to ask an AI assistant to build a simple app with this project:
 >
 > After generating, customize the task list page to show priority as colored badges and add a filter dropdown for status (todo/in-progress/done). Add a custom Go method {{B}}GetTasksByStatus(status string){{B}} on the App struct that filters tasks by status.
 >
-> Read the GRIT_SKILL.md file in the project root for the full reference on how this project works.
+> Read the .claude/skills/grit-desktop/SKILL.md file for the full reference on how this project works.
 
 ---
 
@@ -456,9 +456,16 @@ func desktopGritSkill(opts DesktopOptions) string {
 		"{{BT}}", "```",
 		"{{B}}", "`",
 	)
-	return r.Replace(`# GRIT_SKILL.md — AI Reference for Grit Desktop
+	return r.Replace(`---
+name: grit-desktop
+description: >
+  Grit Desktop framework conventions for native Wails v2 applications.
+  Use when working with Go + Wails + React desktop apps scaffolded by grit new-desktop.
+  Desktop uses direct Go method bindings (no REST API) and SQLite.
+user-invocable: false
+---
 
-> **Read this file before generating any code.** Every convention here is enforced by the CLI.
+# Grit Desktop — AI Reference
 
 ---
 

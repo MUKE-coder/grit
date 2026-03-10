@@ -270,6 +270,13 @@ export const docsMetadata: Record<string, DocPage> = {
       'S3-compatible file storage in Grit: upload handler, image processing, MinIO for development, Cloudflare R2 or AWS S3 for production.',
   },
 
+  // Plugins
+  '/docs/plugins': {
+    title: 'Plugins',
+    description:
+      'Grit plugins: drop-in Go packages for WebSockets, Stripe payments, OAuth, notifications, search, video processing, conferencing, webhooks, i18n, and data export.',
+  },
+
   // Infrastructure
   '/docs/infrastructure/database': {
     title: 'Database',

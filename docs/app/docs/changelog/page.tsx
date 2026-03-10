@@ -28,10 +28,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v2.6.0 */}
+            {/* v2.7.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v2.7.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>10 Official Plugins</strong> &mdash; New <code>grit-plugins</code> ecosystem with
+                    drop-in Go packages for common functionality: WebSockets (<code>grit-websockets</code>),
+                    Stripe payments (<code>grit-stripe</code>), OAuth social login (<code>grit-oauth</code>),
+                    notifications (<code>grit-notifications</code>), full-text search (<code>grit-search</code>),
+                    video processing (<code>grit-video</code>), WebRTC conferencing (<code>grit-conference</code>),
+                    outgoing webhooks (<code>grit-webhooks</code>), i18n translations (<code>grit-i18n</code>),
+                    and PDF/Excel/CSV export (<code>grit-export</code>). Each plugin includes a Claude Code
+                    skill file for AI-assisted integration.
+                  </li>
+                  <li>
+                    <strong>Claude Code Skills format</strong> &mdash; Updated the scaffolded AI skill file
+                    from a monolithic <code>GRIT_SKILL.md</code> to the official Claude Code skills directory
+                    structure (<code>.claude/skills/grit/SKILL.md</code> + <code>reference.md</code>) with
+                    YAML frontmatter. AI assistants can now discover and use Grit conventions automatically.
+                  </li>
+                  <li>
+                    <strong>Grit UI component registry (100 components)</strong> &mdash; Expanded from 91 to
+                    100 pre-built components across 5 categories: marketing (21), auth (10), SaaS (30),
+                    ecommerce (20), and layout (20).
+                  </li>
+                </ul>
+
+                <h3>Documentation</h3>
+                <ul>
+                  <li>
+                    New{' '}
+                    <Link href="/docs/plugins" className="text-primary hover:underline">Plugins</Link>{' '}
+                    page &mdash; overview of all 10 plugins with installation, environment setup,
+                    quick start code, features, and use cases for each.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v2.6.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v2.6.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 6, 2026</span>

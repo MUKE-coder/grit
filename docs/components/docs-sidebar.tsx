@@ -136,6 +136,13 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    title: 'Plugins',
+    icon: <Layers className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Overview', href: '/docs/plugins' },
+    ],
+  },
+  {
     title: 'Infrastructure',
     icon: <Settings className="h-3.5 w-3.5" />,
     items: [

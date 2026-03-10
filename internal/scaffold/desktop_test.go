@@ -53,7 +53,7 @@ func TestDesktopRootFiles(t *testing.T) {
 		".env",
 		".env.example",
 		"README.md",
-		"GRIT_SKILL.md",
+		filepath.Join(".claude", "skills", "grit-desktop", "SKILL.md"),
 	}
 
 	for _, f := range expected {

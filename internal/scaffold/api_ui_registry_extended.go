@@ -149,7 +149,7 @@ func apiUIComponentSeedExtendedGo() string {
 			DisplayName:  %q,
 			Description:  %q,
 			Category:     %q,
-			Tags:         %s,
+			Tags:         %q,
 			Files:        filesJSON(%q, %s),
 			Dependencies: %q,
 			RegistryDeps: "[]",

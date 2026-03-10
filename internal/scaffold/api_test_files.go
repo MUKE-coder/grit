@@ -270,7 +270,7 @@ func newUserTestSetup(t *testing.T) (*gin.Engine, *services.AuthService, *config
 	require.NoError(t, db.Create(&admin).Error)
 
 	r := gin.New()
-	protected := r.Group("/api", middleware.Auth(cfg))
+	protected := r.Group("/api", middleware.Auth(db, authSvc))
 	protected.GET("/users", userHandler.List)
 	protected.GET("/users/:id", userHandler.GetByID)
 
