@@ -103,10 +103,10 @@ GORM_STUDIO_ENABLED=true
 GORM_STUDIO_USERNAME=admin
 GORM_STUDIO_PASSWORD=studio
 
-# AI — Provider: claude, openai, or gemini
-AI_PROVIDER=claude
-AI_API_KEY=                          # sk-ant-... (Claude), sk-... (OpenAI), or AIza... (Gemini)
-AI_MODEL=claude-sonnet-4-5-20250929  # Model to use
+# AI — Vercel AI Gateway (one key, hundreds of models)
+AI_GATEWAY_API_KEY=                           # Get from vercel.com/ai-gateway
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format
+AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
 
 # Observability — Pulse performance monitoring dashboard
 PULSE_ENABLED=true
@@ -193,10 +193,10 @@ GORM_STUDIO_ENABLED=true
 GORM_STUDIO_USERNAME=admin              # Login username for the Studio UI
 GORM_STUDIO_PASSWORD=studio             # Login password for the Studio UI
 
-# AI — Text generation (Claude, OpenAI, or Gemini)
-AI_PROVIDER=claude                   # "claude", "openai", or "gemini"
-AI_API_KEY=                          # sk-ant-... (Claude), sk-... (OpenAI), or AIza... (Gemini)
-AI_MODEL=claude-sonnet-4-5-20250929  # Model to use
+# AI — Vercel AI Gateway (one key, hundreds of models)
+AI_GATEWAY_API_KEY=                           # Get from vercel.com/ai-gateway
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model (e.g. openai/gpt-5.4, google/gemini-2.5-pro)
+AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
 
 # Observability — Pulse (performance monitoring, request tracing, error tracking)
 PULSE_ENABLED=true                   # Set to "false" to disable Pulse entirely
@@ -273,10 +273,10 @@ GORM_STUDIO_ENABLED=true
 GORM_STUDIO_USERNAME=admin               # Login username for the Studio UI
 GORM_STUDIO_PASSWORD=change-me-in-prod   # Login password — CHANGE THIS in production!
 
-# ─── AI (Claude, OpenAI, or Gemini) ──────────────────
-AI_PROVIDER=claude                   # "claude", "openai", or "gemini"
-AI_API_KEY=your-api-key-here         # sk-ant-... (Claude), sk-... (OpenAI), or AIza... (Gemini)
-AI_MODEL=claude-sonnet-4-5-20250929  # Model to use
+# ─── AI (Vercel AI Gateway) ──────────────────────────
+AI_GATEWAY_API_KEY=your-gateway-key  # Get from vercel.com/ai-gateway
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format
+AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
 
 # ─── Observability (Pulse) ────────────────────────────
 PULSE_ENABLED=true

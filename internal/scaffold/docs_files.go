@@ -1385,10 +1385,9 @@ Features:
 - Admin handler for AI operations
 
 ` + "```bash" + `
-# .env configuration
-ANTHROPIC_API_KEY=sk-ant-...
-OPENAI_API_KEY=sk-...
-AI_PROVIDER=claude  # or "openai"
+# .env configuration (Vercel AI Gateway)
+AI_GATEWAY_API_KEY=your-key        # One key for all models
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format
 ` + "```" + `
 
 ## Configuration
@@ -1410,10 +1409,9 @@ S3_REGION=us-east-1
 RESEND_API_KEY=re_...
 MAIL_FROM=noreply@example.com
 
-# AI
-ANTHROPIC_API_KEY=sk-ant-...
-OPENAI_API_KEY=sk-...
-AI_PROVIDER=claude
+# AI (Vercel AI Gateway — one key, hundreds of models)
+AI_GATEWAY_API_KEY=your-key
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6
 ` + "```" + `
 
 ## Docker Services

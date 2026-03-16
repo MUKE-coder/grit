@@ -456,8 +456,8 @@ STORAGE_BUCKET=%[2]s
 STORAGE_ACCESS_KEY=minioadmin
 STORAGE_SECRET_KEY=minioadmin
 RESEND_API_KEY=re_xxxxx
-AI_PROVIDER=claude
-AI_API_KEY=sk-ant-xxxxx
+AI_GATEWAY_API_KEY=your-key
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6
 SENTINEL_ENABLED=true
 PULSE_ENABLED=true
 %[1]s

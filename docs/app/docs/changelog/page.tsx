@@ -28,10 +28,48 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v2.7.0 */}
+            {/* v2.8.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v2.8.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>Vercel AI Gateway integration</strong> &mdash; Replaced the multi-provider AI service
+                    (Claude, OpenAI, Gemini with separate API implementations) with{' '}
+                    <a href="https://vercel.com/ai-gateway" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Vercel AI Gateway</a>.
+                    One API key now gives access to hundreds of models from all major providers through a single
+                    OpenAI-compatible endpoint. Models use the <code>provider/model</code> format
+                    (e.g. <code>anthropic/claude-sonnet-4-6</code>, <code>openai/gpt-5.4</code>,{' '}
+                    <code>google/gemini-2.5-pro</code>). Includes automatic retries, fallbacks,
+                    spend monitoring, and zero markup on tokens.
+                  </li>
+                </ul>
+
+                <h3>Breaking Changes</h3>
+                <ul>
+                  <li>
+                    <strong>AI environment variables</strong> &mdash; <code>AI_PROVIDER</code>,{' '}
+                    <code>AI_API_KEY</code>, and <code>AI_MODEL</code> have been replaced with{' '}
+                    <code>AI_GATEWAY_API_KEY</code>, <code>AI_GATEWAY_MODEL</code>, and{' '}
+                    <code>AI_GATEWAY_URL</code>. Update your <code>.env</code> file accordingly.
+                    Get your API key from{' '}
+                    <a href="https://vercel.com/ai-gateway" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">vercel.com/ai-gateway</a>.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v2.7.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v2.7.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 10, 2026</span>

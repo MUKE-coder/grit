@@ -11,8 +11,8 @@ func writeAIFiles(root string, opts Options) error {
 	module := opts.ProjectName + "/apps/api"
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "ai", "ai.go"):         aiServiceGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "ai.go"):   aiHandlerGo(),
+		filepath.Join(apiRoot, "internal", "ai", "ai.go"):       aiServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "ai.go"): aiHandlerGo(),
 	}
 
 	for path, content := range files {
@@ -70,76 +70,51 @@ type Usage struct {
 // StreamHandler is called for each chunk of a streamed response.
 type StreamHandler func(chunk string) error
 
-// AI provides text generation via Claude or OpenAI APIs.
+// AI provides text generation via Vercel AI Gateway.
+// One API key, hundreds of models — use "provider/model" format
+// (e.g. "anthropic/claude-sonnet-4.6", "openai/gpt-5.4", "google/gemini-2.5-pro").
 type AI struct {
-	provider string
-	apiKey   string
-	model    string
-	client   *http.Client
+	apiKey  string
+	model   string
+	baseURL string
+	client  *http.Client
 }
 
-// New creates a new AI service instance.
-func New(provider, apiKey, model string) *AI {
+// New creates a new AI service backed by Vercel AI Gateway.
+func New(apiKey, model, baseURL string) *AI {
+	if baseURL == "" {
+		baseURL = "https://ai-gateway.vercel.sh/v1"
+	}
+	// Ensure no trailing slash
+	baseURL = strings.TrimRight(baseURL, "/")
+
 	return &AI{
-		provider: strings.ToLower(provider),
-		apiKey:   apiKey,
-		model:    model,
-		client:   &http.Client{Timeout: 120 * time.Second},
+		apiKey:  apiKey,
+		model:   model,
+		baseURL: baseURL,
+		client:  &http.Client{Timeout: 120 * time.Second},
 	}
 }
 
-// Complete generates a response from a single prompt.
+// Complete generates a response from a single prompt or conversation.
 func (a *AI) Complete(ctx context.Context, req CompletionRequest) (*CompletionResponse, error) {
 	messages := req.Messages
 	if len(messages) == 0 && req.Prompt != "" {
 		messages = []Message{{Role: "user", Content: req.Prompt}}
 	}
 
-	if req.MaxTokens == 0 {
-		req.MaxTokens = 1024
+	maxTokens := req.MaxTokens
+	if maxTokens == 0 {
+		maxTokens = 1024
 	}
 
-	switch a.provider {
-	case "openai":
-		return a.openaiComplete(ctx, messages, req.MaxTokens, req.Temperature)
-	case "gemini":
-		return a.geminiComplete(ctx, messages, req.MaxTokens, req.Temperature)
-	default:
-		return a.claudeComplete(ctx, messages, req.MaxTokens, req.Temperature)
-	}
-}
-
-// Stream generates a streaming response, calling handler for each chunk.
-func (a *AI) Stream(ctx context.Context, req CompletionRequest, handler StreamHandler) error {
-	messages := req.Messages
-	if len(messages) == 0 && req.Prompt != "" {
-		messages = []Message{{Role: "user", Content: req.Prompt}}
-	}
-
-	if req.MaxTokens == 0 {
-		req.MaxTokens = 1024
-	}
-
-	switch a.provider {
-	case "openai":
-		return a.openaiStream(ctx, messages, req.MaxTokens, req.Temperature, handler)
-	case "gemini":
-		return a.geminiStream(ctx, messages, req.MaxTokens, req.Temperature, handler)
-	default:
-		return a.claudeStream(ctx, messages, req.MaxTokens, req.Temperature, handler)
-	}
-}
-
-// ── Claude (Anthropic) ──────────────────────────────────────────
-
-func (a *AI) claudeComplete(ctx context.Context, messages []Message, maxTokens int, temperature float64) (*CompletionResponse, error) {
 	body := map[string]interface{}{
 		"model":      a.model,
 		"max_tokens": maxTokens,
 		"messages":   messages,
 	}
-	if temperature > 0 {
-		body["temperature"] = temperature
+	if req.Temperature > 0 {
+		body["temperature"] = req.Temperature
 	}
 
 	data, err := json.Marshal(body)
@@ -147,159 +122,23 @@ func (a *AI) claudeComplete(ctx context.Context, messages []Message, maxTokens i
 		return nil, fmt.Errorf("marshaling request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.anthropic.com/v1/messages", bytes.NewReader(data))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, a.baseURL+"/chat/completions", bytes.NewReader(data))
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
 
-	req.Header.Set("x-api-key", a.apiKey)
-	req.Header.Set("anthropic-version", "2023-06-01")
-	req.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Authorization", "Bearer "+a.apiKey)
+	httpReq.Header.Set("Content-Type", "application/json")
 
-	resp, err := a.client.Do(req)
+	resp, err := a.client.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("calling Claude API: %w", err)
+		return nil, fmt.Errorf("calling AI Gateway: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
 		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("Claude API error (%d): %s", resp.StatusCode, string(respBody))
-	}
-
-	var result struct {
-		Content []struct {
-			Text string ` + "`" + `json:"text"` + "`" + `
-		} ` + "`" + `json:"content"` + "`" + `
-		Model string ` + "`" + `json:"model"` + "`" + `
-		Usage struct {
-			InputTokens  int ` + "`" + `json:"input_tokens"` + "`" + `
-			OutputTokens int ` + "`" + `json:"output_tokens"` + "`" + `
-		} ` + "`" + `json:"usage"` + "`" + `
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding response: %w", err)
-	}
-
-	content := ""
-	if len(result.Content) > 0 {
-		content = result.Content[0].Text
-	}
-
-	return &CompletionResponse{
-		Content: content,
-		Model:   result.Model,
-		Usage: &Usage{
-			InputTokens:  result.Usage.InputTokens,
-			OutputTokens: result.Usage.OutputTokens,
-		},
-	}, nil
-}
-
-func (a *AI) claudeStream(ctx context.Context, messages []Message, maxTokens int, temperature float64, handler StreamHandler) error {
-	body := map[string]interface{}{
-		"model":      a.model,
-		"max_tokens": maxTokens,
-		"messages":   messages,
-		"stream":     true,
-	}
-	if temperature > 0 {
-		body["temperature"] = temperature
-	}
-
-	data, err := json.Marshal(body)
-	if err != nil {
-		return fmt.Errorf("marshaling request: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.anthropic.com/v1/messages", bytes.NewReader(data))
-	if err != nil {
-		return fmt.Errorf("creating request: %w", err)
-	}
-
-	req.Header.Set("x-api-key", a.apiKey)
-	req.Header.Set("anthropic-version", "2023-06-01")
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := a.client.Do(req)
-	if err != nil {
-		return fmt.Errorf("calling Claude API: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("Claude API error (%d): %s", resp.StatusCode, string(respBody))
-	}
-
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if !strings.HasPrefix(line, "data: ") {
-			continue
-		}
-
-		data := strings.TrimPrefix(line, "data: ")
-		if data == "[DONE]" {
-			break
-		}
-
-		var event struct {
-			Type  string ` + "`" + `json:"type"` + "`" + `
-			Delta struct {
-				Text string ` + "`" + `json:"text"` + "`" + `
-			} ` + "`" + `json:"delta"` + "`" + `
-		}
-
-		if err := json.Unmarshal([]byte(data), &event); err != nil {
-			continue
-		}
-
-		if event.Type == "content_block_delta" && event.Delta.Text != "" {
-			if err := handler(event.Delta.Text); err != nil {
-				return err
-			}
-		}
-	}
-
-	return scanner.Err()
-}
-
-// ── OpenAI ──────────────────────────────────────────────────────
-
-func (a *AI) openaiComplete(ctx context.Context, messages []Message, maxTokens int, temperature float64) (*CompletionResponse, error) {
-	body := map[string]interface{}{
-		"model":      a.model,
-		"max_tokens": maxTokens,
-		"messages":   messages,
-	}
-	if temperature > 0 {
-		body["temperature"] = temperature
-	}
-
-	data, err := json.Marshal(body)
-	if err != nil {
-		return nil, fmt.Errorf("marshaling request: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.openai.com/v1/chat/completions", bytes.NewReader(data))
-	if err != nil {
-		return nil, fmt.Errorf("creating request: %w", err)
-	}
-
-	req.Header.Set("Authorization", "Bearer "+a.apiKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := a.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("calling OpenAI API: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("OpenAI API error (%d): %s", resp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("AI Gateway error (%d): %s", resp.StatusCode, string(respBody))
 	}
 
 	var result struct {
@@ -334,15 +173,26 @@ func (a *AI) openaiComplete(ctx context.Context, messages []Message, maxTokens i
 	}, nil
 }
 
-func (a *AI) openaiStream(ctx context.Context, messages []Message, maxTokens int, temperature float64, handler StreamHandler) error {
+// Stream generates a streaming response, calling handler for each chunk.
+func (a *AI) Stream(ctx context.Context, req CompletionRequest, handler StreamHandler) error {
+	messages := req.Messages
+	if len(messages) == 0 && req.Prompt != "" {
+		messages = []Message{{Role: "user", Content: req.Prompt}}
+	}
+
+	maxTokens := req.MaxTokens
+	if maxTokens == 0 {
+		maxTokens = 1024
+	}
+
 	body := map[string]interface{}{
 		"model":      a.model,
 		"max_tokens": maxTokens,
 		"messages":   messages,
 		"stream":     true,
 	}
-	if temperature > 0 {
-		body["temperature"] = temperature
+	if req.Temperature > 0 {
+		body["temperature"] = req.Temperature
 	}
 
 	data, err := json.Marshal(body)
@@ -350,23 +200,23 @@ func (a *AI) openaiStream(ctx context.Context, messages []Message, maxTokens int
 		return fmt.Errorf("marshaling request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.openai.com/v1/chat/completions", bytes.NewReader(data))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, a.baseURL+"/chat/completions", bytes.NewReader(data))
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+a.apiKey)
-	req.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Authorization", "Bearer "+a.apiKey)
+	httpReq.Header.Set("Content-Type", "application/json")
 
-	resp, err := a.client.Do(req)
+	resp, err := a.client.Do(httpReq)
 	if err != nil {
-		return fmt.Errorf("calling OpenAI API: %w", err)
+		return fmt.Errorf("calling AI Gateway: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
 		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("OpenAI API error (%d): %s", resp.StatusCode, string(respBody))
+		return fmt.Errorf("AI Gateway error (%d): %s", resp.StatusCode, string(respBody))
 	}
 
 	scanner := bufio.NewScanner(resp.Body)
@@ -396,176 +246,6 @@ func (a *AI) openaiStream(ctx context.Context, messages []Message, maxTokens int
 		if len(event.Choices) > 0 && event.Choices[0].Delta.Content != "" {
 			if err := handler(event.Choices[0].Delta.Content); err != nil {
 				return err
-			}
-		}
-	}
-
-	return scanner.Err()
-}
-
-// ── Gemini (Google) ──────────────────────────────────────────
-
-func (a *AI) geminiComplete(ctx context.Context, messages []Message, maxTokens int, temperature float64) (*CompletionResponse, error) {
-	// Convert messages to Gemini format
-	contents := make([]map[string]interface{}, 0, len(messages))
-	for _, msg := range messages {
-		role := msg.Role
-		if role == "assistant" {
-			role = "model"
-		}
-		contents = append(contents, map[string]interface{}{
-			"role":  role,
-			"parts": []map[string]string{{"text": msg.Content}},
-		})
-	}
-
-	body := map[string]interface{}{
-		"contents": contents,
-		"generationConfig": map[string]interface{}{
-			"maxOutputTokens": maxTokens,
-		},
-	}
-	if temperature > 0 {
-		body["generationConfig"].(map[string]interface{})["temperature"] = temperature
-	}
-
-	data, err := json.Marshal(body)
-	if err != nil {
-		return nil, fmt.Errorf("marshaling request: %w", err)
-	}
-
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", a.model, a.apiKey)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
-	if err != nil {
-		return nil, fmt.Errorf("creating request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := a.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("calling Gemini API: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("Gemini API error (%d): %s", resp.StatusCode, string(respBody))
-	}
-
-	var result struct {
-		Candidates []struct {
-			Content struct {
-				Parts []struct {
-					Text string ` + "`" + `json:"text"` + "`" + `
-				} ` + "`" + `json:"parts"` + "`" + `
-			} ` + "`" + `json:"content"` + "`" + `
-		} ` + "`" + `json:"candidates"` + "`" + `
-		UsageMetadata struct {
-			PromptTokenCount     int ` + "`" + `json:"promptTokenCount"` + "`" + `
-			CandidatesTokenCount int ` + "`" + `json:"candidatesTokenCount"` + "`" + `
-		} ` + "`" + `json:"usageMetadata"` + "`" + `
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decoding response: %w", err)
-	}
-
-	content := ""
-	if len(result.Candidates) > 0 && len(result.Candidates[0].Content.Parts) > 0 {
-		content = result.Candidates[0].Content.Parts[0].Text
-	}
-
-	return &CompletionResponse{
-		Content: content,
-		Model:   a.model,
-		Usage: &Usage{
-			InputTokens:  result.UsageMetadata.PromptTokenCount,
-			OutputTokens: result.UsageMetadata.CandidatesTokenCount,
-		},
-	}, nil
-}
-
-func (a *AI) geminiStream(ctx context.Context, messages []Message, maxTokens int, temperature float64, handler StreamHandler) error {
-	// Convert messages to Gemini format
-	contents := make([]map[string]interface{}, 0, len(messages))
-	for _, msg := range messages {
-		role := msg.Role
-		if role == "assistant" {
-			role = "model"
-		}
-		contents = append(contents, map[string]interface{}{
-			"role":  role,
-			"parts": []map[string]string{{"text": msg.Content}},
-		})
-	}
-
-	body := map[string]interface{}{
-		"contents": contents,
-		"generationConfig": map[string]interface{}{
-			"maxOutputTokens": maxTokens,
-		},
-	}
-	if temperature > 0 {
-		body["generationConfig"].(map[string]interface{})["temperature"] = temperature
-	}
-
-	data, err := json.Marshal(body)
-	if err != nil {
-		return fmt.Errorf("marshaling request: %w", err)
-	}
-
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:streamGenerateContent?alt=sse&key=%s", a.model, a.apiKey)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
-	if err != nil {
-		return fmt.Errorf("creating request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := a.client.Do(req)
-	if err != nil {
-		return fmt.Errorf("calling Gemini API: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("Gemini API error (%d): %s", resp.StatusCode, string(respBody))
-	}
-
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if !strings.HasPrefix(line, "data: ") {
-			continue
-		}
-
-		data := strings.TrimPrefix(line, "data: ")
-		if data == "[DONE]" {
-			break
-		}
-
-		var event struct {
-			Candidates []struct {
-				Content struct {
-					Parts []struct {
-						Text string ` + "`" + `json:"text"` + "`" + `
-					} ` + "`" + `json:"parts"` + "`" + `
-				} ` + "`" + `json:"content"` + "`" + `
-			} ` + "`" + `json:"candidates"` + "`" + `
-		}
-
-		if err := json.Unmarshal([]byte(data), &event); err != nil {
-			continue
-		}
-
-		if len(event.Candidates) > 0 && len(event.Candidates[0].Content.Parts) > 0 {
-			text := event.Candidates[0].Content.Parts[0].Text
-			if text != "" {
-				if err := handler(text); err != nil {
-					return err
-				}
 			}
 		}
 	}

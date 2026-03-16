@@ -206,11 +206,11 @@ func main() {
 		log.Println("Warning: Resend API key not set (emails disabled)")
 	}
 
-	// AI service
+	// AI service (Vercel AI Gateway)
 	var aiService *ai.AI
-	if cfg.AIAPIKey != "" {
-		aiService = ai.New(cfg.AIProvider, cfg.AIAPIKey, cfg.AIModel)
-		log.Printf("AI service configured (%s)", cfg.AIProvider)
+	if cfg.AIGatewayAPIKey != "" {
+		aiService = ai.New(cfg.AIGatewayAPIKey, cfg.AIGatewayModel, cfg.AIGatewayURL)
+		log.Printf("AI service configured via AI Gateway (%s)", cfg.AIGatewayModel)
 	}
 
 	// Background jobs (asynq)
@@ -404,10 +404,10 @@ type Config struct {
 	GORMStudioUsername string
 	GORMStudioPassword string
 
-	// AI
-	AIProvider string // "claude", "openai", or "gemini"
-	AIAPIKey   string
-	AIModel    string
+	// AI (Vercel AI Gateway)
+	AIGatewayAPIKey string
+	AIGatewayModel  string
+	AIGatewayURL    string
 
 	// Security (Sentinel)
 	SentinelEnabled   bool
@@ -457,9 +457,9 @@ func Load() (*Config, error) {
 		GORMStudioUsername: getEnv("GORM_STUDIO_USERNAME", "admin"),
 		GORMStudioPassword: getEnv("GORM_STUDIO_PASSWORD", "studio"),
 
-		AIProvider: getEnv("AI_PROVIDER", "claude"),
-		AIAPIKey:   getEnv("AI_API_KEY", ""),
-		AIModel:    getEnv("AI_MODEL", "claude-sonnet-4-5-20250929"),
+		AIGatewayAPIKey: getEnv("AI_GATEWAY_API_KEY", ""),
+		AIGatewayModel:  getEnv("AI_GATEWAY_MODEL", "anthropic/claude-sonnet-4-6"),
+		AIGatewayURL:    getEnv("AI_GATEWAY_URL", "https://ai-gateway.vercel.sh/v1"),
 
 		SentinelEnabled:   getEnv("SENTINEL_ENABLED", "true") == "true",
 		SentinelUsername:   getEnv("SENTINEL_USERNAME", "admin"),
