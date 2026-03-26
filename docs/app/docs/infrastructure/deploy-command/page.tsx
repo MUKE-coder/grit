@@ -10,35 +10,35 @@ export const metadata = getDocMetadata('/docs/infrastructure/deploy-command')
 
 export default function DeployCommandPage() {
   return (
-    <div className="min-h-screen bg-[#0b1120]">
+    <div className="min-h-screen bg-background">
       <SiteHeader />
       <DocsSidebar />
 
       <main className="lg:pl-64">
         <div className="max-w-4xl mx-auto py-12 px-6 lg:px-8">
           <div className="mb-14">
-            <p className="text-sm font-mono font-medium text-sky-400 mb-3 tracking-wide uppercase">
+            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">
               Infrastructure
             </p>
-            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-white mb-4">
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
               Deploy Command
             </h1>
-            <p className="text-lg text-slate-400 leading-relaxed max-w-2xl">
+            <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl">
               One-command production deployment. Build, upload, and configure your server with{' '}
-              <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[15px]">grit deploy</code>.
+              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[15px]">grit deploy</code>.
             </p>
           </div>
 
           <div className="mb-14">
-            <h2 className="text-xl font-semibold text-white mb-8">How it works</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-8">How it works</h2>
 
             <StepWithCode
               number="01"
               title="Build"
               description={
                 <p>
-                  Cross-compiles your Go binary for Linux (<code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">GOOS=linux GOARCH=amd64 CGO_ENABLED=0</code>).
-                  If a <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">frontend/</code> directory
+                  Cross-compiles your Go binary for Linux (<code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">GOOS=linux GOARCH=amd64 CGO_ENABLED=0</code>).
+                  If a <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">frontend/</code> directory
                   exists, builds the frontend first.
                 </p>
               }
@@ -60,7 +60,7 @@ export default function DeployCommandPage() {
             <StepWithCode
               number="03"
               title="Systemd service"
-              description={<p>Creates and enables a systemd service unit. The service auto-restarts on failure and reads environment variables from your <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">.env</code> file.</p>}
+              description={<p>Creates and enables a systemd service unit. The service auto-restarts on failure and reads environment variables from your <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">.env</code> file.</p>}
               code={`[Unit]
 Description=my-app
 After=network.target
@@ -82,7 +82,7 @@ WantedBy=multi-user.target`}
             <StepWithCode
               number="04"
               title="Caddy reverse proxy"
-              description={<p>If <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">--domain</code> is provided, configures Caddy as a reverse proxy with automatic HTTPS via Let{"'"}s Encrypt.</p>}
+              description={<p>If <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">--domain</code> is provided, configures Caddy as a reverse proxy with automatic HTTPS via Let{"'"}s Encrypt.</p>}
               code={`myapp.com {
     reverse_proxy localhost:8080
     encode gzip
@@ -99,17 +99,17 @@ WantedBy=multi-user.target`}
 
           {/* Flags */}
           <div className="mb-14">
-            <h2 className="text-xl font-semibold text-white mb-4">Flags</h2>
-            <div className="overflow-x-auto rounded-lg border border-white/[0.06]">
+            <h2 className="text-xl font-semibold text-foreground mb-4">Flags</h2>
+            <div className="overflow-x-auto rounded-lg border border-border/40">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/[0.06] bg-white/[0.02]">
-                    <th className="px-4 py-3 text-left font-medium text-slate-300">Flag</th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-300">Env Var</th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-300">Description</th>
+                  <tr className="border-b border-border/40 bg-accent/20">
+                    <th className="px-4 py-3 text-left font-medium text-foreground/80">Flag</th>
+                    <th className="px-4 py-3 text-left font-medium text-foreground/80">Env Var</th>
+                    <th className="px-4 py-3 text-left font-medium text-foreground/80">Description</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.04]">
+                <tbody className="divide-y divide-border/30">
                   {[
                     { flag: '--host', env: 'DEPLOY_HOST', desc: 'SSH host (e.g. user@server.com)' },
                     { flag: '--port', env: '-', desc: 'SSH port (default: 22)' },
@@ -117,10 +117,10 @@ WantedBy=multi-user.target`}
                     { flag: '--domain', env: 'DEPLOY_DOMAIN', desc: 'Domain for Caddy reverse proxy' },
                     { flag: '--app-port', env: '-', desc: 'Port the app runs on (default: 8080)' },
                   ].map((row) => (
-                    <tr key={row.flag} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="px-4 py-3 font-mono text-sm text-sky-400">{row.flag}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-slate-500">{row.env}</td>
-                      <td className="px-4 py-3 text-slate-400">{row.desc}</td>
+                    <tr key={row.flag} className="hover:bg-accent/20 transition-colors">
+                      <td className="px-4 py-3 font-mono text-sm text-primary">{row.flag}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground/70">{row.env}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{row.desc}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -128,14 +128,14 @@ WantedBy=multi-user.target`}
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-8 border-t border-white/[0.06]">
-            <Button variant="ghost" size="sm" asChild className="text-slate-500 hover:text-white">
+          <div className="flex items-center justify-between pt-8 border-t border-border/40">
+            <Button variant="ghost" size="sm" asChild className="text-muted-foreground/70 hover:text-foreground">
               <Link href="/docs/infrastructure/deployment" className="gap-1.5">
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Deployment
               </Link>
             </Button>
-            <Button variant="ghost" size="sm" asChild className="text-slate-500 hover:text-white">
+            <Button variant="ghost" size="sm" asChild className="text-muted-foreground/70 hover:text-foreground">
               <Link href="/docs/infrastructure/dokploy" className="gap-1.5">
                 Deploy with Dokploy
                 <ArrowRight className="h-3.5 w-3.5" />

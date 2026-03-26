@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/getting-started/installation')
 
 export default function InstallationPage() {
   return (
-    <div className="min-h-screen bg-[#0b1120]">
+    <div className="min-h-screen bg-background">
       <SiteHeader />
       <DocsSidebar />
 
@@ -18,13 +18,13 @@ export default function InstallationPage() {
         <div className="max-w-5xl mx-auto py-12 px-6 lg:px-8">
           {/* Header */}
           <div className="mb-14">
-            <p className="text-sm font-mono font-medium text-sky-400 mb-3 tracking-wide uppercase">
+            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">
               Getting Started
             </p>
-            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-white mb-4">
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
               Installation
             </h1>
-            <p className="text-lg text-slate-400 leading-relaxed max-w-2xl">
+            <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl">
               Get up and running with Grit in minutes. Install the CLI, choose your architecture,
               and scaffold a production-ready full-stack application.
             </p>
@@ -32,30 +32,30 @@ export default function InstallationPage() {
 
           {/* Prerequisites */}
           <div className="mb-14">
-            <h2 className="text-xl font-semibold text-white mb-6">System Requirements</h2>
-            <div className="overflow-x-auto rounded-lg border border-white/[0.06]">
+            <h2 className="text-xl font-semibold text-foreground mb-6">System Requirements</h2>
+            <div className="overflow-x-auto rounded-lg border border-border/40">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/[0.06] bg-white/[0.02]">
-                    <th className="px-4 py-3 text-left font-medium text-slate-300">Tool</th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-300">Min Version</th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-300 hidden sm:table-cell">Required For</th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-300 hidden md:table-cell">Check</th>
+                  <tr className="border-b border-border/40 bg-accent/20">
+                    <th className="px-4 py-3 text-left font-medium text-foreground/80">Tool</th>
+                    <th className="px-4 py-3 text-left font-medium text-foreground/80">Min Version</th>
+                    <th className="px-4 py-3 text-left font-medium text-foreground/80 hidden sm:table-cell">Required For</th>
+                    <th className="px-4 py-3 text-left font-medium text-foreground/80 hidden md:table-cell">Check</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.04]">
+                <tbody className="divide-y divide-border/30">
                   {[
                     { tool: 'Go', version: '1.21+', for: 'API server', check: 'go version' },
                     { tool: 'Node.js', version: '18+', for: 'Frontend apps', check: 'node --version' },
                     { tool: 'pnpm', version: '8+', for: 'Package management', check: 'pnpm --version' },
                     { tool: 'Docker', version: 'Latest', for: 'Infrastructure', check: 'docker --version' },
                   ].map((row) => (
-                    <tr key={row.tool} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="px-4 py-3 font-medium text-white">{row.tool}</td>
-                      <td className="px-4 py-3 font-mono text-sm text-sky-400">{row.version}</td>
-                      <td className="px-4 py-3 text-slate-400 hidden sm:table-cell">{row.for}</td>
+                    <tr key={row.tool} className="hover:bg-accent/20 transition-colors">
+                      <td className="px-4 py-3 font-medium text-foreground">{row.tool}</td>
+                      <td className="px-4 py-3 font-mono text-sm text-primary">{row.version}</td>
+                      <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{row.for}</td>
                       <td className="px-4 py-3 hidden md:table-cell">
-                        <code className="text-xs font-mono text-slate-500 bg-white/[0.04] px-1.5 py-0.5 rounded">{row.check}</code>
+                        <code className="text-xs font-mono text-muted-foreground/70 bg-accent/30 px-1.5 py-0.5 rounded">{row.check}</code>
                       </td>
                     </tr>
                   ))}
@@ -66,15 +66,15 @@ export default function InstallationPage() {
 
           {/* Installation Steps */}
           <div className="mb-14">
-            <h2 className="text-xl font-semibold text-white mb-8">Install the Grit CLI</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-8">Install the Grit CLI</h2>
 
             <StepWithCode
               number="01"
               title="Install Grit"
               description={
                 <p>
-                  Install the Grit CLI globally using <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">go install</code>.
-                  This gives you the <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">grit</code> command
+                  Install the Grit CLI globally using <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">go install</code>.
+                  This gives you the <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">grit</code> command
                   anywhere on your system.
                 </p>
               }
@@ -88,7 +88,7 @@ export default function InstallationPage() {
               title="Create your project"
               description={
                 <p>
-                  Run <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">grit new</code> and
+                  Run <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">grit new</code> and
                   follow the interactive prompts to select your architecture and frontend framework.
                 </p>
               }
@@ -115,7 +115,7 @@ export default function InstallationPage() {
                 <p>
                   Start PostgreSQL, Redis, MinIO, and Mailhog with Docker Compose.
                   These services are pre-configured in the generated{' '}
-                  <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">docker-compose.yml</code>.
+                  <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">docker-compose.yml</code>.
                 </p>
               }
               code={`cd my-app
@@ -130,9 +130,9 @@ docker compose up -d`}
               description={
                 <p>
                   Install frontend dependencies and start all development servers.
-                  The Go API runs on <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">:8080</code>,
-                  web app on <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">:3000</code>,
-                  and admin on <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">:3001</code>.
+                  The Go API runs on <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">:8080</code>,
+                  web app on <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">:3000</code>,
+                  and admin on <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">:3001</code>.
                 </p>
               }
               code={`pnpm install
@@ -144,8 +144,8 @@ pnpm dev`}
 
           {/* Quick command reference */}
           <div className="mb-14">
-            <h2 className="text-xl font-semibold text-white mb-4">Architecture shortcuts</h2>
-            <p className="text-slate-400 mb-6">
+            <h2 className="text-xl font-semibold text-foreground mb-4">Architecture shortcuts</h2>
+            <p className="text-muted-foreground mb-6">
               Skip the interactive prompts with flags:
             </p>
             <CodeBlock language="bash" filename="Terminal" code={`# Triple (default) with Next.js
@@ -166,7 +166,7 @@ grit new-desktop my-app`} />
 
           {/* Services table */}
           <div className="mb-14">
-            <h2 className="text-xl font-semibold text-white mb-4">Default services</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-4">Default services</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { name: 'Go API', url: 'http://localhost:8080', desc: 'Backend server' },
@@ -176,26 +176,26 @@ grit new-desktop my-app`} />
                 { name: 'GORM Studio', url: 'http://localhost:8080/studio', desc: 'Database browser' },
                 { name: 'Mailhog', url: 'http://localhost:8025', desc: 'Email testing' },
               ].map((svc) => (
-                <div key={svc.name} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors">
+                <div key={svc.name} className="rounded-lg border border-border/40 bg-accent/20 p-4 hover:bg-accent/30 transition-colors">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-white">{svc.name}</span>
-                    <code className="text-[11px] font-mono text-sky-400/70">{svc.url.replace('http://', '')}</code>
+                    <span className="text-sm font-medium text-foreground">{svc.name}</span>
+                    <code className="text-[11px] font-mono text-primary/70">{svc.url.replace('http://', '')}</code>
                   </div>
-                  <p className="text-xs text-slate-500">{svc.desc}</p>
+                  <p className="text-xs text-muted-foreground/70">{svc.desc}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Nav */}
-          <div className="flex items-center justify-between pt-8 border-t border-white/[0.06]">
-            <Button variant="ghost" size="sm" asChild className="text-slate-500 hover:text-white">
+          <div className="flex items-center justify-between pt-8 border-t border-border/40">
+            <Button variant="ghost" size="sm" asChild className="text-muted-foreground/70 hover:text-foreground">
               <Link href="/docs/getting-started/quick-start" className="gap-1.5">
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Quick Start
               </Link>
             </Button>
-            <Button variant="ghost" size="sm" asChild className="text-slate-500 hover:text-white">
+            <Button variant="ghost" size="sm" asChild className="text-muted-foreground/70 hover:text-foreground">
               <Link href="/docs/getting-started/project-structure" className="gap-1.5">
                 Project Structure
                 <ArrowRight className="h-3.5 w-3.5" />

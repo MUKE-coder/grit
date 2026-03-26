@@ -24,7 +24,7 @@ import {
   Menu,
 } from 'lucide-react'
 import { useState } from 'react'
-import { SidebarSponsorBanner, RightSideBanners } from '@/components/sidebar-banners'
+// Banners removed for cleaner Tailwind-style sidebar
 import {
   Sheet,
   SheetContent,
@@ -216,7 +216,6 @@ const navItems: NavItem[] = [
 ]
 
 function NavSection({ item }: { item: NavItem }) {
-  const [isOpen, setIsOpen] = useState(true)
   const pathname = usePathname()
 
   if (!item.items) {
@@ -224,54 +223,39 @@ function NavSection({ item }: { item: NavItem }) {
       <Link
         href={item.href || '#'}
         className={cn(
-          'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-all',
+          'block px-3 py-1 text-sm transition-colors',
           pathname === item.href
-            ? 'bg-primary/10 text-primary font-medium'
-            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+            ? 'text-primary font-medium'
+            : 'text-muted-foreground hover:text-foreground'
         )}
       >
-        {item.icon}
         {item.title}
       </Link>
     )
   }
 
   return (
-    <div className="mb-1">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-[13px] font-medium text-foreground/80 hover:bg-accent/30 transition-colors"
-      >
-        <div className="flex items-center gap-2.5">
-          <span className="text-muted-foreground/60">{item.icon}</span>
-          {item.title}
-        </div>
-        <ChevronRight
-          className={cn(
-            'h-3 w-3 text-muted-foreground/40 transition-transform duration-200',
-            isOpen && 'rotate-90'
-          )}
-        />
-      </button>
-      {isOpen && (
-        <div className="mt-0.5 space-y-0.5 ml-3 pl-3 border-l border-border/30">
-          {item.items.map((subItem) => (
-            <Link
-              key={subItem.href}
-              href={subItem.href || '#'}
-              data-active={pathname === subItem.href ? 'true' : undefined}
-              className={cn(
-                'block rounded-md px-2.5 py-1.5 text-[13px] transition-all',
-                pathname === subItem.href
-                  ? 'text-primary font-medium bg-primary/5'
-                  : 'text-muted-foreground/70 hover:text-foreground hover:bg-accent/30'
-              )}
-            >
-              {subItem.title}
-            </Link>
-          ))}
-        </div>
-      )}
+    <div className="mb-5">
+      <h5 className="px-3 mb-2 text-[11px] font-semibold tracking-wider text-foreground/50 uppercase">
+        {item.title}
+      </h5>
+      <div className="space-y-0.5">
+        {item.items.map((subItem) => (
+          <Link
+            key={subItem.href}
+            href={subItem.href || '#'}
+            data-active={pathname === subItem.href ? 'true' : undefined}
+            className={cn(
+              'block px-3 py-1 text-sm transition-colors border-l-2',
+              pathname === subItem.href
+                ? 'text-primary font-medium border-primary'
+                : 'text-muted-foreground hover:text-foreground border-transparent hover:border-muted-foreground/30'
+            )}
+          >
+            {subItem.title}
+          </Link>
+        ))}
+      </div>
     </div>
   )
 }
@@ -288,30 +272,13 @@ export function DocsSidebar() {
   }, [pathname])
 
   return (
-    <>
-      <aside ref={sidebarRef} className="fixed top-14 z-30 hidden h-[calc(100vh-3.5rem)] w-64 shrink-0 overflow-y-auto border-r border-border/30 bg-background/80 backdrop-blur-xl py-6 lg:block">
-        <nav className="space-y-1 px-4">
-          {navItems.map((item) => (
-            <NavSection key={item.title} item={item} />
-          ))}
-        </nav>
-        {/* Handbook download */}
-        <div className="px-4 mt-4 mb-2">
-          <a
-            href="https://14j7oh8kso.ufs.sh/f/HLxTbDBCDLwfeHHJl34ZKSqNhOvVj6p9rg3Icmo05TAEwQ4a"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <div className="flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/8 px-3 py-2.5 text-xs font-medium text-primary/80 hover:bg-primary/15 hover:text-primary transition-colors cursor-pointer">
-              <Download className="h-3.5 w-3.5 shrink-0" />
-              <span>Download Handbook PDF</span>
-            </div>
-          </a>
-        </div>
-        <SidebarSponsorBanner />
-      </aside>
-      <RightSideBanners />
-    </>
+    <aside ref={sidebarRef} className="fixed top-16 z-30 hidden h-[calc(100vh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-border/40 bg-background py-8 lg:block">
+      <nav className="px-2">
+        {navItems.map((item) => (
+          <NavSection key={item.title} item={item} />
+        ))}
+      </nav>
+    </aside>
   )
 }
 

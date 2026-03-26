@@ -10,20 +10,20 @@ export const metadata = getDocMetadata('/docs/concepts/architecture-modes')
 
 export default function ArchitectureModesPage() {
   return (
-    <div className="min-h-screen bg-[#0b1120]">
+    <div className="min-h-screen bg-background">
       <SiteHeader />
       <DocsSidebar />
 
       <main className="lg:pl-64">
         <div className="max-w-4xl mx-auto py-12 px-6 lg:px-8">
           <div className="mb-14">
-            <p className="text-sm font-mono font-medium text-sky-400 mb-3 tracking-wide uppercase">
+            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">
               Core Concepts
             </p>
-            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-white mb-4">
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
               Architecture Modes
             </h1>
-            <p className="text-lg text-slate-400 leading-relaxed max-w-2xl">
+            <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl">
               Grit supports 5 architecture modes. Choose the one that fits your team,
               your deployment target, and the frameworks you already know.
             </p>
@@ -131,29 +131,29 @@ export default function ArchitectureModesPage() {
                 ],
               },
             ].map((arch) => (
-              <div key={arch.name} className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
-                <div className="p-6 border-b border-white/[0.04]">
+              <div key={arch.name} className="rounded-xl border border-border/40 bg-accent/20 overflow-hidden">
+                <div className="p-6 border-b border-border/30">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-semibold text-white">{arch.name}</h3>
-                    <code className="text-[11px] font-mono text-slate-500 bg-white/[0.04] px-2 py-0.5 rounded">
+                    <h3 className="text-xl font-semibold text-foreground">{arch.name}</h3>
+                    <code className="text-[11px] font-mono text-muted-foreground/70 bg-accent/30 px-2 py-0.5 rounded">
                       {arch.flag}
                     </code>
                   </div>
-                  <p className="text-slate-400">{arch.tagline}</p>
-                  <p className="text-sm text-slate-500 mt-1">Ideal for: {arch.ideal}</p>
+                  <p className="text-muted-foreground">{arch.tagline}</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">Ideal for: {arch.ideal}</p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-white/[0.04]">
+                <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border/30">
                   <div className="p-6">
-                    <h4 className="text-xs font-mono text-slate-500 uppercase tracking-wider mb-3">Structure</h4>
-                    <pre className="text-[12px] font-mono text-slate-400 leading-5 whitespace-pre">{arch.structure}</pre>
+                    <h4 className="text-xs font-mono text-muted-foreground/70 uppercase tracking-wider mb-3">Structure</h4>
+                    <pre className="text-[12px] font-mono text-muted-foreground leading-5 whitespace-pre">{arch.structure}</pre>
                   </div>
                   <div className="p-6">
-                    <h4 className="text-xs font-mono text-slate-500 uppercase tracking-wider mb-3">Features</h4>
+                    <h4 className="text-xs font-mono text-muted-foreground/70 uppercase tracking-wider mb-3">Features</h4>
                     <ul className="space-y-2">
                       {arch.features.map((f, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-slate-400">
-                          <span className="text-sky-400 mt-0.5">-</span>
+                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <span className="text-primary mt-0.5">-</span>
                           {f}
                         </li>
                       ))}
@@ -166,30 +166,30 @@ export default function ArchitectureModesPage() {
 
           {/* Frontend choice */}
           <div className="mt-14 mb-14">
-            <h2 className="text-xl font-semibold text-white mb-6">Frontend Framework Choice</h2>
-            <p className="text-slate-400 mb-6">
+            <h2 className="text-xl font-semibold text-foreground mb-6">Frontend Framework Choice</h2>
+            <p className="text-muted-foreground mb-6">
               For any architecture that includes a frontend (single, double, triple), you can choose between:
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-6">
+              <div className="rounded-lg border border-border/40 bg-accent/20 p-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <h3 className="font-semibold text-white">Next.js</h3>
-                  <code className="text-[10px] font-mono text-slate-500 bg-white/[0.04] px-1.5 py-0.5 rounded">--next</code>
+                  <h3 className="font-semibold text-foreground">Next.js</h3>
+                  <code className="text-[10px] font-mono text-muted-foreground/70 bg-accent/30 px-1.5 py-0.5 rounded">--next</code>
                 </div>
-                <ul className="space-y-1.5 text-sm text-slate-400">
+                <ul className="space-y-1.5 text-sm text-muted-foreground">
                   <li>- Server-side rendering (SSR)</li>
                   <li>- SEO-friendly by default</li>
                   <li>- App Router with layouts</li>
                   <li>- Larger bundle, Node.js runtime</li>
                 </ul>
               </div>
-              <div className="rounded-lg border border-sky-400/20 bg-sky-400/5 p-6">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <h3 className="font-semibold text-white">TanStack Router</h3>
-                  <code className="text-[10px] font-mono text-sky-400/70 bg-sky-400/10 px-1.5 py-0.5 rounded">--vite</code>
+                  <h3 className="font-semibold text-foreground">TanStack Router</h3>
+                  <code className="text-[10px] font-mono text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">--vite</code>
                 </div>
-                <ul className="space-y-1.5 text-sm text-slate-400">
+                <ul className="space-y-1.5 text-sm text-muted-foreground">
                   <li>- Vite — instant HMR, fast builds</li>
                   <li>- Small bundle size (SPA)</li>
                   <li>- File-based routing via plugin</li>
@@ -200,14 +200,14 @@ export default function ArchitectureModesPage() {
           </div>
 
           {/* Nav */}
-          <div className="flex items-center justify-between pt-8 border-t border-white/[0.06]">
-            <Button variant="ghost" size="sm" asChild className="text-slate-500 hover:text-white">
+          <div className="flex items-center justify-between pt-8 border-t border-border/40">
+            <Button variant="ghost" size="sm" asChild className="text-muted-foreground/70 hover:text-foreground">
               <Link href="/docs/concepts/architecture" className="gap-1.5">
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Architecture Overview
               </Link>
             </Button>
-            <Button variant="ghost" size="sm" asChild className="text-slate-500 hover:text-white">
+            <Button variant="ghost" size="sm" asChild className="text-muted-foreground/70 hover:text-foreground">
               <Link href="/docs/concepts/cli" className="gap-1.5">
                 CLI Commands
                 <ArrowRight className="h-3.5 w-3.5" />

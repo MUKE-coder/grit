@@ -40,38 +40,39 @@
   }
 
   .dark {
-    --background: 240 20% 4%;
-    --foreground: 240 10% 94%;
-    --card: 240 17% 5%;
-    --card-foreground: 240 10% 94%;
-    --popover: 240 17% 5%;
-    --popover-foreground: 240 10% 94%;
-    --primary: 262 52% 63%;
+    /* Tailwind-inspired dark theme: deep navy blue */
+    --background: 222 47% 7%;      /* #0b1120 */
+    --foreground: 213 31% 91%;     /* #e2e8f0 (slate-200) */
+    --card: 222 47% 9%;            /* slightly lighter than bg */
+    --card-foreground: 213 31% 91%;
+    --popover: 222 47% 9%;
+    --popover-foreground: 213 31% 91%;
+    --primary: 199 89% 48%;        /* sky-500 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 12% 8%;
-    --secondary-foreground: 240 10% 94%;
-    --muted: 240 12% 8%;
-    --muted-foreground: 240 5% 55%;
-    --accent: 240 12% 10%;
-    --accent-foreground: 240 10% 94%;
+    --secondary: 217 33% 12%;
+    --secondary-foreground: 213 31% 91%;
+    --muted: 217 33% 12%;
+    --muted-foreground: 215 20% 55%;  /* slate-400ish */
+    --accent: 217 33% 14%;
+    --accent-foreground: 213 31% 91%;
     --destructive: 0 63% 50%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 10% 14%;
-    --input: 240 10% 14%;
-    --ring: 262 52% 63%;
-    --chart-1: 262 52% 63%;
+    --border: 217 33% 14%;         /* subtle white/[0.06] feel */
+    --input: 217 33% 14%;
+    --ring: 199 89% 48%;           /* sky-500 */
+    --chart-1: 199 89% 48%;
     --chart-2: 160 52% 36%;
     --chart-3: 36 100% 50%;
     --chart-4: 340 75% 55%;
     --chart-5: 217 91% 60%;
-    --sidebar-background: 240 17% 3%;
-    --sidebar-foreground: 240 10% 94%;
-    --sidebar-primary: 262 52% 63%;
+    --sidebar-background: 222 47% 5%;  /* darker than bg */
+    --sidebar-foreground: 213 31% 91%;
+    --sidebar-primary: 199 89% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 12% 8%;
-    --sidebar-accent-foreground: 240 10% 94%;
-    --sidebar-border: 240 10% 12%;
-    --sidebar-ring: 262 52% 63%;
+    --sidebar-accent: 217 33% 10%;
+    --sidebar-accent-foreground: 213 31% 91%;
+    --sidebar-border: 217 33% 12%;
+    --sidebar-ring: 199 89% 48%;
   }
 }
 
@@ -186,7 +187,7 @@
 }
 
 .prose-grit code {
-  @apply text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary;
+  @apply text-[13px] font-mono bg-white/[0.06] px-1.5 py-0.5 rounded text-primary;
 }
 
 .prose-grit pre {
