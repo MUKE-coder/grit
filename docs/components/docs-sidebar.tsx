@@ -73,6 +73,7 @@ const navItems: NavItem[] = [
     icon: <Box className="h-3.5 w-3.5" />,
     items: [
       { title: 'Architecture Overview', href: '/docs/concepts/architecture' },
+      { title: 'Architecture Modes', href: '/docs/concepts/architecture-modes' },
       { title: 'CLI Commands', href: '/docs/concepts/cli' },
       { title: 'Code Generation', href: '/docs/concepts/code-generation' },
       { title: 'Type System', href: '/docs/concepts/type-system' },
@@ -150,6 +151,7 @@ const navItems: NavItem[] = [
       { title: 'Docker Cheat Sheet', href: '/docs/infrastructure/docker-cheatsheet' },
       { title: 'Database & Migrations', href: '/docs/infrastructure/database' },
       { title: 'Deployment', href: '/docs/infrastructure/deployment' },
+      { title: 'Deploy Command', href: '/docs/infrastructure/deploy-command' },
       { title: 'Deploy with Dokploy', href: '/docs/infrastructure/dokploy' },
     ],
   },
