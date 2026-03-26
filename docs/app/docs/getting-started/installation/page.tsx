@@ -1,560 +1,209 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { SiteHeader } from "@/components/site-header";
-import { DocsSidebar } from "@/components/docs-sidebar";
-import { CodeBlock } from '@/components/code-block'
+import Link from "next/link"
+import { ArrowLeft, ArrowRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { SiteHeader } from "@/components/site-header"
+import { DocsSidebar } from "@/components/docs-sidebar"
+import { CodeBlock, StepWithCode } from '@/components/code-block'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/getting-started/installation')
 
 export default function InstallationPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#0b1120]">
       <SiteHeader />
       <DocsSidebar />
 
       <main className="lg:pl-64">
-        <div className="container max-w-screen-xl py-10 px-6">
-          <div className="max-w-3xl">
-            {/* Header */}
-            <div className="mb-10">
-              <span className="tag-mono text-primary/80 mb-3 block">
-                Getting Started
-              </span>
-              <h1 className="text-4xl font-bold tracking-tight mb-4">
-                Installation
-              </h1>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Everything you need to install and configure before creating
-                your first Grit project. This guide covers system requirements,
-                tool installation, and the Grit CLI setup.
-              </p>
-            </div>
+        <div className="max-w-5xl mx-auto py-12 px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-14">
+            <p className="text-sm font-mono font-medium text-sky-400 mb-3 tracking-wide uppercase">
+              Getting Started
+            </p>
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-white mb-4">
+              Installation
+            </h1>
+            <p className="text-lg text-slate-400 leading-relaxed max-w-2xl">
+              Get up and running with Grit in minutes. Install the CLI, choose your architecture,
+              and scaffold a production-ready full-stack application.
+            </p>
+          </div>
 
-            <div className="prose-grit">
-              {/* System Requirements */}
-              <h2>System Requirements</h2>
-              <p>
-                Grit runs on macOS, Linux, and Windows. You need the following
-                tools installed:
-              </p>
-            </div>
-
-            <div className="mb-10">
-              <table className="w-full border-collapse">
+          {/* Prerequisites */}
+          <div className="mb-14">
+            <h2 className="text-xl font-semibold text-white mb-6">System Requirements</h2>
+            <div className="overflow-x-auto rounded-lg border border-white/[0.06]">
+              <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left text-sm font-semibold text-foreground pb-3 pr-4">
-                      Tool
-                    </th>
-                    <th className="text-left text-sm font-semibold text-foreground pb-3 pr-4">
-                      Minimum Version
-                    </th>
-                    <th className="text-left text-sm font-semibold text-foreground pb-3 pr-4">
-                      Required For
-                    </th>
-                    <th className="text-left text-sm font-semibold text-foreground pb-3">
-                      Check Command
-                    </th>
+                  <tr className="border-b border-white/[0.06] bg-white/[0.02]">
+                    <th className="px-4 py-3 text-left font-medium text-slate-300">Tool</th>
+                    <th className="px-4 py-3 text-left font-medium text-slate-300">Min Version</th>
+                    <th className="px-4 py-3 text-left font-medium text-slate-300 hidden sm:table-cell">Required For</th>
+                    <th className="px-4 py-3 text-left font-medium text-slate-300 hidden md:table-cell">Check</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-white/[0.04]">
                   {[
-                    {
-                      tool: "Go",
-                      version: "1.21+",
-                      purpose: "Backend API + CLI",
-                      check: "go version",
-                    },
-                    {
-                      tool: "Node.js",
-                      version: "18+",
-                      purpose: "Frontend apps",
-                      check: "node --version",
-                    },
-                    {
-                      tool: "pnpm",
-                      version: "8+",
-                      purpose: "Package management",
-                      check: "pnpm --version",
-                    },
-                    {
-                      tool: "Docker",
-                      version: "Latest",
-                      purpose: "PostgreSQL, Redis, MinIO",
-                      check: "docker --version",
-                    },
-                    {
-                      tool: "Docker Compose",
-                      version: "V2",
-                      purpose: "Service orchestration",
-                      check: "docker compose version",
-                    },
-                    {
-                      tool: "Git",
-                      version: "Any",
-                      purpose: "Version control",
-                      check: "git --version",
-                    },
+                    { tool: 'Go', version: '1.21+', for: 'API server', check: 'go version' },
+                    { tool: 'Node.js', version: '18+', for: 'Frontend apps', check: 'node --version' },
+                    { tool: 'pnpm', version: '8+', for: 'Package management', check: 'pnpm --version' },
+                    { tool: 'Docker', version: 'Latest', for: 'Infrastructure', check: 'docker --version' },
                   ].map((row) => (
-                    <tr key={row.tool} className="border-b border-border/50">
-                      <td className="text-sm text-foreground py-3 pr-4 font-medium">
-                        {row.tool}
-                      </td>
-                      <td className="text-sm text-muted-foreground py-3 pr-4 font-mono">
-                        {row.version}
-                      </td>
-                      <td className="text-sm text-muted-foreground py-3 pr-4">
-                        {row.purpose}
-                      </td>
-                      <td className="text-sm text-muted-foreground py-3 font-mono text-primary/60">
-                        {row.check}
+                    <tr key={row.tool} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="px-4 py-3 font-medium text-white">{row.tool}</td>
+                      <td className="px-4 py-3 font-mono text-sm text-sky-400">{row.version}</td>
+                      <td className="px-4 py-3 text-slate-400 hidden sm:table-cell">{row.for}</td>
+                      <td className="px-4 py-3 hidden md:table-cell">
+                        <code className="text-xs font-mono text-slate-500 bg-white/[0.04] px-1.5 py-0.5 rounded">{row.check}</code>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+          </div>
 
-            <div className="prose-grit">
-              {/* Installing Go */}
-              <h2>Installing Go</h2>
-              <p>
-                Go is required for both the Grit CLI and the backend API.
-                Download the latest version from the official website or use a
-                version manager.
-              </p>
-            </div>
+          {/* Installation Steps */}
+          <div className="mb-14">
+            <h2 className="text-xl font-semibold text-white mb-8">Install the Grit CLI</h2>
 
-            {/* macOS */}
-            <div className="mb-4">
-              <p className="text-sm font-semibold mb-2 text-foreground/80">
-                macOS (Homebrew)
-              </p>
-              <CodeBlock terminal code="brew install go" className="mb-0" />
-            </div>
-
-            {/* Linux */}
-            <div className="mb-4">
-              <p className="text-sm font-semibold mb-2 text-foreground/80">
-                Linux (Ubuntu/Debian)
-              </p>
-              <CodeBlock terminal code={`wget https://go.dev/dl/go1.22.0.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.22.0.linux-amd64.tar.gz
-export PATH=$PATH:/usr/local/go/bin`} className="mb-0" />
-            </div>
-
-            {/* Windows */}
-            <div className="mb-8">
-              <p className="text-sm font-semibold mb-2 text-foreground/80">
-                Windows
-              </p>
-              <div className="prose-grit">
+            <StepWithCode
+              number="01"
+              title="Install Grit"
+              description={
                 <p>
-                  Download the MSI installer from{" "}
-                  <a href="https://go.dev/dl/" target="_blank" rel="noreferrer">
-                    go.dev/dl
-                  </a>{" "}
-                  and run it. The installer adds Go to your system PATH
-                  automatically. Alternatively, use{" "}
-                  <code>winget install GoLang.Go</code> or{" "}
-                  <code>scoop install go</code>.
+                  Install the Grit CLI globally using <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">go install</code>.
+                  This gives you the <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">grit</code> command
+                  anywhere on your system.
                 </p>
-              </div>
-            </div>
+              }
+              code={`go install github.com/MUKE-coder/grit/v2/cmd/grit@latest`}
+              filename="Terminal"
+              language="bash"
+            />
 
-            <div className="prose-grit">
-              {/* Installing Node.js */}
-              <h2>Installing Node.js</h2>
-              <p>
-                Node.js 18 or later is required for the Next.js frontend apps.
-                We recommend using a version manager like <strong>nvm</strong>{" "}
-                or <strong>fnm</strong>.
-              </p>
-            </div>
+            <StepWithCode
+              number="02"
+              title="Create your project"
+              description={
+                <p>
+                  Run <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">grit new</code> and
+                  follow the interactive prompts to select your architecture and frontend framework.
+                </p>
+              }
+              code={`grit new my-app
 
-            <div className="mb-4">
-              <p className="text-sm font-semibold mb-2 text-foreground/80">
-                Using nvm (recommended)
-              </p>
-              <CodeBlock terminal code={`nvm install 20
-nvm use 20`} className="mb-0" />
-            </div>
+? Select architecture:
+  > Triple — Web + Admin + API (Turborepo)
+    Double — Web + API (Turborepo)
+    Single — Go API + embedded React SPA
+    API Only — Go API (no frontend)
+    Mobile — API + Expo (React Native)
 
-            <div className="mb-8">
-              <p className="text-sm font-semibold mb-2 text-foreground/80">
-                Using Homebrew (macOS)
-              </p>
-              <CodeBlock terminal code="brew install node@20" className="mb-0" />
-            </div>
+? Select frontend framework:
+  > Next.js — SSR, SEO, App Router
+    TanStack Router — Vite, fast builds, small bundle`}
+              filename="Terminal"
+              language="bash"
+            />
 
-            <div className="prose-grit">
-              {/* Installing pnpm */}
-              <h2>Installing pnpm</h2>
-              <p>
-                Grit uses pnpm for frontend package management. It is faster,
-                more disk-efficient, and enforces stricter dependency resolution
-                than npm or yarn.
-              </p>
-            </div>
+            <StepWithCode
+              number="03"
+              title="Start infrastructure"
+              description={
+                <p>
+                  Start PostgreSQL, Redis, MinIO, and Mailhog with Docker Compose.
+                  These services are pre-configured in the generated{' '}
+                  <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">docker-compose.yml</code>.
+                </p>
+              }
+              code={`cd my-app
+docker compose up -d`}
+              filename="Terminal"
+              language="bash"
+            />
 
-            <div className="mb-8">
-              <CodeBlock terminal code={`# Using npm (easiest)
-npm install -g pnpm
+            <StepWithCode
+              number="04"
+              title="Install dependencies & start"
+              description={
+                <p>
+                  Install frontend dependencies and start all development servers.
+                  The Go API runs on <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">:8080</code>,
+                  web app on <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">:3000</code>,
+                  and admin on <code className="text-sky-400 bg-white/[0.04] px-1.5 py-0.5 rounded text-[13px]">:3001</code>.
+                </p>
+              }
+              code={`pnpm install
+pnpm dev`}
+              filename="Terminal"
+              language="bash"
+            />
+          </div>
 
-# Or using corepack (built into Node.js)
-corepack enable
-corepack prepare pnpm@latest --activate`} className="mb-0" />
-            </div>
+          {/* Quick command reference */}
+          <div className="mb-14">
+            <h2 className="text-xl font-semibold text-white mb-4">Architecture shortcuts</h2>
+            <p className="text-slate-400 mb-6">
+              Skip the interactive prompts with flags:
+            </p>
+            <CodeBlock language="bash" filename="Terminal" code={`# Triple (default) with Next.js
+grit new my-app --triple --next
 
-            <div className="prose-grit">
-              {/* Installing Docker */}
-              <h2>Installing Docker</h2>
-              <p>
-                Docker is used to run PostgreSQL, Redis, MinIO, and Mailhog in
-                development. Install Docker Desktop for your platform:
-              </p>
-              <ul>
-                <li>
-                  <strong>macOS:</strong>{" "}
-                  <a
-                    href="https://docs.docker.com/desktop/install/mac-install/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Docker Desktop for Mac
-                  </a>
-                </li>
-                <li>
-                  <strong>Windows:</strong>{" "}
-                  <a
-                    href="https://docs.docker.com/desktop/install/windows-install/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Docker Desktop for Windows
-                  </a>{" "}
-                  (WSL2 backend recommended)
-                </li>
-                <li>
-                  <strong>Linux:</strong>{" "}
-                  <a
-                    href="https://docs.docker.com/engine/install/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Docker Engine
-                  </a>{" "}
-                  +{" "}
-                  <a
-                    href="https://docs.docker.com/compose/install/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Docker Compose V2
-                  </a>
-                </li>
-              </ul>
-              <p>After installation, verify Docker is running:</p>
-            </div>
+# Single app with TanStack Router (Vite)
+grit new my-app --single --vite
 
-            <div className="mb-8">
-              <CodeBlock terminal code={`docker --version
-docker compose version`} className="mb-0" />
-            </div>
-
-            <div className="prose-grit">
-              {/* Installing the Grit CLI */}
-              <h2>Installing the Grit CLI</h2>
-              <p>
-                The Grit CLI is a Go binary that you install globally. It
-                provides the <code>grit</code> command for scaffolding projects,
-                generating resources, running migrations, and syncing types.
-              </p>
-            </div>
-
-            <div className="mb-4">
-              <CodeBlock terminal code="go install github.com/MUKE-coder/grit/v2/cmd/grit@latest" className="mb-0 glow-purple-sm" />
-            </div>
-
-            <div className="prose-grit">
-              <p>
-                This downloads, compiles, and installs the <code>grit</code>{" "}
-                binary into your <code>$GOPATH/bin</code> directory (usually{" "}
-                <code>~/go/bin</code>). Make sure this directory is in your
-                system <code>PATH</code>.
-              </p>
-
-              {/* Verify */}
-              <h3>Verifying the Installation</h3>
-              <p>
-                Run the following command to verify everything is installed
-                correctly:
-              </p>
-            </div>
-
-            <div className="mb-8">
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  </div>
-                  <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">
-                    terminal
-                  </span>
-                </div>
-                <div className="p-5 font-mono text-sm space-y-1">
-                  <div>
-                    <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">grit --help</span>
-                  </div>
-                  <div className="text-muted-foreground/40 text-xs mt-3 space-y-1">
-                    <div className="text-primary/40">
-                      {"   ____      _  _   "}
-                    </div>
-                    <div className="text-primary/40">
-                      {"  / ___|_ __(_)| |_ "}
-                    </div>
-                    <div className="text-primary/40">
-                      {" | |  _| '__| || __|"}
-                    </div>
-                    <div className="text-primary/40">
-                      {" | |_| | |  | || |_ "}
-                    </div>
-                    <div className="text-primary/40">
-                      {"  \\____|_|  |_| \\__|"}
-                    </div>
-                    <div className="mt-2">Go + React. Built with Grit.</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="prose-grit">
-              {/* Creating First Project */}
-              <h2>Creating Your First Project</h2>
-              <p>
-                With all tools installed, you are ready to create your first
-                Grit project:
-              </p>
-            </div>
-
-            <div className="mb-4">
-              <CodeBlock terminal code="grit new my-saas-app" className="mb-0 glow-purple-sm" />
-            </div>
-
-            <div className="prose-grit">
-              {/* Project Flags */}
-              <h2>Project Flags</h2>
-              <p>
-                The <code>grit new</code> command supports flags to customize
-                what gets scaffolded:
-              </p>
-            </div>
-
-            <div className="mb-8">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left text-sm font-semibold text-foreground pb-3 pr-4">
-                      Flag
-                    </th>
-                    <th className="text-left text-sm font-semibold text-foreground pb-3 pr-4">
-                      Description
-                    </th>
-                    <th className="text-left text-sm font-semibold text-foreground pb-3">
-                      What Gets Created
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    {
-                      flag: "(default)",
-                      desc: "Full-stack project",
-                      creates:
-                        "Go API + Next.js web + admin panel + shared types + Docker",
-                    },
-                    {
-                      flag: "--api",
-                      desc: "Backend only",
-                      creates:
-                        "Go API with auth, Docker setup, no frontend apps",
-                    },
-                    {
-                      flag: "--full",
-                      desc: "Everything + mobile",
-                      creates: "Default + Expo mobile app + docs site",
-                    },
-                  ].map((row) => (
-                    <tr key={row.flag} className="border-b border-border/50">
-                      <td className="text-sm text-foreground py-3 pr-4 font-mono text-primary/70">
-                        {row.flag}
-                      </td>
-                      <td className="text-sm text-muted-foreground py-3 pr-4">
-                        {row.desc}
-                      </td>
-                      <td className="text-sm text-muted-foreground py-3">
-                        {row.creates}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="prose-grit">
-              <p>Examples:</p>
-            </div>
-
-            <div className="mb-8">
-              <CodeBlock terminal code={`# Full-stack (default)
-grit new my-crm
+# Double (web + api) with TanStack Router
+grit new my-app --double --vite
 
 # API only (no frontend)
-grit new my-api --api
+grit new my-app --api
 
-# Full + mobile + docs
-grit new my-startup --full`} className="mb-0" />
+# Desktop app (Wails)
+grit new-desktop my-app`} />
+          </div>
+
+          {/* Services table */}
+          <div className="mb-14">
+            <h2 className="text-xl font-semibold text-white mb-4">Default services</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                { name: 'Go API', url: 'http://localhost:8080', desc: 'Backend server' },
+                { name: 'Web App', url: 'http://localhost:3000', desc: 'Next.js or TanStack' },
+                { name: 'Admin Panel', url: 'http://localhost:3001', desc: 'Resource management' },
+                { name: 'API Docs', url: 'http://localhost:8080/docs', desc: 'Auto-generated' },
+                { name: 'GORM Studio', url: 'http://localhost:8080/studio', desc: 'Database browser' },
+                { name: 'Mailhog', url: 'http://localhost:8025', desc: 'Email testing' },
+              ].map((svc) => (
+                <div key={svc.name} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-white">{svc.name}</span>
+                    <code className="text-[11px] font-mono text-sky-400/70">{svc.url.replace('http://', '')}</code>
+                  </div>
+                  <p className="text-xs text-slate-500">{svc.desc}</p>
+                </div>
+              ))}
             </div>
+          </div>
 
-            <div className="prose-grit">
-              {/* Troubleshooting */}
-              <h2>Troubleshooting</h2>
-
-              <h3>
-                <code>grit: command not found</code>
-              </h3>
-              <p>
-                This means <code>$GOPATH/bin</code> is not in your system{" "}
-                <code>PATH</code>. Add the following to your shell profile (
-                <code>~/.zshrc</code>, <code>~/.bashrc</code>, or{" "}
-                <code>~/.profile</code>):
-              </p>
-            </div>
-
-            <div className="mb-4">
-              <CodeBlock filename="~/.zshrc" code={`export PATH=$PATH:$(go env GOPATH)/bin`} />
-            </div>
-
-            <div className="prose-grit">
-              <p>
-                Then reload your shell: <code>source ~/.zshrc</code>. On
-                Windows, make sure <code>%GOPATH%\\bin</code> is in your system
-                PATH environment variable.
-              </p>
-
-              <h3>Docker daemon not running</h3>
-              <p>
-                If <code>docker compose up</code> fails with a connection error,
-                make sure Docker Desktop is running. On Linux, start the Docker
-                daemon with <code>sudo systemctl start docker</code>.
-              </p>
-
-              <h3>Port conflicts</h3>
-              <p>
-                If ports 5432, 6379, 8080, 3000, or 3001 are already in use,
-                edit the <code>.env</code> file and{" "}
-                <code>docker-compose.yml</code> to use different ports. Common
-                conflicts:
-              </p>
-              <ul>
-                <li>Port 5432 -- another PostgreSQL instance is running</li>
-                <li>
-                  Port 3000 -- another Next.js or React dev server is running
-                </li>
-                <li>Port 8080 -- another API server or proxy is running</li>
-              </ul>
-
-              <h3>pnpm install fails</h3>
-              <p>
-                If <code>pnpm install</code> fails with peer dependency errors,
-                try deleting the lockfile and <code>node_modules</code> folders
-                and running again:
-              </p>
-            </div>
-
-            <div className="mb-8">
-              <CodeBlock terminal code={`rm -rf node_modules pnpm-lock.yaml apps/*/node_modules packages/*/node_modules
-pnpm install`} className="mb-0" />
-            </div>
-
-            <div className="prose-grit">
-              <h3>Cloud-only setup (no Docker)</h3>
-              <p>
-                If you cannot run Docker, Grit includes a{" "}
-                <code>.env.cloud.example</code> file that configures the project
-                to use cloud services instead:
-              </p>
-              <ul>
-                <li>
-                  <strong>Database:</strong>{" "}
-                  <a href="https://neon.tech" target="_blank" rel="noreferrer">
-                    Neon
-                  </a>{" "}
-                  (free serverless PostgreSQL)
-                </li>
-                <li>
-                  <strong>Redis:</strong>{" "}
-                  <a
-                    href="https://upstash.com"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Upstash
-                  </a>{" "}
-                  (free serverless Redis)
-                </li>
-                <li>
-                  <strong>Storage:</strong>{" "}
-                  <a
-                    href="https://dash.cloudflare.com"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Cloudflare R2
-                  </a>{" "}
-                  or{" "}
-                  <a
-                    href="https://www.backblaze.com/b2"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Backblaze B2
-                  </a>
-                </li>
-              </ul>
-              <p>Copy the cloud example and fill in your credentials:</p>
-            </div>
-
-            <div className="mb-8">
-              <CodeBlock terminal code="cp .env.cloud.example .env" className="mb-0" />
-            </div>
-
-            {/* Nav */}
-            <div className="flex flex-wrap gap-3 mt-12 pt-6 border-t border-border/30">
-              <Button
-                variant="outline"
-                asChild
-                className="border-border/60 bg-transparent hover:bg-accent/50"
-              >
-                <Link href="/docs/getting-started/quick-start">
-                  Quick Start
-                </Link>
-              </Button>
-              <Button asChild className="glow-purple-sm ml-auto">
-                <Link href="/docs/getting-started/project-structure">
-                  Project Structure
-                  <ArrowRight className="ml-1.5 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
+          {/* Nav */}
+          <div className="flex items-center justify-between pt-8 border-t border-white/[0.06]">
+            <Button variant="ghost" size="sm" asChild className="text-slate-500 hover:text-white">
+              <Link href="/docs/getting-started/quick-start" className="gap-1.5">
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Quick Start
+              </Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild className="text-slate-500 hover:text-white">
+              <Link href="/docs/getting-started/project-structure" className="gap-1.5">
+                Project Structure
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
           </div>
         </div>
       </main>
     </div>
-  );
+  )
 }
