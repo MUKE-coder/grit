@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Github, Sun, Moon } from 'lucide-react'
+import { Github, Youtube, Heart, Sun, Moon } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { SearchDialog } from '@/components/search-dialog'
@@ -23,13 +23,13 @@ export function SiteHeader() {
         {/* Logo */}
         <div className="mr-6 lg:mr-8 flex items-center">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-sky-500/10 transition-colors group-hover:bg-sky-500/20">
-              <span className="text-sky-400 font-mono font-bold text-xs">G</span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 transition-colors group-hover:bg-primary/20">
+              <span className="text-primary font-mono font-bold text-xs">G</span>
             </div>
-            <span className="font-semibold text-[15px] tracking-tight text-white/90">
+            <span className="font-semibold text-[15px] tracking-tight text-foreground">
               Grit
             </span>
-            <span className="hidden sm:inline-flex items-center rounded-full bg-sky-400/10 border border-sky-400/20 px-2 py-0.5 text-[10px] font-mono font-medium text-sky-400/80">
+            <span className="hidden sm:inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-mono font-medium text-primary/80">
               v3.5.0
             </span>
           </Link>
@@ -41,12 +41,11 @@ export function SiteHeader() {
             { label: 'Docs', href: '/docs' },
             { label: 'Components', href: '/docs/admin/resources' },
             { label: 'Showcase', href: '/showcase' },
-            { label: 'Blog', href: 'https://gritcms.com', external: true },
+            { label: 'Hire Us', href: '/hire' },
           ].map((item) => (
             <Link
               key={item.label}
               href={item.href}
-              {...('external' in item ? { target: '_blank', rel: 'noreferrer' } : {})}
               className="px-3 py-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
             >
               {item.label}
@@ -55,7 +54,7 @@ export function SiteHeader() {
         </nav>
 
         {/* Right side */}
-        <div className="flex flex-1 items-center justify-end gap-1.5">
+        <div className="flex flex-1 items-center justify-end gap-1">
           <SearchDialog />
 
           {mounted && (
@@ -77,7 +76,21 @@ export function SiteHeader() {
             </Link>
           </Button>
 
-          <Button size="sm" className="hidden md:inline-flex h-8 px-4 text-xs font-medium bg-sky-500 hover:bg-sky-400 text-white border-0 rounded-full" asChild>
+          <Button variant="ghost" size="icon" className="hidden sm:inline-flex h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50" asChild>
+            <Link href="https://www.youtube.com/@JBWEBDEVELOPER" target="_blank" rel="noreferrer">
+              <Youtube className="h-4 w-4" />
+              <span className="sr-only">YouTube</span>
+            </Link>
+          </Button>
+
+          <Button variant="ghost" size="icon" className="hidden sm:inline-flex h-8 w-8 text-pink-500/70 hover:text-pink-500 hover:bg-pink-500/10" asChild>
+            <Link href="/donate">
+              <Heart className="h-4 w-4" />
+              <span className="sr-only">Sponsor</span>
+            </Link>
+          </Button>
+
+          <Button size="sm" className="hidden md:inline-flex h-8 px-4 text-xs font-medium bg-primary hover:bg-primary/80 text-primary-foreground border-0 rounded-full" asChild>
             <Link href="/docs/getting-started/quick-start">
               Get Started
             </Link>

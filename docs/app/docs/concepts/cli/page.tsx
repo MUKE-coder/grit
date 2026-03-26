@@ -25,8 +25,10 @@ export default function CLICommandsPage() {
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 The Grit CLI is a single binary that scaffolds projects, generates full-stack
-                resources, and syncs types between Go and TypeScript. Install it once and use it
-                across all your Grit projects.
+                resources, and syncs types between Go and TypeScript. Running{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit new</code> is
+                interactive by default -- it walks you through architecture mode and frontend
+                selection. Install it once and use it across all your Grit projects.
               </p>
             </div>
 
@@ -398,7 +400,7 @@ grit rm resource <Name>`} />
                     <tbody className="text-muted-foreground">
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt;</td>
-                        <td className="px-4 py-2.5">Scaffold a new full-stack project</td>
+                        <td className="px-4 py-2.5">Scaffold a new project (interactive by default)</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt; --api</td>
@@ -407,6 +409,30 @@ grit rm resource <Name>`} />
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt; --full</td>
                         <td className="px-4 py-2.5">Scaffold everything including docs</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt; --single</td>
+                        <td className="px-4 py-2.5">Single architecture (API only)</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt; --double</td>
+                        <td className="px-4 py-2.5">Double architecture (API + web)</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt; --triple</td>
+                        <td className="px-4 py-2.5">Triple architecture (API + web + admin)</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt; --vite</td>
+                        <td className="px-4 py-2.5">Use TanStack Router (Vite) frontend</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt; --next</td>
+                        <td className="px-4 py-2.5">Use Next.js frontend</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">--arch, --frontend</td>
+                        <td className="px-4 py-2.5">Long-form flags for architecture and frontend</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit generate resource &lt;Name&gt;</td>
@@ -455,6 +481,22 @@ grit rm resource <Name>`} />
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit update</td>
                         <td className="px-4 py-2.5">Remove old CLI and install latest version</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit routes</td>
+                        <td className="px-4 py-2.5">List all registered API routes</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit down</td>
+                        <td className="px-4 py-2.5">Enable maintenance mode (503)</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit up</td>
+                        <td className="px-4 py-2.5">Disable maintenance mode</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit deploy</td>
+                        <td className="px-4 py-2.5">Deploy to production server</td>
                       </tr>
                       <tr>
                         <td className="px-4 py-2.5 font-mono text-xs">grit version</td>

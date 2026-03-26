@@ -26,10 +26,10 @@ export default function DocsIntroductionPage() {
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Grit is a full-stack meta-framework purpose-built for CRMs, admin dashboards, SaaS
                 products, and internal tools. It fuses a{' '}
-                <strong className="text-foreground">Go backend</strong> (Gin + GORM) with a{' '}
-                <strong className="text-foreground">Next.js frontend</strong> (React + App Router) and a{' '}
-                <strong className="text-foreground">Filament-like admin panel</strong> in a single
-                monorepo &mdash; with authentication, file storage, email, background jobs, AI
+                <strong className="text-foreground">Go backend</strong> (Gin + GORM) with your choice of{' '}
+                <strong className="text-foreground">Next.js or TanStack Router (Vite)</strong> frontend and a{' '}
+                <strong className="text-foreground">Filament-like admin panel</strong> &mdash; with 5 architecture
+                modes, an interactive CLI, authentication, file storage, email, background jobs, AI
                 integration, and a visual database browser all wired together out of the box.
               </p>
             </div>
@@ -120,7 +120,7 @@ export default function DocsIntroductionPage() {
                   <h3 className="text-sm font-semibold mb-1.5">Self-Host Everything</h3>
                   <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
                     No vendor lock-in. No serverless cold starts. No per-request pricing. Grit compiles
-                    to a single Go binary and static Next.js bundles. Deploy on a $5 VPS, your own
+                    to a single Go binary and static frontend bundles (Next.js or Vite). Deploy on a $5 VPS, your own
                     servers, or any cloud. You own every byte of your infrastructure.
                   </p>
                 </div>
@@ -158,7 +158,7 @@ export default function DocsIntroductionPage() {
                 Think of Grit as <strong>Laravel&apos;s developer experience, but with Go&apos;s performance
                 and React&apos;s frontend ecosystem.</strong> Instead of stitching together 15+ tools to build
                 a modern full-stack app, you run one command and get everything: a Go API server, a React
-                frontend, an admin dashboard, shared TypeScript types, Docker infrastructure, and a CLI
+                frontend (Next.js or TanStack Router), an admin dashboard, shared TypeScript types, Docker infrastructure, and a CLI
                 that generates full-stack resources for you.
               </p>
               <p>
@@ -379,8 +379,8 @@ export default function DocsIntroductionPage() {
                 {[
                   {
                     icon: Terminal,
-                    title: 'CLI Scaffolder',
-                    desc: 'grit new myapp creates a complete monorepo with Go API, Next.js frontend, admin panel, shared types, and Docker setup.',
+                    title: 'Interactive CLI Scaffolder',
+                    desc: 'grit new myapp launches an interactive CLI to pick your architecture (single/double/triple) and frontend (Next.js or TanStack Router). Five modes from API-only to full monorepo.',
                   },
                   {
                     icon: Code2,
@@ -431,7 +431,7 @@ export default function DocsIntroductionPage() {
                   {
                     step: '1',
                     title: 'Scaffold your project',
-                    description: 'Run grit new myapp to generate the full monorepo -- Go API with auth, Next.js web app, admin panel, shared types, Docker Compose, and GORM Studio.',
+                    description: 'Run grit new myapp to launch the interactive CLI. Choose your architecture mode and frontend framework (Next.js or TanStack Router), and Grit generates the full project -- Go API with auth, frontend app, admin panel, shared types, Docker Compose, and GORM Studio.',
                   },
                   {
                     step: '2',

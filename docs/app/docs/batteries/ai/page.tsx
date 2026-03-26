@@ -24,9 +24,9 @@ export default function AIPage() {
                 AI Integration
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Grit ships with multi-provider AI support for Claude (Anthropic), OpenAI, and Gemini (Google).
-                Generate completions, run multi-turn conversations, and stream responses via SSE -- all through
-                a unified Go service with raw <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">net/http</code> calls (no SDK dependencies).
+                Grit integrates with Vercel AI Gateway — one API key gives you access to hundreds of models
+                from all major providers (Anthropic, OpenAI, Google, and more) through a single OpenAI-compatible
+                endpoint. Generate completions, run multi-turn conversations, and stream responses via SSE.
               </p>
             </div>
 
@@ -37,42 +37,26 @@ export default function AIPage() {
                   Configuration
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  AI is configured via three environment variables. Switch between Claude, OpenAI,
-                  and Gemini by changing the provider and model -- no code changes required.
+                  AI is configured via three environment variables. Vercel AI Gateway uses a{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">provider/model</code> format,
+                  so switching models is just a string change -- no code changes required.
                 </p>
 
-                <CodeBlock language="bash" filename=".env" code={`# AI Configuration
-AI_PROVIDER=claude                   # "claude", "openai", or "gemini"
-AI_API_KEY=sk-ant-xxxxxxxxxxxxx      # API key for the selected provider
-AI_MODEL=claude-sonnet-4-5-20250929  # Model identifier`} />
+                <CodeBlock language="bash" filename=".env" code={`# AI Configuration (Vercel AI Gateway)
+AI_GATEWAY_API_KEY=                           # Get from vercel.com/ai-gateway
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format
+AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1`} />
 
-                <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border/30 bg-accent/20">
-                        <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Provider</th>
-                        <th className="text-left px-4 py-2.5 font-medium text-foreground/80">AI_PROVIDER</th>
-                        <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Example Models</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-muted-foreground">
-                      <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-medium">Anthropic Claude</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">claude</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">claude-sonnet-4-20250514, claude-opus-4-20250514</td>
-                      </tr>
-                      <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-medium">OpenAI</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">openai</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">gpt-4o, gpt-4o-mini</td>
-                      </tr>
-                      <tr>
-                        <td className="px-4 py-2.5 font-medium">Google Gemini</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">gemini</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">gemini-2.0-flash, gemini-1.5-pro</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div className="rounded-lg border border-border/20 bg-accent/20 p-3 mt-4">
+                  <p className="text-sm text-muted-foreground/70">
+                    <strong className="text-foreground/80">Model format:</strong>{" "}
+                    Models use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">provider/model</code> format.
+                    Examples: <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">anthropic/claude-sonnet-4-6</code>,{" "}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">openai/gpt-5.4</code>,{" "}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">google/gemini-2.5-pro</code>.
+                    See the full list at{" "}
+                    <a href="https://vercel.com/ai-gateway" target="_blank" rel="noreferrer" className="text-primary/70 underline underline-offset-2">vercel.com/ai-gateway</a>.
+                  </p>
                 </div>
               </div>
 
@@ -83,8 +67,8 @@ AI_MODEL=claude-sonnet-4-5-20250929  # Model identifier`} />
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   The AI service at <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">internal/ai/ai.go</code> provides
-                  a unified interface that works with Claude, OpenAI, and Gemini. It handles the differences
-                  in API formats, authentication headers, and response structures internally.
+                  a unified interface powered by Vercel AI Gateway. It sends requests to a single OpenAI-compatible
+                  endpoint, which routes to the correct provider based on your model string.
                 </p>
 
                 <CodeBlock filename="internal/ai/ai.go (types)" code={`// Message represents a chat message.
@@ -118,10 +102,10 @@ type Usage struct {
 type StreamHandler func(chunk string) error`} />
 
                 <CodeBlock filename="internal/ai/ai.go (methods)" code={`// New creates a new AI service instance.
-func New(provider, apiKey, model string) *AI
+func New(apiKey, model, gatewayURL string) *AI
 
 // Complete generates a response from a single prompt or message history.
-// Automatically routes to Claude, OpenAI, or Gemini based on provider config.
+// Routes through Vercel AI Gateway to the provider specified in the model string.
 func (a *AI) Complete(ctx context.Context, req CompletionRequest) (*CompletionResponse, error)
 
 // Stream generates a streaming response, calling handler for each text chunk.
@@ -138,7 +122,7 @@ func (a *AI) Stream(ctx context.Context, req CompletionRequest, handler StreamHa
                   The simplest way to use the AI service. Send a prompt, get a response.
                 </p>
 
-                <CodeBlock filename="complete-example.go" code={`aiService := ai.New("claude", apiKey, "claude-sonnet-4-20250514")
+                <CodeBlock filename="complete-example.go" code={`aiService := ai.New(apiKey, "anthropic/claude-sonnet-4-6", "https://ai-gateway.vercel.sh/v1")
 
 resp, err := aiService.Complete(ctx, ai.CompletionRequest{
     Prompt:    "Explain the Go concurrency model in 3 sentences.",
@@ -149,7 +133,7 @@ if err != nil {
 }
 
 fmt.Println(resp.Content)  // "Go uses goroutines..."
-fmt.Println(resp.Model)    // "claude-sonnet-4-20250514"
+fmt.Println(resp.Model)    // "anthropic/claude-sonnet-4-6"
 fmt.Println(resp.Usage.InputTokens)  // 12
 fmt.Println(resp.Usage.OutputTokens) // 87`} />
 
@@ -220,7 +204,7 @@ fmt.Println(resp.Usage.OutputTokens) // 87`} />
 {
   "data": {
     "content": "To generate a resource in Grit, use the CLI...",
-    "model": "claude-sonnet-4-20250514",
+    "model": "anthropic/claude-sonnet-4-6",
     "usage": {
       "input_tokens": 45,
       "output_tokens": 120
@@ -358,66 +342,31 @@ err := aiService.Stream(ctx, ai.CompletionRequest{
                 </div>
               </div>
 
-              {/* Switching Providers */}
+              {/* Switching Models */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
-                  Switching Providers
+                  Switching Models
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Switching between Claude, OpenAI, and Gemini requires only environment variable changes.
-                  The AI service abstracts away the differences in request/response formats,
-                  authentication headers, and streaming protocols.
+                  With Vercel AI Gateway, switching between providers is just a model string change.
+                  The gateway handles all differences in API formats, authentication, and streaming
+                  protocols behind a single OpenAI-compatible endpoint.
                 </p>
 
-                <CodeBlock filename=".env (Claude)" code={`AI_PROVIDER=claude
-AI_API_KEY=sk-ant-api03-xxxxxxxxxxxx
-AI_MODEL=claude-sonnet-4-20250514`} />
+                <CodeBlock filename=".env (Anthropic Claude)" code={`AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6`} />
 
-                <CodeBlock filename=".env (OpenAI)" code={`AI_PROVIDER=openai
-AI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
-AI_MODEL=gpt-4o`} />
+                <CodeBlock filename=".env (OpenAI)" code={`AI_GATEWAY_MODEL=openai/gpt-5.4`} />
 
-                <CodeBlock filename=".env (Gemini)" code={`AI_PROVIDER=gemini
-AI_API_KEY=AIzaSyxxxxxxxxxxxxxxxxxxxxxxx
-AI_MODEL=gemini-2.0-flash`} />
+                <CodeBlock filename=".env (Google Gemini)" code={`AI_GATEWAY_MODEL=google/gemini-2.5-pro`} />
 
-                <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border/30 bg-accent/20">
-                        <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Difference</th>
-                        <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Claude</th>
-                        <th className="text-left px-4 py-2.5 font-medium text-foreground/80">OpenAI</th>
-                        <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Gemini</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-muted-foreground">
-                      <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5">API URL</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">api.anthropic.com/v1/messages</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">api.openai.com/v1/chat/completions</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">generativelanguage.googleapis.com</td>
-                      </tr>
-                      <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5">Auth</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">x-api-key header</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">Authorization: Bearer</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">?key= query param</td>
-                      </tr>
-                      <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5">Response format</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">content[0].text</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">choices[0].message.content</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">candidates[0].content.parts[0].text</td>
-                      </tr>
-                      <tr>
-                        <td className="px-4 py-2.5">Stream event</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">content_block_delta</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">choices[0].delta.content</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">candidates[0].content.parts[0].text</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div className="rounded-lg border border-border/20 bg-accent/20 p-3 mt-4">
+                  <p className="text-sm text-muted-foreground/70">
+                    <strong className="text-foreground/80">One key, all providers.</strong>{" "}
+                    You do not need separate API keys for each provider. Your single{" "}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">AI_GATEWAY_API_KEY</code>{" "}
+                    works with every model available on Vercel AI Gateway. The gateway URL stays the same:{" "}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">https://ai-gateway.vercel.sh/v1</code>.
+                  </p>
                 </div>
               </div>
 
@@ -434,9 +383,9 @@ AI_MODEL=gemini-2.0-flash`} />
 
                 <CodeBlock filename="cmd/server/main.go (excerpt)" code={`// Initialize AI service (optional -- graceful if not configured)
 var aiService *ai.AI
-if cfg.AIProvider != "" && cfg.AIAPIKey != "" {
-    aiService = ai.New(cfg.AIProvider, cfg.AIAPIKey, cfg.AIModel)
-    log.Printf("AI service initialized: %s (%s)", cfg.AIProvider, cfg.AIModel)
+if cfg.AIGatewayAPIKey != "" {
+    aiService = ai.New(cfg.AIGatewayAPIKey, cfg.AIGatewayModel, cfg.AIGatewayURL)
+    log.Printf("AI service initialized: %s", cfg.AIGatewayModel)
 }
 
 // Register AI routes

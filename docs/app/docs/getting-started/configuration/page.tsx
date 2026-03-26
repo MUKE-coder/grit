@@ -301,21 +301,21 @@ GORM_STUDIO_ENABLED=true`} />
             <div className="prose-grit">
               <h2>AI Integration</h2>
               <p>
-                Grit ships with built-in AI support for both Anthropic Claude and OpenAI. The
-                AI service provides text completion and streaming endpoints.
+                Grit ships with built-in AI support via Vercel AI Gateway (one key, hundreds of models).
+                The AI service provides text completion and streaming endpoints.
               </p>
             </div>
 
             <div className="mb-10">
-              <CodeBlock language="bash" filename=".env" code={`# AI — Text generation (Claude or OpenAI)
-AI_PROVIDER=claude           # "claude" or "openai"
-AI_API_KEY=                  # Your API key (sk-ant-... or sk-...)
-AI_MODEL=claude-sonnet-4-5-20250929`} />
+              <CodeBlock language="bash" filename=".env" code={`# AI — Vercel AI Gateway (one key, hundreds of models)
+AI_GATEWAY_API_KEY=                           # Get from vercel.com/ai-gateway
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format
+AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1`} />
               <div className="mt-4 space-y-3">
                 {[
-                  { variable: 'AI_PROVIDER', default: 'claude', desc: 'Which AI provider to use. Options: claude (Anthropic) or openai. The AI service uses the appropriate API format based on this setting.' },
-                  { variable: 'AI_API_KEY', default: '(your key)', desc: 'Your AI provider API key. For Anthropic, starts with sk-ant-. For OpenAI, starts with sk-. Leave empty if you do not use AI features.' },
-                  { variable: 'AI_MODEL', default: 'claude-sonnet-4-5-20250929', desc: 'The model to use for completions. For Claude: claude-sonnet-4-5-20250929, claude-opus-4-6, etc. For OpenAI: gpt-4o, gpt-4o-mini, etc.' },
+                  { variable: 'AI_GATEWAY_API_KEY', default: '(your key)', desc: 'Your Vercel AI Gateway API key. Get one at vercel.com/ai-gateway. A single key gives you access to all providers (Anthropic, OpenAI, Google, and more). Leave empty if you do not use AI features.' },
+                  { variable: 'AI_GATEWAY_MODEL', default: 'anthropic/claude-sonnet-4-6', desc: 'The model to use, in provider/model format. Examples: anthropic/claude-sonnet-4-6, openai/gpt-5.4, google/gemini-2.5-pro.' },
+                  { variable: 'AI_GATEWAY_URL', default: 'https://ai-gateway.vercel.sh/v1', desc: 'The Vercel AI Gateway endpoint URL. This is the same for all providers and models. You should not need to change this.' },
                 ].map((item) => (
                   <div key={item.variable} className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                     <div className="flex items-center gap-2 mb-1">
@@ -325,6 +325,31 @@ AI_MODEL=claude-sonnet-4-5-20250929`} />
                     <p className="text-xs text-muted-foreground/60 leading-relaxed">{item.desc}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* TOTP Config */}
+            <div className="prose-grit">
+              <h2>Two-Factor Authentication</h2>
+              <p>
+                Grit supports TOTP-based two-factor authentication. The issuer name appears in
+                authenticator apps (e.g., Google Authenticator, Authy) alongside the user&apos;s account.
+              </p>
+            </div>
+
+            <div className="mb-10">
+              <CodeBlock language="bash" filename=".env" code={`# Two-Factor Authentication (TOTP)
+TOTP_ISSUER=myapp`} />
+              <div className="mt-4 space-y-3">
+                <div className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <code className="text-sm font-mono text-primary/70 font-medium">TOTP_ISSUER</code>
+                    <span className="text-[10px] font-mono text-muted-foreground/40 bg-accent/50 px-1.5 py-0.5 rounded">myapp</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground/60 leading-relaxed">
+                    The issuer name displayed in authenticator apps when users set up 2FA. Set this to your application or company name.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -414,10 +439,13 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 # GORM Studio
 GORM_STUDIO_ENABLED=true
 
-# AI
-AI_PROVIDER=claude
-AI_API_KEY=
-AI_MODEL=claude-sonnet-4-5-20250929`} />
+# AI (Vercel AI Gateway)
+AI_GATEWAY_API_KEY=
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6
+AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
+
+# Two-Factor Authentication (TOTP)
+TOTP_ISSUER=myapp`} />
             </div>
 
             <div className="prose-grit">
