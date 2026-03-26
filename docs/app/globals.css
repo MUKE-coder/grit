@@ -65,7 +65,7 @@
     --chart-3: 36 100% 50%;
     --chart-4: 340 75% 55%;
     --chart-5: 217 91% 60%;
-    --sidebar-background: 222 47% 5%;  /* darker than bg */
+    --sidebar-background: 222 47% 3.5%;  /* noticeably darker than bg */
     --sidebar-foreground: 213 31% 91%;
     --sidebar-primary: 199 89% 48%;
     --sidebar-primary-foreground: 0 0% 100%;

@@ -272,7 +272,7 @@ export function DocsSidebar() {
   }, [pathname])
 
   return (
-    <aside ref={sidebarRef} className="fixed top-16 z-30 hidden h-[calc(100vh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-border/40 bg-background py-8 lg:block">
+    <aside ref={sidebarRef} className="fixed top-16 z-30 hidden h-[calc(100vh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-border/40 bg-sidebar-background py-8 lg:block">
       <nav className="px-2">
         {navItems.map((item) => (
           <NavSection key={item.title} item={item} />
