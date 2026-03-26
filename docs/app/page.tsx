@@ -420,9 +420,11 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
       {/* ═══ CREATOR QUOTE ═══ */}
       <section className="py-24 px-6 border-t border-border/40 bg-card/30">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-            <span className="text-2xl font-bold text-primary">JB</span>
-          </div>
+          <img
+            src="https://avatars.githubusercontent.com/u/64189841?v=4"
+            alt="Muke JohnBaptist"
+            className="h-16 w-16 rounded-full mx-auto mb-6 ring-2 ring-primary/20"
+          />
           <blockquote className="text-xl md:text-2xl font-medium text-foreground leading-relaxed mb-6">
             &ldquo;I built Grit because I was tired of spending weeks setting up the same boilerplate for every project.
             Auth, admin panels, file uploads, background jobs — they should just work. Now they do.
