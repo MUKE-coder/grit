@@ -259,10 +259,16 @@ func Run(opts Options) error {
 	}
 
 	if opts.ShouldIncludeAdmin() {
-		// Write admin panel
-		spinner.Printf("  → Scaffolding admin panel...\n")
-		if err := writeAdminFiles(root, opts); err != nil {
-			return fmt.Errorf("writing admin files: %w", err)
+		if opts.UseTanStack() {
+			spinner.Printf("  → Scaffolding TanStack Router admin panel (Vite)...\n")
+			if err := writeAdminTanStackFiles(root, opts); err != nil {
+				return fmt.Errorf("writing TanStack admin files: %w", err)
+			}
+		} else {
+			spinner.Printf("  → Scaffolding admin panel...\n")
+			if err := writeAdminFiles(root, opts); err != nil {
+				return fmt.Errorf("writing admin files: %w", err)
+			}
 		}
 	}
 
@@ -335,31 +341,51 @@ func createDirectories(root string, opts Options) error {
 	}
 
 	if opts.ShouldIncludeAdmin() {
-		dirs = append(dirs,
-			filepath.Join(root, "apps", "admin", "app", "(auth)", "login"),
-			filepath.Join(root, "apps", "admin", "app", "(auth)", "sign-up"),
-			filepath.Join(root, "apps", "admin", "app", "(auth)", "forgot-password"),
-			filepath.Join(root, "apps", "admin", "app", "(auth)", "callback"),
-			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "dashboard"),
-			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "profile"),
-			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "resources", "users"),
-			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "jobs"),
-			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "files"),
-			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "cron"),
-			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "mail"),
-			filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "security"),
-			filepath.Join(root, "apps", "admin", "components", "layout"),
-			filepath.Join(root, "apps", "admin", "components", "tables"),
-			filepath.Join(root, "apps", "admin", "components", "forms", "fields"),
-			filepath.Join(root, "apps", "admin", "components", "widgets"),
-			filepath.Join(root, "apps", "admin", "components", "resource"),
-			filepath.Join(root, "apps", "admin", "components", "shared"),
-			filepath.Join(root, "apps", "admin", "components", "ui"),
-			filepath.Join(root, "apps", "admin", "components", "profile"),
-			filepath.Join(root, "apps", "admin", "hooks"),
-			filepath.Join(root, "apps", "admin", "lib"),
-			filepath.Join(root, "apps", "admin", "resources"),
-		)
+		if opts.UseTanStack() {
+			dirs = append(dirs,
+				filepath.Join(root, "apps", "admin", "src", "routes", "_auth"),
+				filepath.Join(root, "apps", "admin", "src", "routes", "_dashboard", "resources"),
+				filepath.Join(root, "apps", "admin", "src", "routes", "_dashboard", "system"),
+				filepath.Join(root, "apps", "admin", "src", "components", "layout"),
+				filepath.Join(root, "apps", "admin", "src", "components", "tables"),
+				filepath.Join(root, "apps", "admin", "src", "components", "forms", "fields"),
+				filepath.Join(root, "apps", "admin", "src", "components", "widgets"),
+				filepath.Join(root, "apps", "admin", "src", "components", "resource"),
+				filepath.Join(root, "apps", "admin", "src", "components", "shared"),
+				filepath.Join(root, "apps", "admin", "src", "components", "ui"),
+				filepath.Join(root, "apps", "admin", "src", "components", "profile"),
+				filepath.Join(root, "apps", "admin", "src", "hooks"),
+				filepath.Join(root, "apps", "admin", "src", "lib"),
+				filepath.Join(root, "apps", "admin", "src", "resources"),
+				filepath.Join(root, "apps", "admin", "public"),
+			)
+		} else {
+			dirs = append(dirs,
+				filepath.Join(root, "apps", "admin", "app", "(auth)", "login"),
+				filepath.Join(root, "apps", "admin", "app", "(auth)", "sign-up"),
+				filepath.Join(root, "apps", "admin", "app", "(auth)", "forgot-password"),
+				filepath.Join(root, "apps", "admin", "app", "(auth)", "callback"),
+				filepath.Join(root, "apps", "admin", "app", "(dashboard)", "dashboard"),
+				filepath.Join(root, "apps", "admin", "app", "(dashboard)", "profile"),
+				filepath.Join(root, "apps", "admin", "app", "(dashboard)", "resources", "users"),
+				filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "jobs"),
+				filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "files"),
+				filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "cron"),
+				filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "mail"),
+				filepath.Join(root, "apps", "admin", "app", "(dashboard)", "system", "security"),
+				filepath.Join(root, "apps", "admin", "components", "layout"),
+				filepath.Join(root, "apps", "admin", "components", "tables"),
+				filepath.Join(root, "apps", "admin", "components", "forms", "fields"),
+				filepath.Join(root, "apps", "admin", "components", "widgets"),
+				filepath.Join(root, "apps", "admin", "components", "resource"),
+				filepath.Join(root, "apps", "admin", "components", "shared"),
+				filepath.Join(root, "apps", "admin", "components", "ui"),
+				filepath.Join(root, "apps", "admin", "components", "profile"),
+				filepath.Join(root, "apps", "admin", "hooks"),
+				filepath.Join(root, "apps", "admin", "lib"),
+				filepath.Join(root, "apps", "admin", "resources"),
+			)
+		}
 	}
 
 	if opts.ShouldIncludeShared() {

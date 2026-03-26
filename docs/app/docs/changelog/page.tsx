@@ -28,10 +28,41 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v3.0.0 */}
+            {/* v3.1.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.1.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>TanStack Router frontend scaffold</strong> &mdash; When selecting
+                    TanStack Router (Vite) as your frontend, both the web app and admin panel are
+                    now fully scaffolded with Vite + TanStack Router + React Query + Tailwind CSS.
+                    Includes file-based routing via <code>@tanstack/router-vite-plugin</code>,
+                    API proxy in dev mode, and all the same features as the Next.js scaffold.
+                  </li>
+                  <li>
+                    <strong>TanStack Router admin panel</strong> &mdash; Complete admin panel with
+                    TanStack Router: auth pages (login, sign-up, forgot password), dashboard layout
+                    with sidebar, resource management (users, blogs) via ResourcePage component,
+                    system pages (jobs, files, cron, mail, security), profile page. All existing
+                    React components (DataTable, FormBuilder, widgets) are reused with automatic
+                    <code>&quot;use client&quot;</code> directive stripping.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v3.0.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v3.0.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 26, 2026</span>

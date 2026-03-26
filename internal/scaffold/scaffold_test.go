@@ -335,6 +335,59 @@ func TestWriteWebTanStackFiles(t *testing.T) {
 	}
 }
 
+func TestWriteAdminTanStackFiles(t *testing.T) {
+	root := t.TempDir()
+	opts := Options{ProjectName: "test-app", Architecture: ArchTriple, Frontend: FrontendTanStack}
+
+	if err := createDirectories(root, opts); err != nil {
+		t.Fatalf("createDirectories: %v", err)
+	}
+	if err := writeAdminTanStackFiles(root, opts); err != nil {
+		t.Fatalf("writeAdminTanStackFiles: %v", err)
+	}
+
+	files := []string{
+		filepath.Join(root, "apps", "admin", "package.json"),
+		filepath.Join(root, "apps", "admin", "vite.config.ts"),
+		filepath.Join(root, "apps", "admin", "index.html"),
+		filepath.Join(root, "apps", "admin", "src", "main.tsx"),
+		filepath.Join(root, "apps", "admin", "src", "routes", "__root.tsx"),
+		filepath.Join(root, "apps", "admin", "src", "routes", "_auth", "login.tsx"),
+		filepath.Join(root, "apps", "admin", "src", "routes", "_auth", "sign-up.tsx"),
+		filepath.Join(root, "apps", "admin", "src", "routes", "_dashboard.tsx"),
+		filepath.Join(root, "apps", "admin", "src", "routes", "_dashboard", "dashboard.tsx"),
+		filepath.Join(root, "apps", "admin", "src", "routes", "_dashboard", "resources", "users.tsx"),
+		filepath.Join(root, "apps", "admin", "src", "components", "layout", "sidebar.tsx"),
+		filepath.Join(root, "apps", "admin", "src", "components", "tables", "data-table.tsx"),
+		filepath.Join(root, "apps", "admin", "src", "components", "forms", "form-builder.tsx"),
+		filepath.Join(root, "apps", "admin", "src", "components", "widgets", "stats-card.tsx"),
+		filepath.Join(root, "apps", "admin", "src", "lib", "api-client.ts"),
+		filepath.Join(root, "apps", "admin", "src", "hooks", "use-auth.ts"),
+		filepath.Join(root, "apps", "admin", "src", "resources", "users.ts"),
+	}
+	for _, f := range files {
+		if _, err := os.Stat(f); err != nil {
+			t.Errorf("expected file %s was not created: %v", f, err)
+		}
+	}
+
+	// Verify package.json uses Vite, not Next.js
+	data, _ := os.ReadFile(filepath.Join(root, "apps", "admin", "package.json"))
+	content := string(data)
+	if !strings.Contains(content, "vite") {
+		t.Error("Admin TanStack package.json should contain vite")
+	}
+	if strings.Contains(content, "\"next\"") {
+		t.Error("Admin TanStack package.json should NOT contain next")
+	}
+
+	// Verify no "use client" directives in TanStack components
+	dtData, _ := os.ReadFile(filepath.Join(root, "apps", "admin", "src", "components", "tables", "data-table.tsx"))
+	if strings.Contains(string(dtData), "use client") {
+		t.Error("TanStack admin data-table.tsx should not contain 'use client' directive")
+	}
+}
+
 func TestCreateDirectories_Double(t *testing.T) {
 	root := t.TempDir()
 	opts := Options{ProjectName: "test-app", Architecture: ArchDouble, Frontend: FrontendNext}
