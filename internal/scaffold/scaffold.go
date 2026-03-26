@@ -245,10 +245,16 @@ func Run(opts Options) error {
 	}
 
 	if opts.ShouldIncludeWeb() {
-		// Write Next.js web app
-		spinner.Printf("  → Scaffolding Next.js web app...\n")
-		if err := writeWebFiles(root, opts); err != nil {
-			return fmt.Errorf("writing web files: %w", err)
+		if opts.UseTanStack() {
+			spinner.Printf("  → Scaffolding TanStack Router web app (Vite)...\n")
+			if err := writeWebTanStackFiles(root, opts); err != nil {
+				return fmt.Errorf("writing TanStack web files: %w", err)
+			}
+		} else {
+			spinner.Printf("  → Scaffolding Next.js web app...\n")
+			if err := writeWebFiles(root, opts); err != nil {
+				return fmt.Errorf("writing web files: %w", err)
+			}
 		}
 	}
 
@@ -311,11 +317,21 @@ func createDirectories(root string, opts Options) error {
 	}
 
 	if opts.ShouldIncludeWeb() {
-		dirs = append(dirs,
-			filepath.Join(root, "apps", "web", "app"),
-			filepath.Join(root, "apps", "web", "lib"),
-			filepath.Join(root, "apps", "web", "__tests__"),
-		)
+		if opts.UseTanStack() {
+			dirs = append(dirs,
+				filepath.Join(root, "apps", "web", "src", "routes"),
+				filepath.Join(root, "apps", "web", "src", "components"),
+				filepath.Join(root, "apps", "web", "src", "hooks"),
+				filepath.Join(root, "apps", "web", "src", "lib"),
+				filepath.Join(root, "apps", "web", "public"),
+			)
+		} else {
+			dirs = append(dirs,
+				filepath.Join(root, "apps", "web", "app"),
+				filepath.Join(root, "apps", "web", "lib"),
+				filepath.Join(root, "apps", "web", "__tests__"),
+			)
+		}
 	}
 
 	if opts.ShouldIncludeAdmin() {

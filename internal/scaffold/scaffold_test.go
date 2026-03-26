@@ -260,6 +260,148 @@ func TestCreateDirectories_Default(t *testing.T) {
 	}
 }
 
+func TestCreateDirectories_TanStackWeb(t *testing.T) {
+	root := t.TempDir()
+	opts := Options{ProjectName: "test-app", Architecture: ArchTriple, Frontend: FrontendTanStack}
+
+	if err := createDirectories(root, opts); err != nil {
+		t.Fatalf("createDirectories error: %v", err)
+	}
+
+	// TanStack web uses src/ instead of app/
+	for _, dir := range []string{
+		filepath.Join(root, "apps", "web", "src", "routes"),
+		filepath.Join(root, "apps", "web", "src", "components"),
+		filepath.Join(root, "apps", "web", "src", "hooks"),
+		filepath.Join(root, "apps", "web", "src", "lib"),
+	} {
+		if _, err := os.Stat(dir); err != nil {
+			t.Errorf("expected TanStack directory %s was not created: %v", dir, err)
+		}
+	}
+
+	// Next.js app/ directory should NOT exist for TanStack
+	nextAppDir := filepath.Join(root, "apps", "web", "app")
+	if _, err := os.Stat(nextAppDir); err == nil {
+		t.Errorf("Next.js app/ directory should not exist when using TanStack Router")
+	}
+}
+
+func TestWriteWebTanStackFiles(t *testing.T) {
+	root := t.TempDir()
+	opts := Options{ProjectName: "test-app", Architecture: ArchTriple, Frontend: FrontendTanStack}
+
+	if err := createDirectories(root, opts); err != nil {
+		t.Fatalf("createDirectories: %v", err)
+	}
+	if err := writeWebTanStackFiles(root, opts); err != nil {
+		t.Fatalf("writeWebTanStackFiles: %v", err)
+	}
+
+	files := []string{
+		filepath.Join(root, "apps", "web", "package.json"),
+		filepath.Join(root, "apps", "web", "vite.config.ts"),
+		filepath.Join(root, "apps", "web", "index.html"),
+		filepath.Join(root, "apps", "web", "tailwind.config.ts"),
+		filepath.Join(root, "apps", "web", "tsconfig.json"),
+		filepath.Join(root, "apps", "web", "src", "main.tsx"),
+		filepath.Join(root, "apps", "web", "src", "globals.css"),
+		filepath.Join(root, "apps", "web", "src", "routes", "__root.tsx"),
+		filepath.Join(root, "apps", "web", "src", "routes", "index.tsx"),
+		filepath.Join(root, "apps", "web", "src", "routes", "blog", "index.tsx"),
+		filepath.Join(root, "apps", "web", "src", "routes", "blog", "$slug.tsx"),
+		filepath.Join(root, "apps", "web", "src", "components", "navbar.tsx"),
+		filepath.Join(root, "apps", "web", "src", "components", "footer.tsx"),
+		filepath.Join(root, "apps", "web", "src", "lib", "api.ts"),
+		filepath.Join(root, "apps", "web", "src", "hooks", "use-blogs.ts"),
+	}
+	for _, f := range files {
+		if _, err := os.Stat(f); err != nil {
+			t.Errorf("expected file %s was not created: %v", f, err)
+		}
+	}
+
+	// Verify package.json contains vite, not next
+	data, _ := os.ReadFile(filepath.Join(root, "apps", "web", "package.json"))
+	content := string(data)
+	if !strings.Contains(content, "vite") {
+		t.Error("TanStack package.json should contain vite dependency")
+	}
+	if strings.Contains(content, "next") {
+		t.Error("TanStack package.json should NOT contain next dependency")
+	}
+	if !strings.Contains(content, "@tanstack/react-router") {
+		t.Error("TanStack package.json should contain @tanstack/react-router")
+	}
+}
+
+func TestCreateDirectories_Double(t *testing.T) {
+	root := t.TempDir()
+	opts := Options{ProjectName: "test-app", Architecture: ArchDouble, Frontend: FrontendNext}
+
+	if err := createDirectories(root, opts); err != nil {
+		t.Fatalf("createDirectories error: %v", err)
+	}
+
+	// Web and API should exist
+	for _, dir := range []string{
+		filepath.Join(root, "apps", "api", "cmd", "server"),
+		filepath.Join(root, "apps", "web", "app"),
+		filepath.Join(root, "packages", "shared"),
+	} {
+		if _, err := os.Stat(dir); err != nil {
+			t.Errorf("expected directory %s was not created: %v", dir, err)
+		}
+	}
+
+	// Admin must NOT exist
+	adminDir := filepath.Join(root, "apps", "admin")
+	if _, err := os.Stat(adminDir); err == nil {
+		t.Errorf("admin directory should not exist in double architecture")
+	}
+}
+
+func TestOptions_DoubleArchitecture(t *testing.T) {
+	opts := Options{Architecture: ArchDouble, Frontend: FrontendNext}
+	if !opts.ShouldIncludeWeb() {
+		t.Error("Double should include web")
+	}
+	if opts.ShouldIncludeAdmin() {
+		t.Error("Double should NOT include admin")
+	}
+	if !opts.ShouldUseTurborepo() {
+		t.Error("Double should use Turborepo")
+	}
+	if !opts.ShouldIncludeShared() {
+		t.Error("Double should include shared")
+	}
+	if opts.ShouldIncludeSingleSPA() {
+		t.Error("Double should NOT be a single SPA")
+	}
+}
+
+func TestOptions_SingleArchitecture(t *testing.T) {
+	opts := Options{Architecture: ArchSingle, Frontend: FrontendTanStack}
+	if opts.ShouldIncludeWeb() {
+		t.Error("Single should NOT include web (Turborepo app)")
+	}
+	if opts.ShouldIncludeAdmin() {
+		t.Error("Single should NOT include admin")
+	}
+	if !opts.ShouldIncludeSingleSPA() {
+		t.Error("Single should include SPA")
+	}
+	if opts.ShouldUseTurborepo() {
+		t.Error("Single should NOT use Turborepo")
+	}
+	if !opts.ShouldIncludeFrontend() {
+		t.Error("Single should include frontend")
+	}
+	if !opts.UseTanStack() {
+		t.Error("Single with TanStack should return UseTanStack()=true")
+	}
+}
+
 func TestCreateDirectories_Full(t *testing.T) {
 	root := t.TempDir()
 	opts := Options{ProjectName: "test-app", Full: true}
