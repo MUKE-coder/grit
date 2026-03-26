@@ -230,13 +230,32 @@ c.JSON(http.StatusBadRequest, gin.H{
 
 %[1]s
 POST /api/auth/register  → { access_token, refresh_token }
-POST /api/auth/login     → { access_token, refresh_token }
+POST /api/auth/login     → { access_token, refresh_token } or { totp_required, pending_token }
 POST /api/auth/refresh   → New access_token from refresh_token
 POST /api/auth/logout    → Invalidates refresh token
 GET  /api/auth/me        → Current user (requires auth)
 %[1]s
 
 Access tokens: 15 minutes. Refresh tokens: 7 days. Auto-refresh via Axios interceptor.
+
+### Two-Factor Authentication (TOTP)
+
+If user has 2FA enabled and no trusted device cookie, login returns %[1]s{ totp_required: true, pending_token: "..." }%[1]s.
+Client redirects to TOTP page, user enters 6-digit code from authenticator app.
+
+%[1]s
+POST /api/auth/totp/setup              → { secret, uri } (JWT required)
+POST /api/auth/totp/enable             → { enabled, backup_codes } (JWT required)
+POST /api/auth/totp/verify             → { user, tokens } (public, uses pending_token)
+POST /api/auth/totp/backup-codes/verify → { user, tokens } (public, uses pending_token)
+POST /api/auth/totp/disable            → Disable 2FA (JWT + password required)
+GET  /api/auth/totp/status             → { enabled, backup_codes_remaining, trusted_devices }
+POST /api/auth/totp/backup-codes       → Regenerate backup codes (JWT required)
+DELETE /api/auth/totp/trusted-devices   → Revoke all trusted devices (JWT required)
+%[1]s
+
+TOTP: RFC 6238, HMAC-SHA1, 6 digits, 30s period, ±1 window. Backup codes: 10 bcrypt-hashed one-time codes.
+Trusted devices: HttpOnly cookie, SHA-256 hashed token, 30-day sliding expiry.
 
 ### Route Groups
 

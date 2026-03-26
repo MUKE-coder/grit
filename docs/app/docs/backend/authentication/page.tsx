@@ -24,7 +24,8 @@ export default function AuthenticationPage() {
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Grit ships with a complete JWT-based authentication system. It includes register,
-                login, token refresh, logout, password reset, and role-based access control --
+                login, token refresh, logout, password reset, role-based access control,
+                and two-factor authentication (TOTP) with backup codes and trusted devices --
                 all pre-configured and ready to use.
               </p>
             </div>
@@ -529,6 +530,147 @@ func GenerateResetToken() (string, error) {
 // Output example: "a3f4b2c1e5d6f7890123456789abcdef..."
 // (64 hex characters = 32 bytes of randomness)`} />
 
+              {/* ── Two-Factor Authentication ─────────────────────────────── */}
+              <h2 id="two-factor">Two-Factor Authentication (TOTP)</h2>
+              <p>
+                Every Grit project includes a complete two-factor authentication system using
+                TOTP (Time-based One-Time Passwords). It works with any authenticator app:
+                Google Authenticator, Authy, 1Password, Bitwarden, etc.
+              </p>
+
+              <h3 id="totp-how-it-works">How It Works</h3>
+              <CodeBlock filename="TOTP login flow" code={`
+  Client                           Grit API
+    |                                  |
+    |  POST /api/auth/login            |
+    |  { email, password }             |
+    | -------------------------------->|
+    |                                  |  Validate password ✓
+    |                                  |  Check: TOTP enabled?
+    |                                  |  Check: Trusted device cookie?
+    |                                  |
+    |  If TOTP required:               |
+    |  { totp_required, pending_token }|
+    | <--------------------------------|
+    |                                  |
+    |  POST /api/auth/totp/verify      |
+    |  { pending_token, code, trust }  |
+    | -------------------------------->|
+    |                                  |  Validate TOTP code ✓
+    |                                  |  (Optional) Set trusted device
+    |  { user, tokens }                |
+    | <--------------------------------|
+`} />
+
+              <p>
+                If the user has 2FA enabled and no trusted device cookie, the login endpoint
+                returns a short-lived <code>pending_token</code> (5 minutes) instead of JWT tokens.
+                The client then redirects to a TOTP verification page.
+              </p>
+
+              <h3 id="totp-endpoints">TOTP Endpoints</h3>
+              <div className="overflow-x-auto mb-6">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Method</th>
+                      <th>Endpoint</th>
+                      <th>Auth</th>
+                      <th>Purpose</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><code>POST</code></td><td><code>/api/auth/totp/setup</code></td><td>JWT</td><td>Generate secret + QR code URI</td></tr>
+                    <tr><td><code>POST</code></td><td><code>/api/auth/totp/enable</code></td><td>JWT</td><td>Verify initial code, activate 2FA, get backup codes</td></tr>
+                    <tr><td><code>POST</code></td><td><code>/api/auth/totp/verify</code></td><td>Public</td><td>Exchange pending token + TOTP code for JWT</td></tr>
+                    <tr><td><code>POST</code></td><td><code>/api/auth/totp/backup-codes/verify</code></td><td>Public</td><td>Use backup code during login</td></tr>
+                    <tr><td><code>POST</code></td><td><code>/api/auth/totp/disable</code></td><td>JWT</td><td>Turn off 2FA (requires password)</td></tr>
+                    <tr><td><code>GET</code></td><td><code>/api/auth/totp/status</code></td><td>JWT</td><td>Check 2FA status, backup codes remaining</td></tr>
+                    <tr><td><code>POST</code></td><td><code>/api/auth/totp/backup-codes</code></td><td>JWT</td><td>Regenerate backup codes</td></tr>
+                    <tr><td><code>DELETE</code></td><td><code>/api/auth/totp/trusted-devices</code></td><td>JWT</td><td>Revoke all trusted devices</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <h3 id="totp-setup-flow">Enabling 2FA (User Flow)</h3>
+              <CodeBlock language="typescript" filename="Enable TOTP" code={`// Step 1: Get the secret and QR code URI
+const { data } = await api.post('/api/auth/totp/setup')
+// data.secret = "JBSWY3DPEHPK3PXP..."
+// data.uri    = "otpauth://totp/MyApp:user@email.com?secret=..."
+// → Show QR code to user (use a QR library to render data.uri)
+
+// Step 2: User scans QR code, enters the 6-digit code from their app
+const { data: result } = await api.post('/api/auth/totp/enable', {
+  secret: data.secret,
+  code: '123456'  // from authenticator app
+})
+// result.enabled = true
+// result.backup_codes = ["A1B2C3D4", "E5F6G7H8", ...]
+// → Show backup codes to user (they must save these!)`} />
+
+              <h3 id="totp-login-flow">Login with 2FA (Client Flow)</h3>
+              <CodeBlock language="typescript" filename="Login with TOTP" code={`// Step 1: Normal login
+const { data } = await api.post('/api/auth/login', { email, password })
+
+if (data.totp_required) {
+  // Step 2: Redirect to TOTP verification page
+  // Store the pending token temporarily
+  const pendingToken = data.pending_token
+
+  // Step 3: User enters 6-digit code from authenticator app
+  const { data: result } = await api.post('/api/auth/totp/verify', {
+    pending_token: pendingToken,
+    code: '123456',
+    trust_device: true  // optional: remember this device for 30 days
+  })
+  // result.user = { ... }
+  // result.tokens = { access_token, refresh_token }
+} else {
+  // No 2FA — normal login, tokens already returned
+  // data.user = { ... }
+  // data.tokens = { access_token, refresh_token }
+}`} />
+
+              <h3 id="backup-codes">Backup Codes</h3>
+              <p>
+                When 2FA is enabled, 10 one-time-use backup codes are generated. Each code is
+                individually bcrypt-hashed before storage. When a user enters a backup code during
+                login, the used code is permanently removed from the database.
+              </p>
+              <CodeBlock language="typescript" filename="Using a backup code" code={`// During login, if user lost their authenticator app:
+const { data } = await api.post('/api/auth/totp/backup-codes/verify', {
+  pending_token: pendingToken,
+  code: 'A1B2C3D4',  // one of the saved backup codes
+  trust_device: false
+})
+// data.backup_codes_remaining = 9  (one code was consumed)`} />
+
+              <h3 id="trusted-devices">Trusted Devices</h3>
+              <p>
+                When <code>trust_device: true</code> is sent during TOTP verification, an HttpOnly
+                cookie (<code>totp_trusted</code>) is set with a random token. The SHA-256 hash of this
+                token is stored in the database with the user&apos;s IP and user agent. Trusted devices
+                last 30 days with sliding expiry — each successful login refreshes the timer.
+              </p>
+              <p>
+                Users can revoke all trusted devices:
+              </p>
+              <CodeBlock language="typescript" filename="Revoke trusted devices" code={`await api.delete('/api/auth/totp/trusted-devices')
+// All trusted device cookies are now invalid`} />
+
+              <h3 id="totp-implementation">Implementation Details</h3>
+              <ul>
+                <li><strong>Algorithm:</strong> HMAC-SHA1 (RFC 6238 / RFC 4226)</li>
+                <li><strong>Code length:</strong> 6 digits</li>
+                <li><strong>Period:</strong> 30 seconds</li>
+                <li><strong>Clock skew:</strong> &plusmn;1 window tolerance (90 second total window)</li>
+                <li><strong>Secret:</strong> 20 random bytes, base32-encoded (no padding)</li>
+                <li><strong>Pending tokens:</strong> 32 random bytes, hex-encoded, SHA-256 hashed for DB, expires in 5 minutes</li>
+                <li><strong>Backup codes:</strong> 8-character hex codes, individually bcrypt-hashed, one-time use</li>
+                <li><strong>Trusted device tokens:</strong> 32 random bytes, SHA-256 hashed, 30-day sliding expiry</li>
+                <li><strong>Dependencies:</strong> Zero external — uses only Go standard library + <code>golang.org/x/crypto/bcrypt</code></li>
+              </ul>
+
               {/* ── Configuration ─────────────────────────────── */}
               <h2 id="configuration">Auth Configuration</h2>
               <p>
@@ -539,7 +681,10 @@ JWT_SECRET=change-this-to-a-long-random-string
 
 # Optional (defaults shown)
 JWT_ACCESS_EXPIRY=15m      # Go duration format
-JWT_REFRESH_EXPIRY=168h    # 7 days`} />
+JWT_REFRESH_EXPIRY=168h    # 7 days
+
+# TOTP (Two-Factor Authentication)
+TOTP_ISSUER=MyApp          # App name shown in authenticator apps (defaults to APP_NAME)`} />
               <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/5 mb-6">
                 <p className="text-sm text-foreground/80 mb-0">
                   <strong>Important:</strong> The <code>JWT_SECRET</code> environment variable is required.
