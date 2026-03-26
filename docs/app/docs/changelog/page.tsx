@@ -28,10 +28,45 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v3.3.0 */}
+            {/* v3.4.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.4.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>Multi-architecture code generator</strong> &mdash; <code>grit generate resource</code>
+                    now works for all 5 architecture modes and both frontend frameworks. Generates Go model,
+                    service, and handler at the correct path (<code>internal/</code> for single app,
+                    <code>apps/api/internal/</code> for monorepo). Generates React Query hooks and admin
+                    resource pages for both Next.js and TanStack Router.
+                  </li>
+                  <li>
+                    <strong><code>grit.json</code> project manifest</strong> &mdash; Every scaffolded project
+                    now includes a <code>grit.json</code> file at the root with <code>architecture</code> and
+                    <code>frontend</code> fields. The generator reads this to determine correct file paths
+                    and template variants, eliminating fragile filesystem heuristics.
+                  </li>
+                  <li>
+                    <strong>TanStack Router resource generation</strong> &mdash; When generating resources
+                    in a TanStack Router project, creates route files at
+                    <code>src/routes/_dashboard/resources/</code> using <code>createFileRoute</code> instead
+                    of Next.js <code>app/(dashboard)/resources/</code> page convention.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v3.3.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v3.3.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 26, 2026</span>

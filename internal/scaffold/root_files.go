@@ -12,6 +12,7 @@ func writeRootFiles(root string, opts Options) error {
 		filepath.Join(root, ".env.cloud.example"): envCloudExampleFile(opts),
 		filepath.Join(root, ".gitignore"):         rootGitignore(),
 		filepath.Join(root, "README.md"):          readmeFile(opts),
+		filepath.Join(root, "grit.json"):          gritJSON(opts),
 		filepath.Join(root, ".claude", "skills", "grit", "SKILL.md"):      gritSkillFile(opts),
 		filepath.Join(root, ".claude", "skills", "grit", "reference.md"):  gritSkillReference(opts),
 	}
@@ -579,4 +580,13 @@ No Docker needed — just your API keys and `+"``"+`go run`+"``"+`.
 
 *Built with Grit v0.13.0*
 `, opts.ProjectName, opts.ProjectName)
+}
+
+func gritJSON(opts Options) string {
+	return fmt.Sprintf(`{
+  "architecture": "%s",
+  "frontend": "%s",
+  "version": "3.3.0"
+}
+`, string(opts.Architecture), string(opts.Frontend))
 }

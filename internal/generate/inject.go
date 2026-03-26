@@ -9,9 +9,9 @@ import (
 
 // injectAll injects code into all existing files that have markers.
 func (g *Generator) injectAll(names Names) error {
-	apiRoot := filepath.Join(g.Root, "apps", "api")
+	apiRoot := g.APIRoot()
 	sharedRoot := filepath.Join(g.Root, "packages", "shared")
-	adminRoot := filepath.Join(g.Root, "apps", "admin")
+	adminRoot := g.AdminRoot()
 
 	// 1. Inject model into AutoMigrate
 	modelFile := filepath.Join(apiRoot, "internal", "models", "user.go")
@@ -143,6 +143,10 @@ func (g *Generator) injectAll(names Names) error {
 
 	// 9. Inject resource import into resource registry
 	registryFile := filepath.Join(adminRoot, "resources", "index.ts")
+	// TanStack admin: src/resources/index.ts
+	if !fileExists(registryFile) {
+		registryFile = filepath.Join(adminRoot, "src", "resources", "index.ts")
+	}
 	if fileExists(registryFile) {
 		resourceImport := fmt.Sprintf(`import { %sResource } from "./%s";`,
 			names.Camel, names.PluralKebab)

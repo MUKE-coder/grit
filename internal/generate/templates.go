@@ -133,7 +133,7 @@ func (m *%s) BeforeCreate(tx *gorm.DB) error {
 `, names.Pascal, slugGoName, slugGoName, slugSourceGo)
 
 		// Write shared slugify helper if it doesn't exist yet
-		helpersPath := filepath.Join(g.Root, "apps", "api", "internal", "models", "helpers.go")
+		helpersPath := filepath.Join(g.APIRoot(), "internal", "models", "helpers.go")
 		if _, err := os.Stat(helpersPath); os.IsNotExist(err) {
 			helpersContent := `package models
 
@@ -161,7 +161,7 @@ func slugify(s string) string {
 		}
 	}
 
-	path := filepath.Join(g.Root, "apps", "api", "internal", "models", names.Snake+".go")
+	path := filepath.Join(g.APIRoot(), "internal", "models", names.Snake+".go")
 	return writeFileWithDirs(path, content)
 }
 
@@ -281,7 +281,7 @@ func (s *{{Pascal}}Service) Delete(id uint) error {
 }
 `)
 
-	path := filepath.Join(g.Root, "apps", "api", "internal", "services", names.Snake+".go")
+	path := filepath.Join(g.APIRoot(), "internal", "services", names.Snake+".go")
 	return writeFileWithDirs(path, content)
 }
 
@@ -660,7 +660,7 @@ func (h *{{Pascal}}Handler) Delete(c *gin.Context) {
 }
 `)
 
-	path := filepath.Join(g.Root, "apps", "api", "internal", "handlers", names.Snake+".go")
+	path := filepath.Join(g.APIRoot(), "internal", "handlers", names.Snake+".go")
 	return writeFileWithDirs(path, content)
 }
 
