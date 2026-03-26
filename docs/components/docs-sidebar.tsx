@@ -75,6 +75,7 @@ const navItems: NavItem[] = [
       { title: 'Architecture Overview', href: '/docs/concepts/architecture' },
       { title: 'Architecture Modes', href: '/docs/concepts/architecture-modes' },
       { title: 'CLI Commands', href: '/docs/concepts/cli' },
+      { title: 'New CLI Commands', href: '/docs/concepts/cli-commands' },
       { title: 'Code Generation', href: '/docs/concepts/code-generation' },
       { title: 'Type System', href: '/docs/concepts/type-system' },
       { title: 'Naming Conventions', href: '/docs/concepts/naming-conventions' },
@@ -115,10 +116,11 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    title: 'Frontend (Next.js)',
+    title: 'Frontend',
     icon: <Layers className="h-3.5 w-3.5" />,
     items: [
-      { title: 'Web App', href: '/docs/frontend/web-app' },
+      { title: 'Web App (Next.js)', href: '/docs/frontend/web-app' },
+      { title: 'TanStack Router (Vite)', href: '/docs/frontend/tanstack-router' },
       { title: 'React Query Hooks', href: '/docs/frontend/hooks' },
       { title: 'Shared Package', href: '/docs/frontend/shared-package' },
     ],

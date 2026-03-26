@@ -27,21 +27,47 @@ For detailed API conventions, code patterns, and service documentation, see [ref
 ## CLI Commands
 
 %[1]sash
-grit new myapp                    # Full monorepo (Go API + Next.js web + admin)
-grit new myapp --api              # Go API only
-grit new myapp --full             # Everything + Expo mobile + docs site
+# Project creation (interactive by default)
+grit new myapp                        # Interactive: select architecture + frontend
+grit new myapp --triple --next        # Triple monorepo with Next.js
+grit new myapp --single --vite        # Single app with TanStack Router (Vite)
+grit new myapp --double --vite        # Web + API with TanStack Router
+grit new myapp --api                  # Go API only (no frontend)
+grit new-desktop myapp                # Wails desktop app
 
+# Code generation
 grit generate resource Post --fields "title:string,content:text,published:bool"
 grit generate resource Post --from post.yaml
-grit generate resource Category -i   # Interactive mode
+grit generate resource Category -i    # Interactive mode
 
+# Development
+grit start                            # Start dev servers
 grit sync                             # Go types → TypeScript
 grit add role MODERATOR               # Injects role into 7 locations
 grit migrate                          # Run GORM AutoMigrate
 grit seed                             # Create admin + demo users
+
+# Operations
+grit routes                           # List all API routes
+grit down                             # Enable maintenance mode (503)
+grit up                               # Disable maintenance mode
+grit deploy --host user@server --domain myapp.com  # Production deploy
+
+# Updates
 grit upgrade                          # Update project to latest templates
 grit update                           # Update Grit CLI itself
 %[1]s
+
+### Architecture modes
+- **single**: Go + embedded React SPA (go:embed, one binary)
+- **double**: Turborepo with Web + API
+- **triple**: Turborepo with Web + Admin + API (default)
+- **api**: Go API only
+- **mobile**: Turborepo with API + Expo
+
+### Frontend options
+- **next**: Next.js (SSR, App Router) — default
+- **tanstack/vite**: TanStack Router + Vite (SPA, fast builds)
 
 ---
 

@@ -28,10 +28,64 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v3.4.0 */}
+            {/* v3.5.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.5.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Documentation</h3>
+                <ul>
+                  <li>
+                    <strong>Full docs redesign</strong> &mdash; Rebuilt the documentation site with a
+                    Tailwind CSS-inspired aesthetic. New dark theme (<code>#0b1120</code>), sky-blue accents,
+                    cleaner header with backdrop blur, redesigned code blocks with file tabs and line
+                    highlighting, and new <code>StepWithCode</code> component for two-column step-by-step
+                    guides (text left, code right).
+                  </li>
+                  <li>
+                    <strong>Installation page redesigned</strong> &mdash; Step-numbered sections (01-04)
+                    with the new two-column layout, system requirements table, architecture shortcuts,
+                    and services grid.
+                  </li>
+                  <li>
+                    <strong>Architecture Modes page</strong> &mdash; Visual cards for all 5 architectures
+                    (single, double, triple, API only, mobile) with directory structure trees, features
+                    list, ideal use cases, and frontend framework comparison.
+                  </li>
+                  <li>
+                    <strong>TanStack Router guide</strong> &mdash; Complete guide for the TanStack Router
+                    frontend option: project structure, routing patterns, comparison table with Next.js,
+                    route examples, and admin panel auth guards.
+                  </li>
+                  <li>
+                    <strong>New CLI Commands page</strong> &mdash; Documents <code>grit routes</code>,
+                    <code>grit down/up</code> (maintenance mode), and <code>grit deploy</code>. Includes
+                    complete command reference table for all 21 CLI commands.
+                  </li>
+                  <li>
+                    <strong>Deploy Command guide</strong> &mdash; Step-by-step deployment pipeline with
+                    systemd service unit and Caddyfile examples, flags table.
+                  </li>
+                </ul>
+
+                <h3>Improvements</h3>
+                <ul>
+                  <li>Updated skill file with all v3.x architecture modes, frontend options, and new CLI commands.</li>
+                  <li>Updated sidebar with new pages: Architecture Modes, New CLI Commands, TanStack Router, Deploy Command.</li>
+                  <li>Frontend sidebar section renamed from &ldquo;Frontend (Next.js)&rdquo; to &ldquo;Frontend&rdquo; to reflect multi-framework support.</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v3.4.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v3.4.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 26, 2026</span>

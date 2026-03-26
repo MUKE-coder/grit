@@ -30,7 +30,7 @@ export function SiteHeader() {
               Grit
             </span>
             <span className="hidden sm:inline-flex items-center rounded-full bg-sky-400/10 border border-sky-400/20 px-2 py-0.5 text-[10px] font-mono font-medium text-sky-400/80">
-              v3.4.0
+              v3.5.0
             </span>
           </Link>
         </div>
