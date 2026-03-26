@@ -11,13 +11,16 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
+	"github.com/MUKE-coder/grit/v2/internal/deploy"
 	"github.com/MUKE-coder/grit/v2/internal/generate"
+	"github.com/MUKE-coder/grit/v2/internal/maintenance"
 	"github.com/MUKE-coder/grit/v2/internal/project"
 	"github.com/MUKE-coder/grit/v2/internal/prompt"
+	"github.com/MUKE-coder/grit/v2/internal/routeparser"
 	"github.com/MUKE-coder/grit/v2/internal/scaffold"
 )
 
-var version = "3.2.0"
+var version = "3.3.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -40,6 +43,10 @@ func main() {
 	rootCmd.AddCommand(upgradeCmd())
 	rootCmd.AddCommand(updateCmd())
 	rootCmd.AddCommand(versionCmd())
+	rootCmd.AddCommand(routesCmd())
+	rootCmd.AddCommand(downCmd())
+	rootCmd.AddCommand(upCmd())
+	rootCmd.AddCommand(deployCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -837,4 +844,164 @@ func printDesktopSuccess(name string) {
 	gray.Println("  To build for production:")
 	cyan.Println("    wails build")
 	fmt.Println()
+}
+
+// ── grit routes ──────────────────────────────────────────────────────────────
+
+func routesCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "routes",
+		Short: "List all registered API routes",
+		Long:  "Parse the routes.go file and display a table of all registered HTTP routes with their methods, paths, handlers, and middleware groups.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+
+			cwd, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("getting working directory: %w", err)
+			}
+
+			routesFile, err := routeparser.FindRoutesFile(cwd)
+			if err != nil {
+				return err
+			}
+
+			routes, err := routeparser.Parse(routesFile)
+			if err != nil {
+				return err
+			}
+
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			purple.Printf("\n  API Routes (%s)\n\n", routesFile)
+
+			fmt.Println(routeparser.FormatTable(routes))
+			return nil
+		},
+	}
+}
+
+// ── grit down / grit up ─────────────────────────────────────────────────────
+
+func downCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "down",
+		Short: "Put the application in maintenance mode",
+		Long:  "Creates a .maintenance file that triggers the maintenance middleware, returning 503 for all requests.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			if maintenance.IsEnabled(cwd) {
+				color.Yellow("\n  Application is already in maintenance mode.\n")
+				return nil
+			}
+
+			if err := maintenance.Enable(cwd); err != nil {
+				return err
+			}
+
+			color.New(color.FgHiYellow, color.Bold).Println("\n  Application is now in maintenance mode.")
+			color.New(color.FgHiBlack).Println("  All requests will receive 503 Service Unavailable.")
+			color.New(color.FgHiBlack).Println("  Run 'grit up' to bring it back online.")
+			fmt.Println()
+			return nil
+		},
+	}
+}
+
+func upCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "up",
+		Short: "Bring the application back online",
+		Long:  "Removes the .maintenance file, allowing normal request handling to resume.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			if err := maintenance.Disable(cwd); err != nil {
+				return err
+			}
+
+			color.New(color.FgHiGreen, color.Bold).Println("\n  Application is back online!")
+			color.New(color.FgHiBlack).Println("  Normal request handling has resumed.")
+			fmt.Println()
+			return nil
+		},
+	}
+}
+
+// ── grit deploy ──────────────────────────────────────────────────────────────
+
+func deployCmd() *cobra.Command {
+	var host, port, keyFile, domain, appPort string
+
+	cmd := &cobra.Command{
+		Use:   "deploy",
+		Short: "Deploy application to a remote server",
+		Long:  "Build the application, upload via SSH, configure systemd service, and optionally set up Caddy reverse proxy with auto-TLS.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+
+			// Try to detect app name from go.mod or grit.config
+			appName := "grit-app"
+			if data, err := os.ReadFile("go.mod"); err == nil {
+				for _, line := range strings.Split(string(data), "\n") {
+					if strings.HasPrefix(line, "module ") {
+						parts := strings.Fields(line)
+						if len(parts) >= 2 {
+							appName = filepath.Base(parts[1])
+						}
+						break
+					}
+				}
+			}
+
+			// Fall back to env vars if flags not set
+			if host == "" {
+				host = os.Getenv("DEPLOY_HOST")
+			}
+			if keyFile == "" {
+				keyFile = os.Getenv("DEPLOY_KEY_FILE")
+			}
+			if domain == "" {
+				domain = os.Getenv("DEPLOY_DOMAIN")
+			}
+
+			cfg := deploy.Config{
+				Host:    host,
+				Port:    port,
+				KeyFile: keyFile,
+				AppName: appName,
+				Domain:  domain,
+				AppPort: appPort,
+			}
+
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			purple.Printf("\n  Deploying %s to %s\n\n", appName, host)
+
+			if err := deploy.Run(cfg); err != nil {
+				color.Red("\n  Deploy failed: %v\n", err)
+				return err
+			}
+
+			green := color.New(color.FgHiGreen, color.Bold)
+			green.Println("\n  Deployment successful!")
+			if domain != "" {
+				color.New(color.FgHiBlack).Printf("  Live at: https://%s\n\n", domain)
+			}
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&host, "host", "", "SSH host (e.g. user@server.com) or DEPLOY_HOST env var")
+	cmd.Flags().StringVar(&port, "port", "22", "SSH port")
+	cmd.Flags().StringVar(&keyFile, "key", "", "Path to SSH private key or DEPLOY_KEY_FILE env var")
+	cmd.Flags().StringVar(&domain, "domain", "", "Domain for Caddy reverse proxy or DEPLOY_DOMAIN env var")
+	cmd.Flags().StringVar(&appPort, "app-port", "8080", "Port the app runs on")
+
+	return cmd
 }

@@ -28,10 +28,49 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v3.2.0 */}
+            {/* v3.3.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.3.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features (Goravel-Inspired)</h3>
+                <ul>
+                  <li>
+                    <strong><code>grit routes</code></strong> &mdash; List all registered API routes in a
+                    formatted table. Parses <code>routes.go</code> and shows method, path, handler, and
+                    middleware group (public/protected/admin). Works for both monorepo and single app projects.
+                  </li>
+                  <li>
+                    <strong><code>grit down</code> / <code>grit up</code></strong> &mdash; Maintenance mode.
+                    <code>grit down</code> creates a <code>.maintenance</code> file that triggers the new
+                    maintenance middleware, returning 503 for all requests. <code>grit up</code> removes
+                    it and resumes normal operation.
+                  </li>
+                  <li>
+                    <strong><code>grit deploy</code></strong> &mdash; One-command production deployment.
+                    Cross-compiles for Linux, builds frontend, uploads binary via SCP, configures a systemd
+                    service, and optionally sets up Caddy reverse proxy with auto-TLS. Supports
+                    <code>--host</code>, <code>--domain</code>, <code>--key</code> flags or
+                    <code>DEPLOY_HOST</code>/<code>DEPLOY_DOMAIN</code>/<code>DEPLOY_KEY_FILE</code> env vars.
+                  </li>
+                  <li>
+                    <strong>Maintenance middleware</strong> &mdash; All scaffolded projects now include a
+                    <code>Maintenance()</code> Gin middleware that checks for a <code>.maintenance</code>
+                    file on every request. Runs as the first global middleware.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v3.2.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v3.2.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 26, 2026</span>

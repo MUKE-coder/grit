@@ -25,9 +25,10 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "services", "auth.go"):    apiAuthServiceGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "auth.go"):    apiAuthHandlerGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user.go"):    apiUserHandlerGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "auth.go"):  apiAuthMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "cors.go"):  apiCorsMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "logger.go"): apiLoggerMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "auth.go"):        apiAuthMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "cors.go"):        apiCorsMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "logger.go"):      apiLoggerMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "maintenance.go"): apiMaintenanceMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "routes", "routes.go"):    apiRoutesGo(),
 		filepath.Join(apiRoot, ".air.toml"):                          airConfig(),
 		// Test files — give the generated API a working test suite out of the box
@@ -2032,6 +2033,37 @@ func Logger() gin.HandlerFunc {
 `
 }
 
+func apiMaintenanceMiddlewareGo() string {
+	return `package middleware
+
+import (
+	"net/http"
+	"os"
+
+	"github.com/gin-gonic/gin"
+)
+
+// Maintenance returns a middleware that checks for a .maintenance file.
+// When the file exists, all requests receive a 503 Service Unavailable response.
+// Toggle with: grit down (enable) / grit up (disable)
+func Maintenance() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if _, err := os.Stat(".maintenance"); err == nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"error": gin.H{
+					"code":    "MAINTENANCE",
+					"message": "Application is in maintenance mode. Please try again later.",
+				},
+			})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+`
+}
+
 func apiRoutesGo() string {
 	return `package routes
 
@@ -2078,6 +2110,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	r := gin.New()
 
 	// Global middleware
+	r.Use(middleware.Maintenance())
 	r.Use(middleware.RequestID())
 	r.Use(middleware.Logger())
 	r.Use(gin.Recovery())
