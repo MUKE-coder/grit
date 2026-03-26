@@ -7,8 +7,8 @@ import (
 )
 
 func writeAPIFiles(root string, opts Options) error {
-	apiRoot := filepath.Join(root, "apps", "api")
-	module := opts.ProjectName + "/apps/api"
+	apiRoot := opts.APIRoot(root)
+	module := opts.Module()
 
 	files := map[string]string{
 		filepath.Join(apiRoot, "go.mod"):                              apiGoMod(opts),
@@ -48,7 +48,7 @@ func writeAPIFiles(root string, opts Options) error {
 }
 
 func apiGoMod(opts Options) string {
-	return fmt.Sprintf(`module %s/apps/api
+	return fmt.Sprintf(`module %s
 
 go 1.21
 
@@ -80,7 +80,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/glebarez/sqlite v1.11.0
 )
-`, opts.ProjectName)
+`, opts.Module())
 }
 
 func apiGitignore() string {

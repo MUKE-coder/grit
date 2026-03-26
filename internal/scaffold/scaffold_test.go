@@ -287,6 +287,154 @@ func TestCreateDirectories_TanStackWeb(t *testing.T) {
 	}
 }
 
+func TestCreateSingleDirectories(t *testing.T) {
+	root := t.TempDir()
+
+	if err := createSingleDirectories(root); err != nil {
+		t.Fatalf("createSingleDirectories error: %v", err)
+	}
+
+	// Go internal dirs at root level (no apps/api/)
+	for _, dir := range []string{
+		filepath.Join(root, "cmd", "server"),
+		filepath.Join(root, "internal", "config"),
+		filepath.Join(root, "internal", "models"),
+		filepath.Join(root, "internal", "handlers"),
+		filepath.Join(root, "internal", "routes"),
+		filepath.Join(root, "internal", "cache"),
+		filepath.Join(root, "frontend", "src", "routes"),
+		filepath.Join(root, "frontend", "src", "components"),
+	} {
+		if _, err := os.Stat(dir); err != nil {
+			t.Errorf("expected directory %s was not created: %v", dir, err)
+		}
+	}
+
+	// apps/ directory should NOT exist
+	if _, err := os.Stat(filepath.Join(root, "apps")); err == nil {
+		t.Error("apps/ directory should not exist in single app architecture")
+	}
+}
+
+func TestSingleAppAPIFiles(t *testing.T) {
+	root := t.TempDir()
+	opts := Options{ProjectName: "my-single-app", Architecture: ArchSingle, Frontend: FrontendTanStack}
+
+	if err := createSingleDirectories(root); err != nil {
+		t.Fatalf("createSingleDirectories: %v", err)
+	}
+	if err := writeAPIFiles(root, opts); err != nil {
+		t.Fatalf("writeAPIFiles: %v", err)
+	}
+
+	// Go files should be at root/internal/, not root/apps/api/internal/
+	for _, f := range []string{
+		filepath.Join(root, "go.mod"),
+		filepath.Join(root, "internal", "config", "config.go"),
+		filepath.Join(root, "internal", "models", "user.go"),
+		filepath.Join(root, "internal", "handlers", "auth.go"),
+		filepath.Join(root, "internal", "routes", "routes.go"),
+	} {
+		if _, err := os.Stat(f); err != nil {
+			t.Errorf("expected file %s was not created: %v", f, err)
+		}
+	}
+
+	// apps/api/ should NOT exist
+	if _, err := os.Stat(filepath.Join(root, "apps")); err == nil {
+		t.Error("apps/ directory should not exist for single app")
+	}
+
+	// go.mod should use root module path (not project-name/apps/api)
+	data, _ := os.ReadFile(filepath.Join(root, "go.mod"))
+	content := string(data)
+	if !strings.Contains(content, "module my-single-app") {
+		t.Error("go.mod should contain 'module my-single-app', not 'module my-single-app/apps/api'")
+	}
+	if strings.Contains(content, "apps/api") {
+		t.Error("go.mod should NOT contain 'apps/api' for single app")
+	}
+}
+
+func TestSingleAppFrontendFiles(t *testing.T) {
+	root := t.TempDir()
+	opts := Options{ProjectName: "my-single-app", Architecture: ArchSingle, Frontend: FrontendTanStack}
+
+	if err := createSingleDirectories(root); err != nil {
+		t.Fatalf("createSingleDirectories: %v", err)
+	}
+	if err := writeSingleFrontendFiles(root, opts); err != nil {
+		t.Fatalf("writeSingleFrontendFiles: %v", err)
+	}
+
+	for _, f := range []string{
+		filepath.Join(root, "frontend", "package.json"),
+		filepath.Join(root, "frontend", "vite.config.ts"),
+		filepath.Join(root, "frontend", "index.html"),
+		filepath.Join(root, "frontend", "src", "main.tsx"),
+		filepath.Join(root, "frontend", "src", "routes", "__root.tsx"),
+		filepath.Join(root, "frontend", "src", "routes", "index.tsx"),
+	} {
+		if _, err := os.Stat(f); err != nil {
+			t.Errorf("expected file %s was not created: %v", f, err)
+		}
+	}
+}
+
+func TestSingleMainGoEmbed(t *testing.T) {
+	root := t.TempDir()
+	opts := Options{ProjectName: "my-single-app", Architecture: ArchSingle, Frontend: FrontendTanStack}
+
+	if err := createSingleDirectories(root); err != nil {
+		t.Fatalf("createSingleDirectories: %v", err)
+	}
+	if err := writeSingleMainGo(root, opts); err != nil {
+		t.Fatalf("writeSingleMainGo: %v", err)
+	}
+
+	mainPath := filepath.Join(root, "cmd", "server", "main.go")
+	data, err := os.ReadFile(mainPath)
+	if err != nil {
+		t.Fatalf("reading main.go: %v", err)
+	}
+
+	content := string(data)
+	if !strings.Contains(content, "go:embed frontend/dist") {
+		t.Error("single app main.go should contain go:embed directive")
+	}
+	if !strings.Contains(content, "my-single-app/internal") {
+		t.Error("single app main.go should use root module path imports")
+	}
+	if strings.Contains(content, "apps/api") {
+		t.Error("single app main.go should NOT reference apps/api")
+	}
+}
+
+func TestOptions_APIRoot(t *testing.T) {
+	single := Options{ProjectName: "app", Architecture: ArchSingle}
+	if got := single.APIRoot("/tmp/app"); got != "/tmp/app" {
+		t.Errorf("Single APIRoot = %s, want /tmp/app", got)
+	}
+
+	triple := Options{ProjectName: "app", Architecture: ArchTriple}
+	want := filepath.Join("/tmp/app", "apps", "api")
+	if got := triple.APIRoot("/tmp/app"); got != want {
+		t.Errorf("Triple APIRoot = %s, want %s", got, want)
+	}
+}
+
+func TestOptions_Module(t *testing.T) {
+	single := Options{ProjectName: "my-app", Architecture: ArchSingle}
+	if got := single.Module(); got != "my-app" {
+		t.Errorf("Single Module = %s, want my-app", got)
+	}
+
+	triple := Options{ProjectName: "my-app", Architecture: ArchTriple}
+	if got := triple.Module(); got != "my-app/apps/api" {
+		t.Errorf("Triple Module = %s, want my-app/apps/api", got)
+	}
+}
+
 func TestWriteWebTanStackFiles(t *testing.T) {
 	root := t.TempDir()
 	opts := Options{ProjectName: "test-app", Architecture: ArchTriple, Frontend: FrontendTanStack}

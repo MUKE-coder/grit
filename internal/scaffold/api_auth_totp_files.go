@@ -7,8 +7,8 @@ import (
 )
 
 func writeTOTPFiles(root string, opts Options) error {
-	apiRoot := filepath.Join(root, "apps", "api")
-	module := opts.ProjectName + "/apps/api"
+	apiRoot := opts.APIRoot(root)
+	module := opts.Module()
 
 	files := map[string]string{
 		filepath.Join(apiRoot, "internal", "totp", "totp.go"):         totpServiceGo(),

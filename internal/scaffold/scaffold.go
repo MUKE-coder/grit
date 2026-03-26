@@ -138,6 +138,24 @@ func (o Options) UseTanStack() bool {
 	return o.Frontend == FrontendTanStack
 }
 
+// APIRoot returns the base directory for Go API files.
+// Single app: project root. Monorepo: apps/api/.
+func (o Options) APIRoot(root string) string {
+	if o.Architecture == ArchSingle {
+		return root
+	}
+	return filepath.Join(root, "apps", "api")
+}
+
+// Module returns the Go module path for the API.
+// Single app: project-name. Monorepo: project-name/apps/api.
+func (o Options) Module() string {
+	if o.Architecture == ArchSingle {
+		return o.ProjectName
+	}
+	return o.ProjectName + "/apps/api"
+}
+
 // ValidateProjectName ensures the project name is lowercase, alphanumeric, and hyphens only.
 func ValidateProjectName(name string) error {
 	re := regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
@@ -153,6 +171,12 @@ func ValidateProjectName(name string) error {
 // Run executes the full scaffolding process.
 func Run(opts Options) error {
 	opts.Normalize()
+
+	// Dispatch to single app scaffold if applicable
+	if opts.Architecture == ArchSingle {
+		return RunSingle(opts)
+	}
+
 	root := opts.ProjectName
 
 	if _, err := os.Stat(root); err == nil {
@@ -293,6 +317,141 @@ func Run(opts Options) error {
 		spinner.Printf("  → Scaffolding frontend tests (Vitest + Playwright)...\n")
 		if err := writeFrontendTestFiles(root, opts); err != nil {
 			return fmt.Errorf("writing frontend test files: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// RunSingle executes the single-app scaffolding process.
+// Single app: Go API + embedded React SPA, one binary, no Turborepo.
+func RunSingle(opts Options) error {
+	root := opts.ProjectName
+
+	if _, err := os.Stat(root); err == nil {
+		return fmt.Errorf("directory %q already exists", root)
+	}
+
+	spinner := color.New(color.FgHiBlack)
+
+	// Create directory structure
+	spinner.Printf("  → Creating directory structure...\n")
+	if err := createSingleDirectories(root); err != nil {
+		return fmt.Errorf("creating directories: %w", err)
+	}
+
+	// Write root config files (.env, .gitignore, skill file, Makefile)
+	spinner.Printf("  → Writing configuration files...\n")
+	if err := writeSingleRootFiles(root, opts); err != nil {
+		return fmt.Errorf("writing root files: %w", err)
+	}
+
+	// Write .env file (reuse from root_files but with single-app paths)
+	if err := writeRootFiles(root, opts); err != nil {
+		return fmt.Errorf("writing env files: %w", err)
+	}
+
+	// Write Go API files (uses opts.APIRoot which returns root for single)
+	spinner.Printf("  → Scaffolding Go API...\n")
+	if err := writeAPIFiles(root, opts); err != nil {
+		return fmt.Errorf("writing API files: %w", err)
+	}
+
+	// Write migrate/seed tools
+	spinner.Printf("  → Adding migration and seed tools...\n")
+	if err := writeMigrateSeedFiles(root, opts); err != nil {
+		return fmt.Errorf("writing migrate/seed files: %w", err)
+	}
+
+	// Write batteries
+	spinner.Printf("  → Adding batteries (cache, storage, mail, jobs, cron, AI, TOTP)...\n")
+	if err := writeCacheFiles(root, opts); err != nil {
+		return fmt.Errorf("writing cache files: %w", err)
+	}
+	if err := writeStorageFiles(root, opts); err != nil {
+		return fmt.Errorf("writing storage files: %w", err)
+	}
+	if err := writeMailFiles(root, opts); err != nil {
+		return fmt.Errorf("writing mail files: %w", err)
+	}
+	if err := writeJobsFiles(root, opts); err != nil {
+		return fmt.Errorf("writing jobs files: %w", err)
+	}
+	if err := writeCronFiles(root, opts); err != nil {
+		return fmt.Errorf("writing cron files: %w", err)
+	}
+	if err := writeAIFiles(root, opts); err != nil {
+		return fmt.Errorf("writing AI files: %w", err)
+	}
+	if err := writeTOTPFiles(root, opts); err != nil {
+		return fmt.Errorf("writing TOTP files: %w", err)
+	}
+
+	// Write blog example
+	spinner.Printf("  → Adding blog example...\n")
+	if err := writeAPIBlogFiles(root, opts); err != nil {
+		return fmt.Errorf("writing blog files: %w", err)
+	}
+
+	// Write embed-aware main.go (replaces the standard cmd/server/main.go)
+	spinner.Printf("  → Writing single-app main.go with go:embed...\n")
+	if err := writeSingleMainGo(root, opts); err != nil {
+		return fmt.Errorf("writing single main.go: %w", err)
+	}
+
+	// Run go mod tidy at project root
+	spinner.Printf("  → Resolving Go dependencies...\n")
+	tidyCmd := exec.Command("go", "mod", "tidy")
+	tidyCmd.Dir = root
+	if out, err := tidyCmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("running go mod tidy: %w\n%s", err, string(out))
+	}
+
+	// Write Docker files
+	spinner.Printf("  → Creating Docker setup...\n")
+	if err := writeDockerFiles(root, opts); err != nil {
+		return fmt.Errorf("writing Docker files: %w", err)
+	}
+
+	// Write frontend
+	spinner.Printf("  → Scaffolding React frontend (Vite + TanStack Router)...\n")
+	if err := writeSingleFrontendFiles(root, opts); err != nil {
+		return fmt.Errorf("writing frontend files: %w", err)
+	}
+
+	return nil
+}
+
+// createSingleDirectories creates the flat directory structure for a single app.
+func createSingleDirectories(root string) error {
+	dirs := []string{
+		filepath.Join(root, "cmd", "server"),
+		filepath.Join(root, "cmd", "migrate"),
+		filepath.Join(root, "cmd", "seed"),
+		filepath.Join(root, "internal", "config"),
+		filepath.Join(root, "internal", "database"),
+		filepath.Join(root, "internal", "models"),
+		filepath.Join(root, "internal", "handlers"),
+		filepath.Join(root, "internal", "middleware"),
+		filepath.Join(root, "internal", "services"),
+		filepath.Join(root, "internal", "routes"),
+		filepath.Join(root, "internal", "mail", "templates"),
+		filepath.Join(root, "internal", "storage"),
+		filepath.Join(root, "internal", "jobs"),
+		filepath.Join(root, "internal", "cron"),
+		filepath.Join(root, "internal", "cache"),
+		filepath.Join(root, "internal", "ai"),
+		filepath.Join(root, "internal", "totp"),
+		filepath.Join(root, "frontend", "src", "routes"),
+		filepath.Join(root, "frontend", "src", "components"),
+		filepath.Join(root, "frontend", "src", "hooks"),
+		filepath.Join(root, "frontend", "src", "lib"),
+		filepath.Join(root, "frontend", "public"),
+	}
+
+	for _, dir := range dirs {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("creating directory %s: %w", dir, err)
 		}
 	}
 

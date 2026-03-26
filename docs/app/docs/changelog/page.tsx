@@ -28,10 +28,46 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v3.1.0 */}
+            {/* v3.2.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.2.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>Single app architecture</strong> &mdash; <code>grit new my-app --single</code> creates
+                    a single Go binary that serves both the API and an embedded React SPA. Uses <code>go:embed</code>
+                    to bake the built frontend into the binary at compile time. One file to deploy. Dev mode runs
+                    Go on <code>:8080</code> and Vite on <code>:5173</code> with API proxy.
+                  </li>
+                  <li>
+                    <strong>Parameterized API paths</strong> &mdash; All Go API file generators now use
+                    <code>opts.APIRoot()</code> and <code>opts.Module()</code> helpers, enabling the same
+                    template functions to generate files for both monorepo (<code>apps/api/</code>) and
+                    single app (project root) architectures.
+                  </li>
+                </ul>
+
+                <h3>Single App Structure</h3>
+                <ul>
+                  <li><code>cmd/server/main.go</code> &mdash; Entry point with <code>go:embed frontend/dist/*</code> and SPA fallback routing</li>
+                  <li><code>internal/</code> &mdash; Full Go backend (same as monorepo API)</li>
+                  <li><code>frontend/</code> &mdash; React + Vite + TanStack Router SPA</li>
+                  <li><code>Makefile</code> &mdash; <code>make dev</code> (parallel servers), <code>make build</code> (single binary)</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v3.1.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v3.1.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 26, 2026</span>
