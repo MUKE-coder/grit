@@ -28,10 +28,55 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v2.9.0 */}
+            {/* v3.0.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.0.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>Interactive project creation</strong> &mdash; <code>grit new my-app</code> now
+                    launches an interactive prompt to select your architecture and frontend framework.
+                    Power users can skip with flags: <code>--single --vite</code>, <code>--triple --next</code>,
+                    <code>--api</code>, etc.
+                  </li>
+                  <li>
+                    <strong>5 architecture modes</strong> &mdash; Choose the project structure that fits your team:
+                    <strong>Single</strong> (Go API + embedded React SPA, one binary),
+                    <strong>Double</strong> (Web + API Turborepo),
+                    <strong>Triple</strong> (Web + Admin + API Turborepo),
+                    <strong>API Only</strong> (Go backend, no frontend),
+                    <strong>Mobile</strong> (API + Expo React Native).
+                  </li>
+                  <li>
+                    <strong>Frontend framework choice</strong> &mdash; Pick between <strong>Next.js</strong> (SSR,
+                    App Router) and <strong>TanStack Router</strong> (Vite, fast builds, small bundle, SPA).
+                    Available for all architecture modes that include a frontend.
+                  </li>
+                </ul>
+
+                <h3>Breaking Changes</h3>
+                <ul>
+                  <li>
+                    <strong>Options struct refactored</strong> &mdash; The internal <code>Options</code> struct
+                    now uses <code>Architecture</code> and <code>Frontend</code> enum fields instead of boolean
+                    flags. Legacy flags (<code>--api</code>, <code>--mobile</code>, <code>--full</code>) still
+                    work via the <code>Normalize()</code> migration layer.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v2.9.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v2.9.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 26, 2026</span>

@@ -22,7 +22,7 @@ func writeDockerFiles(root string, opts Options) error {
 		files[filepath.Join(root, "apps", "docs", "Dockerfile")] = dockerfileNextJS("docs")
 	}
 
-	if !opts.APIOnly {
+	if opts.Architecture != ArchAPI {
 		files[filepath.Join(root, ".dockerignore")] = dockerIgnore()
 	}
 

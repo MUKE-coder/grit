@@ -16,7 +16,7 @@ func writeRootFiles(root string, opts Options) error {
 		filepath.Join(root, ".claude", "skills", "grit", "reference.md"):  gritSkillReference(opts),
 	}
 
-	if !opts.APIOnly {
+	if opts.ShouldUseTurborepo() {
 		files[filepath.Join(root, "pnpm-workspace.yaml")] = pnpmWorkspace()
 		files[filepath.Join(root, "turbo.json")] = turboJSON()
 		files[filepath.Join(root, "package.json")] = rootPackageJSON(opts)

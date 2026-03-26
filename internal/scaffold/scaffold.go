@@ -11,14 +11,68 @@ import (
 	"github.com/fatih/color"
 )
 
+// Architecture represents the project architecture mode.
+type Architecture string
+
+const (
+	ArchSingle Architecture = "single" // Go API + embedded React SPA (one binary)
+	ArchDouble Architecture = "double" // Turborepo: Web + API
+	ArchTriple Architecture = "triple" // Turborepo: Web + Admin + API
+	ArchAPI    Architecture = "api"    // Go API only (no frontend)
+	ArchMobile Architecture = "mobile" // Turborepo: API + Expo mobile
+)
+
+// Frontend represents the frontend framework choice.
+type Frontend string
+
+const (
+	FrontendNext     Frontend = "next"     // Next.js (App Router, SSR)
+	FrontendTanStack Frontend = "tanstack" // TanStack Router (Vite, SPA)
+)
+
 // Options holds the scaffolding configuration.
 type Options struct {
-	ProjectName string
+	ProjectName  string
+	Architecture Architecture
+	Frontend     Frontend
+	Style        string
+
+	// Deprecated: use Architecture instead. Kept for backward compatibility.
 	APIOnly     bool
 	IncludeExpo bool
 	MobileOnly  bool
 	Full        bool
-	Style       string
+}
+
+// Normalize maps legacy boolean flags to the new Architecture enum.
+// Call this after constructing Options from CLI flags.
+func (o *Options) Normalize() {
+	// If Architecture is already set, it takes priority
+	if o.Architecture != "" {
+		return
+	}
+
+	// Map legacy booleans to Architecture
+	switch {
+	case o.APIOnly:
+		o.Architecture = ArchAPI
+	case o.MobileOnly:
+		o.Architecture = ArchMobile
+	case o.Full:
+		o.Architecture = ArchTriple // full includes everything
+	default:
+		o.Architecture = ArchTriple // default: triple (web + admin + api)
+	}
+
+	// Legacy expo flag: triple + expo
+	if o.IncludeExpo && o.Architecture == ArchTriple {
+		// Keep as triple but also include expo
+	}
+
+	// Default frontend to Next.js if not set
+	if o.Frontend == "" {
+		o.Frontend = FrontendNext
+	}
 }
 
 // ValidStyles lists all supported admin panel style variants.
@@ -39,29 +93,49 @@ func (o *Options) ValidateStyle() error {
 	return fmt.Errorf("invalid style %q: must be one of %s", o.Style, strings.Join(ValidStyles, ", "))
 }
 
-// ShouldIncludeWeb returns true if the web app should be scaffolded.
+// ShouldIncludeWeb returns true if a web frontend app should be scaffolded (Turborepo web app).
 func (o Options) ShouldIncludeWeb() bool {
-	return !o.APIOnly && !o.MobileOnly
+	return o.Architecture == ArchDouble || o.Architecture == ArchTriple
 }
 
 // ShouldIncludeAdmin returns true if the admin panel should be scaffolded.
 func (o Options) ShouldIncludeAdmin() bool {
-	return !o.APIOnly && !o.MobileOnly
+	return o.Architecture == ArchTriple
+}
+
+// ShouldIncludeSingleSPA returns true if this is a single-app embedded SPA.
+func (o Options) ShouldIncludeSingleSPA() bool {
+	return o.Architecture == ArchSingle
+}
+
+// ShouldUseTurborepo returns true if the project uses a Turborepo monorepo.
+func (o Options) ShouldUseTurborepo() bool {
+	return o.Architecture == ArchDouble || o.Architecture == ArchTriple || o.Architecture == ArchMobile
 }
 
 // ShouldIncludeShared returns true if the shared package should be scaffolded.
 func (o Options) ShouldIncludeShared() bool {
-	return !o.APIOnly
+	return o.ShouldUseTurborepo()
+}
+
+// ShouldIncludeFrontend returns true if any frontend (web, admin, or SPA) is included.
+func (o Options) ShouldIncludeFrontend() bool {
+	return o.Architecture != ArchAPI
 }
 
 // ShouldIncludeExpo returns true if the Expo app should be scaffolded.
 func (o Options) ShouldIncludeExpo() bool {
-	return o.IncludeExpo || o.MobileOnly || o.Full
+	return o.Architecture == ArchMobile || o.IncludeExpo || o.Full
 }
 
 // ShouldIncludeDocs returns true if the docs site should be scaffolded.
 func (o Options) ShouldIncludeDocs() bool {
 	return o.Full
+}
+
+// UseTanStack returns true if the frontend uses TanStack Router (Vite).
+func (o Options) UseTanStack() bool {
+	return o.Frontend == FrontendTanStack
 }
 
 // ValidateProjectName ensures the project name is lowercase, alphanumeric, and hyphens only.
@@ -78,6 +152,7 @@ func ValidateProjectName(name string) error {
 
 // Run executes the full scaffolding process.
 func Run(opts Options) error {
+	opts.Normalize()
 	root := opts.ProjectName
 
 	if _, err := os.Stat(root); err == nil {

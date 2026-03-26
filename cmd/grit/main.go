@@ -13,10 +13,11 @@ import (
 
 	"github.com/MUKE-coder/grit/v2/internal/generate"
 	"github.com/MUKE-coder/grit/v2/internal/project"
+	"github.com/MUKE-coder/grit/v2/internal/prompt"
 	"github.com/MUKE-coder/grit/v2/internal/scaffold"
 )
 
-var version = "2.9.0"
+var version = "3.0.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -57,13 +58,16 @@ func versionCmd() *cobra.Command {
 }
 
 func newCmd() *cobra.Command {
+	// New architecture/frontend flags
+	var archFlag, frontendFlag, style string
+
+	// Legacy flags (backward compatibility)
 	var apiOnly, includeExpo, mobileOnly, full bool
-	var style string
 
 	cmd := &cobra.Command{
 		Use:   "new <project-name>",
 		Short: "Create a new Grit project",
-		Long:  "Scaffold a new Grit monorepo with Go API, Next.js frontend, admin panel, and shared packages.",
+		Long:  "Scaffold a new Grit project. Interactive by default — select architecture and frontend.\nUse flags to skip prompts: grit new my-app --single --vite",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectName := args[0]
@@ -72,32 +76,69 @@ func newCmd() *cobra.Command {
 				return err
 			}
 
-			// Validate mutual exclusivity
-			count := 0
-			if apiOnly {
-				count++
-			}
-			if includeExpo {
-				count++
-			}
-			if mobileOnly {
-				count++
-			}
-			if full {
-				count++
-			}
-			if count > 1 {
-				return fmt.Errorf("only one mode flag can be used at a time (--api, --expo, --mobile, --full)")
-			}
-
 			opts := scaffold.Options{
 				ProjectName: projectName,
+				Style:       style,
+				// Legacy flags
 				APIOnly:     apiOnly,
 				IncludeExpo: includeExpo,
 				MobileOnly:  mobileOnly,
 				Full:        full,
-				Style:       style,
 			}
+
+			// Map architecture shorthand flags
+			switch archFlag {
+			case "single":
+				opts.Architecture = scaffold.ArchSingle
+			case "double":
+				opts.Architecture = scaffold.ArchDouble
+			case "triple":
+				opts.Architecture = scaffold.ArchTriple
+			case "api":
+				opts.Architecture = scaffold.ArchAPI
+			case "mobile":
+				opts.Architecture = scaffold.ArchMobile
+			case "":
+				// Will be set by legacy flags or interactive prompt
+			default:
+				return fmt.Errorf("invalid architecture %q: must be single, double, triple, api, or mobile", archFlag)
+			}
+
+			// Map frontend shorthand flags
+			switch frontendFlag {
+			case "next":
+				opts.Frontend = scaffold.FrontendNext
+			case "vite", "tanstack":
+				opts.Frontend = scaffold.FrontendTanStack
+			case "":
+				// Will be set by interactive prompt or default
+			default:
+				return fmt.Errorf("invalid frontend %q: must be next, vite, or tanstack", frontendFlag)
+			}
+
+			// Apply legacy flag mappings
+			opts.Normalize()
+
+			// If architecture is still empty (no flags set), show interactive prompt
+			if opts.Architecture == "" || (!cmd.Flags().Changed("arch") && !apiOnly && !mobileOnly && !full && !includeExpo && opts.Architecture == scaffold.ArchTriple) {
+				// Only prompt if no explicit flags were set
+				anyFlagSet := cmd.Flags().Changed("arch") || cmd.Flags().Changed("frontend") ||
+					cmd.Flags().Changed("api") || cmd.Flags().Changed("mobile") ||
+					cmd.Flags().Changed("expo") || cmd.Flags().Changed("full")
+
+				if !anyFlagSet {
+					printLogo()
+					// Reset to empty so prompt shows
+					opts.Architecture = ""
+					opts.Frontend = ""
+					if err := prompt.RunNewProjectPrompt(&opts); err != nil {
+						return err
+					}
+				}
+			}
+
+			// Final normalization (sets defaults for anything still empty)
+			opts.Normalize()
 
 			if err := opts.ValidateStyle(); err != nil {
 				return err
@@ -106,7 +147,10 @@ func newCmd() *cobra.Command {
 			printLogo()
 
 			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Printf("\n  Creating new Grit project: %s\n\n", projectName)
+			purple.Printf("\n  Creating new Grit project: %s\n", projectName)
+
+			gray := color.New(color.FgHiBlack)
+			gray.Printf("  Architecture: %s | Frontend: %s\n\n", opts.Architecture, opts.Frontend)
 
 			if err := scaffold.Run(opts); err != nil {
 				color.Red("\n  Error: %v\n", err)
@@ -118,11 +162,46 @@ func newCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVar(&apiOnly, "api", false, "Scaffold only the Go API (no frontend apps)")
-	cmd.Flags().BoolVar(&includeExpo, "expo", false, "Include Expo mobile app (api + web + admin + shared + expo)")
-	cmd.Flags().BoolVar(&mobileOnly, "mobile", false, "Scaffold API + Expo mobile app only")
-	cmd.Flags().BoolVar(&full, "full", false, "Scaffold everything including docs site")
-	cmd.Flags().StringVar(&style, "style", "default", "Admin panel style variant (default, modern, minimal, glass)")
+	// New flags
+	cmd.Flags().StringVar(&archFlag, "arch", "", "Architecture: single, double, triple, api, mobile")
+	cmd.Flags().StringVar(&frontendFlag, "frontend", "", "Frontend framework: next, vite (tanstack)")
+	cmd.Flags().StringVar(&style, "style", "", "Admin panel style variant (default, modern, minimal, glass)")
+
+	// Shorthand architecture flags
+	cmd.Flags().BoolVar(&apiOnly, "api", false, "Shorthand for --arch=api")
+	cmd.Flags().BoolVar(&mobileOnly, "mobile", false, "Shorthand for --arch=mobile")
+	cmd.Flags().BoolVar(&full, "full", false, "Shorthand for --arch=triple with docs")
+	cmd.Flags().BoolVar(&includeExpo, "expo", false, "Include Expo mobile app")
+
+	// Shorthand frontend flags
+	cmd.Flags().Bool("vite", false, "Shorthand for --frontend=vite (TanStack Router)")
+	cmd.Flags().Bool("next", false, "Shorthand for --frontend=next (Next.js)")
+
+	// Handle shorthand frontend flags
+	cmd.PreRunE = func(cmd *cobra.Command, args []string) error {
+		if v, _ := cmd.Flags().GetBool("vite"); v {
+			frontendFlag = "vite"
+		}
+		if v, _ := cmd.Flags().GetBool("next"); v {
+			frontendFlag = "next"
+		}
+		// Shorthand single/double/triple
+		if v, _ := cmd.Flags().GetBool("single"); v {
+			archFlag = "single"
+		}
+		if v, _ := cmd.Flags().GetBool("double"); v {
+			archFlag = "double"
+		}
+		if v, _ := cmd.Flags().GetBool("triple"); v {
+			archFlag = "triple"
+		}
+		return nil
+	}
+
+	// Shorthand architecture flags
+	cmd.Flags().Bool("single", false, "Shorthand for --arch=single")
+	cmd.Flags().Bool("double", false, "Shorthand for --arch=double")
+	cmd.Flags().Bool("triple", false, "Shorthand for --arch=triple")
 
 	return cmd
 }
@@ -652,9 +731,13 @@ func printSuccess(name string, opts scaffold.Options) {
 	cyan.Printf("    cd %s\n", name)
 	cyan.Println("    docker compose up -d")
 
-	if opts.APIOnly {
+	switch opts.Architecture {
+	case scaffold.ArchAPI:
 		cyan.Println("    cd apps/api && go run cmd/server/main.go")
-	} else {
+	case scaffold.ArchSingle:
+		cyan.Println("    cd frontend && pnpm install")
+		cyan.Println("    go run main.go")
+	default:
 		cyan.Println("    pnpm install")
 		cyan.Println("    pnpm dev")
 	}
@@ -675,6 +758,9 @@ func printSuccess(name string, opts scaffold.Options) {
 	}
 	if opts.ShouldIncludeAdmin() {
 		gray.Printf("  Admin:       http://localhost:3001\n")
+	}
+	if opts.ShouldIncludeSingleSPA() {
+		gray.Printf("  Frontend:    http://localhost:5173\n")
 	}
 	if opts.ShouldIncludeExpo() {
 		gray.Printf("  Expo:        exp://localhost:8081\n")

@@ -157,6 +157,7 @@ func TestOptions_ShouldInclude(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.opts.Normalize()
 			if got := tt.opts.ShouldIncludeWeb(); got != tt.includeWeb {
 				t.Errorf("ShouldIncludeWeb() = %v, want %v", got, tt.includeWeb)
 			}
@@ -181,6 +182,7 @@ func TestOptions_ShouldInclude(t *testing.T) {
 func TestCreateDirectories_APIOnly(t *testing.T) {
 	root := t.TempDir()
 	opts := Options{ProjectName: "test-app", APIOnly: true}
+	opts.Normalize()
 
 	if err := createDirectories(root, opts); err != nil {
 		t.Fatalf("createDirectories error: %v", err)
@@ -227,6 +229,7 @@ func TestCreateDirectories_APIOnly(t *testing.T) {
 func TestCreateDirectories_Default(t *testing.T) {
 	root := t.TempDir()
 	opts := Options{ProjectName: "test-app"}
+	opts.Normalize()
 
 	if err := createDirectories(root, opts); err != nil {
 		t.Fatalf("createDirectories error: %v", err)
@@ -260,6 +263,7 @@ func TestCreateDirectories_Default(t *testing.T) {
 func TestCreateDirectories_Full(t *testing.T) {
 	root := t.TempDir()
 	opts := Options{ProjectName: "test-app", Full: true}
+	opts.Normalize()
 
 	if err := createDirectories(root, opts); err != nil {
 		t.Fatalf("createDirectories error: %v", err)
@@ -285,6 +289,7 @@ func TestCreateDirectories_Full(t *testing.T) {
 func TestWriteAPIFiles_ModuleSubstitution(t *testing.T) {
 	root := t.TempDir()
 	opts := Options{ProjectName: "my-project"}
+	opts.Normalize()
 
 	if err := createDirectories(root, opts); err != nil {
 		t.Fatalf("createDirectories: %v", err)
@@ -337,6 +342,7 @@ func TestWriteAPIFiles_ModuleSubstitution(t *testing.T) {
 func TestWriteAPIFiles_KeyFilesExist(t *testing.T) {
 	root := t.TempDir()
 	opts := Options{ProjectName: "acme"}
+	opts.Normalize()
 
 	if err := createDirectories(root, opts); err != nil {
 		t.Fatalf("createDirectories: %v", err)
@@ -378,6 +384,7 @@ func TestWriteAPIFiles_KeyFilesExist(t *testing.T) {
 func TestWriteFrontendTestFiles_KeyFilesExist(t *testing.T) {
 	root := t.TempDir()
 	opts := Options{ProjectName: "acme"} // default mode: web + admin
+	opts.Normalize()
 
 	if err := createDirectories(root, opts); err != nil {
 		t.Fatalf("createDirectories: %v", err)
@@ -412,6 +419,7 @@ func TestWriteFrontendTestFiles_KeyFilesExist(t *testing.T) {
 func TestWriteFrontendTestFiles_APIOnly_NoFiles(t *testing.T) {
 	root := t.TempDir()
 	opts := Options{ProjectName: "acme", APIOnly: true}
+	opts.Normalize()
 
 	if err := createDirectories(root, opts); err != nil {
 		t.Fatalf("createDirectories: %v", err)
