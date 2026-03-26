@@ -341,9 +341,88 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
       </section>
 
       {/* ═══════════════════════════════════════════════════════
-          TECH STACK
+          COMPARISON TABLE
       ═══════════════════════════════════════════════════════ */}
       <section className="py-24 px-6 border-t border-border/40">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">Framework Comparison</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">How Grit compares</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              See what you get out of the box versus setting it up yourself with other frameworks.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto rounded-xl border border-border/40">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/40 bg-card/80">
+                  <th className="px-5 py-4 text-left font-medium text-muted-foreground w-[200px]">Feature</th>
+                  <th className="px-5 py-4 text-center font-semibold text-primary">Grit</th>
+                  <th className="px-5 py-4 text-center font-medium text-muted-foreground">Next.js</th>
+                  <th className="px-5 py-4 text-center font-medium text-muted-foreground">Laravel</th>
+                  <th className="px-5 py-4 text-center font-medium text-muted-foreground">T3 Stack</th>
+                  <th className="px-5 py-4 text-center font-medium text-muted-foreground hidden lg:table-cell">Goravel</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/30">
+                {[
+                  { feature: 'Go Backend', grit: true, next: false, laravel: false, t3: false, goravel: true },
+                  { feature: 'React Frontend', grit: true, next: true, laravel: false, t3: true, goravel: false },
+                  { feature: 'Admin Panel', grit: true, next: false, laravel: 'partial', t3: false, goravel: false },
+                  { feature: 'Code Generator (CLI)', grit: true, next: false, laravel: true, t3: false, goravel: true },
+                  { feature: 'JWT + OAuth2 Auth', grit: true, next: false, laravel: true, t3: 'partial', goravel: true },
+                  { feature: 'Two-Factor Auth (TOTP)', grit: true, next: false, laravel: false, t3: false, goravel: false },
+                  { feature: 'File Storage (S3)', grit: true, next: false, laravel: true, t3: false, goravel: true },
+                  { feature: 'Background Jobs', grit: true, next: false, laravel: true, t3: false, goravel: true },
+                  { feature: 'Email System', grit: true, next: false, laravel: true, t3: false, goravel: true },
+                  { feature: 'AI Integration', grit: true, next: false, laravel: false, t3: false, goravel: false },
+                  { feature: 'API Documentation', grit: true, next: false, laravel: false, t3: false, goravel: false },
+                  { feature: 'Database Browser', grit: true, next: false, laravel: false, t3: false, goravel: false },
+                  { feature: 'Security (WAF)', grit: true, next: false, laravel: false, t3: false, goravel: false },
+                  { feature: 'Observability', grit: true, next: false, laravel: false, t3: false, goravel: false },
+                  { feature: 'One-Command Deploy', grit: true, next: false, laravel: false, t3: false, goravel: true },
+                  { feature: 'Maintenance Mode', grit: true, next: false, laravel: true, t3: false, goravel: true },
+                  { feature: 'Desktop App (Wails)', grit: true, next: false, laravel: false, t3: false, goravel: false },
+                  { feature: 'Multiple Architectures', grit: true, next: false, laravel: false, t3: false, goravel: false },
+                  { feature: 'TanStack Router Option', grit: true, next: false, laravel: false, t3: false, goravel: false },
+                  { feature: 'Shared Types (Zod)', grit: true, next: false, laravel: false, t3: true, goravel: false },
+                ].map((row) => (
+                  <tr key={row.feature} className="hover:bg-accent/20 transition-colors">
+                    <td className="px-5 py-3 font-medium text-foreground/90 text-[13px]">{row.feature}</td>
+                    {[row.grit, row.next, row.laravel, row.t3, row.goravel].map((val, i) => (
+                      <td key={i} className={`px-5 py-3 text-center ${i === 4 ? 'hidden lg:table-cell' : ''}`}>
+                        {val === true ? (
+                          <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full ${i === 0 ? 'bg-primary/15 text-primary' : 'bg-emerald-500/15 text-emerald-400'}`}>
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                          </span>
+                        ) : val === 'partial' ? (
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/15 text-amber-400">
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" /></svg>
+                          </span>
+                        ) : (
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-muted/50 text-muted-foreground/30">
+                            <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                          </span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <p className="text-center text-xs text-muted-foreground/60 mt-4">
+            Comparison based on out-of-the-box features without additional packages or configuration.
+          </p>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          TECH STACK
+      ═══════════════════════════════════════════════════════ */}
+      <section className="py-24 px-6 border-t border-border/40 bg-card/30">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">Tech Stack</p>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12">Built on proven technologies</h2>
