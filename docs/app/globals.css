@@ -162,6 +162,70 @@
   background-size: 24px 24px;
 }
 
+/* Premium grid pattern for cards */
+.grid-pattern {
+  background-image:
+    linear-gradient(to right, hsl(var(--border) / 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--border) / 0.15) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Card gradient overlay */
+.card-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.03) 0%, transparent 50%, hsl(var(--primary) / 0.02) 100%);
+}
+
+/* Animated typing cursor */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+.cursor-blink::after {
+  content: '▊';
+  animation: blink 1s step-end infinite;
+  color: hsl(var(--primary));
+  margin-left: 2px;
+}
+
+/* Pulse glow animation for icons */
+@keyframes icon-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+.icon-animated:hover svg {
+  animation: icon-pulse 1.5s ease-in-out infinite;
+}
+
+/* Fade in up animation */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+/* Staggered children animation */
+.stagger-children > * {
+  opacity: 0;
+  animation: fade-in-up 0.5s ease-out forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 80ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 160ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 320ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 400ms; }
+
+/* Count up animation */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-count {
+  animation: count-up 0.8s ease-out forwards;
+}
+
 /* Prose styling for docs content */
 .prose-grit h2 {
   @apply text-2xl font-semibold tracking-tight mb-4 mt-10 text-foreground scroll-mt-20;

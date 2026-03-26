@@ -47,7 +47,7 @@ export function SiteHeader() {
               key={item.label}
               href={item.href}
               {...('external' in item ? { target: '_blank', rel: 'noreferrer' } : {})}
-              className="px-3 py-1.5 text-[13px] text-slate-400 hover:text-white transition-colors"
+              className="px-3 py-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
             >
               {item.label}
             </Link>
@@ -62,7 +62,7 @@ export function SiteHeader() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-slate-400 hover:text-white hover:bg-white/5"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             >
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -70,7 +70,7 @@ export function SiteHeader() {
             </Button>
           )}
 
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white hover:bg-white/5" asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50" asChild>
             <Link href="https://github.com/MUKE-coder/grit" target="_blank" rel="noreferrer">
               <Github className="h-4 w-4" />
               <span className="sr-only">GitHub</span>
