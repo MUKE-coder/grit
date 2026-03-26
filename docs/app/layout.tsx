@@ -4,6 +4,7 @@ import Script from 'next/script'
 import { DM_Sans, JetBrains_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { OrganizationSchema } from '@/components/structured-data'
+import { NexoraChat } from '@/components/nexora-chat'
 import { siteConfig } from '@/config/site'
 
 import './globals.css'
@@ -81,6 +82,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <OrganizationSchema />
           {children}
+          <NexoraChat />
         </ThemeProvider>
         {process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID && (
           <Script
