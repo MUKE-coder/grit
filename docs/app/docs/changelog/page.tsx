@@ -28,10 +28,58 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v2.8.0 */}
+            {/* v2.9.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v2.9.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>Two-Factor Authentication (TOTP)</strong> &mdash; Every <code>grit new</code> project
+                    now includes a complete 2FA system with authenticator app support (Google Authenticator,
+                    Authy, 1Password, etc.). Zero-dependency RFC 6238 implementation with HMAC-SHA1.
+                    Includes setup flow with QR code URI generation, 6-digit code verification with
+                    &plusmn;1 window clock skew tolerance, and seamless integration with the existing
+                    JWT login flow.
+                  </li>
+                  <li>
+                    <strong>Backup Codes</strong> &mdash; 10 one-time-use recovery codes generated when
+                    enabling 2FA. Each code is individually bcrypt-hashed for storage. Codes can be
+                    regenerated at any time (invalidates previous set). Use during login as an alternative
+                    to the authenticator app.
+                  </li>
+                  <li>
+                    <strong>Trusted Devices</strong> &mdash; &ldquo;Remember this device&rdquo; option
+                    during TOTP verification. Sets an HttpOnly cookie with a SHA-256 hashed token stored
+                    in the database. Trusted devices last 30 days with sliding expiry (refreshed on each use).
+                    Users can revoke all trusted devices from their account.
+                  </li>
+                </ul>
+
+                <h3>New Endpoints</h3>
+                <ul>
+                  <li><code>POST /api/auth/totp/setup</code> &mdash; Generate TOTP secret + QR URI (authenticated)</li>
+                  <li><code>POST /api/auth/totp/enable</code> &mdash; Verify initial code and activate 2FA</li>
+                  <li><code>POST /api/auth/totp/verify</code> &mdash; Verify TOTP code during login (public, uses pending token)</li>
+                  <li><code>POST /api/auth/totp/backup-codes/verify</code> &mdash; Use backup code during login</li>
+                  <li><code>POST /api/auth/totp/disable</code> &mdash; Disable 2FA (requires password)</li>
+                  <li><code>GET /api/auth/totp/status</code> &mdash; Check 2FA status, remaining backup codes, trusted device count</li>
+                  <li><code>POST /api/auth/totp/backup-codes</code> &mdash; Regenerate backup codes</li>
+                  <li><code>DELETE /api/auth/totp/trusted-devices</code> &mdash; Revoke all trusted devices</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v2.8.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v2.8.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 16, 2026</span>

@@ -108,6 +108,9 @@ AI_GATEWAY_API_KEY=                           # Get from vercel.com/ai-gateway
 AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format
 AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
 
+# Two-Factor Authentication (TOTP)
+TOTP_ISSUER=%s
+
 # Observability — Pulse performance monitoring dashboard
 PULSE_ENABLED=true
 PULSE_USERNAME=admin
@@ -118,7 +121,7 @@ SENTINEL_ENABLED=true
 SENTINEL_USERNAME=admin
 SENTINEL_PASSWORD=sentinel
 SENTINEL_SECRET_KEY=change-me-in-production
-`, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
+`, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 
 func envExampleFile(opts Options) string {
@@ -197,6 +200,9 @@ GORM_STUDIO_PASSWORD=studio             # Login password for the Studio UI
 AI_GATEWAY_API_KEY=                           # Get from vercel.com/ai-gateway
 AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model (e.g. openai/gpt-5.4, google/gemini-2.5-pro)
 AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
+
+# Two-Factor Authentication (TOTP)
+TOTP_ISSUER=myapp                    # App name shown in authenticator apps
 
 # Observability — Pulse (performance monitoring, request tracing, error tracking)
 PULSE_ENABLED=true                   # Set to "false" to disable Pulse entirely
@@ -278,6 +284,9 @@ AI_GATEWAY_API_KEY=your-gateway-key  # Get from vercel.com/ai-gateway
 AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format
 AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
 
+# ─── TOTP (Two-Factor Authentication) ────────────────
+TOTP_ISSUER=%s
+
 # ─── Observability (Pulse) ────────────────────────────
 PULSE_ENABLED=true
 PULSE_USERNAME=admin
@@ -288,7 +297,7 @@ SENTINEL_ENABLED=true
 SENTINEL_USERNAME=admin
 SENTINEL_PASSWORD=change-me-in-production
 SENTINEL_SECRET_KEY=generate-a-random-string-here
-`, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
+`, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 
 func rootGitignore() string {

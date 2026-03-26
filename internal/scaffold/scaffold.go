@@ -130,6 +130,9 @@ func Run(opts Options) error {
 	if err := writeAIFiles(root, opts); err != nil {
 		return fmt.Errorf("writing AI files: %w", err)
 	}
+	if err := writeTOTPFiles(root, opts); err != nil {
+		return fmt.Errorf("writing TOTP files: %w", err)
+	}
 
 	// Write blog example files
 	spinner.Printf("  → Adding blog example...\n")

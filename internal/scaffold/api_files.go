@@ -409,6 +409,9 @@ type Config struct {
 	AIGatewayModel  string
 	AIGatewayURL    string
 
+	// TOTP (Two-Factor Authentication)
+	TOTPIssuer string
+
 	// Security (Sentinel)
 	SentinelEnabled   bool
 	SentinelUsername   string
@@ -460,6 +463,8 @@ func Load() (*Config, error) {
 		AIGatewayAPIKey: getEnv("AI_GATEWAY_API_KEY", ""),
 		AIGatewayModel:  getEnv("AI_GATEWAY_MODEL", "anthropic/claude-sonnet-4-6"),
 		AIGatewayURL:    getEnv("AI_GATEWAY_URL", "https://ai-gateway.vercel.sh/v1"),
+
+		TOTPIssuer: getEnv("TOTP_ISSUER", getEnv("APP_NAME", "grit-app")),
 
 		SentinelEnabled:   getEnv("SENTINEL_ENABLED", "true") == "true",
 		SentinelUsername:   getEnv("SENTINEL_USERNAME", "admin"),
@@ -659,6 +664,9 @@ func Models() []interface{} {
 		&Upload{},
 		&Blog{},
 		&UIComponent{},
+		&TwoFactorConfig{},
+		&TrustedDevice{},
+		&TOTPPendingToken{},
 		// grit:models
 	}
 }
@@ -847,6 +855,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/config"
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/services"
+	"` + "{{MODULE}}" + `/internal/totp"
 )
 
 // AuthHandler handles authentication endpoints.
@@ -1004,6 +1013,38 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			},
 		})
 		return
+	}
+
+	// Check if user has TOTP enabled
+	var totpConfig models.TwoFactorConfig
+	if err := h.DB.Where("user_id = ? AND enabled = ?", user.ID, true).First(&totpConfig).Error; err == nil {
+		// TOTP is enabled — check for trusted device
+		if !handlers.IsTrustedDevice(c, h.DB, user.ID) {
+			// Generate a short-lived pending token for TOTP verification
+			pendingToken, err := totp.GeneratePendingToken()
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": gin.H{"code": "TOKEN_ERROR", "message": "Failed to create verification session"},
+				})
+				return
+			}
+
+			// Store hashed pending token in DB
+			h.DB.Create(&models.TOTPPendingToken{
+				UserID:    user.ID,
+				TokenHash: totp.HashToken(pendingToken),
+				ExpiresAt: time.Now().Add(totp.PendingTokenExpiry),
+			})
+
+			c.JSON(http.StatusOK, gin.H{
+				"data": gin.H{
+					"totp_required": true,
+					"pending_token": pendingToken,
+				},
+				"message": "Two-factor authentication required",
+			})
+			return
+		}
 	}
 
 	tokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
@@ -2169,6 +2210,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	cronHandler := &handlers.CronHandler{}
 	blogHandler := handlers.NewBlogHandler(db)
 	uiRegistryHandler := handlers.NewUIRegistryHandler(db, cfg.AppURL)
+	totpHandler := &handlers.TOTPHandler{
+		DB:          db,
+		AuthService: authService,
+		Issuer:      cfg.TOTPIssuer,
+	}
 	// grit:handlers
 
 	// Health check
@@ -2207,12 +2253,24 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		oauth.GET("/:provider/callback", authHandler.OAuthCallback)
 	}
 
+	// TOTP verification (public — uses pending tokens, not JWT)
+	auth.POST("/totp/verify", totpHandler.Verify)
+	auth.POST("/totp/backup-codes/verify", totpHandler.VerifyBackupCode)
+
 	// Protected routes
 	protected := r.Group("/api")
 	protected.Use(middleware.Auth(db, authService))
 	{
 		protected.GET("/auth/me", authHandler.Me)
 		protected.POST("/auth/logout", authHandler.Logout)
+
+		// Two-Factor Authentication (TOTP)
+		protected.POST("/auth/totp/setup", totpHandler.Setup)
+		protected.POST("/auth/totp/enable", totpHandler.Enable)
+		protected.POST("/auth/totp/disable", totpHandler.Disable)
+		protected.GET("/auth/totp/status", totpHandler.Status)
+		protected.POST("/auth/totp/backup-codes", totpHandler.RegenerateBackupCodes)
+		protected.DELETE("/auth/totp/trusted-devices", totpHandler.RevokeTrustedDevices)
 
 		// User routes (authenticated)
 		protected.GET("/users/:id", userHandler.GetByID)
