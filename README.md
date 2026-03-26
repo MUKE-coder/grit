@@ -1,8 +1,28 @@
-# Grit
+<p align="center">
+  <img src="images/grit_banner.png" alt="Grit Framework" width="100%" />
+</p>
 
-**Go + React. Built with Grit.**
+<h1 align="center">Grit</h1>
 
-Grit is a full-stack meta-framework that fuses Go (Gin + GORM) with Next.js (React + TypeScript) in a monorepo. One command to scaffold a complete production-ready project with authentication, admin panel, code generation, file storage, email, background jobs, Redis caching, AI integration, and Docker setup.
+<p align="center">
+  <strong>Go + React. Built with Grit.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/MUKE-coder/grit/releases"><img src="https://img.shields.io/github/v/release/MUKE-coder/grit?style=flat-square&color=38bdf8" alt="Release" /></a>
+  <a href="https://github.com/MUKE-coder/grit/blob/main/LICENSE"><img src="https://img.shields.io/github/license/MUKE-coder/grit?style=flat-square&color=38bdf8" alt="License" /></a>
+  <a href="https://gritframework.com"><img src="https://img.shields.io/badge/docs-gritframework.com-38bdf8?style=flat-square" alt="Docs" /></a>
+</p>
+
+<p align="center">
+  The full-stack Go + React framework. Choose your architecture, pick your frontend, and scaffold a production-ready application in seconds.
+</p>
+
+---
+
+## What is Grit?
+
+Grit is a full-stack meta-framework that fuses **Go** (Gin + GORM) with **Next.js** or **TanStack Router** (Vite) in a flexible architecture. One interactive CLI to scaffold a complete production-ready project with authentication, 2FA, admin panel, code generation, file storage, email, background jobs, AI integration, one-command deployment, and Docker setup.
 
 ## Install
 
@@ -10,203 +30,183 @@ Grit is a full-stack meta-framework that fuses Go (Gin + GORM) with Next.js (Rea
 go install github.com/MUKE-coder/grit/v2/cmd/grit@latest
 ```
 
-To remove a previous version first:
-
-```bash
-rm $(which grit)
-```
-
 ## Quick Start
 
 ```bash
-# Create a new project
+# Interactive — choose architecture + frontend
 grit new myapp
 
-# Start infrastructure (PostgreSQL, Redis, MinIO, Mailhog)
+# Or use flags to skip prompts
+grit new myapp --triple --next       # Web + Admin + API (Next.js)
+grit new myapp --double --vite       # Web + API (TanStack Router)
+grit new myapp --single              # Single Go binary + embedded SPA
+grit new myapp --api                 # Go API only
+grit new-desktop myapp               # Native desktop app (Wails)
+```
+
+```bash
 cd myapp
-docker compose up -d
-
-# Start the Go API
-cd apps/api && go run cmd/server/main.go
-
-# In another terminal — start the frontend
-cd myapp && pnpm install && pnpm dev
+docker compose up -d    # PostgreSQL, Redis, MinIO, Mailhog
+pnpm install && pnpm dev
 ```
 
 Open http://localhost:3000 — register, log in, see the dashboard.
 
-## What You Get
+## Architecture Modes
 
-| Service        | URL                               |
-| -------------- | --------------------------------- |
-| Web App        | http://localhost:3000             |
-| Admin Panel    | http://localhost:3001             |
-| Go API         | http://localhost:8080             |
-| GORM Studio    | http://localhost:8080/studio      |
-| API Docs       | http://localhost:8080/docs        |
-| Pulse          | http://localhost:8080/pulse/ui/   |
-| Sentinel       | http://localhost:8080/sentinel/ui |
-| Mailhog        | http://localhost:8025             |
-| MinIO Console  | http://localhost:9001             |
+| Mode | Command | What You Get |
+|------|---------|-------------|
+| **Triple** | `grit new app --triple` | Web + Admin + API (monorepo, Turborepo) |
+| **Double** | `grit new app --double` | Web + API (no admin, lighter) |
+| **Single** | `grit new app --single` | Go binary with `go:embed` frontend (like Laravel/Next.js) |
+| **API** | `grit new app --api` | Go API only (no frontend) |
+| **Mobile** | `grit new app --mobile` | API + Expo React Native |
+| **Desktop** | `grit new-desktop app` | Wails + Go + React + SQLite |
 
-## Project Structure (Generated)
+## Frontend Options
 
+| Frontend | Flag | Stack |
+|----------|------|-------|
+| **Next.js** (default) | `--next` | App Router, Server Components, SSR/ISR |
+| **TanStack Router** | `--vite` | Vite, file-based routing, SPA, faster builds |
+
+## What Ships With Every Project
+
+| Feature | Details |
+|---------|---------|
+| **JWT Authentication** | Register, login, refresh tokens, role-based access (ADMIN/EDITOR/USER) |
+| **Two-Factor Auth (TOTP)** | Authenticator app, 10 backup codes, 30-day trusted devices |
+| **OAuth2 Social Login** | Google + GitHub via `goth` |
+| **File Storage (S3)** | Presigned URL uploads to AWS S3, Cloudflare R2, or MinIO |
+| **Email (Resend)** | Transactional emails with Go HTML templates |
+| **Background Jobs** | Redis-backed queue via `asynq` with admin dashboard |
+| **Cron Scheduler** | Recurring tasks with cron expressions |
+| **AI Integration** | Vercel AI Gateway — one key, hundreds of models |
+| **Redis Caching** | Get/Set/Delete + cache middleware for responses |
+| **GORM Studio** | Visual database browser at `/studio` |
+| **API Documentation** | Auto-generated Scalar docs at `/docs` |
+| **Sentinel** | WAF, rate limiting, brute-force protection at `/sentinel/ui` |
+| **Pulse** | Request tracing, DB monitoring, metrics at `/pulse/ui` |
+| **Grit UI** | 100 pre-built shadcn-compatible components |
+| **Docker** | Dev + production Docker Compose setups |
+
+## Code Generator
+
+```bash
+# Generate a full-stack resource
+grit generate resource Post --fields "title:string,content:richtext,published:bool,slug:slug:title"
+
+# Interactive mode
+grit generate resource Product -i
+
+# From YAML
+grit generate resource Post --from post.yaml
+
+# Remove a resource (deletes files + reverses injections)
+grit remove resource Post
 ```
-myapp/
-├── apps/
-│   ├── api/                    # Go backend (Gin + GORM)
-│   │   ├── cmd/server/         # Entry point
-│   │   └── internal/
-│   │       ├── config/         # Environment configuration
-│   │       ├── database/       # GORM connection pool
-│   │       ├── models/         # GORM models
-│   │       ├── handlers/       # HTTP handlers
-│   │       ├── services/       # Business logic
-│   │       ├── middleware/     # Auth, CORS, gzip, request ID
-│   │       ├── routes/         # Route definitions
-│   │       ├── cache/          # Redis cache service
-│   │       ├── storage/        # S3-compatible file storage
-│   │       ├── mail/           # Resend email service
-│   │       ├── jobs/           # asynq background jobs
-│   │       ├── cron/           # asynq cron scheduler
-│   │       └── ai/             # Claude / OpenAI integration
-│   ├── web/                    # Next.js frontend (App Router)
-│   └── admin/                  # Next.js admin panel
-├── packages/
-│   └── shared/                 # Zod schemas, TypeScript types, constants
-├── docker-compose.yml          # PostgreSQL 16, Redis 7, MinIO, Mailhog
-├── docker-compose.prod.yml     # Production Docker Compose
-└── turbo.json                  # Monorepo task runner
-```
 
-## Features
-
-### Foundation
-- **JWT Authentication** — Register, login, refresh tokens, role-based access (ADMIN / EDITOR / USER)
-- **OAuth2 Social Login** — Google and GitHub via `goth`
-- **User Management** — CRUD with pagination, search, sorting
-- **GORM Studio** — Visual database browser at `/studio`
-- **API Documentation** — Auto-generated Scalar docs at `/docs`
-- **Dark Theme** — Premium dark UI across all apps
-- **Docker Ready** — Dev and production Docker Compose setups
-
-### Code Generator
-- **`grit generate resource <Name>`** — Full-stack resource in one command:
-  - Go model with GORM tags + auto-migration
-  - REST handler with pagination, search, sorting
-  - Zod schema + TypeScript types in `packages/shared`
-  - React Query hooks in admin and web
-  - Admin panel page with DataTable
-  - Automatic route injection via markers
-- **`grit sync`** — Sync Go models → TypeScript types and Zod schemas
-- **Inline fields**: `--fields "title:string,content:text,published:bool"`
-- **YAML definition**: `--from post.yaml`
-
-### Admin Panel
-- **Resource system** — `defineResource()` for data-driven admin pages
-- **DataTable** — Server-side pagination, sorting, filtering, column visibility, export CSV/JSON
-- **Form builder** — 8+ field types with Zod validation, create/edit from same definition
-- **Dashboard widgets** — Stats cards, line charts, bar charts, activity feed
-- **Collapsible sidebar** — Auto-generated navigation from registered resources
-- **Dark/light theme toggle**
-
-### Batteries Included
-- **File Storage** — S3/R2/B2/MinIO with image processing (thumbnails via background jobs)
-- **Email** — Resend integration with HTML templates (welcome, reset, verify, notify)
-- **Background Jobs** — Redis-backed `asynq` queue with admin dashboard (retry, clear, stats)
-- **Cron Scheduler** — `asynq` Scheduler with admin task list
-- **Redis Caching** — Get/Set/Delete/Flush with cache middleware for GET responses
-- **AI Integration** — Claude and OpenAI APIs with SSE streaming
-
-### Desktop (Wails)
-- **`grit new-desktop <name>`** — Scaffold a native desktop app (Go + React + SQLite)
-- **Wails bindings** — Go functions directly callable from React (no HTTP)
-- **Auth, CRUD, Export** — Login/register, blog + contact CRUD, PDF/Excel export
-- **GORM Studio** — Standalone database browser at `cmd/studio`
-- **Resource generation** — `grit generate resource` works for desktop projects too
-- **Custom title bar** — Frameless window with draggable title bar
-- **Dark theme** — Grit dark theme with accent purple
-
-### Security & Observability
-- **Sentinel** — WAF, rate limiting per IP/route, auth shield, anomaly detection at `/sentinel/ui`
-- **Pulse** — Request tracing, DB monitoring, metrics, health checks at `/pulse/ui/`
-- **Gzip compression** — Response compression middleware (Best Speed level)
-- **Request ID tracing** — `X-Request-ID` header injected on every request
+**Generated files per resource:** Go model, service, handler, Zod schema, TypeScript types, React Query hooks, admin page, route injection — all via code markers.
 
 ## CLI Commands
 
 ```bash
-# Project scaffolding
-grit new <name>                    # Full monorepo (web + admin + API)
-grit new <name> --api              # Go API only
-grit new <name> --mobile           # Mobile-first (API + Expo)
-grit new <name> --full             # Everything including Expo + docs site
-grit new <name> --style modern     # Admin style: default|modern|minimal|glass
-grit new-desktop <name>            # Native desktop app (Wails + Go + React)
+# Scaffolding
+grit new <name>                        # Interactive (architecture + frontend)
+grit new <name> --triple --next        # Explicit flags
+grit new-desktop <name>                # Desktop app (Wails)
 
-# Code generation (works for both web and desktop projects)
-grit generate resource <Name>                      # Interactive field prompts
-grit generate resource <Name> --fields "..."      # Inline field definition
-grit generate resource <Name> --from post.yaml    # YAML definition file
-grit remove resource <Name>                       # Remove generated resource
-
-# Type sync (web projects)
-grit sync                           # Go models -> TypeScript + Zod
+# Code generation
+grit generate resource <Name> --fields "..."
+grit remove resource <Name>
+grit add role <ROLE_NAME>
+grit sync                              # Go types → TypeScript + Zod
 
 # Development
-grit dev                            # Start all frontend apps (pnpm dev)
-grit server                         # Start Go API server
-grit start                          # Auto-detect project type, start dev server
-grit compile                        # Build desktop executable (wails build)
-grit studio                         # Open database browser (web + desktop)
+grit start                             # Auto-detect project, start dev server
+grit start client                      # Start frontend apps
+grit start server                      # Start Go API
+grit studio                            # Open GORM Studio
+grit routes                            # List all registered API routes
 
 # Database
-grit migrate                        # Run database migrations
-grit migrate --fresh                # Drop + re-migrate
-grit seed                           # Run database seeder
+grit migrate                           # Run migrations
+grit migrate --fresh                   # Drop + re-migrate
+grit seed                              # Seed database
+
+# Operations
+grit down                              # Maintenance mode (503 all requests)
+grit up                                # Back online
+grit deploy --host user@server.com --domain myapp.com
 
 # Meta
-grit version                        # Print CLI version (2.0.0)
+grit version                           # v3.5.0
+grit update                            # Self-update to latest
+grit upgrade                           # Upgrade project templates
 ```
 
-## Field Types (Code Generator)
+## Field Types
 
-| Type           | Go Type                        | TypeScript      | Notes                         |
-| -------------- | ------------------------------ | --------------- | ----------------------------- |
-| `string`       | `string`                       | `string`        | Required by default           |
-| `text`         | `string`                       | `string`        | GORM `type:text`              |
-| `richtext`     | `string`                       | `string`        | GORM `type:text`              |
-| `int`          | `int`                          | `number`        |                               |
-| `uint`         | `uint`                         | `number`        |                               |
-| `float`        | `float64`                      | `number`        |                               |
-| `bool`         | `bool`                         | `boolean`       |                               |
-| `datetime`     | `*time.Time`                   | `string\|null`  |                               |
-| `date`         | `*time.Time`                   | `string\|null`  |                               |
-| `slug`         | `string`                       | `string`        | Auto-unique index             |
-| `belongs_to`   | `uint`                         | `number`        | FK + index                    |
-| `many_to_many` | `[]uint`                       | `number[]`      | Requires target model         |
-| `string_array` | `datatypes.JSONSlice[string]`  | `string[]`      | GORM `type:json`              |
+| Type | Go Type | TypeScript | Notes |
+|------|---------|-----------|-------|
+| `string` | `string` | `string` | Required by default |
+| `text` | `string` | `string` | GORM `type:text` |
+| `richtext` | `string` | `string` | Tiptap WYSIWYG editor |
+| `int` | `int` | `number` | |
+| `uint` | `uint` | `number` | |
+| `float` | `float64` | `number` | |
+| `bool` | `bool` | `boolean` | |
+| `datetime` | `*time.Time` | `string\|null` | |
+| `date` | `*time.Time` | `string\|null` | |
+| `slug` | `string` | `string` | Auto-unique from source |
+| `belongs_to` | `uint` | `number` | FK + index |
+| `many_to_many` | `[]uint` | `number[]` | Junction table |
+| `string_array` | `datatypes.JSONSlice[string]` | `string[]` | JSON column |
 
 **Modifiers:** `:unique`, `:optional`, `:slug:<source>`, `:belongs_to:<Model>`, `:many_to_many:<Model>`
 
 ## Tech Stack
 
-| Layer          | Technology                      |
-| -------------- | ------------------------------- |
-| Backend        | Go 1.21+ · Gin · GORM           |
-| Frontend       | Next.js 14 (App Router) · React |
-| Styling        | Tailwind CSS · shadcn/ui        |
-| Database       | PostgreSQL (dev: Docker)        |
-| Cache / Queue  | Redis · asynq                   |
-| File Storage   | S3-compatible (MinIO/R2/B2)     |
-| Email          | Resend                          |
-| AI             | Anthropic Claude · OpenAI       |
-| Validation     | Zod (shared between apps)       |
-| Data Fetching  | TanStack Query                  |
-| Monorepo       | Turborepo · pnpm                |
-| DB Browser     | GORM Studio                     |
-| Security       | Sentinel (WAF + rate limiting)  |
-| Observability  | Pulse (tracing + metrics)       |
+| Layer | Technology |
+|-------|-----------|
+| Backend | Go 1.21+ · Gin · GORM |
+| Frontend | Next.js 14+ (App Router) **or** TanStack Router (Vite) |
+| Styling | Tailwind CSS · shadcn/ui |
+| Database | PostgreSQL (dev: Docker) · SQLite (desktop/single) |
+| Cache / Queue | Redis · asynq |
+| File Storage | S3-compatible (MinIO / Cloudflare R2 / AWS S3) |
+| Email | Resend |
+| AI | Vercel AI Gateway (Anthropic, OpenAI, Google, and more) |
+| Auth | JWT + TOTP (2FA) + OAuth2 (Google, GitHub) |
+| Validation | Zod (shared between apps) |
+| Data Fetching | TanStack Query |
+| Monorepo | Turborepo · pnpm |
+| Security | Sentinel (WAF + rate limiting) |
+| Observability | Pulse (tracing + metrics) |
+| DB Browser | GORM Studio |
+| Desktop | Wails v2 |
+| Deployment | SSH + systemd + Caddy (auto-TLS) |
+
+## Plugins
+
+10 official drop-in Go packages for functionality that doesn't ship in core:
+
+| Plugin | Package | Purpose |
+|--------|---------|---------|
+| [grit-websockets](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-websockets) | `ws` | Hub, rooms, broadcast, auth |
+| [grit-stripe](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-stripe) | `gritstripe` | Checkout, subscriptions, webhooks |
+| [grit-oauth](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-oauth) | `oauth` | Google, GitHub, Discord social login |
+| [grit-notifications](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-notifications) | `notify` | In-app, push (FCM), SMS (Twilio) |
+| [grit-search](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-search) | `search` | Meilisearch + GORM auto-index |
+| [grit-video](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-video) | `video` | Upload, FFmpeg, HLS streaming |
+| [grit-conference](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-conference) | `conference` | WebRTC signaling, rooms |
+| [grit-webhooks](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-webhooks) | `webhooks` | Outgoing webhooks, HMAC, retry |
+| [grit-i18n](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-i18n) | `i18n` | Translation, locale middleware |
+| [grit-export](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-export) | `export` | PDF, Excel, CSV generation |
+
+## Documentation
+
+Full docs at **[gritframework.com](https://gritframework.com)** — architecture guides, tutorials, API reference, deployment, and plugin documentation.
 
 ## License
 
