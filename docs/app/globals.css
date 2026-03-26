@@ -4,39 +4,40 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 4%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 4%;
+    /* Light mode: clean white with strong contrast */
+    --background: 210 20% 98%;     /* very light cool gray, not pure white */
+    --foreground: 222 47% 11%;     /* near-black with blue tint */
+    --card: 0 0% 100%;             /* pure white cards for contrast against bg */
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 4%;
-    --primary: 262 52% 63%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 199 89% 40%;        /* sky-600 — darker sky for light mode contrast */
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 6% 10%;
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 4% 46%;
-    --accent: 240 5% 96%;
-    --accent-foreground: 240 6% 10%;
+    --secondary: 210 20% 95%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 20% 95%;
+    --muted-foreground: 215 16% 47%;  /* slate-500 — good contrast on white */
+    --accent: 210 20% 94%;
+    --accent-foreground: 222 47% 11%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 262 52% 63%;
-    --chart-1: 262 52% 63%;
+    --border: 214 20% 88%;         /* visible but subtle borders */
+    --input: 214 20% 88%;
+    --ring: 199 89% 40%;
+    --chart-1: 199 89% 40%;
     --chart-2: 160 52% 36%;
     --chart-3: 36 100% 50%;
     --chart-4: 340 75% 55%;
     --chart-5: 217 91% 60%;
     --radius: 0.625rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 6% 10%;
-    --sidebar-primary: 262 52% 63%;
+    --sidebar-background: 222 30% 96%;  /* cooler gray — visual split from bg */
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 199 89% 40%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 5% 96%;
-    --sidebar-accent-foreground: 240 6% 10%;
-    --sidebar-border: 240 6% 90%;
-    --sidebar-ring: 262 52% 63%;
+    --sidebar-accent: 210 20% 92%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 20% 88%;
+    --sidebar-ring: 199 89% 40%;
   }
 
   .dark {
@@ -187,7 +188,7 @@
 }
 
 .prose-grit code {
-  @apply text-[13px] font-mono bg-white/[0.06] px-1.5 py-0.5 rounded text-primary;
+  @apply text-[13px] font-mono bg-slate-100 dark:bg-white/[0.06] px-1.5 py-0.5 rounded text-primary;
 }
 
 .prose-grit pre {

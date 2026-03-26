@@ -47,10 +47,10 @@ export function CodeBlock({
   const trimmedCode = code.trim()
 
   return (
-    <div className={`rounded-lg border border-border/40 bg-card overflow-hidden relative group ${className}`}>
+    <div className={`rounded-lg border border-slate-200 dark:border-border/40 bg-slate-900 overflow-hidden relative group ${className}`}>
       {/* Header */}
       {(filename || terminal) && (
-        <div className="flex items-center justify-between px-4 py-2 border-b border-border/40">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700/50">
           <div className="flex items-center gap-2.5">
             {terminal && (
               <div className="flex items-center gap-1.5 mr-1">
@@ -59,13 +59,13 @@ export function CodeBlock({
                 <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]/80" />
               </div>
             )}
-            <span className="text-[12px] font-mono text-muted-foreground/70">
+            <span className="text-[12px] font-mono text-slate-500">
               {filename || 'Terminal'}
             </span>
           </div>
           <CopyButton
             text={terminal ? trimmedCode.replace(/^\$\s*/gm, '') : trimmedCode}
-            className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 text-muted-foreground/70 hover:text-foreground/80"
+            className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 text-slate-500 hover:text-slate-300"
           />
         </div>
       )}
@@ -80,14 +80,14 @@ export function CodeBlock({
             if (line.trimStart().startsWith('#')) {
               return (
                 <div key={i}>
-                  <span className="text-muted-foreground/50 text-xs">{line}</span>
+                  <span className="text-slate-600 text-xs">{line}</span>
                 </div>
               )
             }
             return (
               <div key={i} className="flex">
-                <span className="text-primary/60 select-none mr-2">$</span>
-                <span className="text-foreground/80">{line}</span>
+                <span className="text-sky-400/60 select-none mr-2">$</span>
+                <span className="text-slate-300">{line}</span>
               </div>
             )
           })}
@@ -103,7 +103,7 @@ export function CodeBlock({
                   <div
                     key={i}
                     {...getLineProps({ line })}
-                    className={isHighlighted ? 'bg-primary/[0.08] border-l-2 border-primary -mx-4 px-4 pl-[14px]' : ''}
+                    className={isHighlighted ? 'bg-sky-500/[0.08] border-l-2 border-sky-400 -mx-4 px-4 pl-[14px]' : ''}
                   >
                     {line.map((token, key) => (
                       <span key={key} {...getTokenProps({ token })} />
@@ -121,7 +121,7 @@ export function CodeBlock({
         <div className="absolute top-2 right-2">
           <CopyButton
             text={trimmedCode}
-            className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 text-muted-foreground/70 hover:text-foreground/80"
+            className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 text-slate-500 hover:text-slate-300"
           />
         </div>
       )}
@@ -135,7 +135,7 @@ export function Step({ number, title, children }: { number: string; title: strin
     <div className="relative grid grid-cols-1 lg:grid-cols-[minmax(min-content,350px)_minmax(min-content,1fr)] gap-x-10 gap-y-4 pb-16">
       <div>
         <div className="flex items-center gap-3 mb-3">
-          <span className="inline-flex items-center justify-center h-7 px-2 rounded border border-border/40 bg-accent/20 text-[11px] font-mono font-medium text-muted-foreground">
+          <span className="inline-flex items-center justify-center h-7 px-2 rounded border border-slate-200 dark:border-border/40 bg-slate-100 dark:bg-accent/20 text-[11px] font-mono font-medium text-slate-500 dark:text-muted-foreground">
             {number}
           </span>
           <h3 className="text-base font-semibold text-foreground">{title}</h3>
@@ -162,7 +162,7 @@ export function StepWithCode({ number, title, description, code, filename, langu
     <div className="relative grid grid-cols-1 lg:grid-cols-[minmax(min-content,380px)_minmax(min-content,1fr)] gap-x-10 gap-y-4 pb-14">
       <div>
         <div className="flex items-center gap-3 mb-3">
-          <span className="inline-flex items-center justify-center h-7 px-2 rounded border border-border/40 bg-accent/20 text-[11px] font-mono font-medium text-muted-foreground">
+          <span className="inline-flex items-center justify-center h-7 px-2 rounded border border-slate-200 dark:border-border/40 bg-slate-100 dark:bg-accent/20 text-[11px] font-mono font-medium text-slate-500 dark:text-muted-foreground">
             {number}
           </span>
           <h3 className="text-base font-semibold text-foreground">{title}</h3>
