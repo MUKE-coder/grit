@@ -93,7 +93,7 @@ export default function QuickStartPage() {
                   anywhere on your system.
                 </p>
               </div>
-              <CodeBlock terminal code="go install github.com/MUKE-coder/grit/v2/cmd/grit@latest" className="mb-0 glow-purple-sm" />
+              <CodeBlock terminal code="go install github.com/MUKE-coder/grit/v3/cmd/grit@latest" className="mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>
                   Note: Grit CLI 3.x is currently distributed from the Go module path <code>/v2</code>.

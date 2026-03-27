@@ -474,7 +474,7 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Start building in 30 seconds</h2>
           <p className="text-muted-foreground mb-8 text-lg">Install the CLI and scaffold your first project.</p>
-          <CodeBlock language="bash" className="mb-8 text-left" code={`go install github.com/MUKE-coder/grit/v2/cmd/grit@latest
+          <CodeBlock language="bash" className="mb-8 text-left" code={`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest
 grit new my-app`} />
           <p className="text-sm text-muted-foreground mb-8">
             Grit CLI 3.x is currently distributed from the Go module path /v2.

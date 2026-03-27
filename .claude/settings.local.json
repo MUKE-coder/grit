@@ -16,7 +16,17 @@
       "WebFetch(domain:gobyexample.com)",
       "WebFetch(domain:readmedium.com)",
       "WebFetch(domain:archive.org)",
-      "Bash(git status:*)"
+      "Bash(git status:*)",
+      "WebFetch(domain:dizzy.zone)",
+      "Bash(grep:*)",
+      "WebFetch(domain:withcodeexample.com)",
+      "WebFetch(domain:laraveldaily.com)",
+      "WebFetch(domain:www.theodinproject.com)",
+      "WebFetch(domain:www.road-to-next.com)",
+      "WebFetch(domain:www.nextjscourse.dev)",
+      "WebFetch(domain:codepurple.in)",
+      "WebFetch(domain:www.scaler.com)",
+      "WebFetch(domain:www.udemy.com)"
     ]
   }
 }

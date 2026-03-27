@@ -8,8 +8,8 @@ export const siteConfig = {
   creator: 'MUKE-coder',
   author: 'Muke JohnBaptist',
   github: 'https://github.com/MUKE-coder/grit',
-  youtube: 'https://www.youtube.com/@JBWEBDEVELOPER',
-  linkedin: 'https://www.linkedin.com/in/muke-johnbaptist-95bb82198/',
+  youtube: 'https://www.youtube.com/@GritFramework',
+  linkedin: 'https://www.linkedin.com/company/grit-framework',
   website: 'https://jb.desishub.com',
   keywords: [
     'Go framework',

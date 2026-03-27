@@ -232,7 +232,7 @@ export default function HirePage() {
               <p className="text-xs text-muted-foreground/40 mt-4">
                 Or reach out on{" "}
                 <Link
-                  href="https://www.linkedin.com/in/muke-johnbaptist-95bb82198/"
+                  href="https://www.linkedin.com/company/grit-framework"
                   target="_blank"
                   rel="noreferrer"
                   className="text-primary/70 hover:underline"

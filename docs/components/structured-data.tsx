@@ -25,8 +25,8 @@ export function OrganizationSchema() {
           'The full-stack meta-framework that combines Go, React, and a Filament-like admin panel.',
         sameAs: [
           'https://github.com/MUKE-coder/grit',
-          'https://www.youtube.com/@JBWEBDEVELOPER',
-          'https://www.linkedin.com/in/muke-johnbaptist-95bb82198/',
+          'https://www.youtube.com/@GritFramework',
+          'https://www.linkedin.com/company/grit-framework',
           'https://jb.desishub.com',
         ],
       }}
@@ -86,7 +86,7 @@ export function FAQPageSchema() {
             name: 'How do I install Grit?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'Install Grit with: go install github.com/MUKE-coder/grit/v2/cmd/grit@latest. Then run "grit new my-project" to scaffold a full-stack project. You need Go 1.21+, Node.js 18+, and pnpm installed.',
+              text: 'Install Grit with: go install github.com/MUKE-coder/grit/v3/cmd/grit@latest. Then run "grit new my-project" to scaffold a full-stack project. You need Go 1.21+, Node.js 18+, and pnpm installed.',
             },
           },
           {

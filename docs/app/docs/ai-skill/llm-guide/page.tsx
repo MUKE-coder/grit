@@ -177,7 +177,7 @@ export default function LLMGuidePage() {
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Install once with{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">go install github.com/MUKE-coder/grit/v2/cmd/grit@latest</code>.
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">go install github.com/MUKE-coder/grit/v3/cmd/grit@latest</code>.
                   Every command is idempotent — safe to re-run.
                 </p>
 

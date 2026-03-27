@@ -84,7 +84,7 @@ export default function InstallationPage() {
                   </p>
                 </div>
               }
-              code={`go install github.com/MUKE-coder/grit/v2/cmd/grit@latest`}
+              code={`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest`}
               filename="Terminal"
               language="bash"
             />
