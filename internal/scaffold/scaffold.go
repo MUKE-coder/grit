@@ -36,6 +36,7 @@ type Options struct {
 	Architecture Architecture
 	Frontend     Frontend
 	Style        string
+	InPlace      bool // Scaffold into current directory (grit new .)
 
 	// Deprecated: use Architecture instead. Kept for backward compatibility.
 	APIOnly     bool
@@ -178,9 +179,14 @@ func Run(opts Options) error {
 	}
 
 	root := opts.ProjectName
+	if opts.InPlace {
+		root = "."
+	}
 
-	if _, err := os.Stat(root); err == nil {
-		return fmt.Errorf("directory %q already exists", root)
+	if !opts.InPlace {
+		if _, err := os.Stat(root); err == nil {
+			return fmt.Errorf("directory %q already exists", root)
+		}
 	}
 
 	spinner := color.New(color.FgHiBlack)
@@ -327,9 +333,14 @@ func Run(opts Options) error {
 // Single app: Go API + embedded React SPA, one binary, no Turborepo.
 func RunSingle(opts Options) error {
 	root := opts.ProjectName
+	if opts.InPlace {
+		root = "."
+	}
 
-	if _, err := os.Stat(root); err == nil {
-		return fmt.Errorf("directory %q already exists", root)
+	if !opts.InPlace {
+		if _, err := os.Stat(root); err == nil {
+			return fmt.Errorf("directory %q already exists", root)
+		}
 	}
 
 	spinner := color.New(color.FgHiBlack)

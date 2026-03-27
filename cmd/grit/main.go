@@ -79,12 +79,22 @@ func newCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectName := args[0]
 
-			if err := scaffold.ValidateProjectName(projectName); err != nil {
-				return err
+			// Support "grit new ." to scaffold into current directory
+			if projectName == "." {
+				cwd, err := os.Getwd()
+				if err != nil {
+					return fmt.Errorf("getting current directory: %w", err)
+				}
+				projectName = filepath.Base(cwd)
+			} else {
+				if err := scaffold.ValidateProjectName(projectName); err != nil {
+					return err
+				}
 			}
 
 			opts := scaffold.Options{
 				ProjectName: projectName,
+				InPlace:     args[0] == ".",
 				Style:       style,
 				// Legacy flags
 				APIOnly:     apiOnly,
@@ -126,21 +136,17 @@ func newCmd() *cobra.Command {
 			// Apply legacy flag mappings
 			opts.Normalize()
 
-			// If architecture is still empty (no flags set), show interactive prompt
-			if opts.Architecture == "" || (!cmd.Flags().Changed("arch") && !apiOnly && !mobileOnly && !full && !includeExpo && opts.Architecture == scaffold.ArchTriple) {
-				// Only prompt if no explicit flags were set
-				anyFlagSet := cmd.Flags().Changed("arch") || cmd.Flags().Changed("frontend") ||
-					cmd.Flags().Changed("api") || cmd.Flags().Changed("mobile") ||
-					cmd.Flags().Changed("expo") || cmd.Flags().Changed("full")
+			// Only show interactive prompt if NO explicit flags were set
+			anyFlagSet := archFlag != "" || frontendFlag != "" ||
+				apiOnly || mobileOnly || full || includeExpo
 
-				if !anyFlagSet {
-					printLogo()
-					// Reset to empty so prompt shows
-					opts.Architecture = ""
-					opts.Frontend = ""
-					if err := prompt.RunNewProjectPrompt(&opts); err != nil {
-						return err
-					}
+			if !anyFlagSet {
+				printLogo()
+				// Reset to empty so prompt shows
+				opts.Architecture = ""
+				opts.Frontend = ""
+				if err := prompt.RunNewProjectPrompt(&opts); err != nil {
+					return err
 				}
 			}
 
