@@ -476,6 +476,9 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
           <p className="text-muted-foreground mb-8 text-lg">Install the CLI and scaffold your first project.</p>
           <CodeBlock language="bash" className="mb-8 text-left" code={`go install github.com/MUKE-coder/grit/v2/cmd/grit@latest
 grit new my-app`} />
+          <p className="text-sm text-muted-foreground mb-8">
+            Grit CLI 3.x is currently distributed from the Go module path /v2.
+          </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" className="bg-primary hover:bg-primary/80 text-primary-foreground px-8 h-12 text-base rounded-full" asChild>
               <Link href="/docs/getting-started/quick-start">Read the docs <ArrowRight className="ml-2 h-4 w-4" /></Link>
