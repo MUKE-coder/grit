@@ -99,7 +99,6 @@ func newCmd() *cobra.Command {
 
 			opts := scaffold.Options{
 				ProjectName: projectName,
-				InPlace:     args[0] == ".",
 				Style:       style,
 				InPlace:     inPlace,
 				Force:       force,
