@@ -148,19 +148,12 @@ func newCmd() *cobra.Command {
 
 			// Show interactive selector only when the user did not provide any
 			// architecture/frontend shortcuts or explicit long-form flags.
-			anyScaffoldSelection := cmd.Flags().Changed("arch") ||
-				cmd.Flags().Changed("frontend") ||
-				cmd.Flags().Changed("single") ||
-				cmd.Flags().Changed("double") ||
-				cmd.Flags().Changed("triple") ||
-				cmd.Flags().Changed("vite") ||
-				cmd.Flags().Changed("next") ||
-				cmd.Flags().Changed("api") ||
-				cmd.Flags().Changed("mobile") ||
-				cmd.Flags().Changed("expo") ||
-				cmd.Flags().Changed("full")
+			// We check the resolved flag values directly (set by PreRunE) rather
+			// than cmd.Flags().Changed(), which is more reliable across flag sources.
+			anyFlagSet := archFlag != "" || frontendFlag != "" ||
+				apiOnly || mobileOnly || full || includeExpo
 
-			if !anyScaffoldSelection {
+			if !anyFlagSet {
 				printLogo()
 				// Keep empty values so the prompt can collect architecture/frontend.
 				opts.Architecture = ""

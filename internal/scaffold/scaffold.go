@@ -37,6 +37,7 @@ type Options struct {
 	Frontend     Frontend
 	Style        string
 	InPlace      bool // Scaffold into current directory (grit new .)
+	Force        bool // Allow scaffolding into non-empty directory (--force)
 
 	// Deprecated: use Architecture instead. Kept for backward compatibility.
 	APIOnly     bool
