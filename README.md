@@ -30,6 +30,8 @@ Grit is a full-stack meta-framework that fuses **Go** (Gin + GORM) with **Next.j
 go install github.com/MUKE-coder/grit/v2/cmd/grit@latest
 ```
 
+Note: The current Grit CLI 3.x release line is published from the Go module path `/v2`.
+
 ## Quick Start
 
 ```bash
