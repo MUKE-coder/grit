@@ -1,58 +1,12 @@
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight, Terminal, CheckCircle2, AlertCircle, BookOpen } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
+import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Your First Grit App — Grit Web Course',
   description: 'Learn to install Grit, scaffold your first full-stack project, understand the project structure, and run all development servers.',
-}
-
-function CodeBlock({ filename, children }: { filename?: string; children: string }) {
-  return (
-    <div className="my-4 rounded-lg border border-border/40 overflow-hidden">
-      {filename && (
-        <div className="px-4 py-2 bg-muted/30 border-b border-border/40 text-xs font-mono text-muted-foreground">
-          {filename}
-        </div>
-      )}
-      <pre className="p-4 overflow-x-auto bg-[#0d1117] text-sm font-mono leading-relaxed">
-        <code className="text-gray-300">{children}</code>
-      </pre>
-    </div>
-  )
-}
-
-function Challenge({ number, title, children }: { number: number; title: string; children: React.ReactNode }) {
-  return (
-    <div className="my-6 rounded-lg border border-primary/30 bg-primary/5 p-5">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/20 text-xs font-bold text-primary">
-          {number}
-        </span>
-        <h4 className="font-semibold text-foreground text-sm">Challenge: {title}</h4>
-      </div>
-      <div className="text-sm text-muted-foreground leading-relaxed">{children}</div>
-    </div>
-  )
-}
-
-function Note({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="my-4 flex gap-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-4 text-sm">
-      <AlertCircle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
-      <div className="text-muted-foreground leading-relaxed">{children}</div>
-    </div>
-  )
-}
-
-function Tip({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="my-4 flex gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm">
-      <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-      <div className="text-muted-foreground leading-relaxed">{children}</div>
-    </div>
-  )
 }
 
 export default function FirstAppCourse() {
@@ -75,6 +29,8 @@ export default function FirstAppCourse() {
           <div className="flex items-center gap-2 mb-3">
             <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Course 1 of 8</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
+            <span className="text-xs text-muted-foreground">•</span>
+            <span className="text-xs text-muted-foreground">18 challenges</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Your First Grit App
@@ -88,10 +44,7 @@ export default function FirstAppCourse() {
 
         <hr className="border-border/40 mb-10" />
 
-        {/* ═══════════════════════════════════════════════════════════ */}
-        {/* SECTION 1: What is Grit?                                  */}
-        {/* ═══════════════════════════════════════════════════════════ */}
-
+        {/* ═══ What is Grit? ═══ */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-foreground mb-4">What is Grit?</h2>
 
@@ -99,23 +52,33 @@ export default function FirstAppCourse() {
             Grit is a <strong className="text-foreground">full-stack framework</strong> that combines Go (for the backend) with React (for the frontend).
           </p>
 
+          <Definition term="Framework">
+            A framework is a pre-built foundation that provides structure, tools, and conventions so you
+            don{"'"}t have to build everything from scratch. Think of it like a house blueprint — it gives you
+            the walls, plumbing, and wiring, and you add the furniture.
+          </Definition>
+
+          <Definition term="Full-stack">
+            Full-stack means both the <strong className="text-foreground">backend</strong> (server, database, API — the part users don{"'"}t see)
+            and the <strong className="text-foreground">frontend</strong> (the website or app the user interacts with).
+            Grit handles both.
+          </Definition>
+
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> Grit uses <strong className="text-foreground">Go</strong> with the Gin web framework and GORM ORM for the API</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Grit uses <strong className="text-foreground">React</strong> with Next.js or TanStack Router for the frontend</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> Grit uses <strong className="text-foreground">Go</strong> with the <a href="https://gin-gonic.com" target="_blank" rel="noreferrer" className="text-primary hover:underline">Gin</a> web framework and <a href="https://gorm.io" target="_blank" rel="noreferrer" className="text-primary hover:underline">GORM</a> ORM for the API</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> Grit uses <strong className="text-foreground">React</strong> with <a href="https://nextjs.org" target="_blank" rel="noreferrer" className="text-primary hover:underline">Next.js</a> or <a href="https://tanstack.com/router" target="_blank" rel="noreferrer" className="text-primary hover:underline">TanStack Router</a> for the frontend</li>
             <li className="flex gap-2"><span className="text-primary">•</span> Grit generates a complete project with authentication, admin panel, and more</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Grit has a CLI that helps you generate code, run migrations, and deploy</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> Grit is open source and free to use (MIT license)</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> Grit has a <strong className="text-foreground">CLI</strong> (Command Line Interface) that helps you generate code, run migrations, and deploy</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> Grit is <a href="https://github.com/MUKE-coder/grit" target="_blank" rel="noreferrer" className="text-primary hover:underline">open source</a> and free to use (MIT license)</li>
           </ul>
 
-          <p className="text-muted-foreground leading-relaxed mb-4">
-            With Grit, you write one command and get a production-ready app. No more spending weeks setting up boilerplate.
-          </p>
+          <Definition term="CLI (Command Line Interface)">
+            A program you run in your terminal (like Terminal on Mac or Command Prompt on Windows).
+            Instead of clicking buttons in a graphical interface, you type commands like <Code>grit new myapp</Code>.
+          </Definition>
         </section>
 
-        {/* ═══════════════════════════════════════════════════════════ */}
-        {/* SECTION 2: Prerequisites                                  */}
-        {/* ═══════════════════════════════════════════════════════════ */}
-
+        {/* ═══ Prerequisites ═══ */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-foreground mb-4">Prerequisites</h2>
 
@@ -130,31 +93,31 @@ export default function FirstAppCourse() {
                   <th className="text-left px-4 py-3 font-semibold text-foreground border-b border-border/40">Tool</th>
                   <th className="text-left px-4 py-3 font-semibold text-foreground border-b border-border/40">Version</th>
                   <th className="text-left px-4 py-3 font-semibold text-foreground border-b border-border/40">What it does</th>
-                  <th className="text-left px-4 py-3 font-semibold text-foreground border-b border-border/40">Check command</th>
+                  <th className="text-left px-4 py-3 font-semibold text-foreground border-b border-border/40">Check</th>
                 </tr>
               </thead>
               <tbody className="text-muted-foreground">
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-medium text-foreground">Go</td>
-                  <td className="px-4 py-3"><code className="text-primary">1.21+</code></td>
+                  <td className="px-4 py-3 font-medium text-foreground"><a href="https://go.dev/dl/" target="_blank" rel="noreferrer" className="text-primary hover:underline">Go</a></td>
+                  <td className="px-4 py-3"><Code>1.21+</Code></td>
                   <td className="px-4 py-3">Runs the backend API server</td>
                   <td className="px-4 py-3"><code className="text-xs bg-muted/30 px-1.5 py-0.5 rounded">go version</code></td>
                 </tr>
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-medium text-foreground">Node.js</td>
-                  <td className="px-4 py-3"><code className="text-primary">18+</code></td>
+                  <td className="px-4 py-3 font-medium text-foreground"><a href="https://nodejs.org" target="_blank" rel="noreferrer" className="text-primary hover:underline">Node.js</a></td>
+                  <td className="px-4 py-3"><Code>18+</Code></td>
                   <td className="px-4 py-3">Runs the frontend apps</td>
                   <td className="px-4 py-3"><code className="text-xs bg-muted/30 px-1.5 py-0.5 rounded">node --version</code></td>
                 </tr>
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-medium text-foreground">pnpm</td>
-                  <td className="px-4 py-3"><code className="text-primary">8+</code></td>
+                  <td className="px-4 py-3 font-medium text-foreground"><a href="https://pnpm.io/installation" target="_blank" rel="noreferrer" className="text-primary hover:underline">pnpm</a></td>
+                  <td className="px-4 py-3"><Code>8+</Code></td>
                   <td className="px-4 py-3">Installs JavaScript packages</td>
                   <td className="px-4 py-3"><code className="text-xs bg-muted/30 px-1.5 py-0.5 rounded">pnpm --version</code></td>
                 </tr>
                 <tr>
-                  <td className="px-4 py-3 font-medium text-foreground">Docker</td>
-                  <td className="px-4 py-3"><code className="text-primary">20+</code></td>
+                  <td className="px-4 py-3 font-medium text-foreground"><a href="https://docker.com/get-started" target="_blank" rel="noreferrer" className="text-primary hover:underline">Docker</a></td>
+                  <td className="px-4 py-3"><Code>20+</Code></td>
                   <td className="px-4 py-3">Runs PostgreSQL, Redis, MinIO</td>
                   <td className="px-4 py-3"><code className="text-xs bg-muted/30 px-1.5 py-0.5 rounded">docker --version</code></td>
                 </tr>
@@ -162,24 +125,29 @@ export default function FirstAppCourse() {
             </table>
           </div>
 
-          <p className="text-muted-foreground leading-relaxed mb-4">
-            Open your terminal and run each check command. If any tool is missing, install it from its official website.
-          </p>
+          <Definition term="pnpm">
+            A fast, disk-efficient package manager for JavaScript. It{"'"}s like npm but faster and uses less disk space.
+            Grit uses pnpm instead of npm because it handles monorepos better. Install it with: <Code>npm install -g pnpm</Code>
+          </Definition>
+
+          <Definition term="Docker">
+            Docker runs applications in isolated containers. Instead of installing PostgreSQL, Redis, and MinIO
+            directly on your computer, Docker runs them in lightweight virtual environments. This keeps your
+            system clean and makes setup identical across all operating systems.
+          </Definition>
 
           <Challenge number={1} title="Check Your Tools">
-            <p>Open your terminal and run all four check commands above. Write down the version of each tool you have installed. All four must return a version number.</p>
+            <p>Open your terminal and run all four check commands from the table above. Write down the version of each tool. All four must return a version number before you continue.</p>
           </Challenge>
         </section>
 
-        {/* ═══════════════════════════════════════════════════════════ */}
-        {/* SECTION 3: Install Grit                                   */}
-        {/* ═══════════════════════════════════════════════════════════ */}
-
+        {/* ═══ Install Grit ═══ */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-foreground mb-4">Install Grit</h2>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Grit is installed using Go{"'"}s <code className="text-primary text-sm bg-muted/30 px-1.5 py-0.5 rounded">go install</code> command. This downloads the Grit CLI binary and puts it in your Go bin directory.
+            Grit is installed using Go{"'"}s <Code>go install</Code> command.
+            This downloads the Grit CLI binary and puts it in your Go bin directory.
           </p>
 
           <CodeBlock filename="Terminal">
@@ -189,9 +157,9 @@ export default function FirstAppCourse() {
           <h3 className="text-lg font-semibold text-foreground mb-3 mt-6">Command Explained</h3>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <code className="text-xs bg-muted/30 px-1 rounded">go install</code> tells Go to download and compile a package</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <code className="text-xs bg-muted/30 px-1 rounded">github.com/MUKE-coder/grit/v2/cmd/grit</code> is the path to the Grit CLI</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <code className="text-xs bg-muted/30 px-1 rounded">@latest</code> means get the newest version</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <Code>go install</Code> tells Go to download and compile a package</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <code className="text-xs bg-muted/30 px-1 rounded">github.com/MUKE-coder/grit/v2/cmd/grit</code> is the path to the Grit CLI on <a href="https://github.com/MUKE-coder/grit" target="_blank" rel="noreferrer" className="text-primary hover:underline">GitHub</a></li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <Code>@latest</Code> means get the newest version</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -205,23 +173,20 @@ export default function FirstAppCourse() {
 
           <Note>
             If you get {'"'}command not found{'"'}, your Go bin directory is not in your PATH.
-            Add <code className="text-xs bg-muted/30 px-1 rounded">export PATH=$PATH:$(go env GOPATH)/bin</code> to your shell profile (~/.bashrc or ~/.zshrc).
+            Add <Code>export PATH=$PATH:$(go env GOPATH)/bin</Code> to your shell profile (~/.bashrc or ~/.zshrc), then restart your terminal.
           </Note>
 
           <Challenge number={2} title="Install Grit">
-            <p>Run the install command, then run <code className="text-primary bg-muted/30 px-1 rounded">grit version</code> to verify. You should see {"\""}grit version 3.5.0{"\""} (or newer).</p>
+            <p>Run the install command, then run <Code>grit version</Code> to verify. You should see {'"'}grit version 3.5.0{'"'} (or newer).</p>
           </Challenge>
         </section>
 
-        {/* ═══════════════════════════════════════════════════════════ */}
-        {/* SECTION 4: Create a Project                               */}
-        {/* ═══════════════════════════════════════════════════════════ */}
-
+        {/* ═══ Create a Project ═══ */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-foreground mb-4">Create Your First Project</h2>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            The <code className="text-primary text-sm bg-muted/30 px-1.5 py-0.5 rounded">grit new</code> command creates a new project.
+            The <Code>grit new</Code> command creates a new project.
             When you run it without flags, it enters <strong className="text-foreground">interactive mode</strong> and asks you questions.
           </p>
 
@@ -229,13 +194,7 @@ export default function FirstAppCourse() {
 {`grit new myapp`}
           </CodeBlock>
 
-          <h3 className="text-lg font-semibold text-foreground mb-3 mt-6">The Interactive Prompts</h3>
-
-          <p className="text-muted-foreground leading-relaxed mb-4">
-            Grit will ask you three questions:
-          </p>
-
-          <h4 className="text-base font-semibold text-foreground mb-2">Question 1: Choose your architecture</h4>
+          <h3 className="text-lg font-semibold text-foreground mb-3 mt-6">Question 1: Choose your architecture</h3>
 
           <CodeBlock filename="Terminal">
 {`? Select architecture:
@@ -250,6 +209,12 @@ export default function FirstAppCourse() {
             For this course, select <strong className="text-foreground">Triple</strong>. This gives you the full experience:
             a web app, an admin panel, and a Go API — all in one project.
           </p>
+
+          <Definition term="Architecture">
+            The structure of your project — how many apps it contains and how they{"'"}re organized.
+            Triple means three apps (web + admin + API). Double means two (web + API). Single means one Go binary
+            that serves everything.
+          </Definition>
 
           <div className="overflow-x-auto mb-4">
             <table className="w-full text-sm border border-border/40 rounded-lg overflow-hidden">
@@ -290,7 +255,7 @@ export default function FirstAppCourse() {
             </table>
           </div>
 
-          <h4 className="text-base font-semibold text-foreground mb-2">Question 2: Choose your frontend</h4>
+          <h3 className="text-lg font-semibold text-foreground mb-3 mt-6">Question 2: Choose your frontend</h3>
 
           <CodeBlock filename="Terminal">
 {`? Select frontend:
@@ -300,11 +265,19 @@ export default function FirstAppCourse() {
 
           <p className="text-muted-foreground leading-relaxed mb-4">
             Select <strong className="text-foreground">Next.js</strong> for this course.
-            Next.js gives you server-side rendering and is better for SEO.
-            TanStack Router is faster but is a client-side SPA.
           </p>
 
-          <h4 className="text-base font-semibold text-foreground mb-2">Question 3: Choose your admin style</h4>
+          <Definition term="SSR (Server-Side Rendering)">
+            The server generates the HTML before sending it to the browser. This is better for SEO because
+            search engines can read the content immediately. Next.js does this by default.
+          </Definition>
+
+          <Definition term="SPA (Single Page Application)">
+            The browser downloads one HTML file and JavaScript handles all navigation. Faster page
+            transitions but harder for SEO. TanStack Router with Vite creates SPAs.
+          </Definition>
+
+          <h3 className="text-lg font-semibold text-foreground mb-3 mt-6">Question 3: Choose your admin style</h3>
 
           <CodeBlock filename="Terminal">
 {`? Select admin panel style:
@@ -320,23 +293,24 @@ export default function FirstAppCourse() {
 
           <Tip>
             You can skip the prompts by passing flags directly:
-            <code className="block mt-2 text-xs bg-muted/30 px-2 py-1 rounded">grit new myapp --triple --next --style default</code>
+            <code className="block mt-2 text-xs bg-muted/30 px-2 py-1 rounded font-mono">grit new myapp --triple --next --style default</code>
           </Tip>
 
           <Challenge number={3} title="Create a Project">
-            <p>Run <code className="text-primary bg-muted/30 px-1 rounded">grit new myapp</code> and select Triple, Next.js, and Default style. Wait for it to finish.</p>
+            <p>Run <Code>grit new myapp</Code> and select Triple, Next.js, and Default style. Wait for it to finish.</p>
+          </Challenge>
+
+          <Challenge number={4} title="Create with Flags">
+            <p>Delete the myapp folder (<Code>rm -rf myapp</Code>). Now create the same project using flags instead of interactive mode: <Code>grit new myapp --triple --next</Code>. Same result, no prompts.</p>
           </Challenge>
         </section>
 
-        {/* ═══════════════════════════════════════════════════════════ */}
-        {/* SECTION 5: Project Structure                              */}
-        {/* ═══════════════════════════════════════════════════════════ */}
-
+        {/* ═══ Project Structure ═══ */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-foreground mb-4">Understanding the Project Structure</h2>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Grit created a folder called <code className="text-primary text-sm bg-muted/30 px-1.5 py-0.5 rounded">myapp/</code>. Let{"'"}s look inside:
+            Grit created a folder called <Code>myapp/</Code>. Let{"'"}s look inside:
           </p>
 
           <CodeBlock filename="Project Structure">
@@ -350,15 +324,24 @@ export default function FirstAppCourse() {
 ├── docker-compose.yml ← PostgreSQL, Redis, MinIO, Mailhog
 ├── turbo.json         ← Monorepo task runner config
 ├── package.json       ← Root package.json
+├── pnpm-workspace.yaml ← Workspace definition
 └── .env               ← Environment variables`}
           </CodeBlock>
 
-          <h3 className="text-lg font-semibold text-foreground mb-3 mt-6">Structure Explained</h3>
+          <Definition term="Monorepo">
+            A single Git repository that contains multiple projects (apps and libraries). Instead of having
+            separate repos for your API and frontend, everything lives together. This makes it easy to share
+            code and keep things in sync. Grit uses <a href="https://turbo.build" target="_blank" rel="noreferrer" className="text-primary hover:underline">Turborepo</a> to
+            manage the monorepo.
+          </Definition>
 
-          <p className="text-muted-foreground leading-relaxed mb-4">
-            This is a <strong className="text-foreground">monorepo</strong> — multiple apps in one repository.
-            Turborepo manages them so they can share code and run together.
-          </p>
+          <Definition term="ORM (Object-Relational Mapping)">
+            A tool that lets you interact with your database using Go structs instead of writing raw SQL.
+            <a href="https://gorm.io" target="_blank" rel="noreferrer" className="text-primary hover:underline"> GORM</a> is Go{"'"}s most popular ORM.
+            You define a <Code>User</Code> struct and GORM creates the <Code>users</Code> table automatically.
+          </Definition>
+
+          <h3 className="text-lg font-semibold text-foreground mb-3 mt-6">Structure Explained</h3>
 
           <div className="overflow-x-auto mb-4">
             <table className="w-full text-sm border border-border/40 rounded-lg overflow-hidden">
@@ -387,7 +370,7 @@ export default function FirstAppCourse() {
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">packages/shared/</td>
-                  <td className="px-4 py-3">Shared Zod validation schemas and TypeScript types</td>
+                  <td className="px-4 py-3">Shared <a href="https://zod.dev" target="_blank" rel="noreferrer" className="text-primary hover:underline">Zod</a> validation schemas and TypeScript types</td>
                   <td className="px-4 py-3">TypeScript</td>
                 </tr>
                 <tr>
@@ -399,20 +382,17 @@ export default function FirstAppCourse() {
             </table>
           </div>
 
-          <Challenge number={4} title="Explore the Folders">
-            <p>Open the <code className="text-primary bg-muted/30 px-1 rounded">myapp</code> folder in your code editor (VS Code recommended). Look at each folder listed above. Can you find the Go API entry point at <code className="text-primary bg-muted/30 px-1 rounded">apps/api/cmd/server/main.go</code>?</p>
+          <Challenge number={5} title="Explore the Folders">
+            <p>Open the <Code>myapp</Code> folder in VS Code (<Code>code myapp</Code>). Look at each folder in the table above. Can you find the Go API entry point at <Code>apps/api/cmd/server/main.go</Code>?</p>
           </Challenge>
         </section>
 
-        {/* ═══════════════════════════════════════════════════════════ */}
-        {/* SECTION 6: The Go API                                     */}
-        {/* ═══════════════════════════════════════════════════════════ */}
-
+        {/* ═══ Inside the Go API ═══ */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-foreground mb-4">Inside the Go API</h2>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            The Go API lives in <code className="text-primary text-sm bg-muted/30 px-1.5 py-0.5 rounded">apps/api/</code>. Here{"'"}s what{"'"}s inside:
+            The Go API is the brain of your application. It lives in <Code>apps/api/</Code>:
           </p>
 
           <CodeBlock filename="apps/api/">
@@ -433,54 +413,72 @@ export default function FirstAppCourse() {
     ├── storage/           ← File uploads (S3/MinIO)
     ├── mail/              ← Email service (Resend)
     ├── jobs/              ← Background jobs (asynq)
-    ├── cron/              ← Scheduled tasks
     ├── ai/                ← AI service (Vercel AI Gateway)
     └── totp/              ← Two-factor authentication`}
           </CodeBlock>
 
-          <h3 className="text-lg font-semibold text-foreground mb-3 mt-6">How the API Works</h3>
+          <Definition term="API (Application Programming Interface)">
+            A set of endpoints (URLs) that your frontend calls to get or send data. For example,
+            <Code>POST /api/auth/login</Code> logs a user in and returns a token.
+            The frontend sends JSON, the API processes it, and returns JSON back.
+          </Definition>
+
+          <Definition term="REST API">
+            A style of API that uses HTTP methods (GET, POST, PUT, DELETE) to perform actions.
+            GET reads data, POST creates data, PUT updates data, DELETE removes data.
+            Grit generates REST APIs automatically.
+          </Definition>
+
+          <h3 className="text-lg font-semibold text-foreground mb-3 mt-6">How a Request Flows Through the API</h3>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            When a user makes a request (like logging in), this is what happens:
+            When a user does something (like clicking {'"'}Login{'"'}), here{"'"}s what happens:
           </p>
 
           <CodeBlock filename="Request Flow">
-{`Browser → Request → Middleware → Handler → Service → Database
-                      ↓                                  ↓
-                 (Auth check)                      (GORM query)
-                      ↓                                  ↓
-              Handler ← Service ← Database Response
-                      ↓
-              JSON Response → Browser`}
+{`Browser → HTTP Request → Middleware → Handler → Service → Database
+                            ↓                                 ↓
+                      (Auth check)                      (GORM query)
+                            ↓                                 ↓
+                   Handler ← Service ← Database Response
+                            ↓
+                   JSON Response → Browser`}
           </CodeBlock>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Middleware</strong> runs first — checks authentication, logs the request, checks rate limits</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Handler</strong> receives the request — validates input, calls the service</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Service</strong> contains business logic — talks to the database, processes data</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Database</strong> stores everything — users, posts, files, sessions</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Middleware</strong> runs first — checks if the user is logged in, logs the request, applies rate limits</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Handler</strong> receives the request — validates input data, then calls the service</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Service</strong> contains business logic — talks to the database, processes data, applies rules</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Model</strong> defines the database table — what columns exist, their types, and relationships</li>
           </ul>
 
-          <Challenge number={5} title="Read the Entry Point">
-            <p>Open <code className="text-primary bg-muted/30 px-1 rounded">apps/api/cmd/server/main.go</code> and read through it. Can you find where the database connects? Where the router is set up? Where the server starts listening?</p>
+          <Definition term="Middleware">
+            Code that runs <em>before</em> your handler. Like a security guard at a building entrance — it checks
+            your credentials before letting you in. Grit{"'"}s auth middleware checks the JWT token on every protected request.
+          </Definition>
+
+          <Challenge number={6} title="Read the Entry Point">
+            <p>Open <Code>apps/api/cmd/server/main.go</Code> and read through it. Can you find where: (1) the database connects, (2) the router is set up, and (3) the server starts listening?</p>
           </Challenge>
 
-          <Challenge number={6} title="Find the User Model">
-            <p>Open <code className="text-primary bg-muted/30 px-1 rounded">apps/api/internal/models/user.go</code>. What fields does the User model have? Can you identify the GORM tags (<code className="text-primary bg-muted/30 px-1 rounded">gorm:&quot;...&quot;</code>) and JSON tags (<code className="text-primary bg-muted/30 px-1 rounded">json:&quot;...&quot;</code>)?</p>
+          <Challenge number={7} title="Find the User Model">
+            <p>Open <Code>apps/api/internal/models/user.go</Code>. List all the fields the User model has. Can you identify the GORM tags (<Code>gorm:&quot;...&quot;</Code>) and JSON tags (<Code>json:&quot;...&quot;</Code>)?</p>
           </Challenge>
         </section>
 
-        {/* ═══════════════════════════════════════════════════════════ */}
-        {/* SECTION 7: Start Docker Services                          */}
-        {/* ═══════════════════════════════════════════════════════════ */}
-
+        {/* ═══ Start Docker ═══ */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-foreground mb-4">Start Docker Services</h2>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
             Your app needs a database (PostgreSQL), cache (Redis), file storage (MinIO), and a mail catcher (Mailhog).
-            All of these run in Docker containers.
+            All of these run inside Docker containers.
           </p>
+
+          <Definition term="Container">
+            A lightweight, isolated environment that runs an application. Think of it like a tiny virtual computer
+            dedicated to running one thing (like PostgreSQL). Docker manages these containers for you.
+          </Definition>
 
           <CodeBlock filename="Terminal">
 {`cd myapp
@@ -490,14 +488,10 @@ docker compose up -d`}
           <h3 className="text-lg font-semibold text-foreground mb-3 mt-6">Command Explained</h3>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <code className="text-xs bg-muted/30 px-1 rounded">cd myapp</code> — moves into your project folder</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <code className="text-xs bg-muted/30 px-1 rounded">docker compose up -d</code> — starts all services in the background</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <code className="text-xs bg-muted/30 px-1 rounded">-d</code> means {"\""} detached{"\""} — they run in the background so you get your terminal back</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <Code>cd myapp</Code> — moves into your project folder</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <Code>docker compose up</Code> — reads <Code>docker-compose.yml</Code> and starts all services</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <Code>-d</Code> means {'"'}detached{'"'} — they run in the background so you get your terminal back</li>
           </ul>
-
-          <p className="text-muted-foreground leading-relaxed mb-4">
-            Docker starts four services:
-          </p>
 
           <div className="overflow-x-auto mb-4">
             <table className="w-full text-sm border border-border/40 rounded-lg overflow-hidden">
@@ -517,7 +511,7 @@ docker compose up -d`}
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">Redis</td>
                   <td className="px-4 py-3">6379</td>
-                  <td className="px-4 py-3">Cache and job queue</td>
+                  <td className="px-4 py-3">Cache (fast temporary storage) and job queue</td>
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">MinIO</td>
@@ -534,7 +528,7 @@ docker compose up -d`}
           </div>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            You can check if all services are running:
+            Check if everything is running:
           </p>
 
           <CodeBlock filename="Terminal">
@@ -542,25 +536,27 @@ docker compose up -d`}
 # All 4 services should show "running"`}
           </CodeBlock>
 
-          <Challenge number={7} title="Start Docker">
-            <p>Run <code className="text-primary bg-muted/30 px-1 rounded">docker compose up -d</code> inside your project. Then run <code className="text-primary bg-muted/30 px-1 rounded">docker compose ps</code> to verify all 4 services are running.</p>
+          <Challenge number={8} title="Start Docker Services">
+            <p>Run <Code>docker compose up -d</Code> inside your project. Then run <Code>docker compose ps</Code> to verify all 4 services are running. If any service failed, run <Code>docker compose logs</Code> to see what went wrong.</p>
           </Challenge>
         </section>
 
-        {/* ═══════════════════════════════════════════════════════════ */}
-        {/* SECTION 8: Start the App                                  */}
-        {/* ═══════════════════════════════════════════════════════════ */}
-
+        {/* ═══ Start the App ═══ */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-foreground mb-4">Start the Development Servers</h2>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Now start the frontend apps. First, install JavaScript dependencies:
+            Install JavaScript dependencies first:
           </p>
 
           <CodeBlock filename="Terminal">
 {`pnpm install`}
           </CodeBlock>
+
+          <Definition term="Dependencies">
+            External libraries your project uses. For example, React, Tailwind CSS, and Zod are dependencies.
+            <Code>pnpm install</Code> reads the <Code>package.json</Code> file and downloads everything your project needs.
+          </Definition>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
             Then start all apps at once:
@@ -571,7 +567,7 @@ docker compose up -d`}
           </CodeBlock>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            This starts three servers simultaneously:
+            This starts three servers simultaneously using <a href="https://turbo.build" target="_blank" rel="noreferrer" className="text-primary hover:underline">Turborepo</a>:
           </p>
 
           <div className="overflow-x-auto mb-4">
@@ -586,17 +582,17 @@ docker compose up -d`}
               <tbody className="text-muted-foreground">
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">Web App</td>
-                  <td className="px-4 py-3"><code className="text-primary">http://localhost:3000</code></td>
+                  <td className="px-4 py-3"><Code>http://localhost:3000</Code></td>
                   <td className="px-4 py-3">Main frontend with login/register/dashboard</td>
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">Admin Panel</td>
-                  <td className="px-4 py-3"><code className="text-primary">http://localhost:3001</code></td>
+                  <td className="px-4 py-3"><Code>http://localhost:3001</Code></td>
                   <td className="px-4 py-3">Admin dashboard with user management</td>
                 </tr>
                 <tr>
                   <td className="px-4 py-3 font-medium text-foreground">Go API</td>
-                  <td className="px-4 py-3"><code className="text-primary">http://localhost:8080</code></td>
+                  <td className="px-4 py-3"><Code>http://localhost:8080</Code></td>
                   <td className="px-4 py-3">REST API (JSON responses)</td>
                 </tr>
               </tbody>
@@ -604,33 +600,28 @@ docker compose up -d`}
           </div>
 
           <Note>
-            The Go API starts automatically with <code className="text-xs bg-muted/30 px-1 rounded">pnpm dev</code> if you are running the Turborepo setup. If it does not start, open a separate terminal and run: <code className="text-xs bg-muted/30 px-1 rounded">cd apps/api && go run cmd/server/main.go</code>
+            If the Go API doesn{"'"}t start with <Code>pnpm dev</Code>, open a separate terminal and run: <Code>cd apps/api && go run cmd/server/main.go</Code>
           </Note>
 
-          <Challenge number={8} title="Start Everything">
-            <p>Run <code className="text-primary bg-muted/30 px-1 rounded">pnpm install</code> then <code className="text-primary bg-muted/30 px-1 rounded">pnpm dev</code>. Open all three URLs in your browser. You should see the web app, admin panel, and API welcome message.</p>
+          <Challenge number={9} title="Start Everything">
+            <p>Run <Code>pnpm install</Code> then <Code>pnpm dev</Code>. Open all three URLs in your browser.</p>
           </Challenge>
 
-          <Challenge number={9} title="Register an Account">
-            <p>Go to <code className="text-primary bg-muted/30 px-1 rounded">http://localhost:3000</code> and click {"\""}Register{"\""}.
-            Create an account with your email and password. After registering, you should be redirected to the dashboard.</p>
+          <Challenge number={10} title="Register an Account">
+            <p>Go to <Code>http://localhost:3000</Code> and click {'"'}Register{'"'}. Create an account with your email and password. You should be redirected to the dashboard after registration.</p>
           </Challenge>
 
-          <Challenge number={10} title="Log Into Admin">
-            <p>Go to <code className="text-primary bg-muted/30 px-1 rounded">http://localhost:3001</code> and log in with the same account.
-            You should see the admin dashboard with stats cards and a sidebar menu.</p>
+          <Challenge number={11} title="Log Into the Admin Panel">
+            <p>Go to <Code>http://localhost:3001</Code> and log in with the same credentials. Explore the sidebar — click on Users, Dashboard, and System pages.</p>
           </Challenge>
         </section>
 
-        {/* ═══════════════════════════════════════════════════════════ */}
-        {/* SECTION 9: Built-in Tools                                 */}
-        {/* ═══════════════════════════════════════════════════════════ */}
-
+        {/* ═══ Built-in Tools ═══ */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-foreground mb-4">Built-in Tools</h2>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Your API comes with four built-in tools. Each one has a web interface:
+            Your API comes with five built-in tools, each with its own web interface:
           </p>
 
           <div className="overflow-x-auto mb-4">
@@ -645,59 +636,57 @@ docker compose up -d`}
               <tbody className="text-muted-foreground">
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">GORM Studio</td>
-                  <td className="px-4 py-3"><code className="text-primary">localhost:8080/studio</code></td>
-                  <td className="px-4 py-3">Browse database tables, view and edit records, run SQL</td>
+                  <td className="px-4 py-3"><Code>localhost:8080/studio</Code></td>
+                  <td className="px-4 py-3">Browse database tables, view/edit records, run SQL</td>
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">API Docs</td>
-                  <td className="px-4 py-3"><code className="text-primary">localhost:8080/docs</code></td>
+                  <td className="px-4 py-3"><Code>localhost:8080/docs</Code></td>
                   <td className="px-4 py-3">Interactive API documentation — test every endpoint</td>
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">Pulse</td>
-                  <td className="px-4 py-3"><code className="text-primary">localhost:8080/pulse/ui</code></td>
-                  <td className="px-4 py-3">Request tracing, metrics, database monitoring</td>
+                  <td className="px-4 py-3"><Code>localhost:8080/pulse/ui</Code></td>
+                  <td className="px-4 py-3">Request tracing, performance metrics, database monitoring</td>
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">Sentinel</td>
-                  <td className="px-4 py-3"><code className="text-primary">localhost:8080/sentinel/ui</code></td>
+                  <td className="px-4 py-3"><Code>localhost:8080/sentinel/ui</Code></td>
                   <td className="px-4 py-3">Security dashboard — rate limits, blocked IPs, threats</td>
                 </tr>
                 <tr>
                   <td className="px-4 py-3 font-medium text-foreground">Mailhog</td>
-                  <td className="px-4 py-3"><code className="text-primary">localhost:8025</code></td>
+                  <td className="px-4 py-3"><Code>localhost:8025</Code></td>
                   <td className="px-4 py-3">Email inbox — catches all emails sent during development</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <Challenge number={11} title="Visit GORM Studio">
-            <p>Open <code className="text-primary bg-muted/30 px-1 rounded">http://localhost:8080/studio</code> in your browser. Log in (default: admin/studio). Find the {"\""}users{"\""} table and look for the account you just registered.</p>
+          <Challenge number={12} title="Visit GORM Studio">
+            <p>Open <Code>http://localhost:8080/studio</Code>. Log in (default: admin/studio). Find the {'"'}users{'"'} table and look for the account you just registered.</p>
           </Challenge>
 
-          <Challenge number={12} title="Test the API Docs">
-            <p>Open <code className="text-primary bg-muted/30 px-1 rounded">http://localhost:8080/docs</code>. Find the {"\""}POST /api/auth/login{"\""} endpoint. Try logging in with your email and password using the interactive form. You should get a JSON response with a token.</p>
+          <Challenge number={13} title="Test the API Docs">
+            <p>Open <Code>http://localhost:8080/docs</Code>. Find the {'"'}POST /api/auth/login{'"'} endpoint. Click it, fill in your email and password, and click {'"'}Send{'"'}. You should get a JSON response with a token.</p>
           </Challenge>
 
-          <Challenge number={13} title="Check Pulse">
-            <p>Open <code className="text-primary bg-muted/30 px-1 rounded">http://localhost:8080/pulse/ui</code>. Refresh your web app a few times, then go back to Pulse. Can you see the requests being logged?</p>
+          <Challenge number={14} title="Check Pulse">
+            <p>Open <Code>http://localhost:8080/pulse/ui</Code>. Refresh your web app a few times, then check Pulse again. Can you see the requests being logged with their response times?</p>
           </Challenge>
 
-          <Challenge number={14} title="Check Mailhog">
-            <p>Open <code className="text-primary bg-muted/30 px-1 rounded">http://localhost:8025</code>. Is there a welcome email from when you registered? If yes, open it and see the HTML template.</p>
+          <Challenge number={15} title="Check Mailhog">
+            <p>Open <Code>http://localhost:8025</Code>. Is there a welcome email from when you registered? Open it and look at the HTML template.</p>
           </Challenge>
         </section>
 
-        {/* ═══════════════════════════════════════════════════════════ */}
-        {/* SECTION 10: The .env File                                  */}
-        {/* ═══════════════════════════════════════════════════════════ */}
-
+        {/* ═══ The .env File ═══ */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-foreground mb-4">The .env File</h2>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Every Grit project has a <code className="text-primary text-sm bg-muted/30 px-1.5 py-0.5 rounded">.env</code> file at the root. This file contains all your configuration:
+            Every Grit project has a <Code>.env</Code> file at the root. This file stores all your configuration
+            as key-value pairs:
           </p>
 
           <CodeBlock filename=".env (partial)">
@@ -722,33 +711,28 @@ AI_GATEWAY_API_KEY=
 AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6`}
           </CodeBlock>
 
-          <h3 className="text-lg font-semibold text-foreground mb-3 mt-6">Key Variables Explained</h3>
-
-          <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <code className="text-xs bg-muted/30 px-1 rounded">DATABASE_URL</code> — connection string for PostgreSQL</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <code className="text-xs bg-muted/30 px-1 rounded">JWT_SECRET</code> — secret key for signing authentication tokens (change this in production!)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <code className="text-xs bg-muted/30 px-1 rounded">REDIS_URL</code> — connection to Redis for caching and job queues</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <code className="text-xs bg-muted/30 px-1 rounded">AI_GATEWAY_API_KEY</code> — optional, for AI features (get from vercel.com/ai-gateway)</li>
-          </ul>
+          <Definition term="Environment Variables">
+            Configuration values that change between environments (development vs production). You use
+            different database URLs locally vs on your server. The <Code>.env</Code> file keeps these values
+            outside your code so you can change them without modifying any Go or TypeScript files.
+          </Definition>
 
           <Note>
-            Never commit your <code className="text-xs bg-muted/30 px-1 rounded">.env</code> file to Git. It contains secrets. Grit adds it to <code className="text-xs bg-muted/30 px-1 rounded">.gitignore</code> automatically.
+            Never commit your <Code>.env</Code> file to Git — it contains secrets like API keys and database passwords.
+            Grit adds it to <Code>.gitignore</Code> automatically. Use <Code>.env.example</Code> as a template for other developers.
           </Note>
 
-          <Challenge number={15} title="Read the .env File">
-            <p>Open the <code className="text-primary bg-muted/30 px-1 rounded">.env</code> file in your editor. Find the <code className="text-primary bg-muted/30 px-1 rounded">DATABASE_URL</code> — what database name is it using? Find the <code className="text-primary bg-muted/30 px-1 rounded">APP_PORT</code> — what port does the API run on?</p>
+          <Challenge number={16} title="Read the .env File">
+            <p>Open the <Code>.env</Code> file. Find: (1) What database name is it using? (2) What port does the API run on? (3) What is the JWT_SECRET set to?</p>
           </Challenge>
         </section>
 
-        {/* ═══════════════════════════════════════════════════════════ */}
-        {/* SECTION 11: Useful CLI Commands                           */}
-        {/* ═══════════════════════════════════════════════════════════ */}
-
+        {/* ═══ Essential CLI Commands ═══ */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-foreground mb-4">Useful CLI Commands</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">Essential CLI Commands</h2>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Here are commands you will use every day while developing with Grit:
+            Here are commands you{"'"}ll use every day:
           </p>
 
           <div className="overflow-x-auto mb-4">
@@ -762,19 +746,19 @@ AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6`}
               <tbody className="text-muted-foreground">
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-mono text-foreground text-xs">grit routes</td>
-                  <td className="px-4 py-3">Lists all your API endpoints in a table</td>
+                  <td className="px-4 py-3">Lists all API endpoints in a formatted table</td>
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-mono text-foreground text-xs">grit migrate</td>
-                  <td className="px-4 py-3">Runs database migrations (creates/updates tables)</td>
+                  <td className="px-4 py-3">Creates or updates database tables from your Go models</td>
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-mono text-foreground text-xs">grit seed</td>
-                  <td className="px-4 py-3">Fills the database with demo data</td>
+                  <td className="px-4 py-3">Fills the database with demo data (admin user, sample posts)</td>
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-mono text-foreground text-xs">grit studio</td>
-                  <td className="px-4 py-3">Opens the database browser</td>
+                  <td className="px-4 py-3">Opens the database browser in your browser</td>
                 </tr>
                 <tr>
                   <td className="px-4 py-3 font-mono text-foreground text-xs">grit version</td>
@@ -784,58 +768,40 @@ AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6`}
             </table>
           </div>
 
-          <Challenge number={16} title="List Your Routes">
-            <p>Run <code className="text-primary bg-muted/30 px-1 rounded">grit routes</code> in your project folder. How many routes does your app have? Can you find the login endpoint? The register endpoint?</p>
-          </Challenge>
-
-          <Challenge number={17} title="Stop and Restart">
-            <p>Stop your dev servers (Ctrl+C). Stop Docker with <code className="text-primary bg-muted/30 px-1 rounded">docker compose down</code>. Then start everything again: <code className="text-primary bg-muted/30 px-1 rounded">docker compose up -d</code> and <code className="text-primary bg-muted/30 px-1 rounded">pnpm dev</code>. Verify everything still works.</p>
+          <Challenge number={17} title="List Your Routes">
+            <p>Run <Code>grit routes</Code> in your project folder. How many routes does your app have? Can you find the login endpoint? The register endpoint? Which routes are {'"'}protected{'"'} (require authentication)?</p>
           </Challenge>
         </section>
 
-        {/* ═══════════════════════════════════════════════════════════ */}
-        {/* SECTION 12: Summary                                       */}
-        {/* ═══════════════════════════════════════════════════════════ */}
-
+        {/* ═══ Summary ═══ */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-foreground mb-4">What You Learned</h2>
 
-          <p className="text-muted-foreground leading-relaxed mb-4">
-            In this course you learned:
-          </p>
-
-          <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-1" /> How to install Grit with <code className="text-xs bg-muted/30 px-1 rounded">go install</code></li>
-            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-1" /> How to scaffold a project with <code className="text-xs bg-muted/30 px-1 rounded">grit new</code> (interactive and with flags)</li>
+          <ul className="space-y-2 text-muted-foreground mb-6">
+            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-1" /> What Grit is — a full-stack Go + React framework</li>
+            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-1" /> How to install Grit with <Code>go install</Code></li>
+            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-1" /> How to scaffold a project with <Code>grit new</Code> (interactive and with flags)</li>
             <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-1" /> The monorepo project structure (apps/api, apps/web, apps/admin, packages/shared)</li>
-            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-1" /> How the Go API is organized (models → services → handlers → routes)</li>
+            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-1" /> How the Go API is organized (middleware → handler → service → database)</li>
             <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-1" /> How to start Docker services and development servers</li>
             <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-1" /> The 5 built-in tools (GORM Studio, API Docs, Pulse, Sentinel, Mailhog)</li>
-            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-1" /> How the .env file works</li>
-            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-1" /> Essential CLI commands (grit routes, grit migrate, grit studio)</li>
+            <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-1" /> How the .env file works and why you never commit it to Git</li>
           </ul>
 
-          <Challenge number={18} title="Final Challenge: Start From Scratch">
-            <p>Delete the <code className="text-primary bg-muted/30 px-1 rounded">myapp</code> folder completely. Now create a new project called <code className="text-primary bg-muted/30 px-1 rounded">bookstore</code> using Triple architecture with TanStack Router (Vite) instead of Next.js. Start everything and verify it works. Notice any differences from the Next.js version?</p>
+          <Challenge number={18} title="Final Challenge: Start Fresh">
+            <p>Delete the <Code>myapp</Code> folder completely. Now create a new project called <Code>bookstore</Code> using Triple architecture but with <strong>TanStack Router (Vite)</strong> instead of Next.js: <Code>grit new bookstore --triple --vite</Code>. Start everything and verify it works. Notice any differences from the Next.js version?</p>
           </Challenge>
         </section>
 
+        {/* Footer */}
+        <CourseFooter />
+
         {/* Navigation */}
-        <div className="flex items-center justify-between pt-8 border-t border-border/40">
-          <Link
-            href="/courses/grit-web"
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Grit Web
-          </Link>
-          <Link
-            href="/courses/grit-web/code-generator"
-            className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-          >
-            Next: Code Generator Mastery
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+        <div className="mt-8">
+          <CourseNav
+            prev={{ href: '/courses/grit-web', label: 'Back to Grit Web' }}
+            next={{ href: '/courses/grit-web/code-generator', label: 'Next: Code Generator Mastery' }}
+          />
         </div>
       </main>
     </div>
