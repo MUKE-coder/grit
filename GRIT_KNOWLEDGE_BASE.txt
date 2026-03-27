@@ -1,0 +1,838 @@
+GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
+=========================================
+
+Version: 3.5.0
+Website: https://gritframework.dev/
+GitHub: https://github.com/MUKE-coder/grit
+Creator: Muke JohnBaptist (@MUKE-coder)
+License: MIT
+Tagline: Go + React. Built with Grit.
+
+
+WHAT IS GRIT?
+=============
+
+Grit is a full-stack meta-framework that fuses Go with React. It gives developers one CLI command to scaffold a complete production-ready application with authentication, two-factor authentication, admin panel, code generation, file storage, email, background jobs, AI integration, one-command deployment, and Docker setup.
+
+Think of it as what Laravel is to PHP, but for Go + React. Or what Ruby on Rails is to Ruby, but with a Go backend and a modern React frontend.
+
+Grit is not just a boilerplate or a starter template. It is a living framework with a CLI that continues to help you after the initial scaffold — generating resources, syncing types, managing deployments, and more.
+
+The framework solves the "setup fatigue" problem. Every full-stack developer knows the pain: you want to build a SaaS app, but first you need to set up authentication, database models, an admin panel, file uploads, email sending, background jobs, caching, API documentation, security middleware, Docker configuration, and deployment scripts. That takes weeks before you write a single line of business logic. Grit gives you all of that in one command, in under 30 seconds.
+
+
+WHO IS GRIT FOR?
+================
+
+Grit is designed for:
+
+1. Go developers who want a batteries-included framework like Laravel or Rails, but in Go
+2. Laravel developers migrating to Go who want familiar patterns (single-app mode, artisan-like CLI)
+3. Next.js developers who want a proper backend instead of serverless functions
+4. MERN stack developers who want a structured monorepo with type safety
+5. Solo developers and small teams building SaaS products who need to ship fast
+6. Agencies building client projects who need consistent, production-ready scaffolding
+7. Developers who are tired of spending weeks on boilerplate before writing business logic
+
+
+HOW TO INSTALL
+==============
+
+Prerequisites:
+- Go 1.21 or later
+- Node.js 18 or later
+- pnpm 8 or later
+- Docker (for development databases and services)
+
+Installation:
+  go install github.com/MUKE-coder/grit/v2/cmd/grit@latest
+
+Verify:
+  grit version
+
+Update to latest:
+  grit update
+
+Remove previous version:
+  rm $(which grit)
+
+
+ARCHITECTURE MODES
+==================
+
+When you run "grit new myapp", the CLI enters interactive mode and asks you to choose an architecture. This is one of Grit's most powerful features — you pick the structure that matches your project's needs.
+
+1. TRIPLE (Web + Admin + API)
+   Command: grit new myapp --triple
+   Structure: Turborepo monorepo with three apps
+   - apps/api/ — Go backend (Gin + GORM)
+   - apps/web/ — Main frontend (Next.js or TanStack Router)
+   - apps/admin/ — Admin panel (Next.js or TanStack Router)
+   - packages/shared/ — Zod schemas, TypeScript types, constants
+   Best for: SaaS applications, content platforms, e-commerce sites
+   This is the default and most feature-complete mode.
+
+2. DOUBLE (Web + API)
+   Command: grit new myapp --double
+   Structure: Turborepo monorepo with two apps
+   - apps/api/ — Go backend
+   - apps/web/ — Frontend
+   - packages/shared/ — Shared types
+   Best for: Simpler apps that don't need a separate admin panel, marketing sites with a backend, blogs
+
+3. SINGLE (Embedded SPA)
+   Command: grit new myapp --single
+   Structure: Single Go binary with embedded frontend
+   - main.go at the project root with go:embed
+   - internal/ — Go backend code
+   - frontend/ — React SPA (built and embedded into the binary)
+   Best for: Laravel/Next.js developers who want one deployable unit, microservices, internal tools
+   This is similar to how Laravel or Next.js work — one app, one deployment, one binary.
+   In development, Go runs on port 8080 and Vite runs on port 5173 with a proxy.
+   In production, the frontend is compiled and embedded into the Go binary using go:embed.
+
+4. API ONLY
+   Command: grit new myapp --api
+   Structure: Just the Go API
+   - cmd/server/main.go — Entry point
+   - internal/ — All Go code
+   Best for: Headless APIs, mobile app backends, microservices
+
+5. MOBILE (API + Expo)
+   Command: grit new myapp --mobile
+   Structure: Turborepo monorepo with API and Expo
+   - apps/api/ — Go backend
+   - apps/expo/ — React Native (Expo) mobile app
+   Best for: Mobile-first applications
+
+6. DESKTOP (Wails)
+   Command: grit new-desktop myapp
+   Structure: Standalone Wails desktop application
+   - Go backend with Wails v2 bindings
+   - React frontend (Vite + TanStack Router)
+   - SQLite database (local)
+   Best for: Cross-platform desktop tools, offline-first apps
+
+
+FRONTEND OPTIONS
+================
+
+Grit supports two frontend frameworks. You choose when scaffolding:
+
+1. NEXT.JS (default)
+   Flag: --next
+   - App Router with Server Components
+   - Server-Side Rendering (SSR), Static Site Generation (SSG), Incremental Static Regeneration (ISR)
+   - Great for SEO-heavy sites, marketing pages, blogs
+   - Larger bundle size but more features
+   - Deployable to Vercel, or self-hosted with Docker
+
+2. TANSTACK ROUTER (Vite)
+   Flag: --vite
+   - File-based routing via TanStack Router
+   - Vite for fast builds and hot module replacement
+   - Client-side SPA — smaller bundle, faster builds
+   - Better for internal tools, dashboards, admin panels where SEO doesn't matter
+   - Uses the same React components, hooks, and patterns as the Next.js option
+
+Both frontends use the exact same:
+- React Query (TanStack Query) for data fetching
+- Zod for validation
+- shadcn/ui for UI components
+- Tailwind CSS for styling
+- The same Go API backend
+
+You can choose different frontends for different apps in the same project. For example, the web app could use Next.js for SEO while the admin panel uses TanStack Router for speed.
+
+
+INTERACTIVE CLI
+===============
+
+When you run "grit new myapp" without any flags, the CLI enters interactive mode powered by the charmbracelet/huh library. It presents beautiful terminal prompts:
+
+Step 1: Choose Architecture
+  > Triple — Web + Admin + API (Turborepo)
+    Double — Web + API (Turborepo)
+    Single — Go API + embedded React SPA (one binary)
+    API Only — Go API (no frontend)
+    Mobile — API + Expo (React Native)
+
+Step 2: Choose Frontend (if applicable)
+  > Next.js — SSR, SEO, App Router
+    TanStack Router — Vite, fast builds, small bundle (SPA)
+
+Step 3: Choose Admin Style (if Triple)
+  > Default — Clean dark theme
+    Modern — Gradient accents
+    Minimal — Ultra clean
+    Glass — Glassmorphism
+
+You can skip prompts by passing flags directly:
+  grit new myapp --triple --vite --style modern
+
+Legacy flags still work for backward compatibility:
+  grit new myapp --api
+  grit new myapp --full --expo
+
+
+WHAT SHIPS WITH EVERY PROJECT
+==============================
+
+Every Grit project, regardless of architecture, includes these production-ready features:
+
+1. JWT AUTHENTICATION
+   - User registration with email verification
+   - Login with email and password
+   - JWT access tokens (short-lived) and refresh tokens (long-lived)
+   - Password reset flow with email
+   - Role-Based Access Control with three built-in roles: ADMIN, EDITOR, USER
+   - Custom roles can be added with "grit add role MODERATOR"
+   - Protected routes via middleware
+
+2. TWO-FACTOR AUTHENTICATION (TOTP)
+   - RFC 6238 compliant Time-based One-Time Passwords
+   - Works with any authenticator app (Google Authenticator, Authy, 1Password, etc.)
+   - QR code provisioning URL for easy setup
+   - 10 backup recovery codes (bcrypt-hashed, one-time use)
+   - 30-day trusted device cookies (skip 2FA on known devices)
+   - Zero external dependencies — built with Go stdlib crypto packages
+   - API endpoints: POST /api/totp/setup, POST /api/totp/verify, POST /api/totp/disable
+
+3. OAUTH2 SOCIAL LOGIN
+   - Google and GitHub sign-in via the goth library
+   - Accounts automatically linked by email address
+   - Social login buttons on all auth pages (login, register, admin)
+   - Configurable via GOOGLE_CLIENT_ID, GITHUB_CLIENT_ID environment variables
+
+4. FILE STORAGE (S3-COMPATIBLE)
+   - Presigned URL uploads — files go directly from browser to S3, bypassing the API
+   - Works with AWS S3, Cloudflare R2, Backblaze B2, or MinIO (local dev)
+   - Image processing via background jobs (thumbnails, resize)
+   - Upload progress tracking via XHR
+   - Admin file management dashboard
+
+5. EMAIL (RESEND)
+   - Transactional emails via Resend API
+   - Four built-in Go HTML templates: welcome, password reset, email verification, notification
+   - Development mode uses Mailhog (catches all emails locally)
+   - Configurable sender via MAIL_FROM environment variable
+
+6. BACKGROUND JOBS
+   - Redis-backed job queue using asynq
+   - Built-in workers: email sending, image processing, cleanup
+   - Admin dashboard showing job status, retries, failures
+   - Retry logic with exponential backoff
+
+7. CRON SCHEDULER
+   - Recurring tasks via cron expressions
+   - Uses the same asynq worker pool as background jobs
+   - Admin dashboard showing scheduled tasks
+
+8. AI INTEGRATION (VERCEL AI GATEWAY)
+   - One API key for hundreds of models (Anthropic, OpenAI, Google, and more)
+   - Single OpenAI-compatible endpoint (no provider-specific code)
+   - Models use "provider/model" format: anthropic/claude-sonnet-4-6, openai/gpt-5.4, google/gemini-2.5-pro
+   - Three API endpoints: POST /api/ai/complete, POST /api/ai/chat, POST /api/ai/stream
+   - Server-Sent Events (SSE) streaming support
+   - No markup on token pricing
+   - Automatic retries and fallbacks
+
+9. REDIS CACHING
+   - Get/Set/Delete/Flush operations
+   - Cache middleware for GET responses
+   - Configurable TTL per key
+   - Admin cache management
+
+10. GORM STUDIO
+    - Visual database browser embedded at /studio
+    - Browse tables, view records, edit data
+    - Raw SQL editor
+    - Schema export (SQL, JSON, YAML, DBML, ERD)
+    - Data import/export (JSON, CSV, SQL, XLSX)
+    - Go model generation from schema
+
+11. API DOCUMENTATION
+    - Auto-generated OpenAPI 3.1 spec using gin-docs
+    - Interactive Scalar UI at /docs
+    - Postman and Insomnia export
+    - No annotations required — routes and models introspected automatically
+
+12. SECURITY (SENTINEL)
+    - Web Application Firewall (WAF)
+    - Rate limiting per IP and per route
+    - Brute-force protection on auth endpoints
+    - Anomaly detection
+    - IP geolocation
+    - Security headers (HSTS, X-Frame-Options, CSP, etc.)
+    - Real-time threat dashboard at /sentinel/ui
+
+13. OBSERVABILITY (PULSE)
+    - Request tracing with timing
+    - Database query monitoring
+    - Runtime metrics (goroutines, memory, GC)
+    - Error tracking
+    - Health checks
+    - Prometheus metric export
+    - Dashboard at /pulse/ui
+
+14. GRIT UI COMPONENT REGISTRY
+    - 100 pre-built shadcn-compatible React components
+    - Five categories: marketing (21), auth (10), SaaS (30), ecommerce (20), layout (20)
+    - Install via: npx shadcn@latest add --url http://localhost:8080/r
+    - Served via API: GET /r.json (all), GET /r/:name.json (individual)
+    - Each component includes JSON metadata and TSX source code
+
+15. DOCKER SETUP
+    - docker-compose.yml for development: PostgreSQL 16, Redis 7, MinIO, Mailhog
+    - docker-compose.prod.yml for production
+    - Dockerfiles for Go API and Next.js frontend
+    - Named volumes for data persistence
+
+16. PERFORMANCE
+    - Gzip response compression
+    - Database connection pool tuning (MaxIdle: 10, MaxOpen: 100)
+    - Request ID tracing via X-Request-ID header
+    - Cache-Control headers on public endpoints
+    - Presigned URL uploads (bypass API for large files)
+
+17. ADMIN PANEL (Triple mode only)
+    - Resource-based admin system inspired by Laravel Filament
+    - defineResource() for data-driven admin pages
+    - DataTable with server-side pagination, sorting, filtering, column visibility, CSV/JSON export
+    - FormBuilder with 8+ field types and Zod validation
+    - Dashboard widgets: stats cards, line charts, bar charts, activity feed
+    - Collapsible sidebar with auto-generated navigation
+    - Multi-step forms (modal-steps and page-steps variants)
+    - Dark/light theme toggle
+    - Four style variants: default, modern, minimal, glass
+    - System pages: Jobs, Files, Cron, Mail Preview, Security
+
+18. TESTS (Scaffolded)
+    - Go API tests: auth (6 tests), users (4 tests), benchmarks
+    - Frontend tests: Vitest + React Testing Library
+    - E2E tests: Playwright (auth flow, admin flow)
+    - All test configs scaffolded and wired into package.json
+
+
+CODE GENERATOR
+==============
+
+The code generator is one of Grit's most powerful features. It creates a full-stack CRUD resource in one command.
+
+Command:
+  grit generate resource Post --fields "title:string,content:richtext,published:bool,slug:slug:title"
+
+What it generates:
+  1. Go model (internal/models/post.go) — GORM struct with tags, auto-migration
+  2. Go service (internal/services/post_service.go) — Business logic (Create, GetByID, List, Update, Delete)
+  3. Go handler (internal/handlers/post_handler.go) — HTTP handlers with pagination, search, sorting
+  4. Zod schema (packages/shared/schemas/post.ts) — Validation rules
+  5. TypeScript types (packages/shared/types/post.ts) — Full type definitions
+  6. React Query hooks (apps/web/hooks/use-posts.ts) — Data fetching hooks
+  7. Admin page (apps/admin/app/posts/) — DataTable with forms
+  8. Route injection — Adds routes to routes.go via code markers
+
+What it injects (via grit: markers in existing files):
+  - Model import + auto-migration in database.go
+  - Handler initialization in main.go
+  - Route registration in routes.go
+  - Zod schema export in packages/shared
+  - TypeScript type export
+  - Admin sidebar navigation entry
+  - Admin resource definition
+
+The generator uses code markers (comments like "// grit:models" and "// grit:routes") to know exactly where to inject code. This means it can add to existing files without overwriting your custom code.
+
+Field types supported:
+  string, text, richtext, int, uint, float, bool, datetime, date, slug, belongs_to, many_to_many, string_array
+
+Field modifiers:
+  :unique — Add unique index
+  :optional — Allow NULL
+  :slug:<source> — Auto-generate slug from another field
+  :belongs_to:<Model> — Foreign key relationship
+  :many_to_many:<Model> — Many-to-many relationship
+
+Removing a resource:
+  grit remove resource Post
+  This deletes all generated files AND reverses all code injections, cleanly removing the resource.
+
+Type sync:
+  grit sync
+  Parses Go model files and regenerates TypeScript types and Zod schemas in packages/shared.
+
+
+CLI COMMANDS REFERENCE
+======================
+
+Project Scaffolding:
+  grit new <name>                        Interactive mode (prompts for architecture + frontend)
+  grit new <name> --triple --next        Web + Admin + API with Next.js
+  grit new <name> --double --vite        Web + API with TanStack Router
+  grit new <name> --single               Single Go binary with embedded SPA
+  grit new <name> --api                  Go API only
+  grit new <name> --mobile               API + Expo React Native
+  grit new <name> --full                 Everything including Expo + docs site
+  grit new <name> --style modern         Admin style: default, modern, minimal, glass
+  grit new-desktop <name>                Native desktop app (Wails + Go + React + SQLite)
+
+Code Generation:
+  grit generate resource <Name> --fields "title:string,content:text"
+  grit generate resource <Name> -i       Interactive field definition
+  grit generate resource <Name> --from post.yaml
+  grit generate resource <Name> --roles "ADMIN,EDITOR"
+  grit remove resource <Name>            Delete resource + reverse all injections
+  grit remove resource <Name> --force    Skip confirmation
+  grit add role <ROLE_NAME>              Add custom role to all apps
+  grit sync                              Go types to TypeScript + Zod
+
+Development:
+  grit start                             Auto-detect project type, start dev server
+  grit start client                      Start frontend apps (pnpm dev via Turborepo)
+  grit start server                      Start Go API (go run cmd/server/main.go)
+  grit studio                            Open GORM Studio database browser
+  grit routes                            List all registered API routes in a table
+
+Database:
+  grit migrate                           Run GORM AutoMigrate for all models
+  grit migrate --fresh                   Drop all tables then re-migrate
+  grit seed                              Run database seeders (admin user, demo data)
+
+Operations:
+  grit down                              Enable maintenance mode (503 for all requests)
+  grit up                                Disable maintenance mode, resume normal operation
+  grit deploy --host user@server.com --domain myapp.com
+  grit deploy --host user@server.com --key ~/.ssh/id_rsa --domain myapp.com --app-port 8080
+
+Project Management:
+  grit upgrade                           Upgrade project templates to latest Grit version
+  grit upgrade -f                        Force upgrade (no confirmation)
+  grit update                            Self-update CLI to latest version
+  grit compile                           Build desktop app executable (wails build)
+  grit version                           Print current version (v3.5.0)
+
+
+DEPLOYMENT
+==========
+
+Grit includes a one-command deployment system. No CI/CD pipeline needed for getting started.
+
+Command:
+  grit deploy --host deploy@server.com --domain myapp.com
+
+What happens:
+  Step 1: Cross-compiles Go binary for Linux (CGO_ENABLED=0, GOOS=linux, GOARCH=amd64)
+  Step 2: Builds frontend if present (pnpm build)
+  Step 3: Uploads binary to remote server via SCP to /opt/myapp/
+  Step 4: Creates a systemd service with auto-restart on failure
+  Step 5: Configures Caddy reverse proxy with automatic Let's Encrypt TLS (if --domain provided)
+
+The systemd service:
+  - Runs as www-data user
+  - Auto-restarts on failure (5-second delay)
+  - Reads .env file for configuration
+  - Security hardening: NoNewPrivileges, ProtectSystem, ProtectHome
+
+The Caddy configuration:
+  - Reverse proxies to localhost:8080
+  - Automatic HTTPS via Let's Encrypt
+  - Gzip compression enabled
+  - Security headers (X-Frame-Options, X-Content-Type-Options, etc.)
+  - Log rotation (10MB files, 5 kept)
+
+You can also use environment variables instead of flags:
+  DEPLOY_HOST=deploy@server.com
+  DEPLOY_KEY_FILE=~/.ssh/id_rsa
+  DEPLOY_DOMAIN=myapp.com
+
+For Docker-based deployment, Grit also scaffolds docker-compose.prod.yml with production-ready Dockerfiles.
+
+
+MAINTENANCE MODE
+================
+
+Grit includes Laravel-style maintenance mode:
+
+  grit down     Creates a .maintenance file, all requests return 503
+  grit up       Removes the file, normal operation resumes
+
+The API middleware checks for the .maintenance file on every request. When it exists, all responses are 503 Service Unavailable. This is useful during deployments or database migrations.
+
+
+ROUTE LISTING
+=============
+
+  grit routes
+
+Parses the routes.go file and displays a formatted table:
+
+  METHOD  PATH                    HANDLER                    GROUP
+  ──────  ──────────────────────  ─────────────────────────  ─────────
+  POST    /api/auth/register      handlers.Register          public
+  POST    /api/auth/login         handlers.Login             public
+  GET     /api/users              handlers.GetUsers          protected
+  PUT     /api/users/:id          handlers.UpdateUser        protected
+  DELETE  /api/admin/users/:id    handlers.AdminDeleteUser   admin
+
+  12 routes total
+
+The parser understands nested route groups, middleware detection (auth, role-based), and resolves full paths from group prefixes.
+
+
+PLUGINS ECOSYSTEM
+=================
+
+Grit has 10 official plugins — standalone Go packages for functionality that doesn't ship in core:
+
+1. grit-websockets (package: ws)
+   Hub pattern, rooms, broadcast messaging, auth middleware for WebSocket connections.
+   Use cases: chat apps, live dashboards, real-time notifications, collaborative editing.
+
+2. grit-stripe (package: gritstripe)
+   Stripe Checkout sessions, subscription management, customer portal, webhook handling.
+   Use cases: SaaS billing, subscription products, one-time payments.
+
+3. grit-oauth (package: oauth)
+   Extended social login: Google, GitHub, Discord. More providers than core goth integration.
+   Use cases: Apps needing Discord login, social platforms.
+
+4. grit-notifications (package: notify)
+   In-app notifications, push notifications via Firebase Cloud Messaging, SMS via Twilio.
+   Use cases: Mobile apps, notification centers, alert systems.
+
+5. grit-search (package: search)
+   Full-text search via Meilisearch, GORM auto-indexing hooks.
+   Use cases: Product search, content search, document indexing.
+
+6. grit-video (package: video)
+   Video upload, FFmpeg transcoding, HLS streaming.
+   Use cases: Video platforms, course platforms, media apps.
+
+7. grit-conference (package: conference)
+   WebRTC signaling server, room management.
+   Use cases: Video conferencing, virtual classrooms, telehealth.
+
+8. grit-webhooks (package: webhooks)
+   Outgoing webhook management, HMAC signature verification, retry with exponential backoff.
+   Use cases: Integration platforms, event-driven architectures.
+
+9. grit-i18n (package: i18n)
+   JSON-based translation files, locale detection middleware, language switching.
+   Use cases: Multi-language apps, internationalized SaaS products.
+
+10. grit-export (package: export)
+    PDF generation, Excel spreadsheets, CSV files.
+    Use cases: Reports, invoices, data export features.
+
+Each plugin includes a Claude Code skill file for AI-assisted integration.
+Install: go get github.com/MUKE-coder/grit-plugins/grit-websockets
+
+
+TECH STACK
+==========
+
+Backend:
+  - Language: Go 1.21+
+  - Web Framework: Gin (most popular Go web framework)
+  - ORM: GORM (auto-migration, hooks, relationships, preloading)
+  - Database: PostgreSQL (production), SQLite (desktop/quick start/testing)
+  - Cache: Redis
+  - Job Queue: asynq (Redis-backed)
+  - File Storage: S3-compatible (AWS S3, Cloudflare R2, Backblaze B2, MinIO)
+  - Email: Resend
+  - AI: Vercel AI Gateway
+  - Auth: JWT + TOTP (RFC 6238) + OAuth2 (goth)
+  - API Docs: gin-docs (auto-generated OpenAPI 3.1)
+  - Security: Sentinel (WAF + rate limiting)
+  - Observability: Pulse (tracing + metrics)
+  - DB Browser: GORM Studio
+
+Frontend:
+  - Framework: Next.js 14+ (App Router) OR TanStack Router (Vite)
+  - UI Library: React
+  - Styling: Tailwind CSS + shadcn/ui
+  - Data Fetching: TanStack Query (React Query)
+  - Validation: Zod
+  - State: React hooks (useState, useEffect)
+  - Forms: React Hook Form + Zod resolver
+  - Rich Text: Tiptap editor
+
+Monorepo:
+  - Package Manager: pnpm
+  - Task Runner: Turborepo
+  - Workspace: pnpm workspaces
+
+Desktop:
+  - Framework: Wails v2
+  - Database: SQLite (via pure Go driver, no CGO)
+  - Router: TanStack Router (with hash history for Wails compatibility)
+
+Deployment:
+  - SSH + SCP for binary upload
+  - systemd for process management
+  - Caddy for reverse proxy + auto-TLS
+  - Docker for containerized deployment
+
+Design:
+  - Font: Onest (UI), JetBrains Mono (code)
+  - Theme: Dark mode default, premium SaaS aesthetic
+  - Inspiration: Linear, Vercel Dashboard, Raycast
+
+
+DESIGN PHILOSOPHY
+=================
+
+Grit follows six core principles:
+
+1. CONVENTION OVER CONFIGURATION
+   Sensible defaults for everything. You shouldn't need to configure 50 things before you start coding. File structure, naming conventions, API response format — all decided for you. But everything is overridable.
+
+2. CODE GENERATION OVER RUNTIME MAGIC
+   Grit generates real, readable code — not hidden behind abstractions. You own every line. No framework lock-in. If you stop using Grit tomorrow, your code still works.
+
+3. BATTERIES INCLUDED, OPTIONALLY REMOVABLE
+   Auth, admin, email, storage, jobs, AI, security — all included by default. But they're modular. Don't need AI? Delete the ai/ folder. Don't need jobs? Remove the jobs/ folder. Nothing breaks.
+
+4. BEAUTIFUL BY DEFAULT
+   Every generated UI looks premium out of the box. Dark theme, clean typography, smooth interactions. No "developer placeholder" UIs. The admin panel rivals commercial products.
+
+5. MONOREPO NATIVE
+   Shared types between Go and TypeScript. One repository, one deployment pipeline. Types generated from Go models are automatically available in the frontend. No API contract drift.
+
+6. VIBE CODING READY
+   Every project includes a Claude Code skill file (.claude/skills/grit/SKILL.md) that teaches AI assistants how to work with Grit. AI can generate resources, understand the architecture, and follow conventions automatically.
+
+
+API RESPONSE FORMAT
+===================
+
+All Grit API endpoints follow a consistent response format:
+
+Success (single item):
+  {
+    "data": { "id": 1, "name": "John", "email": "john@example.com" },
+    "message": "User created successfully"
+  }
+
+Success (list with pagination):
+  {
+    "data": [
+      { "id": 1, "name": "John" },
+      { "id": 2, "name": "Jane" }
+    ],
+    "meta": {
+      "total": 100,
+      "page": 1,
+      "page_size": 20,
+      "pages": 5
+    }
+  }
+
+Error:
+  {
+    "error": {
+      "code": "VALIDATION_ERROR",
+      "message": "Email is required",
+      "details": {
+        "email": "This field is required"
+      }
+    }
+  }
+
+HTTP status codes: 200 OK, 201 Created, 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 422 Validation Error, 503 Service Unavailable (maintenance), 500 Server Error.
+
+
+ENVIRONMENT VARIABLES
+=====================
+
+Every Grit project uses a .env file. Here are the key variables:
+
+Core:
+  APP_NAME=myapp
+  APP_ENV=development
+  APP_PORT=8080
+  APP_URL=http://localhost:8080
+  DATABASE_URL=postgres://user:pass@localhost:5432/myapp?sslmode=disable
+  JWT_SECRET=your-secret-key
+  REDIS_URL=redis://localhost:6379
+
+Storage:
+  STORAGE_DRIVER=minio
+  STORAGE_ENDPOINT=localhost:9000
+  STORAGE_BUCKET=uploads
+  STORAGE_ACCESS_KEY=minioadmin
+  STORAGE_SECRET_KEY=minioadmin
+
+Email:
+  RESEND_API_KEY=re_xxxxx
+  MAIL_FROM=noreply@myapp.com
+
+AI (Vercel AI Gateway):
+  AI_GATEWAY_API_KEY=your-gateway-key
+  AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6
+  AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
+
+TOTP:
+  TOTP_ISSUER=myapp
+
+OAuth:
+  GOOGLE_CLIENT_ID=xxx
+  GOOGLE_CLIENT_SECRET=xxx
+  GITHUB_CLIENT_ID=xxx
+  GITHUB_CLIENT_SECRET=xxx
+
+CORS:
+  CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+
+GORM Studio:
+  GORM_STUDIO_ENABLED=true
+  GORM_STUDIO_USERNAME=admin
+  GORM_STUDIO_PASSWORD=studio
+
+Security:
+  SENTINEL_ENABLED=true
+  SENTINEL_USERNAME=admin
+  SENTINEL_PASSWORD=sentinel
+
+Observability:
+  PULSE_ENABLED=true
+  PULSE_USERNAME=admin
+  PULSE_PASSWORD=pulse
+
+Deployment:
+  DEPLOY_HOST=user@server.com
+  DEPLOY_KEY_FILE=~/.ssh/id_rsa
+  DEPLOY_DOMAIN=myapp.com
+
+
+COMPARISON WITH OTHER FRAMEWORKS
+=================================
+
+Grit vs Laravel (PHP):
+  - Both: Batteries-included, CLI scaffolding, resource generation, admin panel, deployment
+  - Grit advantage: Go performance (10-100x faster), type-safe frontend, modern React UI
+  - Laravel advantage: Larger ecosystem, more mature, PHP is easier for beginners
+
+Grit vs Ruby on Rails:
+  - Both: Convention over configuration, code generators, monorepo, batteries-included
+  - Grit advantage: Go compilation speed, type safety, React frontend instead of ERB/Hotwire
+  - Rails advantage: More mature, larger gem ecosystem
+
+Grit vs Next.js:
+  - Both: React frontend, TypeScript, modern tooling
+  - Grit advantage: Proper Go backend (not serverless), admin panel, background jobs, security
+  - Next.js advantage: Simpler for frontend-only apps, Vercel hosting, larger community
+
+Grit vs T3 Stack:
+  - Both: TypeScript, React, type-safe APIs
+  - Grit advantage: Go backend performance, admin panel, batteries (email, jobs, storage, AI)
+  - T3 advantage: Full TypeScript stack, simpler for pure TypeScript teams
+
+Grit vs Django:
+  - Both: Admin panel, ORM, auth, batteries-included
+  - Grit advantage: Go performance, modern React frontend, monorepo type safety
+  - Django advantage: More mature, Python ML ecosystem, Django REST framework
+
+Grit vs Goravel:
+  - Both: Go-based, Laravel-inspired, CLI scaffolding
+  - Grit advantage: React frontend included, admin panel, more batteries, monorepo
+  - Goravel advantage: Closer to Laravel API, familiar for Laravel developers
+
+
+DESKTOP APPLICATIONS
+====================
+
+Grit can scaffold native desktop applications using Wails v2.
+
+Command: grit new-desktop myapp
+
+What you get:
+  - Go backend with Wails bindings (Go functions callable from React)
+  - React frontend with Vite + TanStack Router
+  - SQLite database (local, no server needed)
+  - Local JWT authentication (bcrypt password hashing)
+  - Blog + Contact CRUD as starter modules
+  - PDF and Excel export
+  - Custom frameless window with draggable title bar
+  - Dark theme matching Grit's design system
+  - GORM Studio for database browsing
+
+Resource generation works for desktop too:
+  grit generate resource Task --fields "title:string,description:text,done:bool"
+
+Build for production:
+  grit compile
+  (This runs "wails build" and produces a single native executable)
+
+
+GRIT UI COMPONENT REGISTRY
+============================
+
+Every Grit web project includes a component registry with 100 pre-built, shadcn-compatible React components.
+
+Categories:
+  - Marketing (21): Hero sections, feature grids, pricing tables, testimonials, CTAs, footers
+  - Auth (10): Login forms, register forms, forgot password, OTP input, social login buttons
+  - SaaS (30): Dashboard layouts, billing pages, settings panels, onboarding flows, analytics
+  - Ecommerce (20): Product cards, cart, checkout, order history, category pages
+  - Layout (20): Navbars, sidebars, footers, headers, app shells, page layouts
+
+Install components via shadcn CLI:
+  npx shadcn@latest add hero-split --url http://localhost:8080/r
+
+API endpoints:
+  GET /r.json — List all components
+  GET /r/:name.json — Get single component (JSON metadata + TSX source)
+
+
+VERSION HISTORY HIGHLIGHTS
+===========================
+
+v3.5.0 (Current):
+  - Interactive CLI with architecture and frontend selection
+  - 5 architecture modes (single, double, triple, API, mobile)
+  - 2 frontend options (Next.js, TanStack Router)
+  - TOTP two-factor authentication with backup codes and trusted devices
+  - One-command deployment (grit deploy)
+  - Maintenance mode (grit down / grit up)
+  - Route listing (grit routes)
+  - Docs site redesign (Tailwind CSS-inspired)
+  - Homepage with animated hero, bento grids, testimonials, FAQ
+
+v2.8.0:
+  - Vercel AI Gateway integration (replaced direct Claude/OpenAI/Gemini)
+
+v2.7.0:
+  - 10 official plugins ecosystem
+  - Claude Code skills format (.claude/skills/)
+  - 100 UI components (up from 91)
+
+v2.0.0:
+  - Desktop apps via Wails (grit new-desktop)
+  - Desktop resource generation
+  - Project type auto-detection
+  - GORM Studio integration
+
+v1.0.0:
+  - Initial release
+  - Full-stack scaffolding (web + admin + API)
+  - Code generator
+  - All Phase 1-4 batteries
+
+
+GETTING HELP
+============
+
+Documentation: https://gritframework.dev/
+GitHub Issues: https://github.com/MUKE-coder/grit/issues
+YouTube: https://www.youtube.com/@JBWEBDEVELOPER
+Community: https://gritframework.dev/community
+
+
+ABOUT THE CREATOR
+=================
+
+Grit was created by Muke JohnBaptist, a full-stack developer who was tired of spending weeks setting up the same boilerplate for every project. Authentication, admin panels, file uploads, background jobs — they should just work. Now they do. One command, and you have a production-ready app. That's the framework he wanted to use, so he built it.
+
+GitHub: https://github.com/MUKE-coder
+YouTube: https://www.youtube.com/@JBWEBDEVELOPER

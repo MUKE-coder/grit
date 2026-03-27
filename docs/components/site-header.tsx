@@ -40,8 +40,8 @@ export function SiteHeader() {
           {[
             { label: 'Docs', href: '/docs' },
             { label: 'Components', href: '/docs/admin/resources' },
+            { label: 'Courses', href: '/courses' },
             { label: 'Showcase', href: '/showcase' },
-            { label: 'Hire Us', href: '/hire' },
           ].map((item) => (
             <Link
               key={item.label}
