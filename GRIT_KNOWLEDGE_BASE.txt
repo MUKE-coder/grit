@@ -46,6 +46,7 @@ Prerequisites:
 
 Installation:
   go install github.com/MUKE-coder/grit/v2/cmd/grit@latest
+  Note: Grit CLI 3.x is currently distributed from the /v2 Go module path.
 
 Verify:
   grit version
