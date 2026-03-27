@@ -72,11 +72,17 @@ export default function InstallationPage() {
               number="01"
               title="Install Grit"
               description={
-                <p>
+                <div>
+                  <p>
                   Install the Grit CLI globally using <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">go install</code>.
                   This gives you the <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">grit</code> command
                   anywhere on your system.
-                </p>
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Note: Grit CLI 3.x is currently distributed from the Go module path
+                    <code className="ml-1 text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">/v2</code>.
+                  </p>
+                </div>
               }
               code={`go install github.com/MUKE-coder/grit/v2/cmd/grit@latest`}
               filename="Terminal"

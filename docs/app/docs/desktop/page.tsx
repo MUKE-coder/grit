@@ -64,6 +64,9 @@ export default function DesktopOverviewPage() {
                   installed. Then install the Grit CLI:
                 </p>
                 <CodeBlock terminal code="go install github.com/MUKE-coder/grit/v2/cmd/grit@latest" className="mb-4 glow-purple-sm" />
+                <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                  Note: Grit CLI 3.x is currently distributed from the Go module path /v2.
+                </p>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Scaffold a new desktop app and start developing:
                 </p>

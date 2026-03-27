@@ -163,6 +163,10 @@ export default function FirstAppCourse() {
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
+            Note: Grit CLI 3.x is currently distributed from the Go module path <Code>/v2</Code>.
+          </p>
+
+          <p className="text-muted-foreground leading-relaxed mb-4">
             After installation, verify it works:
           </p>
 

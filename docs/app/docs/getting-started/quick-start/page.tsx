@@ -96,6 +96,9 @@ export default function QuickStartPage() {
               <CodeBlock terminal code="go install github.com/MUKE-coder/grit/v2/cmd/grit@latest" className="mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>
+                  Note: Grit CLI 3.x is currently distributed from the Go module path <code>/v2</code>.
+                </p>
+                <p>
                   Verify the installation by running <code>grit --help</code>.
                   You should see the Grit ASCII art logo and a list of available
                   commands.
@@ -108,8 +111,8 @@ export default function QuickStartPage() {
                 </h3>
                 <p className="text-[15px] text-muted-foreground">
                   Already have Grit installed? Update the CLI to the latest version
-                  with a single command. This removes the old binary and installs the
-                  newest release:
+                  with a single command. This installs the newest release from the
+                  current supported module path:
                 </p>
                 <CodeBlock terminal code="grit update" className="mb-0" />
                 <p className="text-[15px] text-muted-foreground">
