@@ -28,7 +28,7 @@ jobs:
       - name: Build release binaries
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
-          LDFLAGS="-s -w -X main.Version=${VERSION}"
+          LDFLAGS="-s -w -X main.version=${VERSION}"
 
           GOOS=linux   GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o dist/grit-linux-amd64   ./cmd/grit
           GOOS=linux   GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o dist/grit-linux-arm64   ./cmd/grit
