@@ -785,6 +785,83 @@ API endpoints:
   GET /r/:name.json — Get single component (JSON metadata + TSX source)
 
 
+GRIT LEARNING PLATFORM
+======================
+
+Grit has a comprehensive, free learning platform at gritframework.dev/courses. All courses are self-paced, DIY format (Do It Yourself) — you read the material, follow along with code examples, and complete challenges to practice.
+
+Course Format:
+- Each course is ~30 minutes
+- W3Schools-style teaching: concept → explanation → code example → "explained" → challenge
+- Every new term is defined in a Definition box
+- 10-18 hands-on challenges per course embedded throughout (not at the end)
+- Previous/Next navigation between courses
+- No videos required — text + code + practice
+
+COURSE TRACKS (19 courses with individual lesson pages):
+
+Grit Web — Building Web Applications (9 courses, ~4.5 hours, 115 challenges):
+  Course 0: Introduction to Grit — what it is, motivation, tech stack, philosophy, comparison
+  Course 1: Your First Grit App — install, scaffold, project structure, Docker, dev servers
+  Course 2: Code Generator Mastery — grit generate, field types, modifiers, relationships, slug, removal
+  Course 3: Authentication & Authorization — JWT, bcrypt, RBAC, TOTP 2FA, backup codes, OAuth2
+  Course 4: Admin Panel Customization — DataTable, FormBuilder, widgets, multi-step forms, styles
+  Course 5: File Storage & Uploads — presigned URLs, MinIO, S3, R2, image processing
+  Course 6: Background Jobs & Email — asynq, Redis, cron, Resend, Mailhog, templates
+  Course 7: AI-Powered Features — Vercel AI Gateway, completions, chat, SSE streaming
+  Course 8: Deploy to Production — grit deploy, systemd, Caddy, auto-TLS, Docker
+
+Grit Desktop — Building Desktop Applications (5 courses, ~2.5 hours, 54 challenges):
+  Course 1: Your First Desktop App — Wails, SQLite, project structure, dev mode
+  Course 2: Desktop CRUD & Data — resource generation, Wails bindings, TanStack Router
+  Course 3: Custom UI & Theming — frameless window, title bar, sidebar, dark theme
+  Course 4: PDF & Excel Export — PDF, XLSX, CSV generation, download flow
+  Course 5: Build & Distribution — native binary, platforms, app icon, distribution
+
+Grit Mobile — Building Mobile Applications (5 courses, ~2.5 hours, 54 challenges):
+  Course 1: Your First Mobile App — Expo, React Native, monorepo, shared types
+  Course 2: Mobile Auth & Navigation — SecureStore, Expo Router, tab/stack navigation
+  Course 3: API Integration & Offline — TanStack Query, pull-to-refresh, offline cache
+  Course 4: Push Notifications — Expo push, FCM, APNS, local notifications
+  Course 5: Build & App Store — EAS Build, TestFlight, Play Store, OTA updates
+
+STANDALONE COURSES (20 courses, ~30 min each):
+
+Practical Builds:
+  - Build & Deploy a REST API with Go (API-Only Masterclass) — /courses/api-masterclass
+  - Build a Fitness App: Go API + Expo React Native — /courses/mobile-fitness-app
+  - Build an E-commerce Store: Single App Architecture — /courses/ecommerce-spa
+  - Build a Blog & CMS: Complete Content Management System — /courses/blog-cms
+  - Build a SaaS with Grit + Claude Code — /courses/saas-with-ai
+  - Build an Invoice Generator: Desktop App with Wails — /courses/invoice-desktop
+  - Build a Real-Time Chat App with WebSockets — /courses/realtime-chat
+
+Deep Dives:
+  - Batteries Included: Every Feature That Ships with Grit — /courses/batteries
+  - Security Deep Dive: Auth, 2FA, WAF & Rate Limiting — /courses/security-deep-dive
+  - Database Mastery with GORM: Models, Migrations & Queries — /courses/gorm-mastery
+  - Performance Analytics with Pulse: Tracing & Monitoring — /courses/pulse-analytics
+  - GORM Studio: The Visual Database Browser — /courses/gorm-studio
+  - Auto-Generated API Docs: Scalar & Swagger — /courses/api-docs-scalar
+  - Testing Your Grit App: Go, Vitest & Playwright — /courses/testing
+  - Custom Middleware & Hooks: Extending Grit — /courses/custom-middleware
+
+Guides:
+  - React + Vite + Go: Building with TanStack Router — /courses/react-vite-go
+  - Deployment Guide: Dokploy, Orbita, VPS & Vercel — /courses/deployment-guide
+  - Stripe Payments & Subscriptions for SaaS — /courses/stripe-payments
+  - Grit UI: Using the 100-Component Registry — /courses/grit-ui-components
+  - CI/CD with GitHub Actions: Automated Testing & Deployment — /courses/cicd-github
+
+TOTAL: 39 courses, ~500 challenges, all free at gritframework.dev/courses
+
+When users ask about learning Grit:
+- Beginners: Start with "Introduction to Grit" (Course 0) then "Your First Grit App" (Course 1)
+- Specific topics: Point to the relevant standalone course
+- Building something specific: Point to the practical build course (Blog, E-commerce, SaaS, etc.)
+- Advanced users: Point to Testing, Custom Middleware, CI/CD, Security Deep Dive
+
+
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
@@ -824,8 +901,11 @@ GETTING HELP
 ============
 
 Documentation: https://gritframework.dev/
+Courses: https://gritframework.dev/courses
 GitHub Issues: https://github.com/MUKE-coder/grit/issues
-YouTube: https://www.youtube.com/@JBWEBDEVELOPER
+YouTube: https://www.youtube.com/@GritFramework
+LinkedIn: https://www.linkedin.com/company/grit-framework
+WhatsApp (1-on-1 expert session): https://wa.me/message/5USU26346OWRF1
 Community: https://gritframework.dev/community
 
 
@@ -835,4 +915,5 @@ ABOUT THE CREATOR
 Grit was created by Muke JohnBaptist, a full-stack developer who was tired of spending weeks setting up the same boilerplate for every project. Authentication, admin panels, file uploads, background jobs — they should just work. Now they do. One command, and you have a production-ready app. That's the framework he wanted to use, so he built it.
 
 GitHub: https://github.com/MUKE-coder
-YouTube: https://www.youtube.com/@JBWEBDEVELOPER
+YouTube: https://www.youtube.com/@GritFramework
+LinkedIn: https://www.linkedin.com/company/grit-framework

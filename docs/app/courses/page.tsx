@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Globe, Monitor, Smartphone, Clock, ArrowRight, BookOpen, Zap, Server, Dumbbell, ShoppingCart, FileText, Shield, Activity, Database, Code2, Rocket, Bot, Receipt } from "lucide-react"
+import { Globe, Monitor, Smartphone, Clock, ArrowRight, BookOpen, Zap, Server, Dumbbell, ShoppingCart, FileText, Shield, Activity, Database, Code2, Rocket, Bot, Receipt, TestTube2, HardDrive, MessageSquare, CreditCard, Newspaper, GitBranch, Wrench, Palette } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import type { Metadata } from "next"
 
@@ -92,6 +92,14 @@ const standaloneCourses = [
   { title: "Deployment Guide", subtitle: "Dokploy, Orbita, VPS & Vercel", href: "/courses/deployment-guide", icon: Rocket, duration: "30 min" },
   { title: "SaaS with Claude Code", subtitle: "AI-assisted SaaS development", href: "/courses/saas-with-ai", icon: Bot, duration: "30 min" },
   { title: "Invoice Generator", subtitle: "Desktop app with Wails + PDF export", href: "/courses/invoice-desktop", icon: Receipt, duration: "30 min" },
+  { title: "Testing Your Grit App", subtitle: "Go, Vitest & Playwright", href: "/courses/testing", icon: TestTube2, duration: "30 min" },
+  { title: "Database Mastery", subtitle: "GORM models, migrations & queries", href: "/courses/gorm-mastery", icon: HardDrive, duration: "30 min" },
+  { title: "Real-Time Chat", subtitle: "WebSockets with grit-websockets", href: "/courses/realtime-chat", icon: MessageSquare, duration: "30 min" },
+  { title: "Stripe Payments", subtitle: "Subscriptions & billing for SaaS", href: "/courses/stripe-payments", icon: CreditCard, duration: "30 min" },
+  { title: "Blog & CMS", subtitle: "Complete content management system", href: "/courses/blog-cms", icon: Newspaper, duration: "30 min" },
+  { title: "CI/CD with GitHub Actions", subtitle: "Automated testing & deployment", href: "/courses/cicd-github", icon: GitBranch, duration: "30 min" },
+  { title: "Custom Middleware", subtitle: "Extending Grit with hooks", href: "/courses/custom-middleware", icon: Wrench, duration: "30 min" },
+  { title: "Grit UI Components", subtitle: "Using the 100-component registry", href: "/courses/grit-ui-components", icon: Palette, duration: "30 min" },
 ]
 
 /* -- Page component ------------------------------------------------------- */
