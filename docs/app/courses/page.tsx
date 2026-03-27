@@ -33,9 +33,10 @@ const categories: CourseCategory[] = [
     subtitle: "Building Web Applications",
     icon: Globe,
     href: "/courses/grit-web",
-    courseCount: 8,
-    totalTime: "~4 hours",
+    courseCount: 9,
+    totalTime: "~4.5 hours",
     courses: [
+      "Introduction to Grit",
       "Your First Grit App",
       "Code Generator Mastery",
       "Authentication & Authorization",

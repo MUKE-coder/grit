@@ -1,14 +1,23 @@
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight, BookOpen, Clock, Trophy, Terminal, Wand2, ShieldCheck, LayoutDashboard, HardDrive, Mail, Sparkles, Rocket } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, Clock, Trophy, BookMarked, Terminal, Wand2, ShieldCheck, LayoutDashboard, HardDrive, Mail, Sparkles, Rocket } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Grit Web — Building Web Applications with Grit',
-  description: '8 self-paced courses teaching you to build full-stack web apps with Grit. From your first app to production deployment.',
+  description: '9 self-paced courses teaching you to build full-stack web apps with Grit. From introduction to production deployment.',
 }
 
 const courses = [
+  {
+    number: 0,
+    title: 'Introduction to Grit',
+    href: '/courses/grit-web/introduction',
+    icon: BookMarked,
+    description: 'What Grit is, why it exists, the tech stack, architecture modes, philosophy, and comparison with other frameworks.',
+    challenges: 12,
+    duration: '30 min',
+  },
   {
     number: 1,
     title: 'Your First Grit App',
@@ -104,7 +113,7 @@ export default function GritWebCourses() {
             Building Web Applications with Grit
           </h1>
           <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-            8 self-paced courses that take you from zero to production.
+            9 self-paced courses that take you from zero to production.
             Each course is ~30 minutes with hands-on challenges you complete yourself.
             No videos, no lectures — just concepts, examples, and practice.
           </p>
@@ -113,11 +122,11 @@ export default function GritWebCourses() {
           <div className="flex flex-wrap gap-6">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <BookOpen className="h-4 w-4 text-primary" />
-              <span><strong className="text-foreground">8</strong> courses</span>
+              <span><strong className="text-foreground">9</strong> courses</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock className="h-4 w-4 text-primary" />
-              <span><strong className="text-foreground">~4 hours</strong> total</span>
+              <span><strong className="text-foreground">~4.5 hours</strong> total</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Trophy className="h-4 w-4 text-primary" />
@@ -167,10 +176,10 @@ export default function GritWebCourses() {
             All Courses
           </Link>
           <Link
-            href="/courses/grit-web/first-app"
+            href="/courses/grit-web/introduction"
             className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
           >
-            Start Course 1
+            Start Course 0
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>

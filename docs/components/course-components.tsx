@@ -148,7 +148,7 @@ export function CourseFooter() {
       <div className="rounded-lg border border-primary/20 bg-primary/5 p-6">
         <div className="grid sm:grid-cols-3 gap-4 text-center">
           <a
-            href="https://wa.me/256757072868"
+            href="https://wa.me/message/5USU26346OWRF1"
             target="_blank"
             rel="noreferrer"
             className="group rounded-lg border border-border/40 bg-card/30 p-4 hover:border-green-500/30 transition-colors"

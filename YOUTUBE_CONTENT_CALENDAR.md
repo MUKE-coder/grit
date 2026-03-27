@@ -1,605 +1,780 @@
 # Grit Framework — YouTube Content Calendar (30 Days)
 
 **Channel:** https://www.youtube.com/@GritFramework
-**Goal:** Awareness, SEO, practical guides
-**Format:** Under 10 minutes, fast-paced, no fluff
-**Schedule:** One video per day
+**Goal:** Awareness, SEO, practical course walkthroughs
+**Format:** Under 10 minutes each, "coding along with me" style
+**Schedule:** One video per day, 30 consecutive days
+**Structure:** 19 courses (9 web + 5 desktop + 5 mobile), each split into 2-3 videos
 
 ---
 
-## WEEK 1: INTRODUCTION & CORE CONCEPTS
+## Content Strategy
 
-### Day 1 — Channel Launch / Framework Introduction
-**Title:** "Grit: The Full-Stack Go + React Framework (Everything You Need to Know)"
-**Description:** Meet Grit — the framework that gives you auth, admin panel, file storage, email, background jobs, AI, and deployment in one CLI command. This is the only full-stack Go + React framework you'll ever need. Install it in 10 seconds, scaffold a production app in 30.
-**Purpose:** Awareness — first impression, hook developers, establish what Grit is
+### SEO Keywords (target in titles, descriptions, tags)
+- Primary: grit framework, go react framework, full-stack go, go web framework
+- Secondary: go crud generator, go jwt auth, go admin panel, go file upload s3, go background jobs
+- Long-tail: "build saas with go", "go react monorepo", "wails desktop app", "expo react native go backend"
+- Comparison: "go vs laravel", "gin vs next.js", "go react vs next.js full stack"
+
+### Posting Schedule
+- Upload daily at 9:00 AM UTC (consistent time builds algorithm trust)
+- Publish Monday through Sunday, no gaps
+- Pin a playlist "Grit Framework — Full Course" on the channel page
+- Add end screens linking to the next video in the series
+
+### Shorts Strategy
+- Extract one 30-60 second clip from each video (the "hook" or a single impressive demo moment)
+- Post each Short 4-6 hours after the main video goes live
+- Title format for Shorts: "Build [X] in [Y] seconds with Grit" or "One command = [result]"
+- Shorts drive discovery; long-form drives retention and subscribers
+
+### Thumbnail Consistency Guidelines
+- **Background:** Dark navy gradient (#0b1120 to #0a0a0f)
+- **Primary text:** Bold white or sky blue (#38bdf8), max 4-5 words, positioned left or center
+- **Secondary text:** Smaller, muted (#9090a8), bottom edge
+- **Visual element:** Always include one of: terminal screenshot, code snippet, app screenshot, or architecture diagram on the right side
+- **Accent glow:** Soft purple (#6c5ce7) or sky blue (#38bdf8) bloom behind the visual element
+- **Course badge:** Small colored pill in top-left corner — "WEB 0", "WEB 1", "DESKTOP 3", etc. — color-coded per section (blue for web, green for desktop, orange for mobile)
+- **No faces** in thumbnails — developer/code-focused aesthetic
+- **Font:** Bold sans-serif (Inter Black or similar), always ALL CAPS for primary text
+- **Resolution:** 1280x720, safe zone: keep text away from edges by 80px
+
+---
+
+## WEEK 1: GRIT WEB — Introduction & Setup (Days 1-7)
+
+---
+
+### Day 1 — Course 0, Part 1: What is Grit?
+
+**Title:** "The Setup Tax is Killing Your Projects — Grit Fixes It"
+**Description:** Every Go project starts with the same grind: wiring auth, building an admin panel, setting up file storage, configuring Docker. Grit eliminates all of it. In this first video, we explain the problem Grit solves, why it exists, and what makes it different from every other Go framework.
+**Purpose:** Awareness — establish the problem, introduce the framework, hook developers who feel the pain
 **Timeline:**
-- 0:00 — Hook: "What if one command gave you everything?"
-- 0:30 — What is Grit? (Go + React meta-framework)
-- 1:30 — Live demo: grit new myapp (interactive CLI)
-- 3:00 — Tour of generated project (folders, files, what's inside)
-- 5:00 — What ships by default (quick feature flythrough)
-- 7:00 — Who is Grit for? (Laravel devs, Next.js devs, Go devs)
-- 8:30 — Install command + docs link
-- 9:00 — What's coming on this channel
-**Thumbnail Prompt:** Create a YouTube thumbnail (1280x720) with dark navy background (#0b1120). Large bold white text "GRIT" on the left. Right side shows a terminal window with "grit new myapp" command. Sky blue (#38bdf8) accent glow behind the terminal. Bottom right: "Go + React Framework" in smaller text. Clean, developer-focused, no face.
+- 0:00 — Hook: "You've started this project before. Auth, admin, storage, email — again."
+- 0:45 — The setup tax: what it costs you every time
+- 2:00 — What is Grit? One CLI, full-stack Go + React
+- 3:30 — Why Go + React? The case for this stack
+- 5:00 — What you get out of the box (feature flythrough)
+- 6:30 — Who is Grit for? (Laravel devs, Next.js devs, Go devs)
+- 8:00 — What this course series covers
+- 9:00 — Subscribe + next video teaser
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy gradient background (#0b1120 to #0a0a0f). Large bold white text "SETUP TAX" with a red strikethrough line across it, positioned center-left. Right side shows a faded montage of repetitive boilerplate code (auth, config, docker files) with a purple glow (#6c5ce7) bloom behind it. Small sky blue text at bottom: "There's a better way." Top-left: small blue pill badge "WEB 0". Clean, developer-focused.
 
 ---
 
-### Day 2 — Installation & First Project
-**Title:** "Install Grit and Build Your First App in 5 Minutes"
-**Description:** Step-by-step: install Go, install Grit, scaffold your first project, start Docker, run the app. In 5 minutes you'll have a full-stack app with auth, database, and admin panel running on localhost.
-**Purpose:** SEO — "install grit framework", "go react tutorial", practical onboarding
-**Timeline:**
-- 0:00 — Prerequisites check (Go, Node, pnpm, Docker)
-- 1:00 — Install Grit: go install command
-- 1:30 — grit new myapp (show interactive prompts)
-- 2:30 — docker compose up -d (start services)
-- 3:00 — pnpm install && pnpm dev
-- 3:30 — Tour: web app (localhost:3000)
-- 4:30 — Tour: admin panel (localhost:3001)
-- 5:30 — Tour: API endpoints (localhost:8080)
-- 6:30 — Tour: GORM Studio, API Docs, Pulse, Sentinel
-- 8:00 — Recap + next video teaser
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Left side: "5 MIN SETUP" in large bold yellow text. Right side: split screen showing a terminal on top and a web app dashboard on bottom. Small Grit logo in corner. Text at bottom: "Go + React Full-Stack App".
+### Day 2 — Course 0, Part 2: Tech Stack & Architecture
 
----
-
-### Day 3 — Architecture Modes Explained
-**Title:** "5 Ways to Build with Grit (Pick Your Architecture)"
-**Description:** Grit lets you choose your architecture: Triple (Web + Admin + API), Double (Web + API), Single (one binary like Laravel), API-only, or Mobile (API + Expo). Learn which one is right for your project.
-**Purpose:** Awareness — unique selling point, no other framework does this
+**Title:** "Grit Tech Stack Explained — Go, React, and 5 Architectures"
+**Description:** Grit gives you five architecture modes: Triple, Double, Single, API-only, and Mobile. This video walks through the full tech stack — Go, Gin, GORM, Next.js, TanStack, Tailwind, shadcn/ui — and explains when to use each architecture mode for your project.
+**Purpose:** Awareness / SEO — "go react tech stack", "go web app architecture", decision guide
 **Timeline:**
 - 0:00 — Hook: "Not every project needs the same structure"
-- 0:30 — Triple: when and why (SaaS, platforms)
-- 2:00 — Double: when and why (simpler apps, blogs)
-- 3:00 — Single: when and why (Laravel devs, microservices)
-- 4:30 — API-only: when and why (mobile backends, headless)
-- 5:30 — Mobile: when and why (React Native apps)
-- 6:30 — Desktop bonus: grit new-desktop
-- 7:30 — Decision flowchart: "Which should YOU pick?"
-- 9:00 — Quick demo: scaffold each mode
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Center: 5 colored boxes in a row labeled "SINGLE", "DOUBLE", "TRIPLE", "API", "MOBILE". Title text above: "PICK YOUR ARCHITECTURE". Each box has a different icon (one app, two apps, three apps, server, phone). Sky blue and purple color scheme.
+- 0:40 — The tech stack layer by layer (Go, Gin, GORM, Postgres, Redis)
+- 2:00 — Frontend stack (Next.js, TanStack Router, Tailwind, shadcn/ui)
+- 3:15 — Monorepo structure (Turborepo + pnpm)
+- 4:30 — Architecture mode 1: Triple (Web + Admin + API)
+- 5:15 — Architecture mode 2: Double (Web + API)
+- 5:50 — Architecture mode 3: Single (one binary)
+- 6:30 — Architecture mode 4: API-only
+- 7:00 — Architecture mode 5: Mobile (API + Expo)
+- 7:45 — Decision flowchart: which mode should you pick?
+- 8:45 — Philosophy: conventions over configuration
+- 9:30 — Next video: we install and scaffold
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Center: five colored boxes in a horizontal row labeled "SINGLE", "DOUBLE", "TRIPLE", "API", "MOBILE", each with a different icon (one app, two apps, three apps, server, phone). Bold white text above: "PICK YOUR ARCHITECTURE". Purple and sky blue color scheme. Top-left: blue pill badge "WEB 0". Bottom-right: small "Go + React" text in muted gray.
 
 ---
 
-### Day 4 — Next.js vs TanStack Router
-**Title:** "Next.js or TanStack Router? Choosing Your Grit Frontend"
-**Description:** Grit supports two frontends: Next.js (SSR, SEO, App Router) and TanStack Router (Vite, SPA, fast builds). Here's how they compare and when to use each one.
-**Purpose:** SEO — "next.js vs tanstack router", "vite react router", decision guide
+### Day 3 — Course 1, Part 1: Install & Scaffold
+
+**Title:** "Install Grit and Scaffold Your First App in 5 Minutes"
+**Description:** Hands on the keyboard. We install Go, install Grit, run the interactive CLI, and scaffold a full-stack project. By the end of this video, you'll have a project folder with a Go API, Next.js frontend, admin panel, Docker config, and shared types — all generated from one command.
+**Purpose:** SEO / Practical — "install grit framework", "go react tutorial", "grit new"
 **Timeline:**
-- 0:00 — Hook: "Two frontends, same backend — which one?"
-- 0:30 — Next.js overview: SSR, App Router, SEO
-- 2:00 — TanStack Router overview: Vite, SPA, speed
-- 3:30 — Side-by-side: build time, bundle size, DX
-- 5:00 — When to use Next.js (marketing sites, SEO-heavy)
-- 6:00 — When to use TanStack Router (dashboards, internal tools)
-- 7:00 — Demo: same app, both frontends
-- 8:30 — Can you mix them? (Yes — Next.js web + TanStack admin)
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Left side: Next.js logo with "SSR" label. Right side: Vite logo with "SPA" label. Center: "VS" in large bold text with a lightning bolt. Bottom text: "Which Frontend for Your Grit App?". Split design with blue on left, purple on right.
+- 0:00 — Hook: "One command. Full-stack app. Let's go."
+- 0:30 — Prerequisites check (Go, Node, pnpm, Docker)
+- 1:15 — Install Grit: `go install` command
+- 1:45 — Run `grit new myapp` — interactive prompts walkthrough
+- 3:00 — Project structure tour: root files (docker-compose, turbo.json, pnpm-workspace)
+- 4:00 — Tour: apps/api/ — Go backend structure
+- 5:00 — Tour: apps/web/ — Next.js frontend structure
+- 6:00 — Tour: apps/admin/ — Admin panel structure
+- 7:00 — Tour: packages/shared/ — Zod schemas, TypeScript types
+- 8:00 — Tour: grit.config.ts — project configuration
+- 9:00 — Next: starting Docker and running the app
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold yellow text "5 MIN SETUP" in large font. Right side: terminal window showing `grit new myapp` with colorful ASCII art output and a sky blue glow behind it. Bottom text in muted gray: "Go + React Full-Stack App". Top-left: blue pill badge "WEB 1".
 
 ---
 
-### Day 5 — Code Generator Deep Dive
-**Title:** "Generate a Full-Stack CRUD in 10 Seconds (Grit Code Generator)"
-**Description:** Watch the code generator create a Go model, service, handler, Zod schema, TypeScript types, React hooks, and admin page — all from one command. Then we'll look at every generated file.
-**Purpose:** Practical guide — core feature demo, show the magic
+### Day 4 — Course 1, Part 2: Docker, Dev Servers & App Tour
+
+**Title:** "Start Your Grit App — Docker, Dev Servers, and Built-in Tools"
+**Description:** We spin up Docker services (Postgres, Redis, MinIO, Mailhog), start the dev servers, and take a full tour of the running application. You'll see the web app, admin panel, API docs, GORM Studio, Pulse monitoring, and Sentinel rate limiting — all running out of the box.
+**Purpose:** Practical guide — show the full developer experience, demonstrate value
 **Timeline:**
-- 0:00 — Hook: "One command, 8 files, full-stack CRUD"
-- 0:30 — The command: grit generate resource Product --fields "..."
-- 1:30 — What it generated (file tree walkthrough)
-- 2:30 — Go model: struct, tags, migration
-- 3:30 — Go service: CRUD business logic
-- 4:00 — Go handler: REST endpoints with pagination
-- 4:30 — Zod schema + TypeScript types
-- 5:00 — React Query hooks
-- 5:30 — Admin page: DataTable + forms
-- 6:30 — Route injection: how markers work
-- 7:30 — Field types and modifiers overview
-- 8:30 — grit remove: clean undo
-- 9:00 — Interactive mode demo (-i flag)
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Terminal showing "grit generate resource Product" on left. Right side: fan of generated files (model.go, handler.go, schema.ts, page.tsx) spreading out. Bold text: "ONE COMMAND = FULL CRUD". Green accent color for the terminal.
+- 0:00 — Hook: "Your app is scaffolded. Let's bring it to life."
+- 0:30 — Docker compose up: starting Postgres, Redis, MinIO, Mailhog
+- 1:30 — pnpm install and pnpm dev — starting all services
+- 2:30 — Web app tour (localhost:3000): auth pages, dashboard
+- 3:30 — Admin panel tour (localhost:3001): layout, sidebar, data tables
+- 4:30 — API endpoints tour (localhost:8080): health, auth routes
+- 5:30 — GORM Studio: visual database browser
+- 6:15 — API Docs: auto-generated endpoint reference
+- 7:00 — Pulse: real-time monitoring dashboard
+- 7:45 — Sentinel: rate limiting dashboard
+- 8:30 — Mailhog: email testing interface
+- 9:15 — Recap: everything running from one scaffold
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "FULL APP TOUR". Right side: a grid of four small app screenshots (web dashboard, admin panel, GORM Studio, terminal) with a soft purple glow behind the grid. Bottom text: "Everything runs out of the box". Top-left: blue pill badge "WEB 1".
 
 ---
 
-### Day 6 — Authentication System Tour
-**Title:** "JWT + 2FA + OAuth — Grit's Auth System Explained"
-**Description:** Every Grit project ships with JWT authentication, TOTP two-factor auth with backup codes, and OAuth2 social login. Walk through the entire auth flow from register to 2FA setup.
-**Purpose:** SEO — "go jwt authentication", "totp golang", feature showcase
+### Day 5 — Course 2, Part 1: First Resource Generation
+
+**Title:** "Generate Full-Stack CRUD in 10 Seconds with Grit"
+**Description:** The code generator is Grit's superpower. We run one command to generate a complete Product resource — Go model, service, handler, Zod schema, TypeScript types, React Query hooks, and admin page. Then we walk through every generated file to understand what just happened.
+**Purpose:** SEO / Practical — "go crud generator", "generate rest api go", core feature demo
 **Timeline:**
-- 0:00 — Hook: "Most frameworks give you basic auth. Grit gives you bank-grade security."
-- 0:30 — Registration flow (API + frontend)
-- 1:30 — Login + JWT tokens (access + refresh)
-- 2:30 — Role-based access control (ADMIN, EDITOR, USER)
-- 3:30 — TOTP setup: QR code, authenticator app
-- 5:00 — Backup codes: 10 one-time recovery codes
-- 6:00 — Trusted devices: 30-day cookie
-- 7:00 — OAuth2: Google + GitHub login
-- 8:00 — Custom roles: grit add role MODERATOR
-- 9:00 — Code walkthrough: where auth lives in the project
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Large lock icon with a shield in sky blue. Text: "JWT + 2FA + OAuth". Subtitle: "Authentication That Ships by Default". Small QR code graphic in corner. Professional security-themed design.
+- 0:00 — Hook: "One command. Eight files. Full-stack CRUD."
+- 0:30 — The command: `grit generate resource Product --fields "name:string price:float"`
+- 1:15 — What it generated: file tree overview
+- 2:00 — Go model: struct, GORM tags, auto-migration
+- 3:00 — Go service: CRUD business logic, pagination
+- 4:00 — Go handler: REST endpoints, request validation
+- 5:00 — Zod schema: validation rules generated from Go types
+- 5:45 — TypeScript types: interfaces matching Go structs
+- 6:30 — React Query hooks: useProducts, useCreateProduct, etc.
+- 7:15 — Admin page: DataTable and form, already wired up
+- 8:00 — Route injection: how markers work behind the scenes
+- 9:00 — Next: field types, modifiers, and advanced generation
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold sky blue text "1 COMMAND" on top line, bold white text "8 FILES" on bottom line. Right side: a code editor showing a file tree with highlighted generated files (model.go, handler.go, schema.ts, hooks.ts) with a purple glow. Bottom text: "Full-Stack CRUD Generator". Top-left: blue pill badge "WEB 2".
 
 ---
 
-### Day 7 — Admin Panel Showcase
-**Title:** "The Admin Panel That Rivals Laravel Nova (Built-in, Free)"
-**Description:** Grit's admin panel includes DataTable with pagination/sorting/filtering, FormBuilder with 8+ field types, dashboard widgets, 4 style variants, and system pages. All generated, all customizable.
-**Purpose:** Awareness — show the admin panel quality, compare to paid tools
+### Day 6 — Course 2, Part 2: Field Types & Modifiers
+
+**Title:** "Grit Field Types — Strings, Slugs, Enums, and Modifiers"
+**Description:** Grit supports 12+ field types and modifiers like :unique, :optional, and :default. We walk through every type — string, text, int, float, bool, datetime, enum, json, slug — and show how modifiers change the generated code in Go, Zod, and TypeScript.
+**Purpose:** SEO / Practical — "gorm field types", "go struct tags", reference guide
 **Timeline:**
-- 0:00 — Hook: "This admin panel ships free with every Grit project"
-- 0:30 — Dashboard: stats cards, charts, activity feed
-- 2:00 — DataTable: pagination, sorting, filtering, column visibility
-- 3:30 — FormBuilder: text, select, date, richtext, file upload
-- 4:30 — Multi-step forms: modal-steps + page-steps
-- 5:30 — Resource system: defineResource() pattern
-- 6:30 — Style variants: default, modern, minimal, glass
-- 7:30 — System pages: Jobs, Files, Cron, Mail Preview
-- 8:30 — Standalone usage: use DataTable/FormBuilder anywhere
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Screenshot of a dark-themed admin dashboard with stats cards and a data table. Bold text overlay: "FREE ADMIN PANEL". Subtitle: "Ships with Every Grit Project". Gold/amber accent to suggest premium quality.
+- 0:00 — Hook: "Your fields control everything — model, validation, and UI"
+- 0:30 — Basic types: string, text, int, float, bool
+- 1:30 — Date types: datetime, date, time
+- 2:30 — Special types: enum, json, slug
+- 3:30 — The slug field: auto-generated from another field
+- 4:15 — Modifier: :unique — what it changes in GORM and Zod
+- 5:00 — Modifier: :optional — nullable fields, pointer types in Go
+- 5:45 — Modifier: :default — default values in migration and schema
+- 6:30 — Combining modifiers: `email:string:unique:optional`
+- 7:15 — Live demo: generate a Blog resource with mixed fields
+- 8:15 — Inspecting the generated code: Go struct tags, Zod rules
+- 9:00 — Next: relationships and removing resources
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "FIELD TYPES" with a list of colored type labels below (string, int, float, bool, enum, slug) each in small colored pills. Right side: a Go struct code snippet showing field declarations with GORM tags, sky blue syntax highlighting. Top-left: blue pill badge "WEB 2".
 
 ---
 
-## WEEK 2: BATTERIES & FEATURES
+### Day 7 — Course 2, Part 3: Relationships & Resource Removal
 
-### Day 8 — File Storage & Uploads
-**Title:** "Presigned URL Uploads in Go (S3, R2, MinIO) — Grit Batteries"
-**Description:** How Grit handles file uploads: presigned URLs that bypass the API, works with AWS S3, Cloudflare R2, or MinIO locally. Includes image processing via background jobs.
-**Purpose:** SEO — "go s3 upload", "presigned url golang", practical guide
+**Title:** "Grit Relationships — belongs_to, many_to_many, and Clean Undo"
+**Description:** Resources don't live in isolation. We add belongs_to and many_to_many relationships, see how Grit generates foreign keys, join tables, and nested queries. Then we use `grit remove` to cleanly undo a resource — every file, every injection, gone.
+**Purpose:** Practical guide — relationships are the make-or-break feature of any generator
 **Timeline:**
-- 0:00 — Hook: "Your uploads shouldn't go through your API"
-- 0:30 — The problem: traditional uploads vs presigned URLs
-- 1:30 — How it works: browser → S3 directly, then record in DB
-- 3:00 — Configuration: .env storage variables
-- 4:00 — MinIO for local development
-- 5:00 — Switching to Cloudflare R2 or AWS S3
-- 6:00 — Image processing: background job thumbnails
-- 7:00 — Upload progress tracking in the frontend
-- 8:00 — Admin file management page
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Cloud upload icon with arrows pointing to S3, R2, and MinIO logos. Text: "PRESIGNED UPLOADS". Subtitle: "Skip the API, Upload Direct". Blue and orange color scheme.
+- 0:00 — Hook: "Real apps have relationships. Grit handles them."
+- 0:30 — belongs_to: adding a Category to our Product
+- 1:30 — What belongs_to generates: foreign key, preload, nested response
+- 2:30 — many_to_many: adding Tags to our Product
+- 3:30 — What many_to_many generates: join table, association methods
+- 4:30 — Frontend: how relationships appear in forms and tables
+- 5:30 — Type sync: `grit sync` — keeping Go and TypeScript in lockstep
+- 6:30 — Removing a resource: `grit remove resource Product`
+- 7:15 — What removal cleans up: files, route injections, imports
+- 8:00 — Round-trip demo: generate, verify, remove, verify clean state
+- 8:45 — Recap: the full generation lifecycle
+- 9:15 — Next week: authentication deep dive
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Center: a diagram showing three connected boxes — "Product", "Category", "Tag" — with arrows labeled "belongs_to" and "many_to_many" in sky blue. Bold white text at top: "RELATIONSHIPS". Subtle purple glow behind the diagram. Bottom text: "Generate, Connect, Remove". Top-left: blue pill badge "WEB 2".
 
 ---
 
-### Day 9 — Background Jobs & Cron
-**Title:** "Background Jobs + Cron Scheduler in Go (Redis + asynq)"
-**Description:** How Grit uses Redis and asynq for background job processing and scheduled tasks. Includes built-in workers for email, image processing, and cleanup — plus an admin dashboard.
-**Purpose:** SEO — "golang background jobs", "asynq tutorial", "redis job queue go"
+## WEEK 2: GRIT WEB — Auth, Admin, Storage (Days 8-14)
+
+---
+
+### Day 8 — Course 3, Part 1: JWT Authentication Flow
+
+**Title:** "JWT Auth in Go — Registration, Login, Tokens Explained"
+**Description:** Grit ships with a complete JWT authentication system. We walk through the registration flow, login flow, access and refresh tokens, middleware protection, and how the frontend stores and refreshes tokens automatically.
+**Purpose:** SEO — "go jwt authentication", "gin jwt middleware", "go register login api"
 **Timeline:**
-- 0:00 — Hook: "Don't make users wait for email sends"
-- 0:30 — What are background jobs? When to use them
-- 1:30 — asynq overview: Redis-backed Go job queue
-- 2:30 — Built-in workers: email, image, cleanup
-- 3:30 — Creating a custom job
-- 5:00 — Cron scheduler: recurring tasks
-- 6:00 — Admin dashboard: job status, retries, failures
-- 7:00 — Error handling and retry strategies
-- 8:00 — Production considerations
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Conveyor belt illustration with job cards moving along it. Redis logo in corner. Text: "BACKGROUND JOBS IN GO". Subtitle: "Redis + asynq". Red and blue color scheme.
+- 0:00 — Hook: "Auth is the first thing you need and the last thing you want to build"
+- 0:30 — What Grit generates: auth handler, JWT service, middleware
+- 1:30 — Registration flow: request validation, password hashing, token generation
+- 2:30 — Login flow: credential check, token pair creation
+- 3:30 — Access tokens vs refresh tokens: why both, expiration strategy
+- 4:30 — Auth middleware: protecting routes, extracting user from token
+- 5:30 — Token refresh: how the frontend auto-refreshes expired tokens
+- 6:30 — Testing with curl: register, login, access protected route
+- 7:30 — Frontend auth context: useAuth hook, token storage
+- 8:30 — Logout and token invalidation
+- 9:00 — Next: roles, 2FA, and social login
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "JWT AUTH" with a lock icon in sky blue above it. Right side: a flow diagram showing User -> Login -> Access Token -> Protected Route, with arrows in sky blue. Bottom text: "Go + React Authentication". Top-left: blue pill badge "WEB 3".
 
 ---
 
-### Day 10 — Email Service
-**Title:** "Transactional Emails in Go with Resend (Templates Included)"
-**Description:** Grit includes a complete email service with Resend integration and 4 HTML templates. Welcome emails, password resets, verification, notifications — all working out of the box.
-**Purpose:** SEO — "resend golang", "send email go", practical guide
+### Day 9 — Course 3, Part 2: Roles, 2FA & Trusted Devices
+
+**Title:** "RBAC Roles and TOTP 2FA — Securing Your Grit App"
+**Description:** We add role-based access control with admin, editor, and user roles. Then we enable TOTP two-factor authentication with QR code setup, backup codes, and trusted device management. Your Grit app goes from basic auth to production-grade security.
+**Purpose:** SEO — "go rbac", "totp 2fa go", "two factor authentication golang"
 **Timeline:**
-- 0:00 — Hook: "Every app needs email. Here's how Grit handles it."
-- 0:30 — Resend overview: modern email API
-- 1:30 — Configuration: API key, sender address
-- 2:30 — Built-in templates: welcome, reset, verify, notify
-- 3:30 — Mailhog for local development
-- 4:30 — Sending from a handler/service
-- 5:30 — Sending via background jobs
-- 6:30 — Custom templates: adding your own
-- 7:30 — Admin mail preview page
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Email envelope icon with code brackets inside. Text: "EMAIL IN GO". Subtitle: "Resend + HTML Templates". Purple and white color scheme.
+- 0:00 — Hook: "Basic auth isn't enough. Let's add roles and 2FA."
+- 0:30 — Role-based access control: how Grit implements RBAC
+- 1:30 — Built-in roles: admin, editor, user — what each can do
+- 2:30 — Role middleware: restricting routes by role
+- 3:30 — Custom roles: adding your own role definitions
+- 4:15 — TOTP 2FA: what it is, why it matters
+- 5:00 — Setup flow: generating secret, QR code, verification
+- 6:00 — Login with 2FA: the two-step authentication flow
+- 7:00 — Backup codes: generation, storage, one-time use
+- 7:45 — Trusted devices: skip 2FA on recognized devices
+- 8:30 — Frontend: 2FA setup page, verification modal
+- 9:15 — Next: OAuth2 social login
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "ROLES + 2FA". Right side: a shield icon with a checkmark in sky blue, surrounded by small icons representing roles (admin crown, editor pencil, user silhouette). A QR code graphic partially visible behind the shield with purple glow. Top-left: blue pill badge "WEB 3".
 
 ---
 
-### Day 11 — AI Integration
-**Title:** "Add AI to Your Go App in 2 Minutes (Vercel AI Gateway)"
-**Description:** Grit integrates with Vercel AI Gateway — one API key for Claude, GPT, Gemini, and hundreds more. Completions, multi-turn chat, and SSE streaming all built in.
-**Purpose:** SEO — "vercel ai gateway", "ai golang", "openai go api", trending topic
+### Day 10 — Course 3, Part 3: OAuth2 Social Login
+
+**Title:** "Add Google & GitHub Login to Your Go App in Minutes"
+**Description:** Grit includes OAuth2 social login out of the box. We configure Google and GitHub providers, walk through the OAuth2 flow (redirect, callback, account linking), and show the frontend social login buttons — all pre-built and ready to customize.
+**Purpose:** SEO — "go oauth2", "google login golang", "github oauth go gin"
 **Timeline:**
-- 0:00 — Hook: "One API key. Hundreds of AI models."
-- 0:30 — The old way: separate keys for every provider
-- 1:30 — Vercel AI Gateway: unified endpoint
-- 2:30 — Configuration: 3 env vars
-- 3:30 — Complete endpoint: POST /api/ai/complete
-- 4:30 — Chat endpoint: multi-turn conversations
-- 5:30 — Streaming: Server-Sent Events
-- 6:30 — Switching models: just change one string
-- 7:30 — Building a chat UI with React
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Brain/AI icon connected to multiple provider logos (Anthropic, OpenAI, Google) via lines through a gateway. Text: "AI IN 2 MINUTES". Subtitle: "One Key, Hundreds of Models". Gradient blue to purple.
+- 0:00 — Hook: "Your users expect social login. Here's how Grit does it."
+- 0:30 — OAuth2 flow overview: redirect, consent, callback, token
+- 1:30 — Configuring Google OAuth: client ID, secret, redirect URI
+- 2:30 — Configuring GitHub OAuth: same pattern, different provider
+- 3:30 — The callback handler: what happens when the user returns
+- 4:30 — Account linking: connecting social accounts to existing users
+- 5:30 — New user flow: auto-registration from social profile
+- 6:15 — Frontend: social login buttons, loading states, error handling
+- 7:15 — Custom roles for social users: default role assignment
+- 8:00 — Adding more providers: the provider interface pattern
+- 8:45 — Full demo: sign up with GitHub, see the user in admin
+- 9:15 — Next week: the admin panel deep dive
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Center: Google "G" logo and GitHub octocat logo side by side, connected to a Grit app icon with arrows. Bold white text above: "SOCIAL LOGIN". Sky blue glow behind the logos. Bottom text: "OAuth2 in Minutes". Top-left: blue pill badge "WEB 3".
 
 ---
 
-### Day 12 — Security with Sentinel
-**Title:** "WAF + Rate Limiting for Your Go API (Sentinel Security)"
-**Description:** Every Grit project ships with Sentinel — a Web Application Firewall with rate limiting, brute-force protection, anomaly detection, and a real-time threat dashboard.
-**Purpose:** SEO — "golang rate limiting", "web application firewall go", security
+### Day 11 — Course 4, Part 1: Admin Panel & DataTable
+
+**Title:** "Grit Admin Panel — Dashboard Widgets and DataTable Deep Dive"
+**Description:** The admin panel ships fully functional. We tour the dashboard with its stats cards, charts, and activity feed. Then we deep dive into DataTable — sorting, filtering, column selection, pagination, bulk actions — all generated automatically for every resource.
+**Purpose:** Practical guide — admin panels are a major selling point
 **Timeline:**
-- 0:00 — Hook: "Your API is under attack. You just don't know it yet."
-- 0:30 — What is Sentinel? WAF + rate limiter + threat detection
-- 1:30 — Rate limiting: per IP, per route configuration
-- 3:00 — Brute-force protection on auth endpoints
-- 4:00 — Security headers: HSTS, CSP, X-Frame-Options
-- 5:00 — Anomaly detection: unusual patterns
-- 6:00 — Threat dashboard tour (/sentinel/ui)
-- 7:00 — Configuration: env vars and customization
-- 8:00 — ExcludePaths: health checks, studio, docs
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Shield icon with a lock, surrounded by blocked attack arrows. Text: "SECURE YOUR GO API". Subtitle: "WAF + Rate Limiting Built In". Red warning accents on dark blue.
+- 0:00 — Hook: "Every app needs an admin panel. Grit builds it for you."
+- 0:30 — Admin panel overview: layout, sidebar, navigation
+- 1:30 — Dashboard widgets: stats cards with trends
+- 2:30 — Dashboard charts: configuring chart data
+- 3:15 — Activity feed: recent actions log
+- 4:00 — DataTable introduction: generated for every resource
+- 4:45 — Sorting: click column headers, multi-sort
+- 5:30 — Filtering: text search, column-specific filters
+- 6:15 — Column selection: show/hide columns, persist preference
+- 7:00 — Pagination: server-side, configurable page size
+- 7:45 — Bulk actions: select rows, bulk delete
+- 8:30 — Customizing DataTable: adding custom columns, actions
+- 9:15 — Next: FormBuilder and multi-step forms
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background (#0a0a0f). Left side: bold white text "ADMIN PANEL". Right side: a screenshot of the Grit admin dashboard showing stats cards and a data table with rows of data, purple accent highlights on active elements. Sky blue glow behind the screenshot. Top-left: blue pill badge "WEB 4".
 
 ---
 
-### Day 13 — Observability with Pulse
-**Title:** "Monitor Your Go API: Request Tracing, Metrics, Health Checks (Pulse)"
-**Description:** Pulse gives you request tracing, database monitoring, runtime metrics, error tracking, health checks, and Prometheus export — all embedded in your Grit API.
-**Purpose:** SEO — "golang observability", "go api monitoring", "prometheus go"
+### Day 12 — Course 4, Part 2: FormBuilder & Variants
+
+**Title:** "Grit FormBuilder — Multi-Step Forms and Style Variants"
+**Description:** FormBuilder generates forms from your resource definition — text inputs, selects, date pickers, rich text editors, file uploads. We build a multi-step form, explore the three style variants (default, compact, floating), and show how to use FormBuilder as a standalone component.
+**Purpose:** Practical guide — forms are tedious; showing automation saves time
 **Timeline:**
-- 0:00 — Hook: "Can you see what your API is doing right now?"
-- 0:30 — Pulse overview: self-hosted observability
-- 1:30 — Request tracing: timing every endpoint
-- 2:30 — Database monitoring: slow queries, connection pool
-- 3:30 — Runtime metrics: goroutines, memory, GC
-- 4:30 — Error tracking: catch and log errors
-- 5:30 — Health checks: /pulse/health endpoint
-- 6:30 — Prometheus export: integrate with Grafana
-- 7:30 — Dashboard tour (/pulse/ui)
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Dashboard mockup with charts, graphs, and metrics. Text: "MONITOR YOUR GO API". Subtitle: "Tracing + Metrics + Alerts". Green and blue color scheme suggesting health/monitoring.
+- 0:00 — Hook: "Forms are boring to build. So we automated them."
+- 0:30 — FormBuilder overview: what it generates from your fields
+- 1:30 — Field types: text, textarea, select, date, toggle, file upload
+- 2:30 — Rich text editor: built-in for text fields
+- 3:15 — Validation: Zod schemas driving form validation
+- 4:00 — Multi-step forms: splitting fields across steps
+- 5:00 — Step navigation: progress indicator, validation per step
+- 5:45 — Style variant: default — standard form layout
+- 6:15 — Style variant: compact — dense, admin-friendly
+- 6:45 — Style variant: floating — floating labels, modern feel
+- 7:30 — Standalone usage: using FormBuilder outside the admin
+- 8:15 — Custom fields: extending FormBuilder with your own inputs
+- 9:00 — Next: file storage and image processing
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "FORMBUILDER" with three small form mockups stacked below (default, compact, floating label styles). Right side: a multi-step form UI with step indicators and form fields, purple accent on the active step. Top-left: blue pill badge "WEB 4".
 
 ---
 
-### Day 14 — GORM Studio & API Docs
-**Title:** "Visual Database Browser + Auto-Generated API Docs (GORM Studio + gin-docs)"
-**Description:** GORM Studio lets you browse tables, edit data, run SQL, and export schemas. gin-docs auto-generates OpenAPI 3.1 documentation. Both embedded in every Grit project.
-**Purpose:** SEO — "gorm studio", "gin api documentation", "openapi golang"
+### Day 13 — Course 5, Part 1: File Storage & Presigned URLs
+
+**Title:** "S3 File Storage in Go — MinIO, Presigned URLs, Setup Guide"
+**Description:** Grit includes a complete file storage system using S3-compatible storage. We set up MinIO locally, explain presigned URLs for secure direct uploads, and walk through the storage service — upload, download, delete, list — all pre-built in your scaffolded app.
+**Purpose:** SEO — "go s3 upload", "minio golang", "presigned url go"
 **Timeline:**
-- 0:00 — Hook: "Two tools you'll use every day"
-- 0:30 — GORM Studio: visual database browser
-- 1:30 — Browse tables, view records, inline editing
-- 2:30 — Raw SQL editor
-- 3:00 — Schema export: SQL, JSON, YAML, ERD
-- 4:00 — Data import/export: CSV, JSON, XLSX
-- 4:30 — gin-docs: auto-generated API documentation
-- 5:30 — OpenAPI 3.1 spec (no annotations needed)
-- 6:30 — Interactive Scalar UI at /docs
-- 7:30 — Postman/Insomnia export
-- 8:00 — Both tools in one project, zero config
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Split screen: database table view on left, API docs on right. Text: "DB BROWSER + API DOCS". Subtitle: "Zero Config, Ships by Default". Teal and white color scheme.
+- 0:00 — Hook: "File uploads shouldn't take a week to set up"
+- 0:30 — Storage architecture: why S3-compatible, why presigned URLs
+- 1:30 — MinIO setup: already in your Docker Compose
+- 2:15 — MinIO console tour: buckets, objects, access keys
+- 3:00 — Storage service walkthrough: the Go code Grit generates
+- 4:00 — Presigned URLs explained: how they work, why they're secure
+- 5:00 — Upload flow: frontend requests URL, uploads directly to storage
+- 6:00 — Download flow: generating presigned download URLs
+- 6:45 — List and delete operations
+- 7:30 — Upload model: tracking files in the database
+- 8:15 — Environment config: bucket names, regions, credentials
+- 9:00 — Next: the upload UI and image processing
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "FILE STORAGE" with an upload cloud icon in sky blue. Right side: a diagram showing Browser -> Presigned URL -> S3 Bucket, with arrows and the MinIO logo. Purple glow behind the diagram. Top-left: blue pill badge "WEB 5".
 
 ---
 
-## WEEK 3: PRACTICAL BUILDS
+### Day 14 — Course 5, Part 2: Upload UI & Cloud Migration
 
-### Day 15 — Build a Blog API in 5 Minutes
-**Title:** "Build a Blog API with Go in 5 Minutes (Grit Generate)"
-**Description:** Use grit generate to create a complete blog API with title, slug, content, published status, and categories. From zero to REST API with pagination, search, and filtering.
-**Purpose:** SEO — "go blog api", "golang rest api tutorial", practical build
+**Title:** "Image Processing and Switching to Cloudflare R2 or AWS S3"
+**Description:** We build the upload flow end-to-end: drag-and-drop UI, progress bar, image processing (resize, thumbnail generation), and file type validation. Then we switch from local MinIO to Cloudflare R2 — just change three environment variables.
+**Purpose:** Practical guide — "cloudflare r2 golang", "go image processing", real-world upload flow
 **Timeline:**
-- 0:00 — Hook: "Blog API in 5 minutes. No boilerplate."
-- 0:30 — The fields: title, slug, content, published, category
-- 1:00 — Generate command with field types
-- 2:00 — Test in API docs: create, list, get, update, delete
-- 3:30 — Pagination and search working out of the box
-- 4:30 — Admin panel: manage posts
-- 5:30 — Add categories (belongs_to relationship)
-- 7:00 — Public endpoints vs protected endpoints
-- 8:00 — Deploy this to production (teaser)
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Blog icon (document with lines) next to a terminal. Text: "BLOG API IN 5 MIN". Subtitle: "Go + Grit Code Generator". Timer graphic showing 5:00.
+- 0:00 — Hook: "Local dev with MinIO, production with R2 — same code"
+- 0:30 — Upload component: drag-and-drop, file selection, preview
+- 1:30 — Progress tracking: upload progress bar implementation
+- 2:15 — File type validation: allowed types, size limits
+- 3:00 — Image processing: automatic resize on upload
+- 3:45 — Thumbnail generation: creating smaller versions
+- 4:30 — Processing pipeline: upload -> process -> store -> record
+- 5:30 — Switching to Cloudflare R2: three env vars to change
+- 6:15 — R2 configuration: account ID, access key, bucket
+- 7:00 — Switching to AWS S3: same pattern, different credentials
+- 7:45 — Backblaze B2: another option, same interface
+- 8:15 — Production tips: CDN, caching, signed URLs expiration
+- 9:00 — Next week: background jobs and AI
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "UPLOAD + CLOUD". Right side: three cloud provider logos (MinIO, Cloudflare R2, AWS S3) connected by arrows to a single Go gopher icon, showing interchangeability. Sky blue glow behind the logos. Bottom text: "Same Code, Any Provider". Top-left: blue pill badge "WEB 5".
 
 ---
 
-### Day 16 — Build a SaaS Dashboard
-**Title:** "Build a SaaS Dashboard with Go + React (Full Tutorial)"
-**Description:** Scaffold a triple architecture project, generate User, Subscription, and Invoice resources, customize the admin dashboard with stats cards and charts.
-**Purpose:** SEO — "saas dashboard tutorial", "go react saas", practical build
+## WEEK 3: GRIT WEB — Jobs, AI, Deploy (Days 15-21)
+
+---
+
+### Day 15 — Course 6, Part 1: Background Jobs with Asynq
+
+**Title:** "Background Jobs in Go with Asynq — Workers, Queues, Retries"
+**Description:** Grit includes asynq for background job processing. We explore the built-in workers (email, image processing, cleanup), create a custom job from scratch, and monitor everything from the admin jobs dashboard. No external job servers — Redis handles it all.
+**Purpose:** SEO — "go background jobs", "asynq golang tutorial", "redis job queue go"
 **Timeline:**
-- 0:00 — Hook: "SaaS dashboard from scratch in one video"
-- 0:30 — Scaffold: grit new saas-app --triple --next
-- 1:30 — Generate: User profile, Subscription, Invoice resources
-- 3:00 — Customize dashboard: stats cards
-- 4:30 — Add charts: revenue, signups
-- 5:30 — Role-based access: admin vs user views
-- 7:00 — Stripe integration (grit-stripe plugin teaser)
-- 8:00 — What's next: billing, webhooks
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. SaaS dashboard mockup with stats cards, charts, and sidebar. Text: "SAAS DASHBOARD". Subtitle: "Go + React + Grit". Dollar sign icon in sky blue.
+- 0:00 — Hook: "Some work doesn't belong in the request cycle"
+- 0:30 — Why background jobs: email, image processing, reports, cleanup
+- 1:30 — Asynq overview: how it uses Redis as a job broker
+- 2:15 — Built-in workers: email worker, image processing worker, cleanup worker
+- 3:15 — Job lifecycle: enqueue, process, retry, dead letter
+- 4:15 — Creating a custom job: task definition, handler, registration
+- 5:15 — Enqueuing jobs: from handlers, from services, with options
+- 6:00 — Retry configuration: max retries, backoff strategy
+- 6:45 — Queue priorities: critical, default, low
+- 7:30 — Admin jobs dashboard: monitoring active, pending, failed jobs
+- 8:15 — Inspecting failed jobs: error details, retry button
+- 9:00 — Next: cron scheduler and email service
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "BACKGROUND JOBS". Right side: a queue visualization showing tasks flowing from "Enqueue" through "Process" to "Complete" with retry arrows, in sky blue and purple. Redis logo small in the corner. Top-left: blue pill badge "WEB 6".
 
 ---
 
-### Day 17 — Build an E-commerce API
-**Title:** "E-commerce API in 10 Minutes: Products, Categories, Orders (Grit)"
-**Description:** Generate Product, Category, and Order resources with relationships. Add image uploads for products. Build a complete e-commerce backend.
-**Purpose:** SEO — "ecommerce api golang", "go rest api ecommerce", practical build
+### Day 16 — Course 6, Part 2: Cron Scheduler & Email Service
+
+**Title:** "Cron Jobs and Email Templates in Go — Scheduled Tasks Made Easy"
+**Description:** We set up the cron scheduler for recurring tasks — daily cleanup, weekly reports, session pruning. Then we explore the email service: Resend integration, four pre-built HTML templates, and Mailhog for local testing. Schedule it, send it, preview it.
+**Purpose:** SEO — "go cron jobs", "send email golang", "resend go tutorial"
 **Timeline:**
-- 0:00 — Hook: "E-commerce backend. 10 minutes. Let's go."
-- 0:30 — Plan: Product, Category, Order models
-- 1:30 — Generate Category (name, slug, description)
-- 2:30 — Generate Product (name, price, belongs_to Category, image)
-- 4:00 — Generate Order (status, total, user relationship)
-- 5:30 — Test the API: create products, place orders
-- 7:00 — Admin panel: manage inventory
-- 8:00 — Frontend: product listing page
-- 9:00 — What's next: Stripe checkout, cart logic
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Shopping cart icon with code brackets. Text: "E-COMMERCE API". Subtitle: "Products + Orders + Categories". Orange and white color scheme.
+- 0:00 — Hook: "Cron jobs and emails — two things every app needs, zero fun to build"
+- 0:30 — Cron scheduler: how Grit integrates asynq's periodic tasks
+- 1:30 — Built-in cron jobs: cleanup expired sessions, prune old files
+- 2:15 — Adding a custom cron job: schedule expression, handler
+- 3:00 — Cron expressions explained: @daily, @weekly, custom patterns
+- 3:45 — Admin cron dashboard: viewing scheduled tasks, next run times
+- 4:30 — Email service overview: Resend as the provider
+- 5:15 — Email templates: welcome, password reset, verification, notification
+- 6:15 — Template structure: Go html/template with inline CSS
+- 7:00 — Sending email from code: service method, template data
+- 7:45 — Mailhog: testing emails locally without sending real mail
+- 8:30 — Mail preview page: viewing templates in the admin panel
+- 9:00 — Next: AI integration
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "CRON + EMAIL". Right side: split visual — top half shows a clock/calendar icon with cron expressions, bottom half shows an email template preview with purple and sky blue accents. Top-left: blue pill badge "WEB 6".
 
 ---
 
-### Day 18 — Build a Task Manager (Single App)
-**Title:** "Build a Task Manager with Go (Single Binary App)"
-**Description:** Use the single architecture to build a task manager where the Go binary serves both the API and the React frontend. One binary, one deployment.
-**Purpose:** SEO — "golang single binary app", "go embed react", practical build
+### Day 17 — Course 7, Part 1: AI Gateway Setup
+
+**Title:** "Add AI to Your Go App — Claude and OpenAI Gateway"
+**Description:** Grit includes an AI gateway that supports Claude and OpenAI models behind a unified API. We set up the gateway, make completion requests, and explore the chat endpoint — all through Grit's pre-built AI service. Bring your own API key, pick your model, and go.
+**Purpose:** SEO — "go ai integration", "claude api golang", "openai go tutorial"
 **Timeline:**
-- 0:00 — Hook: "One binary. API + frontend. Deploy anywhere."
-- 0:30 — Scaffold: grit new tasks --single --vite
-- 1:30 — Project structure tour (no monorepo, flat)
-- 2:30 — Generate Task resource (title, description, done, priority)
-- 4:00 — Frontend: task list with filters
-- 5:30 — Mark complete, edit, delete
-- 6:30 — Build: go build (frontend embedded via go:embed)
-- 7:30 — Run the single binary
-- 8:30 — Deploy: scp binary to server, done
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Single cube/box icon representing one binary. Text: "ONE BINARY APP". Subtitle: "Go + React = Single File". Minimalist design, green accent.
+- 0:00 — Hook: "Every app needs AI now. Here's the easiest way to add it."
+- 0:30 — AI gateway architecture: unified API over multiple providers
+- 1:30 — Configuration: API keys, model selection, environment variables
+- 2:15 — The AI service: what Grit generates for you
+- 3:00 — Complete endpoint: single prompt, single response
+- 4:00 — Making a completion request: curl demo
+- 4:45 — Chat endpoint: multi-turn conversation with history
+- 5:30 — Chat request structure: messages array, system prompt
+- 6:15 — Model switching: Claude to OpenAI with one config change
+- 7:00 — Token counting and rate limiting
+- 7:45 — Error handling: API errors, fallback strategies
+- 8:30 — Admin AI dashboard: usage monitoring
+- 9:00 — Next: SSE streaming and building a chat UI
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "AI GATEWAY". Right side: Claude and OpenAI logos connected by arrows to a central Go gopher icon acting as a gateway. Purple and sky blue glow effects. Bottom text: "One API, Any Model". Top-left: blue pill badge "WEB 7".
 
 ---
 
-### Day 19 — Build a Desktop App
-**Title:** "Build a Desktop App with Go + React (Grit + Wails)"
-**Description:** Use grit new-desktop to create a native desktop application with Go backend, React frontend, SQLite database, local auth, and PDF export.
-**Purpose:** SEO — "wails tutorial", "go desktop app", "golang gui", practical build
+### Day 18 — Course 7, Part 2: SSE Streaming & Chat UI
+
+**Title:** "Build a Streaming Chat UI with Go SSE and React"
+**Description:** We implement server-sent events for real-time AI streaming — tokens arrive one at a time, just like ChatGPT. Then we build a React chat interface with message history, typing indicators, and model selection. The full AI chat experience in your own app.
+**Purpose:** SEO — "go sse streaming", "server sent events golang", "react chat ui ai"
 **Timeline:**
-- 0:00 — Hook: "Desktop apps with Go. Yes, really."
-- 0:30 — grit new-desktop todo-app
-- 1:30 — Project structure: Wails + React + SQLite
-- 2:30 — Run: wails dev (hot reload)
-- 3:30 — Tour: login, dashboard, CRUD
-- 4:30 — Generate a new resource
-- 5:30 — Custom title bar, frameless window
-- 6:30 — Export: PDF and Excel
-- 7:30 — Build: grit compile (native executable)
-- 8:30 — Distribution: Windows, macOS, Linux
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Desktop app window mockup with dark UI. Text: "DESKTOP APP IN GO". Subtitle: "Wails + React + SQLite". Desktop monitor icon, purple accents.
+- 0:00 — Hook: "Streaming responses, just like ChatGPT — in your Grit app"
+- 0:30 — SSE explained: server-sent events vs WebSockets
+- 1:30 — Streaming endpoint: how the Go handler sends token chunks
+- 2:30 — Frontend SSE client: EventSource, parsing chunks
+- 3:30 — Building the chat UI: message list, input area, send button
+- 4:30 — Message rendering: markdown support, code blocks
+- 5:15 — Typing indicator: showing "AI is thinking..." animation
+- 6:00 — Conversation history: storing and sending previous messages
+- 6:45 — Model selector: switching between Claude and OpenAI models
+- 7:30 — System prompt configuration: customizing AI behavior
+- 8:15 — Full demo: multi-turn conversation with streaming
+- 9:00 — Next: deployment
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "STREAMING AI". Right side: a chat interface mockup showing a conversation with streaming text (partially rendered last message), sky blue message bubbles on dark background. Cursor blinking effect on the last line. Top-left: blue pill badge "WEB 7".
 
 ---
 
-### Day 20 — Deploy to Production
-**Title:** "Deploy Your Go App in One Command (SSH + systemd + Caddy)"
-**Description:** Use grit deploy to cross-compile your app, upload via SSH, create a systemd service, and configure Caddy with automatic HTTPS. From localhost to production in one command.
-**Purpose:** SEO — "deploy go app", "golang production", "caddy reverse proxy", practical guide
+### Day 19 — Course 8, Part 1: Deployment Concepts & Build Pipeline
+
+**Title:** "Deploy Your Grit App — Build Pipeline and grit deploy"
+**Description:** Time to go live. We cover deployment concepts: building the Go binary, generating the frontend static assets, and using the `grit deploy` command to package everything. We walk through the build pipeline step by step — from source code to production artifacts.
+**Purpose:** Practical guide — "deploy go app", "go production build", deployment is where frameworks fail
 **Timeline:**
-- 0:00 — Hook: "Code to HTTPS in one command"
-- 0:30 — What grit deploy does (5-step pipeline)
-- 1:30 — Prerequisites: VPS, SSH access, domain
-- 2:30 — The command: grit deploy --host --domain
-- 3:30 — Watch it work: build, upload, systemd, Caddy
-- 5:00 — Verify: visit https://myapp.com
-- 6:00 — What's running: systemd service explained
-- 7:00 — Caddy config: auto-TLS, headers, logging
-- 8:00 — Updates: re-run grit deploy
-- 9:00 — Alternative: Docker deployment
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Rocket launching from a terminal into a cloud. Text: "DEPLOY IN ONE COMMAND". Subtitle: "SSH + systemd + Auto-HTTPS". Gradient from blue to green.
+- 0:00 — Hook: "Building it is the fun part. Deploying it is where frameworks fail."
+- 0:30 — Deployment overview: what needs to happen
+- 1:30 — Building the Go API: cross-compilation, binary output
+- 2:30 — Building the frontend: Next.js build, static export options
+- 3:15 — Building the admin panel: same process, separate artifact
+- 4:00 — The grit deploy command: what it does under the hood
+- 4:45 — Environment variables: production config, secrets management
+- 5:30 — Database migrations: running in production
+- 6:15 — Health checks: the /health endpoint and readiness probes
+- 7:00 — Build pipeline: CI/CD with GitHub Actions (generated workflow)
+- 8:00 — Artifact overview: what you're deploying, where it goes
+- 9:00 — Next: systemd, Caddy, and Docker deployment
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "DEPLOY". Right side: a pipeline diagram showing Code -> Build -> Test -> Deploy with arrows, each stage in a colored box (blue, purple, sky blue, green). A rocket icon at the end. Top-left: blue pill badge "WEB 8".
 
 ---
 
-### Day 21 — Grit Plugins Overview
-**Title:** "10 Plugins That Supercharge Your Grit App"
-**Description:** Overview of all 10 official Grit plugins: WebSockets, Stripe, OAuth, notifications, search, video, conferencing, webhooks, i18n, and export.
-**Purpose:** Awareness — plugin ecosystem, show extensibility
+### Day 20 — Course 8, Part 2: systemd, Caddy & Docker Deploy
+
+**Title:** "Go to Production — systemd, Caddy Reverse Proxy, Docker Deploy"
+**Description:** Three deployment strategies in one video. We deploy with systemd and Caddy on a VPS (the simplest path), then show Docker Compose deployment for teams, and cover maintenance mode for zero-downtime updates. Your Grit app, live on the internet.
+**Purpose:** SEO — "deploy go app vps", "caddy reverse proxy go", "docker compose production"
 **Timeline:**
-- 0:00 — Hook: "Core features + plugins = unlimited possibilities"
-- 0:30 — What are Grit plugins? (standalone Go packages)
-- 1:00 — WebSockets: real-time chat, live dashboards
-- 2:00 — Stripe: subscriptions, checkout, webhooks
-- 3:00 — OAuth: Google, GitHub, Discord
-- 3:30 — Notifications: in-app, push (FCM), SMS
-- 4:30 — Search: Meilisearch full-text search
-- 5:00 — Video: upload, transcode, HLS streaming
-- 5:30 — Conference: WebRTC video calls
-- 6:00 — Webhooks: outgoing events with HMAC
-- 6:30 — i18n: multi-language support
-- 7:00 — Export: PDF, Excel, CSV
-- 7:30 — How to install and use a plugin
-- 8:30 — Community plugins: how to create your own
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Grid of 10 colorful plugin icons arranged in 2 rows of 5. Text: "10 PLUGINS". Subtitle: "WebSockets, Stripe, AI, Video & More". Rainbow accent colors on dark background.
+- 0:00 — Hook: "Three ways to deploy. Pick the one that fits."
+- 0:30 — Strategy 1: VPS with systemd — the simplest deployment
+- 1:15 — Writing the systemd service file
+- 2:00 — Caddy reverse proxy: automatic HTTPS, simple config
+- 2:45 — Caddy configuration: domain, proxy pass, static files
+- 3:30 — Starting and managing the service: enable, start, logs
+- 4:15 — Strategy 2: Docker Compose deployment
+- 5:00 — Production docker-compose: API, frontend, Postgres, Redis
+- 5:45 — Docker networking: service communication
+- 6:30 — Strategy 3: maintenance mode for updates
+- 7:15 — Zero-downtime update process
+- 8:00 — Monitoring in production: logs, health checks, alerts
+- 8:45 — Your app is live: full demo of deployed application
+- 9:15 — Next: bonus SaaS build
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "PRODUCTION". Right side: three deployment icons stacked — a server rack (systemd), a Caddy logo, and a Docker whale — connected by dotted lines. Green "LIVE" indicator dot in top right. Top-left: blue pill badge "WEB 8".
 
 ---
 
-## WEEK 4: ADVANCED TOPICS & TIPS
+### Day 21 — BONUS: Build a Complete SaaS with Grit
 
-### Day 22 — Grit vs Laravel
-**Title:** "Grit vs Laravel: Go + React Framework Compared to PHP King"
-**Description:** Honest comparison: CLI scaffolding, code generation, admin panel, auth, deployment, performance, ecosystem. When to choose Grit, when to stick with Laravel.
-**Purpose:** SEO — "go vs php", "laravel alternative", "golang framework comparison"
+**Title:** "Build a Complete SaaS in 30 Minutes with Grit Framework"
+**Description:** Everything we've learned, all in one build. We scaffold a SaaS project, generate resources, configure auth with roles and 2FA, set up file storage, add background jobs, integrate AI, and deploy — a real, production-ready SaaS application built from scratch with Grit.
+**Purpose:** Awareness / SEO — "build saas with go", "go saas tutorial", capstone video
 **Timeline:**
-- 0:00 — Hook: "Can a Go framework match Laravel's DX?"
-- 0:30 — CLI: grit new vs laravel new
-- 1:30 — Code generation: grit generate vs artisan make
-- 3:00 — Admin: Grit admin vs Laravel Nova/Filament
-- 4:00 — Auth: JWT+TOTP vs Laravel Breeze/Fortify
-- 5:00 — Deployment: grit deploy vs Laravel Forge
-- 6:00 — Performance: Go vs PHP benchmarks
-- 7:00 — Ecosystem: Composer vs Go modules
-- 8:00 — Verdict: when to use which
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Grit logo on left, Laravel logo on right, "VS" in center. Text: "GRIT vs LARAVEL". Subtitle: "Go + React vs PHP". Split design blue/red.
+- 0:00 — Hook: "A complete SaaS. From zero to deployed. Let's build."
+- 0:30 — Project scaffold: `grit new saas-app` with Triple mode
+- 1:15 — Generate resources: Users, Projects, Tasks, Comments
+- 2:30 — Relationships: Projects has_many Tasks, Tasks has_many Comments
+- 3:30 — Auth configuration: roles (admin, member), 2FA enabled
+- 4:30 — File storage: project attachments with image processing
+- 5:30 — Background jobs: email notifications on task assignment
+- 6:15 — AI integration: task summarization with Claude
+- 7:00 — Admin panel: managing users, monitoring jobs
+- 7:45 — Deployment: `grit deploy` and Docker Compose
+- 8:30 — Live demo: the finished SaaS running in production
+- 9:15 — Recap: every Grit feature, one project, 30 minutes
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Center: bold white text "BUILD A SAAS" on top, "30 MINUTES" in sky blue below. Right side: a polished SaaS dashboard screenshot with purple accent elements. Left bottom: small icons representing auth, storage, jobs, AI, deploy in a row. Top-left: yellow pill badge "BONUS".
 
 ---
 
-### Day 23 — Grit for Next.js Developers
-**Title:** "Why Next.js Developers Should Try Grit (Go Backend > Serverless)"
-**Description:** If you love Next.js but hate serverless limitations, Grit gives you a proper Go backend with the same React frontend. Real database, real caching, real background jobs.
-**Purpose:** SEO — "next.js backend", "next.js alternative backend", audience expansion
+## WEEK 4: GRIT DESKTOP & MOBILE (Days 22-30)
+
+---
+
+### Day 22 — Desktop Course 1: First Desktop App
+
+**Title:** "Build a Desktop App with Go and Wails — Grit Desktop"
+**Description:** Grit isn't just for web. We scaffold a desktop app with `grit new-desktop`, explore the Wails + Go + React stack, set up SQLite for local storage, and run the app in dev mode. A native desktop application with web technologies — no Electron, no bloat.
+**Purpose:** SEO — "go desktop app", "wails tutorial", "wails golang react"
 **Timeline:**
-- 0:00 — Hook: "Love Next.js? Hate serverless cold starts?"
-- 0:30 — The problem: API routes limitations
-- 1:30 — What Grit adds: Go backend with everything
-- 3:00 — Same React, same TanStack Query, same Zod
-- 4:00 — But now: real PostgreSQL, Redis, background jobs
-- 5:30 — File uploads that actually work (presigned URLs)
-- 6:30 — Admin panel for free
-- 7:30 — Deploy to any VPS (not just Vercel)
-- 8:30 — Migration guide: adding Grit to existing Next.js
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Next.js logo with an arrow pointing to Grit logo. Text: "NEXT.JS + GO BACKEND". Subtitle: "Better Than Serverless". Blue gradient.
+- 0:00 — Hook: "Desktop apps with Go. No Electron. No bloat."
+- 0:30 — What is Grit Desktop? Wails v2 + Go + React
+- 1:15 — Why Wails over Electron: native webview, small binary, Go backend
+- 2:00 — Scaffold: `grit new-desktop my-app`
+- 2:45 — Project structure: Go backend, React frontend, Wails config
+- 3:30 — Go files: main.go, app.go, Wails bootstrap
+- 4:15 — Database: GORM with SQLite, auto-migration
+- 5:00 — Models: User, Blog, Contact — pre-generated
+- 5:45 — Frontend: React + TypeScript + Tailwind + TanStack Router
+- 6:30 — Dev mode: `wails dev` — live reload, DevTools
+- 7:15 — Tour: the running desktop app
+- 8:00 — Wails bindings: how Go functions become JavaScript calls
+- 9:00 — Next: CRUD operations and bindings
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "DESKTOP APP" with "No Electron" in smaller red strikethrough text below. Right side: a desktop window frame showing a polished dark app UI with sidebar navigation. Go gopher icon in the corner. Top-left: green pill badge "DESKTOP 1".
 
 ---
 
-### Day 24 — Environment Variables & Configuration
-**Title:** "Every Grit Environment Variable Explained (Complete .env Guide)"
-**Description:** Walk through every environment variable in a Grit project: database, auth, storage, email, AI, security, observability. What each one does and how to configure for production.
-**Purpose:** SEO — "golang environment variables", "go env configuration", practical reference
+### Day 23 — Desktop Course 2: Desktop CRUD & Bindings
+
+**Title:** "Desktop CRUD with Wails Bindings and TanStack Router"
+**Description:** We generate a resource for our desktop app, explore how Wails bindings expose Go functions to the React frontend, and set up TanStack Router for client-side navigation. Full CRUD — create, read, update, delete — with Go doing the heavy lifting and React rendering the UI.
+**Purpose:** Practical guide — "wails bindings", "wails crud", "tanstack router wails"
 **Timeline:**
-- 0:00 — Hook: "Your .env file has 30+ variables. Here's what they all do."
-- 0:30 — Core: APP_NAME, APP_ENV, APP_PORT, APP_URL
-- 1:30 — Database: DATABASE_URL patterns
-- 2:30 — Auth: JWT_SECRET, TOTP_ISSUER
-- 3:00 — Storage: STORAGE_DRIVER and S3 config
-- 4:00 — Email: RESEND_API_KEY, MAIL_FROM
-- 4:30 — AI: AI_GATEWAY_API_KEY, AI_GATEWAY_MODEL
-- 5:30 — OAuth: Google + GitHub client IDs
-- 6:00 — Security: Sentinel config
-- 6:30 — Observability: Pulse config
-- 7:00 — GORM Studio: username, password
-- 7:30 — Production vs development differences
-- 8:30 — .env.example and .env.cloud.example
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. .env file icon with key-value pairs visible. Text: "EVERY ENV VAR EXPLAINED". Subtitle: "Complete Grit Configuration Guide". Green terminal-style text on dark.
+- 0:00 — Hook: "Call Go functions directly from React. No REST API needed."
+- 0:30 — Wails bindings explained: Go methods become TypeScript functions
+- 1:30 — Blog service: CRUD methods bound to the frontend
+- 2:30 — Generated TypeScript bindings: auto-typed from Go structs
+- 3:30 — TanStack Router setup: routes, layouts, navigation
+- 4:30 — Blog list page: calling Go, rendering in React
+- 5:30 — Create form: calling the Go create method
+- 6:15 — Edit and delete: update and remove operations
+- 7:00 — Contact service: second resource, same pattern
+- 7:45 — Error handling: Go errors surfacing in the UI
+- 8:30 — Data flow recap: React -> Wails Bridge -> Go -> SQLite -> back
+- 9:00 — Next: custom UI and frameless window
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "WAILS CRUD". Right side: a split view showing Go code on top and React/TypeScript code on bottom, connected by an arrow labeled "Bindings" in sky blue. Purple glow between them. Top-left: green pill badge "DESKTOP 2".
 
 ---
 
-### Day 25 — Relationships & Advanced Fields
-**Title:** "Database Relationships in Grit: belongs_to, many_to_many, slug"
-**Description:** How to use belongs_to, many_to_many, slug, and string_array field types. Build a blog with categories (belongs_to) and tags (many_to_many).
-**Purpose:** SEO — "gorm relationships", "golang belongs to", practical guide
+### Day 24 — Desktop Course 3: Custom UI & Frameless Window
+
+**Title:** "Frameless Desktop Window with Custom Title Bar and Themes"
+**Description:** We make the desktop app look native and polished. Custom frameless window with a draggable title bar, window controls (minimize, maximize, close), dark and light theme toggle, and 12 shadcn-style UI components — all pre-built in your Grit Desktop scaffold.
+**Purpose:** Practical guide — "wails frameless window", "custom title bar wails", UI polish
 **Timeline:**
-- 0:00 — Hook: "Real apps have relationships. Here's how Grit handles them."
-- 0:30 — belongs_to: foreign key relationships
-- 2:00 — Demo: Post belongs_to Category
-- 3:30 — many_to_many: junction tables
-- 5:00 — Demo: Post many_to_many Tag
-- 6:30 — slug: auto-generated URL-friendly strings
-- 7:30 — string_array: JSON arrays in PostgreSQL
-- 8:30 — Field modifiers: :unique, :optional
-- 9:00 — Admin panel: relationship select fields
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Database diagram showing connected tables with arrows. Text: "RELATIONSHIPS IN GO". Subtitle: "belongs_to + many_to_many". Blue connected nodes design.
+- 0:00 — Hook: "Make your desktop app look like it belongs on the platform"
+- 0:30 — Frameless window: removing the default title bar
+- 1:15 — Custom title bar: draggable area, window controls
+- 2:00 — Window controls: minimize, maximize, close — calling Wails runtime
+- 2:45 — Draggable regions: CSS flags for drag behavior
+- 3:30 — Sidebar navigation: collapsible, icon-based, route-aware
+- 4:15 — App layout: sidebar + header + content area
+- 5:00 — Theme toggle: dark and light mode with system detection
+- 5:45 — shadcn-style UI components: button, input, card, dialog
+- 6:30 — DataTable component: sorting, filtering for desktop data
+- 7:15 — FormBuilder: reusable form generation
+- 8:00 — Draggable panels: resizable split views
+- 8:45 — Full UI tour: the polished desktop experience
+- 9:15 — Next: export features and distribution
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "FRAMELESS UI". Right side: a desktop app screenshot showing a frameless window with custom title bar, sidebar, and dark theme. Window control buttons (red, yellow, green dots) visible in the title bar. Purple accent glow. Top-left: green pill badge "DESKTOP 3".
 
 ---
 
-### Day 26 — Custom Roles & Permissions
-**Title:** "Role-Based Access Control in Go (RBAC with Grit)"
-**Description:** How Grit handles roles: built-in ADMIN/EDITOR/USER, adding custom roles with grit add role, protecting routes per role, and admin-only endpoints.
-**Purpose:** SEO — "golang rbac", "go role based access", practical guide
+### Day 25 — Desktop Courses 4-5: Export & Distribution
+
+**Title:** "PDF, Excel, CSV Export + Build and Distribute Your Desktop App"
+**Description:** Two courses in one video. First: export data from your desktop app to PDF, Excel, and CSV using Go libraries — one-click export buttons in the UI. Second: build your Wails app into native binaries for Windows, macOS, and Linux, and prepare for distribution.
+**Purpose:** Practical guide — "go pdf export", "wails build", "distribute wails app"
 **Timeline:**
-- 0:00 — Hook: "Not every user should see everything"
-- 0:30 — Built-in roles: ADMIN, EDITOR, USER
-- 1:30 — Role middleware: RequireRole("ADMIN")
-- 3:00 — Adding custom roles: grit add role MODERATOR
-- 4:00 — What grit add role changes (Go + TypeScript + Zod)
-- 5:00 — Role-restricted resource generation: --roles flag
-- 6:00 — Admin panel: user role management
-- 7:00 — Frontend: conditional rendering by role
-- 8:00 — Best practices: least privilege, role hierarchy
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Three user silhouettes at different heights (hierarchy). Text: "RBAC IN GO". Subtitle: "Roles + Permissions + Middleware". Purple and blue gradient.
+- 0:00 — Hook: "Export anything. Ship everywhere."
+- 0:30 — Export overview: PDF, Excel, CSV from Go services
+- 1:15 — PDF export: generating formatted PDF reports
+- 2:00 — Excel export: creating .xlsx files with styled sheets
+- 2:45 — CSV export: simple, universal data export
+- 3:30 — Export UI: one-click buttons, file save dialog
+- 4:15 — Export service architecture: Go handles generation, Wails saves
+- 5:00 — Building for production: `wails build`
+- 5:30 — Windows build: .exe, installer options
+- 6:00 — macOS build: .app bundle, code signing basics
+- 6:30 — Linux build: binary, AppImage
+- 7:00 — Build configuration: wails.json options, app icon, metadata
+- 7:45 — Binary size: what to expect, optimization tips
+- 8:15 — Distribution: where to host, update strategies
+- 8:45 — Recap: from scaffold to shipped desktop app
+- 9:15 — Next: mobile development with Grit
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "EXPORT + SHIP". Right side: three file icons (PDF in red, Excel in green, CSV in blue) on top, and three platform icons (Windows, macOS, Linux) on bottom, separated by a horizontal line. Purple glow. Top-left: green pill badge "DESKTOP 4-5".
 
 ---
 
-### Day 27 — Maintenance Mode & Route Listing
-**Title:** "grit down, grit up, grit routes — 3 Commands You Need to Know"
-**Description:** Maintenance mode (grit down/up) and route listing (grit routes). Simple but powerful CLI commands for operations and debugging.
-**Purpose:** SEO — "golang maintenance mode", practical tips, short and useful
+### Day 26 — Mobile Course 1: First Mobile App
+
+**Title:** "Build a Mobile App with Go Backend — Grit + Expo"
+**Description:** Grit's mobile mode scaffolds an Expo React Native app connected to your Go API. We create the project, explore the file structure, configure the development environment, and run the app on a physical device and emulator. Full-stack mobile, powered by Go.
+**Purpose:** SEO — "expo react native go backend", "go mobile app", "expo go tutorial"
 **Timeline:**
-- 0:00 — Hook: "Three commands that make your life easier"
-- 0:30 — grit routes: see every API endpoint
-- 2:00 — Reading the route table: method, path, handler, group
-- 3:00 — grit down: maintenance mode
-- 4:00 — What happens: .maintenance file, 503 responses
-- 5:00 — Use case: during deployments, migrations
-- 6:00 — grit up: back online
-- 6:30 — Scripting: use in deploy pipelines
-- 7:00 — Bonus: grit version, grit update
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Three terminal commands stacked vertically: "grit routes", "grit down", "grit up". Text: "3 MUST-KNOW COMMANDS". Green, yellow, green color coding (up, warning, up).
+- 0:00 — Hook: "Your Go backend. A native mobile app. Let's connect them."
+- 0:30 — Grit Mobile overview: Expo + Go API architecture
+- 1:15 — Scaffold: `grit new my-mobile-app --mobile` (API + Expo)
+- 2:00 — Project structure: Go API in apps/api, Expo in apps/mobile
+- 2:45 — Expo project tour: app directory, components, hooks, config
+- 3:30 — Development setup: Expo Go, iOS simulator, Android emulator
+- 4:15 — Running on device: scanning QR code with Expo Go
+- 5:00 — Running on emulator: iOS and Android side by side
+- 5:45 — API connection: base URL configuration, environment-based
+- 6:30 — Project config: app.json, EAS configuration
+- 7:15 — Navigation structure: Expo Router file-based routing
+- 8:00 — Shared types: same Zod schemas, same TypeScript types
+- 8:45 — Dev workflow: hot reload, debugging, logs
+- 9:15 — Next: auth and navigation
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "MOBILE APP" with "Go + Expo" in sky blue below. Right side: a phone mockup showing a mobile app screen with dark theme, next to a terminal running the Go API. Purple glow behind the phone. Top-left: orange pill badge "MOBILE 1".
 
 ---
 
-### Day 28 — Redis Caching Strategies
-**Title:** "Redis Caching in Go: Cache Middleware, TTL, Invalidation (Grit)"
-**Description:** How to use Grit's built-in Redis cache service: GET/SET operations, cache middleware for API responses, TTL configuration, and cache invalidation patterns.
-**Purpose:** SEO — "golang redis cache", "go api caching", practical guide
+### Day 27 — Mobile Course 2: Auth & Navigation
+
+**Title:** "Mobile Auth with SecureStore and Expo Router Navigation"
+**Description:** We implement mobile authentication — login, register, token storage with Expo SecureStore, and automatic token refresh. Then we set up Expo Router with tab navigation, stack navigation, and auth-guarded routes. The mobile app now has real user sessions.
+**Purpose:** SEO — "expo securestore auth", "expo router tabs", "react native jwt auth"
 **Timeline:**
-- 0:00 — Hook: "Your API is fast. Caching makes it instant."
-- 0:30 — Redis cache service overview
-- 1:30 — Get/Set/Delete operations
-- 2:30 — Cache middleware: automatic response caching
-- 4:00 — TTL configuration per key
-- 5:00 — Cache invalidation: when to clear
-- 6:00 — Patterns: cache-aside, write-through
-- 7:00 — Admin: cache management
-- 8:00 — Production: Redis configuration tips
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Redis logo with speed/lightning effects. Text: "REDIS CACHING IN GO". Subtitle: "Middleware + TTL + Invalidation". Red Redis color with blue accents.
+- 0:00 — Hook: "Mobile auth is different. Tokens go in SecureStore, not cookies."
+- 0:30 — Auth architecture: mobile vs web token storage
+- 1:15 — SecureStore: encrypted storage for tokens on device
+- 2:00 — Login screen: form, validation, API call to Go backend
+- 2:45 — Register screen: same pattern, different endpoint
+- 3:30 — Token management: storing, retrieving, refreshing
+- 4:15 — Auth context: useAuth hook for the mobile app
+- 5:00 — Auto-refresh: intercepting 401s, refreshing tokens silently
+- 5:45 — Expo Router: file-based routing for mobile
+- 6:30 — Tab navigation: bottom tabs with icons
+- 7:15 — Stack navigation: push/pop within tabs
+- 7:45 — Auth guard: redirecting unauthenticated users to login
+- 8:30 — Protected routes: checking auth state before rendering
+- 9:00 — Next: API integration with TanStack Query
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "MOBILE AUTH". Right side: a phone mockup showing a login screen with email and password fields, dark theme. A lock icon with a checkmark above the phone. Sky blue accent on form elements. Top-left: orange pill badge "MOBILE 2".
 
 ---
 
-### Day 29 — Grit UI Components
-**Title:** "100 Free React Components That Ship With Your Grit App"
-**Description:** Tour the Grit UI component registry: 100 shadcn-compatible components across marketing, auth, SaaS, ecommerce, and layout categories. Install with one command.
-**Purpose:** SEO — "free react components", "shadcn components", showcase
+### Day 28 — Mobile Course 3: API Integration & Offline
+
+**Title:** "TanStack Query on Mobile — Pull to Refresh, Offline Cache"
+**Description:** We connect the mobile app to the Go API using TanStack Query — the same data fetching library used in the web app. Pull-to-refresh, infinite scroll, optimistic updates, and offline caching. Your mobile app stays fast and responsive even with a flaky connection.
+**Purpose:** SEO — "react native tanstack query", "expo offline cache", "pull to refresh react native"
 **Timeline:**
-- 0:00 — Hook: "100 components. Free. Already in your project."
-- 0:30 — What is Grit UI? shadcn-compatible registry
-- 1:30 — Marketing components: heroes, features, pricing
-- 3:00 — Auth components: login, register, OTP forms
-- 4:00 — SaaS components: dashboards, billing, settings
-- 5:00 — Ecommerce components: products, cart, checkout
-- 6:00 — Layout components: navbars, sidebars, footers
-- 7:00 — Installing: npx shadcn@latest add --url
-- 8:00 — Customizing: it's just Tailwind + React
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Grid of small UI component previews (cards, forms, navbars). Text: "100 FREE COMPONENTS". Subtitle: "shadcn-Compatible React UI Kit". Colorful component grid on dark.
+- 0:00 — Hook: "Same React Query skills. Native mobile experience."
+- 0:30 — TanStack Query setup: QueryClient, provider, config
+- 1:15 — Fetching data: useQuery with the Go API
+- 2:00 — Custom hooks: useProducts, useUser — same pattern as web
+- 2:45 — Pull-to-refresh: connecting RefreshControl to refetch
+- 3:30 — Infinite scroll: paginated lists with useInfiniteQuery
+- 4:15 — Creating data: useMutation for POST requests
+- 5:00 — Optimistic updates: instant UI, reconcile with server
+- 5:45 — Error handling: retry logic, error boundaries
+- 6:30 — Offline caching: persisting query cache to AsyncStorage
+- 7:15 — Stale data: showing cached data while fetching fresh
+- 8:00 — Network detection: online/offline indicators
+- 8:30 — Full demo: browsing, creating, pull-to-refresh, going offline
+- 9:00 — Next: push notifications and app store
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "API + OFFLINE". Right side: a phone mockup showing a data list with a pull-to-refresh spinner, and a small "offline" badge in the corner. Arrows between phone and a cloud labeled "Go API". Top-left: orange pill badge "MOBILE 3".
 
 ---
 
-### Day 30 — What's Next for Grit
-**Title:** "Grit Roadmap: What's Coming in v4.0 and Beyond"
-**Description:** The future of Grit: community feedback, planned features, plugin marketplace, Grit Cloud, and how to contribute. Plus a recap of everything we covered this month.
-**Purpose:** Awareness — community building, set expectations, call to action
+### Day 29 — Mobile Courses 4-5: Push Notifications & App Store
+
+**Title:** "Push Notifications and App Store Submission with Expo EAS"
+**Description:** Two courses, one video. First: push notifications with Expo — registering tokens, sending from the Go backend, handling taps. Second: building with EAS, configuring app metadata, and submitting to the Apple App Store and Google Play Store. From code to store listing.
+**Purpose:** Practical guide — "expo push notifications", "eas build", "submit app to app store"
 **Timeline:**
-- 0:00 — Hook: "30 days of Grit. Here's what's next."
-- 0:30 — Month recap: what we built and learned
-- 2:00 — Community: GitHub stars, issues, contributions
-- 3:00 — Planned: more plugins (payments, analytics)
-- 4:00 — Planned: plugin marketplace
-- 5:00 — Planned: Grit Cloud (hosted platform)
-- 6:00 — Planned: more architecture modes, frontend options
-- 7:00 — How to contribute: issues, PRs, plugins
-- 8:00 — How to support: star, share, sponsor
-- 9:00 — Thank you + subscribe CTA
-**Thumbnail Prompt:** YouTube thumbnail (1280x720), dark background. Road/path stretching into the horizon with Grit logo at the end. Text: "GRIT ROADMAP". Subtitle: "What's Coming in v4.0". Blue gradient horizon, futuristic feel.
+- 0:00 — Hook: "Notifications bring users back. The app store brings users in."
+- 0:30 — Push notification architecture: Expo push service + Go backend
+- 1:15 — Registering push tokens: getting the device token on app start
+- 2:00 — Storing tokens: saving to Go API, associating with user
+- 2:45 — Sending notifications: Go service calling Expo push API
+- 3:30 — Notification handling: foreground, background, tap actions
+- 4:15 — Notification types: transactional, marketing, silent data push
+- 5:00 — EAS Build: cloud builds for iOS and Android
+- 5:30 — Build configuration: eas.json profiles (development, preview, production)
+- 6:00 — iOS build: certificates, provisioning profiles, TestFlight
+- 6:45 — Android build: signing key, AAB format, internal testing
+- 7:15 — App metadata: icons, screenshots, descriptions
+- 7:45 — EAS Submit: automated submission to both stores
+- 8:15 — Review process: what to expect, common rejection reasons
+- 8:45 — Your app is live: from Grit scaffold to app store listing
+- 9:15 — Next: series wrap-up
+
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Left side: bold white text "NOTIFY + SHIP". Right side: a phone showing a push notification banner at top, with Apple App Store and Google Play Store logos below it. Green "PUBLISHED" indicator. Top-left: orange pill badge "MOBILE 4-5".
 
 ---
 
-## CONTENT STRATEGY NOTES
+### Day 30 — Channel Wrap-Up: What's Next
 
-### SEO Keywords Targeted:
-- golang full stack framework
-- go react framework
-- go rest api tutorial
-- gorm tutorial
-- gin framework tutorial
-- next.js go backend
-- laravel alternative golang
-- deploy go app
-- golang authentication jwt
-- vercel ai gateway
-- wails desktop app
-- golang background jobs
-- redis golang cache
-- shadcn components free
+**Title:** "30 Days of Grit — What's Next for the Framework and Channel"
+**Description:** We built web apps, desktop apps, and mobile apps — all powered by Grit and Go. This final video recaps the journey, previews the Grit roadmap (Grit Cloud, marketplace, new generators), and invites the community to contribute, request features, and join the Discord.
+**Purpose:** Awareness / Community — retention, community building, roadmap hype
+**Timeline:**
+- 0:00 — Hook: "30 days. 19 courses. 3 platforms. Here's what's next."
+- 0:30 — Recap: what we built across 30 videos
+- 1:15 — Web platform recap: 9 courses, auth to deployment
+- 2:00 — Desktop platform recap: 5 courses, Wails to distribution
+- 2:45 — Mobile platform recap: 5 courses, Expo to app store
+- 3:30 — Most popular videos: what resonated with the community
+- 4:15 — Grit roadmap: what's coming next
+- 5:00 — Grit Cloud: hosted deployment platform (preview)
+- 5:45 — Marketplace: community templates and plugins
+- 6:15 — New generators: more resource types, more field types
+- 7:00 — Community: Discord, GitHub discussions, contributing
+- 7:30 — How to contribute: issues, PRs, component library
+- 8:00 — Feature requests: what do YOU want Grit to build?
+- 8:30 — Thank you: to everyone who followed along
+- 9:00 — Call to action: subscribe, star the repo, join Discord
 
-### Posting Schedule:
-- Upload daily at 9:00 AM UTC
-- Premiere format for first 3 videos (build hype)
-- Community posts on off-days with code snippets
-- Shorts from each video (30-60 second clips of the best moments)
+**Thumbnail Prompt:** YouTube thumbnail (1280x720). Dark navy background. Center: bold white text "WHAT'S NEXT" with the Grit logo above it, glowing with a purple and sky blue gradient aura. Below the text: three small icons representing web (browser), desktop (monitor), and mobile (phone) in a row. Bottom text: "30 Days Complete". Celebratory but clean — no confetti, just refined glow effects. Top-left: white pill badge "FINALE".
 
-### Thumbnail Consistency:
-- Always dark background (#0b1120)
-- Bold white text, sky blue (#38bdf8) accents
-- One main visual element (terminal, dashboard, icon)
-- Subtitle in smaller text below main title
-- No faces unless doing a talking-head video
-- Consistent placement: title left/center, visual right
+---
+
+## Summary
+
+| Week | Days | Focus | Courses Covered |
+|------|------|-------|-----------------|
+| 1 | 1-7 | Grit Web — Intro & Setup | Course 0 (2 videos), Course 1 (2 videos), Course 2 (3 videos) |
+| 2 | 8-14 | Grit Web — Auth, Admin, Storage | Course 3 (3 videos), Course 4 (2 videos), Course 5 (2 videos) |
+| 3 | 15-21 | Grit Web — Jobs, AI, Deploy | Course 6 (2 videos), Course 7 (2 videos), Course 8 (2 videos), Bonus (1 video) |
+| 4 | 22-30 | Desktop & Mobile | Desktop 1-5 (4 videos), Mobile 1-5 (4 videos), Wrap-up (1 video) |
+
+**Total:** 30 videos across 30 days covering all 19 courses (9 web + 5 desktop + 5 mobile)

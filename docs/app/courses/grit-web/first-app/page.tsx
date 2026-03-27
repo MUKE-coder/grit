@@ -799,7 +799,7 @@ AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6`}
         {/* Navigation */}
         <div className="mt-8">
           <CourseNav
-            prev={{ href: '/courses/grit-web', label: 'Back to Grit Web' }}
+            prev={{ href: '/courses/grit-web/introduction', label: 'Prev: Introduction to Grit' }}
             next={{ href: '/courses/grit-web/code-generator', label: 'Next: Code Generator Mastery' }}
           />
         </div>

@@ -96,6 +96,37 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     // Changelog
     { path: '/docs/changelog', priority: 0.6, changeFrequency: 'weekly' as const },
+
+    // Plugins
+    { path: '/docs/plugins', priority: 0.7, changeFrequency: 'monthly' as const },
+
+    // Courses
+    { path: '/courses', priority: 0.9, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-web', priority: 0.9, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-web/introduction', priority: 0.9, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-web/first-app', priority: 0.9, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-web/code-generator', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-web/authentication', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-web/admin-panel', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-web/file-storage', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-web/jobs-email', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-web/ai-features', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-web/deploy', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-desktop', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-desktop/first-app', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-desktop/crud-data', priority: 0.7, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-desktop/custom-ui', priority: 0.7, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-desktop/export', priority: 0.7, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-desktop/build', priority: 0.7, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-mobile', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-mobile/first-app', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-mobile/auth-navigation', priority: 0.7, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-mobile/api-offline', priority: 0.7, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-mobile/notifications', priority: 0.7, changeFrequency: 'monthly' as const },
+    { path: '/courses/grit-mobile/build-store', priority: 0.7, changeFrequency: 'monthly' as const },
+
+    // Course (legacy single course page)
+    { path: '/course', priority: 0.5, changeFrequency: 'monthly' as const },
   ]
 
   return routes.map((route) => ({
