@@ -28,10 +28,61 @@ export default function ChangelogPage() {
               </p>
             </div>
 
-            {/* v3.5.0 */}
+            {/* v3.6.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
                 <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.6.0
+                </span>
+                <span className="text-sm text-muted-foreground">March 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Features</h3>
+                <ul>
+                  <li>
+                    <strong>Scaffold into current directory</strong> &mdash; <code>grit new .</code> and{' '}
+                    <code>grit new ./</code> now scaffold into the current directory instead of creating a
+                    subfolder. Infers the project name from the folder name. Also auto-detects when the
+                    current directory name matches the project name.
+                  </li>
+                  <li>
+                    <strong><code>--force</code> flag</strong> &mdash; Allows scaffolding into non-empty
+                    directories. Useful when a repo was cloned first (with README, .git, LICENSE) before
+                    scaffolding: <code>grit new . --triple --vite --force</code>.
+                  </li>
+                  <li>
+                    <strong><code>--here</code> flag</strong> &mdash; Explicit alternative to{' '}
+                    <code>grit new .</code> for in-place scaffolding.
+                  </li>
+                  <li>
+                    <strong>30 standalone courses</strong> &mdash; Added 20 new courses to the learning
+                    platform (42 total across 3 tracks + 20 standalone). Topics include testing, GORM
+                    mastery, WebSockets, Stripe payments, blog/CMS, CI/CD, middleware, and the 100-component
+                    UI registry.
+                  </li>
+                </ul>
+
+                <h3>Bug Fixes</h3>
+                <ul>
+                  <li>
+                    <strong>Flags now skip interactive prompt</strong> &mdash; Running{' '}
+                    <code>grit new myapp --triple --vite</code> no longer shows the architecture/frontend
+                    selection prompt. Flags act as true shortcuts for non-interactive setup.
+                  </li>
+                  <li>
+                    <strong>Module path upgrade to /v3</strong> &mdash; Fixed{' '}
+                    <code>go install ...@latest</code> downloading v2.9.0 instead of v3.x.{' '}
+                    All import paths updated from <code>grit/v2</code> to <code>grit/v3</code>.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v3.5.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-muted/50 px-3 py-1 text-sm font-semibold text-muted-foreground">
                   v3.5.0
                 </span>
                 <span className="text-sm text-muted-foreground">March 26, 2026</span>

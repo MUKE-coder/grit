@@ -409,7 +409,7 @@ Project Management:
   grit upgrade -f                        Force upgrade (no confirmation)
   grit update                            Self-update CLI to latest version
   grit compile                           Build desktop app executable (wails build)
-  grit version                           Print current version (v3.5.1)
+  grit version                           Print current version (v3.6.0)
 
 
 DEPLOYMENT
@@ -865,7 +865,7 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.5.1 (Current):
+v3.6.0 (Current):
   - Interactive CLI with architecture and frontend selection
   - 5 architecture modes (single, double, triple, API, mobile)
   - 2 frontend options (Next.js, TanStack Router)

@@ -145,7 +145,7 @@ grit up                                # Back online
 grit deploy --host user@server.com --domain myapp.com
 
 # Meta
-grit version                           # v3.5.0
+grit version                           # v3.6.0
 grit update                            # Self-update to latest
 grit upgrade                           # Upgrade project templates
 ```
