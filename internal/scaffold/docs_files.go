@@ -417,6 +417,8 @@ Install the Grit CLI globally:
 go install github.com/MUKE-coder/grit/v2/cmd/grit@latest
 `+"```"+`
 
+> Note: Grit CLI 3.x is currently distributed from the Go module path `/v2`.
+
 Verify the installation:
 
 `+"```bash"+`
@@ -868,13 +870,15 @@ The seeder is idempotent — it skips records that already exist. Add your own s
 
 ## grit update
 
-Update the Grit CLI itself to the latest version. This removes the current binary and installs the newest release from GitHub.
+Update the Grit CLI itself to the latest version. This installs the newest release from the current supported module path.
 
 ` + "```bash" + `
 grit update
 ` + "```" + `
 
-This runs ` + "`go install github.com/MUKE-coder/grit/v2/cmd/grit@latest`" + ` under the hood, replacing the old binary with the latest version. Run ` + "`grit version`" + ` afterwards to verify.
+This runs ` + "`go install github.com/MUKE-coder/grit/v2/cmd/grit@latest`" + ` under the hood. Run ` + "`grit version`" + ` afterwards to verify.
+
+> Note: Grit CLI 3.x is currently distributed from the Go module path ` + "`/v2`" + `.
 
 > **Note:** ` + "`grit update`" + ` updates the **CLI tool**. To update your **project's scaffold files**, use ` + "`grit upgrade`" + ` instead.
 
