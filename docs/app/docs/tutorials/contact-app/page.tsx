@@ -44,7 +44,7 @@ export default function TutorialContactAppPage() {
                   "Go 1.21+ installed",
                   "Node.js 18+ and pnpm installed",
                   "Docker and Docker Compose installed",
-                  "Grit CLI installed globally (go install github.com/MUKE-coder/grit/v2/cmd/grit@latest)",
+                  "Grit CLI installed globally (go install github.com/MUKE-coder/grit/v2/cmd/grit@latest). Note: Grit CLI 3.x is currently distributed from the Go module path /v2.",
                 ].map((item) => (
                   <li
                     key={item}

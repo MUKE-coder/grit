@@ -123,6 +123,11 @@ export default function DesktopFirstAppPage() {
                 code="go install github.com/MUKE-coder/grit/v2/cmd/grit@latest"
                 className="mb-4"
               />
+              <div className="prose-grit mb-4">
+                <p>
+                  Note: Grit CLI 3.x is currently distributed from the Go module path <code>/v2</code>.
+                </p>
+              </div>
 
               <div className="prose-grit mb-0">
                 <p>

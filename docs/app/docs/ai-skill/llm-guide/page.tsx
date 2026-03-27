@@ -100,6 +100,9 @@ export default function LLMGuidePage() {
                   inside a Turborepo monorepo. It is opinionated, batteries-included, and optimised for
                   AI-assisted development. A single CLI command scaffolds a complete production-ready project.
                 </p>
+                <p className="text-xs text-muted-foreground/80 mb-4">
+                  Note: Grit CLI 3.x is currently distributed from the Go module path <code>/v2</code>.
+                </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
                     { label: 'Backend', value: 'Go 1.24 · Gin · GORM · PostgreSQL · Redis' },
@@ -1372,6 +1375,7 @@ pnpm --filter admin dev    # http://localhost:3001`} />
                 </h2>
                 <div className="space-y-4">
                   <CodeBlock language="bash" filename="Start a new project (with Docker)" code={`go install github.com/MUKE-coder/grit/v2/cmd/grit@latest
+# Note: Grit CLI 3.x is currently distributed from the Go module path /v2
 grit new myapp && cd myapp
 cp .env.example .env          # fill in values
 docker compose up -d          # starts PostgreSQL, Redis, MinIO, Mailhog
