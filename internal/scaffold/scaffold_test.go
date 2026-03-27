@@ -45,6 +45,110 @@ func TestValidateProjectName(t *testing.T) {
 	}
 }
 
+func TestResolveScaffoldRoot(t *testing.T) {
+	t.Run("explicit in-place", func(t *testing.T) {
+		root, inPlace, err := resolveScaffoldRoot(Options{ProjectName: "my-app", InPlace: true})
+		if err != nil {
+			t.Fatalf("resolveScaffoldRoot returned error: %v", err)
+		}
+		if root != "." {
+			t.Fatalf("root = %q, want .", root)
+		}
+		if !inPlace {
+			t.Fatal("inPlace = false, want true")
+		}
+	})
+
+	t.Run("auto in-place when cwd matches project name", func(t *testing.T) {
+		prev, err := os.Getwd()
+		if err != nil {
+			t.Fatalf("getwd: %v", err)
+		}
+
+		target := filepath.Join(t.TempDir(), "my-app")
+		if err := os.MkdirAll(target, 0755); err != nil {
+			t.Fatalf("mkdirall: %v", err)
+		}
+		if err := os.Chdir(target); err != nil {
+			t.Fatalf("chdir target: %v", err)
+		}
+		t.Cleanup(func() {
+			_ = os.Chdir(prev)
+		})
+
+		root, inPlace, err := resolveScaffoldRoot(Options{ProjectName: "my-app"})
+		if err != nil {
+			t.Fatalf("resolveScaffoldRoot returned error: %v", err)
+		}
+		if root != "." {
+			t.Fatalf("root = %q, want .", root)
+		}
+		if !inPlace {
+			t.Fatal("inPlace = false, want true")
+		}
+	})
+
+	t.Run("default creates named directory", func(t *testing.T) {
+		root, inPlace, err := resolveScaffoldRoot(Options{ProjectName: "my-app"})
+		if err != nil {
+			t.Fatalf("resolveScaffoldRoot returned error: %v", err)
+		}
+		if root != "my-app" {
+			t.Fatalf("root = %q, want my-app", root)
+		}
+		if inPlace {
+			t.Fatal("inPlace = true, want false")
+		}
+	})
+}
+
+func TestEnsureTargetDirectory(t *testing.T) {
+	t.Run("non-in-place rejects existing directory", func(t *testing.T) {
+		root := filepath.Join(t.TempDir(), "existing")
+		if err := os.MkdirAll(root, 0755); err != nil {
+			t.Fatalf("mkdirall: %v", err)
+		}
+
+		err := ensureTargetDirectory(root, false, false)
+		if err == nil {
+			t.Fatal("expected error for existing directory, got nil")
+		}
+	})
+
+	t.Run("in-place allows empty directory", func(t *testing.T) {
+		root := t.TempDir()
+		if err := ensureTargetDirectory(root, true, false); err != nil {
+			t.Fatalf("ensureTargetDirectory returned error: %v", err)
+		}
+	})
+
+	t.Run("in-place rejects non-empty directory by default", func(t *testing.T) {
+		root := t.TempDir()
+		if err := os.WriteFile(filepath.Join(root, "placeholder.txt"), []byte("x"), 0644); err != nil {
+			t.Fatalf("writefile: %v", err)
+		}
+
+		err := ensureTargetDirectory(root, true, false)
+		if err == nil {
+			t.Fatal("expected error for non-empty directory, got nil")
+		}
+		if !strings.Contains(err.Error(), "--force") {
+			t.Fatalf("expected --force hint in error, got: %v", err)
+		}
+	})
+
+	t.Run("in-place force allows non-empty directory", func(t *testing.T) {
+		root := t.TempDir()
+		if err := os.WriteFile(filepath.Join(root, "placeholder.txt"), []byte("x"), 0644); err != nil {
+			t.Fatalf("writefile: %v", err)
+		}
+
+		if err := ensureTargetDirectory(root, true, true); err != nil {
+			t.Fatalf("ensureTargetDirectory returned error with force: %v", err)
+		}
+	})
+}
+
 // ── ValidateStyle ─────────────────────────────────────────────────────────────
 
 func TestValidateStyle(t *testing.T) {
