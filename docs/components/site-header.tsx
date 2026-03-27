@@ -30,7 +30,7 @@ export function SiteHeader() {
               Grit
             </span>
             <span className="hidden sm:inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-mono font-medium text-primary/80">
-              v3.5.0
+              v3.5.1
             </span>
           </Link>
         </div>
@@ -77,7 +77,7 @@ export function SiteHeader() {
           </Button>
 
           <Button variant="ghost" size="icon" className="hidden sm:inline-flex h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50" asChild>
-            <Link href="https://www.youtube.com/@JBWEBDEVELOPER" target="_blank" rel="noreferrer">
+            <Link href="https://www.youtube.com/@GritFramework" target="_blank" rel="noreferrer">
               <Youtube className="h-4 w-4" />
               <span className="sr-only">YouTube</span>
             </Link>

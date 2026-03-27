@@ -1447,7 +1447,7 @@ JB is entirely self-taught with no formal computer science degree. He transition
 
 - **Founder & CEO** of [Desishub Technologies](https://desishub.com) — a company that develops websites, mobile applications, and AI-powered business solutions across Africa and beyond
 - **Founder** of Nextjs Academy — an online learning platform with 9+ courses
-- **YouTube Creator** — 14,600+ subscribers on the [JB Web Developer](https://youtube.com/@JBWEBDEVELOPER) channel
+- **YouTube Creator** — [Grit Framework](https://youtube.com/@GritFramework) and [JB Web Developer](https://youtube.com/@JBWEBDEVELOPER) channels
 - **Educator** — Trained 100+ students through in-person coding bootcamps
 
 ## Achievements
@@ -1469,9 +1469,9 @@ JB is entirely self-taught with no formal computer science degree. He transition
 ## Connect
 
 - [GitHub](https://github.com/MUKE-coder) — @MUKE-coder
-- [YouTube](https://youtube.com/@JBWEBDEVELOPER) — @JBWEBDEVELOPER
+- [YouTube](https://youtube.com/@GritFramework) — @GritFramework
 - [X (Twitter)](https://x.com/MJohnbaptist) — @MJohnbaptist
-- [LinkedIn](https://linkedin.com/in/muke-johnbaptist) — muke-johnbaptist
+- [LinkedIn](https://linkedin.com/company/grit-framework) — Grit Framework
 - [TikTok](https://tiktok.com/@jbdesishub) — @jbdesishub
 - [Website](https://jb.desishub.com) — jb.desishub.com
 
