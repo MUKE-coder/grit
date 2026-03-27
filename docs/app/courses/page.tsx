@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Globe, Monitor, Smartphone, Clock, ArrowRight, BookOpen } from "lucide-react"
+import { Globe, Monitor, Smartphone, Clock, ArrowRight, BookOpen, Zap, Server, Dumbbell, ShoppingCart, FileText, Shield, Activity, Database, Code2, Rocket, Bot, Receipt } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import type { Metadata } from "next"
 
@@ -77,6 +77,21 @@ const categories: CourseCategory[] = [
       "Build & App Store",
     ],
   },
+]
+
+const standaloneCourses = [
+  { title: "Batteries Included", subtitle: "Every feature that ships with Grit", href: "/courses/batteries", icon: Zap, duration: "30 min" },
+  { title: "API-Only Masterclass", subtitle: "Build & deploy a REST API with Go", href: "/courses/api-masterclass", icon: Server, duration: "30 min" },
+  { title: "Build a Fitness App", subtitle: "Go API + Expo React Native", href: "/courses/mobile-fitness-app", icon: Dumbbell, duration: "30 min" },
+  { title: "E-commerce Store", subtitle: "Single app architecture with Vite", href: "/courses/ecommerce-spa", icon: ShoppingCart, duration: "30 min" },
+  { title: "API Docs: Scalar & Swagger", subtitle: "Auto-generated API documentation", href: "/courses/api-docs-scalar", icon: FileText, duration: "30 min" },
+  { title: "Security Deep Dive", subtitle: "Auth, 2FA, WAF & rate limiting", href: "/courses/security-deep-dive", icon: Shield, duration: "30 min" },
+  { title: "Pulse Analytics", subtitle: "Tracing, metrics & monitoring", href: "/courses/pulse-analytics", icon: Activity, duration: "30 min" },
+  { title: "GORM Studio", subtitle: "The visual database browser", href: "/courses/gorm-studio", icon: Database, duration: "30 min" },
+  { title: "React + Vite + Go", subtitle: "Building with TanStack Router", href: "/courses/react-vite-go", icon: Code2, duration: "30 min" },
+  { title: "Deployment Guide", subtitle: "Dokploy, Orbita, VPS & Vercel", href: "/courses/deployment-guide", icon: Rocket, duration: "30 min" },
+  { title: "SaaS with Claude Code", subtitle: "AI-assisted SaaS development", href: "/courses/saas-with-ai", icon: Bot, duration: "30 min" },
+  { title: "Invoice Generator", subtitle: "Desktop app with Wails + PDF export", href: "/courses/invoice-desktop", icon: Receipt, duration: "30 min" },
 ]
 
 /* -- Page component ------------------------------------------------------- */
@@ -163,6 +178,35 @@ export default function CoursesPage() {
                   </div>
                 </Link>
               ))}
+            </div>
+
+            {/* Standalone Courses */}
+            <div className="mt-20">
+              <div className="text-center mb-10">
+                <h2 className="text-2xl font-bold text-foreground mb-2">Standalone Courses</h2>
+                <p className="text-muted-foreground">Deep dives, practical builds, and specialized topics</p>
+              </div>
+
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {standaloneCourses.map((course) => (
+                  <Link
+                    key={course.href}
+                    href={course.href}
+                    className="group flex items-start gap-3 p-4 rounded-lg border border-border/40 bg-card/30 hover:border-primary/30 hover:bg-card/50 transition-all"
+                  >
+                    <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/10 text-primary shrink-0 group-hover:bg-primary/20 transition-colors">
+                      <course.icon className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                        {course.title}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">{course.subtitle}</p>
+                      <span className="text-[10px] text-muted-foreground/60 mt-1 block">{course.duration}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </section>
