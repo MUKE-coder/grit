@@ -22,6 +22,8 @@ import (
 
 var version = "3.5.0"
 
+const updateInstallTarget = "github.com/MUKE-coder/grit/v2/cmd/grit@latest"
+
 func main() {
 	rootCmd := &cobra.Command{
 		Use:   "grit",
@@ -480,7 +482,7 @@ func updateCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "update",
 		Short: "Update the Grit CLI to the latest version",
-		Long:  "Removes the current Grit binary and installs the latest version from GitHub using go install.",
+		Long:  "Installs the latest Grit CLI from GitHub using go install on the current supported module path.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
 
@@ -489,6 +491,8 @@ func updateCmd() *cobra.Command {
 			spinner := color.New(color.FgHiBlack)
 
 			purple.Printf("\n  Updating Grit CLI (current: v%s)...\n\n", version)
+			spinner.Printf("  → Source module path: %s\n", updateInstallTarget)
+			spinner.Println("  → Note: Grit CLI 3.x is currently distributed via Go module path /v2.")
 
 			// Find the current binary path
 			binPath, err := os.Executable()
@@ -500,33 +504,46 @@ func updateCmd() *cobra.Command {
 				return fmt.Errorf("resolving binary path: %w", err)
 			}
 
-			// On Windows, a running binary can't be deleted but can be renamed
+			// On Windows, a running binary can't be overwritten while in use.
+			oldPath := binPath + ".old"
 			if runtime.GOOS == "windows" {
-				oldPath := binPath + ".old"
 				// Clean up any previous .old file
 				os.Remove(oldPath)
 				spinner.Printf("  → Renaming old binary: %s\n", binPath)
 				if err := os.Rename(binPath, oldPath); err != nil {
 					return fmt.Errorf("renaming old binary: %w", err)
 				}
-			} else {
-				spinner.Printf("  → Removing old binary: %s\n", binPath)
-				if err := os.Remove(binPath); err != nil {
-					return fmt.Errorf("removing old binary: %w", err)
-				}
 			}
 
 			spinner.Println("  → Installing latest version...")
-			c := exec.Command("go", "install", "github.com/MUKE-coder/grit/v2/cmd/grit@latest")
+			spinner.Printf("  → Running: go install %s\n", updateInstallTarget)
+			c := exec.Command("go", "install", updateInstallTarget)
+			c.Env = append(os.Environ(), fmt.Sprintf("GOBIN=%s", filepath.Dir(binPath)))
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
 			if err := c.Run(); err != nil {
+				if runtime.GOOS == "windows" {
+					if restoreErr := os.Rename(oldPath, binPath); restoreErr != nil {
+						return fmt.Errorf("installing latest version: %w (restore failed: %v)", err, restoreErr)
+					}
+				}
 				return fmt.Errorf("installing latest version: %w", err)
 			}
 
-			// Clean up renamed binary on Windows
+			// Clean up renamed binary on Windows after successful install.
 			if runtime.GOOS == "windows" {
-				os.Remove(binPath + ".old")
+				_ = os.Remove(oldPath)
+			}
+
+			newVersionOutput, versionErr := exec.Command(binPath, "version").CombinedOutput()
+			if versionErr == nil {
+				installedVersion := parseVersionOutput(string(newVersionOutput))
+				if installedVersion != "" {
+					spinner.Printf("  → Installed version: v%s\n", installedVersion)
+					if installedVersion == version {
+						spinner.Println("  → You already have the latest available version on this module path.")
+					}
+				}
 			}
 
 			fmt.Println()
@@ -537,6 +554,17 @@ func updateCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func parseVersionOutput(output string) string {
+	fields := strings.Fields(strings.TrimSpace(output))
+	if len(fields) < 3 {
+		return ""
+	}
+	if strings.EqualFold(fields[0], "grit") && strings.EqualFold(fields[1], "version") {
+		return strings.TrimPrefix(fields[2], "v")
+	}
+	return ""
 }
 
 func startCmd() *cobra.Command {
