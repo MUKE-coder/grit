@@ -217,8 +217,8 @@ func newCmd() *cobra.Command {
 
 func generateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "generate",
-		Short: "Generate code for your Grit project",
+		Use:     "generate",
+		Short:   "Generate code for your Grit project",
 		Aliases: []string{"g"},
 	}
 
@@ -229,8 +229,8 @@ func generateCmd() *cobra.Command {
 
 func removeCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "remove",
-		Short: "Remove components from your Grit project",
+		Use:     "remove",
+		Short:   "Remove components from your Grit project",
 		Aliases: []string{"rm"},
 	}
 

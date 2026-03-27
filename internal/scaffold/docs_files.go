@@ -417,7 +417,7 @@ Install the Grit CLI globally:
 go install github.com/MUKE-coder/grit/v2/cmd/grit@latest
 `+"```"+`
 
-> Note: Grit CLI 3.x is currently distributed from the Go module path `/v2`.
+> Note: Grit CLI 3.x is currently distributed from the Go module path ` + "`/v2`" + `.
 
 Verify the installation:
 
