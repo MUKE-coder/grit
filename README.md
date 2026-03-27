@@ -41,8 +41,12 @@ grit new myapp --triple --next       # Web + Admin + API (Next.js)
 grit new myapp --double --vite       # Web + API (TanStack Router)
 grit new myapp --single              # Single Go binary + embedded SPA
 grit new myapp --api                 # Go API only
+grit new . --triple --vite           # Scaffold into current directory
+grit new ./ --triple --vite          # Same as above
 grit new-desktop myapp               # Native desktop app (Wails)
 ```
+
+Tip: when using `grit new .`, Grit infers the project name from your current folder name. Use `--force` if the directory is non-empty.
 
 ```bash
 cd myapp
@@ -114,6 +118,7 @@ grit remove resource Post
 # Scaffolding
 grit new <name>                        # Interactive (architecture + frontend)
 grit new <name> --triple --next        # Explicit flags
+grit new . --triple --vite             # Scaffold into current directory
 grit new-desktop <name>                # Desktop app (Wails)
 
 # Code generation

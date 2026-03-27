@@ -169,6 +169,63 @@ func ValidateProjectName(name string) error {
 	return nil
 }
 
+func resolveScaffoldRoot(opts Options) (string, bool, error) {
+	if opts.InPlace {
+		return ".", true, nil
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", false, fmt.Errorf("getting current directory: %w", err)
+	}
+
+	// Quality-of-life behavior: if the user is already inside a directory whose
+	// name matches the project name, scaffold in place instead of nesting.
+	if filepath.Base(cwd) == opts.ProjectName {
+		return ".", true, nil
+	}
+
+	return opts.ProjectName, false, nil
+}
+
+func ensureTargetDirectory(root string, inPlace bool, force bool) error {
+	if !inPlace {
+		if _, err := os.Stat(root); err == nil {
+			return fmt.Errorf("directory %q already exists", root)
+		} else if !os.IsNotExist(err) {
+			return fmt.Errorf("checking directory %q: %w", root, err)
+		}
+		return nil
+	}
+
+	info, err := os.Stat(root)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(root, 0755); err != nil {
+				return fmt.Errorf("creating directory %q: %w", root, err)
+			}
+			return nil
+		}
+		return fmt.Errorf("checking directory %q: %w", root, err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("target %q is not a directory", root)
+	}
+	if force {
+		return nil
+	}
+
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return fmt.Errorf("reading directory %q: %w", root, err)
+	}
+	if len(entries) > 0 {
+		return fmt.Errorf("current directory is not empty; rerun with --force to scaffold in place")
+	}
+
+	return nil
+}
+
 // Run executes the full scaffolding process.
 func Run(opts Options) error {
 	opts.Normalize()

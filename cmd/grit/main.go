@@ -67,40 +67,53 @@ func versionCmd() *cobra.Command {
 func newCmd() *cobra.Command {
 	// New architecture/frontend flags
 	var archFlag, frontendFlag, style string
+	var inPlace, force bool
 
 	// Legacy flags (backward compatibility)
 	var apiOnly, includeExpo, mobileOnly, full bool
 
 	cmd := &cobra.Command{
-		Use:   "new <project-name>",
+		Use:   "new <project-name|.>",
 		Short: "Create a new Grit project",
-		Long:  "Scaffold a new Grit project. Interactive by default — select architecture and frontend.\nUse flags to skip prompts: grit new my-app --single --vite",
+		Long:  "Scaffold a new Grit project. Interactive by default — select architecture and frontend.\nUse flags to skip prompts: grit new my-app --single --vite\nUse `grit new .` to scaffold in the current directory.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			projectName := args[0]
+			projectArg := strings.TrimSpace(args[0])
+			projectName := projectArg
 
-			// Support "grit new ." to scaffold into current directory
-			if projectName == "." {
+			if filepath.Clean(projectArg) == "." {
 				cwd, err := os.Getwd()
 				if err != nil {
 					return fmt.Errorf("getting current directory: %w", err)
 				}
 				projectName = filepath.Base(cwd)
-			} else {
-				if err := scaffold.ValidateProjectName(projectName); err != nil {
-					return err
+				inPlace = true
+			}
+
+			if err := scaffold.ValidateProjectName(projectName); err != nil {
+				if filepath.Clean(projectArg) == "." {
+					return fmt.Errorf("invalid current directory name %q for project generation: %w", projectName, err)
 				}
+				return err
 			}
 
 			opts := scaffold.Options{
 				ProjectName: projectName,
-				InPlace:     args[0] == ".",
 				Style:       style,
+				InPlace:     inPlace,
+				Force:       force,
 				// Legacy flags
 				APIOnly:     apiOnly,
 				IncludeExpo: includeExpo,
 				MobileOnly:  mobileOnly,
 				Full:        full,
+			}
+
+			if !opts.InPlace {
+				cwd, err := os.Getwd()
+				if err == nil && filepath.Base(cwd) == projectName {
+					opts.InPlace = true
+				}
 			}
 
 			// Map architecture shorthand flags
@@ -133,16 +146,23 @@ func newCmd() *cobra.Command {
 				return fmt.Errorf("invalid frontend %q: must be next, vite, or tanstack", frontendFlag)
 			}
 
-			// Apply legacy flag mappings
-			opts.Normalize()
+			// Show interactive selector only when the user did not provide any
+			// architecture/frontend shortcuts or explicit long-form flags.
+			anyScaffoldSelection := cmd.Flags().Changed("arch") ||
+				cmd.Flags().Changed("frontend") ||
+				cmd.Flags().Changed("single") ||
+				cmd.Flags().Changed("double") ||
+				cmd.Flags().Changed("triple") ||
+				cmd.Flags().Changed("vite") ||
+				cmd.Flags().Changed("next") ||
+				cmd.Flags().Changed("api") ||
+				cmd.Flags().Changed("mobile") ||
+				cmd.Flags().Changed("expo") ||
+				cmd.Flags().Changed("full")
 
-			// Only show interactive prompt if NO explicit flags were set
-			anyFlagSet := archFlag != "" || frontendFlag != "" ||
-				apiOnly || mobileOnly || full || includeExpo
-
-			if !anyFlagSet {
+			if !anyScaffoldSelection {
 				printLogo()
-				// Reset to empty so prompt shows
+				// Keep empty values so the prompt can collect architecture/frontend.
 				opts.Architecture = ""
 				opts.Frontend = ""
 				if err := prompt.RunNewProjectPrompt(&opts); err != nil {
@@ -215,14 +235,16 @@ func newCmd() *cobra.Command {
 	cmd.Flags().Bool("single", false, "Shorthand for --arch=single")
 	cmd.Flags().Bool("double", false, "Shorthand for --arch=double")
 	cmd.Flags().Bool("triple", false, "Shorthand for --arch=triple")
+	cmd.Flags().BoolVar(&inPlace, "here", false, "Scaffold into the current directory instead of creating a new folder")
+	cmd.Flags().BoolVar(&force, "force", false, "Allow scaffolding into a non-empty directory (use with --here)")
 
 	return cmd
 }
 
 func generateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "generate",
-		Short: "Generate code for your Grit project",
+		Use:     "generate",
+		Short:   "Generate code for your Grit project",
 		Aliases: []string{"g"},
 	}
 
@@ -233,8 +255,8 @@ func generateCmd() *cobra.Command {
 
 func removeCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "remove",
-		Short: "Remove components from your Grit project",
+		Use:     "remove",
+		Short:   "Remove components from your Grit project",
 		Aliases: []string{"rm"},
 	}
 
@@ -741,7 +763,9 @@ func printSuccess(name string, opts scaffold.Options) {
 
 	white.Println("  Next steps:")
 	fmt.Println()
-	cyan.Printf("    cd %s\n", name)
+	if !opts.InPlace {
+		cyan.Printf("    cd %s\n", name)
+	}
 	cyan.Println("    docker compose up -d")
 
 	switch opts.Architecture {
