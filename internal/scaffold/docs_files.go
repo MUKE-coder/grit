@@ -414,7 +414,7 @@ description: Install Grit and create your first full-stack project in minutes.
 Install the Grit CLI globally:
 
 `+"```bash"+`
-go install github.com/MUKE-coder/grit/v2/cmd/grit@latest
+go install github.com/MUKE-coder/grit/v3/cmd/grit@latest
 `+"```"+`
 
 Verify the installation:
@@ -516,7 +516,7 @@ After updating the CLI, upgrade your project's scaffold files to match:
 
 `+"```bash"+`
 # Update the CLI first
-go install github.com/MUKE-coder/grit/v2/cmd/grit@latest
+go install github.com/MUKE-coder/grit/v3/cmd/grit@latest
 
 # Then upgrade your project
 cd %s
@@ -874,7 +874,7 @@ Update the Grit CLI itself to the latest version. This removes the current binar
 grit update
 ` + "```" + `
 
-This runs ` + "`go install github.com/MUKE-coder/grit/v2/cmd/grit@latest`" + ` under the hood, replacing the old binary with the latest version. Run ` + "`grit version`" + ` afterwards to verify.
+This runs ` + "`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest`" + ` under the hood, replacing the old binary with the latest version. Run ` + "`grit version`" + ` afterwards to verify.
 
 > **Note:** ` + "`grit update`" + ` updates the **CLI tool**. To update your **project's scaffold files**, use ` + "`grit upgrade`" + ` instead.
 

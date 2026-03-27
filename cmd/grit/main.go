@@ -11,13 +11,13 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
-	"github.com/MUKE-coder/grit/v2/internal/deploy"
-	"github.com/MUKE-coder/grit/v2/internal/generate"
-	"github.com/MUKE-coder/grit/v2/internal/maintenance"
-	"github.com/MUKE-coder/grit/v2/internal/project"
-	"github.com/MUKE-coder/grit/v2/internal/prompt"
-	"github.com/MUKE-coder/grit/v2/internal/routeparser"
-	"github.com/MUKE-coder/grit/v2/internal/scaffold"
+	"github.com/MUKE-coder/grit/v3/internal/deploy"
+	"github.com/MUKE-coder/grit/v3/internal/generate"
+	"github.com/MUKE-coder/grit/v3/internal/maintenance"
+	"github.com/MUKE-coder/grit/v3/internal/project"
+	"github.com/MUKE-coder/grit/v3/internal/prompt"
+	"github.com/MUKE-coder/grit/v3/internal/routeparser"
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 var version = "3.5.0"
@@ -517,7 +517,7 @@ func updateCmd() *cobra.Command {
 			}
 
 			spinner.Println("  → Installing latest version...")
-			c := exec.Command("go", "install", "github.com/MUKE-coder/grit/v2/cmd/grit@latest")
+			c := exec.Command("go", "install", "github.com/MUKE-coder/grit/v3/cmd/grit@latest")
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
 			if err := c.Run(); err != nil {

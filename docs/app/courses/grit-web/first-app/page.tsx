@@ -151,14 +151,14 @@ export default function FirstAppCourse() {
           </p>
 
           <CodeBlock filename="Terminal">
-{`go install github.com/MUKE-coder/grit/v2/cmd/grit@latest`}
+{`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest`}
           </CodeBlock>
 
           <h3 className="text-lg font-semibold text-foreground mb-3 mt-6">Command Explained</h3>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
             <li className="flex gap-2"><span className="text-primary">•</span> <Code>go install</Code> tells Go to download and compile a package</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <code className="text-xs bg-muted/30 px-1 rounded">github.com/MUKE-coder/grit/v2/cmd/grit</code> is the path to the Grit CLI on <a href="https://github.com/MUKE-coder/grit" target="_blank" rel="noreferrer" className="text-primary hover:underline">GitHub</a></li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <code className="text-xs bg-muted/30 px-1 rounded">github.com/MUKE-coder/grit/v3/cmd/grit</code> is the path to the Grit CLI on <a href="https://github.com/MUKE-coder/grit" target="_blank" rel="noreferrer" className="text-primary hover:underline">GitHub</a></li>
             <li className="flex gap-2"><span className="text-primary">•</span> <Code>@latest</Code> means get the newest version</li>
           </ul>
 

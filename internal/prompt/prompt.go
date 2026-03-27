@@ -3,7 +3,7 @@ package prompt
 import (
 	"github.com/charmbracelet/huh"
 
-	"github.com/MUKE-coder/grit/v2/internal/scaffold"
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // RunNewProjectPrompt shows an interactive prompt for project configuration.

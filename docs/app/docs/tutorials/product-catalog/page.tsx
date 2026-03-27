@@ -67,7 +67,7 @@ export default function TutorialProductCatalogPage() {
                   "Go 1.21+ installed",
                   "Node.js 18+ and pnpm installed",
                   "Docker and Docker Compose installed",
-                  "Grit CLI installed globally (go install github.com/MUKE-coder/grit/v2/cmd/grit@latest)",
+                  "Grit CLI installed globally (go install github.com/MUKE-coder/grit/v3/cmd/grit@latest)",
                 ].map((item) => (
                   <li
                     key={item}
