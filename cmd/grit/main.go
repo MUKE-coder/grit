@@ -147,16 +147,23 @@ func newCmd() *cobra.Command {
 				return fmt.Errorf("invalid frontend %q: must be next, vite, or tanstack", frontendFlag)
 			}
 
-			// Apply legacy flag mappings
-			opts.Normalize()
+			// Show interactive selector only when the user did not provide any
+			// architecture/frontend shortcuts or explicit long-form flags.
+			anyScaffoldSelection := cmd.Flags().Changed("arch") ||
+				cmd.Flags().Changed("frontend") ||
+				cmd.Flags().Changed("single") ||
+				cmd.Flags().Changed("double") ||
+				cmd.Flags().Changed("triple") ||
+				cmd.Flags().Changed("vite") ||
+				cmd.Flags().Changed("next") ||
+				cmd.Flags().Changed("api") ||
+				cmd.Flags().Changed("mobile") ||
+				cmd.Flags().Changed("expo") ||
+				cmd.Flags().Changed("full")
 
-			// Only show interactive prompt if NO explicit flags were set
-			anyFlagSet := archFlag != "" || frontendFlag != "" ||
-				apiOnly || mobileOnly || full || includeExpo
-
-			if !anyFlagSet {
+			if !anyScaffoldSelection {
 				printLogo()
-				// Reset to empty so prompt shows
+				// Keep empty values so the prompt can collect architecture/frontend.
 				opts.Architecture = ""
 				opts.Frontend = ""
 				if err := prompt.RunNewProjectPrompt(&opts); err != nil {
