@@ -139,9 +139,50 @@ export default function QuickStartPage() {
               <CodeBlock terminal code="grit new myapp" className="mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>
+                  The <strong>interactive CLI</strong> walks you through selecting an architecture mode
+                  and frontend option. Grit supports <strong>5 architecture modes</strong>:{' '}
+                  <code>single</code> (API only), <code>double</code> (API + web),{' '}
+                  <code>triple</code> (API + web + admin), <code>api</code> (headless API),
+                  and <code>mobile</code> (API + Expo). It also supports <strong>2 frontend options</strong>:{' '}
+                  <code>Next.js</code> and <code>TanStack Router (Vite)</code>.
+                </p>
+                <p>
                   The project name must be lowercase, alphanumeric, and hyphens
                   only (e.g., <code>my-saas-app</code>). It must start with a
                   letter and cannot end with a hyphen.
+                </p>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                <h3 className="text-base font-semibold text-foreground/90">
+                  Flag shortcuts (skip prompts)
+                </h3>
+                <p className="text-[15px] text-muted-foreground">
+                  Use flags to skip the interactive prompts and scaffold instantly:
+                </p>
+                <CodeBlock terminal code="grit new myapp --triple --vite" className="mb-0" />
+                <p className="text-[15px] text-muted-foreground mt-3">
+                  Available flags: <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--single</code>,{' '}
+                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--double</code>,{' '}
+                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--triple</code>,{' '}
+                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--api</code>,{' '}
+                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--mobile</code> for architecture, and{' '}
+                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--vite</code>,{' '}
+                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--next</code> for frontend.
+                </p>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                <h3 className="text-base font-semibold text-foreground/90">
+                  In-place scaffolding
+                </h3>
+                <p className="text-[15px] text-muted-foreground">
+                  Scaffold directly into the current directory instead of creating a new folder:
+                </p>
+                <CodeBlock terminal code="grit new . --triple --vite" className="mb-0" />
+                <p className="text-sm text-muted-foreground/60 mt-2">
+                  Use <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--force</code> to
+                  scaffold into a non-empty directory.
                 </p>
               </div>
             </div>
@@ -455,6 +496,17 @@ turbo dev`} className="mt-4 mb-0 glow-purple-sm" />
                   </Link>
                 ))}
               </div>
+            </div>
+
+            {/* Bug Reports */}
+            <div className="mb-8 rounded-xl border border-primary/20 bg-primary/5 p-5">
+              <p className="text-[15px] text-muted-foreground leading-relaxed">
+                Found a bug or something doesn&apos;t work? Please open an issue at{' '}
+                <a href="https://github.com/MUKE-coder/grit/issues" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  https://github.com/MUKE-coder/grit/issues
+                </a>{' '}
+                — your feedback helps us improve Grit for everyone.
+              </p>
             </div>
 
             {/* Nav */}

@@ -202,6 +202,7 @@ type Post struct {
 6. **Use Zod** for validation — shared between frontend and backend
 7. **Use Tailwind + shadcn/ui** — no custom CSS files
 8. **Use App Router** — never Pages Router
+9. **Report bugs** — if you encounter a bug, open an issue at https://github.com/MUKE-coder/grit/issues with the error message and steps to reproduce
 `, "`", opts.ProjectName)
 }
 

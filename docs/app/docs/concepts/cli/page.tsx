@@ -379,7 +379,7 @@ grit rm resource <Name>`} />
                   </div>
                   <div className="p-5 font-mono text-sm">
                     <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit version</span></div>
-                    <div className="mt-1"><span className="text-muted-foreground/60">grit version 0.13.0</span></div>
+                    <div className="mt-1"><span className="text-muted-foreground/60">grit version 3.6.0</span></div>
                   </div>
                 </div>
               </div>
@@ -401,6 +401,18 @@ grit rm resource <Name>`} />
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt;</td>
                         <td className="px-4 py-2.5">Scaffold a new project (interactive by default)</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit new .</td>
+                        <td className="px-4 py-2.5">Scaffold into the current directory</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit new . --force</td>
+                        <td className="px-4 py-2.5">Scaffold into a non-empty directory</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit new myapp --here</td>
+                        <td className="px-4 py-2.5">Explicit in-place scaffolding</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt; --api</td>
@@ -506,6 +518,17 @@ grit rm resource <Name>`} />
                   </table>
                 </div>
               </div>
+            </div>
+
+            {/* Bug Reports */}
+            <div className="mb-10 rounded-xl border border-primary/20 bg-primary/5 p-5">
+              <p className="text-[15px] text-muted-foreground leading-relaxed">
+                Found a bug? Open an issue at{' '}
+                <a href="https://github.com/MUKE-coder/grit/issues" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  https://github.com/MUKE-coder/grit/issues
+                </a>{' '}
+                — we fix bugs fast and appreciate every report.
+              </p>
             </div>
 
             {/* Nav */}

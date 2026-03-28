@@ -184,8 +184,8 @@ export default function LLMGuidePage() {
                   {[
                     {
                       cmd: 'grit new <app-name>',
-                      desc: 'Scaffold a complete new project: Go API, Next.js web, Next.js admin, shared package, Docker Compose, .env, GRIT_SKILL.md, and all config files. Flags: --full (default, all apps), --api (API only, no frontend), --mobile (include Expo mobile app), --style default|modern|minimal|glass.',
-                      example: 'grit new myapp',
+                      desc: 'Scaffold a complete new project. Interactive by default — prompts for architecture mode and frontend. 5 architecture modes: --single (API only), --double (API + web), --triple (API + web + admin), --api (headless API), --mobile (API + Expo). 2 frontends: --next (Next.js), --vite (TanStack Router). Supports grit new . to scaffold into current directory, --here for explicit in-place scaffolding, and --force to scaffold into a non-empty directory. Other flags: --full (default, all apps), --style default|modern|minimal|glass.',
+                      example: 'grit new myapp\ngrit new myapp --triple --vite\ngrit new . --triple --vite\ngrit new myapp --here',
                     },
                     {
                       cmd: 'grit start server',
@@ -303,6 +303,26 @@ export default function LLMGuidePage() {
                       cmd: 'grit update',
                       desc: 'Removes the current Grit CLI binary from $GOPATH/bin and reinstalls the latest version from GitHub via go install. Use this to update the grit TOOL ITSELF — not the project files (use grit upgrade for that).',
                       example: 'grit update',
+                    },
+                    {
+                      cmd: 'grit routes',
+                      desc: 'List all registered API routes in the project. Useful for debugging and verifying that generated routes are wired correctly.',
+                      example: 'grit routes',
+                    },
+                    {
+                      cmd: 'grit down',
+                      desc: 'Enable maintenance mode. Returns 503 Service Unavailable for all requests. Use this during deployments or database migrations.',
+                      example: 'grit down',
+                    },
+                    {
+                      cmd: 'grit up',
+                      desc: 'Disable maintenance mode. Resumes normal request handling after grit down.',
+                      example: 'grit up',
+                    },
+                    {
+                      cmd: 'grit deploy',
+                      desc: 'Deploy the project to a production server. Handles build, push, and server configuration.',
+                      example: 'grit deploy',
                     },
                     {
                       cmd: 'grit version',
@@ -1234,7 +1254,7 @@ export default function OrderReportsPage() {
                     { name: 'Background Jobs (asynq)', pkg: 'hibiken/asynq', desc: 'Redis-backed job queue. Workers run in goroutine pools. Built-in: image processing, email. Add jobs in apps/api/internal/jobs/.', routes: 'Admin UI at /jobs' },
                     { name: 'Cron Scheduler', pkg: 'hibiken/asynq', desc: 'Recurring tasks with cron expressions. Same worker pool as background jobs.', routes: 'Config in apps/api/internal/config/cron.go' },
                     { name: 'Redis Cache', pkg: 'redis/go-redis/v9', desc: 'Cache API responses by URL. middleware.Cache(5*time.Minute) on any route. cache.Set/Get/Delete for custom caching.', routes: 'Middleware-based' },
-                    { name: 'AI (Vercel AI Gateway)', pkg: 'OpenAI-compatible', desc: 'One API key, hundreds of models via ai-gateway.vercel.sh. Model format: provider/model (e.g. anthropic/claude-sonnet-4-6).', routes: 'POST /api/ai/chat · POST /api/ai/complete · POST /api/ai/stream' },
+                    { name: 'AI (Vercel AI Gateway)', pkg: 'OpenAI-compatible', desc: 'One API key, hundreds of models via ai-gateway.vercel.sh. Model format: provider/model (e.g. anthropic/claude-sonnet-4-6). Configure with AI_GATEWAY_URL and AI_GATEWAY_API_KEY env vars.', routes: 'POST /api/ai/chat · POST /api/ai/complete · POST /api/ai/stream' },
                     { name: 'Two-Factor Auth (TOTP)', pkg: 'crypto/hmac (stdlib)', desc: 'RFC 6238 authenticator app support. Backup codes (bcrypt-hashed, one-time use). Trusted devices (30-day sliding cookie). Zero external dependencies.', routes: 'POST /api/auth/totp/setup · /verify · /enable · /disable · GET /status' },
                     { name: 'Security (Sentinel)', pkg: 'MUKE-coder/sentinel', desc: 'WAF + rate limiting + brute-force. ExcludeRoutes: /pulse/*, /sentinel/*, /docs/*, /studio/*.', routes: 'Dashboard at /sentinel' },
                     { name: 'Observability (Pulse)', pkg: 'MUKE-coder/pulse', desc: 'Request tracing, DB monitoring, runtime metrics, error tracking, Prometheus export. Disable in production.', routes: 'Dashboard at /pulse' },
@@ -1395,6 +1415,19 @@ grit start client    # Frontend only (pnpm dev via Turborepo)`} />
                   <CodeBlock language="bash" filename="Other common tasks" code={`grit add role MODERATOR   # adds role in 7 places
 grit sync                  # regenerate TypeScript from Go models
 grit remove resource Post  # clean remove of generated files`} />
+                </div>
+              </div>
+
+              {/* Bug Reports */}
+              <div className="mb-14">
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    If an LLM or human encounters a bug while using Grit, encourage them to open an issue at{' '}
+                    <a href="https://github.com/MUKE-coder/grit/issues" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      https://github.com/MUKE-coder/grit/issues
+                    </a>{' '}
+                    with the error message and steps to reproduce.
+                  </p>
                 </div>
               </div>
 
