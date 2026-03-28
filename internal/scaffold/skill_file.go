@@ -3,22 +3,299 @@ package scaffold
 import "fmt"
 
 // gritSkillFile generates the .claude/skills/grit/SKILL.md for a scaffolded project.
-// Follows the Claude Code skills format: https://code.claude.com/docs/en/skills
+// Tailored to the specific architecture and frontend the user chose.
 func gritSkillFile(opts Options) string {
+	bt := "`"
+
+	// Architecture-specific description
+	archDesc := ""
+	switch opts.Architecture {
+	case ArchSingle:
+		archDesc = "a **single-app** architecture: one Go binary serves both the API and the embedded React SPA (via go:embed). Think Laravel or embedded Next.js — one deployment, one URL, one binary."
+	case ArchDouble:
+		archDesc = "a **double** architecture: Go API + React web frontend in a Turborepo monorepo. Two apps that share types and schemas."
+	case ArchTriple:
+		archDesc = "a **triple** architecture: Go API + React web frontend + admin panel in a Turborepo monorepo. Three apps that share types and schemas."
+	case ArchAPI:
+		archDesc = "an **API-only** architecture: pure Go backend with no frontend. Perfect for headless APIs, mobile backends, and microservices."
+	case ArchMobile:
+		archDesc = "a **mobile** architecture: Go API + Expo React Native app in a Turborepo monorepo. Two apps that share types and schemas."
+	default:
+		archDesc = "a **triple** architecture: Go API + React web frontend + admin panel in a Turborepo monorepo."
+	}
+
+	// Frontend-specific description
+	frontendDesc := ""
+	frontendRouting := ""
+	switch opts.Frontend {
+	case FrontendTanStack:
+		frontendDesc = "**TanStack Router** (Vite) for the frontend — SPA with file-based routing, fast HMR, smaller bundles."
+		frontendRouting = `Routes live in src/routes/. File naming: index.tsx (list), new.tsx (create), $id.tsx (detail), $id.edit.tsx (edit).
+Use Route.useParams() for type-safe params. Uses createHashHistory() for Wails desktop compatibility.
+Navigation: import { Link, useNavigate } from '@tanstack/react-router'.`
+	default:
+		frontendDesc = "**Next.js** (App Router) for the frontend — SSR, SSG, ISR, SEO-optimized."
+		frontendRouting = `Routes live in app/. File naming: page.tsx (route), layout.tsx (layout), loading.tsx, error.tsx.
+Use 'use client' directive for client components. Server Components by default.
+Navigation: import { useRouter } from 'next/navigation', import Link from 'next/link'.`
+	}
+
+	// Project structure based on architecture
+	projectStructure := ""
+	switch opts.Architecture {
+	case ArchSingle:
+		projectStructure = fmt.Sprintf(`%[1]s/
+├── main.go                       # Entry point (go:embed frontend/dist)
+├── internal/
+│   ├── config/                   # Loads .env
+│   ├── database/                 # GORM connection
+│   ├── models/                   # GORM models
+│   ├── handlers/                 # HTTP handlers
+│   ├── services/                 # Business logic
+│   ├── middleware/               # Auth, CORS, logger, cache, maintenance
+│   ├── routes/                   # Route registration
+│   ├── mail/                     # Email (Resend)
+│   ├── storage/                  # File storage (S3)
+│   ├── jobs/                     # Background jobs (asynq)
+│   ├── cache/                    # Redis cache
+│   └── ai/                       # AI service (Vercel AI Gateway)
+├── frontend/                     # React app (Vite + TanStack Router)
+│   ├── src/routes/               # File-based routes
+│   ├── src/components/           # React components
+│   ├── src/hooks/                # Custom hooks
+│   └── src/lib/                  # API client, utilities
+├── .env                          # Environment variables
+└── docker-compose.yml            # PostgreSQL, Redis, MinIO, Mailhog`, opts.ProjectName)
+	case ArchAPI:
+		projectStructure = fmt.Sprintf(`%[1]s/
+├── apps/api/                     # Go backend (Gin + GORM)
+│   ├── cmd/server/main.go
+│   └── internal/                 # config, database, models, handlers, services, middleware, routes
+├── .env
+└── docker-compose.yml`, opts.ProjectName)
+	case ArchDouble:
+		webDir := "web/"
+		if opts.Frontend == FrontendTanStack {
+			webDir = "web/                      # React app (Vite + TanStack Router)"
+		} else {
+			webDir = "web/                      # Next.js frontend (App Router)"
+		}
+		projectStructure = fmt.Sprintf(`%[1]s/
+├── packages/shared/              # Zod schemas, TS types, constants
+├── apps/
+│   ├── api/                      # Go backend (Gin + GORM)
+│   │   ├── cmd/server/main.go
+│   │   └── internal/             # config, database, models, handlers, services, middleware, routes
+│   └── %[2]s
+├── .env
+├── docker-compose.yml
+└── turbo.json                    # Turborepo configuration`, opts.ProjectName, webDir)
+	case ArchMobile:
+		projectStructure = fmt.Sprintf(`%[1]s/
+├── packages/shared/              # Zod schemas, TS types, constants
+├── apps/
+│   ├── api/                      # Go backend (Gin + GORM)
+│   │   ├── cmd/server/main.go
+│   │   └── internal/             # config, database, models, handlers, services, middleware, routes
+│   └── expo/                     # Expo React Native app
+│       ├── app/                  # Expo Router screens
+│       ├── components/           # React Native components
+│       └── hooks/                # Custom hooks
+├── .env
+├── docker-compose.yml
+└── turbo.json`, opts.ProjectName)
+	default: // Triple
+		adminDir := "admin/"
+		webDir := "web/"
+		if opts.Frontend == FrontendTanStack {
+			webDir = "web/                      # React app (Vite + TanStack Router)"
+			adminDir = "admin/                    # Admin panel (Vite + TanStack Router)"
+		} else {
+			webDir = "web/                      # Next.js frontend (App Router)"
+			adminDir = "admin/                    # Next.js admin panel (App Router)"
+		}
+		projectStructure = fmt.Sprintf(`%[1]s/
+├── packages/shared/              # Zod schemas, TS types, constants
+├── apps/
+│   ├── api/                      # Go backend (Gin + GORM)
+│   │   ├── cmd/server/main.go
+│   │   └── internal/             # config, database, models, handlers, services, middleware, routes
+│   ├── %[2]s
+│   └── %[3]s
+├── .env
+├── docker-compose.yml
+└── turbo.json`, opts.ProjectName, webDir, adminDir)
+	}
+
+	// Architecture-specific common tasks
+	addFieldPaths := ""
+	switch opts.Architecture {
+	case ArchSingle:
+		addFieldPaths = `1. Add field to Go model (internal/models/<name>.go)
+2. Update handler if field needs special handling
+3. Update Zod schema (frontend/src/schemas/<name>.ts)
+4. Update TypeScript type (frontend/src/types/<name>.ts)
+5. Restart API (GORM auto-migrates)`
+	case ArchAPI:
+		addFieldPaths = `1. Add field to Go model (apps/api/internal/models/<name>.go)
+2. Update handler if field needs special handling
+3. Restart API (GORM auto-migrates)`
+	default:
+		addFieldPaths = `1. Add field to Go model (apps/api/internal/models/<name>.go)
+2. Update handler if field needs special handling
+3. Update Zod schema (packages/shared/schemas/<name>.ts)
+4. Update TypeScript type (packages/shared/types/<name>.ts)
+5. Update admin resource (apps/admin/resources/<name>.ts) — add column + form field
+6. Restart API (GORM auto-migrates)`
+	}
+
+	// Architecture-specific critical rules
+	frontendRules := ""
+	switch opts.Architecture {
+	case ArchAPI:
+		frontendRules = "" // No frontend rules for API-only
+	case ArchSingle:
+		if opts.Frontend == FrontendTanStack {
+			frontendRules = `5. **Use React Query** for all data fetching — no raw fetch
+6. **Use Zod** for validation
+7. **Use Tailwind + shadcn/ui** — no custom CSS files
+8. **Use TanStack Router** — file-based routes in src/routes/`
+		} else {
+			frontendRules = `5. **Use React Query** for all data fetching — no raw fetch
+6. **Use Zod** for validation
+7. **Use Tailwind + shadcn/ui** — no custom CSS files
+8. **Use App Router** — never Pages Router`
+		}
+	default:
+		if opts.Frontend == FrontendTanStack {
+			frontendRules = `5. **Use React Query** for all data fetching — no raw fetch
+6. **Use Zod** for validation — shared between frontend and backend
+7. **Use Tailwind + shadcn/ui** — no custom CSS files
+8. **Use TanStack Router** — file-based routes in src/routes/`
+		} else {
+			frontendRules = `5. **Use React Query** for all data fetching — no raw fetch
+6. **Use Zod** for validation — shared between frontend and backend
+7. **Use Tailwind + shadcn/ui** — no custom CSS files
+8. **Use App Router** — never Pages Router`
+		}
+	}
+
+	// Build the marker comments section (only for architectures that have them)
+	markerSection := ""
+	if opts.Architecture != ArchAPI {
+		tsMarkers := ""
+		if opts.Architecture != ArchSingle || opts.Frontend != "" {
+			tsMarkers = fmt.Sprintf(`
+%[1]stypescript
+// grit:schemas         — schemas/index.ts
+// grit:types           — types/index.ts
+// grit:api-routes      — constants/index.ts
+%[1]s`, bt)
+			if opts.ShouldIncludeAdmin() {
+				tsMarkers += fmt.Sprintf(`
+%[1]stypescript
+// grit:resources       — resources/index.ts (imports)
+// grit:resource-list   — resources/index.ts (registry array)
+%[1]s`, bt)
+			}
+		}
+
+		markerSection = fmt.Sprintf(`
+## Marker Comments
+
+Grit uses marker comments to inject generated code. **Never delete these:**
+
+%[1]sgo
+// grit:models          — models/user.go (AutoMigrate list)
+// grit:handlers        — routes/routes.go (handler initialization)
+// grit:routes:protected — routes/routes.go (protected route group)
+// grit:routes:admin    — routes/routes.go (admin route group)
+%[1]s
+%[2]s
+---
+`, bt, tsMarkers)
+	} else {
+		markerSection = fmt.Sprintf(`
+## Marker Comments
+
+Grit uses marker comments to inject generated code. **Never delete these:**
+
+%[1]sgo
+// grit:models          — models/user.go (AutoMigrate list)
+// grit:handlers        — routes/routes.go (handler initialization)
+// grit:routes:protected — routes/routes.go (protected route group)
+// grit:routes:admin    — routes/routes.go (admin route group)
+%[1]s
+
+---
+`, bt)
+	}
+
+	// Single app specific notes
+	singleAppNote := ""
+	if opts.Architecture == ArchSingle {
+		singleAppNote = fmt.Sprintf(`
+## Single App — go:embed
+
+This project uses %[1]sgo:embed%[1]s to embed the frontend build output into the Go binary:
+
+%[1]sgo
+//go:embed frontend/dist/*
+var frontendFS embed.FS
+%[1]s
+
+In **development**, run Go and Vite separately — Vite proxies API calls to Go:
+- Go API: %[1]sgo run main.go%[1]s (port 8080)
+- Vite dev: %[1]scd frontend && pnpm dev%[1]s (port 5173, proxies /api → 8080)
+
+For **production**, build the frontend first, then the Go binary:
+%[1]sash
+cd frontend && pnpm build    # Outputs to frontend/dist/
+go build -o myapp main.go   # Embeds frontend/dist/ into binary
+./myapp                      # Serves API + frontend on port 8080
+%[1]s
+
+---
+`, bt)
+	}
+
+	// Mobile-specific notes
+	mobileNote := ""
+	if opts.Architecture == ArchMobile {
+		mobileNote = fmt.Sprintf(`
+## Mobile — Expo React Native
+
+The Expo app lives in %[1]sapps/expo/%[1]s and uses Expo Router for file-based navigation.
+
+**Development:**
+- Start API: %[1]scd apps/api && go run cmd/server/main.go%[1]s
+- Start Expo: %[1]scd apps/expo && npx expo start%[1]s
+- Scan QR code with Expo Go on your phone
+
+**Token storage:** Use %[1]sexpo-secure-store%[1]s (encrypted) — NOT AsyncStorage.
+
+**API URL:** On physical devices, %[1]slocalhost%[1]s won't work — use your machine's local IP.
+
+---
+`, bt)
+	}
+
 	return fmt.Sprintf(`---
 name: grit
 description: >
-  Grit framework conventions and patterns for Go + React full-stack monorepo projects.
-  Use when modifying models, handlers, routes, schemas, types, resources, or admin panel
-  components in a Grit project. Automatically loaded as background knowledge.
+  Grit framework conventions and patterns for this %[3]s project.
+  Use when modifying models, handlers, routes, schemas, types, or components.
+  Automatically loaded as background knowledge.
 user-invocable: false
 ---
 
-# Grit Framework
+# Grit Framework — %[4]s
 
-Grit is a full-stack meta-framework: **Go** (Gin + GORM + PostgreSQL) + **React/Next.js** (App Router + Tailwind + shadcn/ui) in a monorepo. Think Laravel + Filament, but Go + React.
+This project uses %[5]s
 
-**Batteries included:** file storage (S3), email (Resend), background jobs (asynq), cron, Redis cache, AI (Claude/OpenAI), security (Sentinel), observability (Pulse), auto-generated API docs (gin-docs).
+It uses %[6]s
+
+**Batteries included:** file storage (S3), email (Resend), background jobs (asynq), cron, Redis cache, AI (Vercel AI Gateway), security (Sentinel), observability (Pulse), auto-generated API docs (gin-docs).
 
 For detailed API conventions, code patterns, and service documentation, see [reference.md](reference.md).
 
@@ -27,18 +304,10 @@ For detailed API conventions, code patterns, and service documentation, see [ref
 ## CLI Commands
 
 %[1]sash
-# Project creation (interactive by default)
-grit new myapp                        # Interactive: select architecture + frontend
-grit new myapp --triple --next        # Triple monorepo with Next.js
-grit new myapp --single --vite        # Single app with TanStack Router (Vite)
-grit new myapp --double --vite        # Web + API with TanStack Router
-grit new myapp --api                  # Go API only (no frontend)
-grit new-desktop myapp                # Wails desktop app
-
 # Code generation
 grit generate resource Post --fields "title:string,content:text,published:bool"
 grit generate resource Post --from post.yaml
-grit generate resource Category -i    # Interactive mode
+grit remove resource Post               # Cleanly removes all generated files + injections
 
 # Development
 grit start                            # Start dev servers
@@ -58,53 +327,12 @@ grit upgrade                          # Update project to latest templates
 grit update                           # Update Grit CLI itself
 %[1]s
 
-### Architecture modes
-- **single**: Go + embedded React SPA (go:embed, one binary)
-- **double**: Turborepo with Web + API
-- **triple**: Turborepo with Web + Admin + API (default)
-- **api**: Go API only
-- **mobile**: Turborepo with API + Expo
-
-### Frontend options
-- **next**: Next.js (SSR, App Router) — default
-- **tanstack/vite**: TanStack Router + Vite (SPA, fast builds)
-
 ---
 
 ## Project Structure
 
 %[1]s
-%[2]s/
-├── .env                          # Environment variables
-├── docker-compose.yml            # PostgreSQL, Redis, MinIO, Mailhog
-├── .claude/skills/grit/          # This skill — AI assistant guide
-├── packages/shared/              # Zod schemas, TS types, constants
-│   ├── schemas/                  # Zod validation (user.ts, etc.)
-│   ├── types/                    # TypeScript interfaces
-│   └── constants/                # API_ROUTES, ROLES, etc.
-├── apps/
-│   ├── api/                      # Go backend (Gin + GORM)
-│   │   ├── cmd/server/main.go
-│   │   └── internal/
-│   │       ├── config/           # Loads .env
-│   │       ├── database/         # GORM connection
-│   │       ├── models/           # GORM models
-│   │       ├── handlers/         # HTTP handlers
-│   │       ├── services/         # Business logic
-│   │       ├── middleware/       # Auth, CORS, logger, cache
-│   │       ├── routes/           # Route registration
-│   │       ├── mail/             # Email (Resend)
-│   │       ├── storage/          # File storage (S3)
-│   │       ├── jobs/             # Background jobs (asynq)
-│   │       ├── cron/             # Scheduled tasks
-│   │       ├── cache/            # Redis cache
-│   │       └── ai/               # AI service
-│   ├── web/                      # SaaS landing page (Next.js)
-│   └── admin/                    # Filament-like admin panel
-│       ├── components/           # Layout, tables, forms, widgets
-│       ├── hooks/                # use-auth, use-resource, use-system
-│       ├── resources/            # Resource definitions
-│       └── lib/                  # defineResource(), icons
+%[7]s
 %[1]s
 
 **Mounted dashboards** (auto-configured in routes.go):
@@ -121,7 +349,7 @@ grit update                           # Update Grit CLI itself
 grit generate resource Post --fields "title:string,content:text,published:bool,views:int"
 %[1]s
 
-Creates **8 files** (model, service, handler, schema, types, hooks, resource def, admin page) and injects into **6 existing files** (models, routes, schemas, types, constants, resource registry) via marker comments.
+Creates model, service, handler, schema, types, hooks, and injects into existing files via marker comments.
 
 ### Field Types
 
@@ -141,25 +369,10 @@ Creates **8 files** (model, service, handler, schema, types, hooks, resource def
 **Modifiers:** %[1]s:unique%[1]s, %[1]s:required%[1]s, %[1]s:optional%[1]s (append after type).
 
 ---
+%[8]s%[9]s%[10]s
+## Frontend Routing
 
-## Marker Comments
-
-Grit uses marker comments to inject generated code. **Never delete these:**
-
-%[1]sgo
-// grit:models          — models/user.go (AutoMigrate list)
-// grit:handlers        — routes/routes.go (handler initialization)
-// grit:routes:protected — routes/routes.go (protected route group)
-// grit:routes:admin    — routes/routes.go (admin route group)
-%[1]s
-
-%[1]stypescript
-// grit:schemas         — schemas/index.ts
-// grit:types           — types/index.ts
-// grit:api-routes      — constants/index.ts
-// grit:resources       — resources/index.ts (imports)
-// grit:resource-list   — resources/index.ts (registry array)
-%[1]s
+%[11]s
 
 ---
 
@@ -167,25 +380,20 @@ Grit uses marker comments to inject generated code. **Never delete these:**
 
 ### Add a field to an existing resource
 
-1. Add field to Go model (%[1]sapps/api/internal/models/<name>.go%[1]s)
-2. Update handler if field needs special handling
-3. Update Zod schema (%[1]spackages/shared/schemas/<name>.ts%[1]s)
-4. Update TypeScript type (%[1]spackages/shared/types/<name>.ts%[1]s)
-5. Update admin resource (%[1]sapps/admin/resources/<name>.ts%[1]s) — add column + form field
-6. Restart API (GORM auto-migrates)
+%[12]s
 
 ### Add a new API endpoint
 
-1. Create/update handler in %[1]sapps/api/internal/handlers/%[1]s
-2. Register route in %[1]sapps/api/internal/routes/routes.go%[1]s
-3. Create React Query hook in %[1]sapps/web/hooks/%[1]s or %[1]sapps/admin/hooks/%[1]s
+1. Create/update handler in the handlers directory
+2. Register route in routes.go
+3. Create React Query hook if frontend needs it
 
 ### Add a relationship
 
 %[1]sgo
 type Post struct {
-    CategoryID uint     %[1]sjson:"category_id"%[1]s
-    Category   Category %[1]sgorm:"foreignKey:CategoryID" json:"category,omitempty"%[1]s
+    CategoryID uint     // json:"category_id"
+    Category   Category // gorm:"foreignKey:CategoryID" json:"category,omitempty"
 }
 // In handler: query.Preload("Category").Find(&posts)
 %[1]s
@@ -198,17 +406,154 @@ type Post struct {
 2. **Follow the response format** — %[1]s{ data, message }%[1]s / %[1]s{ data, meta }%[1]s / %[1]s{ error: { code, message } }%[1]s
 3. **Always handle errors in Go** — never ignore with %[1]s_%[1]s
 4. **Keep the folder structure** — don't move files
-5. **Use React Query** for all data fetching — no raw %[1]sfetch%[1]s
-6. **Use Zod** for validation — shared between frontend and backend
-7. **Use Tailwind + shadcn/ui** — no custom CSS files
-8. **Use App Router** — never Pages Router
+%[13]s
 9. **Report bugs** — if you encounter a bug, open an issue at https://github.com/MUKE-coder/grit/issues with the error message and steps to reproduce
-`, "`", opts.ProjectName)
+`,
+		bt,                  // [1] backtick
+		opts.ProjectName,    // [2] project name (unused in this format but kept for consistency)
+		opts.Architecture,   // [3] architecture name
+		archTitle(opts),     // [4] human-readable title
+		archDesc,            // [5] architecture description
+		frontendDesc,        // [6] frontend description
+		projectStructure,    // [7] project tree
+		markerSection,       // [8] marker comments
+		singleAppNote,       // [9] single app note (empty if not single)
+		mobileNote,          // [10] mobile note (empty if not mobile)
+		frontendRouting,     // [11] routing info
+		addFieldPaths,       // [12] add field steps
+		frontendRules,       // [13] frontend-specific rules
+	)
+}
+
+func archTitle(opts Options) string {
+	arch := string(opts.Architecture)
+	fe := ""
+	switch opts.Frontend {
+	case FrontendTanStack:
+		fe = " + TanStack Router (Vite)"
+	case FrontendNext:
+		fe = " + Next.js"
+	}
+
+	switch opts.Architecture {
+	case ArchSingle:
+		return "Single App" + fe
+	case ArchDouble:
+		return "Double (Web + API)" + fe
+	case ArchTriple:
+		return "Triple (Web + Admin + API)" + fe
+	case ArchAPI:
+		return "API Only"
+	case ArchMobile:
+		return "Mobile (API + Expo)"
+	default:
+		return arch + fe
+	}
 }
 
 // gritSkillReference generates .claude/skills/grit/reference.md with detailed
 // API conventions, code patterns, admin panel docs, and service documentation.
+// This file is the same across architectures (API conventions don't change).
 func gritSkillReference(opts Options) string {
+	bt := "`"
+
+	// Only include admin panel section for triple architecture
+	adminSection := ""
+	if opts.ShouldIncludeAdmin() {
+		adminSection = fmt.Sprintf(`
+## Admin Panel — Resource Definitions
+
+%[1]stypescript
+import { defineResource } from "@/lib/resource";
+
+export const postsResource = defineResource({
+  name: "Post",
+  slug: "posts",
+  endpoint: "/api/posts",
+  icon: "FileText",
+  label: { singular: "Post", plural: "Posts" },
+
+  table: {
+    columns: [
+      { key: "id", label: "ID", sortable: true, format: "number" },
+      { key: "title", label: "Title", sortable: true, searchable: true },
+      { key: "published", label: "Published", format: "boolean" },
+      { key: "created_at", label: "Created", sortable: true, format: "relative" },
+    ],
+    defaultSort: { key: "created_at", direction: "desc" },
+    filters: [{ key: "published", label: "Published", type: "boolean" }],
+    pageSize: 20,
+    searchable: true,
+    actions: ["create", "edit", "delete"],
+  },
+
+  form: {
+    fields: [
+      { key: "title", label: "Title", type: "text", required: true },
+      { key: "content", label: "Content", type: "textarea", required: true },
+      { key: "published", label: "Published", type: "toggle", defaultValue: false },
+      { key: "cover", label: "Cover Image", type: "image" },
+    ],
+    layout: "single",
+  },
+});
+%[1]s
+
+### Form Field Types
+
+| Type | Component | Notes |
+|------|----------|-------|
+| %[1]stext%[1]s | Text input | prefix, suffix |
+| %[1]stextarea%[1]s | Textarea | configurable rows |
+| %[1]snumber%[1]s | Number input | min, max, step |
+| %[1]sselect%[1]s | Dropdown | requires options |
+| %[1]sdate%[1]s / %[1]sdatetime%[1]s | Picker | |
+| %[1]stoggle%[1]s / %[1]scheckbox%[1]s | Boolean | |
+| %[1]simage%[1]s | Image upload | react-dropzone |
+| %[1]srichtext%[1]s | Tiptap WYSIWYG | |
+| %[1]srelationship-select%[1]s | Searchable dropdown | belongs_to |
+| %[1]smulti-relationship-select%[1]s | Multi-select tags | many_to_many |
+
+### Form View Variants
+
+%[1]sformView%[1]s: %[1]smodal%[1]s (default), %[1]spage%[1]s, %[1]smodal-steps%[1]s, %[1]spage-steps%[1]s
+
+---
+`, bt)
+	}
+
+	// Frontend patterns section (skip for API-only)
+	frontendSection := ""
+	if opts.Architecture != ArchAPI {
+		frontendSection = fmt.Sprintf(`
+## Frontend Patterns
+
+### React Query Hooks
+
+%[1]stypescript
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
+
+export function usePosts({ page = 1, pageSize = 20, search = "" } = {}) {
+  return useQuery({
+    queryKey: ["posts", { page, pageSize, search }],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: String(page),
+        page_size: String(pageSize),
+        ...(search && { search }),
+      });
+      const { data } = await apiClient.get("/api/posts?" + params);
+      return data;
+    },
+  });
+}
+%[1]s
+
+---
+`, bt)
+	}
+
 	return fmt.Sprintf(`# Grit Framework — Detailed Reference
 
 ## API Conventions
@@ -263,7 +608,7 @@ POST /api/auth/logout    → Invalidates refresh token
 GET  /api/auth/me        → Current user (requires auth)
 %[1]s
 
-Access tokens: 15 minutes. Refresh tokens: 7 days. Auto-refresh via Axios interceptor.
+Access tokens: 15 minutes. Refresh tokens: 7 days.
 
 ### Two-Factor Authentication (TOTP)
 
@@ -277,11 +622,9 @@ POST /api/auth/totp/verify             → { user, tokens } (public, uses pendin
 POST /api/auth/totp/backup-codes/verify → { user, tokens } (public, uses pending_token)
 POST /api/auth/totp/disable            → Disable 2FA (JWT + password required)
 GET  /api/auth/totp/status             → { enabled, backup_codes_remaining, trusted_devices }
-POST /api/auth/totp/backup-codes       → Regenerate backup codes (JWT required)
-DELETE /api/auth/totp/trusted-devices   → Revoke all trusted devices (JWT required)
 %[1]s
 
-TOTP: RFC 6238, HMAC-SHA1, 6 digits, 30s period, ±1 window. Backup codes: 10 bcrypt-hashed one-time codes.
+TOTP: RFC 6238, HMAC-SHA1, 6 digits, 30s period. Backup codes: 10 bcrypt-hashed one-time codes.
 Trusted devices: HttpOnly cookie, SHA-256 hashed token, 30-day sliding expiry.
 
 ### Route Groups
@@ -300,17 +643,16 @@ admin.Use(middleware.RequireRole("admin"))
 
 %[1]sgo
 type Post struct {
-    ID        uint           %[1]sgorm:"primarykey" json:"id"%[1]s
-    Title     string         %[1]sgorm:"size:255;not null" json:"title" binding:"required"%[1]s
-    Slug      string         %[1]sgorm:"size:255;uniqueIndex" json:"slug"%[1]s
-    Content   string         %[1]sgorm:"type:text" json:"content"%[1]s
-    Published bool           %[1]sgorm:"default:false" json:"published"%[1]s
-    Views     int            %[1]sjson:"views"%[1]s
-    UserID    uint           %[1]sjson:"user_id"%[1]s
-    User      User           %[1]sgorm:"foreignKey:UserID" json:"user,omitempty"%[1]s
-    CreatedAt time.Time      %[1]sjson:"created_at"%[1]s
-    UpdatedAt time.Time      %[1]sjson:"updated_at"%[1]s
-    DeletedAt gorm.DeletedAt %[1]sgorm:"index" json:"-"%[1]s
+    ID        uint           // gorm:"primarykey" json:"id"
+    Title     string         // gorm:"size:255;not null" json:"title" binding:"required"
+    Slug      string         // gorm:"size:255;uniqueIndex" json:"slug"
+    Content   string         // gorm:"type:text" json:"content"
+    Published bool           // gorm:"default:false" json:"published"
+    UserID    uint           // json:"user_id"
+    User      User           // gorm:"foreignKey:UserID" json:"user,omitempty"
+    CreatedAt time.Time      // json:"created_at"
+    UpdatedAt time.Time      // json:"updated_at"
+    DeletedAt gorm.DeletedAt // gorm:"index" json:"-"
 }
 %[1]s
 
@@ -318,115 +660,9 @@ Rules:
 - Always include ID, CreatedAt, UpdatedAt, DeletedAt
 - %[1]sjson:"-"%[1]s for DeletedAt (hidden from API)
 - %[1]sbinding:"required"%[1]s for required fields
-- %[1]sgorm:"size:255"%[1]s for strings, %[1]sgorm:"type:text"%[1]s for long text
 
 ---
-
-## Admin Panel — Resource Definitions
-
-%[1]stypescript
-import { defineResource } from "@/lib/resource";
-
-export const postsResource = defineResource({
-  name: "Post",
-  slug: "posts",
-  endpoint: "/api/posts",
-  icon: "FileText",
-  label: { singular: "Post", plural: "Posts" },
-
-  table: {
-    columns: [
-      { key: "id", label: "ID", sortable: true, format: "number" },
-      { key: "title", label: "Title", sortable: true, searchable: true },
-      { key: "published", label: "Published", format: "boolean" },
-      { key: "created_at", label: "Created", sortable: true, format: "relative" },
-    ],
-    defaultSort: { key: "created_at", direction: "desc" },
-    filters: [{ key: "published", label: "Published", type: "boolean" }],
-    pageSize: 20,
-    searchable: true,
-    actions: ["create", "edit", "delete"],
-  },
-
-  form: {
-    fields: [
-      { key: "title", label: "Title", type: "text", required: true },
-      { key: "content", label: "Content", type: "textarea", required: true },
-      { key: "published", label: "Published", type: "toggle", defaultValue: false },
-      { key: "cover", label: "Cover Image", type: "image" },
-    ],
-    layout: "single",
-  },
-
-  dashboard: {
-    widgets: [{
-      type: "stat", label: "Total Posts", endpoint: "/api/posts?page_size=1",
-      icon: "FileText", color: "accent", format: "number", colSpan: 1,
-    }],
-  },
-});
-%[1]s
-
-### Form Field Types
-
-| Type | Component | Notes |
-|------|----------|-------|
-| %[1]stext%[1]s | Text input | prefix, suffix |
-| %[1]stextarea%[1]s | Textarea | configurable rows |
-| %[1]snumber%[1]s | Number input | min, max, step |
-| %[1]sselect%[1]s | Dropdown | requires options |
-| %[1]sdate%[1]s / %[1]sdatetime%[1]s | Picker | |
-| %[1]stoggle%[1]s / %[1]scheckbox%[1]s | Boolean | |
-| %[1]sradio%[1]s | Radio group | requires options |
-| %[1]simage%[1]s | Image upload | react-dropzone |
-| %[1]srichtext%[1]s | Tiptap WYSIWYG | |
-| %[1]srelationship-select%[1]s | Searchable dropdown | belongs_to |
-| %[1]smulti-relationship-select%[1]s | Multi-select tags | many_to_many |
-
-### Form View Variants
-
-%[1]sformView%[1]s: %[1]smodal%[1]s (default), %[1]spage%[1]s, %[1]smodal-steps%[1]s, %[1]spage-steps%[1]s
-
-### Dropzone
-
-%[1]stsx
-<Dropzone
-  variant="default"  // "default" | "compact" | "minimal" | "avatar" | "inline"
-  maxFiles={5}
-  maxSize={1024 * 1024 * 10}
-  onFilesChange={setFiles}
-  accept={{ "image/*": [] }}
-/>
-%[1]s
-
----
-
-## Frontend Patterns
-
-### React Query Hooks
-
-%[1]stypescript
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
-
-export function usePosts({ page = 1, pageSize = 20, search = "" } = {}) {
-  return useQuery({
-    queryKey: ["posts", { page, pageSize, search }],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        page: String(page),
-        page_size: String(pageSize),
-        ...(search && { search }),
-      });
-      const { data } = await apiClient.get("/api/posts?" + params);
-      return data;
-    },
-  });
-}
-%[1]s
-
----
-
+%[2]s%[3]s
 ## Batteries (Services)
 
 ### File Storage
@@ -436,8 +672,6 @@ storage.Upload(ctx, "uploads/2024/01/photo.jpg", reader, "image/jpeg")
 url := storage.GetURL("uploads/2024/01/photo.jpg")
 url, err := storage.GetSignedURL(ctx, key, 1*time.Hour)
 %[1]s
-
-Endpoint: %[1]sPOST /api/uploads%[1]s (multipart, max 10MB)
 
 ### Email
 
@@ -463,59 +697,30 @@ jobs.EnqueueProcessImage(uploadID, key, mimeType)
 cache.Set(ctx, "user:123", userData, 5*time.Minute)
 cache.Get(ctx, "user:123", &user)
 cache.Delete(ctx, "user:123")
-// As middleware:
-router.GET("/api/posts", middleware.CacheResponse(cache, 5*time.Minute), handler.List)
 %[1]s
 
-### AI Integration
+### AI Integration (Vercel AI Gateway)
 
 %[1]sgo
 result, err := ai.Complete(ctx, ai.CompletionRequest{Prompt: "Summarize..."})
 ai.Stream(ctx, req, func(chunk string) { /* SSE */ })
 %[1]s
 
+One key, hundreds of models. Config: %[1]sAI_GATEWAY_API_KEY%[1]s, %[1]sAI_GATEWAY_MODEL%[1]s (e.g. %[1]santhropic/claude-sonnet-4-6%[1]s).
+
 ### Security (Sentinel)
 
-WAF, rate limiting, brute-force protection, anomaly detection. Dashboard at %[1]s/sentinel/ui%[1]s. Disable: %[1]sSENTINEL_ENABLED=false%[1]s.
+WAF, rate limiting, brute-force protection. Dashboard at %[1]s/sentinel/ui%[1]s.
 
 ### Observability (Pulse)
 
-Request tracing, DB monitoring, runtime metrics, error tracking, health checks, Prometheus at %[1]s/pulse/metrics%[1]s. Dashboard at %[1]s/pulse%[1]s. Disable: %[1]sPULSE_ENABLED=false%[1]s.
+Request tracing, DB monitoring, metrics. Dashboard at %[1]s/pulse%[1]s. Prometheus at %[1]s/pulse/metrics%[1]s.
 
 ### API Documentation (gin-docs)
 
-Zero-annotation OpenAPI 3.1 spec. Interactive UI at %[1]s/docs%[1]s. Export to Postman/Insomnia.
+Zero-annotation OpenAPI 3.1 spec. Interactive UI at %[1]s/docs%[1]s.
 
 ---
-
-## Configuration (.env)
-
-%[1]sash
-DATABASE_URL=postgres://postgres:password@localhost:5432/%[2]s?sslmode=disable
-PORT=8080
-JWT_SECRET=your-secret-key
-WEB_URL=http://localhost:3000
-ADMIN_URL=http://localhost:3001
-REDIS_URL=redis://localhost:6379
-STORAGE_ENDPOINT=http://localhost:9000
-STORAGE_BUCKET=%[2]s
-STORAGE_ACCESS_KEY=minioadmin
-STORAGE_SECRET_KEY=minioadmin
-RESEND_API_KEY=re_xxxxx
-AI_GATEWAY_API_KEY=your-key
-AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6
-SENTINEL_ENABLED=true
-PULSE_ENABLED=true
-%[1]s
-
-## Docker Services
-
-| Service | Port | Purpose |
-|---------|------|---------|
-| PostgreSQL | 5432 | Database |
-| Redis | 6379 | Cache + job queue |
-| MinIO | 9000/9001 | Local S3 storage |
-| Mailhog | 1025/8025 | Email testing |
 
 ## Naming Conventions
 
@@ -527,17 +732,5 @@ PULSE_ENABLED=true
 | React | %[1]sPascalCase.tsx%[1]s | %[1]sDataTable.tsx%[1]s |
 | API routes | %[1]s/api/plural%[1]s | %[1]s/api/posts%[1]s |
 | DB tables | %[1]splural_snake%[1]s | %[1]sblog_posts%[1]s |
-
-## Design System
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| %[1]sbg-primary%[1]s | %[1]s#0a0a0f%[1]s | Page background |
-| %[1]sbg-secondary%[1]s | %[1]s#111118%[1]s | Card background |
-| %[1]saccent%[1]s | %[1]s#6c5ce7%[1]s | Primary accent (purple) |
-| %[1]ssuccess%[1]s | %[1]s#00b894%[1]s | Success states |
-| %[1]sdanger%[1]s | %[1]s#ff6b6b%[1]s | Error states |
-
-Fonts: **Onest** (UI), **JetBrains Mono** (code)
-`, "`", opts.ProjectName)
+`, bt, adminSection, frontendSection)
 }
