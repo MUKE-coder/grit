@@ -8,13 +8,18 @@ import (
 func writeRootFiles(root string, opts Options) error {
 	files := map[string]string{
 		filepath.Join(root, ".env"):               envFile(opts),
-		filepath.Join(root, ".env.example"):       envExampleFile(opts),
-		filepath.Join(root, ".env.cloud.example"): envCloudExampleFile(opts),
+		filepath.Join(root, ".env.example"):       envFile(opts), // Same as .env — serves as documentation for other devs
 		filepath.Join(root, ".gitignore"):         rootGitignore(),
 		filepath.Join(root, "README.md"):          readmeFile(opts),
 		filepath.Join(root, "grit.json"):          gritJSON(opts),
 		filepath.Join(root, ".claude", "skills", "grit", "SKILL.md"):      gritSkillFile(opts),
 		filepath.Join(root, ".claude", "skills", "grit", "reference.md"):  gritSkillReference(opts),
+	}
+
+	// Prettier config (all architectures with frontend)
+	if opts.Architecture != ArchAPI {
+		files[filepath.Join(root, ".prettierrc")] = prettierConfig()
+		files[filepath.Join(root, ".prettierignore")] = prettierIgnore()
 	}
 
 	if opts.ShouldUseTurborepo() {
@@ -321,6 +326,7 @@ tmp/
 *.dylib
 *.test
 *.out
+migrate.exe
 
 # Environment
 .env
@@ -346,10 +352,49 @@ minio-data/
 # Turborepo
 .turbo/
 
+# Sentinel (WAF database)
+sentinel.db
+sentinel.db-shm
+sentinel.db-wal
+
+# Testing
+e2e/test-results/
+e2e/playwright-report/
+coverage/
+
 # Debug
 *.log
 npm-debug.log*
 pnpm-debug.log*
+`
+}
+
+func prettierConfig() string {
+	return `{
+  "semi": false,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "tabWidth": 2,
+  "printWidth": 100,
+  "bracketSpacing": true,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "plugins": ["prettier-plugin-tailwindcss"]
+}
+`
+}
+
+func prettierIgnore() string {
+	return `node_modules/
+.next/
+dist/
+build/
+out/
+coverage/
+.turbo/
+pnpm-lock.yaml
+*.min.js
+*.min.css
 `
 }
 

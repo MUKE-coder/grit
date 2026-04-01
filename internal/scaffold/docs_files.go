@@ -68,7 +68,7 @@ func docsPackageJSON(opts Options) string {
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3002",
+    "dev": "rm -rf .next && next dev --port 3002",
     "build": "next build",
     "start": "next start --port 3002"
   },

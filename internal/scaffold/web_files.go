@@ -48,10 +48,11 @@ func webPackageJSON(opts Options) string {
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3000",
+    "dev": "rm -rf .next && next dev --port 3000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"
@@ -80,6 +81,8 @@ func webPackageJSON(opts Options) string {
     "autoprefixer": "^10.4.0",
     "jsdom": "^25.0.0",
     "postcss": "^8.4.0",
+    "prettier": "^3.3.0",
+    "prettier-plugin-tailwindcss": "^0.6.0",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.3.0",
     "vitest": "^2.0.0"
