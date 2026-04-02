@@ -509,6 +509,17 @@ turbo dev`} className="mt-4 mb-0 glow-purple-sm" />
               </p>
             </div>
 
+            {/* Example Projects */}
+            <div className="mt-10 rounded-lg border border-primary/20 bg-primary/5 p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-2">Example Projects</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                See the same Job Portal app built with every architecture — full source code, setup guide, and deployment config.
+              </p>
+              <a href="https://github.com/MUKE-coder/grit/tree/main/examples" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+                Browse all 6 examples on GitHub &rarr;
+              </a>
+            </div>
+
             {/* Nav */}
             <div className="flex flex-wrap gap-3 mt-12 pt-6 border-t border-border/30">
               <Button

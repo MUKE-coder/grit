@@ -38,6 +38,7 @@ export default function ArchitectureModesPage() {
                 tagline: 'Go API + embedded React SPA — one binary',
                 color: 'sky',
                 ideal: 'Laravel/Rails developers, solo devs, simple deploys',
+                example: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-single-vite',
                 structure: `my-app/
 ├── cmd/server/main.go   # go:embed frontend/dist/*
 ├── internal/            # Go backend
@@ -57,6 +58,7 @@ export default function ArchitectureModesPage() {
                 tagline: 'Web + API Turborepo monorepo',
                 color: 'violet',
                 ideal: 'MERN stack developers, API + SPA projects',
+                example: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-double-vite',
                 structure: `my-app/
 ├── apps/
 │   ├── api/             # Go backend (Gin + GORM)
@@ -77,6 +79,7 @@ export default function ArchitectureModesPage() {
                 tagline: 'Web + Admin + API Turborepo monorepo',
                 color: 'emerald',
                 ideal: 'Full-stack teams, SaaS products, content platforms',
+                example: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-triple-next',
                 structure: `my-app/
 ├── apps/
 │   ├── api/             # Go backend (Gin + GORM)
@@ -98,6 +101,7 @@ export default function ArchitectureModesPage() {
                 tagline: 'Go API with no frontend',
                 color: 'amber',
                 ideal: 'Microservices, backend teams, mobile-first apps',
+                example: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-api-only',
                 structure: `my-app/
 ├── apps/
 │   └── api/             # Go backend (Gin + GORM)
@@ -117,6 +121,7 @@ export default function ArchitectureModesPage() {
                 tagline: 'API + Expo React Native',
                 color: 'rose',
                 ideal: 'Mobile-first products, cross-platform apps',
+                example: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-mobile-expo',
                 structure: `my-app/
 ├── apps/
 │   ├── api/             # Go backend
@@ -141,6 +146,11 @@ export default function ArchitectureModesPage() {
                   </div>
                   <p className="text-muted-foreground">{arch.tagline}</p>
                   <p className="text-sm text-muted-foreground/70 mt-1">Ideal for: {arch.ideal}</p>
+                  {arch.example && (
+                    <a href={arch.example} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+                      View example project (Job Portal) &rarr;
+                    </a>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border/30">
@@ -196,6 +206,35 @@ export default function ArchitectureModesPage() {
                   <li>- No Node.js server needed</li>
                 </ul>
               </div>
+            </div>
+          </div>
+
+          {/* Example Projects */}
+          <div className="mt-14 mb-14">
+            <h2 className="text-xl font-semibold text-foreground mb-4">Example Projects</h2>
+            <p className="text-muted-foreground mb-6">
+              We built the same <strong>Job Portal</strong> app with every architecture so you can see exactly how each one works.
+              Each example includes a README, step-by-step guide, .env template, and production Docker Compose.
+            </p>
+            <div className="rounded-lg border border-border/40 bg-accent/20 p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[
+                  { label: 'Triple + Next.js', href: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-triple-next' },
+                  { label: 'Triple + TanStack', href: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-triple-vite' },
+                  { label: 'Double + TanStack', href: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-double-vite' },
+                  { label: 'Single (one binary)', href: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-single-vite' },
+                  { label: 'API Only', href: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-api-only' },
+                  { label: 'Mobile + Expo', href: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-mobile-expo' },
+                ].map((ex) => (
+                  <a key={ex.label} href={ex.href} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-md border border-border/30 bg-background/50 px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors">
+                    {ex.label}
+                    <span className="text-primary text-xs">&rarr;</span>
+                  </a>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground/60 mt-4">
+                All examples: <a href="https://github.com/MUKE-coder/grit/tree/main/examples" target="_blank" rel="noreferrer" className="text-primary hover:underline">github.com/MUKE-coder/grit/tree/main/examples</a>
+              </p>
             </div>
           </div>
 

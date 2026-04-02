@@ -589,6 +589,11 @@ export default function DocsIntroductionPage() {
                   Read the Philosophy
                 </Link>
               </Button>
+              <Button variant="outline" asChild className="border-border/60 bg-transparent hover:bg-accent/50">
+                <a href="https://github.com/MUKE-coder/grit/tree/main/examples" target="_blank" rel="noreferrer">
+                  Browse Examples
+                </a>
+              </Button>
             </div>
           </div>
         </div>
