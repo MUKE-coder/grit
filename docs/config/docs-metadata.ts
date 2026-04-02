@@ -81,6 +81,36 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Understand Grit architecture: monorepo layout, Go API with handler-service-model pattern, Next.js frontend, shared types, and code generation.',
   },
+  '/docs/concepts/architecture-modes': {
+    title: 'Architecture Modes',
+    description:
+      'Grit supports 5 architecture modes: triple (web + admin + API), double (web + API), single (embedded SPA), API only, and mobile. Choose the one that fits your project.',
+  },
+  '/docs/concepts/architecture-modes/triple': {
+    title: 'Triple Architecture: Web + Admin + API',
+    description:
+      'The default and most feature-rich Grit architecture. Turborepo monorepo with 3 apps (web, admin, API) sharing types via packages/shared. Best for SaaS, marketplaces, and content platforms.',
+  },
+  '/docs/concepts/architecture-modes/double': {
+    title: 'Double Architecture: Web + API',
+    description:
+      'Streamlined Turborepo monorepo with 2 apps (web + API). Admin features live as role-protected routes in the web app. Best for blogs, portfolios, and simpler SaaS applications.',
+  },
+  '/docs/concepts/architecture-modes/single': {
+    title: 'Single Architecture: One Binary',
+    description:
+      'Single architecture in Grit: one Go binary serves both API and embedded React frontend via go:embed. Flat project structure, no monorepo, simplest deployment.',
+  },
+  '/docs/concepts/architecture-modes/api-only': {
+    title: 'API Only Architecture: Headless Go Backend',
+    description:
+      'API-only architecture in Grit: pure Go backend with no frontend. All batteries included (auth, storage, email, jobs, AI). Perfect for mobile backends and microservices.',
+  },
+  '/docs/concepts/architecture-modes/mobile': {
+    title: 'Mobile Architecture: API + Expo React Native',
+    description:
+      'Mobile architecture in Grit: Go API paired with Expo React Native in a Turborepo monorepo. SecureStore for tokens, Expo Router for navigation, shared types between backend and mobile.',
+  },
   '/docs/concepts/cli': {
     title: 'CLI Commands',
     description:

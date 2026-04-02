@@ -63,55 +63,86 @@ ARCHITECTURE MODES
 When you run "grit new myapp", the CLI enters interactive mode and asks you to choose an architecture. This is one of Grit's most powerful features — you pick the structure that matches your project's needs.
 
 1. TRIPLE (Web + Admin + API)
-   Command: grit new myapp --triple
+   Command: grit new myapp --triple --next (or --vite)
+   Docs: https://gritframework.dev/docs/concepts/architecture-modes/triple
+   Example: https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-triple-next
    Structure: Turborepo monorepo with three apps
-   - apps/api/ — Go backend (Gin + GORM)
-   - apps/web/ — Main frontend (Next.js or TanStack Router)
-   - apps/admin/ — Admin panel (Next.js or TanStack Router)
-   - packages/shared/ — Zod schemas, TypeScript types, constants
-   Best for: SaaS applications, content platforms, e-commerce sites
-   This is the default and most feature-complete mode.
+   - apps/api/ — Go backend (Gin + GORM + PostgreSQL)
+   - apps/web/ — Main frontend (Next.js App Router or TanStack Router)
+   - apps/admin/ — Admin panel with DataTable, FormBuilder, dashboard, system pages
+   - packages/shared/ — Zod schemas, TypeScript types, constants (shared between web + admin)
+   - packages/grit-ui/ — 100 shadcn-compatible UI components
+   Folder structure (abbreviated):
+     myapp/
+     ├── .env, docker-compose.yml, turbo.json, pnpm-workspace.yaml
+     ├── .claude/skills/grit/ (SKILL.md tailored to triple)
+     ├── packages/shared/ (schemas/, types/, constants/)
+     ├── apps/api/ (cmd/server/main.go, internal/{config,database,models,handlers,services,middleware,routes,mail,storage,jobs,cache,ai,auth})
+     ├── apps/web/ (Next.js: app/ or TanStack: src/routes/)
+     └── apps/admin/ (resources/, components/, hooks/)
+   Code generation: Creates 8 files (Go model, service, handler + TS schema, type, hook + admin resource def + admin page) and injects into 6 marker locations
+   Ports: API 8080, Web 3000, Admin 3001, PostgreSQL 5432, Redis 6379, MinIO 9000/9001, Mailhog 8025
+   Deployment: grit deploy (VPS), Docker Compose, Vercel (frontend) + VPS (API)
+   Best for: SaaS applications, content platforms, e-commerce sites, anything needing a separate admin panel
 
 2. DOUBLE (Web + API)
-   Command: grit new myapp --double
-   Structure: Turborepo monorepo with two apps
+   Command: grit new myapp --double --vite (or --next)
+   Docs: https://gritframework.dev/docs/concepts/architecture-modes/double
+   Example: https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-double-vite
+   Structure: Turborepo monorepo with two apps (NO admin panel)
    - apps/api/ — Go backend
-   - apps/web/ — Frontend
+   - apps/web/ — Frontend (admin features via role-protected routes)
    - packages/shared/ — Shared types
-   Best for: Simpler apps that don't need a separate admin panel, marketing sites with a backend, blogs
+   Key difference: No apps/admin/. ADMIN users access management features within the web app itself via role-protected routes. Code generation creates fewer files (no admin resource/page).
+   Best for: Simpler apps, blogs, portfolios, apps where admins use the same UI as users
 
 3. SINGLE (Embedded SPA)
-   Command: grit new myapp --single
-   Structure: Single Go binary with embedded frontend
-   - main.go at the project root with go:embed
-   - internal/ — Go backend code
-   - frontend/ — React SPA (built and embedded into the binary)
-   Best for: Laravel/Next.js developers who want one deployable unit, microservices, internal tools
-   This is similar to how Laravel or Next.js work — one app, one deployment, one binary.
-   In development, Go runs on port 8080 and Vite runs on port 5173 with a proxy.
-   In production, the frontend is compiled and embedded into the Go binary using go:embed.
+   Command: grit new myapp --single --vite
+   Docs: https://gritframework.dev/docs/concepts/architecture-modes/single
+   Example: https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-single-vite
+   Structure: Single Go binary with embedded frontend (go:embed)
+   - main.go at project root with //go:embed frontend/dist/*
+   - internal/ — Go backend (same structure as apps/api/internal/)
+   - frontend/ — React SPA (Vite + TanStack Router)
+   Key differences from other architectures:
+   - NO Turborepo, NO pnpm-workspace, NO turbo.json
+   - FLAT project structure (no apps/ directory)
+   - Module path: just "myapp" (not "myapp/apps/api")
+   - Schemas/types live in frontend/src/ (not packages/shared/)
+   - Dev: Go on :8080, Vite on :5173 with proxy (/api → :8080)
+   - Production: cd frontend && pnpm build && go build → single binary serves everything
+   Best for: Laravel/Rails developers, solo devs, simple deploys, internal tools
 
 4. API ONLY
    Command: grit new myapp --api
-   Structure: Just the Go API
-   - cmd/server/main.go — Entry point
-   - internal/ — All Go code
-   Best for: Headless APIs, mobile app backends, microservices
+   Docs: https://gritframework.dev/docs/concepts/architecture-modes/api-only
+   Example: https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-api-only
+   Structure: Pure Go API — no frontend, no React, no Node.js, no pnpm
+   - apps/api/ — Go backend only
+   Key differences: No TypeScript, no Zod schemas, no React. Code generation only creates Go files. All batteries still work (auth, storage, email, jobs, AI, TOTP). Test via /docs (Scalar/Swagger), curl, or Postman.
+   Best for: Mobile app backends, microservices, headless CMS, third-party APIs
 
 5. MOBILE (API + Expo)
    Command: grit new myapp --mobile
-   Structure: Turborepo monorepo with API and Expo
+   Docs: https://gritframework.dev/docs/concepts/architecture-modes/mobile
+   Example: https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-mobile-expo
+   Structure: Turborepo monorepo with API and Expo React Native
    - apps/api/ — Go backend
-   - apps/expo/ — React Native (Expo) mobile app
-   Best for: Mobile-first applications
+   - apps/expo/ — Expo React Native (Expo Router for navigation)
+   - packages/shared/ — Shared types between API and mobile
+   Key differences: SecureStore for encrypted token storage (not localStorage), Expo Router for tab/stack navigation, FlatList instead of HTML tables, push notifications via Expo Notifications, physical device needs local IP (not localhost)
+   Best for: Mobile-first applications, cross-platform apps
 
 6. DESKTOP (Wails)
    Command: grit new-desktop myapp
    Structure: Standalone Wails desktop application
-   - Go backend with Wails v2 bindings
+   - Go backend with Wails v2 bindings (methods callable from React)
    - React frontend (Vite + TanStack Router)
-   - SQLite database (local)
+   - SQLite database (local, no Docker needed)
    Best for: Cross-platform desktop tools, offline-first apps
+
+ALL EXAMPLES: https://github.com/MUKE-coder/grit/tree/main/examples
+Same Job Portal built with every architecture — full source, setup guide, deployment config.
 
 
 FRONTEND OPTIONS
