@@ -561,6 +561,7 @@ func apiDatabaseGo() string {
 import (
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"gorm.io/driver/postgres"
@@ -570,11 +571,21 @@ import (
 
 // Connect establishes a database connection using the provided DSN.
 func Connect(dsn string) (*gorm.DB, error) {
+	// Use Warn level by default — only logs slow queries and errors.
+	// Set DB_LOG_LEVEL=info for verbose SQL logging during debugging.
+	// In production, Warn prevents log flooding during AutoMigrate.
+	logLevel := logger.Warn
+	if os.Getenv("DB_LOG_LEVEL") == "info" {
+		logLevel = logger.Info
+	} else if os.Getenv("DB_LOG_LEVEL") == "silent" {
+		logLevel = logger.Silent
+	}
+
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		DSN:                  dsn,
 		PreferSimpleProtocol: true, // Avoids prepared statement issues with schema changes
 	}), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logLevel),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
