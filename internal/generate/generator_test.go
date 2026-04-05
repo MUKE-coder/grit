@@ -128,7 +128,7 @@ func Models() []interface{} {
 }
 
 type User struct {
-	ID        uint           `+"`"+`gorm:"primarykey" json:"id"`+"`"+`
+	ID        string         `+"`"+`gorm:"primarykey;size:36" json:"id"`+"`"+`
 	Name      string         `+"`"+`json:"name"`+"`"+`
 	CreatedAt time.Time      `+"`"+`json:"created_at"`+"`"+`
 	DeletedAt gorm.DeletedAt `+"`"+`gorm:"index" json:"-"`+"`"+`
@@ -230,7 +230,9 @@ func TestWriteGoModel_BasicFields(t *testing.T) {
 	}{
 		{"package declaration", "package models"},
 		{"struct declaration", "type Post struct {"},
-		{"ID field", `gorm:"primarykey"`},
+		{"ID field", `gorm:"primarykey;size:36"`},
+		{"uuid import", `"github.com/google/uuid"`},
+		{"BeforeCreate hook", "func (m *Post) BeforeCreate"},
 		{"Title field", "Title string"},
 		{"title json tag", `json:"title"`},
 		{"Content field", "Content string"},
@@ -299,7 +301,7 @@ func TestWriteGoModel_BelongsTo(t *testing.T) {
 
 	got := readTestFile(t, filepath.Join(root, "apps", "api", "internal", "models", "post.go"))
 
-	if !strings.Contains(got, "CategoryID uint") {
+	if !strings.Contains(got, "CategoryID string") {
 		t.Errorf("belongs_to should generate CategoryID field:\n%s", got)
 	}
 	if !strings.Contains(got, "Category Category") {
@@ -448,7 +450,7 @@ func TestWriteTSTypes(t *testing.T) {
 		"export interface Post {",
 		"title: string",
 		"published: boolean",
-		"id: number",
+		"id: string",
 		"created_at: string",
 	}
 	for _, want := range checks {

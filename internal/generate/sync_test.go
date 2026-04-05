@@ -213,7 +213,7 @@ func TestParseGoStructs(t *testing.T) {
 import "time"
 
 type Product struct {
-	ID        uint      ` + "`" + `gorm:"primarykey" json:"id"` + "`" + `
+	ID        string    ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
 	Name      string    ` + "`" + `gorm:"size:255" json:"name"` + "`" + `
 	Price     float64   ` + "`" + `json:"price"` + "`" + `
 	Active    bool      ` + "`" + `json:"active"` + "`" + `

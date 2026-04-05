@@ -55,9 +55,9 @@ func (g *Generator) writeGoModel(names Names) error {
 	if hasSlug {
 		stdImports = "\"fmt\"\n\t\"time\""
 	}
-	extImports := `"gorm.io/gorm"`
+	extImports := "\"github.com/google/uuid\"\n\t\"gorm.io/gorm\""
 	if needsDatatypes {
-		extImports = "\"gorm.io/datatypes\"\n\t\"gorm.io/gorm\""
+		extImports = "\"github.com/google/uuid\"\n\t\"gorm.io/datatypes\"\n\t\"gorm.io/gorm\""
 	}
 	imports = fmt.Sprintf("import (\n\t%s\n\n\t%s\n)", stdImports, extImports)
 
@@ -71,7 +71,7 @@ func (g *Generator) writeGoModel(names Names) error {
 			fkJson := toSnakeCase(baseName) + "_id"       // e.g., category_id
 			assocName := toPascalCase(baseName)            // e.g., Category
 			// FK column
-			structFields += fmt.Sprintf("\t%s uint `gorm:\"index\" json:\"%s\" binding:\"required\"`\n", fkGoName, fkJson)
+			structFields += fmt.Sprintf("\t%s string `gorm:\"size:36;index\" json:\"%s\" binding:\"required\"`\n", fkGoName, fkJson)
 			// Association struct
 			structFields += fmt.Sprintf("\t%s %s `gorm:\"foreignKey:%s\" json:\"%s\"`\n",
 				assocName, relModel, fkGoName, toSnakeCase(assocName))
@@ -112,19 +112,22 @@ func (g *Generator) writeGoModel(names Names) error {
 
 // %s represents a %s in the system.
 type %s struct {
-	ID        uint           `+"`"+`gorm:"primarykey" json:"id"`+"`"+`
+	ID        string         `+"`"+`gorm:"primarykey;size:36" json:"id"`+"`"+`
 %s	CreatedAt time.Time      `+"`"+`json:"created_at"`+"`"+`
 	UpdatedAt time.Time      `+"`"+`json:"updated_at"`+"`"+`
 	DeletedAt gorm.DeletedAt `+"`"+`gorm:"index" json:"-"`+"`"+`
 }
 `, imports, names.Pascal, names.Lower, names.Pascal, structFields)
 
-	// Add BeforeCreate hook if slug field exists
+	// Add BeforeCreate hook (UUID generation + optional slug)
 	if hasSlug {
 		slugGoName := toPascalCase(slugField.Name)
 		content += fmt.Sprintf(`
-// BeforeCreate auto-generates the slug before inserting.
+// BeforeCreate generates a UUID and auto-generates the slug before inserting.
 func (m *%s) BeforeCreate(tx *gorm.DB) error {
+	if m.ID == "" {
+		m.ID = uuid.New().String()
+	}
 	if m.%s == "" {
 		m.%s = slugify(fmt.Sprintf("%%v", m.%s))
 	}
@@ -159,6 +162,17 @@ func slugify(s string) string {
 				return fmt.Errorf("writing helpers.go: %w", err)
 			}
 		}
+	} else {
+		// No slug — still need UUID generation
+		content += fmt.Sprintf(`
+// BeforeCreate generates a UUID before inserting.
+func (m *%s) BeforeCreate(tx *gorm.DB) error {
+	if m.ID == "" {
+		m.ID = uuid.New().String()
+	}
+	return nil
+}
+`, names.Pascal)
 	}
 
 	path := filepath.Join(g.APIRoot(), "internal", "models", names.Snake+".go")
@@ -774,7 +788,7 @@ func (g *Generator) writeTSTypes(names Names) error {
 		content = imports + "\n"
 	}
 	content += fmt.Sprintf(`export interface %s {
-  id: number;
+  id: string;
 %s  created_at: string;
   updated_at: string;
 }
@@ -790,7 +804,7 @@ func (g *Generator) writeReactQueryHooks(names Names, app string) error {
 import { apiClient } from "@/lib/api-client";
 
 interface %s {
-  id: number;
+  id: string;
 %s  created_at: string;
   updated_at: string;
 }
@@ -832,7 +846,7 @@ export function use%s({ page = 1, pageSize = 20, search = "", sortBy = "created_
   });
 }
 
-export function useGet%s(id: number) {
+export function useGet%s(id: string) {
   return useQuery<%s>({
     queryKey: ["%s", id],
     queryFn: async () => {
@@ -861,7 +875,7 @@ export function useUpdate%s() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...input }: { id: number } & Record<string, unknown>) => {
+    mutationFn: async ({ id, ...input }: { id: string } & Record<string, unknown>) => {
       const { data } = await apiClient.put(%s, input);
       return data;
     },
@@ -875,7 +889,7 @@ export function useDelete%s() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       await apiClient.delete(%s);
     },
     onSuccess: () => {

@@ -65,6 +65,7 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.2.0
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/sessions v1.4.0
 	github.com/hibiken/asynq v0.24.1
 	github.com/markbates/goth v1.80.0
@@ -604,6 +605,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -618,7 +620,7 @@ const (
 
 // User represents a user in the system.
 type User struct {
-	ID              uint           ` + "`" + `gorm:"primarykey" json:"id"` + "`" + `
+	ID              string         ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
 	FirstName       string         ` + "`" + `gorm:"size:255;not null" json:"first_name" binding:"required"` + "`" + `
 	LastName        string         ` + "`" + `gorm:"size:255;not null" json:"last_name" binding:"required"` + "`" + `
 	Email           string         ` + "`" + `gorm:"size:255;uniqueIndex;not null" json:"email" binding:"required,email"` + "`" + `
@@ -639,14 +641,25 @@ type User struct {
 	DeletedAt       gorm.DeletedAt ` + "`" + `gorm:"index" json:"-"` + "`" + `
 }
 
-// BeforeCreate hashes the password before saving.
+// BeforeCreate generates a UUID and hashes the password before saving.
 func (u *User) BeforeCreate(tx *gorm.DB) error {
+	if u.ID == "" {
+		u.ID = uuid.New().String()
+	}
 	if u.Password != "" {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 		if err != nil {
 			return err
 		}
 		u.Password = string(hashedPassword)
+	}
+	return nil
+}
+
+// BeforeCreate generates a UUID for uploads.
+func (u *Upload) BeforeCreate(tx *gorm.DB) error {
+	if u.ID == "" {
+		u.ID = uuid.New().String()
 	}
 	return nil
 }
@@ -713,7 +726,7 @@ import (
 
 // Upload represents a file uploaded to storage.
 type Upload struct {
-	ID           uint           ` + "`" + `gorm:"primarykey" json:"id"` + "`" + `
+	ID           string         ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
 	Filename     string         ` + "`" + `gorm:"size:255;not null" json:"filename"` + "`" + `
 	OriginalName string         ` + "`" + `gorm:"size:255;not null" json:"original_name"` + "`" + `
 	MimeType     string         ` + "`" + `gorm:"size:100;not null" json:"mime_type"` + "`" + `
@@ -721,7 +734,7 @@ type Upload struct {
 	Path         string         ` + "`" + `gorm:"size:500;not null" json:"path"` + "`" + `
 	URL          string         ` + "`" + `gorm:"size:500" json:"url"` + "`" + `
 	ThumbnailURL string         ` + "`" + `gorm:"size:500" json:"thumbnail_url"` + "`" + `
-	UserID       uint           ` + "`" + `gorm:"index;not null" json:"user_id"` + "`" + `
+	UserID       string         ` + "`" + `gorm:"size:36;index;not null" json:"user_id"` + "`" + `
 	User         User           ` + "`" + `gorm:"foreignKey:UserID" json:"-"` + "`" + `
 	CreatedAt    time.Time      ` + "`" + `json:"created_at"` + "`" + `
 	UpdatedAt    time.Time      ` + "`" + `json:"updated_at"` + "`" + `
@@ -758,7 +771,7 @@ type TokenPair struct {
 
 // Claims represents JWT claims.
 type Claims struct {
-	UserID uint   ` + "`" + `json:"user_id"` + "`" + `
+	UserID string ` + "`" + `json:"user_id"` + "`" + `
 	Email  string ` + "`" + `json:"email"` + "`" + `
 	Role   string ` + "`" + `json:"role"` + "`" + `
 	jwt.RegisteredClaims
@@ -2002,10 +2015,34 @@ func (g *gzipResponseWriter) WriteString(s string) (int, error) {
 }
 
 // Logger creates a structured logging middleware with request ID correlation.
+// Silently skips internal dashboard paths to keep the terminal readable.
 func Logger() gin.HandlerFunc {
+	// Paths that generate noise and aren't useful to see in dev logs
+	skipPrefixes := []string{
+		"/studio/",
+		"/pulse/",
+		"/pulse",
+		"/sentinel/",
+		"/docs/",
+		"/docs",
+		"/r.json",
+		"/r/",
+		"/api/health",
+		"/favicon.ico",
+	}
+
 	return func(c *gin.Context) {
 		start := time.Now()
 		path := c.Request.URL.Path
+
+		// Skip noisy internal paths
+		for _, prefix := range skipPrefixes {
+			if strings.HasPrefix(path, prefix) || path == prefix {
+				c.Next()
+				return
+			}
+		}
+
 		query := c.Request.URL.RawQuery
 
 		c.Next()
@@ -2119,6 +2156,21 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 
 	// Mount Sentinel security suite (WAF, rate limiting, auth shield, anomaly detection)
 	if cfg.SentinelEnabled {
+		// In development, use relaxed rate limits so devs don't get blocked while testing
+		isDev := cfg.AppEnv == "development"
+		ipLimit := &sentinel.Limit{Requests: 100, Window: 1 * time.Minute}
+		routeLimits := map[string]sentinel.Limit{
+			"/api/auth/login":    {Requests: 5, Window: 15 * time.Minute},
+			"/api/auth/register": {Requests: 3, Window: 15 * time.Minute},
+		}
+		if isDev {
+			ipLimit = &sentinel.Limit{Requests: 1000, Window: 1 * time.Minute}
+			routeLimits = map[string]sentinel.Limit{
+				"/api/auth/login":    {Requests: 100, Window: 1 * time.Minute},
+				"/api/auth/register": {Requests: 100, Window: 1 * time.Minute},
+			}
+		}
+
 		sentinel.Mount(r, db, sentinel.Config{
 			Dashboard: sentinel.DashboardConfig{
 				Username:  cfg.SentinelUsername,
@@ -2130,22 +2182,19 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 				Mode:    sentinel.ModeLog, // Switch to sentinel.ModeBlock in production
 			},
 			RateLimit: sentinel.RateLimitConfig{
-				Enabled: true,
-				ByIP:    &sentinel.Limit{Requests: 100, Window: 1 * time.Minute},
-				ByRoute: map[string]sentinel.Limit{
-					"/api/auth/login":    {Requests: 5, Window: 15 * time.Minute},
-					"/api/auth/register": {Requests: 3, Window: 15 * time.Minute},
-				},
+				Enabled: !isDev, // Disabled in development, enabled in production
+				ByIP:    ipLimit,
+				ByRoute: routeLimits,
 			},
 			AuthShield: sentinel.AuthShieldConfig{
-				Enabled:    true,
+				Enabled:    !isDev, // Disabled in development
 				LoginRoute: "/api/auth/login",
 			},
 			Anomaly: sentinel.AnomalyConfig{
-				Enabled: true,
+				Enabled: !isDev, // Disabled in development
 			},
 			Geo: sentinel.GeoConfig{
-				Enabled: true,
+				Enabled: !isDev, // Disabled in development
 			},
 		})
 		log.Println("Sentinel security suite mounted at /sentinel")

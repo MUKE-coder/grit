@@ -88,7 +88,7 @@ func (g *DesktopGenerator) writeDesktopModel(names Names) error {
 	content += imports + "\n\n"
 	content += "// " + names.Pascal + " represents a " + names.Lower + " in the system.\n"
 	content += "type " + names.Pascal + " struct {\n"
-	content += "\tID        uint           " + "`" + "gorm:\"primarykey\" json:\"id\"" + "`" + "\n"
+	content += "\tID        string         " + "`" + "gorm:\"primarykey;size:36\" json:\"id\"" + "`" + "\n"
 	content += structFields
 	content += "\tCreatedAt time.Time      " + "`" + "json:\"created_at\"" + "`" + "\n"
 	content += "\tUpdatedAt time.Time      " + "`" + "json:\"updated_at\"" + "`" + "\n"
@@ -116,7 +116,7 @@ func (g *DesktopGenerator) writeDesktopModel(names Names) error {
 		content += imports + "\n\n"
 		content += "// " + names.Pascal + " represents a " + names.Lower + " in the system.\n"
 		content += "type " + names.Pascal + " struct {\n"
-		content += "\tID        uint           " + "`" + "gorm:\"primarykey\" json:\"id\"" + "`" + "\n"
+		content += "\tID        string         " + "`" + "gorm:\"primarykey;size:36\" json:\"id\"" + "`" + "\n"
 		content += structFields
 		content += "\tCreatedAt time.Time      " + "`" + "json:\"created_at\"" + "`" + "\n"
 		content += "\tUpdatedAt time.Time      " + "`" + "json:\"updated_at\"" + "`" + "\n"
@@ -129,7 +129,7 @@ func (g *DesktopGenerator) writeDesktopModel(names Names) error {
 		tmpContent += imports + "\n\n"
 		tmpContent += "// " + names.Pascal + " represents a " + names.Lower + " in the system.\n"
 		tmpContent += "type " + names.Pascal + " struct {\n"
-		tmpContent += "\tID        uint           " + "`" + "gorm:\"primarykey\" json:\"id\"" + "`" + "\n"
+		tmpContent += "\tID        string         " + "`" + "gorm:\"primarykey;size:36\" json:\"id\"" + "`" + "\n"
 		tmpContent += structFields
 		tmpContent += "\tCreatedAt time.Time      " + "`" + "json:\"created_at\"" + "`" + "\n"
 		tmpContent += "\tUpdatedAt time.Time      " + "`" + "json:\"updated_at\"" + "`" + "\n"
