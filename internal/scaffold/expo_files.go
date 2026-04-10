@@ -9,23 +9,25 @@ func writeExpoFiles(root string, opts Options) error {
 	expoRoot := filepath.Join(root, "apps", "expo")
 
 	files := map[string]string{
-		filepath.Join(expoRoot, "package.json"):                  expoPackageJSON(opts),
-		filepath.Join(expoRoot, "app.json"):                      expoAppJSON(opts),
-		filepath.Join(expoRoot, "tsconfig.json"):                 expoTSConfig(),
-		filepath.Join(expoRoot, "tailwind.config.js"):            expoTailwindConfig(),
-		filepath.Join(expoRoot, "metro.config.js"):               expoMetroConfig(),
-		filepath.Join(expoRoot, "global.css"):                    expoGlobalCSS(),
-		filepath.Join(expoRoot, "nativewind-env.d.ts"):           expoNativewindEnv(),
-		filepath.Join(expoRoot, "app", "_layout.tsx"):            expoRootLayout(),
-		filepath.Join(expoRoot, "app", "(auth)", "_layout.tsx"):  expoAuthLayout(),
-		filepath.Join(expoRoot, "app", "(auth)", "login.tsx"):    expoLoginScreen(),
-		filepath.Join(expoRoot, "app", "(auth)", "register.tsx"): expoRegisterScreen(),
-		filepath.Join(expoRoot, "app", "(tabs)", "_layout.tsx"):  expoTabsLayout(),
-		filepath.Join(expoRoot, "app", "(tabs)", "index.tsx"):    expoDashboardScreen(),
-		filepath.Join(expoRoot, "app", "(tabs)", "profile.tsx"):  expoProfileScreen(),
-		filepath.Join(expoRoot, "lib", "api.ts"):                 expoAPIClient(),
-		filepath.Join(expoRoot, "lib", "auth.tsx"):               expoAuthProvider(),
-		filepath.Join(expoRoot, "lib", "query-client.ts"):        expoQueryClient(),
+		filepath.Join(expoRoot, "package.json"):                     expoPackageJSON(opts),
+		filepath.Join(expoRoot, "app.json"):                         expoAppJSON(opts),
+		filepath.Join(expoRoot, "tsconfig.json"):                    expoTSConfig(),
+		filepath.Join(expoRoot, "tailwind.config.js"):               expoTailwindConfig(),
+		filepath.Join(expoRoot, "metro.config.js"):                  expoMetroConfig(),
+		filepath.Join(expoRoot, "global.css"):                       expoGlobalCSS(),
+		filepath.Join(expoRoot, "nativewind-env.d.ts"):              expoNativewindEnv(),
+		filepath.Join(expoRoot, "app", "_layout.tsx"):               expoRootLayout(),
+		filepath.Join(expoRoot, "app", "(auth)", "_layout.tsx"):     expoAuthLayout(),
+		filepath.Join(expoRoot, "app", "(auth)", "login.tsx"):       expoLoginScreen(),
+		filepath.Join(expoRoot, "app", "(auth)", "register.tsx"):    expoRegisterScreen(),
+		filepath.Join(expoRoot, "app", "(tabs)", "_layout.tsx"):     expoTabsLayout(),
+		filepath.Join(expoRoot, "app", "(tabs)", "index.tsx"):       expoHomeScreen(),
+		filepath.Join(expoRoot, "app", "(tabs)", "explore.tsx"):     expoExploreScreen(),
+		filepath.Join(expoRoot, "app", "(tabs)", "profile.tsx"):     expoProfileScreen(),
+		filepath.Join(expoRoot, "app", "(tabs)", "settings.tsx"):    expoSettingsScreen(),
+		filepath.Join(expoRoot, "lib", "api.ts"):                    expoAPIClient(),
+		filepath.Join(expoRoot, "lib", "auth.tsx"):                  expoAuthProvider(),
+		filepath.Join(expoRoot, "lib", "query-client.ts"):           expoQueryClient(),
 	}
 
 	for path, content := range files {
@@ -56,6 +58,9 @@ func expoPackageJSON(opts Options) string {
     "expo-status-bar": "~3.0.0",
     "expo-secure-store": "~15.0.0",
     "expo-splash-screen": "~31.0.0",
+    "expo-image": "~2.3.0",
+    "expo-haptics": "~14.1.0",
+    "expo-web-browser": "~14.0.0",
     "react": "19.1.0",
     "react-native": "0.81.0",
     "react-native-safe-area-context": "~5.6.0",
@@ -65,7 +70,10 @@ func expoPackageJSON(opts Options) string {
     "nativewind": "^4.2.0",
     "@tanstack/react-query": "^5.0.0",
     "react-native-reanimated": "~4.1.0",
-    "react-native-gesture-handler": "~2.28.0"
+    "react-native-gesture-handler": "~2.28.0",
+    "react-hook-form": "^7.54.0",
+    "@hookform/resolvers": "^3.9.0",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
@@ -88,6 +96,12 @@ func expoAppJSON(opts Options) string {
     "scheme": "%s",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0a0f"
+    },
+    "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.%s.app"
@@ -255,24 +269,40 @@ import {
   Platform,
 } from "react-native";
 import { Link } from "expo-router";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import * as WebBrowser from "expo-web-browser";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/lib/auth";
 
+const loginSchema = z.object({
+  email: z.string().email("Invalid email"),
+  password: z.string().min(6, "Minimum 6 characters"),
+});
+
+type LoginForm = z.infer<typeof loginSchema>;
+
 export default function LoginScreen() {
-  const { login } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { login, loginWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setError("Please fill in all fields");
-      return;
-    }
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+  });
+
+  const onSubmit = async (data: LoginForm) => {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
+      await login(data.email, data.password);
     } catch (err: any) {
       setError(err.message || "Login failed");
     } finally {
@@ -280,10 +310,22 @@ export default function LoginScreen() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    setError("");
+    setGoogleLoading(true);
+    try {
+      await loginWithGoogle();
+    } catch (err: any) {
+      setError(err.message || "Google login failed");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-bg-primary"
+      className="flex-1 bg-[#0a0a0f]"
     >
       <View className="flex-1 justify-center px-8">
         <Text className="text-4xl font-bold text-white mb-2">Welcome back</Text>
@@ -292,41 +334,61 @@ export default function LoginScreen() {
         </Text>
 
         {error ? (
-          <View className="bg-danger/10 border border-danger/30 rounded-xl p-4 mb-6">
-            <Text className="text-danger text-sm">{error}</Text>
+          <View className="bg-[#ff6b6b]/10 border border-[#ff6b6b]/30 rounded-xl p-4 mb-6">
+            <Text className="text-[#ff6b6b] text-sm">{error}</Text>
           </View>
         ) : null}
 
         <View className="mb-4">
           <Text className="text-sm text-[#9090a8] mb-2">Email</Text>
-          <TextInput
-            className="bg-bg-secondary border border-border rounded-xl px-4 py-3.5 text-white text-base"
-            placeholder="you@example.com"
-            placeholderTextColor="#606078"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
+                placeholder="you@example.com"
+                placeholderTextColor="#606078"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+              />
+            )}
           />
+          {errors.email ? (
+            <Text className="text-[#ff6b6b] text-xs mt-1">{errors.email.message}</Text>
+          ) : null}
         </View>
 
         <View className="mb-6">
           <Text className="text-sm text-[#9090a8] mb-2">Password</Text>
-          <TextInput
-            className="bg-bg-secondary border border-border rounded-xl px-4 py-3.5 text-white text-base"
-            placeholder="••••••••"
-            placeholderTextColor="#606078"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
+                placeholder="••••••••"
+                placeholderTextColor="#606078"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                secureTextEntry
+              />
+            )}
           />
+          {errors.password ? (
+            <Text className="text-[#ff6b6b] text-xs mt-1">{errors.password.message}</Text>
+          ) : null}
         </View>
 
         <TouchableOpacity
-          className={` + "`" + `rounded-xl py-4 items-center ${loading ? "bg-accent/50" : "bg-accent"}` + "`" + `}
-          onPress={handleLogin}
-          disabled={loading}
+          className={` + "`" + `rounded-xl py-4 items-center ${loading ? "bg-[#6c5ce7]/50" : "bg-[#6c5ce7]"}` + "`" + `}
+          onPress={handleSubmit(onSubmit)}
+          disabled={loading || googleLoading}
           activeOpacity={0.8}
         >
           {loading ? (
@@ -336,10 +398,34 @@ export default function LoginScreen() {
           )}
         </TouchableOpacity>
 
+        <View className="flex-row items-center my-6">
+          <View className="flex-1 h-px bg-[#2a2a3a]" />
+          <Text className="text-[#606078] mx-4 text-sm">or</Text>
+          <View className="flex-1 h-px bg-[#2a2a3a]" />
+        </View>
+
+        <TouchableOpacity
+          className={` + "`" + `rounded-xl py-4 items-center flex-row justify-center border border-[#2a2a3a] ${googleLoading ? "bg-[#22222e]/50" : "bg-[#22222e]"}` + "`" + `}
+          onPress={handleGoogleLogin}
+          disabled={loading || googleLoading}
+          activeOpacity={0.8}
+        >
+          {googleLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Ionicons name="logo-google" size={20} color="#e8e8f0" />
+              <Text className="text-white font-semibold text-base ml-3">
+                Sign in with Google
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+
         <View className="flex-row justify-center mt-6">
           <Text className="text-[#9090a8]">Don't have an account? </Text>
           <Link href="/(auth)/register">
-            <Text className="text-accent font-semibold">Sign up</Text>
+            <Text className="text-[#6c5ce7] font-semibold">Sign up</Text>
           </Link>
         </View>
       </View>
@@ -362,30 +448,49 @@ import {
   ScrollView,
 } from "react-native";
 import { Link } from "expo-router";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useAuth } from "@/lib/auth";
 
+const registerSchema = z.object({
+  firstName: z.string().min(1, "Required"),
+  lastName: z.string().min(1, "Required"),
+  email: z.string().email("Invalid email"),
+  password: z.string().min(8, "Minimum 8 characters"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+type RegisterForm = z.infer<typeof registerSchema>;
+
 export default function RegisterScreen() {
-  const { register } = useAuth();
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { register: registerUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleRegister = async () => {
-    if (!firstName || !lastName || !email || !password) {
-      setError("Please fill in all fields");
-      return;
-    }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterForm>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  const onSubmit = async (data: RegisterForm) => {
     setError("");
     setLoading(true);
     try {
-      await register(firstName, lastName, email, password);
+      await registerUser(data.firstName, data.lastName, data.email, data.password);
     } catch (err: any) {
       setError(err.message || "Registration failed");
     } finally {
@@ -396,7 +501,7 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-bg-primary"
+      className="flex-1 bg-[#0a0a0f]"
     >
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
@@ -409,65 +514,127 @@ export default function RegisterScreen() {
         </Text>
 
         {error ? (
-          <View className="bg-danger/10 border border-danger/30 rounded-xl p-4 mb-6">
-            <Text className="text-danger text-sm">{error}</Text>
+          <View className="bg-[#ff6b6b]/10 border border-[#ff6b6b]/30 rounded-xl p-4 mb-6">
+            <Text className="text-[#ff6b6b] text-sm">{error}</Text>
           </View>
         ) : null}
 
         <View className="flex-row gap-3 mb-4">
           <View className="flex-1">
             <Text className="text-sm text-[#9090a8] mb-2">First name</Text>
-            <TextInput
-              className="bg-bg-secondary border border-border rounded-xl px-4 py-3.5 text-white text-base"
-              placeholder="John"
-              placeholderTextColor="#606078"
-              value={firstName}
-              onChangeText={setFirstName}
-              autoComplete="given-name"
+            <Controller
+              control={control}
+              name="firstName"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
+                  placeholder="John"
+                  placeholderTextColor="#606078"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  autoComplete="given-name"
+                />
+              )}
             />
+            {errors.firstName ? (
+              <Text className="text-[#ff6b6b] text-xs mt-1">{errors.firstName.message}</Text>
+            ) : null}
           </View>
           <View className="flex-1">
             <Text className="text-sm text-[#9090a8] mb-2">Last name</Text>
-            <TextInput
-              className="bg-bg-secondary border border-border rounded-xl px-4 py-3.5 text-white text-base"
-              placeholder="Doe"
-              placeholderTextColor="#606078"
-              value={lastName}
-              onChangeText={setLastName}
-              autoComplete="family-name"
+            <Controller
+              control={control}
+              name="lastName"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
+                  placeholder="Doe"
+                  placeholderTextColor="#606078"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  autoComplete="family-name"
+                />
+              )}
             />
+            {errors.lastName ? (
+              <Text className="text-[#ff6b6b] text-xs mt-1">{errors.lastName.message}</Text>
+            ) : null}
           </View>
         </View>
 
         <View className="mb-4">
           <Text className="text-sm text-[#9090a8] mb-2">Email</Text>
-          <TextInput
-            className="bg-bg-secondary border border-border rounded-xl px-4 py-3.5 text-white text-base"
-            placeholder="you@example.com"
-            placeholderTextColor="#606078"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
+                placeholder="you@example.com"
+                placeholderTextColor="#606078"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+              />
+            )}
           />
+          {errors.email ? (
+            <Text className="text-[#ff6b6b] text-xs mt-1">{errors.email.message}</Text>
+          ) : null}
+        </View>
+
+        <View className="mb-4">
+          <Text className="text-sm text-[#9090a8] mb-2">Password</Text>
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
+                placeholder="Min. 8 characters"
+                placeholderTextColor="#606078"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                secureTextEntry
+              />
+            )}
+          />
+          {errors.password ? (
+            <Text className="text-[#ff6b6b] text-xs mt-1">{errors.password.message}</Text>
+          ) : null}
         </View>
 
         <View className="mb-6">
-          <Text className="text-sm text-[#9090a8] mb-2">Password</Text>
-          <TextInput
-            className="bg-bg-secondary border border-border rounded-xl px-4 py-3.5 text-white text-base"
-            placeholder="Min. 8 characters"
-            placeholderTextColor="#606078"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
+          <Text className="text-sm text-[#9090a8] mb-2">Confirm password</Text>
+          <Controller
+            control={control}
+            name="confirmPassword"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
+                placeholder="Repeat password"
+                placeholderTextColor="#606078"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                secureTextEntry
+              />
+            )}
           />
+          {errors.confirmPassword ? (
+            <Text className="text-[#ff6b6b] text-xs mt-1">{errors.confirmPassword.message}</Text>
+          ) : null}
         </View>
 
         <TouchableOpacity
-          className={` + "`" + `rounded-xl py-4 items-center ${loading ? "bg-accent/50" : "bg-accent"}` + "`" + `}
-          onPress={handleRegister}
+          className={` + "`" + `rounded-xl py-4 items-center ${loading ? "bg-[#6c5ce7]/50" : "bg-[#6c5ce7]"}` + "`" + `}
+          onPress={handleSubmit(onSubmit)}
           disabled={loading}
           activeOpacity={0.8}
         >
@@ -481,7 +648,7 @@ export default function RegisterScreen() {
         <View className="flex-row justify-center mt-6 mb-8">
           <Text className="text-[#9090a8]">Already have an account? </Text>
           <Link href="/(auth)/login">
-            <Text className="text-accent font-semibold">Sign in</Text>
+            <Text className="text-[#6c5ce7] font-semibold">Sign in</Text>
           </Link>
         </View>
       </ScrollView>
@@ -502,19 +669,34 @@ export default function TabsLayout() {
         headerStyle: { backgroundColor: "#111118" },
         headerTintColor: "#e8e8f0",
         tabBarStyle: {
-          backgroundColor: "#111118",
+          backgroundColor: "#0a0a0f",
           borderTopColor: "#2a2a3a",
+          height: 60,
+          paddingBottom: 8,
         },
         tabBarActiveTintColor: "#6c5ce7",
         tabBarInactiveTintColor: "#606078",
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "500",
+        },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Dashboard",
+          title: "Home",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="grid-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{
+          title: "Explore",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="search-outline" size={size} color={color} />
           ),
         }}
       />
@@ -527,49 +709,107 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: "Settings",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" size={size} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
 `
 }
 
-func expoDashboardScreen() string {
-	return `import { View, Text, ScrollView, RefreshControl } from "react-native";
+func expoHomeScreen() string {
+	return `import { View, Text, ScrollView, RefreshControl, FlatList } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useState, useCallback } from "react";
+import { Ionicons } from "@expo/vector-icons";
 
 interface Stats {
   total_users: number;
   active_users: number;
   new_today: number;
+  total_items: number;
 }
 
-function StatCard({ title, value, color }: { title: string; value: number; color: string }) {
+interface RecentItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  icon: string;
+  time: string;
+}
+
+function StatCard({
+  title,
+  value,
+  color,
+  icon,
+}: {
+  title: string;
+  value: number;
+  color: string;
+  icon: string;
+}) {
   return (
-    <View className="bg-bg-elevated border border-border rounded-2xl p-5 flex-1 min-w-[140px]">
-      <Text className="text-sm text-[#9090a8] mb-1">{title}</Text>
-      <Text className={` + "`" + `text-3xl font-bold` + "`" + `} style={{ color }}>
-        {value}
-      </Text>
+    <View className="bg-[#22222e] border border-[#2a2a3a] rounded-2xl p-4 flex-1 min-w-[140px]">
+      <View className="flex-row items-center justify-between mb-2">
+        <Ionicons name={icon as any} size={18} color={color} />
+      </View>
+      <Text className="text-2xl font-bold text-white">{value}</Text>
+      <Text className="text-xs text-[#9090a8] mt-1">{title}</Text>
     </View>
   );
 }
 
-export default function DashboardScreen() {
+function RecentItemRow({ item }: { item: RecentItem }) {
+  return (
+    <View className="flex-row items-center bg-[#22222e] border border-[#2a2a3a] rounded-xl px-4 py-3 mb-2">
+      <View className="w-10 h-10 rounded-full bg-[#6c5ce7]/20 items-center justify-center mr-3">
+        <Ionicons name={item.icon as any} size={18} color="#6c5ce7" />
+      </View>
+      <View className="flex-1">
+        <Text className="text-sm font-medium text-white">{item.title}</Text>
+        <Text className="text-xs text-[#9090a8] mt-0.5">{item.subtitle}</Text>
+      </View>
+      <Text className="text-xs text-[#606078]">{item.time}</Text>
+    </View>
+  );
+}
+
+export default function HomeScreen() {
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
   const { data: stats, refetch } = useQuery<Stats>({
-    queryKey: ["dashboard-stats"],
+    queryKey: ["home-stats"],
     queryFn: async () => {
       const res = await api.get("/users?page=1&page_size=1");
       return {
         total_users: res.data?.meta?.total || 0,
         active_users: res.data?.meta?.total || 0,
         new_today: 0,
+        total_items: 0,
       };
+    },
+  });
+
+  const { data: recentItems } = useQuery<RecentItem[]>({
+    queryKey: ["recent-items"],
+    queryFn: async () => {
+      // Default placeholder items until the API provides recent activity
+      return [
+        { id: "1", title: "App launched", subtitle: "Your project is running", icon: "rocket-outline", time: "Now" },
+        { id: "2", title: "API connected", subtitle: "Backend is reachable", icon: "cloud-done-outline", time: "Now" },
+        { id: "3", title: "Auth ready", subtitle: "Login and register work", icon: "shield-checkmark-outline", time: "Now" },
+      ];
     },
   });
 
@@ -579,30 +819,43 @@ export default function DashboardScreen() {
     setRefreshing(false);
   }, [refetch]);
 
+  const firstName = user?.first_name || user?.name?.split(" ")[0] || "User";
+
   return (
     <ScrollView
-      className="flex-1 bg-bg-primary"
+      className="flex-1 bg-[#0a0a0f]"
       contentContainerClassName="p-6"
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6c5ce7" />
       }
     >
       <Text className="text-2xl font-bold text-white mb-1">
-        Welcome back, {user?.name?.split(" ")[0] || "User"}
+        Welcome back, {firstName}
       </Text>
-      <Text className="text-base text-[#9090a8] mb-8">
-        Here's an overview of your application.
+      <Text className="text-base text-[#9090a8] mb-6">
+        Here's what's happening today.
       </Text>
 
-      <View className="flex-row gap-4 mb-6 flex-wrap">
-        <StatCard title="Total Users" value={stats?.total_users || 0} color="#6c5ce7" />
-        <StatCard title="Active" value={stats?.active_users || 0} color="#00b894" />
+      <View className="flex-row gap-3 mb-6">
+        <StatCard title="Total Users" value={stats?.total_users || 0} color="#6c5ce7" icon="people-outline" />
+        <StatCard title="Active" value={stats?.active_users || 0} color="#00b894" icon="pulse-outline" />
       </View>
 
-      <View className="bg-bg-secondary border border-border rounded-2xl p-6">
+      <View className="flex-row gap-3 mb-8">
+        <StatCard title="New Today" value={stats?.new_today || 0} color="#74b9ff" icon="trending-up-outline" />
+        <StatCard title="Items" value={stats?.total_items || 0} color="#fdcb6e" icon="cube-outline" />
+      </View>
+
+      <Text className="text-lg font-semibold text-white mb-3">Recent Activity</Text>
+
+      {recentItems?.map((item) => (
+        <RecentItemRow key={item.id} item={item} />
+      ))}
+
+      <View className="bg-[#111118] border border-[#2a2a3a] rounded-2xl p-6 mt-4">
         <Text className="text-lg font-semibold text-white mb-3">Quick Start</Text>
         <Text className="text-sm text-[#9090a8] leading-6">
-          Your Grit mobile app is connected to the API. Edit this dashboard in{"\n"}
+          Your Grit mobile app is connected to the API. Edit this screen in{"\n"}
           apps/expo/app/(tabs)/index.tsx
         </Text>
       </View>
@@ -612,57 +865,541 @@ export default function DashboardScreen() {
 `
 }
 
-func expoProfileScreen() string {
-	return `import { View, Text, TouchableOpacity, ScrollView } from "react-native";
-import { useAuth } from "@/lib/auth";
+func expoExploreScreen() string {
+	return `import { useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  RefreshControl,
+  TouchableOpacity,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+interface ExploreCategory {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  color: string;
+  count: number;
+}
 
+const categories: ExploreCategory[] = [
+  { id: "1", title: "Users", description: "Manage user accounts", icon: "people-outline", color: "#6c5ce7", count: 0 },
+  { id: "2", title: "Content", description: "Posts, pages, and media", icon: "document-text-outline", color: "#00b894", count: 0 },
+  { id: "3", title: "Analytics", description: "Usage and performance", icon: "bar-chart-outline", color: "#74b9ff", count: 0 },
+  { id: "4", title: "Notifications", description: "Alerts and messages", icon: "notifications-outline", color: "#fdcb6e", count: 0 },
+  { id: "5", title: "Storage", description: "Files and uploads", icon: "cloud-outline", color: "#ff6b6b", count: 0 },
+  { id: "6", title: "Integrations", description: "Connected services", icon: "extension-puzzle-outline", color: "#a29bfe", count: 0 },
+];
+
+function CategoryCard({ item }: { item: ExploreCategory }) {
   return (
-    <ScrollView className="flex-1 bg-bg-primary" contentContainerClassName="p-6">
-      <View className="items-center mb-8 mt-4">
-        <View className="w-20 h-20 rounded-full bg-accent items-center justify-center mb-4">
-          <Text className="text-3xl font-bold text-white">
-            {user?.name?.charAt(0)?.toUpperCase() || "U"}
-          </Text>
+    <TouchableOpacity
+      className="bg-[#22222e] border border-[#2a2a3a] rounded-2xl p-5 mb-3"
+      activeOpacity={0.7}
+    >
+      <View className="flex-row items-center">
+        <View
+          className="w-11 h-11 rounded-xl items-center justify-center mr-4"
+          style={{ backgroundColor: item.color + "20" }}
+        >
+          <Ionicons name={item.icon as any} size={22} color={item.color} />
         </View>
-        <Text className="text-xl font-bold text-white">{user?.name || "User"}</Text>
-        <Text className="text-sm text-[#9090a8] mt-1">{user?.email}</Text>
-        <View className="bg-accent/20 px-3 py-1 rounded-full mt-2">
-          <Text className="text-accent text-xs font-medium capitalize">
-            {user?.role || "user"}
-          </Text>
+        <View className="flex-1">
+          <Text className="text-base font-semibold text-white">{item.title}</Text>
+          <Text className="text-xs text-[#9090a8] mt-0.5">{item.description}</Text>
         </View>
+        <Ionicons name="chevron-forward" size={18} color="#606078" />
       </View>
-
-      <View className="bg-bg-secondary border border-border rounded-2xl overflow-hidden mb-6">
-        <ProfileRow icon="person-outline" label="Full Name" value={user?.name || "—"} />
-        <View className="h-px bg-border" />
-        <ProfileRow icon="mail-outline" label="Email" value={user?.email || "—"} />
-        <View className="h-px bg-border" />
-        <ProfileRow icon="shield-outline" label="Role" value={user?.role || "user"} />
-      </View>
-
-      <TouchableOpacity
-        className="bg-danger/10 border border-danger/30 rounded-2xl py-4 items-center"
-        onPress={logout}
-        activeOpacity={0.8}
-      >
-        <Text className="text-danger font-semibold text-base">Sign out</Text>
-      </TouchableOpacity>
-    </ScrollView>
+    </TouchableOpacity>
   );
 }
 
-function ProfileRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+export default function ExploreScreen() {
+  const [search, setSearch] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+
+  const filtered = categories.filter(
+    (c) =>
+      c.title.toLowerCase().includes(search.toLowerCase()) ||
+      c.description.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    // Reload data when API endpoints are available
+    setRefreshing(false);
+  }, []);
+
+  return (
+    <ScrollView
+      className="flex-1 bg-[#0a0a0f]"
+      contentContainerClassName="p-6"
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6c5ce7" />
+      }
+    >
+      <Text className="text-2xl font-bold text-white mb-1">Explore</Text>
+      <Text className="text-base text-[#9090a8] mb-6">
+        Browse and discover features.
+      </Text>
+
+      <View className="flex-row items-center bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 mb-6">
+        <Ionicons name="search-outline" size={18} color="#606078" />
+        <TextInput
+          className="flex-1 text-white text-base py-3 ml-3"
+          placeholder="Search features..."
+          placeholderTextColor="#606078"
+          value={search}
+          onChangeText={setSearch}
+          autoCapitalize="none"
+        />
+        {search ? (
+          <TouchableOpacity onPress={() => setSearch("")}>
+            <Ionicons name="close-circle" size={18} color="#606078" />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      {filtered.map((item) => (
+        <CategoryCard key={item.id} item={item} />
+      ))}
+
+      {filtered.length === 0 ? (
+        <View className="items-center py-12">
+          <Ionicons name="search-outline" size={48} color="#606078" />
+          <Text className="text-[#606078] text-base mt-4">No results found</Text>
+        </View>
+      ) : null}
+    </ScrollView>
+  );
+}
+`
+}
+
+func expoProfileScreen() string {
+	return `import { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useAuth } from "@/lib/auth";
+import { api } from "@/lib/api";
+import { Ionicons } from "@expo/vector-icons";
+
+const profileSchema = z.object({
+  firstName: z.string().min(1, "Required"),
+  lastName: z.string().min(1, "Required"),
+  email: z.string().email("Invalid email"),
+});
+
+type ProfileForm = z.infer<typeof profileSchema>;
+
+function ProfileRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+}) {
   return (
     <View className="flex-row items-center px-5 py-4">
       <Ionicons name={icon as any} size={20} color="#9090a8" />
       <Text className="text-sm text-[#9090a8] ml-3 flex-1">{label}</Text>
       <Text className="text-sm text-white">{value}</Text>
     </View>
+  );
+}
+
+export default function ProfileScreen() {
+  const { user, logout } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const displayName =
+    (user?.first_name || "") + " " + (user?.last_name || "") || user?.name || "User";
+  const initials =
+    (user?.first_name?.charAt(0) || user?.name?.charAt(0) || "U").toUpperCase();
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ProfileForm>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      firstName: user?.first_name || "",
+      lastName: user?.last_name || "",
+      email: user?.email || "",
+    },
+  });
+
+  const onSave = async (data: ProfileForm) => {
+    setError("");
+    setSaving(true);
+    try {
+      await api.put("/auth/me", {
+        first_name: data.firstName,
+        last_name: data.lastName,
+        email: data.email,
+      });
+      setEditing(false);
+    } catch (err: any) {
+      setError(err.message || "Update failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onCancel = () => {
+    reset();
+    setError("");
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <ScrollView className="flex-1 bg-[#0a0a0f]" contentContainerClassName="p-6">
+        <Text className="text-2xl font-bold text-white mb-6">Edit Profile</Text>
+
+        {error ? (
+          <View className="bg-[#ff6b6b]/10 border border-[#ff6b6b]/30 rounded-xl p-4 mb-6">
+            <Text className="text-[#ff6b6b] text-sm">{error}</Text>
+          </View>
+        ) : null}
+
+        <View className="mb-4">
+          <Text className="text-sm text-[#9090a8] mb-2">First name</Text>
+          <Controller
+            control={control}
+            name="firstName"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
+                placeholder="First name"
+                placeholderTextColor="#606078"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+              />
+            )}
+          />
+          {errors.firstName ? (
+            <Text className="text-[#ff6b6b] text-xs mt-1">{errors.firstName.message}</Text>
+          ) : null}
+        </View>
+
+        <View className="mb-4">
+          <Text className="text-sm text-[#9090a8] mb-2">Last name</Text>
+          <Controller
+            control={control}
+            name="lastName"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
+                placeholder="Last name"
+                placeholderTextColor="#606078"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+              />
+            )}
+          />
+          {errors.lastName ? (
+            <Text className="text-[#ff6b6b] text-xs mt-1">{errors.lastName.message}</Text>
+          ) : null}
+        </View>
+
+        <View className="mb-6">
+          <Text className="text-sm text-[#9090a8] mb-2">Email</Text>
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
+                placeholder="Email"
+                placeholderTextColor="#606078"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            )}
+          />
+          {errors.email ? (
+            <Text className="text-[#ff6b6b] text-xs mt-1">{errors.email.message}</Text>
+          ) : null}
+        </View>
+
+        <TouchableOpacity
+          className={` + "`" + `rounded-xl py-4 items-center mb-3 ${saving ? "bg-[#6c5ce7]/50" : "bg-[#6c5ce7]"}` + "`" + `}
+          onPress={handleSubmit(onSave)}
+          disabled={saving}
+          activeOpacity={0.8}
+        >
+          {saving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text className="text-white font-semibold text-base">Save changes</Text>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          className="rounded-xl py-4 items-center border border-[#2a2a3a]"
+          onPress={onCancel}
+          activeOpacity={0.8}
+        >
+          <Text className="text-[#9090a8] font-semibold text-base">Cancel</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    );
+  }
+
+  return (
+    <ScrollView className="flex-1 bg-[#0a0a0f]" contentContainerClassName="p-6">
+      <View className="items-center mb-8 mt-4">
+        <View className="w-20 h-20 rounded-full bg-[#6c5ce7] items-center justify-center mb-4">
+          <Text className="text-3xl font-bold text-white">{initials}</Text>
+        </View>
+        <Text className="text-xl font-bold text-white">{displayName.trim()}</Text>
+        <Text className="text-sm text-[#9090a8] mt-1">{user?.email}</Text>
+        <View className="bg-[#6c5ce7]/20 px-3 py-1 rounded-full mt-2">
+          <Text className="text-[#6c5ce7] text-xs font-medium capitalize">
+            {user?.role || "user"}
+          </Text>
+        </View>
+      </View>
+
+      <View className="bg-[#111118] border border-[#2a2a3a] rounded-2xl overflow-hidden mb-6">
+        <ProfileRow icon="person-outline" label="Full Name" value={displayName.trim()} />
+        <View className="h-px bg-[#2a2a3a]" />
+        <ProfileRow icon="mail-outline" label="Email" value={user?.email || "—"} />
+        <View className="h-px bg-[#2a2a3a]" />
+        <ProfileRow icon="shield-outline" label="Role" value={user?.role || "user"} />
+      </View>
+
+      <TouchableOpacity
+        className="bg-[#6c5ce7] rounded-2xl py-4 items-center mb-3"
+        onPress={() => setEditing(true)}
+        activeOpacity={0.8}
+      >
+        <Text className="text-white font-semibold text-base">Edit Profile</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        className="bg-[#ff6b6b]/10 border border-[#ff6b6b]/30 rounded-2xl py-4 items-center"
+        onPress={logout}
+        activeOpacity={0.8}
+      >
+        <Text className="text-[#ff6b6b] font-semibold text-base">Sign out</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
+`
+}
+
+func expoSettingsScreen() string {
+	return `import { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  SectionList,
+  Switch,
+  Alert,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { useAuth } from "@/lib/auth";
+
+interface SettingItem {
+  id: string;
+  title: string;
+  icon: string;
+  type: "toggle" | "select" | "action" | "info";
+  value?: string;
+  danger?: boolean;
+}
+
+interface SettingSection {
+  title: string;
+  data: SettingItem[];
+}
+
+export default function SettingsScreen() {
+  const { logout } = useAuth();
+  const [darkMode, setDarkMode] = useState(true);
+  const [notifications, setNotifications] = useState(true);
+  const [language, setLanguage] = useState("English");
+
+  const handleToggle = (id: string, value: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (id === "dark_mode") setDarkMode(value);
+    if (id === "notifications") setNotifications(value);
+  };
+
+  const handleLanguage = () => {
+    Alert.alert("Language", "Select your preferred language", [
+      { text: "English", onPress: () => setLanguage("English") },
+      { text: "Spanish", onPress: () => setLanguage("Spanish") },
+      { text: "French", onPress: () => setLanguage("French") },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
+  const handleClearCache = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert(
+      "Clear Cache",
+      "This will clear all cached data. Continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          },
+        },
+      ]
+    );
+  };
+
+  const handleLogout = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign Out",
+        style: "destructive",
+        onPress: () => logout(),
+      },
+    ]);
+  };
+
+  const sections: SettingSection[] = [
+    {
+      title: "Preferences",
+      data: [
+        { id: "dark_mode", title: "Dark Mode", icon: "moon-outline", type: "toggle" },
+        { id: "notifications", title: "Notifications", icon: "notifications-outline", type: "toggle" },
+        { id: "language", title: "Language", icon: "language-outline", type: "select", value: language },
+      ],
+    },
+    {
+      title: "Data",
+      data: [
+        { id: "clear_cache", title: "Clear Cache", icon: "trash-outline", type: "action" },
+      ],
+    },
+    {
+      title: "About",
+      data: [
+        { id: "version", title: "App Version", icon: "information-circle-outline", type: "info", value: "1.0.0" },
+        { id: "build", title: "Build", icon: "code-outline", type: "info", value: "1" },
+      ],
+    },
+    {
+      title: "",
+      data: [
+        { id: "logout", title: "Sign Out", icon: "log-out-outline", type: "action", danger: true },
+      ],
+    },
+  ];
+
+  const renderItem = ({ item }: { item: SettingItem }) => {
+    const onPress = () => {
+      if (item.id === "language") handleLanguage();
+      if (item.id === "clear_cache") handleClearCache();
+      if (item.id === "logout") handleLogout();
+    };
+
+    return (
+      <TouchableOpacity
+        className="flex-row items-center bg-[#111118] px-5 py-4"
+        activeOpacity={item.type === "info" ? 1 : 0.7}
+        onPress={item.type !== "info" && item.type !== "toggle" ? onPress : undefined}
+        disabled={item.type === "info" || item.type === "toggle"}
+      >
+        <Ionicons
+          name={item.icon as any}
+          size={20}
+          color={item.danger ? "#ff6b6b" : "#9090a8"}
+        />
+        <Text
+          className={` + "`" + `text-sm ml-3 flex-1 ${item.danger ? "text-[#ff6b6b] font-semibold" : "text-white"}` + "`" + `}
+        >
+          {item.title}
+        </Text>
+
+        {item.type === "toggle" ? (
+          <Switch
+            value={item.id === "dark_mode" ? darkMode : notifications}
+            onValueChange={(val) => handleToggle(item.id, val)}
+            trackColor={{ false: "#2a2a3a", true: "#6c5ce7" }}
+            thumbColor="#e8e8f0"
+          />
+        ) : null}
+
+        {item.type === "select" ? (
+          <View className="flex-row items-center">
+            <Text className="text-sm text-[#9090a8] mr-2">{item.value}</Text>
+            <Ionicons name="chevron-forward" size={16} color="#606078" />
+          </View>
+        ) : null}
+
+        {item.type === "info" ? (
+          <Text className="text-sm text-[#606078]">{item.value}</Text>
+        ) : null}
+
+        {item.type === "action" && !item.danger ? (
+          <Ionicons name="chevron-forward" size={16} color="#606078" />
+        ) : null}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderSectionHeader = ({ section }: { section: SettingSection }) => {
+    if (!section.title) return <View className="h-6" />;
+    return (
+      <View className="px-5 pt-6 pb-2 bg-[#0a0a0f]">
+        <Text className="text-xs font-semibold text-[#606078] uppercase tracking-wider">
+          {section.title}
+        </Text>
+      </View>
+    );
+  };
+
+  const renderSeparator = () => <View className="h-px bg-[#2a2a3a] ml-14" />;
+
+  return (
+    <SectionList
+      className="flex-1 bg-[#0a0a0f]"
+      sections={sections}
+      keyExtractor={(item) => item.id}
+      renderItem={renderItem}
+      renderSectionHeader={renderSectionHeader}
+      ItemSeparatorComponent={renderSeparator}
+      stickySectionHeadersEnabled={false}
+      contentContainerClassName="pb-12"
+    />
   );
 }
 `
@@ -677,6 +1414,8 @@ const API_URL = Platform.select({
   ios: "http://localhost:8080/api",
   default: "http://localhost:8080/api",
 });
+
+export { API_URL };
 
 interface RequestOptions {
   method?: string;
@@ -776,12 +1515,14 @@ export const api = new ApiClient();
 
 func expoAuthProvider() string {
 	return `import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { api } from "./api";
+import * as WebBrowser from "expo-web-browser";
+import { api, API_URL } from "./api";
 
 interface User {
   id: string;
   first_name: string;
   last_name: string;
+  name?: string;
   email: string;
   role: string;
 }
@@ -791,6 +1532,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   register: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -800,6 +1542,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isLoading: true,
   login: async () => {},
+  loginWithGoogle: async () => {},
   register: async () => {},
   logout: async () => {},
 });
@@ -829,6 +1572,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(res.data.user);
   }, []);
 
+  const loginWithGoogle = useCallback(async () => {
+    const callbackUrl = "myapp://callback";
+    const result = await WebBrowser.openAuthSessionAsync(
+      ` + "`" + `${API_URL}/auth/oauth/google?redirect_uri=${encodeURIComponent(callbackUrl)}` + "`" + `,
+      callbackUrl
+    );
+
+    if (result.type === "success" && result.url) {
+      const url = new URL(result.url);
+      const accessToken = url.searchParams.get("access_token");
+      const refreshToken = url.searchParams.get("refresh_token");
+
+      if (accessToken && refreshToken) {
+        await api.setTokens(accessToken, refreshToken);
+        await loadUser();
+      } else {
+        throw new Error("OAuth callback missing tokens");
+      }
+    } else if (result.type === "cancel") {
+      throw new Error("Login cancelled");
+    }
+  }, []);
+
   const register = useCallback(async (firstName: string, lastName: string, email: string, password: string) => {
     const res = await api.post("/auth/register", { first_name: firstName, last_name: lastName, email, password });
     await api.setTokens(res.data.access_token, res.data.refresh_token);
@@ -846,7 +1612,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext value={{ user, isAuthenticated: !!user, isLoading, login, register, logout }}>
+    <AuthContext value={{ user, isAuthenticated: !!user, isLoading, login, loginWithGoogle, register, logout }}>
       {children}
     </AuthContext>
   );

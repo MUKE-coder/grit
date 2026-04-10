@@ -491,6 +491,9 @@ func Load() (*Config, error) {
 	if cfg.JWTSecret == "" {
 		return nil, fmt.Errorf("JWT_SECRET is required")
 	}
+	if len(cfg.JWTSecret) < 32 {
+		log.Println("WARNING: JWT_SECRET should be at least 32 characters for security. Generate one with: openssl rand -hex 32")
+	}
 
 	// Parse durations
 	accessExpiry, err := time.ParseDuration(getEnv("JWT_ACCESS_EXPIRY", "15m"))
@@ -702,13 +705,16 @@ func Migrate(db *gorm.DB) error {
 	models := Models()
 	migrated := 0
 
+	// Use Silent logger during migration to suppress schema inspection SQL noise
+	silentDB := db.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
+
 	for _, model := range models {
-		if db.Migrator().HasTable(model) {
+		if silentDB.Migrator().HasTable(model) {
 			log.Printf("  ✓ %T — already exists, skipping", model)
 			continue
 		}
 
-		if err := db.AutoMigrate(model); err != nil {
+		if err := silentDB.AutoMigrate(model); err != nil {
 			return fmt.Errorf("migrating %T: %w", model, err)
 		}
 		log.Printf("  ✓ %T — created", model)
@@ -2025,6 +2031,39 @@ func (g *gzipResponseWriter) WriteString(s string) (int, error) {
 	return g.Writer.Write([]byte(s))
 }
 
+// SecurityHeaders adds production security headers to all responses.
+func SecurityHeaders() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("X-XSS-Protection", "1; mode=block")
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+		c.Header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+		// HSTS only in production (when behind HTTPS)
+		if c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https" {
+			c.Header("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
+		}
+		c.Next()
+	}
+}
+
+// MaxBodySize limits the request body to prevent abuse.
+func MaxBodySize(limit int64) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.ContentLength > limit {
+			c.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
+				"error": gin.H{
+					"code":    "PAYLOAD_TOO_LARGE",
+					"message": fmt.Sprintf("Request body exceeds %dMB limit", limit/(1024*1024)),
+				},
+			})
+			return
+		}
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, limit)
+		c.Next()
+	}
+}
+
 // Logger creates a structured logging middleware with request ID correlation.
 // Silently skips internal dashboard paths to keep the terminal readable.
 func Logger() gin.HandlerFunc {
@@ -2159,6 +2198,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 
 	// Global middleware
 	r.Use(middleware.Maintenance())
+	r.Use(middleware.SecurityHeaders())
+	r.Use(middleware.MaxBodySize(10 << 20)) // 10MB max request body
 	r.Use(middleware.RequestID())
 	r.Use(middleware.Logger())
 	r.Use(gin.Recovery())
@@ -2190,7 +2231,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			},
 			WAF: sentinel.WAFConfig{
 				Enabled: true,
-				Mode:    sentinel.ModeLog, // Switch to sentinel.ModeBlock in production
+				Mode: func() sentinel.WAFMode {
+					if isDev { return sentinel.ModeLog }
+					return sentinel.ModeBlock
+				}(),
 			},
 			RateLimit: sentinel.RateLimitConfig{
 				Enabled: !isDev, // Disabled in development, enabled in production
