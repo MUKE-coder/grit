@@ -103,6 +103,11 @@ export default function StyleVariantsPage() {
                         <td className="px-4 py-2.5">Frosted-glass card with backdrop blur</td>
                         <td className="px-4 py-2.5">Hero banner with gradient mesh</td>
                       </tr>
+                      <tr>
+                        <td className="px-4 py-2.5 font-mono text-xs text-primary">centered</td>
+                        <td className="px-4 py-2.5">Single centered card on radial gradient (Linear school)</td>
+                        <td className="px-4 py-2.5">Uses default dashboard</td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -279,6 +284,51 @@ export default function StyleVariantsPage() {
                     <li>Resource cards use glass styling (<code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">backdrop-blur-xl border-white/5</code>)</li>
                     <li>Quick links in a 4-column glass panel at the bottom</li>
                   </ul>
+                </div>
+              </div>
+
+              {/* centered */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  centered
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Linear / Vercel school auth pages. A single centered card (~420px wide) floats on
+                  a subtle radial gradient background. No split-screen branding panel. Minimal chrome,
+                  generous whitespace. The dashboard uses the default layout — only the auth pages
+                  change. Added in v3.8.0.
+                </p>
+
+                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    </div>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                  </div>
+                  <div className="p-5 font-mono text-sm">
+                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit new my-app --style centered</span></div>
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-3">
+                  <h3 className="text-xl font-semibold tracking-tight">Auth layout</h3>
+                  <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                    <li>Full-screen container: <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">flex items-center justify-center</code></li>
+                    <li>Card: <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">max-w-[420px] rounded-2xl p-10 shadow-sm</code></li>
+                    <li>Grit logo mark (purple squircle with white &ldquo;G&rdquo;) centered at top</li>
+                    <li>44px input height, 44px button height, 20px field gap</li>
+                    <li>Subtle radial glow at top of background (<code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">rgba(108, 92, 231, 0.10)</code>)</li>
+                    <li>OAuth buttons in a 2-column grid with &ldquo;or continue with&rdquo; divider</li>
+                  </ul>
+                  <h3 className="text-xl font-semibold tracking-tight mt-6">Dashboard layout</h3>
+                  <p className="text-muted-foreground">
+                    Uses the same dashboard as <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">default</code>.
+                    Only the auth pages change. Good fit when you want Linear-feeling onboarding
+                    but a standard dashboard experience.
+                  </p>
                 </div>
               </div>
 

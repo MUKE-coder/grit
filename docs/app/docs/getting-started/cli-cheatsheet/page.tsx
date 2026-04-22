@@ -214,7 +214,7 @@ export default function CLICheatsheetPage() {
                   />
                   <TerminalCard
                     cmd='grit new myapp --style modern'
-                    desc='Set admin panel style variant (default, modern, minimal, glass)'
+                    desc='Set admin panel style variant (default, modern, minimal, glass, centered)'
                   />
                 </div>
 
@@ -251,7 +251,7 @@ export default function CLICheatsheetPage() {
                         {
                           flag: "--style",
                           type: "string",
-                          desc: "Admin style: default, modern, minimal, glass",
+                          desc: "Admin style: default, modern, minimal, glass, centered",
                         },
                       ].map((f) => (
                         <tr key={f.flag} className="border-b border-border/15 last:border-0">

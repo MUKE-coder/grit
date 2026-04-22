@@ -28,6 +28,144 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.8.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.8.0
+                </span>
+                <span className="text-sm text-muted-foreground">April 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Design System</h3>
+                <ul>
+                  <li>
+                    <strong>GRIT_STYLE_GUIDE.md</strong> &mdash; First official style guide for all Grit-scaffolded
+                    projects. Premium Minimal aesthetic (Linear / Vercel school), Grit purple{' '}
+                    <code>#6C5CE7</code> primary, Onest font. Covers typography, color palette, spacing,
+                    shadows, every component spec (buttons, inputs, cards, tables, modals), auth page rules,
+                    CLI scaffolding design, admin panel patterns, email templates.
+                  </li>
+                </ul>
+
+                <h3>Admin Layout</h3>
+                <ul>
+                  <li>
+                    <strong>Topbar refactor</strong> &mdash; Moved sidebar collapse toggle to top-left of the
+                    topbar (next to mobile menu button). Moved theme toggle, notifications bell, and enhanced
+                    user menu to the top-right cluster alongside search. The sidebar now contains only
+                    navigation. Matches modern dashboard patterns (Linear, Vercel, Raycast).
+                  </li>
+                  <li>
+                    <strong>Enhanced user menu</strong> &mdash; Dropdown now shows User Activity, Settings,
+                    Billing, and Log out sections with a user name/email header.
+                  </li>
+                </ul>
+
+                <h3>PageHeader Component</h3>
+                <ul>
+                  <li>
+                    <strong>Consistent page headers</strong> &mdash; New <code>&lt;PageHeader /&gt;</code>{' '}
+                    component at <code>components/layout/page-header.tsx</code> with title, description,
+                    breadcrumbs, actions slot, and a 4-card stats grid. Every generated resource page
+                    auto-includes it.
+                  </li>
+                  <li>
+                    <strong>Auto-generated stats cards</strong> &mdash; Resource pages now ship with 4 default
+                    stat cards (Total, This Week, This Month, Updated Recently) fetched from the API. Override
+                    via <code>defineResource({`{ stats: { cards: [...] } }`})</code> or disable with{' '}
+                    <code>stats: false</code>.
+                  </li>
+                </ul>
+
+                <h3>Auth Pages</h3>
+                <ul>
+                  <li>
+                    <strong>New centered auth variant</strong> &mdash; <code>grit new myapp --style centered</code>{' '}
+                    scaffolds Linear-school single-card auth pages (login, sign-up, forgot-password). ~420px
+                    card on a subtle radial gradient background. The original split-screen design remains the
+                    default (unchanged).
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* v3.7.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.7.0
+                </span>
+                <span className="text-sm text-muted-foreground">April 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>Security</h3>
+                <ul>
+                  <li>
+                    <strong>Security headers middleware</strong> &mdash; New <code>SecurityHeaders()</code>{' '}
+                    middleware adds X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy,
+                    Permissions-Policy, and HSTS (when HTTPS detected) on every response.
+                  </li>
+                  <li>
+                    <strong>Max body size middleware</strong> &mdash; 10MB default limit returns 413 on exceed.
+                  </li>
+                  <li>
+                    <strong>JWT secret validation</strong> &mdash; Warns if <code>JWT_SECRET</code> is shorter
+                    than 32 characters.
+                  </li>
+                  <li>
+                    <strong>Sentinel WAF</strong> &mdash; Now runs in <code>ModeBlock</code> in production{' '}
+                    (was always <code>ModeLog</code>). Development keeps <code>ModeLog</code>.
+                  </li>
+                </ul>
+
+                <h3>Performance</h3>
+                <ul>
+                  <li>
+                    <strong>GORM AutoMigrate silence</strong> &mdash; Migration now uses a{' '}
+                    <code>logger.Silent</code> session to suppress schema inspection SQL noise. Fixes{' '}
+                    <a href="https://github.com/MUKE-coder/grit/issues/8" className="text-primary hover:underline"
+                       target="_blank" rel="noopener noreferrer">issue #8</a>.
+                  </li>
+                </ul>
+
+                <h3>Web App Auth</h3>
+                <ul>
+                  <li>
+                    <strong>Auth pages for the web app</strong> &mdash; The web app (<code>apps/web</code>) now
+                    ships with its own auth pages: login, register, forgot-password, OAuth callback.
+                    Previously only the admin panel had auth. This is critical for e-commerce and SaaS where
+                    end users log in on the web app, not the admin.
+                  </li>
+                  <li>
+                    <strong><code>useAuth()</code> hook</strong> &mdash; React Query + js-cookie token
+                    management with <code>AuthProvider</code> context wrapping the web app.
+                  </li>
+                </ul>
+
+                <h3>Mobile (Expo)</h3>
+                <ul>
+                  <li>
+                    <strong>Major Expo scaffold upgrade</strong> &mdash; 4 tabs (Home, Explore, Profile,
+                    Settings) instead of 2. All forms use react-hook-form + zod. Home screen with stat cards
+                    and pull-to-refresh. Explore screen with search and category discovery. Settings with
+                    SectionList. Profile with display/edit mode.
+                  </li>
+                  <li>
+                    <strong>OAuth in mobile</strong> &mdash; Google OAuth via <code>expo-web-browser</code>{' '}
+                    with deep-link callback handling.
+                  </li>
+                  <li>
+                    <strong>New Expo dependencies</strong> &mdash; react-hook-form, @hookform/resolvers, zod,
+                    expo-image, expo-haptics, expo-web-browser. Splash screen config in{' '}
+                    <code>app.json</code>.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.6.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

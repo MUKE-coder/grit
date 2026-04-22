@@ -184,7 +184,7 @@ export default function LLMGuidePage() {
                   {[
                     {
                       cmd: 'grit new <app-name>',
-                      desc: 'Scaffold a complete new project. Interactive by default — prompts for architecture mode and frontend. 5 architecture modes: --single (API only), --double (API + web), --triple (API + web + admin), --api (headless API), --mobile (API + Expo). 2 frontends: --next (Next.js), --vite (TanStack Router). Supports grit new . to scaffold into current directory, --here for explicit in-place scaffolding, and --force to scaffold into a non-empty directory. Other flags: --full (default, all apps), --style default|modern|minimal|glass.',
+                      desc: 'Scaffold a complete new project. Interactive by default — prompts for architecture mode and frontend. 5 architecture modes: --single (API only), --double (API + web), --triple (API + web + admin), --api (headless API), --mobile (API + Expo). 2 frontends: --next (Next.js), --vite (TanStack Router). Supports grit new . to scaffold into current directory, --here for explicit in-place scaffolding, and --force to scaffold into a non-empty directory. Other flags: --full (default, all apps), --style default|modern|minimal|glass|centered.',
                       example: 'grit new myapp\ngrit new myapp --triple --vite\ngrit new . --triple --vite\ngrit new myapp --here',
                     },
                     {

@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.5.1
+Version: 3.8.0
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -335,7 +335,7 @@ Every Grit project, regardless of architecture, includes these production-ready 
     - Collapsible sidebar with auto-generated navigation
     - Multi-step forms (modal-steps and page-steps variants)
     - Dark/light theme toggle
-    - Four style variants: default, modern, minimal, glass
+    - Five style variants: default, modern, minimal, glass, centered
     - System pages: Jobs, Files, Cron, Mail Preview, Security
 
 18. TESTS (Scaffolded)
@@ -404,7 +404,7 @@ Project Scaffolding:
   grit new <name> --api                  Go API only
   grit new <name> --mobile               API + Expo React Native
   grit new <name> --full                 Everything including Expo + docs site
-  grit new <name> --style modern         Admin style: default, modern, minimal, glass
+  grit new <name> --style modern         Admin style: default, modern, minimal, glass, centered
   grit new-desktop <name>                Native desktop app (Wails + Go + React + SQLite)
 
 Code Generation:
@@ -896,7 +896,26 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.6.0 (Current):
+v3.8.0 (Current):
+  - GRIT_STYLE_GUIDE.md — first official design style guide (Premium Minimal, Linear school)
+  - Admin layout refactor: sidebar collapse toggle moved to top-left of topbar
+  - Dark mode toggle, notifications bell, and enhanced user menu now live in the topbar (right cluster)
+  - Sidebar is now navigation-only
+  - PageHeader component: every generated resource page gets a consistent header with title, description, actions, and 4 stat cards (Total, This Week, This Month, Updated Recently)
+  - Resource stats configurable via defineResource({ stats: { cards: [...] } }) or disabled with stats: false
+  - New --style centered auth variant (Linear school): single centered card, no split-screen
+  - Enhanced user dropdown: User Activity, Settings, Billing, Log out
+
+v3.7.0:
+  - Security middleware: SecurityHeaders (X-Frame-Options, HSTS, etc.), MaxBodySize (10MB)
+  - JWT secret length warning (< 32 chars)
+  - Sentinel WAF ModeBlock in production
+  - GORM AutoMigrate silent logger (fixes schema inspection SQL flood)
+  - Web app auth pages (login, register, forgot-password, OAuth callback)
+  - useAuth() hook with React Query + js-cookie for the web app
+  - Major Expo mobile scaffold upgrade (4 tabs, react-hook-form + zod, OAuth, splash screen)
+
+v3.6.0:
   - Interactive CLI with architecture and frontend selection
   - 5 architecture modes (single, double, triple, API, mobile)
   - 2 frontend options (Next.js, TanStack Router)
