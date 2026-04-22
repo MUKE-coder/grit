@@ -120,6 +120,10 @@ func adminIconMap() string {
   Link,
   Undo,
   Redo,
+  Activity,
+  TrendingUp,
+  TrendingDown,
+  ArrowLeft,
   type LucideIcon,
 } from "lucide-react";
 
@@ -184,6 +188,9 @@ export {
   FolderOpen,
   Calendar,
   Mail,
+  Bell,
+  Settings,
+  CreditCard,
   RefreshCw,
   Upload,
   File,
@@ -209,6 +216,10 @@ export {
   Link,
   Undo,
   Redo,
+  Activity,
+  TrendingUp,
+  TrendingDown,
+  ArrowLeft,
 };
 `
 }
@@ -276,7 +287,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <Sidebar
         user={user}
         collapsed={sidebarCollapsed}
-        onToggle={toggleSidebar}
         mobileOpen={mobileMenuOpen}
         onMobileClose={() => setMobileMenuOpen(false)}
       />
@@ -289,6 +299,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         <Navbar
           user={user}
           onMenuToggle={() => setMobileMenuOpen(true)}
+          collapsed={sidebarCollapsed}
+          onToggleSidebar={toggleSidebar}
         />
         <main className="flex-1 p-6">{children}</main>
       </div>
@@ -302,14 +314,14 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 func adminSidebar() string {
 	return `"use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
+import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { resources } from "@/resources";
-import { getIcon, ChevronLeft, ChevronRight, ChevronDown, Sun, Moon, LayoutDashboard, UserCircle, LogOut } from "@/lib/icons";
-import { useTheme } from "@/components/shared/theme-provider";
-import { useLogout } from "@/hooks/use-auth";
+import { getIcon, ChevronDown, LayoutDashboard } from "@/lib/icons";
+
+// Theme toggle and user menu have moved to the topbar (Navbar component).
+// The sidebar now contains only navigation.
 
 interface User {
   first_name: string;
@@ -322,113 +334,12 @@ interface User {
 interface SidebarProps {
   user: User;
   collapsed: boolean;
-  onToggle: () => void;
   mobileOpen: boolean;
   onMobileClose: () => void;
 }
 
-function UserMenu({ user, collapsed, fullName }: { user: User; collapsed: boolean; fullName: string }) {
-  const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ bottom: 0, left: 0, width: 0 });
-  const router = useRouter();
-  const { mutate: logout } = useLogout();
-
-  const updatePosition = useCallback(() => {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setPos({ bottom: window.innerHeight - rect.top + 4, left: rect.left, width: rect.width });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    updatePosition();
-    function handleClickOutside(e: MouseEvent) {
-      const target = e.target as Node;
-      if (
-        triggerRef.current && !triggerRef.current.contains(target) &&
-        menuRef.current && !menuRef.current.contains(target)
-      ) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open, updatePosition]);
-
-  const handleSignOut = () => {
-    setOpen(false);
-    logout(undefined, {
-      onSuccess: () => router.push("/login"),
-    });
-  };
-
-  const avatar = user.avatar ? (
-    <img src={user.avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
-  ) : (
-    <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
-      <span className="text-sm font-medium text-accent">{user.first_name?.charAt(0)?.toUpperCase()}</span>
-    </div>
-  );
-
-  const menu = open ? createPortal(
-    <div
-      ref={menuRef}
-      className="fixed z-[9999] w-56 rounded-lg border border-border bg-bg-elevated shadow-xl"
-      style={{ bottom: pos.bottom, left: pos.left, backgroundColor: "var(--bg-elevated, #22222e)" }}
-    >
-      <div className="p-3 border-b border-border">
-        <p className="text-sm font-medium text-foreground truncate">{fullName}</p>
-        <p className="text-xs text-text-muted truncate">{user.email}</p>
-      </div>
-      <div className="p-1">
-        <button
-          onClick={() => { setOpen(false); router.push("/profile"); }}
-          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
-        >
-          <UserCircle className="h-4 w-4" />
-          Profile
-        </button>
-        <button
-          onClick={handleSignOut}
-          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-danger hover:bg-danger/10 transition-colors"
-        >
-          <LogOut className="h-4 w-4" />
-          Sign Out
-        </button>
-      </div>
-    </div>,
-    document.body
-  ) : null;
-
-  return (
-    <div>
-      <div
-        ref={triggerRef}
-        onClick={() => { if (!open) updatePosition(); setOpen(!open); }}
-        className={` + "`" + `flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-bg-hover transition-colors ${collapsed ? "justify-center" : ""}` + "`" + `}
-      >
-        {avatar}
-        {!collapsed && (
-          <>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">{fullName}</p>
-              <p className="text-xs text-text-muted truncate">{user.role}</p>
-            </div>
-            <ChevronDown className={` + "`" + `h-3 w-3 text-text-muted transition-transform ${open ? "rotate-180" : ""}` + "`" + `} />
-          </>
-        )}
-      </div>
-      {menu}
-    </div>
-  );
-}
-
-export function Sidebar({ user, collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
+export function Sidebar({ user, collapsed, mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
-  const { theme, toggleTheme } = useTheme();
 
   const isAdmin = user.role === "ADMIN" || user.role === "EDITOR";
 
@@ -455,8 +366,6 @@ export function Sidebar({ user, collapsed, onToggle, mobileOpen, onMobileClose }
         { label: "Security", href: "/system/security", icon: "Shield" },
       ]
     : [];
-
-  const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ") || "User";
 
   const sidebarContent = (
     <>
@@ -556,37 +465,6 @@ export function Sidebar({ user, collapsed, onToggle, mobileOpen, onMobileClose }
           )}
         </nav>
 
-        {/* Bottom section - flows right after nav items */}
-        <div className="border-t border-border p-3 space-y-2">
-          {/* Theme toggle */}
-          <button
-            onClick={toggleTheme}
-            className={` + "`" + `flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors ${collapsed ? "justify-center" : ""}` + "`" + `}
-            title={collapsed ? (theme === "dark" ? "Light mode" : "Dark mode") : undefined}
-          >
-            {theme === "dark" ? (
-              <Sun className="h-4 w-4 shrink-0" />
-            ) : (
-              <Moon className="h-4 w-4 shrink-0" />
-            )}
-            {!collapsed && <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
-          </button>
-
-          {/* Collapse toggle (desktop only) */}
-          <button
-            onClick={onToggle}
-            className="hidden lg:flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors justify-center"
-          >
-            {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
-          </button>
-
-          {/* User avatar menu */}
-          <UserMenu user={user} collapsed={collapsed} fullName={fullName} />
-        </div>
       </div>
     </>
   );
@@ -616,27 +494,41 @@ export function Sidebar({ user, collapsed, onToggle, mobileOpen, onMobileClose }
 `
 }
 
-// adminNavbar returns the enhanced navbar with breadcrumbs and search.
+// adminNavbar returns the topbar with sidebar-collapse toggle (left) and
+// theme/notifications/user cluster (right). Follows GRIT_STYLE_GUIDE §7.7.
 func adminNavbar() string {
 	return `"use client";
 
 import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useLogout } from "@/hooks/use-auth";
+import { useTheme } from "@/components/shared/theme-provider";
 import { getResource } from "@/resources";
-import { Search } from "@/lib/icons";
+import { Search, ChevronLeft, ChevronRight, Sun, Moon, Bell, Activity, Settings, CreditCard, LogOut } from "@/lib/icons";
 
 interface User {
   first_name: string;
   last_name: string;
   email: string;
   role: string;
+  avatar?: string;
 }
 
-export function Navbar({ user, onMenuToggle }: { user: User; onMenuToggle: () => void }) {
+interface NavbarProps {
+  user: User;
+  onMenuToggle: () => void;
+  collapsed: boolean;
+  onToggleSidebar: () => void;
+}
+
+export function Navbar({ user, onMenuToggle, collapsed, onToggleSidebar }: NavbarProps) {
   const { mutate: logout } = useLogout();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const [userOpen, setUserOpen] = useState(false);
+  const router = useRouter();
   const pathname = usePathname();
+
+  const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ") || "User";
 
   // Build breadcrumbs from pathname
   const segments = pathname.split("/").filter(Boolean);
@@ -653,7 +545,7 @@ export function Navbar({ user, onMenuToggle }: { user: User; onMenuToggle: () =>
           label: resource.label?.plural ?? resource.name,
           href: href + "/" + segments[i + 1],
         });
-        i++; // skip the next segment
+        i++;
         continue;
       }
     }
@@ -664,17 +556,34 @@ export function Navbar({ user, onMenuToggle }: { user: User; onMenuToggle: () =>
     });
   }
 
+  const handleSignOut = () => {
+    setUserOpen(false);
+    logout(undefined, { onSuccess: () => router.push("/login") });
+  };
+
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background px-6">
-      <div className="flex items-center gap-4">
-        {/* Mobile menu button */}
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background px-4 sm:px-6">
+      {/* LEFT CLUSTER: mobile hamburger + collapse toggle + breadcrumbs */}
+      <div className="flex items-center gap-3">
+        {/* Mobile menu button (hidden on desktop) */}
         <button
           onClick={onMenuToggle}
-          className="lg:hidden p-2 rounded-lg hover:bg-bg-hover text-text-secondary"
+          className="lg:hidden flex items-center justify-center h-9 w-9 rounded-lg hover:bg-bg-hover text-text-secondary transition-colors"
+          aria-label="Open menu"
         >
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
+        </button>
+
+        {/* Sidebar collapse toggle (desktop only) */}
+        <button
+          onClick={onToggleSidebar}
+          className="hidden lg:flex items-center justify-center h-9 w-9 rounded-lg hover:bg-bg-hover text-text-secondary transition-colors"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
 
         {/* Breadcrumbs */}
@@ -697,9 +606,10 @@ export function Navbar({ user, onMenuToggle }: { user: User; onMenuToggle: () =>
         </nav>
       </div>
 
-      <div className="flex items-center gap-3">
+      {/* RIGHT CLUSTER: search + notifications + theme + user */}
+      <div className="flex items-center gap-2">
         {/* Search */}
-        <div className="hidden md:flex items-center gap-2 rounded-lg border border-border bg-bg-tertiary px-3 py-1.5">
+        <div className="hidden md:flex items-center gap-2 rounded-lg border border-border bg-bg-tertiary px-3 h-9">
           <Search className="h-4 w-4 text-text-muted" />
           <input
             type="text"
@@ -708,42 +618,264 @@ export function Navbar({ user, onMenuToggle }: { user: User; onMenuToggle: () =>
           />
         </div>
 
+        {/* Notifications */}
+        <button
+          className="relative flex items-center justify-center h-9 w-9 rounded-lg hover:bg-bg-hover text-text-secondary transition-colors"
+          aria-label="Notifications"
+          title="Notifications"
+        >
+          <Bell className="h-4 w-4" />
+          {/* Unread dot (uncomment when wired up) */}
+          {/* <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-accent" /> */}
+        </button>
+
+        {/* Theme toggle */}
+        <button
+          onClick={toggleTheme}
+          className="flex items-center justify-center h-9 w-9 rounded-lg hover:bg-bg-hover text-text-secondary transition-colors"
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          title={theme === "dark" ? "Light mode" : "Dark mode"}
+        >
+          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
+
         {/* User menu */}
         <div className="relative">
           <button
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-bg-hover transition-colors"
+            onClick={() => setUserOpen(!userOpen)}
+            className="flex items-center gap-2 rounded-lg pl-1 pr-2 py-1 hover:bg-bg-hover transition-colors"
+            aria-label="User menu"
           >
-            <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
-              <span className="text-sm font-medium text-accent">
-                {user.first_name?.charAt(0)?.toUpperCase()}
-              </span>
-            </div>
-            <span className="text-sm font-medium text-foreground hidden sm:block">
-              {user.first_name}
-            </span>
+            {user.avatar ? (
+              <img src={user.avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
+            ) : (
+              <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
+                <span className="text-sm font-medium text-accent">
+                  {user.first_name?.charAt(0)?.toUpperCase()}
+                </span>
+              </div>
+            )}
           </button>
 
-          {dropdownOpen && (
+          {userOpen && (
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
-              <div className="absolute right-0 top-full mt-2 w-48 rounded-lg border border-border bg-bg-elevated shadow-lg z-50">
+              <div className="fixed inset-0 z-40" onClick={() => setUserOpen(false)} />
+              <div className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-border bg-bg-elevated shadow-xl z-50 overflow-hidden">
+                {/* Header: name + email */}
                 <div className="px-4 py-3 border-b border-border">
-                  <p className="text-sm font-medium text-foreground">{user.first_name} {user.last_name}</p>
-                  <p className="text-xs text-text-muted">{user.email}</p>
+                  <p className="text-sm font-semibold text-foreground truncate">{fullName}</p>
+                  <p className="text-xs text-text-muted truncate">{user.email}</p>
                 </div>
-                <button
-                  onClick={() => logout()}
-                  className="w-full px-4 py-2.5 text-left text-sm text-danger hover:bg-bg-hover transition-colors"
-                >
-                  Sign Out
-                </button>
+
+                {/* Menu items */}
+                <div className="p-1">
+                  <button
+                    onClick={() => { setUserOpen(false); router.push("/profile"); }}
+                    className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
+                  >
+                    <Activity className="h-4 w-4" />
+                    User Activity
+                  </button>
+                  <button
+                    onClick={() => { setUserOpen(false); router.push("/profile"); }}
+                    className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Settings
+                  </button>
+                  <button
+                    onClick={() => { setUserOpen(false); router.push("/system/billing"); }}
+                    className="flex w-full items-center justify-between gap-2.5 rounded-md px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <CreditCard className="h-4 w-4" />
+                      Billing
+                    </span>
+                  </button>
+                </div>
+
+                {/* Sign out */}
+                <div className="p-1 border-t border-border">
+                  <button
+                    onClick={handleSignOut}
+                    className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-danger hover:bg-danger/10 transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Log out
+                  </button>
+                </div>
               </div>
             </>
           )}
         </div>
       </div>
     </header>
+  );
+}
+`
+}
+
+// adminPageHeader returns a consistent <PageHeader /> component used by every
+// dashboard page (including generated resource pages). Structure:
+//   - Breadcrumbs (optional)
+//   - Title + Description + Actions row
+//   - 4-card stats grid (optional)
+// Follows GRIT_STYLE_GUIDE §7.8.
+func adminPageHeader() string {
+	return `"use client";
+
+import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
+import { getIcon, TrendingUp, TrendingDown } from "@/lib/icons";
+
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
+export interface StatCard {
+  label: string;
+  icon?: string;
+  color?: "default" | "success" | "warning" | "danger" | "info";
+  /** Either provide a static value... */
+  value?: string | number;
+  /** ...or an endpoint + field to fetch it from the API (e.g. endpoint: "/api/posts?page_size=1", field: "meta.total") */
+  endpoint?: string;
+  field?: string;
+  /** Optional trend delta shown next to value */
+  trend?: { value: number; direction: "up" | "down" };
+}
+
+export interface PageHeaderProps {
+  title: string;
+  description?: string;
+  breadcrumbs?: BreadcrumbItem[];
+  actions?: React.ReactNode;
+  stats?: StatCard[];
+}
+
+const colorClasses: Record<string, { bg: string; text: string }> = {
+  default: { bg: "bg-accent/10", text: "text-accent" },
+  success: { bg: "bg-success/10", text: "text-success" },
+  warning: { bg: "bg-warning/10", text: "text-warning" },
+  danger: { bg: "bg-danger/10", text: "text-danger" },
+  info: { bg: "bg-info/10", text: "text-info" },
+};
+
+// Reads a dotted path from an object. e.g. getPath(data, "meta.total") → data.meta.total
+function getPath(obj: any, path: string): any {
+  return path.split(".").reduce((acc, key) => (acc == null ? acc : acc[key]), obj);
+}
+
+function StatCardItem({ stat }: { stat: StatCard }) {
+  const color = colorClasses[stat.color || "default"];
+  const Icon = stat.icon ? getIcon(stat.icon) : null;
+
+  // Fetch value from endpoint if provided; otherwise use static value
+  const { data, isLoading } = useQuery({
+    queryKey: ["stat", stat.endpoint, stat.field],
+    queryFn: async () => {
+      if (!stat.endpoint) return null;
+      const res = await apiClient.get(stat.endpoint);
+      return res.data;
+    },
+    enabled: !!stat.endpoint,
+    staleTime: 30_000,
+  });
+
+  const value =
+    stat.value !== undefined
+      ? stat.value
+      : stat.endpoint && stat.field
+      ? getPath(data, stat.field) ?? "—"
+      : "—";
+
+  return (
+    <div className="rounded-xl border border-border bg-bg-secondary p-5 transition-colors hover:border-border/80">
+      <div className="flex items-start justify-between">
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+            {stat.label}
+          </p>
+          <div className="mt-2 flex items-baseline gap-2">
+            {isLoading && stat.endpoint ? (
+              <div className="h-7 w-16 rounded bg-bg-hover animate-pulse" />
+            ) : (
+              <p className="text-2xl font-bold text-foreground tabular-nums">
+                {typeof value === "number" ? value.toLocaleString() : value}
+              </p>
+            )}
+            {stat.trend && (
+              <span
+                className={` + "`" + `flex items-center gap-0.5 text-xs font-medium ${
+                  stat.trend.direction === "up" ? "text-success" : "text-danger"
+                }` + "`" + `}
+              >
+                {stat.trend.direction === "up" ? (
+                  <TrendingUp className="h-3 w-3" />
+                ) : (
+                  <TrendingDown className="h-3 w-3" />
+                )}
+                {stat.trend.value}%
+              </span>
+            )}
+          </div>
+        </div>
+        {Icon && (
+          <div className={` + "`" + `flex h-9 w-9 items-center justify-center rounded-lg ${color.bg}` + "`" + `}>
+            <Icon className={` + "`" + `h-4 w-4 ${color.text}` + "`" + `} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function PageHeader({ title, description, breadcrumbs, actions, stats }: PageHeaderProps) {
+  return (
+    <div className="mb-8">
+      {/* Breadcrumbs */}
+      {breadcrumbs && breadcrumbs.length > 0 && (
+        <nav className="mb-3 flex items-center gap-1.5 text-xs">
+          {breadcrumbs.map((crumb, i) => (
+            <span key={i} className="flex items-center gap-1.5">
+              {i > 0 && <span className="text-text-muted">/</span>}
+              {crumb.href && i < breadcrumbs.length - 1 ? (
+                <Link
+                  href={crumb.href}
+                  className="text-text-secondary hover:text-foreground transition-colors"
+                >
+                  {crumb.label}
+                </Link>
+              ) : (
+                <span className="text-foreground font-medium">{crumb.label}</span>
+              )}
+            </span>
+          ))}
+        </nav>
+      )}
+
+      {/* Title row */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">{title}</h1>
+          {description && (
+            <p className="mt-1 text-sm text-text-secondary">{description}</p>
+          )}
+        </div>
+        {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+      </div>
+
+      {/* Stats grid */}
+      {stats && stats.length > 0 && (
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((stat, i) => (
+            <StatCardItem key={i} stat={stat} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 `

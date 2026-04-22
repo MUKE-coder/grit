@@ -72,6 +72,7 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "components", "layout", "admin-layout.tsx"): stripUseClient(adminLayoutComponent()),
 		filepath.Join(adminRoot, "src", "components", "layout", "sidebar.tsx"):      stripUseClient(adminSidebar()),
 		filepath.Join(adminRoot, "src", "components", "layout", "navbar.tsx"):       stripUseClient(adminNavbar()),
+		filepath.Join(adminRoot, "src", "components", "layout", "page-header.tsx"):  stripUseClient(adminPageHeader()),
 
 		// Table components (pure React — strip "use client")
 		filepath.Join(adminRoot, "src", "components", "tables", "data-table.tsx"):        stripUseClient(adminDataTable()),

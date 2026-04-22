@@ -136,6 +136,27 @@ export interface ResourceDefinition {
   table: TableDefinition;
   form: FormDefinition;
   dashboard?: DashboardDefinition;
+  stats?: StatsConfig | boolean;
+}
+
+// Stats cards shown above the data table on every resource page.
+// See GRIT_STYLE_GUIDE §7.8 (Page Header).
+// Set stats: false to disable stats on this resource page.
+// Omit stats to get 4 auto-generated default cards (Total, This Week, This Month, Updated Recently).
+// Provide stats: { cards: [...] } to fully customize.
+export interface StatsConfig {
+  enabled?: boolean;
+  cards?: StatCardConfig[];
+}
+
+export interface StatCardConfig {
+  label: string;
+  icon?: string;
+  color?: "default" | "success" | "warning" | "danger" | "info";
+  value?: string | number;
+  endpoint?: string;
+  field?: string;
+  trend?: { value: number; direction: "up" | "down" };
 }
 
 // ─── defineResource Helper ──────────────────────────────────────────
@@ -370,6 +391,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { ResourceDefinition } from "@/lib/resource";
 import { useResource, useDeleteResource, useBulkDeleteResource } from "@/hooks/use-resource";
+import { PageHeader, type StatCard } from "@/components/layout/page-header";
 import { DataTable } from "@/components/tables/data-table";
 import { TableToolbar } from "@/components/tables/table-toolbar";
 import { TablePagination } from "@/components/tables/table-pagination";
@@ -547,14 +569,53 @@ export function ResourcePage({ resource }: ResourcePageProps) {
   const singularName = resource.label?.singular ?? resource.name;
   const pluralName = resource.label?.plural ?? resource.slug;
 
+  // Build stats cards: either from resource.stats.cards config, or auto-defaults.
+  // Set resource.stats = false (or { enabled: false }) to disable stats on this page.
+  const statsConfig = resource.stats;
+  const statsEnabled =
+    statsConfig === undefined ||
+    statsConfig === true ||
+    (typeof statsConfig === "object" && statsConfig !== null && statsConfig.enabled !== false);
+
+  const statsCards: StatCard[] | undefined = useMemo(() => {
+    if (!statsEnabled) return undefined;
+    // Explicit cards override auto-defaults
+    if (
+      typeof statsConfig === "object" &&
+      statsConfig !== null &&
+      Array.isArray(statsConfig.cards) &&
+      statsConfig.cards.length > 0
+    ) {
+      return statsConfig.cards;
+    }
+    // Auto-defaults: 4 cards based on the resource endpoint
+    const ep = resource.endpoint;
+    return [
+      { label: "Total", endpoint: ` + "`" + `${ep}?page_size=1` + "`" + `, field: "meta.total", icon: resource.icon || "Package" },
+      { label: "This Week", endpoint: ` + "`" + `${ep}?page_size=1&created_since=7d` + "`" + `, field: "meta.total", icon: "TrendingUp", color: "success" },
+      { label: "This Month", endpoint: ` + "`" + `${ep}?page_size=1&created_since=30d` + "`" + `, field: "meta.total", icon: "Calendar", color: "info" },
+      { label: "Updated Recently", endpoint: ` + "`" + `${ep}?page_size=1&updated_since=7d` + "`" + `, field: "meta.total", icon: "RefreshCw" },
+    ];
+  }, [statsEnabled, statsConfig, resource.endpoint, resource.icon]);
+
+  const headerActions = actions.includes("create") ? (
+    <button
+      onClick={handleCreate}
+      className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 h-9 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+    >
+      <span className="text-base leading-none">+</span>
+      New {singularName}
+    </button>
+  ) : undefined;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">{pluralName}</h1>
-        <p className="text-text-secondary mt-1">
-          Manage {pluralName.toLowerCase()}
-        </p>
-      </div>
+    <div>
+      <PageHeader
+        title={pluralName}
+        description={` + "`" + `Manage ${pluralName.toLowerCase()}` + "`" + `}
+        actions={headerActions}
+        stats={statsCards}
+      />
 
       <div className="rounded-xl border border-border bg-bg-secondary">
         <TableToolbar

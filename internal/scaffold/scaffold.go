@@ -78,7 +78,7 @@ func (o *Options) Normalize() {
 }
 
 // ValidStyles lists all supported admin panel style variants.
-var ValidStyles = []string{"default", "modern", "minimal", "glass"}
+var ValidStyles = []string{"default", "modern", "minimal", "glass", "centered"}
 
 // ValidateStyle checks that the Style field is a supported value.
 // If empty, it defaults to "default".

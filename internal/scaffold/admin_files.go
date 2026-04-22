@@ -14,6 +14,8 @@ func adminLoginPageForStyle(style string) string {
 		return minimalLoginPage()
 	case "glass":
 		return glassLoginPage()
+	case "centered":
+		return centeredLoginPage()
 	default:
 		return adminLoginPage()
 	}
@@ -28,6 +30,8 @@ func adminSignUpPageForStyle(style string) string {
 		return minimalSignUpPage()
 	case "glass":
 		return glassSignUpPage()
+	case "centered":
+		return centeredSignUpPage()
 	default:
 		return adminSignUpPage()
 	}
@@ -42,6 +46,8 @@ func adminForgotPasswordPageForStyle(style string) string {
 		return minimalForgotPasswordPage()
 	case "glass":
 		return glassForgotPasswordPage()
+	case "centered":
+		return centeredForgotPasswordPage()
 	default:
 		return adminForgotPasswordPage()
 	}
@@ -56,6 +62,9 @@ func adminDashboardPageForStyle(style string) string {
 		return minimalDashboardPage()
 	case "glass":
 		return glassDashboardPage()
+	case "centered":
+		// Centered style uses the default dashboard (only auth pages differ)
+		return adminDashboardPage()
 	default:
 		return adminDashboardPage()
 	}
@@ -208,6 +217,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "layout", "admin-layout.tsx"): adminLayoutComponent(),
 		filepath.Join(adminRoot, "components", "layout", "sidebar.tsx"):      adminSidebar(),
 		filepath.Join(adminRoot, "components", "layout", "navbar.tsx"):       adminNavbar(),
+		filepath.Join(adminRoot, "components", "layout", "page-header.tsx"):  adminPageHeader(),
 
 		// Table components
 		filepath.Join(adminRoot, "components", "tables", "data-table.tsx"):       adminDataTable(),
