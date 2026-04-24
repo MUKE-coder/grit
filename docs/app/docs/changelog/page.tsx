@@ -28,6 +28,66 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.9.2 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.9.2
+                </span>
+                <span className="text-sm text-muted-foreground">April 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  Every <code>grit generate resource</code> run now emits a List handler that is
+                  ~15 lines instead of ~55. The page / sort / search boilerplate moved into a shared{' '}
+                  <code>internal/paginate</code> package that ships with every scaffolded API —
+                  one source of truth for clamping, whitelisting, and search. Addresses{' '}
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/14" target="_blank" rel="noopener noreferrer">issue #14</a>.
+                </p>
+
+                <h3>New <code>paginate</code> package</h3>
+                <ul>
+                  <li>
+                    <code>paginate.List[T](query, paginate.Bind(c), paginate.Config{'{'}...{'}'})</code> —
+                    typed, generic helper that runs search, sort, filter, and pagination against
+                    any <code>*gorm.DB</code> query.
+                  </li>
+                  <li>
+                    <code>paginate.Bind(c)</code> reads <code>page</code>, <code>page_size</code>,
+                    {' '}<code>search</code>, <code>sort_by</code>, <code>sort_order</code> from the
+                    Gin query, clamps <code>page</code> to ≥ 1 and <code>page_size</code> to
+                    {' '}<code>[1, 100]</code>.
+                  </li>
+                  <li>
+                    <code>paginate.Config</code> whitelists sortable columns and declares the
+                    searchable column set — requests for columns outside the whitelist fall back
+                    to <code>created_at desc</code>.
+                  </li>
+                  <li>
+                    <code>paginate.Result[T]</code> returns the canonical{' '}
+                    <code>{'{'} data, meta: {'{'} total, page, page_size, pages {'}'} {'}'}</code>{' '}
+                    envelope — matches the existing API response format exactly.
+                  </li>
+                </ul>
+
+                <h3>Generator update</h3>
+                <ul>
+                  <li>
+                    The emitted List handler now delegates to <code>paginate.List</code>. Every
+                    generated resource gets the same clamping, whitelisting, and UUID-safe search
+                    behavior — no per-resource drift.
+                  </li>
+                  <li>
+                    Searchable column selection uses <code>IsSearchable()</code> (text / string /
+                    slug / richtext only), so FK UUID columns are no longer accidentally included
+                    in <code>ILIKE</code> search — a leftover rough edge from{' '}
+                    <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/12" target="_blank" rel="noopener noreferrer">issue #12</a>.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.9.1 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

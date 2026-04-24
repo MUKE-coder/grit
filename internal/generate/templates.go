@@ -423,7 +423,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 		}
 	}
 
-	searchArgs := g.buildHandlerSearchArgs(names)
+	searchCols := g.buildHandlerSearchCols()
 
 	// Check if any field needs "time" import
 	needsTimeImport := false
@@ -452,7 +452,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 		"{{plural}}", names.Plural,
 		"{{Plural}}", names.PluralPascal,
 		"{{SORT_COLS}}", sortCols,
-		"{{SEARCH_ARGS}}", searchArgs,
+		"{{SEARCH_COLS}}", searchCols,
 		"{{CREATE_FIELDS}}", createFields,
 		"{{CREATE_ASSIGN}}", createAssignments,
 		"{{UPDATE_FIELDS}}", updateFields,
@@ -468,14 +468,13 @@ func (g *Generator) writeGoHandler(names Names) error {
 	content := r.Replace(`package handlers
 
 import (
-	"math"
-	"net/http"
-	"strconv"{{TIME_IMPORT}}
+	"net/http"{{TIME_IMPORT}}
 
 	"github.com/gin-gonic/gin"{{DATATYPES_IMPORT}}
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/models"
+	"{{MODULE}}/internal/paginate"
 )
 
 // {{Pascal}}Handler handles {{lower}} endpoints.
@@ -485,39 +484,17 @@ type {{Pascal}}Handler struct {
 
 // List returns a paginated list of {{plural}}.
 func (h *{{Pascal}}Handler) List(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-	search := c.Query("search")
-	sortBy := c.DefaultQuery("sort_by", "created_at")
-	sortOrder := c.DefaultQuery("sort_order", "desc")
-
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
-	if sortOrder != "asc" && sortOrder != "desc" {
-		sortOrder = "desc"
-	}
-
-	allowedSorts := map[string]bool{{{SORT_COLS}}}
-	if !allowedSorts[sortBy] {
-		sortBy = "created_at"
-	}
-
 	query := h.DB.Model(&models.{{Pascal}}{}){{PRELOADS}}
 
-	if search != "" {
-		query = query.Where({{SEARCH_ARGS}})
-	}
-
-	var total int64
-	query.Count(&total)
-
-	var items []models.{{Pascal}}
-	offset := (page - 1) * pageSize
-	if err := query.Order(sortBy + " " + sortOrder).Offset(offset).Limit(pageSize).Find(&items).Error; err != nil {
+	res, err := paginate.List[models.{{Pascal}}](
+		query,
+		paginate.Bind(c),
+		paginate.Config{
+			Searchable: []string{{{SEARCH_COLS}}},
+			Sortable:   map[string]bool{{{SORT_COLS}}},
+		},
+	)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"code":    "INTERNAL_ERROR",
@@ -527,17 +504,7 @@ func (h *{{Pascal}}Handler) List(c *gin.Context) {
 		return
 	}
 
-	pages := int(math.Ceil(float64(total) / float64(pageSize)))
-
-	c.JSON(http.StatusOK, gin.H{
-		"data": items,
-		"meta": gin.H{
-			"total":     total,
-			"page":      page,
-			"page_size": pageSize,
-			"pages":     pages,
-		},
-	})
+	c.JSON(http.StatusOK, res)
 }
 
 // GetByID returns a single {{lower}} by ID.
@@ -679,25 +646,21 @@ func (h *{{Pascal}}Handler) Delete(c *gin.Context) {
 	return writeFileWithDirs(path, content)
 }
 
-// buildHandlerSearchArgs builds the search Where clause for the handler.
-func (g *Generator) buildHandlerSearchArgs(names Names) string {
-	var searchFields []string
+// buildHandlerSearchCols returns the comma-separated quoted column names for
+// the paginate.Config.Searchable slice literal. Only text-like field types are
+// included — FK UUID columns (which happen to be Go string) are skipped so
+// search doesn't ILIKE against opaque identifiers.
+func (g *Generator) buildHandlerSearchCols() string {
+	var cols []string
 	for _, f := range g.Definition.Fields {
-		if f.GoType() == "string" {
-			searchFields = append(searchFields, toSnakeCase(f.Name)+" ILIKE ?")
+		if f.IsRelationship() {
+			continue
+		}
+		if f.IsSearchable() {
+			cols = append(cols, `"`+toSnakeCase(f.Name)+`"`)
 		}
 	}
-	if len(searchFields) == 0 {
-		return `"id::text ILIKE ?", "%"+search+"%"`
-	}
-
-	clause := `"` + strings.Join(searchFields, " OR ") + `"`
-	args := ""
-	for range searchFields {
-		args += `, "%"+search+"%"`
-	}
-
-	return clause + args
+	return strings.Join(cols, ", ")
 }
 
 // writeZodSchema creates the Zod schema file for the resource.

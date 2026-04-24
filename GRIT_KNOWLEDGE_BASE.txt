@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.9.1
+Version: 3.9.2
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -898,7 +898,20 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.9.1 (Current):
+v3.9.2 (Current):
+  - Generated List endpoints are now 30+ lines smaller: the page/sort/search
+    boilerplate moved into a shared internal/paginate package (issue #14)
+  - Every scaffolded project ships with internal/paginate/paginate.go, a
+    typed helper: paginate.List[T](query, paginate.Bind(c), paginate.Config{...})
+  - Clamps page to >= 1, page_size to [1, 100], normalizes sort_order
+  - Whitelists sort_by against a per-resource Sortable map (no arbitrary column sorts)
+  - Applies ILIKE search across a per-resource Searchable slice (no more
+    search-by-UUID — FK columns are correctly excluded via IsSearchable())
+  - Returns a typed paginate.Result[T] with {data, meta:{total, page, page_size, pages}}
+  - Generator update: the emitted List handler is now ~15 lines (was ~55) and
+    delegates all query shaping to paginate.List — one source of truth
+
+v3.9.1:
   - Patch release fixing v3.9.0 compilation bugs (issues #9, #10, #11, #12)
   - Added missing imports: "log" in config.go, "gorm.io/gorm/logger" in user.go,
     "net/http" in middleware/logger.go
