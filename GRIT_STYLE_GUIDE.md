@@ -805,6 +805,129 @@ Each uses `<PageHeader>` + content area.
 
 ---
 
+### 14.5 Desktop App Patterns
+
+Scaffolded via `grit new <name> --desktop` (combinable with `--triple`, `--mobile`, `--double`, `--api`). Creates `apps/desktop/` — a Wails window that consumes the shared API over HTTP. Distinct from `grit new-desktop` (standalone offline-first app).
+
+**Core principle: feel native, not webby.** Desktop apps sit alongside VS Code, Linear, Raycast, Slack in the user's dock. Web aesthetics (breadcrumb trails, browser-y spacing, tight density) feel out of place.
+
+#### Window & Chrome
+
+- **Frameless window.** No OS title bar. Custom chrome gives us full control.
+- **Default size:** `1280×800`, min `1000×700`
+- **Title bar:** custom `48px` bar (`h-titlebar` token), drag region via `--wails-draggable: drag`
+- **Window controls** — platform-specific:
+  - **macOS:** Traffic lights on the **left** (close/minimise/maximise). `#ff5f57`, `#febc2e`, `#28c840`. `12×12px` circles, `8px` gap.
+  - **Windows/Linux:** Min/Maximise/Close on the **right**. `48×48px` icon buttons. Close button hover turns red.
+- **Platform detection:** `getPlatform()` from `@/lib/wails-bridge` returns `"darwin" | "windows" | "linux"`. Use it to conditionally render the right control layout.
+- **Background:** `bg-background` (dark `#0a0a0f` default). The app should feel dense but not cramped.
+
+#### Sidebar — fixed, not collapsible
+
+- **Width:** `240px` (`w-sidebar` token). Always visible.
+- **Why not collapsible:** desktop windows are wide (1280+). Collapsing a sidebar at 1280px width doesn't gain you usable space — it just adds a toggle affordance users don't need. Web needs collapse because phones exist; desktop doesn't.
+- **Sections:** Workspace header (28px) + nav items (40px each, `rounded-lg px-3`) + footer (version/branding)
+- **Active state:** `bg-accent/10 text-accent` (same as admin panel)
+- **Nav label:** `13px` weight 500, not `14px` like web — desktop has more room for smaller, denser type
+
+#### Topbar
+
+Similar structure to admin v3.8.0 topbar, **without** the sidebar collapse toggle (sidebar is fixed). Order:
+
+1. **Command palette trigger** (left, `w-80`) — looks like a search input with `⌘K` badge. Opens the palette on click.
+2. **Notifications bell** (right cluster)
+3. **Theme toggle**
+4. **User avatar + dropdown** (name, email, Profile, Logout)
+
+Height: `56px` (`h-14`). One line below the title bar.
+
+#### Content area
+
+- **Padding:** `32px` (`p-content` token) — larger than web's `24px`. Desktop apps have long reading sessions; extra breathing room matters.
+- **Overflow:** vertical scroll only. The app container uses `overflow-hidden` to prevent the whole window from scrolling — only the main content scrolls.
+- **Scrollbar:** custom styled — `10px` wide, `var(--border)` thumb with 2px transparent border (matches the bg), hover darkens to `var(--text-muted)`. Webkit-scrollbar rules.
+- **Focus ring:** `2px solid var(--accent)` with `2px` outset. Slightly tighter than web (desktop users use the keyboard heavily — every focus needs to be instantly visible).
+
+#### Command Palette (⌘K)
+
+Every Grit desktop app ships with a command palette. It's non-negotiable — it's how power users navigate native apps.
+
+- **Trigger:** Global `⌘K` on macOS, `Ctrl+K` on Windows/Linux
+- **Position:** centered, `15vh` from top, `max-w-[560px]`
+- **Background:** `bg-black/40 backdrop-blur-sm` overlay, `bg-surface-3` panel
+- **Layout:** input at top (`h-12` with search icon + `ESC` kbd on right), scrollable result list below
+- **Keyboard:** ↑/↓ to navigate, Enter to select, Esc to close. Hover highlights too.
+- **Commands include:** navigation (Dashboard, Profile, Settings), actions (Log out), and — when you add them — resource-specific actions (Create Post, Search Users).
+
+#### Keyboard Shortcuts (default set)
+
+| Shortcut | Action |
+|----------|--------|
+| `⌘K` | Open command palette |
+| `⌘,` | Open Settings |
+| `⌘L` | Log out |
+| `⌘R` | Refresh current view |
+| `G D` | Go to Dashboard (sequential keys) |
+| `G P` | Go to Profile |
+| `Esc` | Close modal / palette |
+
+Implemented via `useShortcuts({ "mod+k": ... })` hook in `lib/use-shortcuts.ts`. `mod` = `⌘` on Mac, `Ctrl` elsewhere.
+
+#### Token Storage — OS Keychain
+
+**Never** store JWTs in `localStorage` on desktop. Use the OS keychain via the Wails bridge:
+
+```typescript
+import { setToken, getToken, deleteToken } from "@/lib/wails-bridge";
+
+await setToken("access_token", jwt);   // → macOS Keychain / Windows Credential Manager / Linux Secret Service
+const token = await getToken("access_token");
+await deleteToken("access_token");
+```
+
+In dev mode (when running `pnpm dev` outside Wails), the bridge falls back to `localStorage` transparently so hot-reload still works.
+
+#### Typography
+
+Slightly tighter than web because desktop apps are used for extended sessions:
+
+| Role | Web | Desktop |
+|------|-----|---------|
+| Body | 14px | 13–14px |
+| Heading | 24px (h1) | 24px (h1) |
+| Small/meta | 13px | 12px |
+| Numerics (stats) | 24px/700 | 24px/700 |
+
+Use `tabular-nums` for all numeric columns (same as web).
+
+#### Shadows
+
+Subtler than web. Desktop already has OS window chrome providing elevation cues. Resist heavy shadows:
+
+- Cards: `shadow-xs` + border (the border does the work)
+- Dropdowns / palette: `shadow-xl` (only for floating overlays)
+- No card hover shadows in most cases — borders are enough
+
+#### Do's & Don'ts
+
+**Do:**
+- Use the command palette for every action a keyboard user would want
+- Match platform conventions (macOS traffic lights on left, Windows controls on right)
+- Use the OS keychain for tokens
+- Keep generous whitespace (32px padding, 20px gaps between fields)
+- Build for keyboard-first navigation
+- Use `Cmd`/`Ctrl` chords liberally — desktop users expect them
+
+**Don't:**
+- Collapse the sidebar (desktop windows are wide enough)
+- Store tokens in `localStorage`
+- Use breadcrumbs (file-based routing makes them redundant and noisy on narrow content)
+- Rely on browser back button UX (no back button in frameless window)
+- Add header banners / promo strips (they feel like a website)
+- Autoplay animations that run continuously (they distract from focused work)
+
+---
+
 ## 15. Email Templates
 
 All scaffolded email templates follow these rules.

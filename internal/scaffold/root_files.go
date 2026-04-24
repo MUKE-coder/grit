@@ -457,6 +457,11 @@ func rootPackageJSON(opts Options) string {
 		scripts += `
     "dev:expo": "cd apps/expo && npx expo start",`
 	}
+	if opts.ShouldIncludeDesktop() {
+		scripts += `
+    "dev:desktop": "cd apps/desktop && wails dev",
+    "build:desktop": "cd apps/desktop && wails build",`
+	}
 	if opts.ShouldIncludeDocs() {
 		scripts += `
     "dev:docs": "cd apps/docs && pnpm dev",`
@@ -515,6 +520,13 @@ export default {
 		config += `
   expo: {
     scheme: "` + opts.ProjectName + `",
+  },`
+	}
+	if opts.ShouldIncludeDesktop() {
+		config += `
+  desktop: {
+    framework: "wails",
+    port: 5174,
   },`
 	}
 	if opts.ShouldIncludeDocs() {

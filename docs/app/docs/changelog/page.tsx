@@ -28,6 +28,90 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.9.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.9.0
+                </span>
+                <span className="text-sm text-muted-foreground">April 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <h3>New: <code>--desktop</code> flag</h3>
+                <ul>
+                  <li>
+                    <strong>Desktop + mobile + API in one monorepo</strong> &mdash;{' '}
+                    <code>grit new myapp --mobile --desktop</code> scaffolds a complete multi-client
+                    SaaS: Go API shared by an Expo mobile app AND a Wails desktop app. All three
+                    share the same <code>packages/shared</code> types and schemas.
+                  </li>
+                  <li>
+                    <strong>Wails as a thin client</strong> &mdash; The new desktop app is a
+                    frameless Wails window that calls the shared API over HTTP. No embedded Go
+                    business logic, no local SQLite. Wails bindings are used only for native OS
+                    features: window controls, file dialogs, and OS keychain (macOS Keychain,
+                    Windows Credential Manager, Linux Secret Service) for JWT storage.
+                  </li>
+                  <li>
+                    <strong>Distinct from <code>grit new-desktop</code></strong> &mdash; The
+                    standalone offline-first desktop scaffold (<code>grit new-desktop</code>) is
+                    unchanged. <code>--desktop</code> is a new, separate capability for
+                    always-online multi-client apps.
+                  </li>
+                </ul>
+
+                <h3>Premium Desktop UX</h3>
+                <ul>
+                  <li>
+                    <strong>Platform-aware window chrome</strong> &mdash; macOS traffic lights on
+                    the left, Windows/Linux controls on the right. Detected at runtime via
+                    <code>GetPlatform()</code> Wails binding.
+                  </li>
+                  <li>
+                    <strong>Command palette</strong> (<code>⌘K</code>) &mdash; every scaffolded
+                    desktop app ships with a Raycast/Linear-style command palette. Searchable
+                    navigation + actions with keyboard-first UX.
+                  </li>
+                  <li>
+                    <strong>Fixed 240px sidebar</strong> &mdash; not collapsible. Desktop windows
+                    are wide enough; collapse toggles are a web pattern.
+                  </li>
+                  <li>
+                    <strong>Global keyboard shortcuts</strong> &mdash;{' '}
+                    <code>useShortcuts()</code> hook with defaults: <code>⌘K</code> palette,{' '}
+                    <code>⌘,</code> settings, <code>⌘L</code> logout, <code>Esc</code> to close.
+                  </li>
+                  <li>
+                    <strong>More negative space</strong> &mdash; content padding is <code>32px</code>
+                    (vs web&apos;s <code>24px</code>) for long focus sessions. Subtler shadows
+                    (OS chrome already provides elevation).
+                  </li>
+                </ul>
+
+                <h3>Style Guide</h3>
+                <ul>
+                  <li>
+                    New <strong>§14.5 Desktop App Patterns</strong> section in
+                    <code>GRIT_STYLE_GUIDE.md</code> covering window chrome, sidebar (not
+                    collapsible), topbar, command palette, keyboard shortcuts, OS keychain
+                    integration, typography (tighter than web), and do&apos;s &amp; don&apos;ts
+                    (no breadcrumbs, no header banners, no web-style autoplay).
+                  </li>
+                </ul>
+
+                <h3>Usage</h3>
+                <pre><code>{`grit new myapp --mobile --desktop --next
+# apps/api + apps/web + apps/expo + apps/desktop
+
+grit new myapp --desktop --triple
+# apps/api + apps/web + apps/admin + apps/desktop
+
+grit new myapp --api --desktop
+# apps/api + apps/desktop (minimal)`}</code></pre>
+              </div>
+            </div>
+
             {/* v3.8.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

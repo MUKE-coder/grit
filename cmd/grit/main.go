@@ -20,7 +20,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
-var version = "3.8.0"
+var version = "3.9.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -67,7 +67,7 @@ func versionCmd() *cobra.Command {
 func newCmd() *cobra.Command {
 	// New architecture/frontend flags
 	var archFlag, frontendFlag, style string
-	var inPlace, force bool
+	var inPlace, force, includeDesktop bool
 
 	// Legacy flags (backward compatibility)
 	var apiOnly, includeExpo, mobileOnly, full bool
@@ -98,10 +98,11 @@ func newCmd() *cobra.Command {
 			}
 
 			opts := scaffold.Options{
-				ProjectName: projectName,
-				Style:       style,
-				InPlace:     inPlace,
-				Force:       force,
+				ProjectName:    projectName,
+				Style:          style,
+				InPlace:        inPlace,
+				Force:          force,
+				IncludeDesktop: includeDesktop,
 				// Legacy flags
 				APIOnly:     apiOnly,
 				IncludeExpo: includeExpo,
@@ -170,6 +171,11 @@ func newCmd() *cobra.Command {
 				return err
 			}
 
+			// --desktop is incompatible with --single (single apps already bundle their own SPA).
+			if opts.IncludeDesktop && opts.Architecture == scaffold.ArchSingle {
+				return fmt.Errorf("--desktop is not supported with --single architecture (single apps already bundle their own frontend)")
+			}
+
 			printLogo()
 
 			purple := color.New(color.FgHiMagenta, color.Bold)
@@ -198,6 +204,7 @@ func newCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&mobileOnly, "mobile", false, "Shorthand for --arch=mobile")
 	cmd.Flags().BoolVar(&full, "full", false, "Shorthand for --arch=triple with docs")
 	cmd.Flags().BoolVar(&includeExpo, "expo", false, "Include Expo mobile app")
+	cmd.Flags().BoolVar(&includeDesktop, "desktop", false, "Include a Wails desktop app that shares the monorepo API")
 
 	// Shorthand frontend flags
 	cmd.Flags().Bool("vite", false, "Shorthand for --frontend=vite (TanStack Router)")
@@ -794,6 +801,9 @@ func printSuccess(name string, opts scaffold.Options) {
 	}
 	if opts.ShouldIncludeExpo() {
 		gray.Printf("  Expo:        exp://localhost:8081\n")
+	}
+	if opts.ShouldIncludeDesktop() {
+		gray.Printf("  Desktop:     wails dev (from apps/desktop)\n")
 	}
 	if opts.ShouldIncludeDocs() {
 		gray.Printf("  Docs:        http://localhost:3002\n")

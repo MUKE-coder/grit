@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.8.0
+Version: 3.9.0
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -403,9 +403,11 @@ Project Scaffolding:
   grit new <name> --single               Single Go binary with embedded SPA
   grit new <name> --api                  Go API only
   grit new <name> --mobile               API + Expo React Native
+  grit new <name> --desktop              Add apps/desktop (Wails client consuming the shared API)
+  grit new <name> --mobile --desktop     API + Expo + Desktop (multi-client SaaS)
   grit new <name> --full                 Everything including Expo + docs site
   grit new <name> --style modern         Admin style: default, modern, minimal, glass, centered
-  grit new-desktop <name>                Native desktop app (Wails + Go + React + SQLite)
+  grit new-desktop <name>                Standalone offline desktop app (Wails + embedded Go + local SQLite)
 
 Code Generation:
   grit generate resource <Name> --fields "title:string,content:text"
@@ -896,7 +898,21 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.8.0 (Current):
+v3.9.0 (Current):
+  - New --desktop flag adds apps/desktop/ to the monorepo (Wails client that consumes the shared API)
+  - Distinct from grit new-desktop (offline standalone): --desktop is for always-online multi-client apps
+  - Combinable: grit new app --mobile --desktop creates API + Expo + Desktop all sharing packages/shared
+  - Wails used only for native OS: window controls, file dialogs, OS keychain (no embedded Go business logic)
+  - Platform-aware window chrome: macOS traffic lights (left) vs Windows/Linux controls (right)
+  - Command palette (Cmd+K) ships by default with every scaffolded desktop app
+  - Fixed 240px sidebar (not collapsible — desktop has room)
+  - 32px content padding (more negative space than web's 24px)
+  - Global keyboard shortcuts hook (useShortcuts)
+  - OS keychain token storage via github.com/99designs/keyring (macOS Keychain, Windows Credential Manager, Linux Secret Service)
+  - New GRIT_STYLE_GUIDE.md §14.5 "Desktop App Patterns"
+  - Incompatible with --single (single apps already bundle their own frontend)
+
+v3.8.0:
   - GRIT_STYLE_GUIDE.md — first official design style guide (Premium Minimal, Linear school)
   - Admin layout refactor: sidebar collapse toggle moved to top-left of topbar
   - Dark mode toggle, notifications bell, and enhanced user menu now live in the topbar (right cluster)

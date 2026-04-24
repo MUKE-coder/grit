@@ -32,12 +32,13 @@ const (
 
 // Options holds the scaffolding configuration.
 type Options struct {
-	ProjectName  string
-	Architecture Architecture
-	Frontend     Frontend
-	Style        string
-	InPlace      bool // Scaffold into current directory (grit new .)
-	Force        bool // Allow scaffolding into non-empty directory (--force)
+	ProjectName    string
+	Architecture   Architecture
+	Frontend       Frontend
+	Style          string
+	InPlace        bool // Scaffold into current directory (grit new .)
+	Force          bool // Allow scaffolding into non-empty directory (--force)
+	IncludeDesktop bool // Add apps/desktop (Wails client that shares the monorepo API)
 
 	// Deprecated: use Architecture instead. Kept for backward compatibility.
 	APIOnly     bool
@@ -112,7 +113,10 @@ func (o Options) ShouldIncludeSingleSPA() bool {
 
 // ShouldUseTurborepo returns true if the project uses a Turborepo monorepo.
 func (o Options) ShouldUseTurborepo() bool {
-	return o.Architecture == ArchDouble || o.Architecture == ArchTriple || o.Architecture == ArchMobile
+	return o.Architecture == ArchDouble ||
+		o.Architecture == ArchTriple ||
+		o.Architecture == ArchMobile ||
+		o.IncludeDesktop
 }
 
 // ShouldIncludeShared returns true if the shared package should be scaffolded.
@@ -128,6 +132,15 @@ func (o Options) ShouldIncludeFrontend() bool {
 // ShouldIncludeExpo returns true if the Expo app should be scaffolded.
 func (o Options) ShouldIncludeExpo() bool {
 	return o.Architecture == ArchMobile || o.IncludeExpo || o.Full
+}
+
+// ShouldIncludeDesktop returns true if the desktop (Wails) client should be
+// scaffolded as part of the monorepo. This is a separate capability from
+// `grit new-desktop` (which is a standalone offline-first app).
+// The --desktop flag adds apps/desktop/ to the monorepo — a Wails window
+// that calls the shared Go API over HTTP (same as the Expo app does).
+func (o Options) ShouldIncludeDesktop() bool {
+	return o.IncludeDesktop || o.Full
 }
 
 // ShouldIncludeDocs returns true if the docs site should be scaffolded.
@@ -365,6 +378,14 @@ func Run(opts Options) error {
 		spinner.Printf("  → Scaffolding Expo mobile app...\n")
 		if err := writeExpoFiles(root, opts); err != nil {
 			return fmt.Errorf("writing Expo files: %w", err)
+		}
+	}
+
+	if opts.ShouldIncludeDesktop() {
+		// Write desktop client (Wails + Vite + TanStack Router, shares the API)
+		spinner.Printf("  → Scaffolding desktop app (Wails)...\n")
+		if err := writeDesktopClientFiles(root, opts); err != nil {
+			return fmt.Errorf("writing desktop files: %w", err)
 		}
 	}
 
@@ -648,6 +669,19 @@ func createDirectories(root string, opts Options) error {
 			filepath.Join(root, "apps", "expo", "lib"),
 			filepath.Join(root, "apps", "expo", "components"),
 			filepath.Join(root, "apps", "expo", "assets"),
+		)
+	}
+
+	if opts.ShouldIncludeDesktop() {
+		dirs = append(dirs,
+			filepath.Join(root, "apps", "desktop", "frontend", "src", "routes", "_auth"),
+			filepath.Join(root, "apps", "desktop", "frontend", "src", "routes", "_app"),
+			filepath.Join(root, "apps", "desktop", "frontend", "src", "components", "layout"),
+			filepath.Join(root, "apps", "desktop", "frontend", "src", "components", "ui"),
+			filepath.Join(root, "apps", "desktop", "frontend", "src", "lib"),
+			filepath.Join(root, "apps", "desktop", "frontend", "src", "hooks"),
+			filepath.Join(root, "apps", "desktop", "internal"),
+			filepath.Join(root, "apps", "desktop", "build", "appicon"),
 		)
 	}
 
