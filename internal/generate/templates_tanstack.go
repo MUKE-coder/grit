@@ -13,7 +13,7 @@ func (g *Generator) writeReactQueryHooksTanStack(names Names, hooksDir string) e
 import { api } from '@/lib/api'
 
 export interface %s {
-  id: number
+  id: string
 %s
   created_at: string
   updated_at: string
@@ -29,7 +29,7 @@ export function use%s() {
   })
 }
 
-export function use%s(id: number) {
+export function use%s(id: string) {
   return useQuery({
     queryKey: ['%s', id],
     queryFn: async () => {
@@ -56,7 +56,7 @@ export function useCreate%s() {
 export function useUpdate%s() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<%s> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Partial<%s> }) => {
       const res = await api.put('/api/%s/' + id, data)
       return res.data.data
     },
@@ -69,7 +69,7 @@ export function useUpdate%s() {
 export function useDelete%s() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       await api.delete('/api/%s/' + id)
     },
     onSuccess: () => {

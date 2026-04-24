@@ -362,6 +362,7 @@ func apiConfigGo() string {
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -622,6 +623,7 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // Role constants
@@ -795,7 +797,7 @@ type Claims struct {
 }
 
 // GenerateTokenPair creates a new access + refresh token pair.
-func (s *AuthService) GenerateTokenPair(userID uint, email, role string) (*TokenPair, error) {
+func (s *AuthService) GenerateTokenPair(userID string, email, role string) (*TokenPair, error) {
 	accessToken, expiresAt, err := s.generateToken(userID, email, role, s.AccessExpiry)
 	if err != nil {
 		return nil, fmt.Errorf("generating access token: %w", err)
@@ -843,7 +845,7 @@ func GenerateResetToken() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-func (s *AuthService) generateToken(userID uint, email, role string, expiry time.Duration) (string, int64, error) {
+func (s *AuthService) generateToken(userID string, email, role string, expiry time.Duration) (string, int64, error) {
 	expiresAt := time.Now().Add(expiry)
 
 	claims := &Claims{
@@ -1050,7 +1052,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	var totpConfig models.TwoFactorConfig
 	if err := h.DB.Where("user_id = ? AND enabled = ?", user.ID, true).First(&totpConfig).Error; err == nil {
 		// TOTP is enabled — check for trusted device
-		if !handlers.IsTrustedDevice(c, h.DB, user.ID) {
+		if !IsTrustedDevice(c, h.DB, user.ID) {
 			// Generate a short-lived pending token for TOTP verification
 			pendingToken, err := totp.GeneratePendingToken()
 			if err != nil {
@@ -1976,6 +1978,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"strings"
 	"time"
 

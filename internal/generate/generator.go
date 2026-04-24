@@ -359,6 +359,52 @@ func readModulePath(root, arch string) (string, error) {
 	return "", fmt.Errorf("no module directive found in go.mod")
 }
 
+// commonInitialisms is the set of Go initialisms that should be fully
+// uppercased when converting snake_case/kebab-case to PascalCase. Matches
+// the rules enforced by golint/staticcheck so generated code is idiomatic.
+var commonInitialisms = map[string]bool{
+	"acl":   true,
+	"api":   true,
+	"ascii": true,
+	"cpu":   true,
+	"css":   true,
+	"db":    true,
+	"dns":   true,
+	"eof":   true,
+	"guid":  true,
+	"html":  true,
+	"http":  true,
+	"https": true,
+	"id":    true,
+	"ip":    true,
+	"json":  true,
+	"jwt":   true,
+	"lhs":   true,
+	"pdf":   true,
+	"qps":   true,
+	"ram":   true,
+	"rhs":   true,
+	"rpc":   true,
+	"sla":   true,
+	"smtp":  true,
+	"sql":   true,
+	"ssh":   true,
+	"tcp":   true,
+	"tls":   true,
+	"ttl":   true,
+	"udp":   true,
+	"ui":    true,
+	"uid":   true,
+	"url":   true,
+	"utf8":  true,
+	"uuid":  true,
+	"vm":    true,
+	"xml":   true,
+	"xmpp":  true,
+	"xsrf":  true,
+	"xss":   true,
+}
+
 func toPascalCase(s string) string {
 	// Handle snake_case, kebab-case, and already PascalCase
 	parts := strings.FieldsFunc(s, func(r rune) bool {
@@ -374,17 +420,34 @@ func toPascalCase(s string) string {
 		if len(part) == 0 {
 			continue
 		}
-		result += strings.ToUpper(part[:1]) + part[1:]
+		if commonInitialisms[strings.ToLower(part)] {
+			result += strings.ToUpper(part)
+		} else {
+			result += strings.ToUpper(part[:1]) + part[1:]
+		}
 	}
 	return result
 }
 
+// toSnakeCase converts PascalCase / camelCase / already-snake to snake_case.
+// Handles initialism runs: "OwnerID" → "owner_id", "ImageURL" → "image_url",
+// "APIKey" → "api_key" (not "a_p_i_key").
 func toSnakeCase(s string) string {
+	runes := []rune(s)
 	var result []rune
-	for i, r := range s {
+	for i, r := range runes {
 		if unicode.IsUpper(r) {
+			// Insert underscore before this uppercase letter when:
+			//   (a) the previous rune was lowercase (camelCase boundary), OR
+			//   (b) the previous rune was uppercase AND the next rune is lowercase
+			//       (end of an initialism run, e.g. URLPath -> URL|Path)
 			if i > 0 {
-				result = append(result, '_')
+				prev := runes[i-1]
+				if unicode.IsLower(prev) {
+					result = append(result, '_')
+				} else if unicode.IsUpper(prev) && i+1 < len(runes) && unicode.IsLower(runes[i+1]) {
+					result = append(result, '_')
+				}
 			}
 			result = append(result, unicode.ToLower(r))
 		} else {

@@ -213,7 +213,7 @@ import (
 // TwoFactorConfig stores TOTP settings for a user.
 type TwoFactorConfig struct {
 	ID          uint                       ` + "`" + `gorm:"primarykey" json:"id"` + "`" + `
-	UserID      uint                       ` + "`" + `gorm:"uniqueIndex;not null" json:"user_id"` + "`" + `
+	UserID      string                     ` + "`" + `gorm:"size:36;uniqueIndex;not null" json:"user_id"` + "`" + `
 	Secret      string                     ` + "`" + `gorm:"size:255;not null" json:"-"` + "`" + `
 	Enabled     bool                       ` + "`" + `gorm:"default:false" json:"enabled"` + "`" + `
 	BackupCodes datatypes.JSONSlice[string] ` + "`" + `gorm:"type:text" json:"-"` + "`" + `
@@ -224,7 +224,7 @@ type TwoFactorConfig struct {
 // TrustedDevice stores a remembered device that can skip TOTP.
 type TrustedDevice struct {
 	ID        uint           ` + "`" + `gorm:"primarykey" json:"id"` + "`" + `
-	UserID    uint           ` + "`" + `gorm:"index;not null" json:"user_id"` + "`" + `
+	UserID    string         ` + "`" + `gorm:"size:36;index;not null" json:"user_id"` + "`" + `
 	TokenHash string         ` + "`" + `gorm:"size:64;uniqueIndex;not null" json:"-"` + "`" + `
 	UserAgent string         ` + "`" + `gorm:"size:500" json:"user_agent"` + "`" + `
 	IPAddress string         ` + "`" + `gorm:"size:45" json:"ip_address"` + "`" + `
@@ -236,7 +236,7 @@ type TrustedDevice struct {
 // TOTPPendingToken stores short-lived tokens for the TOTP verification step.
 type TOTPPendingToken struct {
 	ID        uint      ` + "`" + `gorm:"primarykey" json:"id"` + "`" + `
-	UserID    uint      ` + "`" + `gorm:"index;not null" json:"user_id"` + "`" + `
+	UserID    string    ` + "`" + `gorm:"size:36;index;not null" json:"user_id"` + "`" + `
 	TokenHash string    ` + "`" + `gorm:"size:64;uniqueIndex;not null" json:"-"` + "`" + `
 	ExpiresAt time.Time ` + "`" + `gorm:"not null" json:"expires_at"` + "`" + `
 	CreatedAt time.Time ` + "`" + `json:"created_at"` + "`" + `
@@ -305,7 +305,7 @@ type backupCodeVerifyRequest struct {
 // Setup generates a new TOTP secret and QR code URI for the user.
 // The secret is NOT stored yet — the user must verify it first via Enable.
 func (h *TOTPHandler) Setup(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	userID := c.GetString("user_id")
 	user, _ := c.Get("user")
 	u := user.(models.User)
 
@@ -343,7 +343,7 @@ func (h *TOTPHandler) Setup(c *gin.Context) {
 // Enable verifies the initial TOTP code and activates 2FA for the user.
 // Returns backup codes that the user should save.
 func (h *TOTPHandler) Enable(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	userID := c.GetString("user_id")
 
 	var req totpEnableRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -563,7 +563,7 @@ func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
 
 // Disable turns off 2FA for the user (requires password confirmation).
 func (h *TOTPHandler) Disable(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	userID := c.GetString("user_id")
 
 	var req totpDisableRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -604,7 +604,7 @@ func (h *TOTPHandler) Disable(c *gin.Context) {
 
 // Status returns whether TOTP is enabled for the current user.
 func (h *TOTPHandler) Status(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	userID := c.GetString("user_id")
 
 	var config models.TwoFactorConfig
 	enabled := false
@@ -630,7 +630,7 @@ func (h *TOTPHandler) Status(c *gin.Context) {
 
 // RegenerateBackupCodes creates a new set of backup codes, replacing the old ones.
 func (h *TOTPHandler) RegenerateBackupCodes(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	userID := c.GetString("user_id")
 
 	var config models.TwoFactorConfig
 	if err := h.DB.Where("user_id = ? AND enabled = ?", userID, true).First(&config).Error; err != nil {
@@ -669,7 +669,7 @@ func (h *TOTPHandler) RegenerateBackupCodes(c *gin.Context) {
 
 // RevokeTrustedDevices removes all trusted devices for the current user.
 func (h *TOTPHandler) RevokeTrustedDevices(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	userID := c.GetString("user_id")
 
 	h.DB.Where("user_id = ?", userID).Delete(&models.TrustedDevice{})
 
@@ -679,7 +679,7 @@ func (h *TOTPHandler) RevokeTrustedDevices(c *gin.Context) {
 }
 
 // createTrustedDevice stores a trusted device and sets the cookie.
-func (h *TOTPHandler) createTrustedDevice(c *gin.Context, userID uint) {
+func (h *TOTPHandler) createTrustedDevice(c *gin.Context, userID string) {
 	deviceToken, err := totp.GenerateDeviceToken()
 	if err != nil {
 		return // Non-critical, skip silently
@@ -709,7 +709,7 @@ func (h *TOTPHandler) createTrustedDevice(c *gin.Context, userID uint) {
 }
 
 // IsTrustedDevice checks if the current request has a valid trusted device cookie.
-func IsTrustedDevice(c *gin.Context, db *gorm.DB, userID uint) bool {
+func IsTrustedDevice(c *gin.Context, db *gorm.DB, userID string) bool {
 	token, err := c.Cookie("totp_trusted")
 	if err != nil || token == "" {
 		return false

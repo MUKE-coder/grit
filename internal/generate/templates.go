@@ -251,9 +251,9 @@ func (s *{{Pascal}}Service) List(params {{Pascal}}ListParams) ([]models.{{Pascal
 }
 
 // GetByID returns a single {{lower}} by ID.
-func (s *{{Pascal}}Service) GetByID(id uint) (*models.{{Pascal}}, error) {
+func (s *{{Pascal}}Service) GetByID(id string) (*models.{{Pascal}}, error) {
 	var item models.{{Pascal}}
-	if err := s.DB.First(&item, id).Error; err != nil {
+	if err := s.DB.First(&item, "id = ?", id).Error; err != nil {
 		return nil, fmt.Errorf("{{lower}} not found: %w", err)
 	}
 	return &item, nil
@@ -268,9 +268,9 @@ func (s *{{Pascal}}Service) Create(item *models.{{Pascal}}) error {
 }
 
 // Update modifies an existing {{lower}}.
-func (s *{{Pascal}}Service) Update(id uint, updates map[string]interface{}) (*models.{{Pascal}}, error) {
+func (s *{{Pascal}}Service) Update(id string, updates map[string]interface{}) (*models.{{Pascal}}, error) {
 	var item models.{{Pascal}}
-	if err := s.DB.First(&item, id).Error; err != nil {
+	if err := s.DB.First(&item, "id = ?", id).Error; err != nil {
 		return nil, fmt.Errorf("{{lower}} not found: %w", err)
 	}
 
@@ -278,14 +278,14 @@ func (s *{{Pascal}}Service) Update(id uint, updates map[string]interface{}) (*mo
 		return nil, fmt.Errorf("updating {{lower}}: %w", err)
 	}
 
-	s.DB.First(&item, id)
+	s.DB.First(&item, "id = ?", id)
 	return &item, nil
 }
 
 // Delete soft-deletes a {{lower}}.
-func (s *{{Pascal}}Service) Delete(id uint) error {
+func (s *{{Pascal}}Service) Delete(id string) error {
 	var item models.{{Pascal}}
-	if err := s.DB.First(&item, id).Error; err != nil {
+	if err := s.DB.First(&item, "id = ?", id).Error; err != nil {
 		return fmt.Errorf("{{lower}} not found: %w", err)
 	}
 	if err := s.DB.Delete(&item).Error; err != nil {
@@ -338,7 +338,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 			continue
 		}
 
-		// belongs_to: add FK field (uint) to create/update
+		// belongs_to: add FK field (string UUID) to create/update
 		if f.IsBelongsTo() {
 			baseName := strings.TrimSuffix(f.Name, "_id")
 			fkGoName := toPascalCase(baseName) + "ID"
@@ -346,15 +346,16 @@ func (g *Generator) writeGoHandler(names Names) error {
 			assocName := toPascalCase(baseName)
 			preloads = append(preloads, assocName)
 
-			createFields += fmt.Sprintf("\t\t%s uint `json:\"%s\" binding:\"required\"`\n", fkGoName, fkJson)
+			createFields += fmt.Sprintf("\t\t%s string `json:\"%s\" binding:\"required\"`\n", fkGoName, fkJson)
 			createAssignments += fmt.Sprintf("\t\t%s: req.%s,\n", fkGoName, fkGoName)
 
-			updateFields += fmt.Sprintf("\t\t%s *uint `json:\"%s\"`\n", fkGoName, fkJson)
+			updateFields += fmt.Sprintf("\t\t%s *string `json:\"%s\"`\n", fkGoName, fkJson)
 			updateMap += fmt.Sprintf("	if req.%s != nil {\n\t\tupdates[\"%s\"] = *req.%s\n\t}\n", fkGoName, fkJson, fkGoName)
 			continue
 		}
 
-		// many_to_many: add []uint for create, *[]uint for update
+		// many_to_many: add []string for create, *[]string for update
+		// (all related models use UUID string PKs).
 		if f.IsManyToMany() {
 			relModel := f.RelatedModelName()
 			assocName := toPascalCase(f.Name)
@@ -362,8 +363,8 @@ func (g *Generator) writeGoHandler(names Names) error {
 			idsJson := strings.TrimSuffix(toSnakeCase(f.Name), "s") + "_ids"
 			preloads = append(preloads, assocName)
 
-			createFields += fmt.Sprintf("\t\t%s []uint `json:\"%s\"`\n", idsName, idsJson)
-			updateFields += fmt.Sprintf("\t\t%s *[]uint `json:\"%s\"`\n", idsName, idsJson)
+			createFields += fmt.Sprintf("\t\t%s []string `json:\"%s\"`\n", idsName, idsJson)
+			updateFields += fmt.Sprintf("\t\t%s *[]string `json:\"%s\"`\n", idsName, idsJson)
 
 			varName := toSnakeCase(f.Name)
 			m2mCreateCode += fmt.Sprintf("\n\tif len(req.%s) > 0 {\n\t\tvar %s []models.%s\n\t\th.DB.Find(&%s, req.%s)\n\t\th.DB.Model(&item).Association(\"%s\").Replace(%s)\n\t}\n", idsName, varName, relModel, varName, idsName, assocName, varName)
@@ -406,9 +407,9 @@ func (g *Generator) writeGoHandler(names Names) error {
 	}
 
 	// Build reload-with-preloads line (used after Create/Update)
-	reloadLine := "\th.DB.First(&item, item.ID)"
+	reloadLine := "\th.DB.First(&item, \"id = ?\", item.ID)"
 	if preloadChain != "" {
-		reloadLine = fmt.Sprintf("\th.DB%s.First(&item, item.ID)", preloadChain)
+		reloadLine = fmt.Sprintf("\th.DB%s.First(&item, \"id = ?\", item.ID)", preloadChain)
 	}
 
 	// Build allowed sort columns (skip relationship fields)
@@ -544,7 +545,7 @@ func (h *{{Pascal}}Handler) GetByID(c *gin.Context) {
 	id := c.Param("id")
 
 	var item models.{{Pascal}}
-	if err := h.DB{{PRELOADS}}.First(&item, id).Error; err != nil {
+	if err := h.DB{{PRELOADS}}.First(&item, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -600,7 +601,7 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 	id := c.Param("id")
 
 	var item models.{{Pascal}}
-	if err := h.DB.First(&item, id).Error; err != nil {
+	if err := h.DB.First(&item, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -648,7 +649,7 @@ func (h *{{Pascal}}Handler) Delete(c *gin.Context) {
 	id := c.Param("id")
 
 	var item models.{{Pascal}}
-	if err := h.DB.First(&item, id).Error; err != nil {
+	if err := h.DB.First(&item, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -712,7 +713,10 @@ func (g *Generator) writeZodSchema(names Names) error {
 
 		// belongs_to: use FK column name (e.g., category_id)
 		if f.IsBelongsTo() {
-			fkName := toCamelCase(f.FKColumnName())
+			// Zod schemas use snake_case to match the Go handlers' JSON tags.
+			// The Go API decodes with ShouldBindJSON using `json:"foo_id"` tags,
+			// so the Zod payload must send snake_case keys too.
+			fkName := f.FKColumnName()
 			createFields += fmt.Sprintf("  %s: %s,\n", fkName, f.ZodType())
 			updateFields += fmt.Sprintf("  %s: %s,\n", fkName, f.ZodType()+".optional()")
 			continue
@@ -720,22 +724,22 @@ func (g *Generator) writeZodSchema(names Names) error {
 
 		// many_to_many: use <name>_ids (e.g., tag_ids)
 		if f.IsManyToMany() {
-			idsName := strings.TrimSuffix(toCamelCase(f.Name), "s") + "Ids"
+			idsName := strings.TrimSuffix(toSnakeCase(f.Name), "s") + "_ids"
 			createFields += fmt.Sprintf("  %s: %s,\n", idsName, f.ZodType())
 			updateFields += fmt.Sprintf("  %s: %s,\n", idsName, f.ZodType())
 			continue
 		}
 
-		camelName := toCamelCase(f.Name)
+		snakeName := toSnakeCase(f.Name)
 		zodType := f.ZodType()
-		createFields += fmt.Sprintf("  %s: %s,\n", camelName, zodType)
+		createFields += fmt.Sprintf("  %s: %s,\n", snakeName, zodType)
 
 		// Update schema: make all fields optional
 		updateZod := f.ZodType()
 		if !strings.Contains(updateZod, ".optional()") && !strings.Contains(updateZod, ".nullable()") {
 			updateZod += ".optional()"
 		}
-		updateFields += fmt.Sprintf("  %s: %s,\n", camelName, updateZod)
+		updateFields += fmt.Sprintf("  %s: %s,\n", snakeName, updateZod)
 	}
 
 	content := fmt.Sprintf(`import { z } from "zod";
@@ -767,7 +771,8 @@ func (g *Generator) writeTSTypes(names Names) error {
 			imports += fmt.Sprintf("import type { %s } from \"./%s\";\n", relModel, relKebab)
 			baseName := strings.TrimSuffix(f.Name, "_id")
 			fkSnake := toSnakeCase(baseName) + "_id"
-			fields += fmt.Sprintf("  %s: number;\n", fkSnake)
+			// FK matches the referenced model's UUID string PK.
+			fields += fmt.Sprintf("  %s: string;\n", fkSnake)
 			fields += fmt.Sprintf("  %s?: %s;\n", toSnakeCase(baseName), relModel)
 			continue
 		}
@@ -930,7 +935,8 @@ func (g *Generator) buildTSInterfaceFields() string {
 		if f.IsBelongsTo() {
 			baseName := strings.TrimSuffix(f.Name, "_id")
 			fkSnake := toSnakeCase(baseName) + "_id"
-			result += fmt.Sprintf("  %s: number;\n", fkSnake)
+			// FK matches the referenced model's UUID string PK.
+			result += fmt.Sprintf("  %s: string;\n", fkSnake)
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			result += fmt.Sprintf("  %s?: any;\n", toSnakeCase(baseName))
 			continue

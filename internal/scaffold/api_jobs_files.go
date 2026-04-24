@@ -74,7 +74,7 @@ type EmailPayload struct {
 
 // ImagePayload holds the data for an image processing job.
 type ImagePayload struct {
-	UploadID uint   ` + "`" + `json:"upload_id"` + "`" + `
+	UploadID string ` + "`" + `json:"upload_id"` + "`" + `
 	Key      string ` + "`" + `json:"key"` + "`" + `
 	MimeType string ` + "`" + `json:"mime_type"` + "`" + `
 }
@@ -100,7 +100,7 @@ func (c *Client) EnqueueSendEmail(to, subject, template string, data map[string]
 }
 
 // EnqueueProcessImage enqueues an image processing job.
-func (c *Client) EnqueueProcessImage(uploadID uint, key, mimeType string) error {
+func (c *Client) EnqueueProcessImage(uploadID string, key, mimeType string) error {
 	payload, err := json.Marshal(ImagePayload{
 		UploadID: uploadID,
 		Key:      key,
@@ -224,7 +224,7 @@ func handleImageProcess(deps WorkerDeps) func(ctx context.Context, task *asynq.T
 			return fmt.Errorf("unmarshaling image payload: %w", err)
 		}
 
-		log.Printf("Processing image: upload %d, key %s", payload.UploadID, payload.Key)
+		log.Printf("Processing image: upload %s, key %s", payload.UploadID, payload.Key)
 
 		// Download the original image
 		reader, err := deps.Storage.Download(ctx, payload.Key)
@@ -251,7 +251,7 @@ func handleImageProcess(deps WorkerDeps) func(ctx context.Context, task *asynq.T
 			deps.DB.Model(&models.Upload{}).Where("id = ?", payload.UploadID).Update("thumbnail_url", thumbURL)
 		}
 
-		log.Printf("Thumbnail created for upload %d", payload.UploadID)
+		log.Printf("Thumbnail created for upload %s", payload.UploadID)
 		return nil
 	}
 }

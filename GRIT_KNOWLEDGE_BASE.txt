@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.9.0
+Version: 3.9.1
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -898,7 +898,31 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.9.0 (Current):
+v3.9.1 (Current):
+  - Patch release fixing v3.9.0 compilation bugs (issues #9, #10, #11, #12)
+  - Added missing imports: "log" in config.go, "gorm.io/gorm/logger" in user.go,
+    "net/http" in middleware/logger.go
+  - Removed stray "handlers." package prefix on same-package IsTrustedDevice call
+  - Normalized UserID / UploadID types to string UUIDs across the whole API:
+    2FA models (TwoFactorConfig, TrustedDevice, TOTPPendingToken),
+    auth service (GenerateTokenPair, generateToken),
+    TOTP handler (c.GetString replaces c.GetUint, createTrustedDevice, IsTrustedDevice),
+    jobs package (ImagePayload.UploadID, EnqueueProcessImage),
+    upload handler (userID.(string) type assertion)
+  - Desktop scaffold: keychain.go moved from internal/ to top level (was emitting
+    `package main` in a subdirectory — Go build error). Module path fixed from
+    `<project>/apps/api/apps/desktop` to `<project>/apps/desktop`
+  - Resource generator: service signatures now take `id string` (was `uint`),
+    handler FK fields use `string` (was `uint`), M2M arrays use `[]string` (was `[]uint`),
+    TS interface FK fields use `string`, hooks for TanStack use `id: string`
+  - Initialism-aware PascalCase + SnakeCase: owner_id -> OwnerID (was OwnerId),
+    image_url -> ImageURL (was ImageUrl), api_key -> APIKey. Round-trips correctly.
+  - Zod schemas now emit snake_case field names matching the Go handler's JSON tags
+    (previously emitted camelCase, causing validation/binding mismatches)
+  - Zod FK and M2M validators use z.string().uuid() (previously z.number().int())
+  - FK columns generate with gorm:"size:36;index" (matches UUID PK width)
+
+v3.9.0:
   - New --desktop flag adds apps/desktop/ to the monorepo (Wails client that consumes the shared API)
   - Distinct from grit new-desktop (offline standalone): --desktop is for always-online multi-client apps
   - Combinable: grit new app --mobile --desktop creates API + Expo + Desktop all sharing packages/shared

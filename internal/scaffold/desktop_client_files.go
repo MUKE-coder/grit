@@ -19,15 +19,19 @@ import (
 // Design:          premium desktop UX — frameless, command palette, keyboard shortcuts.
 func writeDesktopClientFiles(root string, opts Options) error {
 	desktopRoot := filepath.Join(root, "apps", "desktop")
-	module := opts.Module() + "/apps/desktop"
+	// Desktop module is a peer of apps/api, not a child.
+	// opts.Module() returns "<project>/apps/api" for monorepo architectures,
+	// so we build the desktop path from the project name directly.
+	module := opts.ProjectName + "/apps/desktop"
 
 	files := map[string]string{
 		// Go side (minimal — native OS only)
+		// keychain.go stays at the top level (same `package main` as main.go/app.go).
 		filepath.Join(desktopRoot, "main.go"):               desktopClientMainGo(opts),
 		filepath.Join(desktopRoot, "app.go"):                desktopClientAppGo(),
+		filepath.Join(desktopRoot, "keychain.go"):           desktopClientKeychainGo(opts),
 		filepath.Join(desktopRoot, "go.mod"):                desktopClientGoMod(module),
 		filepath.Join(desktopRoot, "wails.json"):            desktopClientWailsJSON(opts),
-		filepath.Join(desktopRoot, "internal", "keychain.go"): desktopClientKeychainGo(opts),
 		filepath.Join(desktopRoot, ".gitignore"):            desktopClientGitignore(),
 		filepath.Join(desktopRoot, "README.md"):             desktopClientReadme(opts),
 

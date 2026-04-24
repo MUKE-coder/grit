@@ -18,12 +18,12 @@ func TestField_GoType(t *testing.T) {
 		{"slug", "string"},
 		{"int", "int"},
 		{"uint", "uint"},
-		{"belongs_to", "uint"},
+		{"belongs_to", "string"}, // FK matches UUID string PK
 		{"float", "float64"},
 		{"bool", "bool"},
 		{"datetime", "*time.Time"},
 		{"date", "*time.Time"},
-		{"many_to_many", "[]uint"},
+		{"many_to_many", "[]string"},
 		{"string_array", "datatypes.JSONSlice[string]"},
 		{"unknown", "string"}, // fallback
 	}
@@ -50,11 +50,11 @@ func TestField_TSType(t *testing.T) {
 		{"int", "number"},
 		{"uint", "number"},
 		{"float", "number"},
-		{"belongs_to", "number"},
+		{"belongs_to", "string"}, // FK matches UUID string PK
 		{"bool", "boolean"},
 		{"datetime", "string | null"},
 		{"date", "string | null"},
-		{"many_to_many", "number[]"},
+		{"many_to_many", "string[]"},
 		{"string_array", "string[]"},
 		{"unknown", "string"}, // fallback
 	}
@@ -81,8 +81,8 @@ func TestField_ZodType(t *testing.T) {
 		{Field{Type: "float"}, "z.number()"},
 		{Field{Type: "bool"}, "z.boolean()"},
 		{Field{Type: "datetime"}, "z.string().nullable()"},
-		{Field{Type: "belongs_to"}, "z.number().int()"},
-		{Field{Type: "many_to_many"}, "z.array(z.number().int())"},
+		{Field{Type: "belongs_to"}, "z.string().uuid"},
+		{Field{Type: "many_to_many"}, "z.array(z.string().uuid())"},
 		{Field{Type: "string_array"}, "z.array(z.string())"},
 	}
 

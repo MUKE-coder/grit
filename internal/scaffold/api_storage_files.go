@@ -401,7 +401,7 @@ func (h *UploadHandler) Create(c *gin.Context) {
 		Size:         header.Size,
 		Path:         key,
 		URL:          h.Storage.GetURL(key),
-		UserID:       userID.(uint),
+		UserID:       userID.(string),
 	}
 
 	if err := h.DB.Create(&upload).Error; err != nil {
@@ -614,7 +614,7 @@ func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 		Size:         req.Size,
 		Path:         req.Key,
 		URL:          h.Storage.GetURL(req.Key),
-		UserID:       userID.(uint),
+		UserID:       userID.(string),
 	}
 
 	if err := h.DB.Create(&upload).Error; err != nil {

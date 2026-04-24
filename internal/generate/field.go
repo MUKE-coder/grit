@@ -72,8 +72,11 @@ func (f Field) GoType() string {
 		return "string"
 	case FieldInt:
 		return "int"
-	case FieldUint, FieldBelongsTo:
+	case FieldUint:
 		return "uint"
+	case FieldBelongsTo:
+		// FK columns match the referenced model's UUID string PK.
+		return "string"
 	case FieldFloat:
 		return "float64"
 	case FieldBool:
@@ -81,7 +84,7 @@ func (f Field) GoType() string {
 	case FieldDatetime, FieldDate:
 		return "*time.Time"
 	case FieldManyToMany:
-		return "[]uint"
+		return "[]string"
 	case FieldStringArray:
 		return "datatypes.JSONSlice[string]"
 	default:
@@ -108,7 +111,8 @@ func (f Field) GORMTag() string {
 	case FieldSlug:
 		parts = append(parts, "size:255", "uniqueIndex")
 	case FieldBelongsTo:
-		parts = append(parts, "index")
+		// FK matches the referenced model's UUID string PK.
+		parts = append(parts, "size:36", "index")
 	case FieldStringArray:
 		parts = append(parts, "type:json")
 	}
@@ -147,14 +151,17 @@ func (f Field) TSType() string {
 	switch FieldType(f.Type) {
 	case FieldString, FieldText, FieldSlug, FieldRichtext:
 		return "string"
-	case FieldInt, FieldUint, FieldFloat, FieldBelongsTo:
+	case FieldInt, FieldUint, FieldFloat:
 		return "number"
+	case FieldBelongsTo:
+		// FK columns match the referenced model's UUID string PK.
+		return "string"
 	case FieldBool:
 		return "boolean"
 	case FieldDatetime, FieldDate:
 		return "string | null"
 	case FieldManyToMany:
-		return "number[]"
+		return "string[]"
 	case FieldStringArray:
 		return "string[]"
 	default:
@@ -186,9 +193,10 @@ func (f Field) ZodType() string {
 	case FieldDatetime, FieldDate:
 		base = "z.string().nullable()"
 	case FieldBelongsTo:
-		base = `z.number().int().min(1, "Required")`
+		// FK columns are UUID strings matching the referenced model's PK.
+		base = `z.string().uuid("Invalid ID")`
 	case FieldManyToMany:
-		base = "z.array(z.number().int()).optional()"
+		base = "z.array(z.string().uuid()).optional()"
 	case FieldStringArray:
 		base = "z.array(z.string()).optional()"
 	default:

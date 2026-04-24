@@ -680,7 +680,6 @@ func createDirectories(root string, opts Options) error {
 			filepath.Join(root, "apps", "desktop", "frontend", "src", "components", "ui"),
 			filepath.Join(root, "apps", "desktop", "frontend", "src", "lib"),
 			filepath.Join(root, "apps", "desktop", "frontend", "src", "hooks"),
-			filepath.Join(root, "apps", "desktop", "internal"),
 			filepath.Join(root, "apps", "desktop", "build", "appicon"),
 		)
 	}

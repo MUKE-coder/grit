@@ -28,6 +28,93 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.9.1 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.9.1
+                </span>
+                <span className="text-sm text-muted-foreground">April 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  Patch release fixing compilation and consistency bugs in v3.9.0. Every
+                  freshly scaffolded project (including <code>--mobile --desktop</code>)
+                  and every <code>grit generate resource</code> run now produces Go code that builds
+                  cleanly on the first try. Thanks to <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/9" target="_blank" rel="noopener noreferrer">issue #9</a>,
+                  {' '}<a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/10" target="_blank" rel="noopener noreferrer">#10</a>,
+                  {' '}<a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/11" target="_blank" rel="noopener noreferrer">#11</a>,
+                  {' '}and <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/12" target="_blank" rel="noopener noreferrer">#12</a>.
+                </p>
+
+                <h3>Scaffold fixes</h3>
+                <ul>
+                  <li>
+                    <strong>Missing imports</strong>: added <code>&quot;log&quot;</code> to <code>config.go</code>,{' '}
+                    <code>&quot;gorm.io/gorm/logger&quot;</code> to <code>user.go</code>,{' '}
+                    <code>&quot;net/http&quot;</code> to <code>middleware/logger.go</code>.
+                  </li>
+                  <li>
+                    <strong>Stray package prefix</strong>: removed <code>handlers.</code> qualifier on{' '}
+                    <code>IsTrustedDevice</code> (same-package call).
+                  </li>
+                  <li>
+                    <strong>User ID type consistency</strong>: normalized <code>UserID</code> and{' '}
+                    <code>UploadID</code> to <code>string</code> UUIDs across 2FA models, auth service,
+                    TOTP handler (<code>c.GetString(&quot;user_id&quot;)</code> replaces{' '}
+                    <code>c.GetUint</code>), jobs package, and upload handler.
+                  </li>
+                </ul>
+
+                <h3>Desktop scaffold fixes</h3>
+                <ul>
+                  <li>
+                    <code>keychain.go</code> moved from <code>internal/</code> to the top level (the
+                    subdirectory file was declaring <code>package main</code>, which Go rejects).
+                  </li>
+                  <li>
+                    <code>go.mod</code> module path fixed from{' '}
+                    <code>&lt;project&gt;/apps/api/apps/desktop</code> to{' '}
+                    <code>&lt;project&gt;/apps/desktop</code>.
+                  </li>
+                </ul>
+
+                <h3>Resource generator fixes</h3>
+                <ul>
+                  <li>
+                    Service signatures take <code>id string</code> instead of <code>id uint</code> --
+                    matches the UUID string PK the models have always emitted.
+                  </li>
+                  <li>
+                    Handler FK fields, handler M2M arrays, TS interface FK fields, and TanStack hook
+                    ID types all switched to <code>string</code> (were <code>uint</code> /{' '}
+                    <code>number</code>).
+                  </li>
+                  <li>
+                    <strong>Initialism-aware</strong>{' '}
+                    <code>toPascalCase</code> / <code>toSnakeCase</code>:{' '}
+                    <code>owner_id</code> → <code>OwnerID</code> (was <code>OwnerId</code>),{' '}
+                    <code>image_url</code> → <code>ImageURL</code> (was <code>ImageUrl</code>),{' '}
+                    <code>api_key</code> → <code>APIKey</code>. Round-trips correctly
+                    (snake → pascal → snake).
+                  </li>
+                  <li>
+                    <strong>Zod schemas</strong> now emit snake_case field names matching the Go
+                    handler&apos;s JSON tags (previously emitted camelCase, causing validation and
+                    <code>ShouldBindJSON</code> mismatches).
+                  </li>
+                  <li>
+                    Zod FK and M2M validators use <code>z.string().uuid()</code> instead of{' '}
+                    <code>z.number().int()</code>.
+                  </li>
+                  <li>
+                    FK columns generate with <code>gorm:&quot;size:36;index&quot;</code> (matches UUID PK width).
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.9.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
