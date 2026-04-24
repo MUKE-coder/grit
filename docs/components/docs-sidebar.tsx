@@ -79,6 +79,7 @@ const navItems: NavItem[] = [
       { title: 'Single (One Binary)', href: '/docs/concepts/architecture-modes/single' },
       { title: 'API Only', href: '/docs/concepts/architecture-modes/api-only' },
       { title: 'Mobile (API+Expo)', href: '/docs/concepts/architecture-modes/mobile' },
+      { title: 'Multi-Client (+ Desktop)', href: '/docs/concepts/architecture-modes/multi-client' },
       { title: 'CLI Commands', href: '/docs/concepts/cli' },
       { title: 'New CLI Commands', href: '/docs/concepts/cli-commands' },
       { title: 'Code Generation', href: '/docs/concepts/code-generation' },

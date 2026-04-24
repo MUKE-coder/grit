@@ -24,8 +24,9 @@ export default function ArchitectureModesPage() {
               Architecture Modes
             </h1>
             <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl">
-              Grit supports 5 architecture modes. Choose the one that fits your team,
-              your deployment target, and the frameworks you already know.
+              Grit supports 5 architecture modes plus a <code className="text-base font-mono bg-accent/50 px-1.5 py-0.5 rounded">--desktop</code> flag
+              that combines with any of them (except <code className="text-base font-mono bg-accent/50 px-1.5 py-0.5 rounded">--single</code>).
+              Choose the one that fits your team, your deployment target, and the frameworks you already know.
             </p>
           </div>
 
@@ -135,6 +136,31 @@ export default function ArchitectureModesPage() {
                   'File upload with presigned URLs',
                 ],
               },
+              {
+                name: 'Multi-Client (combine flags)',
+                flag: '--desktop (combinable)',
+                tagline: 'Add a Wails desktop app to any architecture',
+                color: 'cyan',
+                ideal: 'SaaS products needing native + mobile + web clients — the Linear / Notion / Slack pattern',
+                example: '/docs/concepts/architecture-modes/multi-client',
+                structure: `my-app/
+├── apps/
+│   ├── api/             # Shared Go backend
+│   ├── web/             # Next.js or TanStack (optional)
+│   ├── admin/           # Admin panel (optional)
+│   ├── expo/            # Mobile (optional)
+│   └── desktop/         # Wails desktop (always)
+├── packages/shared/     # Types shared across ALL clients
+└── turbo.json`,
+                features: [
+                  'Combine --desktop with --triple, --double, --mobile, or --api',
+                  'Frameless Wails window (platform-aware window controls)',
+                  'Command palette (⌘K) built in',
+                  'OS keychain token storage (not localStorage)',
+                  'Not compatible with --single (single apps bundle their own SPA)',
+                  'Distinct from grit new-desktop (standalone offline-first)',
+                ],
+              },
             ].map((arch) => (
               <div key={arch.name} className="rounded-xl border border-border/40 bg-accent/20 overflow-hidden">
                 <div className="p-6 border-b border-border/30">
@@ -147,9 +173,15 @@ export default function ArchitectureModesPage() {
                   <p className="text-muted-foreground">{arch.tagline}</p>
                   <p className="text-sm text-muted-foreground/70 mt-1">Ideal for: {arch.ideal}</p>
                   {arch.example && (
-                    <a href={arch.example} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-primary hover:text-primary/80 transition-colors">
-                      View example project (Job Portal) &rarr;
-                    </a>
+                    arch.example.startsWith('/') ? (
+                      <Link href={arch.example} className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+                        Read the multi-client guide &rarr;
+                      </Link>
+                    ) : (
+                      <a href={arch.example} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+                        View example project (Job Portal) &rarr;
+                      </a>
+                    )
                   )}
                 </div>
 

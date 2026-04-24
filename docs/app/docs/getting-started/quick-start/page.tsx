@@ -166,9 +166,11 @@ export default function QuickStartPage() {
                   <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--double</code>,{' '}
                   <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--triple</code>,{' '}
                   <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--api</code>,{' '}
-                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--mobile</code> for architecture, and{' '}
+                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--mobile</code> for architecture,{' '}
                   <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--vite</code>,{' '}
-                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--next</code> for frontend.
+                  <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--next</code> for frontend,
+                  and <code className="text-[15px] font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">--desktop</code> to add a
+                  Wails desktop client (<a href="/docs/concepts/architecture-modes/multi-client" className="text-primary hover:underline">multi-client pattern</a>).
                 </p>
               </div>
 

@@ -111,6 +111,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Mobile architecture in Grit: Go API paired with Expo React Native in a Turborepo monorepo. SecureStore for tokens, Expo Router for navigation, shared types between backend and mobile.',
   },
+  '/docs/concepts/architecture-modes/multi-client': {
+    title: 'Multi-Client: API + Mobile + Desktop',
+    description:
+      'Combine --desktop with other flags to scaffold a shared-API multi-client SaaS. One Go backend serving Expo mobile and Wails desktop, with optional web and admin. The Linear / Notion / Slack pattern.',
+  },
   '/docs/concepts/cli': {
     title: 'CLI Commands',
     description:

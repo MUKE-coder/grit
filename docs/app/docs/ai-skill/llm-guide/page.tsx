@@ -184,8 +184,8 @@ export default function LLMGuidePage() {
                   {[
                     {
                       cmd: 'grit new <app-name>',
-                      desc: 'Scaffold a complete new project. Interactive by default — prompts for architecture mode and frontend. 5 architecture modes: --single (API only), --double (API + web), --triple (API + web + admin), --api (headless API), --mobile (API + Expo). 2 frontends: --next (Next.js), --vite (TanStack Router). Supports grit new . to scaffold into current directory, --here for explicit in-place scaffolding, and --force to scaffold into a non-empty directory. Other flags: --full (default, all apps), --style default|modern|minimal|glass|centered.',
-                      example: 'grit new myapp\ngrit new myapp --triple --vite\ngrit new . --triple --vite\ngrit new myapp --here',
+                      desc: 'Scaffold a complete new project. Interactive by default — prompts for architecture mode and frontend. 5 architecture modes: --single (one Go binary with embedded SPA), --double (API + web), --triple (API + web + admin), --api (headless API), --mobile (API + Expo). 2 frontends: --next (Next.js), --vite (TanStack Router). Plus a --desktop flag that adds a Wails desktop client to any monorepo architecture (combinable with --triple, --double, --mobile, --api; NOT --single). Supports grit new . to scaffold into current directory, --here for explicit in-place scaffolding, and --force to scaffold into a non-empty directory. Other flags: --full (default, all apps), --style default|modern|minimal|glass|centered. The --desktop flag is distinct from grit new-desktop (standalone offline-first app with embedded Go + SQLite); --desktop is for always-online multi-client apps that share the monorepo API.',
+                      example: 'grit new myapp\ngrit new myapp --triple --vite\ngrit new . --triple --vite\ngrit new myapp --triple --next --desktop\ngrit new myapp --mobile --desktop',
                     },
                     {
                       cmd: 'grit start server',

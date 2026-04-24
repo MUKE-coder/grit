@@ -443,6 +443,14 @@ grit rm resource <Name>`} />
                         <td className="px-4 py-2.5">Use Next.js frontend</td>
                       </tr>
                       <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt; --desktop</td>
+                        <td className="px-4 py-2.5">Add Wails desktop client (combinable with --triple/--double/--mobile/--api)</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt; --mobile --desktop</td>
+                        <td className="px-4 py-2.5">Multi-client: API + Expo mobile + Wails desktop (shared types)</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">--arch, --frontend</td>
                         <td className="px-4 py-2.5">Long-form flags for architecture and frontend</td>
                       </tr>

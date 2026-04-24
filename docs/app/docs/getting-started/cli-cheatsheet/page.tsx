@@ -209,6 +209,14 @@ export default function CLICheatsheetPage() {
                     desc="API + Expo mobile app only (no web/admin)"
                   />
                   <TerminalCard
+                    cmd="grit new myapp --mobile --desktop"
+                    desc="API + Expo + Wails desktop — the multi-client pattern (new in v3.9)"
+                  />
+                  <TerminalCard
+                    cmd="grit new myapp --triple --next --desktop"
+                    desc="API + web + admin + desktop, one monorepo, shared types"
+                  />
+                  <TerminalCard
                     cmd="grit new myapp --full"
                     desc="Scaffold everything including docs site"
                   />
@@ -242,6 +250,11 @@ export default function CLICheatsheetPage() {
                           flag: "--mobile",
                           type: "bool",
                           desc: "API + Expo mobile only",
+                        },
+                        {
+                          flag: "--desktop",
+                          type: "bool",
+                          desc: "Add a Wails desktop client (combinable with --triple/--double/--mobile/--api; not --single)",
                         },
                         {
                           flag: "--full",
@@ -278,11 +291,16 @@ export default function CLICheatsheetPage() {
                       my-saas-app
                     </code>
                     ). It must start with a letter and cannot end with a hyphen.
-                    Only one mode flag (<code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--api</code>,{" "}
-                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--expo</code>,{" "}
+                    Only one architecture flag (<code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--api</code>,{" "}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--single</code>,{" "}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--double</code>,{" "}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--triple</code>,{" "}
                     <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--mobile</code>,{" "}
                     <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--full</code>)
-                    can be used at a time.
+                    can be used at a time.{" "}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--desktop</code>{" "}
+                    and <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--expo</code>{" "}
+                    are additive — combine them with any architecture (<code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--desktop</code> is not supported with <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--single</code>).
                   </p>
                 </div>
               </div>
@@ -940,10 +958,15 @@ grit upgrade`}
                 <CodeBlock
                   code={`grit
 ├── new <project-name>        # Scaffold a new project
+│   ├── --single              # Go API + embedded SPA (one binary)
+│   ├── --double              # API + web (no admin)
+│   ├── --triple              # API + web + admin (default)
 │   ├── --api                 # Go API only
-│   ├── --expo                # Full stack + Expo mobile
+│   ├── --expo                # Add Expo mobile to --triple
 │   ├── --mobile              # API + Expo mobile only
+│   ├── --desktop             # Add Wails desktop client (combinable, not --single)
 │   ├── --full                # Everything + docs site
+│   ├── --next / --vite       # Frontend: Next.js or TanStack (Vite)
 │   └── --style <variant>     # Admin style variant
 │
 ├── generate (g)              # Code generation
