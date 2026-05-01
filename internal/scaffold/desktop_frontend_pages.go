@@ -110,7 +110,7 @@ function BlogListPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => DeleteBlog(id),
+    mutationFn: (id: string) => DeleteBlog(id),
     onSuccess: () => {
       toast.success("Blog deleted");
       queryClient.invalidateQueries({ queryKey: ["blogs"] });
@@ -118,7 +118,7 @@ function BlogListPage() {
     onError: (err: any) => toast.error(err?.message || "Failed to delete"),
   });
 
-  const handleDelete = (id: number, title: string) => {
+  const handleDelete = (id: string, title: string) => {
     if (window.confirm("Delete \"" + title + "\"? This cannot be undone.")) {
       deleteMutation.mutate(id);
     }
@@ -555,7 +555,7 @@ function ContactListPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => DeleteContact(id),
+    mutationFn: (id: string) => DeleteContact(id),
     onSuccess: () => {
       toast.success("Contact deleted");
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
@@ -563,7 +563,7 @@ function ContactListPage() {
     onError: (err: any) => toast.error(err?.message || "Failed to delete"),
   });
 
-  const handleDelete = (id: number, name: string) => {
+  const handleDelete = (id: string, name: string) => {
     if (window.confirm("Delete \"" + name + "\"? This cannot be undone.")) {
       deleteMutation.mutate(id);
     }

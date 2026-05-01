@@ -28,6 +28,119 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.12.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.12.0
+                </span>
+                <span className="text-sm text-muted-foreground">May 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  Realtime WebSocket hub baked into every API + a desktop client + hooks
+                  for subscribing. And a sweep of every remaining numeric ID — UUIDs are
+                  now the canonical ID type everywhere in the framework.
+                </p>
+
+                <h3>Realtime hub (API)</h3>
+                <ul>
+                  <li>
+                    New package: <code>internal/realtime/hub.go</code>. One <code>Hub</code> per
+                    process; each user can have multiple connections (desktop + mobile + web).
+                  </li>
+                  <li>
+                    <code>Hub.SendToUser(userID, evt)</code>, <code>SendToUsers(ids, evt)</code>,
+                    and <code>Broadcast(evt)</code> let any handler or service push events.
+                  </li>
+                  <li>
+                    Slow-client safe: per-connection 32-message send buffer; when full, that
+                    one client's message is dropped — never blocks the entire hub. Slow
+                    clients resync on their next REST refetch.
+                  </li>
+                  <li>
+                    New handler: <code>internal/handlers/realtime.go</code> upgrades the
+                    request to a WebSocket and registers the client with the hub.
+                  </li>
+                  <li>
+                    Mounted at <code>GET /api/ws?token=&lt;jwt&gt;</code> — query-string auth
+                    because browsers can't set custom headers on the WS handshake.
+                  </li>
+                  <li>
+                    Wire format: <code>{'{ type: "<topic>", payload: {...} }'}</code>. Suggested
+                    topics: <code>chat.message.new</code>, <code>notification.new</code>,{' '}
+                    <code>system.connected</code>, or your own{' '}
+                    <code>{'resource.<name>.<verb>'}</code> namespace.
+                  </li>
+                  <li>
+                    Dependency added: <code>github.com/gorilla/websocket v1.5.3</code>.
+                  </li>
+                </ul>
+
+                <h3>Realtime client (desktop)</h3>
+                <ul>
+                  <li>
+                    New file: <code>frontend/src/lib/realtime.ts</code>. Singleton client with
+                    auto-reconnect via exponential backoff (1s, 2s, 4s, 8s, capped at 15s).
+                  </li>
+                  <li>
+                    Global <code>realtimeBus</code> EventTarget — any component can subscribe.
+                  </li>
+                  <li>
+                    Start from <code>AuthProvider</code> after tokens land, stop on logout.
+                  </li>
+                  <li>
+                    New hook: <code>useRealtimeEvent&lt;T&gt;(type, callback)</code> subscribes to a
+                    typed topic and unsubscribes on unmount. Plus{' '}
+                    <code>useRealtimeAny()</code> for catch-all handlers (debug, toast bar).
+                  </li>
+                </ul>
+
+                <h3>ID consistency sweep — UUIDs everywhere</h3>
+                <p>
+                  v3.9.1 standardized the User model on string UUID PKs but a long tail of
+                  numeric IDs remained in the framework. v3.12.0 cleans them all up.
+                </p>
+                <ul>
+                  <li>
+                    <strong>Go scaffold:</strong> the prebuilt <code>Blog</code> model in{' '}
+                    <code>api_blog_files.go</code> swaps from <code>gorm.Model</code> (auto-incr
+                    uint) to a string UUID PK with a <code>BeforeCreate</code> hook. Service
+                    signatures (<code>GetByID</code>, <code>Update</code>, <code>Delete</code>) and
+                    handler param parsing all switch from <code>uint</code> to <code>string</code>.
+                  </li>
+                  <li>
+                    <strong>Standalone desktop scaffold</strong> (<code>grit new-desktop</code>):
+                    User, Blog, and Contact models all switch to string UUID PKs with{' '}
+                    <code>BeforeCreate</code> hooks. All Wails-bound App methods and underlying
+                    service signatures use <code>id string</code>. Frontend mutation typings
+                    follow.
+                  </li>
+                  <li>
+                    <strong>Shared TS types:</strong> <code>User</code>, <code>Upload</code>, and{' '}
+                    <code>Blog</code> interfaces all use <code>id: string</code>. URL builders in{' '}
+                    <code>API_ROUTES</code> take <code>id: string</code>. The <code>BlogSchema</code>{' '}
+                    Zod schema uses <code>z.string()</code>.
+                  </li>
+                  <li>
+                    <strong>Admin TS:</strong> <code>DataTable</code> selection state, generic{' '}
+                    <code>useResourceItem</code> / <code>useUpdateResource</code> /{' '}
+                    <code>useDeleteResource</code> mutation typings,{' '}
+                    <code>RelationshipSelectField</code> single value,{' '}
+                    <code>MultiRelationshipSelectField</code> array values, and <code>handleDelete</code>{' '}
+                    callbacks all switch from <code>number</code> to <code>string</code>.
+                  </li>
+                </ul>
+
+                <p className="text-sm text-muted-foreground">
+                  Net effect: UUID is the canonical ID type across the entire framework. Any
+                  resource generator output, any scaffolded type, any Go signature — all
+                  string UUIDs. No more <code>id: number</code> hiding in some corner.
+                </p>
+              </div>
+            </div>
+
             {/* v3.11.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

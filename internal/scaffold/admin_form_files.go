@@ -1566,8 +1566,8 @@ import type { FieldDefinition } from "@/lib/resource";
 
 interface RelationshipSelectFieldProps {
   field: FieldDefinition;
-  value: number | null;
-  onChange: (value: number | null) => void;
+  value: string | null;
+  onChange: (value: string | null) => void;
   error?: string;
 }
 
@@ -1724,8 +1724,8 @@ import type { FieldDefinition } from "@/lib/resource";
 
 interface MultiRelationshipSelectFieldProps {
   field: FieldDefinition;
-  value: number[];
-  onChange: (value: number[]) => void;
+  value: string[];
+  onChange: (value: string[]) => void;
   error?: string;
 }
 
@@ -1792,7 +1792,7 @@ export function MultiRelationshipSelectField({ field, value = [], onChange, erro
     });
   }, [value, options, displayField]);
 
-  const toggleItem = (id: number) => {
+  const toggleItem = (id: string) => {
     if (value.includes(id)) {
       onChange(value.filter((v) => v !== id));
     } else {
@@ -1800,7 +1800,7 @@ export function MultiRelationshipSelectField({ field, value = [], onChange, erro
     }
   };
 
-  const removeItem = (id: number) => {
+  const removeItem = (id: string) => {
     onChange(value.filter((v) => v !== id));
   };
 

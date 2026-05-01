@@ -31,6 +31,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "middleware", "maintenance.go"): apiMaintenanceMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "idempotency.go"): apiIdempotencyMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "paginate", "paginate.go"): apiPaginateGo(),
+		filepath.Join(apiRoot, "internal", "realtime", "hub.go"):       apiRealtimeHubGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "realtime.go"):  apiRealtimeHandlerGo(),
 		filepath.Join(apiRoot, "internal", "routes", "routes.go"):    apiRoutesGo(),
 		filepath.Join(apiRoot, ".air.toml"):                          airConfig(),
 		// Test files — give the generated API a working test suite out of the box
@@ -69,6 +71,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/sessions v1.4.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/hibiken/asynq v0.24.1
 	github.com/markbates/goth v1.80.0
 	github.com/joho/godotenv v1.5.1
@@ -2480,6 +2483,285 @@ func (w *idempotencyCapture) WriteHeader(code int) {
 `
 }
 
+func apiRealtimeHubGo() string {
+	return `// Package realtime is a tiny WebSocket fan-out hub. One Hub per process;
+// each authenticated user can have multiple connections (e.g. desktop +
+// mobile + web). The hub owns the registry and exposes safe SendToUser /
+// SendToUsers / Broadcast helpers that handlers call from anywhere.
+//
+// Wire format on the websocket is a JSON envelope:
+//
+//	{ "type": "<topic>", "payload": { ... } }
+//
+// Topics are caller-defined strings. Suggested namespacing:
+//
+//   chat.message.new       — payload is a chat message
+//   notification.new       — payload is a notification
+//   system.connected       — server greeting on first connect
+//   resource.<name>.<verb> — e.g. building.created, lease.expired
+package realtime
+
+import (
+	"encoding/json"
+	"log"
+	"sync"
+
+	"github.com/gorilla/websocket"
+)
+
+// Event is the envelope every WS message uses on the wire.
+type Event struct {
+	Type    string      ` + "`" + `json:"type"` + "`" + `
+	Payload interface{} ` + "`" + `json:"payload"` + "`" + `
+}
+
+// Client is one open WebSocket connection bound to a user.
+type Client struct {
+	UserID string
+	Conn   *websocket.Conn
+	Send   chan []byte
+}
+
+// Hub manages connected clients. Safe for concurrent use.
+type Hub struct {
+	mu      sync.RWMutex
+	clients map[string]map[*Client]struct{} // userID -> set of connections
+}
+
+// NewHub returns an empty Hub.
+func NewHub() *Hub {
+	return &Hub{clients: make(map[string]map[*Client]struct{})}
+}
+
+// Register adds a client to the hub. A user can have multiple registered
+// clients (different devices); each gets its own slot.
+func (h *Hub) Register(c *Client) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	set, ok := h.clients[c.UserID]
+	if !ok {
+		set = make(map[*Client]struct{})
+		h.clients[c.UserID] = set
+	}
+	set[c] = struct{}{}
+	log.Printf("[realtime] client registered user=%s total=%d", c.UserID, len(set))
+}
+
+// Unregister removes a client and closes its Send channel. Safe to call
+// once per client (e.g. from the read pump's defer).
+func (h *Hub) Unregister(c *Client) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if set, ok := h.clients[c.UserID]; ok {
+		if _, exists := set[c]; exists {
+			delete(set, c)
+			close(c.Send)
+		}
+		if len(set) == 0 {
+			delete(h.clients, c.UserID)
+		}
+	}
+}
+
+// SendToUser delivers an event to every connection bound to userID.
+// If a connection's send buffer is full the message is dropped for that
+// connection only — we never block the entire hub on a slow client.
+// The slow client will resync on its next REST poll/refetch.
+func (h *Hub) SendToUser(userID string, evt Event) {
+	bytes, err := json.Marshal(evt)
+	if err != nil {
+		log.Printf("[realtime] marshal: %v", err)
+		return
+	}
+	h.mu.RLock()
+	set := h.clients[userID]
+	targets := make([]*Client, 0, len(set))
+	for c := range set {
+		targets = append(targets, c)
+	}
+	h.mu.RUnlock()
+	for _, c := range targets {
+		select {
+		case c.Send <- bytes:
+		default:
+			log.Printf("[realtime] dropping message for slow client user=%s", userID)
+		}
+	}
+}
+
+// SendToUsers fans out to a slice of user IDs.
+func (h *Hub) SendToUsers(userIDs []string, evt Event) {
+	for _, uid := range userIDs {
+		h.SendToUser(uid, evt)
+	}
+}
+
+// Broadcast delivers an event to every connected client, regardless of
+// user. Use sparingly — for system-wide announcements, maintenance
+// notices, etc.
+func (h *Hub) Broadcast(evt Event) {
+	bytes, err := json.Marshal(evt)
+	if err != nil {
+		log.Printf("[realtime] marshal: %v", err)
+		return
+	}
+	h.mu.RLock()
+	targets := make([]*Client, 0)
+	for _, set := range h.clients {
+		for c := range set {
+			targets = append(targets, c)
+		}
+	}
+	h.mu.RUnlock()
+	for _, c := range targets {
+		select {
+		case c.Send <- bytes:
+		default:
+			log.Printf("[realtime] dropping broadcast for slow client user=%s", c.UserID)
+		}
+	}
+}
+`
+}
+
+func apiRealtimeHandlerGo() string {
+	return `package handlers
+
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+
+	"` + "{{MODULE}}" + `/internal/realtime"
+	"` + "{{MODULE}}" + `/internal/services"
+)
+
+const (
+	wsWriteWait      = 10 * time.Second
+	wsPongWait       = 60 * time.Second
+	wsPingPeriod     = (wsPongWait * 9) / 10
+	wsMaxMessageSize = 1024 // we don't expect clients to send anything large
+)
+
+// upgrader allows any origin — desktop clients use Wails (file://) and
+// the API is mounted behind CORS that already restricts origins for
+// regular HTTP traffic.
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true },
+}
+
+// RealtimeHandler upgrades an HTTP request to a WebSocket and registers
+// it with the hub. Authentication uses a query-string JWT (?token=...)
+// because browsers can't set custom Authorization headers on WebSocket
+// handshakes — there is no other portable way to pass the JWT.
+type RealtimeHandler struct {
+	Hub  *realtime.Hub
+	Auth *services.AuthService
+}
+
+// NewRealtimeHandler wires the handler to the global Hub and AuthService.
+func NewRealtimeHandler(hub *realtime.Hub, auth *services.AuthService) *RealtimeHandler {
+	return &RealtimeHandler{Hub: hub, Auth: auth}
+}
+
+// Connect upgrades the request to a WebSocket connection.
+//
+//   GET /api/ws?token=<jwt>
+func (h *RealtimeHandler) Connect(c *gin.Context) {
+	tokenStr := c.Query("token")
+	if tokenStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": gin.H{"code": "MISSING_TOKEN", "message": "?token query is required"}})
+		return
+	}
+	claims, err := h.Auth.ValidateToken(tokenStr)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": gin.H{"code": "INVALID_TOKEN", "message": err.Error()}})
+		return
+	}
+
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		log.Printf("[ws] upgrade error: %v", err)
+		return
+	}
+
+	client := &realtime.Client{
+		UserID: claims.UserID,
+		Conn:   conn,
+		Send:   make(chan []byte, 32),
+	}
+	h.Hub.Register(client)
+
+	// Greeting so the client knows the link is live.
+	greeting, _ := json.Marshal(realtime.Event{
+		Type:    "system.connected",
+		Payload: gin.H{"user_id": claims.UserID},
+	})
+	select {
+	case client.Send <- greeting:
+	default:
+	}
+
+	go writePump(client)
+	go readPump(h.Hub, client)
+}
+
+// readPump pumps messages from the client → hub. We don't currently
+// accept commands from clients (mutations go through the REST API), so
+// this loop just services ping/pong and cleans up on disconnect.
+func readPump(hub *realtime.Hub, c *realtime.Client) {
+	defer func() {
+		hub.Unregister(c)
+		_ = c.Conn.Close()
+	}()
+	c.Conn.SetReadLimit(wsMaxMessageSize)
+	_ = c.Conn.SetReadDeadline(time.Now().Add(wsPongWait))
+	c.Conn.SetPongHandler(func(string) error {
+		_ = c.Conn.SetReadDeadline(time.Now().Add(wsPongWait))
+		return nil
+	})
+	for {
+		if _, _, err := c.Conn.ReadMessage(); err != nil {
+			return
+		}
+	}
+}
+
+// writePump pumps messages from the hub → client and emits keepalive pings.
+func writePump(c *realtime.Client) {
+	ticker := time.NewTicker(wsPingPeriod)
+	defer func() {
+		ticker.Stop()
+		_ = c.Conn.Close()
+	}()
+	for {
+		select {
+		case msg, ok := <-c.Send:
+			_ = c.Conn.SetWriteDeadline(time.Now().Add(wsWriteWait))
+			if !ok {
+				_ = c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+			if err := c.Conn.WriteMessage(websocket.TextMessage, msg); err != nil {
+				return
+			}
+		case <-ticker.C:
+			_ = c.Conn.SetWriteDeadline(time.Now().Add(wsWriteWait))
+			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
+		}
+	}
+}
+`
+}
+
 func apiRoutesGo() string {
 	return `package routes
 
@@ -2504,6 +2786,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/middleware"
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/jobs"
+	"` + "{{MODULE}}" + `/internal/realtime"
 	"` + "{{MODULE}}" + `/internal/services"
 	"` + "{{MODULE}}" + `/internal/storage"
 )
@@ -2685,6 +2968,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		AuthService: authService,
 		Issuer:      cfg.TOTPIssuer,
 	}
+	realtimeHub := realtime.NewHub()
+	realtimeHandler := handlers.NewRealtimeHandler(realtimeHub, authService)
+	_ = realtimeHub // available to handlers/services that want to push events
 	// grit:handlers
 
 	// Health check
@@ -2694,6 +2980,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			"version": "0.1.0",
 		})
 	})
+
+	// WebSocket: realtime hub. Auth via ?token=<jwt> on the handshake
+	// because browsers can't set custom headers on WS upgrade.
+	r.GET("/api/ws", realtimeHandler.Connect)
 
 	// Public Grit UI component registry (shadcn-compatible)
 	r.GET("/r.json", uiRegistryHandler.GetRegistry)

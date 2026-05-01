@@ -26,11 +26,11 @@ interface DataTableProps {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   onSort?: (key: string) => void;
-  selectedRows?: number[];
-  onSelectRows?: (rows: number[]) => void;
+  selectedRows?: string[];
+  onSelectRows?: (rows: string[]) => void;
   onView?: (item: Record<string, unknown>) => void;
   onEdit?: (item: Record<string, unknown>) => void;
-  onDelete?: (id: number) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function DataTable({
@@ -54,7 +54,7 @@ export function DataTable({
     return <TableEmptyState />;
   }
 
-  const allIds = data.map((row) => Number(row.id));
+  const allIds = data.map((row) => String(row.id));
   const allSelected = allIds.length > 0 && allIds.every((id) => selectedRows.includes(id));
 
   const toggleAll = () => {
@@ -62,7 +62,7 @@ export function DataTable({
     onSelectRows(allSelected ? [] : allIds);
   };
 
-  const toggleRow = (id: number) => {
+  const toggleRow = (id: string) => {
     if (!onSelectRows) return;
     onSelectRows(
       selectedRows.includes(id)
@@ -104,7 +104,7 @@ export function DataTable({
         </thead>
         <tbody>
           {data.map((row, idx) => {
-            const id = Number(row.id);
+            const id = String(row.id);
             const isSelected = selectedRows.includes(id);
 
             return (

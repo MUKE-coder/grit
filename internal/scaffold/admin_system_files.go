@@ -76,7 +76,7 @@ export function useClearQueue() {
 // ── Files ───────────────────────────────────────────────────────
 
 interface Upload {
-  id: number;
+  id: string;
   filename: string;
   original_name: string;
   mime_type: string;
@@ -84,7 +84,7 @@ interface Upload {
   path: string;
   url: string;
   thumbnail_url?: string;
-  user_id: number;
+  user_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -125,7 +125,7 @@ export function useUploadFile() {
 export function useDeleteUpload() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       await apiClient.delete(` + "`" + `/api/uploads/${id}` + "`" + `);
     },
     onSuccess: () => {

@@ -355,7 +355,7 @@ func desktopUseAuthHook() string {
 import { Login as WailsLogin, Register as WailsRegister, GetCurrentUser } from "../../wailsjs/go/main/App";
 
 interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: string;

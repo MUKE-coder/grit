@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.11.0
+Version: 3.12.0
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -898,7 +898,29 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.11.0 (Current):
+v3.12.0 (Current):
+  - Realtime hub: every scaffolded API now ships with a WebSocket fan-out
+    hub at /api/ws. Authentication via ?token=<jwt> on the handshake
+    (browsers can't set Authorization on WS upgrade). Hub.SendToUser /
+    SendToUsers / Broadcast helpers let any handler push events.
+  - Slow-client safety: per-client send buffer (32 messages); when full,
+    that connection's message is dropped rather than blocking the hub.
+  - Wire format: { type: "<topic>", payload: {...} }. Suggested topics:
+    chat.message.new, notification.new, system.connected, resource.<n>.<verb>.
+  - Desktop client gains lib/realtime.ts (WS connect + exponential backoff
+    1s/2s/4s/8s capped at 15s + EventTarget bus). Singleton; start from
+    AuthProvider after tokens land, stop on logout.
+  - useRealtimeEvent<T>(type, callback) hook subscribes to one topic;
+    useRealtimeAny(callback) fires for every message (debug/in-app toaster).
+  - Dependencies: gorilla/websocket v1.5.3 added to scaffolded go.mod.
+  - ID consistency sweep: removed every remaining numeric ID. All Go
+    models use string UUID PKs (Blog, User in standalone desktop scaffold,
+    Contact); all TS interfaces use id: string (User, Upload, Blog in
+    shared/admin/desktop/web); all admin DataTable selection state and
+    mutation/handler signatures are string-typed; URL builders in shared
+    constants take id: string. UUID is the canonical ID type everywhere.
+
+v3.11.0:
   - Desktop UI primitives: every --desktop scaffold now ships with three
     new files in frontend/src/components/ that previously had to be hand-
     written for every CRUD page.

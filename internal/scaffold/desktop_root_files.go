@@ -586,10 +586,10 @@ grit generate resource Article --fields "title:string,slug:slug:source=title,con
 
 {{BT}}go
 func (a *App) GetProducts(page, pageSize int, search string) (*service.PaginatedResult, error)
-func (a *App) GetProduct(id uint) (*models.Product, error)
+func (a *App) GetProduct(id string) (*models.Product, error)
 func (a *App) CreateProduct(input models.ProductInput) (*models.Product, error)
-func (a *App) UpdateProduct(id uint, input models.ProductInput) (*models.Product, error)
-func (a *App) DeleteProduct(id uint) error
+func (a *App) UpdateProduct(id string, input models.ProductInput) (*models.Product, error)
+func (a *App) DeleteProduct(id string) error
 func (a *App) ExportProductsPDF() ([]byte, error)
 func (a *App) ExportProductsExcel() ([]byte, error)
 {{BT}}

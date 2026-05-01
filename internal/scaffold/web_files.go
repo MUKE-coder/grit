@@ -562,7 +562,7 @@ export default function HomePage() {
             </div>
           ) : blogs.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {blogs.map((blog: { id: number; title: string; slug: string; image: string; excerpt: string; published_at: string | null; created_at: string }) => (
+              {blogs.map((blog: { id: string; title: string; slug: string; image: string; excerpt: string; published_at: string | null; created_at: string }) => (
                 <Link
                   key={blog.id}
                   href={` + "`" + `/blog/${blog.slug}` + "`" + `}
@@ -855,7 +855,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
 interface Blog {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   content: string;
@@ -2156,7 +2156,7 @@ import Cookies from "js-cookie";
 import { api } from "@/lib/api";
 
 interface User {
-  id: number;
+  id: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -2296,7 +2296,7 @@ import { createContext, useContext } from "react";
 import { useMe } from "@/hooks/use-auth";
 
 interface User {
-  id: number;
+  id: string;
   first_name: string;
   last_name: string;
   email: string;

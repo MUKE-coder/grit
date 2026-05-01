@@ -33,23 +33,30 @@ func blogModelGo() string {
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 // Blog represents a blog post in the system.
 type Blog struct {
-	gorm.Model
-	Title       string     ` + "`" + `gorm:"size:255;not null" json:"title" binding:"required"` + "`" + `
-	Slug        string     ` + "`" + `gorm:"size:255;uniqueIndex" json:"slug"` + "`" + `
-	Content     string     ` + "`" + `gorm:"type:text" json:"content"` + "`" + `
-	Image       string     ` + "`" + `gorm:"size:500" json:"image"` + "`" + `
-	Excerpt     string     ` + "`" + `gorm:"size:500" json:"excerpt"` + "`" + `
-	Published   bool       ` + "`" + `gorm:"default:false" json:"published"` + "`" + `
-	PublishedAt *time.Time ` + "`" + `json:"published_at"` + "`" + `
+	ID          string         ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
+	Title       string         ` + "`" + `gorm:"size:255;not null" json:"title" binding:"required"` + "`" + `
+	Slug        string         ` + "`" + `gorm:"size:255;uniqueIndex" json:"slug"` + "`" + `
+	Content     string         ` + "`" + `gorm:"type:text" json:"content"` + "`" + `
+	Image       string         ` + "`" + `gorm:"size:500" json:"image"` + "`" + `
+	Excerpt     string         ` + "`" + `gorm:"size:500" json:"excerpt"` + "`" + `
+	Published   bool           ` + "`" + `gorm:"default:false" json:"published"` + "`" + `
+	PublishedAt *time.Time     ` + "`" + `json:"published_at"` + "`" + `
+	CreatedAt   time.Time      ` + "`" + `json:"created_at"` + "`" + `
+	UpdatedAt   time.Time      ` + "`" + `json:"updated_at"` + "`" + `
+	DeletedAt   gorm.DeletedAt ` + "`" + `gorm:"index" json:"-"` + "`" + `
 }
 
-// BeforeCreate auto-generates the slug before inserting.
+// BeforeCreate auto-generates a UUID and the slug before inserting.
 func (b *Blog) BeforeCreate(tx *gorm.DB) error {
+	if b.ID == "" {
+		b.ID = uuid.New().String()
+	}
 	if b.Slug == "" {
 		b.Slug = slugify(b.Title)
 	}
@@ -139,9 +146,9 @@ func (s *BlogService) ListPublished(page, pageSize int) ([]models.Blog, int64, i
 }
 
 // GetByID returns a single blog by ID.
-func (s *BlogService) GetByID(id uint) (*models.Blog, error) {
+func (s *BlogService) GetByID(id string) (*models.Blog, error) {
 	var blog models.Blog
-	if err := s.DB.First(&blog, id).Error; err != nil {
+	if err := s.DB.First(&blog, "id = ?", id).Error; err != nil {
 		return nil, fmt.Errorf("blog not found: %w", err)
 	}
 	return &blog, nil
@@ -165,9 +172,9 @@ func (s *BlogService) Create(blog *models.Blog) error {
 }
 
 // Update modifies an existing blog.
-func (s *BlogService) Update(id uint, data map[string]interface{}) (*models.Blog, error) {
+func (s *BlogService) Update(id string, data map[string]interface{}) (*models.Blog, error) {
 	var blog models.Blog
-	if err := s.DB.First(&blog, id).Error; err != nil {
+	if err := s.DB.First(&blog, "id = ?", id).Error; err != nil {
 		return nil, fmt.Errorf("blog not found: %w", err)
 	}
 
@@ -175,14 +182,14 @@ func (s *BlogService) Update(id uint, data map[string]interface{}) (*models.Blog
 		return nil, fmt.Errorf("updating blog: %w", err)
 	}
 
-	s.DB.First(&blog, id)
+	s.DB.First(&blog, "id = ?", id)
 	return &blog, nil
 }
 
 // Delete soft-deletes a blog.
-func (s *BlogService) Delete(id uint) error {
+func (s *BlogService) Delete(id string) error {
 	var blog models.Blog
-	if err := s.DB.First(&blog, id).Error; err != nil {
+	if err := s.DB.First(&blog, "id = ?", id).Error; err != nil {
 		return fmt.Errorf("blog not found: %w", err)
 	}
 	if err := s.DB.Delete(&blog).Error; err != nil {
@@ -376,19 +383,10 @@ func (h *BlogHandler) Create(c *gin.Context) {
 
 // Update modifies an existing blog (admin).
 func (h *BlogHandler) Update(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_ID",
-				"message": "Invalid blog ID",
-			},
-		})
-		return
-	}
+	id := c.Param("id")
 
 	// Fetch existing blog to check published state
-	existing, err := h.Service.GetByID(uint(id))
+	existing, err := h.Service.GetByID(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
@@ -442,7 +440,7 @@ func (h *BlogHandler) Update(c *gin.Context) {
 		}
 	}
 
-	blog, err := h.Service.Update(uint(id), updates)
+	blog, err := h.Service.Update(id, updates)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
@@ -461,18 +459,9 @@ func (h *BlogHandler) Update(c *gin.Context) {
 
 // Delete soft-deletes a blog (admin).
 func (h *BlogHandler) Delete(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"code":    "INVALID_ID",
-				"message": "Invalid blog ID",
-			},
-		})
-		return
-	}
+	id := c.Param("id")
 
-	if err := h.Service.Delete(uint(id)); err != nil {
+	if err := h.Service.Delete(id); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",

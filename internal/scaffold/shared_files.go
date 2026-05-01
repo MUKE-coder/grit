@@ -147,7 +147,7 @@ export {
 
 func sharedUserTypes() string {
 	return `export interface User {
-  id: number;
+  id: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -258,15 +258,15 @@ export const API_ROUTES = {
   },
   USERS: {
     LIST: "/api/users",
-    GET: (id: number) => ` + "`" + `/api/users/${id}` + "`" + `,
-    UPDATE: (id: number) => ` + "`" + `/api/users/${id}` + "`" + `,
-    DELETE: (id: number) => ` + "`" + `/api/users/${id}` + "`" + `,
+    GET: (id: string) => ` + "`" + `/api/users/${id}` + "`" + `,
+    UPDATE: (id: string) => ` + "`" + `/api/users/${id}` + "`" + `,
+    DELETE: (id: string) => ` + "`" + `/api/users/${id}` + "`" + `,
   },
   UPLOADS: {
     CREATE: "/api/uploads",
     LIST: "/api/uploads",
-    GET: (id: number) => ` + "`" + `/api/uploads/${id}` + "`" + `,
-    DELETE: (id: number) => ` + "`" + `/api/uploads/${id}` + "`" + `,
+    GET: (id: string) => ` + "`" + `/api/uploads/${id}` + "`" + `,
+    DELETE: (id: string) => ` + "`" + `/api/uploads/${id}` + "`" + `,
   },
   AI: {
     COMPLETE: "/api/ai/complete",
@@ -290,8 +290,8 @@ export const API_ROUTES = {
     GET: (slug: string) => ` + "`" + `/api/blogs/${slug}` + "`" + `,
     ADMIN_LIST: "/api/admin/blogs",
     CREATE: "/api/admin/blogs",
-    UPDATE: (id: number) => ` + "`" + `/api/admin/blogs/${id}` + "`" + `,
-    DELETE: (id: number) => ` + "`" + `/api/admin/blogs/${id}` + "`" + `,
+    UPDATE: (id: string) => ` + "`" + `/api/admin/blogs/${id}` + "`" + `,
+    DELETE: (id: string) => ` + "`" + `/api/admin/blogs/${id}` + "`" + `,
   },
   HEALTH: "/api/health",
   // grit:api-routes
@@ -301,7 +301,7 @@ export const API_ROUTES = {
 
 func sharedUploadTypes() string {
 	return `export interface Upload {
-  id: number;
+  id: string;
   filename: string;
   original_name: string;
   mime_type: string;
@@ -309,7 +309,7 @@ func sharedUploadTypes() string {
   path: string;
   url: string;
   thumbnail_url?: string;
-  user_id: number;
+  user_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -320,7 +320,7 @@ func sharedBlogSchema() string {
 	return `import { z } from "zod";
 
 export const BlogSchema = z.object({
-  id: z.number(),
+  id: z.string(),
   title: z.string(),
   slug: z.string(),
   content: z.string(),
@@ -349,7 +349,7 @@ export type UpdateBlogInput = z.infer<typeof UpdateBlogSchema>;
 
 func sharedBlogTypes() string {
 	return `export interface Blog {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   content: string;

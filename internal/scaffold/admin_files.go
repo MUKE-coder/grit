@@ -611,7 +611,7 @@ import Cookies from "js-cookie";
 import { apiClient } from "@/lib/api-client";
 
 interface User {
-  id: number;
+  id: string;
   first_name: string;
   last_name: string;
   email: string;

@@ -441,7 +441,7 @@ export function ResourcePage({ resource }: ResourcePageProps) {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
     resource.table.defaultSort?.direction ?? "desc"
   );
-  const [selectedRows, setSelectedRows] = useState<number[]>([]);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
 
@@ -454,7 +454,7 @@ export function ResourcePage({ resource }: ResourcePageProps) {
 
   // Confirm modal state
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
 
   // Data fetching
@@ -529,7 +529,7 @@ export function ResourcePage({ resource }: ResourcePageProps) {
     }
   }, [isFormPage, router, resource.slug]);
 
-  const handleDelete = useCallback((id: number) => {
+  const handleDelete = useCallback((id: string) => {
     setDeletingId(id);
     setConfirmOpen(true);
   }, []);
@@ -793,7 +793,7 @@ export function useResource<T = Record<string, unknown>>(
 
 export function useResourceItem<T = Record<string, unknown>>(
   endpoint: string,
-  id: number,
+  id: string,
   options?: { enabled?: boolean }
 ) {
   return useQuery<{ data: T }>({
@@ -802,7 +802,7 @@ export function useResourceItem<T = Record<string, unknown>>(
       const { data } = await apiClient.get(` + "`" + `${endpoint}/${id}` + "`" + `);
       return data;
     },
-    enabled: (options?.enabled ?? true) && id > 0,
+    enabled: (options?.enabled ?? true) && !!id,
   });
 }
 
@@ -829,7 +829,7 @@ export function useUpdateResource(endpoint: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, body }: { id: number; body: Record<string, unknown> }) => {
+    mutationFn: async ({ id, body }: { id: string; body: Record<string, unknown> }) => {
       const { data } = await apiClient.put(` + "`" + `${endpoint}/${id}` + "`" + `, body);
       return data;
     },
@@ -848,7 +848,7 @@ export function useDeleteResource(endpoint: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       await apiClient.delete(` + "`" + `${endpoint}/${id}` + "`" + `);
     },
     onSuccess: () => {

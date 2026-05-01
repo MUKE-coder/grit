@@ -82,17 +82,17 @@ func (s *AuthService) Login(email, password string) (*models.AuthResponse, error
 	return &models.AuthResponse{User: user, Token: token}, nil
 }
 
-func (s *AuthService) GetUser(id uint) (*models.User, error) {
+func (s *AuthService) GetUser(id string) (*models.User, error) {
 	var user models.User
-	if err := s.db.First(&user, id).Error; err != nil {
+	if err := s.db.First(&user, "id = ?", id).Error; err != nil {
 		return nil, fmt.Errorf("user not found")
 	}
 	return &user, nil
 }
 
-func (s *AuthService) UpdateUser(id uint, name, email string) (*models.User, error) {
+func (s *AuthService) UpdateUser(id string, name, email string) (*models.User, error) {
 	var user models.User
-	if err := s.db.First(&user, id).Error; err != nil {
+	if err := s.db.First(&user, "id = ?", id).Error; err != nil {
 		return nil, fmt.Errorf("user not found")
 	}
 	user.Name = name
@@ -171,9 +171,9 @@ func (s *BlogService) ListAll() ([]models.Blog, error) {
 	return blogs, nil
 }
 
-func (s *BlogService) GetByID(id uint) (*models.Blog, error) {
+func (s *BlogService) GetByID(id string) (*models.Blog, error) {
 	var blog models.Blog
-	if err := s.db.Preload("Author").First(&blog, id).Error; err != nil {
+	if err := s.db.Preload("Author").First(&blog, "id = ?", id).Error; err != nil {
 		return nil, fmt.Errorf("blog not found")
 	}
 	return &blog, nil
@@ -190,13 +190,13 @@ func (s *BlogService) Create(input models.BlogInput) (*models.Blog, error) {
 	if err := s.db.Create(&blog).Error; err != nil {
 		return nil, fmt.Errorf("failed to create blog: %w", err)
 	}
-	s.db.Preload("Author").First(&blog, blog.ID)
+	s.db.Preload("Author").First(&blog, "id = ?", blog.ID)
 	return &blog, nil
 }
 
-func (s *BlogService) Update(id uint, input models.BlogInput) (*models.Blog, error) {
+func (s *BlogService) Update(id string, input models.BlogInput) (*models.Blog, error) {
 	var blog models.Blog
-	if err := s.db.First(&blog, id).Error; err != nil {
+	if err := s.db.First(&blog, "id = ?", id).Error; err != nil {
 		return nil, fmt.Errorf("blog not found")
 	}
 	blog.Title = input.Title
@@ -206,12 +206,12 @@ func (s *BlogService) Update(id uint, input models.BlogInput) (*models.Blog, err
 	if err := s.db.Save(&blog).Error; err != nil {
 		return nil, fmt.Errorf("failed to update blog: %w", err)
 	}
-	s.db.Preload("Author").First(&blog, blog.ID)
+	s.db.Preload("Author").First(&blog, "id = ?", blog.ID)
 	return &blog, nil
 }
 
-func (s *BlogService) Delete(id uint) error {
-	if err := s.db.Delete(&models.Blog{}, id).Error; err != nil {
+func (s *BlogService) Delete(id string) error {
+	if err := s.db.Delete(&models.Blog{}, "id = ?", id).Error; err != nil {
 		return fmt.Errorf("failed to delete blog: %w", err)
 	}
 	return nil
@@ -285,9 +285,9 @@ func (s *ContactService) ListAll() ([]models.Contact, error) {
 	return contacts, nil
 }
 
-func (s *ContactService) GetByID(id uint) (*models.Contact, error) {
+func (s *ContactService) GetByID(id string) (*models.Contact, error) {
 	var contact models.Contact
-	if err := s.db.First(&contact, id).Error; err != nil {
+	if err := s.db.First(&contact, "id = ?", id).Error; err != nil {
 		return nil, fmt.Errorf("contact not found")
 	}
 	return &contact, nil
@@ -307,9 +307,9 @@ func (s *ContactService) Create(input models.ContactInput) (*models.Contact, err
 	return &contact, nil
 }
 
-func (s *ContactService) Update(id uint, input models.ContactInput) (*models.Contact, error) {
+func (s *ContactService) Update(id string, input models.ContactInput) (*models.Contact, error) {
 	var contact models.Contact
-	if err := s.db.First(&contact, id).Error; err != nil {
+	if err := s.db.First(&contact, "id = ?", id).Error; err != nil {
 		return nil, fmt.Errorf("contact not found")
 	}
 	contact.Name = input.Name
@@ -323,8 +323,8 @@ func (s *ContactService) Update(id uint, input models.ContactInput) (*models.Con
 	return &contact, nil
 }
 
-func (s *ContactService) Delete(id uint) error {
-	if err := s.db.Delete(&models.Contact{}, id).Error; err != nil {
+func (s *ContactService) Delete(id string) error {
+	if err := s.db.Delete(&models.Contact{}, "id = ?", id).Error; err != nil {
 		return fmt.Errorf("failed to delete contact: %w", err)
 	}
 	return nil

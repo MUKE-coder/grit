@@ -121,11 +121,11 @@ func (a *App) Register(name, email, password string) (*models.AuthResponse, erro
 	return a.auth.Register(name, email, password)
 }
 
-func (a *App) GetCurrentUser(id uint) (*models.User, error) {
+func (a *App) GetCurrentUser(id string) (*models.User, error) {
 	return a.auth.GetUser(id)
 }
 
-func (a *App) UpdateUser(id uint, name, email string) (*models.User, error) {
+func (a *App) UpdateUser(id string, name, email string) (*models.User, error) {
 	return a.auth.UpdateUser(id, name, email)
 }
 
@@ -135,7 +135,7 @@ func (a *App) GetBlogs(page, pageSize int, search string) (*models.PaginatedResu
 	return a.blog.List(page, pageSize, search)
 }
 
-func (a *App) GetBlog(id uint) (*models.Blog, error) {
+func (a *App) GetBlog(id string) (*models.Blog, error) {
 	return a.blog.GetByID(id)
 }
 
@@ -143,11 +143,11 @@ func (a *App) CreateBlog(input models.BlogInput) (*models.Blog, error) {
 	return a.blog.Create(input)
 }
 
-func (a *App) UpdateBlog(id uint, input models.BlogInput) (*models.Blog, error) {
+func (a *App) UpdateBlog(id string, input models.BlogInput) (*models.Blog, error) {
 	return a.blog.Update(id, input)
 }
 
-func (a *App) DeleteBlog(id uint) error {
+func (a *App) DeleteBlog(id string) error {
 	return a.blog.Delete(id)
 }
 
@@ -157,7 +157,7 @@ func (a *App) GetContacts(page, pageSize int, search string) (*models.PaginatedR
 	return a.contact.List(page, pageSize, search)
 }
 
-func (a *App) GetContact(id uint) (*models.Contact, error) {
+func (a *App) GetContact(id string) (*models.Contact, error) {
 	return a.contact.GetByID(id)
 }
 
@@ -165,11 +165,11 @@ func (a *App) CreateContact(input models.ContactInput) (*models.Contact, error) 
 	return a.contact.Create(input)
 }
 
-func (a *App) UpdateContact(id uint, input models.ContactInput) (*models.Contact, error) {
+func (a *App) UpdateContact(id string, input models.ContactInput) (*models.Contact, error) {
 	return a.contact.Update(id, input)
 }
 
-func (a *App) DeleteContact(id uint) error {
+func (a *App) DeleteContact(id string) error {
 	return a.contact.Delete(id)
 }
 

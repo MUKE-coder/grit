@@ -121,12 +121,13 @@ func desktopUserModel() string {
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type User struct {
-	ID        uint           ` + "`" + `gorm:"primarykey" json:"id"` + "`" + `
+	ID        string         ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
 	Name      string         ` + "`" + `gorm:"size:200;not null" json:"name"` + "`" + `
 	Email     string         ` + "`" + `gorm:"size:200;uniqueIndex;not null" json:"email"` + "`" + `
 	Password  string         ` + "`" + `gorm:"size:200;not null" json:"-"` + "`" + `
@@ -137,6 +138,9 @@ type User struct {
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) error {
+	if u.ID == "" {
+		u.ID = uuid.New().String()
+	}
 	hashed, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -157,20 +161,28 @@ func desktopBlogModel() string {
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type Blog struct {
-	ID        uint           ` + "`" + `gorm:"primarykey" json:"id"` + "`" + `
+	ID        string         ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
 	Title     string         ` + "`" + `gorm:"size:300;not null" json:"title"` + "`" + `
 	Slug      string         ` + "`" + `gorm:"size:300;uniqueIndex;not null" json:"slug"` + "`" + `
 	Content   string         ` + "`" + `gorm:"type:text" json:"content"` + "`" + `
 	Published bool           ` + "`" + `gorm:"default:false" json:"published"` + "`" + `
-	AuthorID  uint           ` + "`" + `gorm:"index" json:"author_id"` + "`" + `
+	AuthorID  string         ` + "`" + `gorm:"size:36;index" json:"author_id"` + "`" + `
 	Author    User           ` + "`" + `gorm:"foreignKey:AuthorID" json:"author,omitempty"` + "`" + `
 	CreatedAt time.Time      ` + "`" + `json:"created_at"` + "`" + `
 	UpdatedAt time.Time      ` + "`" + `json:"updated_at"` + "`" + `
 	DeletedAt gorm.DeletedAt ` + "`" + `gorm:"index" json:"-"` + "`" + `
+}
+
+func (b *Blog) BeforeCreate(tx *gorm.DB) error {
+	if b.ID == "" {
+		b.ID = uuid.New().String()
+	}
+	return nil
 }
 `
 }
@@ -181,11 +193,12 @@ func desktopContactModel() string {
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type Contact struct {
-	ID        uint           ` + "`" + `gorm:"primarykey" json:"id"` + "`" + `
+	ID        string         ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
 	Name      string         ` + "`" + `gorm:"size:200;not null" json:"name"` + "`" + `
 	Email     string         ` + "`" + `gorm:"size:200" json:"email"` + "`" + `
 	Phone     string         ` + "`" + `gorm:"size:50" json:"phone"` + "`" + `
@@ -194,6 +207,13 @@ type Contact struct {
 	CreatedAt time.Time      ` + "`" + `json:"created_at"` + "`" + `
 	UpdatedAt time.Time      ` + "`" + `json:"updated_at"` + "`" + `
 	DeletedAt gorm.DeletedAt ` + "`" + `gorm:"index" json:"-"` + "`" + `
+}
+
+func (c *Contact) BeforeCreate(tx *gorm.DB) error {
+	if c.ID == "" {
+		c.ID = uuid.New().String()
+	}
+	return nil
 }
 `
 }
@@ -218,7 +238,7 @@ type BlogInput struct {
 	Title     string ` + "`" + `json:"title"` + "`" + `
 	Content   string ` + "`" + `json:"content"` + "`" + `
 	Published bool   ` + "`" + `json:"published"` + "`" + `
-	AuthorID  uint   ` + "`" + `json:"author_id"` + "`" + `
+	AuthorID  string ` + "`" + `json:"author_id"` + "`" + `
 }
 
 type ContactInput struct {
