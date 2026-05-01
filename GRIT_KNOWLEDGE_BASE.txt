@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.10.0
+Version: 3.11.0
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -898,7 +898,28 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.10.0 (Current):
+v3.11.0 (Current):
+  - Desktop UI primitives: every --desktop scaffold now ships with three
+    new files in frontend/src/components/ that previously had to be hand-
+    written for every CRUD page.
+  - two-pane.tsx: TwoPane (master-detail container), ListPane (left pane
+    with title + search + new + filters), ListRow (icon + title/subtitle
+    + right meta + selection bar), DetailPane (right pane with header +
+    scroll + empty state), EmptyState, DetailSection, DetailField. The
+    standard layout for buildings/tenants/leases/anything-with-a-list.
+  - form.tsx: TextField, TextAreaField, SelectField with consistent
+    label/hint/error chrome; FormGrid for 1/2/3-column layouts;
+    FormSection for grouping; FormActions for cancel/submit pairs with
+    isPending support. Plug straight into react-hook-form.
+  - filter-chip.tsx: FilterChip (toggleable pill, active state with
+    accent bg, optional clear X, optional count badge) and FilterBar
+    (horizontal scrollable wrapper). Use as the filters slot in ListPane.
+  - Added 'listpane' spacing token (22rem / 352px) to the desktop
+    Tailwind config.
+  - Pattern lifted from a real Grit-built rental management app —
+    cuts ~200 LOC of custom layout code per CRUD module.
+
+v3.10.0:
   - Idempotency middleware: Idempotency-Key header gives clients safe retry
     semantics for POST/PUT/PATCH/DELETE. First 2xx response is cached in Redis
     for 24h keyed by (method, path, key); subsequent retries replay the cached

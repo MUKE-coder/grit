@@ -73,6 +73,12 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "components", "ui", "avatar.tsx"):       desktopClientAvatar(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "ui", "badge.tsx"):        desktopClientBadge(),
 
+		// Desktop primitives — list/detail container, form fields, filter chips.
+		// These solve the "every desktop CRUD page reinvents the same 200 LOC" problem.
+		filepath.Join(desktopRoot, "frontend", "src", "components", "two-pane.tsx"):    desktopClientTwoPane(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "form.tsx"):        desktopClientForm(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "filter-chip.tsx"): desktopClientFilterChip(),
+
 		// Lib (API client, auth, utils, shortcuts, Wails bridge)
 		filepath.Join(desktopRoot, "frontend", "src", "lib", "api-client.ts"):     desktopClientApiClientTS(),
 		filepath.Join(desktopRoot, "frontend", "src", "lib", "auth-provider.tsx"): desktopClientAuthProvider(),
@@ -621,6 +627,7 @@ export default {
         "content": "2rem",     // 32px main content padding
         "sidebar": "15rem",    // 240px fixed sidebar
         "titlebar": "3rem",    // 48px custom title bar
+        "listpane": "22rem",   // 352px list pane in TwoPane layout
       },
     },
   },
@@ -2488,6 +2495,558 @@ import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+`
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Desktop primitives — TwoPane / Form / FilterChip
+// Pattern lifted from the rental-manager project. Every desktop CRUD
+// page reinvents these otherwise.
+// ═══════════════════════════════════════════════════════════════════
+
+func desktopClientTwoPane() string {
+	return `import { Search, Plus, Inbox } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+// TwoPane is the master-detail layout that almost every desktop CRUD
+// page wants: a fixed-width list on the left (TwoPane.List) and a
+// detail view on the right (TwoPane.Detail) that fills the rest.
+//
+// Usage:
+//   <TwoPane>
+//     <ListPane title="Buildings" search={s} onSearch={setS} onNew={...}>
+//       {items.map((b) => <ListRow ... />)}
+//     </ListPane>
+//     <DetailPane empty={!selected}>{selected ? ... : null}</DetailPane>
+//   </TwoPane>
+export function TwoPane({ children }: { children: React.ReactNode }) {
+  return <div className="flex h-full overflow-hidden">{children}</div>;
+}
+
+interface ListPaneProps {
+  title: string;
+  count?: number;
+  onNew?: () => void;
+  newLabel?: string;
+  search: string;
+  onSearch: (v: string) => void;
+  searchPlaceholder?: string;
+  filters?: React.ReactNode;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+  // Optional slot rendered before the New button (e.g. a refresh button).
+  toolbar?: React.ReactNode;
+}
+
+// ListPane: sticky header (title + search + new) + scrollable body.
+export function ListPane({
+  title,
+  count,
+  onNew,
+  newLabel = "New",
+  search,
+  onSearch,
+  searchPlaceholder = "Search...",
+  filters,
+  children,
+  footer,
+  toolbar,
+}: ListPaneProps) {
+  return (
+    <aside className="w-listpane shrink-0 border-r border-border bg-surface flex flex-col">
+      <div className="px-4 pt-4 pb-2 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-baseline gap-2">
+            <h2 className="text-[15px] font-semibold text-foreground">{title}</h2>
+            {count !== undefined && (
+              <span className="text-[12px] text-foreground-muted">{count}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {toolbar}
+            {onNew && (
+              <button
+                type="button"
+                onClick={onNew}
+                className="h-8 px-2.5 rounded-lg bg-accent text-white text-[12px] font-medium hover:bg-accent-hover transition-colors inline-flex items-center gap-1"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                {newLabel}
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground-muted" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => onSearch(e.target.value)}
+            placeholder={searchPlaceholder}
+            className="w-full h-8 pl-8 pr-2.5 rounded-lg border border-border bg-surface-2 text-[12.5px] placeholder:text-foreground-muted focus:border-accent focus:outline-none"
+          />
+        </div>
+
+        {filters}
+      </div>
+      <div className="flex-1 overflow-y-auto">{children}</div>
+      {footer && <div className="px-4 py-2 border-t border-border-subtle">{footer}</div>}
+    </aside>
+  );
+}
+
+interface ListRowProps {
+  onClick?: () => void;
+  selected?: boolean;
+  icon?: React.ReactNode;
+  title: React.ReactNode;
+  subtitle?: React.ReactNode;
+  rightTop?: React.ReactNode;
+  rightBottom?: React.ReactNode;
+}
+
+// ListRow: avatar/icon + title/subtitle + right meta. Selected state
+// shows a 2px accent bar on the left edge.
+export function ListRow({
+  onClick,
+  selected,
+  icon,
+  title,
+  subtitle,
+  rightTop,
+  rightBottom,
+}: ListRowProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "relative w-full flex items-start gap-3 py-3 px-4 text-left transition-colors border-b border-border-subtle",
+        "hover:bg-surface-hover",
+        selected && "bg-surface-hover"
+      )}
+    >
+      {selected && (
+        <span aria-hidden className="absolute inset-y-0 left-0 w-[2px] bg-accent" />
+      )}
+      {icon && (
+        <div className="h-9 w-9 rounded-full bg-surface-2 shrink-0 flex items-center justify-center text-[12px] font-semibold text-foreground-secondary overflow-hidden">
+          {icon}
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="text-[13.5px] font-medium text-foreground truncate">{title}</div>
+        {subtitle && (
+          <div className="text-[12px] text-foreground-muted truncate mt-0.5">
+            {subtitle}
+          </div>
+        )}
+      </div>
+      {(rightTop || rightBottom) && (
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          {rightTop && <div className="text-[11.5px] text-foreground-muted">{rightTop}</div>}
+          {rightBottom}
+        </div>
+      )}
+    </button>
+  );
+}
+
+// DetailPane: sticky header + scrollable content. When empty=true,
+// shows a centered EmptyState instead.
+export function DetailPane({
+  header,
+  children,
+  empty,
+  emptyTitle = "Nothing selected",
+  emptyHint = "Pick an item from the list, or create a new one.",
+}: {
+  header?: React.ReactNode;
+  children?: React.ReactNode;
+  empty?: boolean;
+  emptyTitle?: string;
+  emptyHint?: string;
+}) {
+  if (empty) {
+    return (
+      <section className="flex-1 flex items-center justify-center bg-background">
+        <EmptyState title={emptyTitle} hint={emptyHint} />
+      </section>
+    );
+  }
+  return (
+    <section className="flex-1 flex flex-col min-w-0 bg-background overflow-hidden">
+      {header && (
+        <div className="border-b border-border bg-surface px-6 py-4">{header}</div>
+      )}
+      <div className="flex-1 overflow-y-auto p-6">{children}</div>
+    </section>
+  );
+}
+
+// EmptyState: inbox icon + title + hint + optional action.
+export function EmptyState({
+  title,
+  hint,
+  action,
+}: {
+  title: string;
+  hint?: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center text-center max-w-sm px-6">
+      <div className="h-14 w-14 rounded-full bg-surface-2 flex items-center justify-center mb-4">
+        <Inbox className="h-6 w-6 text-foreground-muted" />
+      </div>
+      <div className="text-[14px] font-semibold text-foreground">{title}</div>
+      {hint && <div className="text-[13px] text-foreground-secondary mt-1">{hint}</div>}
+      {action && <div className="mt-4">{action}</div>}
+    </div>
+  );
+}
+
+// DetailSection: small caps section header inside a detail pane.
+export function DetailSection({
+  title,
+  action,
+  children,
+}: {
+  title: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">
+          {title}
+        </h3>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+// DetailField: labelled value row, used heavily in detail panes.
+export function DetailField({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="text-[11px] font-medium uppercase tracking-wider text-foreground-muted mb-0.5">
+        {label}
+      </div>
+      <div className="text-[13.5px] text-foreground">
+        {value || <span className="text-foreground-muted">--</span>}
+      </div>
+    </div>
+  );
+}
+`
+}
+
+func desktopClientForm() string {
+	return `import { forwardRef } from "react";
+import { cn } from "@/lib/utils";
+
+// FieldWrap is the shared chrome around every form field: label,
+// required marker, child input, hint OR error message.
+function FieldWrap({
+  label,
+  hint,
+  error,
+  required,
+  className,
+  children,
+}: {
+  label?: string;
+  hint?: string;
+  error?: string;
+  required?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className={cn("block space-y-1", className)}>
+      {label && (
+        <span className="block text-[12.5px] font-medium text-foreground-secondary">
+          {label}
+          {required && <span className="text-danger ml-0.5">*</span>}
+        </span>
+      )}
+      {children}
+      {error ? (
+        <span className="block text-[11.5px] text-danger">{error}</span>
+      ) : hint ? (
+        <span className="block text-[11.5px] text-foreground-muted">{hint}</span>
+      ) : null}
+    </label>
+  );
+}
+
+const baseInput =
+  "w-full h-10 px-3 rounded-lg border border-border bg-surface text-[13.5px] text-foreground placeholder:text-foreground-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15 disabled:bg-surface-2 disabled:text-foreground-muted";
+
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string;
+  hint?: string;
+  error?: string;
+}
+
+export const TextField = forwardRef<HTMLInputElement, InputProps>(
+  ({ label, hint, error, required, className, ...props }, ref) => (
+    <FieldWrap label={label} hint={hint} error={error} required={required}>
+      <input
+        ref={ref}
+        required={required}
+        className={cn(baseInput, className)}
+        {...props}
+      />
+    </FieldWrap>
+  )
+);
+TextField.displayName = "TextField";
+
+interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label?: string;
+  hint?: string;
+  error?: string;
+}
+
+export const TextAreaField = forwardRef<HTMLTextAreaElement, TextAreaProps>(
+  ({ label, hint, error, required, className, ...props }, ref) => (
+    <FieldWrap label={label} hint={hint} error={error} required={required}>
+      <textarea
+        ref={ref}
+        required={required}
+        className={cn(
+          baseInput,
+          "h-auto min-h-[90px] py-2 resize-y",
+          className
+        )}
+        {...props}
+      />
+    </FieldWrap>
+  )
+);
+TextAreaField.displayName = "TextAreaField";
+
+interface SelectOpt {
+  value: string;
+  label: string;
+}
+interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  label?: string;
+  hint?: string;
+  error?: string;
+  options: SelectOpt[];
+  placeholder?: string;
+}
+
+export const SelectField = forwardRef<HTMLSelectElement, SelectProps>(
+  (
+    { label, hint, error, required, className, options, placeholder, ...props },
+    ref
+  ) => (
+    <FieldWrap label={label} hint={hint} error={error} required={required}>
+      <select
+        ref={ref}
+        required={required}
+        className={cn(baseInput, "appearance-none pr-9 bg-no-repeat", className)}
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238F95A3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")",
+          backgroundPosition: "right 12px center",
+        }}
+        {...props}
+      >
+        {placeholder && <option value="">{placeholder}</option>}
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </FieldWrap>
+  )
+);
+SelectField.displayName = "SelectField";
+
+// FormGrid lays fields out in 1, 2, or 3 columns on >= sm breakpoints,
+// stacking to one column on small screens.
+export function FormGrid({
+  columns = 2,
+  children,
+}: {
+  columns?: 1 | 2 | 3;
+  children: React.ReactNode;
+}) {
+  const cls =
+    columns === 1
+      ? "grid grid-cols-1 gap-4"
+      : columns === 3
+      ? "grid grid-cols-1 sm:grid-cols-3 gap-4"
+      : "grid grid-cols-1 sm:grid-cols-2 gap-4";
+  return <div className={cls}>{children}</div>;
+}
+
+// FormSection groups related fields under a small caps title.
+export function FormSection({
+  title,
+  description,
+  children,
+}: {
+  title?: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-3">
+      {(title || description) && (
+        <div>
+          {title && (
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">
+              {title}
+            </h3>
+          )}
+          {description && (
+            <p className="text-[12.5px] text-foreground-secondary mt-0.5">
+              {description}
+            </p>
+          )}
+        </div>
+      )}
+      {children}
+    </section>
+  );
+}
+
+// FormActions is the sticky-footer cancel/submit pair every form needs.
+// Pass isPending from your TanStack mutation to disable + show "Saving..."
+export function FormActions({
+  onCancel,
+  submitLabel = "Save",
+  isPending,
+  extra,
+}: {
+  onCancel?: () => void;
+  submitLabel?: string;
+  isPending?: boolean;
+  extra?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between pt-4 border-t border-border-subtle">
+      <div>{extra}</div>
+      <div className="flex gap-2">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="h-9 px-3.5 rounded-lg border border-border bg-surface text-[13px] font-medium text-foreground-secondary hover:bg-surface-hover"
+          >
+            Cancel
+          </button>
+        )}
+        <button
+          type="submit"
+          disabled={isPending}
+          className="h-9 px-3.5 rounded-lg bg-accent text-white text-[13px] font-medium hover:bg-accent-hover disabled:opacity-60"
+        >
+          {isPending ? "Saving..." : submitLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
+`
+}
+
+func desktopClientFilterChip() string {
+	return `import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+// FilterChip is a toggleable pill used to compose filter bars on
+// desktop list views. Active chips show a subtle accent background
+// and an X to clear; inactive chips look like neutral tags.
+//
+// Pair with FilterBar for the standard horizontal scrollable layout:
+//
+//   <FilterBar>
+//     <FilterChip active={status === "all"} onClick={() => setStatus("all")}>All</FilterChip>
+//     <FilterChip active={status === "open"} onClick={() => setStatus("open")} onClear={() => setStatus("all")}>Open</FilterChip>
+//   </FilterBar>
+export function FilterChip({
+  children,
+  active,
+  onClick,
+  onClear,
+  count,
+}: {
+  children: React.ReactNode;
+  active?: boolean;
+  onClick?: () => void;
+  // When provided AND active, an X button appears that calls onClear instead
+  // of toggling the chip. Lets users clear a single filter without opening a menu.
+  onClear?: () => void;
+  // Optional count rendered after the label (e.g. "Open (3)").
+  count?: number;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 h-7 pl-2.5 rounded-full text-[12px] font-medium border transition-colors select-none",
+        onClear ? "pr-1" : "pr-2.5",
+        active
+          ? "bg-accent/15 border-accent/30 text-accent"
+          : "bg-surface border-border text-foreground-secondary hover:bg-surface-hover hover:text-foreground cursor-pointer"
+      )}
+      onClick={!active ? onClick : undefined}
+      role={!active ? "button" : undefined}
+      tabIndex={!active ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (!active && onClick && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+    >
+      <span>{children}</span>
+      {count !== undefined && (
+        <span className={cn("text-[11px]", active ? "text-accent/70" : "text-foreground-muted")}>
+          {count}
+        </span>
+      )}
+      {active && onClear && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="ml-0.5 h-5 w-5 rounded-full hover:bg-accent/20 inline-flex items-center justify-center"
+          aria-label="Clear filter"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
+    </span>
+  );
+}
+
+// FilterBar wraps a row of FilterChips with horizontal scroll for
+// when there are too many to fit. Use directly inside a ListPane
+// via the filters prop.
+export function FilterBar({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-1.5 overflow-x-auto -mx-1 px-1 pb-1 scrollbar-thin">
+      {children}
+    </div>
+  );
 }
 `
 }

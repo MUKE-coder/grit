@@ -28,6 +28,93 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.11.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.11.0
+                </span>
+                <span className="text-sm text-muted-foreground">May 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  Three new desktop primitive files ship with every <code>--desktop</code>{' '}
+                  scaffold, lifted from a real Grit-built rental management app. They cover
+                  the master-detail layout, form chrome, and filter chips that every CRUD
+                  page reinvents — saving ~200 LOC per resource.
+                </p>
+
+                <h3><code>components/two-pane.tsx</code> — master-detail layout</h3>
+                <ul>
+                  <li>
+                    <code>TwoPane</code> — outer flex container with overflow handling.
+                  </li>
+                  <li>
+                    <code>ListPane</code> — fixed-width (352px) left pane with title +
+                    count + new button + searchbar + optional filters slot + scrollable body
+                    + optional footer. Toolbar slot for refresh buttons or other actions.
+                  </li>
+                  <li>
+                    <code>ListRow</code> — icon/avatar + title + subtitle + right-side
+                    meta. Selected state shows a 2px accent bar on the left edge.
+                  </li>
+                  <li>
+                    <code>DetailPane</code> — right pane with optional header + scrollable
+                    content. <code>empty=true</code> renders an <code>EmptyState</code>{' '}
+                    with the configured title/hint instead.
+                  </li>
+                  <li>
+                    <code>EmptyState</code>, <code>DetailSection</code> (small caps section
+                    header), and <code>DetailField</code> (labelled value rows for read views).
+                  </li>
+                </ul>
+
+                <h3><code>components/form.tsx</code> — form chrome</h3>
+                <ul>
+                  <li>
+                    <code>TextField</code>, <code>TextAreaField</code>, <code>SelectField</code> —
+                    forwarded refs, consistent label/hint/error layout, focus ring,
+                    disabled styling. Plug straight into <code>react-hook-form</code>.
+                  </li>
+                  <li>
+                    <code>FormGrid</code> — 1, 2, or 3 columns on <code>{'>'}=sm</code>; stacks
+                    on small screens.
+                  </li>
+                  <li>
+                    <code>FormSection</code> — small caps title + optional description
+                    over a stack of fields.
+                  </li>
+                  <li>
+                    <code>FormActions</code> — Cancel + Submit pair with{' '}
+                    <code>isPending</code> support (button disables, label flips to
+                    &quot;Saving...&quot;).
+                  </li>
+                </ul>
+
+                <h3><code>components/filter-chip.tsx</code> — filter chips</h3>
+                <ul>
+                  <li>
+                    <code>FilterChip</code> — toggleable pill, active state shows accent
+                    background; optional <code>onClear</code> renders an X to clear a single
+                    filter; optional <code>count</code> renders a small count badge.
+                  </li>
+                  <li>
+                    <code>FilterBar</code> — horizontal scrollable wrapper. Drop into
+                    <code>ListPane</code>&apos;s <code>filters</code> slot.
+                  </li>
+                </ul>
+
+                <h3>Tailwind tokens</h3>
+                <ul>
+                  <li>
+                    Added <code>listpane</code> spacing token (<code>22rem</code> / 352px)
+                    to the desktop Tailwind config so <code>w-listpane</code> works.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.10.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
