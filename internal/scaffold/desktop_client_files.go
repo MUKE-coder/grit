@@ -92,9 +92,21 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-auth.ts"):           desktopClientUseAuth(),
 		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-online-status.ts"):  desktopClientUseOnlineStatus(),
 		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-realtime.ts"):       desktopClientUseRealtime(),
+		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-sync.ts"):           desktopClientUseSync(),
+
+		// Sync client wrappers + UI
+		filepath.Join(desktopRoot, "frontend", "src", "lib", "sync-client.ts"):               desktopClientSyncClientTS(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "sync-button.tsx"):       desktopClientSyncButton(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "pending-changes.tsx"):   desktopClientPendingChanges(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "conflict-dialog.tsx"):   desktopClientConflictDialog(),
 
 		// Realtime client (WebSocket + reconnect + EventTarget bus)
 		filepath.Join(desktopRoot, "frontend", "src", "lib", "realtime.ts"):             desktopClientRealtimeTS(),
+
+		// Offline-first sync engine (local SQLite + outbox + push/pull orchestration)
+		filepath.Join(desktopRoot, "sync", "engine.go"):                                 desktopSyncEngineGo(),
+		filepath.Join(desktopRoot, "sync", "outbox.go"):                                 desktopSyncOutboxGo(),
+		filepath.Join(desktopRoot, "sync", "local.go"):                                  desktopSyncLocalGo(),
 	}
 
 	for path, content := range files {
@@ -191,17 +203,26 @@ func desktopClientAppGo() string {
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"path/filepath"
 	goruntime "runtime"
 
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
+
+	"{{MODULE}}/sync"
 )
 
-// App exposes a minimal set of native OS methods to the React frontend
-// via Wails bindings. All business logic (CRUD, auth, etc.) goes through
-// HTTP to the shared API — NOT through these methods.
+// App exposes native OS methods + the offline sync engine to the React
+// frontend via Wails bindings. Online business logic still goes through
+// HTTP to the shared API; offline-first writes go through the Local*
+// methods below, which queue them in the sync engine's outbox until the
+// user explicitly clicks "Sync".
 type App struct {
-	ctx context.Context
-	kc  *Keychain
+	ctx    context.Context
+	kc     *Keychain
+	sync   *sync.Engine
+	apiURL string
 }
 
 func NewApp() *App {
@@ -212,6 +233,29 @@ func NewApp() *App {
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	// Configure the sync engine. The local SQLite lives under the OS-
+	// standard user data dir so it survives app updates.
+	a.apiURL = os.Getenv("VITE_API_URL")
+	if a.apiURL == "" {
+		a.apiURL = "http://localhost:8080/api"
+	}
+	dataDir, err := os.UserConfigDir()
+	if err != nil {
+		dataDir, _ = os.UserHomeDir()
+	}
+	dbPath := filepath.Join(dataDir, "{{PROJECT_NAME}}", "sync.db")
+	engine, err := sync.Open(dbPath, a.apiURL, func() (string, error) {
+		v, _ := a.kc.Get("access_token")
+		return v, nil
+	})
+	if err != nil {
+		// Don't crash the whole app; offline features will simply fail
+		// closed. The frontend can warn the user via SyncStatus().
+		fmt.Println("[sync] open failed:", err)
+		return
+	}
+	a.sync = engine
 }
 
 // ─── Token storage (OS keychain) ──────────────────────────────────
@@ -263,6 +307,92 @@ func (a *App) GetPlatform() string {
 // GetAppVersion returns the build version.
 func (a *App) GetAppVersion() string {
 	return "0.1.0"
+}
+
+// ─── Offline sync (local-first CRUD + push/pull orchestration) ────
+//
+// Frontend usage:
+//   await LocalCreate("buildings", "", { name: "Foo" })   // generates UUID
+//   await LocalUpdate("buildings", id, { name: "Bar" })
+//   await LocalDelete("buildings", id)
+//   const items = await LocalList("buildings")
+//   const result = await Sync(["buildings", "tenants"])
+//   if (result.conflicts > 0) { /* open conflict dialog */ }
+//
+// Reads come from the local SQLite mirror, populated by Sync's pull
+// phase. Writes are queued in the outbox and only hit the network when
+// the user clicks Sync.
+
+func (a *App) LocalCreate(table, id string, data map[string]interface{}) error {
+	if a.sync == nil {
+		return fmt.Errorf("sync engine not initialized")
+	}
+	return a.sync.LocalCreate(table, id, data)
+}
+
+func (a *App) LocalUpdate(table, id string, data map[string]interface{}) error {
+	if a.sync == nil {
+		return fmt.Errorf("sync engine not initialized")
+	}
+	return a.sync.LocalUpdate(table, id, data)
+}
+
+func (a *App) LocalDelete(table, id string) error {
+	if a.sync == nil {
+		return fmt.Errorf("sync engine not initialized")
+	}
+	return a.sync.LocalDelete(table, id)
+}
+
+func (a *App) LocalGet(table, id string) (map[string]interface{}, error) {
+	if a.sync == nil {
+		return nil, fmt.Errorf("sync engine not initialized")
+	}
+	return a.sync.LocalGet(table, id)
+}
+
+func (a *App) LocalList(table string) ([]map[string]interface{}, error) {
+	if a.sync == nil {
+		return nil, fmt.Errorf("sync engine not initialized")
+	}
+	return a.sync.LocalList(table)
+}
+
+// Sync runs Pull (for the listed tables) then Push. Returns counts
+// for the UI to render.
+func (a *App) Sync(tables []string) (*sync.SyncResult, error) {
+	if a.sync == nil {
+		return nil, fmt.Errorf("sync engine not initialized")
+	}
+	return a.sync.Sync(tables)
+}
+
+// PendingCount returns the number of unpushed entries — wired to the
+// title-bar Sync button badge.
+func (a *App) PendingCount() (int64, error) {
+	if a.sync == nil {
+		return 0, nil
+	}
+	return a.sync.PendingCount()
+}
+
+// GetPendingChanges returns the full outbox for the review panel.
+func (a *App) GetPendingChanges() ([]sync.Outbox, error) {
+	if a.sync == nil {
+		return nil, fmt.Errorf("sync engine not initialized")
+	}
+	return a.sync.GetPendingChanges()
+}
+
+// ResolveConflict accepts the user's merged data for a conflicted entry.
+// serverVersion is the version the user is overwriting (so the next
+// push's optimistic-lock check matches). The engine clears HasConflict
+// so the entry is replayed on the next Sync.
+func (a *App) ResolveConflict(table, entityID string, mergedData map[string]interface{}, serverVersion int) error {
+	if a.sync == nil {
+		return fmt.Errorf("sync engine not initialized")
+	}
+	return a.sync.ResolveConflict(table, entityID, mergedData, serverVersion)
 }
 `
 }
@@ -339,7 +469,10 @@ go 1.24.2
 
 require (
 	github.com/99designs/keyring v1.2.2
+	github.com/glebarez/sqlite v1.11.0
+	github.com/google/uuid v1.6.0
 	github.com/wailsapp/wails/v2 v2.9.2
+	gorm.io/gorm v1.25.12
 )
 `
 }
@@ -1387,6 +1520,14 @@ import {
   getPlatform,
 } from "@/lib/wails-bridge";
 import { useOnlineStatus } from "@/hooks/use-online-status";
+import { SyncButton } from "@/components/sync-button";
+
+// SYNC_TABLES is the list of table names this app pulls/pushes when the
+// user clicks Sync. Extend it as you scaffold new offline-capable
+// resources. The default set covers the User and Upload models that
+// every Grit project ships with — most apps will replace it with their
+// own domain models like "buildings", "tenants", etc.
+const SYNC_TABLES: string[] = ["users", "uploads"];
 
 interface TitleBarProps {
   showSidebarControls?: boolean;
@@ -1430,8 +1571,9 @@ export function TitleBar({ showSidebarControls: _ = true }: TitleBarProps) {
         <div className="text-[13px] font-medium text-foreground-secondary">` + opts.ProjectName + `</div>
       )}
 
-      {/* Right: connection indicator + (on Windows/Linux) window controls */}
+      {/* Right: sync button + connection indicator + (on Windows/Linux) window controls */}
       <div className="no-drag flex items-center">
+        <SyncButton tables={SYNC_TABLES} />
         <ConnectionIndicator />
         {!isMac && (
           <>

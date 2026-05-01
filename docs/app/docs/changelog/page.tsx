@@ -28,6 +28,161 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.14.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.14.0
+                </span>
+                <span className="text-sm text-muted-foreground">May 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Offline-first foundation.</strong> Git-style sync model — work
+                  locally, click Sync explicitly, resolve conflicts per-field, push
+                  one-by-one. Every scaffolded API now has Version-tracked rows + the
+                  POST /api/sync/push and GET /api/sync/pull endpoints; every desktop
+                  scaffold ships a local SQLite mirror, an outbox with squash semantics,
+                  and a title-bar Sync button + conflict-resolution dialog.
+                </p>
+
+                <h3>Server: versioning + sync endpoints</h3>
+                <ul>
+                  <li>
+                    <code>Version int</code> column added to User, Upload, Blog. A{' '}
+                    <code>BeforeUpdate</code> GORM hook auto-increments on every
+                    server-side write. The resource generator emits both on every new
+                    model.
+                  </li>
+                  <li>
+                    <code>POST /api/sync/push</code> accepts a batch of changes; each
+                    entry includes the version the client believes the server has. On
+                    mismatch the response contains <code>VERSION_CONFLICT</code> + the
+                    current server state, so the client can drive a merge UI.
+                  </li>
+                  <li>
+                    <code>GET /api/sync/pull?model=X&since=cursor</code> returns every
+                    row in the table updated after the cursor, paginated, with a new
+                    cursor in the response.
+                  </li>
+                  <li>
+                    New <code>internal/sync/registry.go</code> maps logical table names
+                    (e.g. <code>"buildings"</code>) to <code>reflect.Type</code> so the
+                    handler decodes dynamic payloads. New resources auto-register via{' '}
+                    <code>// grit:sync</code> marker.
+                  </li>
+                </ul>
+
+                <h3>Desktop: sync engine</h3>
+                <ul>
+                  <li>
+                    New <code>apps/desktop/sync/</code> Go package. Opens a local SQLite
+                    file under the OS user-config dir on app boot.
+                  </li>
+                  <li>
+                    Three tables: <code>sync_records</code> (local mirror — reads come
+                    from here), <code>sync_outbox</code> (pending changes; UNIQUE on
+                    (model, entity_id) for squash), <code>sync_cursors</code>{' '}
+                    (incremental pull positions).
+                  </li>
+                  <li>
+                    Squash semantics: edit a record three times offline → one outbox
+                    entry with the final state. delete-after-create cancels both
+                    locally without ever hitting the network.
+                  </li>
+                  <li>
+                    <code>Engine.Sync()</code> runs Pull then Push. Push posts the whole
+                    outbox in one HTTP call; the response drives per-entry result
+                    handling — successes clear from the outbox, conflicts get the
+                    server state stashed for the merge UI.
+                  </li>
+                </ul>
+
+                <h3>Wails bindings</h3>
+                <p>The frontend talks to the engine through these Wails-bound methods on App:</p>
+                <ul>
+                  <li>
+                    <code>LocalCreate</code> / <code>LocalUpdate</code> / <code>LocalDelete</code> —
+                    write-through to local SQLite + outbox.
+                  </li>
+                  <li>
+                    <code>LocalGet</code> / <code>LocalList</code> — read from the local mirror.
+                  </li>
+                  <li>
+                    <code>Sync(tables)</code> — pull listed tables then push the outbox.
+                    Returns counts.
+                  </li>
+                  <li>
+                    <code>PendingCount</code>, <code>GetPendingChanges</code> — drive the
+                    title-bar badge and the review panel.
+                  </li>
+                  <li>
+                    <code>ResolveConflict(table, entityID, mergedData, serverVersion)</code> —
+                    accepts the user's merge for a conflicted entry.
+                  </li>
+                </ul>
+
+                <h3>UI</h3>
+                <ul>
+                  <li>
+                    <strong>Title-bar Sync button</strong> with a pending-count badge.
+                    Green refresh icon when clean; amber alert + count when there are
+                    pending changes.
+                  </li>
+                  <li>
+                    <strong>PendingChangesPanel</strong> — right-edge drawer listing
+                    every outbox entry, split into &quot;Needs review&quot; (conflicts)
+                    and &quot;Ready to push&quot;. <code>Sync now</code> button at the bottom.
+                  </li>
+                  <li>
+                    <strong>ConflictDialog</strong> — field-level merge UI. Three columns
+                    (Field / Local / Server v_N), per-field click to choose. Apply
+                    builds the merged record and calls <code>ResolveConflict</code>.
+                  </li>
+                </ul>
+
+                <h3>React hooks</h3>
+                <ul>
+                  <li>
+                    <code>usePendingCount()</code> — polls every 2s for the badge.
+                  </li>
+                  <li>
+                    <code>usePendingChanges()</code> — full outbox + refresh function.
+                  </li>
+                  <li>
+                    <code>useSyncMutation(tables)</code> — kicks off a Sync, exposes
+                    running/result/error state.
+                  </li>
+                  <li>
+                    <code>useResolveConflict()</code> — applies one merge and refreshes.
+                  </li>
+                </ul>
+
+                <h3>Wire format</h3>
+                <pre><code>{`POST /api/sync/push
+{ "changes": [
+    { "op": "create", "model": "buildings", "id": "uuid", "version": 0, "data": {...} },
+    { "op": "update", "model": "tenants",   "id": "uuid", "version": 5, "data": {...} },
+    { "op": "delete", "model": "leases",    "id": "uuid", "version": 3 }
+] }
+
+→ { "results": [
+    { "ok": true, "new_version": 1 },
+    { "ok": false, "code": "VERSION_CONFLICT", "server_version": 7, "server_data": {...} },
+    { "ok": true }
+] }`}</code></pre>
+
+                <p className="text-sm text-muted-foreground">
+                  Deferred to v3.14.1: React Query offline-aware data hooks
+                  (<code>useOfflineList</code>, <code>useOfflineGet</code>,{' '}
+                  <code>useOfflineMutation</code>) and the resource generator emitting
+                  offline-aware frontend hooks. The engine and primitives ship now;
+                  ergonomics layer next.
+                </p>
+              </div>
+            </div>
+
             {/* v3.13.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

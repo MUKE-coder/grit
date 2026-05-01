@@ -113,7 +113,8 @@ func (g *Generator) writeGoModel(names Names) error {
 // %s represents a %s in the system.
 type %s struct {
 	ID        string         `+"`"+`gorm:"primarykey;size:36" json:"id"`+"`"+`
-%s	CreatedAt time.Time      `+"`"+`json:"created_at"`+"`"+`
+%s	Version   int            `+"`"+`gorm:"not null;default:1" json:"version"`+"`"+`
+	CreatedAt time.Time      `+"`"+`json:"created_at"`+"`"+`
 	UpdatedAt time.Time      `+"`"+`json:"updated_at"`+"`"+`
 	DeletedAt gorm.DeletedAt `+"`"+`gorm:"index" json:"-"`+"`"+`
 }
@@ -174,6 +175,17 @@ func (m *%s) BeforeCreate(tx *gorm.DB) error {
 }
 `, names.Pascal)
 	}
+
+	// BeforeUpdate increments Version on every server-side write so offline
+	// clients can detect that a record they edited has moved on. Pair with
+	// /api/sync/push for safe write replay.
+	content += fmt.Sprintf(`
+// BeforeUpdate increments Version so offline clients can detect server-side updates.
+func (m *%s) BeforeUpdate(tx *gorm.DB) error {
+	m.Version++
+	return nil
+}
+`, names.Pascal)
 
 	path := filepath.Join(g.APIRoot(), "internal", "models", names.Snake+".go")
 	return writeFileWithDirs(path, content)

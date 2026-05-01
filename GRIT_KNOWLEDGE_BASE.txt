@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.13.0
+Version: 3.14.0
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -898,7 +898,42 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.13.0 (Current):
+v3.14.0 (Current):
+  - Offline-first foundation: Git-style sync model. Work locally, click
+    Sync explicitly, resolve conflicts per-field, push one-by-one.
+  - Server: Version int column added to User, Upload, Blog. BeforeUpdate
+    GORM hook auto-increments. Resource generator emits Version + the
+    hook on every new model.
+  - Server: POST /api/sync/push accepts batched changes with per-entry
+    version checks; returns per-entry results (ok | VERSION_CONFLICT
+    + server state). GET /api/sync/pull?model=X&since=cursor streams
+    server-side updates with a continuation cursor.
+  - Server: internal/sync/registry.go maps logical table names to
+    reflect.Type so the handler can decode dynamic payloads. Resource
+    generator auto-registers new models via // grit:sync marker.
+  - Desktop: new sync/ Go package with local SQLite (gorm + glebarez/sqlite),
+    Outbox table with squash semantics (one entry per entity_id),
+    Records mirror table for local reads, Cursor table for incremental
+    pulls.
+  - Desktop bindings on App: LocalCreate / LocalUpdate / LocalDelete /
+    LocalGet / LocalList write-through to local SQLite + outbox; Sync,
+    PendingCount, GetPendingChanges, ResolveConflict drive the UI.
+  - Title-bar SyncButton with pending-count badge (green check or amber
+    alert). Click opens PendingChangesPanel — right-edge drawer listing
+    every outbox entry, separated into "Needs review" (conflicts) and
+    "Ready to push". Sync now button at the bottom.
+  - ConflictDialog: field-level merge UI. Side-by-side diff with per-
+    field local-vs-server choice. Defaults to "local wins" (user just
+    typed those values offline). Submit calls ResolveConflict() with
+    the merged record + new ServerVersion; the entry is replayed on
+    the next Sync.
+  - useSync, usePendingCount, usePendingChanges, useSyncMutation,
+    useResolveConflict React hooks wrap the Wails bindings.
+  - Deferred to v3.14.1: React Query offline-aware data hooks
+    (useOfflineList, useOfflineGet, useOfflineMutation) and the
+    resource generator emitting offline-aware frontend hooks.
+
+v3.13.0:
   - New CLI command: grit generate sequence <Name>
   - First invocation writes internal/sequence/sequence.go — a generic
     counter package with Counter (the GORM-backed row), Config, and an

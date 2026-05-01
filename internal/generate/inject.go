@@ -33,6 +33,16 @@ func (g *Generator) injectAll(names Names) error {
 		fmt.Println("  ✓ Injected model into GORM Studio")
 	}
 
+	// 2b. Register the model with the sync registry so desktop clients
+	// can push/pull it via /api/sync. Tolerant of older projects that
+	// don't have the // grit:sync marker yet.
+	if fileExists(routesFile) {
+		register := fmt.Sprintf("\tsyncRegistry.Register(\"%s\", &models.%s{})", names.PluralSnake, names.Pascal)
+		if err := injectBefore(routesFile, "// grit:sync", register); err == nil {
+			fmt.Println("  ✓ Registered model with sync registry")
+		}
+	}
+
 	// 3. Inject handler init
 	if fileExists(routesFile) {
 		handlerInit := fmt.Sprintf(`	%sHandler := &handlers.%sHandler{

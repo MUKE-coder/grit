@@ -47,6 +47,7 @@ type Blog struct {
 	Excerpt     string         ` + "`" + `gorm:"size:500" json:"excerpt"` + "`" + `
 	Published   bool           ` + "`" + `gorm:"default:false" json:"published"` + "`" + `
 	PublishedAt *time.Time     ` + "`" + `json:"published_at"` + "`" + `
+	Version     int            ` + "`" + `gorm:"not null;default:1" json:"version"` + "`" + `
 	CreatedAt   time.Time      ` + "`" + `json:"created_at"` + "`" + `
 	UpdatedAt   time.Time      ` + "`" + `json:"updated_at"` + "`" + `
 	DeletedAt   gorm.DeletedAt ` + "`" + `gorm:"index" json:"-"` + "`" + `
@@ -60,6 +61,13 @@ func (b *Blog) BeforeCreate(tx *gorm.DB) error {
 	if b.Slug == "" {
 		b.Slug = slugify(b.Title)
 	}
+	return nil
+}
+
+// BeforeUpdate increments Version so offline clients can detect that
+// a record they edited has moved on.
+func (b *Blog) BeforeUpdate(tx *gorm.DB) error {
+	b.Version++
 	return nil
 }
 `
