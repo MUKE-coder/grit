@@ -28,6 +28,90 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.10.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.10.0
+                </span>
+                <span className="text-sm text-muted-foreground">May 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  Foundation release for upcoming offline-first work. Every scaffolded API
+                  now ships with idempotent-retry semantics; every scaffolded client
+                  auto-attaches an <code>Idempotency-Key</code> on mutations; and the
+                  desktop scaffold gains a connection-status indicator backed by an
+                  API heartbeat.
+                </p>
+
+                <h3>Idempotency middleware (API)</h3>
+                <ul>
+                  <li>
+                    New file: <code>internal/middleware/idempotency.go</code> — wired into{' '}
+                    <code>routes.Setup</code> as a global middleware.
+                  </li>
+                  <li>
+                    Activates only when the request carries an <code>Idempotency-Key</code> header
+                    and the method is <code>POST</code>/<code>PUT</code>/<code>PATCH</code>/<code>DELETE</code>.
+                  </li>
+                  <li>
+                    First 2xx response is cached in Redis for <strong>24 hours</strong>, keyed by{' '}
+                    <code>(method, path, key)</code>. Subsequent requests with the same key replay
+                    the cached response instead of re-executing the handler.
+                  </li>
+                  <li>
+                    Errors (4xx/5xx) are intentionally <strong>not</strong> cached — clients can
+                    retry transient failures with the same key.
+                  </li>
+                  <li>
+                    Sets <code>Idempotent-Replayed: true</code> response header on cache hits so
+                    clients can distinguish replays from fresh executions.
+                  </li>
+                </ul>
+
+                <h3>Client-side header injection</h3>
+                <ul>
+                  <li>
+                    Desktop, Expo, web, and admin clients all auto-attach a UUIDv4{' '}
+                    <code>Idempotency-Key</code> on unsafe methods via the request interceptor.
+                  </li>
+                  <li>
+                    The 401-refresh path now reuses the same key when re-issuing a request after a
+                    token refresh — so a token expiring mid-write can never double-create.
+                  </li>
+                </ul>
+
+                <h3>Online-status hook (desktop)</h3>
+                <ul>
+                  <li>
+                    New hook: <code>useOnlineStatus()</code> at{' '}
+                    <code>frontend/src/hooks/use-online-status.ts</code>.
+                  </li>
+                  <li>
+                    Combines <code>navigator.onLine</code> (cheap pre-check) with a 15-second
+                    heartbeat to <code>/api/health</code> (the truth signal). Returns{' '}
+                    <code>{'{ isOnline, lastCheckedAt }'}</code>.
+                  </li>
+                  <li>
+                    Heartbeat times out after 5s so a sleeping laptop surfaces as offline
+                    instantly on wake.
+                  </li>
+                  <li>
+                    The title-bar gains a <code>ConnectionIndicator</code> — small green/amber
+                    dot reflecting API reachability. Hover for last-checked timestamp.
+                  </li>
+                </ul>
+
+                <p className="text-sm text-muted-foreground">
+                  This is the foundation for the offline-first scaffold landing in a later
+                  v3.x release — write-queues, optimistic updates, and last-write-wins
+                  conflict resolution all need stable idempotency keys to be safe.
+                </p>
+              </div>
+            </div>
+
             {/* v3.9.2 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

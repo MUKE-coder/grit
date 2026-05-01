@@ -741,6 +741,14 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = ` + "`" + `Bearer ${token}` + "`" + `;
   }
+  // Auto-attach Idempotency-Key on unsafe methods. The 401-refresh interceptor
+  // below replays the same config object so retries reuse this key — the
+  // server caches the first 2xx response for 24h keyed by (method, path, key).
+  const method = (config.method || "get").toUpperCase();
+  const unsafe = method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE";
+  if (unsafe && config.headers && !config.headers["Idempotency-Key"]) {
+    config.headers["Idempotency-Key"] = crypto.randomUUID();
+  }
   return config;
 });
 

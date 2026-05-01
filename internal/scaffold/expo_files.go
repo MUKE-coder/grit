@@ -1423,6 +1423,17 @@ interface RequestOptions {
   headers?: Record<string, string>;
 }
 
+// UUIDv4-shaped string for the Idempotency-Key header. Math.random is fine
+// here — collision risk for per-mutation keys with 122 bits of entropy is
+// effectively zero, and we don't need cryptographic strength for dedupe.
+function randomKey(): string {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 class ApiClient {
   private async getToken(): Promise<string | null> {
     return SecureStore.getItemAsync("access_token");
@@ -1452,8 +1463,16 @@ class ApiClient {
       headers["Authorization"] = ` + "`" + `Bearer ${token}` + "`" + `;
     }
 
+    // Stable idempotency key for unsafe methods so the 401-refresh retry
+    // below replays the exact same request and the server can dedupe.
+    const method = options.method || "GET";
+    const unsafe = method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE";
+    if (unsafe && !headers["Idempotency-Key"]) {
+      headers["Idempotency-Key"] = randomKey();
+    }
+
     let res = await fetch(` + "`" + `${API_URL}${endpoint}` + "`" + `, {
-      method: options.method || "GET",
+      method,
       headers,
       body: options.body ? JSON.stringify(options.body) : undefined,
     });

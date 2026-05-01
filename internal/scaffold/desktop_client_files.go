@@ -83,7 +83,8 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "lib", "utils.ts"):          desktopClientUtils(),
 
 		// Hooks
-		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-auth.ts"): desktopClientUseAuth(),
+		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-auth.ts"):           desktopClientUseAuth(),
+		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-online-status.ts"):  desktopClientUseOnlineStatus(),
 	}
 
 	for path, content := range files {
@@ -1374,6 +1375,7 @@ import {
   closeWindow,
   getPlatform,
 } from "@/lib/wails-bridge";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 
 interface TitleBarProps {
   showSidebarControls?: boolean;
@@ -1417,16 +1419,39 @@ export function TitleBar({ showSidebarControls: _ = true }: TitleBarProps) {
         <div className="text-[13px] font-medium text-foreground-secondary">` + opts.ProjectName + `</div>
       )}
 
-      {/* Right: Windows/Linux window controls */}
-      {!isMac ? (
-        <div className="no-drag flex items-center">
-          <WinControl icon={<Minus className="h-3.5 w-3.5" />} onClick={minimise} />
-          <WinControl icon={<Square className="h-3 w-3" />} onClick={toggleMaximise} />
-          <WinControl icon={<X className="h-4 w-4" />} onClick={closeWindow} variant="close" />
-        </div>
-      ) : (
-        <div />
-      )}
+      {/* Right: connection indicator + (on Windows/Linux) window controls */}
+      <div className="no-drag flex items-center">
+        <ConnectionIndicator />
+        {!isMac && (
+          <>
+            <WinControl icon={<Minus className="h-3.5 w-3.5" />} onClick={minimise} />
+            <WinControl icon={<Square className="h-3 w-3" />} onClick={toggleMaximise} />
+            <WinControl icon={<X className="h-4 w-4" />} onClick={closeWindow} variant="close" />
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ConnectionIndicator renders a small colored dot reflecting whether the
+// API is reachable. Green = healthy, amber = no network or API unreachable.
+// Hover for last-checked timestamp.
+function ConnectionIndicator() {
+  const { isOnline, lastCheckedAt } = useOnlineStatus();
+  const label = isOnline ? "Connected" : "Reconnecting...";
+  const checked = lastCheckedAt ? lastCheckedAt.toLocaleTimeString() : "...";
+  return (
+    <div
+      className="flex h-titlebar items-center px-3"
+      title={` + "`" + `${label} (last check: ${checked})` + "`" + `}
+      aria-label={label}
+    >
+      <span
+        className={` + "`" + `h-2 w-2 rounded-full transition-colors ${
+          isOnline ? "bg-success animate-none" : "bg-warning animate-pulse"
+        }` + "`" + `}
+      />
     </div>
   );
 }
@@ -2250,11 +2275,21 @@ export const apiClient = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// Attach JWT from OS keychain (or localStorage in dev)
+// Attach JWT from OS keychain (or localStorage in dev) and auto-generate an
+// Idempotency-Key for unsafe methods so the server can dedupe retries (e.g.
+// the 401 refresh path below re-issues the same request — without a stable
+// key, a network blip mid-write could double-charge or double-create).
 apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   const token = await getToken("access_token");
   if (token && config.headers) {
     config.headers.Authorization = ` + "`" + `Bearer ${token}` + "`" + `;
+  }
+  if (config.headers) {
+    const method = (config.method || "get").toUpperCase();
+    const unsafe = method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE";
+    if (unsafe && !config.headers["Idempotency-Key"]) {
+      config.headers["Idempotency-Key"] = crypto.randomUUID();
+    }
   }
   return config;
 });
@@ -2460,6 +2495,96 @@ export function cn(...inputs: ClassValue[]) {
 // ═══════════════════════════════════════════════════════════════════
 // Hooks
 // ═══════════════════════════════════════════════════════════════════
+
+func desktopClientUseOnlineStatus() string {
+	return `import { useEffect, useState } from "react";
+import { apiClient } from "@/lib/api-client";
+
+// useOnlineStatus tracks whether the desktop client can reach the API.
+//
+// "Online" here means two things together:
+//   1) the OS reports a network connection (navigator.onLine), AND
+//   2) the API has answered a heartbeat in the last HEARTBEAT_INTERVAL_MS
+//
+// We need both because navigator.onLine only reflects the OS-level network
+// link — it returns true even when the API is down or the user is on a
+// captive-portal Wi-Fi that hasn't been authenticated. The API heartbeat
+// is the truth signal; navigator.onLine is just a cheap pre-check that
+// stops us from making a doomed request when the laptop lid was just
+// closed.
+//
+// The heartbeat hits GET /api/health which Grit's API exposes for free —
+// no auth required, no DB hit, fast 200 OK.
+
+const HEARTBEAT_INTERVAL_MS = 15_000;
+const HEARTBEAT_TIMEOUT_MS = 5_000;
+
+export function useOnlineStatus() {
+  const [isOnline, setIsOnline] = useState<boolean>(
+    typeof navigator !== "undefined" ? navigator.onLine : true,
+  );
+  const [lastCheckedAt, setLastCheckedAt] = useState<Date | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setInterval> | null = null;
+
+    const ping = async () => {
+      // OS says no network → don't even try.
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        if (!cancelled) {
+          setIsOnline(false);
+          setLastCheckedAt(new Date());
+        }
+        return;
+      }
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), HEARTBEAT_TIMEOUT_MS);
+        await apiClient.get("/health", { signal: controller.signal, timeout: HEARTBEAT_TIMEOUT_MS });
+        clearTimeout(timeoutId);
+        if (!cancelled) {
+          setIsOnline(true);
+          setLastCheckedAt(new Date());
+        }
+      } catch {
+        if (!cancelled) {
+          setIsOnline(false);
+          setLastCheckedAt(new Date());
+        }
+      }
+    };
+
+    ping();
+    timer = setInterval(ping, HEARTBEAT_INTERVAL_MS);
+
+    const handleOnline = () => ping();
+    const handleOffline = () => {
+      if (!cancelled) {
+        setIsOnline(false);
+        setLastCheckedAt(new Date());
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("online", handleOnline);
+      window.addEventListener("offline", handleOffline);
+    }
+
+    return () => {
+      cancelled = true;
+      if (timer) clearInterval(timer);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("online", handleOnline);
+        window.removeEventListener("offline", handleOffline);
+      }
+    };
+  }, []);
+
+  return { isOnline, lastCheckedAt };
+}
+`
+}
 
 func desktopClientUseAuth() string {
 	return `import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.9.2
+Version: 3.10.0
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -898,7 +898,25 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.9.2 (Current):
+v3.10.0 (Current):
+  - Idempotency middleware: Idempotency-Key header gives clients safe retry
+    semantics for POST/PUT/PATCH/DELETE. First 2xx response is cached in Redis
+    for 24h keyed by (method, path, key); subsequent retries replay the cached
+    response instead of re-executing the handler. Stripe-style behavior, baked
+    into every scaffolded API at internal/middleware/idempotency.go.
+  - All four scaffolded clients (desktop, expo, web, admin) auto-attach a
+    UUIDv4 Idempotency-Key on unsafe methods. The 401-refresh path (which
+    re-issues the same request with a new access token) now reuses the same
+    key, so a network blip mid-write can never double-charge or double-create.
+  - useOnlineStatus() hook (desktop): tracks network reachability via
+    navigator.onLine + 15s heartbeat to /api/health. Returns { isOnline,
+    lastCheckedAt }. Hits the API with a 5s timeout so a sleeping laptop
+    surfaces as offline instantly on wake.
+  - Title-bar ConnectionIndicator: small green/amber dot in the window
+    chrome reflecting API reachability. Hover for last-checked timestamp.
+    Foundation for the offline-first work coming in later releases.
+
+v3.9.2:
   - Generated List endpoints are now 30+ lines smaller: the page/sort/search
     boilerplate moved into a shared internal/paginate package (issue #14)
   - Every scaffolded project ships with internal/paginate/paginate.go, a
