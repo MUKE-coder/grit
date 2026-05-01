@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.12.0
+Version: 3.13.0
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -898,7 +898,25 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.12.0 (Current):
+v3.13.0 (Current):
+  - New CLI command: grit generate sequence <Name>
+  - First invocation writes internal/sequence/sequence.go — a generic
+    counter package with Counter (the GORM-backed row), Config, and an
+    atomic Next(db, cfg, t) helper. Counter table uses (name, bucket)
+    composite PK so each "monthly" / "yearly" / "never" reset gets its
+    own counter row.
+  - Each invocation also writes a per-resource wrapper at
+    internal/services/<name>_sequence.go exposing Next<Name>Number(db, t)
+    so handlers don't need to know prefix/reset/width.
+  - Auto-injects &sequence.Counter{} into the Models() slice (idempotent).
+  - Atomic via row-level SELECT FOR UPDATE on Postgres; serialized writes
+    on SQLite.
+  - Flags: --prefix (default first 3 chars uppercased), --reset
+    monthly|yearly|never (default monthly), --width (default 4).
+  - Report generator (grit generate report) deferred to a later release —
+    needs more design work for the Recharts tab page integration.
+
+v3.12.0:
   - Realtime hub: every scaffolded API now ships with a WebSocket fan-out
     hub at /api/ws. Authentication via ?token=<jwt> on the handshake
     (browsers can't set Authorization on WS upgrade). Hub.SendToUser /

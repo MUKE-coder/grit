@@ -20,7 +20,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
-var version = "3.12.0"
+var version = "3.13.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -249,6 +249,47 @@ func generateCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(generateResourceCmd())
+	cmd.AddCommand(generateSequenceCmd())
+
+	return cmd
+}
+
+func generateSequenceCmd() *cobra.Command {
+	var prefix string
+	var reset string
+	var width int
+
+	cmd := &cobra.Command{
+		Use:   "sequence <Name>",
+		Short: "Generate a sequential numbering helper (e.g. INV-202605-0001)",
+		Long: `Generate atomic sequential numbers for a resource.
+
+The first invocation in a project creates internal/sequence/ — a generic
+counter package backed by a database row. Every invocation also writes a
+typed convenience wrapper at internal/services/<name>_sequence.go so
+handlers call services.Next<Name>Number(db, t) without knowing the
+prefix/reset/width.
+
+Examples:
+  grit generate sequence Invoice
+  grit generate sequence Invoice --prefix INV --reset monthly --width 4
+  grit generate sequence Order --prefix ORD --reset yearly --width 6
+  grit generate sequence Receipt --reset never`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+			return generate.GenerateSequence(generate.SequenceOptions{
+				Name:   args[0],
+				Prefix: prefix,
+				Reset:  reset,
+				Width:  width,
+			})
+		},
+	}
+
+	cmd.Flags().StringVar(&prefix, "prefix", "", "Alphabetic prefix (default: first 3 chars of name uppercased)")
+	cmd.Flags().StringVar(&reset, "reset", "monthly", "When the counter resets: monthly, yearly, never")
+	cmd.Flags().IntVar(&width, "width", 4, "Zero-padded width of the numeric portion")
 
 	return cmd
 }

@@ -212,8 +212,12 @@ func (g *Generator) Run() error {
 
 // Names builds all naming variants from the resource name.
 func (g *Generator) Names() Names {
-	raw := g.Definition.Name
+	return MakeNames(g.Definition.Name)
+}
 
+// MakeNames builds the standard naming variants for any raw resource name.
+// Exposed so other generators (e.g. sequence) can reuse the same conversion.
+func MakeNames(raw string) Names {
 	pascal := toPascalCase(raw)
 	snake := toSnakeCase(pascal)
 	kebab := strings.ReplaceAll(snake, "_", "-")

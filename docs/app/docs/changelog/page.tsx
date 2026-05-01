@@ -28,6 +28,89 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.13.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.13.0
+                </span>
+                <span className="text-sm text-muted-foreground">May 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  New <code>grit generate sequence</code> command produces atomic, gap-free
+                  sequential numbers like <code>INV-202605-0001</code>. Pattern lifted from a
+                  real Grit-built rental management app — invoice / receipt / order numbering
+                  is now a one-liner.
+                </p>
+
+                <h3>What it generates</h3>
+                <ul>
+                  <li>
+                    <strong>First invocation only:</strong>{' '}
+                    <code>internal/sequence/sequence.go</code> — a generic counter package
+                    with <code>Counter</code> (the GORM-backed row),{' '}
+                    <code>Config</code> (name + prefix + reset + width), and an atomic{' '}
+                    <code>Next(db, cfg, t)</code> helper.
+                  </li>
+                  <li>
+                    <strong>Every invocation:</strong>{' '}
+                    <code>internal/services/&lt;name&gt;_sequence.go</code> — a typed
+                    convenience wrapper. Handlers call e.g.{' '}
+                    <code>services.NextInvoiceNumber(h.DB, time.Now())</code> without
+                    knowing the prefix or reset cadence.
+                  </li>
+                  <li>
+                    Auto-injects <code>&sequence.Counter{'{}'}</code> into the{' '}
+                    <code>Models()</code> migration slice (idempotent).
+                  </li>
+                </ul>
+
+                <h3>Mechanics</h3>
+                <ul>
+                  <li>
+                    Counter rows keyed by <code>(name, bucket)</code> where bucket is{' '}
+                    <code>"YYYYMM"</code> for monthly resets, <code>"YYYY"</code> for yearly,
+                    or empty for never. So a monthly counter automatically restarts at 1
+                    on the first call of each new month.
+                  </li>
+                  <li>
+                    Atomic via row-level <code>SELECT FOR UPDATE</code> on Postgres
+                    (concurrent callers serialize on the counter row). SQLite serializes
+                    writes globally so it's also safe.
+                  </li>
+                </ul>
+
+                <h3>Usage</h3>
+                <pre><code>{`grit generate sequence Invoice
+grit generate sequence Order --prefix ORD --reset yearly --width 6
+grit generate sequence Receipt --reset never`}</code></pre>
+
+                <p>Flags:</p>
+                <ul>
+                  <li>
+                    <code>--prefix</code> — alphabetic prefix (default: first 3 chars of
+                    the name, uppercased)
+                  </li>
+                  <li>
+                    <code>--reset</code> — when the counter resets:{' '}
+                    <code>monthly</code> (default), <code>yearly</code>, or <code>never</code>
+                  </li>
+                  <li>
+                    <code>--width</code> — zero-padded width of the numeric portion
+                    (default 4)
+                  </li>
+                </ul>
+
+                <p className="text-sm text-muted-foreground">
+                  The <code>grit generate report</code> generator (Recharts tabs page +
+                  Go ReportService) is deferred to a future release — it needs more design
+                  work for the React chart layer than fits a same-day release.
+                </p>
+              </div>
+            </div>
+
             {/* v3.12.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
