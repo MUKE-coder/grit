@@ -2456,7 +2456,17 @@ apiClient.interceptors.response.use(
   async (error) => {
     const original = error.config as AxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status === 401 && !original._retry) {
+    // Don't try to refresh on the auth endpoints themselves — a wrong
+    // password is a real 401 that should bubble up cleanly. Refreshing
+    // here would 401 again, wipe tokens, and leave the user stuck in
+    // a login loop.
+    const url = original.url || "";
+    const isAuthEndpoint =
+      url.includes("/auth/login") ||
+      url.includes("/auth/register") ||
+      url.includes("/auth/refresh");
+
+    if (error.response?.status === 401 && !original._retry && !isAuthEndpoint) {
       original._retry = true;
 
       if (isRefreshing) {

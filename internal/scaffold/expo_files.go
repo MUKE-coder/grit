@@ -1477,8 +1477,15 @@ class ApiClient {
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
 
+    // Skip refresh on the auth endpoints themselves — a wrong password
+    // 401-ing into a refresh attempt would loop and wipe the session.
+    const isAuthEndpoint =
+      endpoint.includes("/auth/login") ||
+      endpoint.includes("/auth/register") ||
+      endpoint.includes("/auth/refresh");
+
     // Try refresh if unauthorized
-    if (res.status === 401) {
+    if (res.status === 401 && !isAuthEndpoint) {
       const refreshToken = await this.getRefreshToken();
       if (refreshToken) {
         const refreshRes = await fetch(` + "`" + `${API_URL}/auth/refresh` + "`" + `, {
