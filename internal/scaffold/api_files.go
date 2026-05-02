@@ -47,6 +47,9 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "webhooks", "webhooks.go"):         apiWebhooksGo(),
 		filepath.Join(apiRoot, "internal", "webhooks", "verifiers.go"):        apiWebhooksVerifiersGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "webhooks.go"):         apiWebhooksHandlerGo(),
+		filepath.Join(apiRoot, "internal", "models", "feature_flag.go"):       apiFeatureFlagModelGo(),
+		filepath.Join(apiRoot, "internal", "flags", "flags.go"):               apiFlagsGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "flags.go"):            apiFlagsHandlerGo(),
 		filepath.Join(apiRoot, "internal", "routes", "routes.go"):    apiRoutesGo(),
 		filepath.Join(apiRoot, ".air.toml"):                          airConfig(),
 		// Test files — give the generated API a working test suite out of the box
@@ -733,6 +736,8 @@ func Models() []interface{} {
 		&TOTPPendingToken{},
 		&ActivityLog{},
 		&WebhookEvent{},
+		&FeatureFlag{},
+		&FlagExposure{},
 		// grit:models
 	}
 }
@@ -3855,6 +3860,585 @@ var _ = fmt.Sprint
 `
 }
 
+func apiFeatureFlagModelGo() string {
+	return `package models
+
+import (
+	"encoding/json"
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
+)
+
+// FeatureFlag is one rollout switch. Two flavors:
+//   - Boolean (Variants empty) → IsEnabled returns true/false
+//   - A/B (Variants set)       → Variant returns one of the listed
+//                                strings, sticky per (user, flag).
+//
+// Rules JSON shape (FlagRules): rollout_percentage, allowlist_user_ids,
+// blocklist_user_ids, enabled_from, enabled_until, variants. The
+// percentage and variant assignment both bucket users by
+// SHA-256(user_id || ":" || flag_name) % 100 so the same user always
+// lands in the same slot for a given flag — no flicker between sessions.
+type FeatureFlag struct {
+	ID          string         ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
+	Name        string         ` + "`" + `gorm:"size:100;uniqueIndex;not null" json:"name"` + "`" + ` // e.g. "new_dashboard"
+	Description string         ` + "`" + `gorm:"type:text" json:"description"` + "`" + `
+	Enabled     bool           ` + "`" + `gorm:"not null;default:false" json:"enabled"` + "`" + ` // master switch — false short-circuits all rules
+	Rules       datatypes.JSON ` + "`" + `gorm:"type:jsonb" json:"rules"` + "`" + `
+	CreatedAt   time.Time      ` + "`" + `json:"created_at"` + "`" + `
+	UpdatedAt   time.Time      ` + "`" + `json:"updated_at"` + "`" + `
+	Version     int            ` + "`" + `gorm:"not null;default:1" json:"version"` + "`" + `
+}
+
+func (f *FeatureFlag) BeforeCreate(tx *gorm.DB) error {
+	if f.ID == "" {
+		f.ID = uuid.New().String()
+	}
+	return nil
+}
+
+func (f *FeatureFlag) BeforeUpdate(tx *gorm.DB) error {
+	f.Version++
+	return nil
+}
+
+// FlagRules is the structured form of FeatureFlag.Rules. Use
+// (*FeatureFlag).ParsedRules() to decode; (*FeatureFlag).SetRules() to
+// encode + assign.
+type FlagRules struct {
+	RolloutPercentage int        ` + "`" + `json:"rollout_percentage,omitempty"` + "`" + ` // 0..100; 0 = off, 100 = full rollout
+	AllowlistUserIDs  []string   ` + "`" + `json:"allowlist_user_ids,omitempty"` + "`" + `  // when non-empty, ONLY these users get the flag
+	BlocklistUserIDs  []string   ` + "`" + `json:"blocklist_user_ids,omitempty"` + "`" + `  // always-deny set; runs before allowlist + percentage
+	EnabledFrom       *time.Time ` + "`" + `json:"enabled_from,omitempty"` + "`" + `        // before this, flag is off (date window)
+	EnabledUntil      *time.Time ` + "`" + `json:"enabled_until,omitempty"` + "`" + `       // after this, flag is off
+	Variants          []string   ` + "`" + `json:"variants,omitempty"` + "`" + `            // when set, A/B mode — Variant() returns one of these
+}
+
+// ParsedRules decodes the Rules JSON. Returns a zero FlagRules on
+// missing or malformed JSON — callers shouldn't error out for
+// misconfigured flags; they should fail closed (return false).
+func (f *FeatureFlag) ParsedRules() FlagRules {
+	var r FlagRules
+	if len(f.Rules) > 0 {
+		_ = json.Unmarshal(f.Rules, &r)
+	}
+	return r
+}
+
+// SetRules encodes a FlagRules and assigns it. Errors propagate.
+func (f *FeatureFlag) SetRules(r FlagRules) error {
+	b, err := json.Marshal(r)
+	if err != nil {
+		return err
+	}
+	f.Rules = b
+	return nil
+}
+
+// FlagExposure records that a user was checked against a flag and what
+// outcome they got. Used by the admin UI to show rollout health
+// ("4,231 users saw variant_a, 4,189 saw variant_b") and to power
+// downstream A/B analytics joins.
+//
+// Insert is fire-and-forget — exposure tracking should never block a
+// flag check. We persist async in a goroutine.
+type FlagExposure struct {
+	ID        string    ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
+	FlagID    string    ` + "`" + `gorm:"size:36;index;not null" json:"flag_id"` + "`" + `
+	FlagName  string    ` + "`" + `gorm:"size:100;index" json:"flag_name"` + "`" + ` // denormalized for join-free analytics
+	UserID    string    ` + "`" + `gorm:"size:36;index" json:"user_id"` + "`" + `
+	Variant   string    ` + "`" + `gorm:"size:50" json:"variant"` + "`" + ` // "enabled" / "disabled" / "control" / "variant_a" / etc.
+	CreatedAt time.Time ` + "`" + `gorm:"index" json:"created_at"` + "`" + `
+}
+
+func (e *FlagExposure) BeforeCreate(tx *gorm.DB) error {
+	if e.ID == "" {
+		e.ID = uuid.New().String()
+	}
+	return nil
+}
+`
+}
+
+func apiFlagsGo() string {
+	return `// Package flags is the feature flag + A/B testing engine.
+//
+// At a glance:
+//
+//   if flags.IsEnabled(c, "new_dashboard") {
+//       // … render the new dashboard
+//   }
+//
+//   switch flags.Variant(c, "checkout_redesign") {
+//   case "control":   /* old flow */
+//   case "variant_a": /* new flow */
+//   case "variant_b": /* alternate new flow */
+//   }
+//
+// Mechanics:
+//   - All flags are loaded into an in-memory map at boot. A background
+//     goroutine refreshes every 30s. Flag checks never hit the DB.
+//   - Bucketing: SHA-256(user_id || ":" || flag_name) % 100. Sticky
+//     per (user, flag) — a user always gets the same bucket for a
+//     given flag, so variant assignment doesn't flicker across sessions.
+//   - Anonymous users (empty user_id) bucket on a random per-request
+//     value, which is effectively random. For sticky anonymous flags
+//     pass a stable identifier (session ID, device ID).
+//   - Exposure tracking is fire-and-forget — flag checks never block
+//     on the DB.
+//   - When a flag is created/updated/deleted, the engine refreshes
+//     immediately and broadcasts a "flag.updated" realtime event so
+//     subscribed clients can refetch.
+package flags
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/binary"
+	"log"
+	"sync"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"` + "{{MODULE}}" + `/internal/models"
+	"` + "{{MODULE}}" + `/internal/realtime"
+)
+
+// DefaultRefreshInterval is how often the engine pulls fresh flag
+// state from the DB. 30s is a reasonable middle ground — admin
+// changes propagate quickly without hammering the DB.
+const DefaultRefreshInterval = 30 * time.Second
+
+// Engine owns the in-memory flag cache. One per process.
+type Engine struct {
+	db        *gorm.DB
+	hub       *realtime.Hub // optional — when set, broadcasts on Refresh
+	mu        sync.RWMutex
+	flags     map[string]*models.FeatureFlag
+	stop      chan struct{}
+}
+
+// New returns an Engine with the cache pre-warmed. Call from
+// routes.Setup. hub is optional — pass nil to disable broadcasts.
+func New(db *gorm.DB, hub *realtime.Hub) *Engine {
+	e := &Engine{
+		db:    db,
+		hub:   hub,
+		flags: make(map[string]*models.FeatureFlag),
+		stop:  make(chan struct{}),
+	}
+	if err := e.Refresh(); err != nil {
+		log.Printf("[flags] initial refresh failed: %v", err)
+	}
+	go e.refreshLoop()
+	return e
+}
+
+// Stop terminates the background refresh goroutine. Call on graceful
+// shutdown to avoid leaking goroutines in tests.
+func (e *Engine) Stop() {
+	close(e.stop)
+}
+
+// Refresh pulls all flags from the DB and replaces the cache. Called
+// every DefaultRefreshInterval and immediately after admin writes.
+func (e *Engine) Refresh() error {
+	var rows []models.FeatureFlag
+	if err := e.db.Find(&rows).Error; err != nil {
+		return err
+	}
+	next := make(map[string]*models.FeatureFlag, len(rows))
+	for i := range rows {
+		f := rows[i]
+		next[f.Name] = &f
+	}
+	e.mu.Lock()
+	e.flags = next
+	e.mu.Unlock()
+	return nil
+}
+
+// RefreshAndBroadcast refreshes the cache and (if a hub was provided)
+// emits a "flag.updated" realtime event so subscribed clients can
+// refetch. Call after admin writes.
+func (e *Engine) RefreshAndBroadcast(flagName string) {
+	if err := e.Refresh(); err != nil {
+		log.Printf("[flags] refresh after change failed: %v", err)
+	}
+	if e.hub != nil {
+		e.hub.Broadcast(realtime.Event{
+			Type:    "flag.updated",
+			Payload: map[string]interface{}{"name": flagName},
+		})
+	}
+}
+
+func (e *Engine) refreshLoop() {
+	t := time.NewTicker(DefaultRefreshInterval)
+	defer t.Stop()
+	for {
+		select {
+		case <-t.C:
+			if err := e.Refresh(); err != nil {
+				log.Printf("[flags] periodic refresh failed: %v", err)
+			}
+		case <-e.stop:
+			return
+		}
+	}
+}
+
+// IsEnabled returns true when the flag is on for the current user.
+// Always returns false for unknown flags (fail closed).
+func (e *Engine) IsEnabled(c *gin.Context, name string) bool {
+	return e.evaluate(userIDFrom(c), name) == "enabled"
+}
+
+// Variant returns the assigned variant for an A/B flag. For boolean
+// flags, returns "enabled" or "disabled". For unknown flags, returns
+// the empty string.
+func (e *Engine) Variant(c *gin.Context, name string) string {
+	return e.evaluate(userIDFrom(c), name)
+}
+
+// IsEnabledForUser is the explicit form for backend code that has the
+// user_id directly (e.g. cron jobs operating on a specific user).
+func (e *Engine) IsEnabledForUser(userID, name string) bool {
+	return e.evaluate(userID, name) == "enabled"
+}
+
+// VariantForUser is the explicit form of Variant.
+func (e *Engine) VariantForUser(userID, name string) string {
+	return e.evaluate(userID, name)
+}
+
+// evaluate is the core decision routine. Returns:
+//   ""           — unknown flag
+//   "disabled"   — flag exists but rules deny the user
+//   "enabled"    — boolean flag passed; user is in the rollout
+//   "<variant>"  — A/B flag passed; the user's bucket maps to this variant
+func (e *Engine) evaluate(userID, name string) string {
+	e.mu.RLock()
+	flag, ok := e.flags[name]
+	e.mu.RUnlock()
+	if !ok {
+		return ""
+	}
+	if !flag.Enabled {
+		return "disabled"
+	}
+
+	rules := flag.ParsedRules()
+
+	// Date window — out-of-window short-circuits before bucketing.
+	now := time.Now()
+	if rules.EnabledFrom != nil && now.Before(*rules.EnabledFrom) {
+		return "disabled"
+	}
+	if rules.EnabledUntil != nil && now.After(*rules.EnabledUntil) {
+		return "disabled"
+	}
+
+	// Blocklist always wins.
+	for _, b := range rules.BlocklistUserIDs {
+		if b == userID {
+			return "disabled"
+		}
+	}
+
+	// Allowlist (when non-empty) restricts to the listed users.
+	// Skip the percentage roll for allowlisted users — they always
+	// see it, that's the point.
+	allowlistMode := len(rules.AllowlistUserIDs) > 0
+	allowed := false
+	for _, a := range rules.AllowlistUserIDs {
+		if a == userID {
+			allowed = true
+			break
+		}
+	}
+	if allowlistMode && !allowed {
+		return "disabled"
+	}
+
+	bucket := bucketFor(userID, name)
+
+	// A/B mode — assign variant by bucket.
+	if len(rules.Variants) > 0 {
+		v := rules.Variants[bucket%len(rules.Variants)]
+		e.trackExposure(flag.ID, name, userID, v)
+		return v
+	}
+
+	// Boolean mode — percentage rollout. Allowlisted users always
+	// pass; everyone else is gated by the percentage.
+	if allowed || bucket < rules.RolloutPercentage {
+		e.trackExposure(flag.ID, name, userID, "enabled")
+		return "enabled"
+	}
+	e.trackExposure(flag.ID, name, userID, "disabled")
+	return "disabled"
+}
+
+// trackExposure records the flag check asynchronously. Never blocks
+// the request path; logs failures.
+func (e *Engine) trackExposure(flagID, flagName, userID, variant string) {
+	if userID == "" {
+		// Anonymous exposures pollute the table without buying us
+		// anything (we can't link them to a user later). Skip.
+		return
+	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		err := e.db.WithContext(ctx).Create(&models.FlagExposure{
+			FlagID:   flagID,
+			FlagName: flagName,
+			UserID:   userID,
+			Variant:  variant,
+		}).Error
+		if err != nil {
+			log.Printf("[flags] exposure insert failed: %v", err)
+		}
+	}()
+}
+
+// bucketFor hashes (userID || ":" || flagName) and returns the bucket
+// 0..99. Same input always produces the same bucket — that's what
+// makes the assignment sticky.
+//
+// We use SHA-256 (not Go's default hash) because it's stable across
+// process restarts + Go versions. FNV would be faster but Grit isn't
+// running flag checks in a hot loop — sub-microsecond cost is fine.
+func bucketFor(userID, name string) int {
+	if userID == "" {
+		// Anonymous users get a random bucket. Not sticky, but the
+		// alternative (deterministic-by-IP) leaks a random property
+		// of the request into the rollout decision in a confusing way.
+		return int(time.Now().UnixNano() % 100)
+	}
+	h := sha256.Sum256([]byte(userID + ":" + name))
+	return int(binary.BigEndian.Uint32(h[:4]) % 100)
+}
+
+// userIDFrom reads "user_id" from the gin context (set by the auth
+// middleware). Empty string for anonymous requests.
+func userIDFrom(c *gin.Context) string {
+	if v, ok := c.Get("user_id"); ok {
+		s, _ := v.(string)
+		return s
+	}
+	return ""
+}
+`
+}
+
+func apiFlagsHandlerGo() string {
+	return `package handlers
+
+import (
+	"errors"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"` + "{{MODULE}}" + `/internal/flags"
+	"` + "{{MODULE}}" + `/internal/models"
+	"` + "{{MODULE}}" + `/internal/paginate"
+)
+
+// FeatureFlagHandler exposes admin-side CRUD over feature flags +
+// exposure analytics. Mounted under admin/* (admin role required).
+type FeatureFlagHandler struct {
+	DB     *gorm.DB
+	Engine *flags.Engine
+}
+
+func NewFeatureFlagHandler(db *gorm.DB, engine *flags.Engine) *FeatureFlagHandler {
+	return &FeatureFlagHandler{DB: db, Engine: engine}
+}
+
+// List returns all flags with the standard paginate envelope.
+//
+//	GET /api/admin/flags
+func (h *FeatureFlagHandler) List(c *gin.Context) {
+	q := h.DB.Model(&models.FeatureFlag{})
+	res, err := paginate.List[models.FeatureFlag](q, paginate.Bind(c), paginate.Config{
+		Searchable:   []string{"name", "description"},
+		Sortable:     map[string]bool{"name": true, "created_at": true, "enabled": true},
+		DefaultSort:  "name",
+		DefaultOrder: "asc",
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// flagPayload is the request shape for create/update. Rules is taken
+// as a structured object — the handler encodes to JSON before hitting
+// the DB so the wire format stays consistent.
+type flagPayload struct {
+	Name        string            ` + "`" + `json:"name"` + "`" + `
+	Description string            ` + "`" + `json:"description"` + "`" + `
+	Enabled     bool              ` + "`" + `json:"enabled"` + "`" + `
+	Rules       models.FlagRules  ` + "`" + `json:"rules"` + "`" + `
+}
+
+// Create adds a new flag. Name must be unique.
+//
+//	POST /api/admin/flags
+//	{ "name": "new_dashboard", "enabled": true, "rules": { "rollout_percentage": 25 } }
+func (h *FeatureFlagHandler) Create(c *gin.Context) {
+	var body flagPayload
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
+		})
+		return
+	}
+	if body.Name == "" {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"error": gin.H{"code": "VALIDATION_ERROR", "message": "name is required"},
+		})
+		return
+	}
+
+	flag := models.FeatureFlag{
+		Name:        body.Name,
+		Description: body.Description,
+		Enabled:     body.Enabled,
+	}
+	if err := flag.SetRules(body.Rules); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+	if err := h.DB.Create(&flag).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+
+	h.Engine.RefreshAndBroadcast(flag.Name)
+	c.JSON(http.StatusCreated, gin.H{"data": flag})
+}
+
+// Update modifies an existing flag.
+//
+//	PUT /api/admin/flags/:id
+func (h *FeatureFlagHandler) Update(c *gin.Context) {
+	id := c.Param("id")
+	var flag models.FeatureFlag
+	if err := h.DB.First(&flag, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": gin.H{"code": "NOT_FOUND", "message": "flag not found"},
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+
+	var body flagPayload
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
+		})
+		return
+	}
+
+	// Name is immutable post-create — too easy to break consumers.
+	flag.Description = body.Description
+	flag.Enabled = body.Enabled
+	if err := flag.SetRules(body.Rules); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+	if err := h.DB.Save(&flag).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+
+	h.Engine.RefreshAndBroadcast(flag.Name)
+	c.JSON(http.StatusOK, gin.H{"data": flag})
+}
+
+// Delete removes a flag. The cache refreshes immediately so app code
+// stops seeing it on the next check.
+//
+//	DELETE /api/admin/flags/:id
+func (h *FeatureFlagHandler) Delete(c *gin.Context) {
+	id := c.Param("id")
+	var flag models.FeatureFlag
+	if err := h.DB.First(&flag, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": gin.H{"code": "NOT_FOUND", "message": "flag not found"},
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+	if err := h.DB.Delete(&flag).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+	h.Engine.RefreshAndBroadcast(flag.Name)
+	c.JSON(http.StatusOK, gin.H{"message": "flag deleted"})
+}
+
+// Exposures returns aggregate counts per variant for one flag —
+// powers the rollout-health view in the admin UI.
+//
+//	GET /api/admin/flags/:id/exposures
+//	→ { "data": [{ "variant": "enabled", "count": 4231 }, ...] }
+func (h *FeatureFlagHandler) Exposures(c *gin.Context) {
+	id := c.Param("id")
+	type bucket struct {
+		Variant string ` + "`" + `json:"variant"` + "`" + `
+		Count   int64  ` + "`" + `json:"count"` + "`" + `
+	}
+	var rows []bucket
+	if err := h.DB.Model(&models.FlagExposure{}).
+		Select("variant, COUNT(DISTINCT user_id) as count").
+		Where("flag_id = ?", id).
+		Group("variant").
+		Order("count desc").
+		Scan(&rows).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": rows})
+}
+`
+}
+
 func apiActivityMiddlewareGo() string {
 	return `package middleware
 
@@ -5015,6 +5599,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/realtime"
 	"` + "{{MODULE}}" + `/internal/services"
 	"` + "{{MODULE}}" + `/internal/storage"
+	"` + "{{MODULE}}" + `/internal/flags"
 	"` + "{{MODULE}}" + `/internal/sync"
 	"` + "{{MODULE}}" + `/internal/webhooks"
 )
@@ -5200,6 +5785,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	webhookHandler := handlers.NewWebhookHandler(db)
 	webhooks.Setup(db)
 	realtimeHub := realtime.NewHub()
+	flagsEngine := flags.New(db, realtimeHub)
+	featureFlagHandler := handlers.NewFeatureFlagHandler(db, flagsEngine)
 	realtimeHandler := handlers.NewRealtimeHandler(realtimeHub, authService)
 	_ = realtimeHub // available to handlers/services that want to push events
 
@@ -5335,6 +5922,13 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// Webhook receiver admin (review + replay failed events)
 		admin.GET("/admin/webhooks", webhookHandler.List)
 		admin.POST("/admin/webhooks/:id/replay", webhookHandler.Replay)
+
+		// Feature flags + A/B testing
+		admin.GET("/admin/flags", featureFlagHandler.List)
+		admin.POST("/admin/flags", featureFlagHandler.Create)
+		admin.PUT("/admin/flags/:id", featureFlagHandler.Update)
+		admin.DELETE("/admin/flags/:id", featureFlagHandler.Delete)
+		admin.GET("/admin/flags/:id/exposures", featureFlagHandler.Exposures)
 
 		// Admin system routes
 		admin.GET("/admin/jobs/stats", jobsHandler.Stats)

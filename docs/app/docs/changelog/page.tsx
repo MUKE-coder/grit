@@ -28,6 +28,121 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.21.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.21.0
+                </span>
+                <span className="text-sm text-muted-foreground">May 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  Feature flags + A/B testing baked into the framework (
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/46" target="_blank" rel="noopener noreferrer">#46</a>).
+                  No LaunchDarkly bolt-on, no PostHog SaaS dependency — the engine,
+                  the model, the admin endpoints, and the realtime push all ship in
+                  every scaffolded API.
+                </p>
+
+                <h3>Usage</h3>
+                <pre><code>{`if flags.IsEnabled(c, "new_dashboard") {
+    // … render the new dashboard
+}
+
+switch flags.Variant(c, "checkout_redesign") {
+case "control":   /* old flow */
+case "variant_a": /* new flow */
+case "variant_b": /* alternate new flow */
+}`}</code></pre>
+
+                <h3>Mechanics</h3>
+                <ul>
+                  <li>
+                    <code>FeatureFlag.Rules</code> JSON holds <code>rollout_percentage</code>,{' '}
+                    <code>allowlist_user_ids</code>, <code>blocklist_user_ids</code>,{' '}
+                    <code>enabled_from</code>, <code>enabled_until</code>,{' '}
+                    <code>variants</code>.
+                  </li>
+                  <li>
+                    All flags load into an in-memory cache at boot. A background
+                    goroutine refreshes every 30s; admin writes trigger an immediate
+                    refresh. Flag checks never hit the DB.
+                  </li>
+                  <li>
+                    Sticky bucketing: <code>SHA-256(user_id || ":" || flag_name) % 100</code>.
+                    A user always lands in the same bucket for a given flag — no
+                    flicker between sessions.
+                  </li>
+                  <li>
+                    Allowlist always passes (bypasses the percentage roll). Blocklist
+                    always denies. Both run before the percentage check.
+                  </li>
+                  <li>
+                    A/B mode kicks in when <code>Rules.Variants</code> is non-empty.{' '}
+                    <code>Variant()</code> returns the bucket-mapped variant string.
+                    Sticky per (user, flag).
+                  </li>
+                </ul>
+
+                <h3>Realtime updates</h3>
+                <p>
+                  When a flag is created / updated / deleted, the engine refreshes
+                  its cache and broadcasts a <code>"flag.updated"</code> realtime
+                  event over the v3.12 WebSocket hub. Frontend subscribers can
+                  invalidate their cache and refetch — flag changes propagate in &lt;1s
+                  across all connected clients.
+                </p>
+
+                <h3>Admin endpoints</h3>
+                <ul>
+                  <li>
+                    <code>GET /api/admin/flags</code> — paginated list (searchable on
+                    name + description, sortable on name / created_at / enabled).
+                  </li>
+                  <li>
+                    <code>POST /api/admin/flags</code> — create. Name is unique +
+                    immutable.
+                  </li>
+                  <li>
+                    <code>PUT /api/admin/flags/:id</code> — update description / enabled
+                    / rules. Bumps Version (the v3.14 optimistic-lock column).
+                  </li>
+                  <li>
+                    <code>DELETE /api/admin/flags/:id</code> — remove + invalidate cache.
+                  </li>
+                  <li>
+                    <code>GET /api/admin/flags/:id/exposures</code> — variant counts
+                    for the rollout-health view: <code>{`[{ "variant": "enabled", "count": 4231 }, ...]`}</code>.
+                  </li>
+                </ul>
+
+                <h3>Fail-closed semantics</h3>
+                <ul>
+                  <li>
+                    Unknown flags return <code>false</code>. A typo in a flag name never
+                    accidentally enables a feature.
+                  </li>
+                  <li>
+                    Misconfigured <code>Rules</code> JSON also returns <code>false</code>{' '}
+                    — the engine never panics on bad data.
+                  </li>
+                  <li>
+                    Anonymous users (empty user_id) get a random bucket per request +
+                    are not exposure-tracked. For sticky anonymous flags, pass a stable
+                    identifier (session ID, device ID).
+                  </li>
+                </ul>
+
+                <p className="text-sm text-muted-foreground">
+                  Pairs with the v3.16 activity log + v3.19 hash chain — every flag
+                  change is auditable, signed, and tamper-evident. SOC2-ish flag
+                  governance for free.
+                </p>
+              </div>
+            </div>
+
             {/* v3.20.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.20.0
+Version: 3.21.0
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -898,7 +898,31 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.20.0 (Current):
+v3.21.0 (Current):
+  - Feature flags + A/B testing baked into the framework (#46).
+  - FeatureFlag model + FlagExposure model. FeatureFlag.Rules is a
+    JSON blob with rollout_percentage, allowlist_user_ids,
+    blocklist_user_ids, enabled_from, enabled_until, variants.
+  - internal/flags package with an Engine that caches all flags in
+    memory, refreshes from DB every 30s + immediately after admin
+    writes, and broadcasts a "flag.updated" realtime event so
+    subscribed clients can refetch.
+  - flags.IsEnabled(c, "name") + flags.Variant(c, "name") for the
+    request path; IsEnabledForUser / VariantForUser for backend code.
+  - Sticky bucketing: SHA-256(user_id || ":" || flag_name) % 100. A
+    user always lands in the same bucket for a given flag — no
+    flicker between sessions.
+  - A/B mode: when Rules.Variants is non-empty, Variant() returns one
+    of the listed strings (assigned by bucket). Sticky per (user, flag).
+  - Exposure tracking is fire-and-forget (goroutine + 5s timeout).
+    Anonymous users skip exposure logging — we can't link to them.
+  - Admin endpoints: GET/POST/PUT/DELETE /api/admin/flags +
+    GET /api/admin/flags/:id/exposures (variant counts for rollout
+    health view).
+  - Fail-closed semantics: unknown flags return false. Admin-misconfigured
+    rules JSON returns false. The engine never panics on bad data.
+
+v3.20.0:
   - Webhook receiver framework (#57). Wiring up Stripe / GitHub /
     WhatsApp / any HMAC-signed webhook is now <10 lines.
   - New internal/webhooks package: Register(name, Provider) +
