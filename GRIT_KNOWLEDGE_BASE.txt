@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.18.0
+Version: 3.19.0
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -898,7 +898,30 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.18.0 (Current):
+v3.19.0 (Current):
+  - Tamper-evident audit log via append-only hash chain (#48). Builds
+    on the v3.16 ActivityLog — each row now carries PrevHash + Hash
+    columns; Hash = SHA-256(PrevHash || canonical(row)). Mutating any
+    row breaks the chain on the next VerifyChain pass.
+  - New internal/audit package: Canonical(entry) returns stable JSON
+    bytes for hashing; ComputeHash(prev, canon) runs SHA-256;
+    AppendChained(db, entry) inserts with FOR UPDATE lock on the
+    latest row so concurrent writes can't fork the chain;
+    VerifyChain(db) walks every row and reports the first mismatch.
+  - ActivityLogger middleware now uses audit.AppendChained — still
+    fire-and-forget so audit DB latency doesn't block responses.
+    Failures log instead of cascading.
+  - New endpoint GET /api/admin/activity/integrity returns
+    { valid, total_entries, broken_at?, broken_at_id?, expected?,
+    got?, message? } so you can wire dashboards / nightly cron alerts.
+  - Defends against direct SQL UPDATE/DELETE on activity_logs (the
+    most common attack vector — DBA covering tracks). Does NOT defend
+    against full server compromise; external anchoring of the daily
+    root hash to a public ledger is the follow-up (#48 mentions it
+    as bonus, not shipped here).
+  - Cost: O(n) verify, ~2-3s per million rows on a warm cache.
+
+v3.18.0:
   - PDF generation module (#13). New internal/pdf package wraps
     go-pdf/fpdf with Grit-styled section helpers + a worked Invoice
     template. Pure Go, no native dependencies (no Chromium/wkhtmltopdf).

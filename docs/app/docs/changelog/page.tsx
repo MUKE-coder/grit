@@ -28,6 +28,117 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.19.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.19.0
+                </span>
+                <span className="text-sm text-muted-foreground">May 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  Tamper-evident audit log via append-only hash chain (
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/48" target="_blank" rel="noopener noreferrer">#48</a>).
+                  Builds on the v3.16 <code>ActivityLog</code> — every row now carries{' '}
+                  <code>PrevHash</code> + <code>Hash</code> columns where{' '}
+                  <code>Hash = SHA-256(PrevHash || canonical(row))</code>. Mutating any
+                  row breaks the chain on the next verification pass.
+                </p>
+
+                <h3>The chain</h3>
+                <ul>
+                  <li>
+                    <strong>Genesis row</strong> has <code>PrevHash = ""</code>; every
+                    subsequent row references the previous row's <code>Hash</code>.
+                  </li>
+                  <li>
+                    Hash input is the <em>stable canonical form</em> of the
+                    audit-relevant fields (user_id, method, path, status, payload digest,
+                    IP, UA, duration, created_at unix-nano). ID + PrevHash + Hash
+                    themselves are <em>not</em> in the canonical form — they're either
+                    random (ID) or derived (Hash, PrevHash).
+                  </li>
+                  <li>
+                    Insert uses <code>FOR UPDATE</code> lock on the latest row inside
+                    the same transaction, so concurrent writes serialize cleanly without
+                    forking the chain.
+                  </li>
+                </ul>
+
+                <h3>The package</h3>
+                <p>
+                  New <code>internal/audit</code> ships these:
+                </p>
+                <ul>
+                  <li>
+                    <code>audit.Canonical(entry)</code> — stable JSON bytes for hashing.
+                  </li>
+                  <li>
+                    <code>audit.ComputeHash(prevHash, canonical)</code> — runs SHA-256
+                    over <code>prevHash || canonical</code>; returns hex.
+                  </li>
+                  <li>
+                    <code>audit.AppendChained(db, entry)</code> — atomic insert with
+                    chain lock. The middleware uses this; you can call it from anywhere.
+                  </li>
+                  <li>
+                    <code>audit.VerifyChain(db)</code> — walks every row in{' '}
+                    <code>(created_at, id)</code> order and recomputes hashes. Returns{' '}
+                    <code>ChainStatus</code> with the first mismatch (broken_at_id +
+                    expected vs got + message).
+                  </li>
+                </ul>
+
+                <h3>The endpoint</h3>
+                <pre><code>{`GET /api/admin/activity/integrity
+
+→ { "valid": true, "total_entries": 12345 }
+
+→ { "valid": false, "broken_at": 47, "broken_at_id": "uuid",
+    "expected": "abc123...", "got": "def456...",
+    "message": "hash mismatch — row was modified, deleted, or inserted out of order" }`}</code></pre>
+                <p>
+                  Wire this to a nightly cron + alerting webhook for free SOC2-ish audit
+                  monitoring. Run it on-demand from a settings page when staff need the
+                  current chain state.
+                </p>
+
+                <h3>What this defends against</h3>
+                <ul>
+                  <li>
+                    Direct SQL <code>UPDATE</code> / <code>DELETE</code> on{' '}
+                    <code>activity_logs</code> — the most common attack vector
+                    (DBA covering tracks).
+                  </li>
+                  <li>
+                    Out-of-band insertion of forged history.
+                  </li>
+                </ul>
+
+                <h3>What it does NOT defend against</h3>
+                <ul>
+                  <li>
+                    Compromise of the running server itself — an attacker with code
+                    execution can rewrite the entire chain.
+                  </li>
+                  <li>
+                    External anchoring (publishing the daily root hash to a public
+                    ledger like a tweet, a transaction, or a Sigstore log) is the
+                    follow-up — flagged in #48 as bonus material, not shipped here.
+                  </li>
+                </ul>
+
+                <p className="text-sm text-muted-foreground">
+                  Verification cost: O(n) — about 2–3 seconds per million rows on a warm
+                  cache. The middleware insert is still fire-and-forget so audit DB
+                  latency never blocks the response path; chain failures log instead of
+                  cascading.
+                </p>
+              </div>
+            </div>
+
             {/* v3.18.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

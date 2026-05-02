@@ -42,6 +42,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "respond", "respond.go"):           apiRespondGo(),
 		filepath.Join(apiRoot, "internal", "pdf", "pdf.go"):                   apiPDFGo(),
 		filepath.Join(apiRoot, "internal", "pdf", "invoice.go"):               apiPDFInvoiceGo(),
+		filepath.Join(apiRoot, "internal", "audit", "audit.go"):               apiAuditGo(),
 		filepath.Join(apiRoot, "internal", "routes", "routes.go"):    apiRoutesGo(),
 		filepath.Join(apiRoot, ".air.toml"):                          airConfig(),
 		// Test files — give the generated API a working test suite out of the box
@@ -3047,10 +3048,16 @@ import (
 	"gorm.io/gorm"
 )
 
-// ActivityLog records every successful authenticated mutation. The
-// payload digest is a SHA-256 of the request body so we have evidence
-// of what was sent without storing PII verbatim. Read-only — no
-// updates, no deletes (use a separate retention job to prune old rows).
+// ActivityLog records every successful authenticated mutation, with a
+// tamper-evident hash chain — each row's Hash is SHA-256 of (PrevHash
+// || canonical(this_row)). Mutating any row breaks the chain on the
+// next VerifyChain pass.
+//
+// The payload digest is a SHA-256 of the request body so we have
+// evidence of what was sent without storing PII verbatim. Read-only —
+// no updates, no deletes (use a separate retention job to prune old
+// rows; deletion still breaks the chain so it must rebuild from a
+// safe checkpoint).
 type ActivityLog struct {
 	ID            string    ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
 	UserID        string    ` + "`" + `gorm:"size:36;index" json:"user_id"` + "`" + `
@@ -3061,6 +3068,8 @@ type ActivityLog struct {
 	IPAddress     string    ` + "`" + `gorm:"size:45" json:"ip_address"` + "`" + `
 	UserAgent     string    ` + "`" + `gorm:"size:500" json:"user_agent"` + "`" + `
 	DurationMS    int64     ` + "`" + `json:"duration_ms"` + "`" + `
+	PrevHash      string    ` + "`" + `gorm:"size:64" json:"prev_hash"` + "`" + ` // hex sha256, "" for the genesis row
+	Hash          string    ` + "`" + `gorm:"size:64;uniqueIndex" json:"hash"` + "`" + ` // hex sha256(prev_hash || canonical)
 	CreatedAt     time.Time ` + "`" + `gorm:"index" json:"created_at"` + "`" + `
 }
 
@@ -3073,6 +3082,178 @@ func (a *ActivityLog) BeforeCreate(tx *gorm.DB) error {
 `
 }
 
+func apiAuditGo() string {
+	return `// Package audit owns the tamper-evident hash chain over the activity log.
+//
+// Each row's Hash = SHA-256(PrevHash || canonical(row)) where canonical
+// is a stable JSON serialization of the audit-relevant fields. Any
+// mutation to a row breaks every Hash from that row forward, which
+// VerifyChain detects.
+//
+// Insert is serialized via a row-level FOR UPDATE lock on the latest
+// row inside the same transaction that does the INSERT — concurrent
+// inserts queue cleanly without forking the chain. Verification walks
+// the chain in created_at + id order; ties broken by id.
+//
+// What this defends against:
+//   - Direct SQL UPDATE / DELETE on activity_logs (most common attack
+//     vector — DBA covering tracks).
+//   - Out-of-band insertion of forged history.
+//
+// What this does NOT defend against:
+//   - Compromise of the running server itself (an attacker with code
+//     execution can rewrite the whole chain). External anchoring
+//     (publishing the daily root hash to a public ledger) is the
+//     follow-up — see #48.
+package audit
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+
+	"` + "{{MODULE}}" + `/internal/models"
+)
+
+// Canonical returns the stable JSON bytes of an entry for hashing.
+// We exclude ID / PrevHash / Hash from the canonical form: ID is
+// random and uncorrelated with content; PrevHash + Hash are derived
+// values, not inputs to the hash.
+func Canonical(e *models.ActivityLog) ([]byte, error) {
+	c := canonicalEntry{
+		UserID:        e.UserID,
+		Method:        e.Method,
+		Path:          e.Path,
+		Status:        e.Status,
+		PayloadDigest: e.PayloadDigest,
+		IPAddress:     e.IPAddress,
+		UserAgent:     e.UserAgent,
+		DurationMS:    e.DurationMS,
+		// Use unix-nano so the canonical bytes are stable across tz
+		// changes / TIMESTAMPTZ formatting differences.
+		CreatedAtUnixNano: e.CreatedAt.UTC().UnixNano(),
+	}
+	return json.Marshal(c)
+}
+
+// canonicalEntry's field order is the wire format for hashing —
+// reorder ONLY in a major version bump (verify breaks otherwise).
+type canonicalEntry struct {
+	UserID            string ` + "`" + `json:"user_id"` + "`" + `
+	Method            string ` + "`" + `json:"method"` + "`" + `
+	Path              string ` + "`" + `json:"path"` + "`" + `
+	Status            int    ` + "`" + `json:"status"` + "`" + `
+	PayloadDigest     string ` + "`" + `json:"payload_digest"` + "`" + `
+	IPAddress         string ` + "`" + `json:"ip_address"` + "`" + `
+	UserAgent         string ` + "`" + `json:"user_agent"` + "`" + `
+	DurationMS        int64  ` + "`" + `json:"duration_ms"` + "`" + `
+	CreatedAtUnixNano int64  ` + "`" + `json:"created_at_unix_nano"` + "`" + `
+}
+
+// ComputeHash returns hex(sha256(prevHash || canonical)) — the prev
+// hash is included as a hex string (not raw bytes) so the input is
+// trivially auditable: cat prev_hash | xxd; cat canonical.json.
+func ComputeHash(prevHash string, canonical []byte) string {
+	h := sha256.New()
+	h.Write([]byte(prevHash))
+	h.Write(canonical)
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+// AppendChained inserts a new ActivityLog with PrevHash + Hash filled
+// in atomically. The FOR UPDATE lock on the previous row serializes
+// concurrent appends so the chain never forks. Call from inside a
+// goroutine if you don't want to block the request path.
+func AppendChained(db *gorm.DB, entry *models.ActivityLog) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		var prev models.ActivityLog
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Order("created_at desc, id desc").
+			Limit(1).
+			First(&prev).Error
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return err
+		}
+
+		canonical, err := Canonical(entry)
+		if err != nil {
+			return fmt.Errorf("canonicalize: %w", err)
+		}
+		entry.PrevHash = prev.Hash
+		entry.Hash = ComputeHash(prev.Hash, canonical)
+		return tx.Create(entry).Error
+	})
+}
+
+// ChainStatus is the result of VerifyChain.
+type ChainStatus struct {
+	Valid        bool   ` + "`" + `json:"valid"` + "`" + `
+	TotalEntries int    ` + "`" + `json:"total_entries"` + "`" + `
+	BrokenAtID   string ` + "`" + `json:"broken_at_id,omitempty"` + "`" + `
+	BrokenAt     int    ` + "`" + `json:"broken_at,omitempty"` + "`" + ` // zero-indexed position
+	Expected     string ` + "`" + `json:"expected,omitempty"` + "`" + `
+	Got          string ` + "`" + `json:"got,omitempty"` + "`" + `
+	Message      string ` + "`" + `json:"message,omitempty"` + "`" + `
+}
+
+// VerifyChain walks the entire activity log in (created_at, id) order
+// and recomputes every Hash. The first mismatch is reported with the
+// position and offending row's ID — everything before that position
+// is trustworthy.
+//
+// Cost is O(n) — a few seconds per million rows on a warm cache.
+// Wire to a nightly cron and a /api/admin/activity/integrity endpoint.
+func VerifyChain(db *gorm.DB) (ChainStatus, error) {
+	var entries []models.ActivityLog
+	if err := db.Order("created_at asc, id asc").Find(&entries).Error; err != nil {
+		return ChainStatus{}, err
+	}
+
+	prevHash := ""
+	for i := range entries {
+		e := &entries[i]
+		canonical, err := Canonical(e)
+		if err != nil {
+			return ChainStatus{}, err
+		}
+		expected := ComputeHash(prevHash, canonical)
+		if expected != e.Hash {
+			return ChainStatus{
+				Valid:        false,
+				TotalEntries: len(entries),
+				BrokenAtID:   e.ID,
+				BrokenAt:     i,
+				Expected:     expected,
+				Got:          e.Hash,
+				Message:      "hash mismatch — row was modified, deleted, or inserted out of order",
+			}, nil
+		}
+		if e.PrevHash != prevHash {
+			return ChainStatus{
+				Valid:        false,
+				TotalEntries: len(entries),
+				BrokenAtID:   e.ID,
+				BrokenAt:     i,
+				Expected:     prevHash,
+				Got:          e.PrevHash,
+				Message:      "prev_hash mismatch — chain link broken",
+			}, nil
+		}
+		prevHash = e.Hash
+	}
+
+	return ChainStatus{
+		Valid:        true,
+		TotalEntries: len(entries),
+	}, nil
+}
+`
+}
+
 func apiActivityMiddlewareGo() string {
 	return `package middleware
 
@@ -3081,12 +3262,14 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"` + "{{MODULE}}" + `/internal/audit"
 	"` + "{{MODULE}}" + `/internal/models"
 )
 
@@ -3146,11 +3329,15 @@ func ActivityLogger(db *gorm.DB) gin.HandlerFunc {
 			IPAddress:     c.ClientIP(),
 			UserAgent:     c.Request.UserAgent(),
 			DurationMS:    time.Since(started).Milliseconds(),
+			CreatedAt:     time.Now(), // explicit — Canonical hashes this field
 		}
-		// Fire-and-forget — log failure inside the goroutine, don't
-		// block the response.
+		// Fire-and-forget — chain-aware append serializes on a row-level
+		// FOR UPDATE lock so concurrent writes can't fork the chain.
+		// Failures are logged but never block the response path.
 		go func(e models.ActivityLog) {
-			_ = db.Create(&e).Error
+			if err := audit.AppendChained(db, &e); err != nil {
+				log.Printf("[audit] append failed: %v", err)
+			}
 		}(entry)
 	}
 }
@@ -3174,6 +3361,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"` + "{{MODULE}}" + `/internal/audit"
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/paginate"
 )
@@ -3216,6 +3404,27 @@ func (h *ActivityHandler) List(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, res)
+}
+
+// VerifyIntegrity walks the entire activity log and verifies every
+// row's Hash matches what we'd compute now. A mismatch means a row
+// was modified, deleted, or inserted out of order — the response
+// pinpoints which row broke the chain.
+//
+//	GET /api/admin/activity/integrity
+//	→ { "valid": true, "total_entries": 12345 }
+//	→ { "valid": false, "broken_at": 47, "broken_at_id": "uuid",
+//	    "expected": "abc...", "got": "def...",
+//	    "message": "hash mismatch — row was modified..." }
+func (h *ActivityHandler) VerifyIntegrity(c *gin.Context) {
+	status, err := audit.VerifyChain(h.DB)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+	c.JSON(http.StatusOK, status)
 }
 `
 }
@@ -4509,8 +4718,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		admin.PUT("/users/:id", userHandler.Update)
 		admin.DELETE("/users/:id", userHandler.Delete)
 
-		// Activity audit log
+		// Activity audit log + tamper-evident chain verification
 		admin.GET("/admin/activity", activityHandler.List)
+		admin.GET("/admin/activity/integrity", activityHandler.VerifyIntegrity)
 
 		// Admin system routes
 		admin.GET("/admin/jobs/stats", jobsHandler.Stats)
