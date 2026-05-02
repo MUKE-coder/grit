@@ -28,6 +28,114 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.17.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.17.0
+                </span>
+                <span className="text-sm text-muted-foreground">May 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  Quality-of-life bundle. Four GitHub issues closed:
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/12" target="_blank" rel="noopener noreferrer"> #12</a>,{' '}
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/31" target="_blank" rel="noopener noreferrer">#31</a>,{' '}
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/35" target="_blank" rel="noopener noreferrer">#35</a>,{' '}
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/43" target="_blank" rel="noopener noreferrer">#43</a>.
+                </p>
+
+                <h3><code>grit init</code> — #35</h3>
+                <p>
+                  New CLI command writes <code>CLAUDE.md</code> + <code>AGENTS.md</code>{' '}
+                  to the current directory. Both files carry the framework's hard rules
+                  (Forms / Frontend stdlib / Data / Backend / Resources / Sync / Auth)
+                  so contributors and AI assistants get the conventions right on first
+                  PR. Skips existing files unless <code>--force</code> is passed; re-run
+                  with <code>--force</code> after a major framework upgrade to refresh.
+                </p>
+
+                <h3>Verbose AutoMigrate — #31</h3>
+                <p>
+                  <code>Migrate()</code> now snapshots <code>ColumnTypes</code> before
+                  and after each <code>AutoMigrate</code> call and logs a diff:
+                </p>
+                <pre><code>{`================================================================
+DATABASE MIGRATION — 8 model(s) registered
+================================================================
+  + created models.Building
+  ~ models.User — added 2 column(s): is_vip, vip_notes
+----------------------------------------------------------------
+Migration done — 1 created, 1 altered (+2 column), 6 unchanged.
+================================================================`}</code></pre>
+                <p>
+                  Silent migrations are gone. Also fixes a pre-existing bug where{' '}
+                  <code>Migrate</code> <em>skipped</em> already-existing tables — so
+                  columns added to a model never actually landed in the DB. Now they do.
+                </p>
+
+                <h3>Cursor-based pagination — #43</h3>
+                <ul>
+                  <li>
+                    <code>paginate.List</code> gains opt-in cursor mode via{' '}
+                    <code>Config.CursorMode: true</code>. Response carries{' '}
+                    <code>Meta.NextCursor</code> + <code>Meta.HasMore</code>{' '}
+                    instead of <code>Page</code>/<code>Pages</code>.
+                  </li>
+                  <li>
+                    Detects <code>HasMore</code> by fetching <code>PageSize + 1</code>{' '}
+                    rows — no separate count query needed.
+                  </li>
+                  <li>
+                    Cursor is opaque base64 of <code>(sort_value, id)</code> so pages
+                    stay stable when rows insert mid-pagination. Works with any sort
+                    field; extracts the value via reflection on the last row.
+                  </li>
+                  <li>
+                    Total count opt-in via <code>Config.IncludeTotal</code> — costs an
+                    extra <code>COUNT(*)</code>, leave off unless your UI shows a
+                    &quot;X of Y&quot; indicator.
+                  </li>
+                  <li>
+                    Offset mode stays the default for back-compat; new resources can
+                    flip the flag.
+                  </li>
+                </ul>
+
+                <h3>Generator quality — #12</h3>
+                <p>The remaining tag-default heuristics from issue #12:</p>
+                <ul>
+                  <li>
+                    <strong>URL fields</strong> (suffix <code>_url</code> + named{' '}
+                    <code>url</code> / <code>image</code> / <code>avatar</code> /{' '}
+                    <code>thumbnail</code> / <code>logo</code> / <code>cover</code> /{' '}
+                    <code>icon</code> / <code>banner</code> / <code>photo</code>) get{' '}
+                    <code>size:500</code> instead of <code>size:255</code>. UTM-tagged
+                    links and signed S3 URLs blow past 255 in the wild.
+                  </li>
+                  <li>
+                    <strong>Long-text fields</strong> named <code>description</code> /{' '}
+                    <code>notes</code> / <code>content</code> / <code>body</code> /{' '}
+                    <code>summary</code> / <code>bio</code> / <code>details</code> /{' '}
+                    <code>comment</code> / <code>comments</code> / <code>message</code>{' '}
+                    get <code>type:text</code>.
+                  </li>
+                  <li>
+                    <strong>Money fields</strong> on <code>float</code> type (suffix{' '}
+                    <code>_amount</code> / <code>_price</code> / <code>_total</code> /{' '}
+                    <code>_cost</code> / <code>_fee</code> / <code>_balance</code> /{' '}
+                    <code>_rent</code> / <code>_salary</code> / <code>_wage</code> /{' '}
+                    <code>_value</code> / <code>_revenue</code> / <code>_deposit</code>{' '}
+                    + named <code>amount</code> / <code>price</code> / <code>total</code> /{' '}
+                    <code>cost</code> / <code>fee</code> / <code>balance</code> /{' '}
+                    <code>subtotal</code>) get <code>type:decimal(12,2)</code> for
+                    fixed-precision storage. No more <code>1.99 + 0.01 = 1.9999999</code>.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.16.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

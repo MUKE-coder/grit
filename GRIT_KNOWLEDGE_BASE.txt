@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.16.0
+Version: 3.17.0
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -898,7 +898,44 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.16.0 (Current):
+v3.17.0 (Current):
+  - Quality-of-life bundle: 4 issues closed (#12, #31, #35, #43).
+  - #35 grit init: new command writes CLAUDE.md + AGENTS.md to the
+    current directory with the framework's hard rules (forms / data /
+    backend / sync / auth conventions). Skips existing files unless
+    --force is passed. Both files have the same content so different
+    LLM tooling finds the rules regardless of preferred filename.
+  - #31 verbose AutoMigrate: Migrate() now snapshots ColumnTypes
+    before/after and prints a diff per model:
+      ================================================================
+      DATABASE MIGRATION — 8 model(s) registered
+      ================================================================
+        + created models.Building
+        ~ models.User — added 2 column(s): is_vip, vip_notes
+      ----------------------------------------------------------------
+      Migration done — 1 created, 1 altered (+2 column), 6 unchanged.
+      ================================================================
+    Silent migrations are gone. Also fixes a pre-existing bug where
+    Migrate skipped already-existing tables entirely (so columns added
+    to a model never landed in the DB).
+  - #43 cursor-based pagination: paginate.List gains opt-in cursor
+    mode via Config.CursorMode. Response carries Meta.NextCursor +
+    HasMore (PageSize+1 fetch detects HasMore without a separate count).
+    Cursor encodes (sort_value, id) so pages stay stable when rows
+    insert mid-pagination. Works with any sort field — extracts the
+    value via reflection on the last row. Total count opt-in via
+    IncludeTotal: true. Offset mode stays default for back-compat.
+  - #12 generator quality (final pieces):
+    * URL fields (suffix _url + named url/image/avatar/thumbnail/
+      logo/cover/icon/banner/photo) → size:500 instead of size:255
+    * Long-text fields (description/notes/content/body/summary/bio/
+      details/comment/comments/message) → type:text instead of size:255
+    * Money fields (suffix _amount/_price/_total/_cost/_fee/_balance/
+      _rent/_salary/_wage/_value/_revenue/_deposit + named amount/
+      price/total/cost/fee/balance/subtotal) on float type →
+      type:decimal(12,2) for fixed-precision storage
+
+v3.16.0:
   - Three issues in one release: #15 (CSV/Excel export per resource),
     #32 (activity logger middleware), #27 (apiErrorMessage helper).
   - Activity audit log: new ActivityLog model + ActivityLogger

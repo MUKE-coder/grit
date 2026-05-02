@@ -631,6 +631,7 @@ func apiUserModelGo() string {
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -727,34 +728,87 @@ func Models() []interface{} {
 	}
 }
 
-// Migrate runs database migrations only for tables that don't exist yet.
-// It prints which tables were created and which were skipped.
+// Migrate runs AutoMigrate for every registered model. For tables that
+// already exist, GORM ALTERs them to add missing columns — we snapshot
+// the column set before and after so the deploy log surfaces exactly
+// what changed. Silent migrations are gone: if a column you expected
+// didn't land, the diff makes it obvious.
+//
+//	================================================================
+//	DATABASE MIGRATION — 8 model(s) registered
+//	================================================================
+//	  + created models.Building
+//	  ~ models.User — added 2 column(s): is_vip, vip_notes
+//	----------------------------------------------------------------
+//	Migration done — 1 table(s) created, 1 altered (+2 column(s)), 6 unchanged.
+//	================================================================
 func Migrate(db *gorm.DB) error {
 	models := Models()
-	migrated := 0
+	separator := strings.Repeat("=", 64)
+	thinSep := strings.Repeat("-", 64)
 
-	// Use Silent logger during migration to suppress schema inspection SQL noise
+	log.Println(separator)
+	log.Printf("DATABASE MIGRATION — %d model(s) registered", len(models))
+	log.Println(separator)
+
+	// Silent logger keeps the schema-inspection SQL noise out of the diff log.
 	silentDB := db.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
+	mig := silentDB.Migrator()
+
+	created := 0
+	altered := 0
+	columnsAdded := 0
+	unchanged := 0
 
 	for _, model := range models {
-		if silentDB.Migrator().HasTable(model) {
-			log.Printf("  ✓ %T — already exists, skipping", model)
-			continue
+		existed := mig.HasTable(model)
+
+		var before map[string]bool
+		if existed {
+			before = make(map[string]bool)
+			cols, err := mig.ColumnTypes(model)
+			if err == nil {
+				for _, c := range cols {
+					before[c.Name()] = true
+				}
+			}
 		}
 
 		if err := silentDB.AutoMigrate(model); err != nil {
 			return fmt.Errorf("migrating %T: %w", model, err)
 		}
-		log.Printf("  ✓ %T — created", model)
-		migrated++
+
+		if !existed {
+			log.Printf("  + created %T", model)
+			created++
+			continue
+		}
+
+		// Diff columns to surface anything AutoMigrate added.
+		after, err := mig.ColumnTypes(model)
+		if err != nil {
+			unchanged++
+			continue
+		}
+		var added []string
+		for _, c := range after {
+			if !before[c.Name()] {
+				added = append(added, c.Name())
+			}
+		}
+		if len(added) == 0 {
+			unchanged++
+			continue
+		}
+		log.Printf("  ~ %T — added %d column(s): %s", model, len(added), strings.Join(added, ", "))
+		altered++
+		columnsAdded += len(added)
 	}
 
-	if migrated == 0 {
-		log.Println("All tables are up to date — nothing to migrate.")
-	} else {
-		log.Printf("Migrated %d table(s).", migrated)
-	}
-
+	log.Println(thinSep)
+	log.Printf("Migration done — %d table(s) created, %d altered (+%d column(s)), %d unchanged.",
+		created, altered, columnsAdded, unchanged)
+	log.Println(separator)
 	return nil
 }
 `
@@ -2189,8 +2243,13 @@ func apiPaginateGo() string {
 package paginate
 
 import (
+	"encoding/base64"
+	"fmt"
 	"math"
+	"reflect"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -2207,12 +2266,14 @@ const (
 
 // Params is the normalized query state for a List request.
 // Produced by Bind(c). Filters is free-form extra WHERE col = val clauses.
+// Cursor (when present) drives cursor-mode pagination — see Config.CursorMode.
 type Params struct {
 	Page      int
 	PageSize  int
 	Search    string
 	SortBy    string
 	SortOrder string
+	Cursor    string // opaque base64 from a previous Result.Meta.NextCursor
 	Filters   map[string]any
 }
 
@@ -2248,14 +2309,29 @@ type Config struct {
 	Sortable     map[string]bool // whitelist for sort_by values
 	DefaultSort  string          // fallback sort column (defaults to "created_at")
 	DefaultOrder string          // fallback sort order (defaults to "desc")
+
+	// CursorMode opts into cursor-based pagination (default is offset/page).
+	// When true, the response carries Meta.NextCursor + Meta.HasMore instead
+	// of Page/Pages/Total. Cursor is opaque base64 of (sort_value, id) so
+	// pages stay stable when rows insert mid-pagination.
+	CursorMode bool
+
+	// IncludeTotal asks cursor mode to also run COUNT(*). Slow on big
+	// tables — leave off unless your UI shows a "X of Y" indicator.
+	IncludeTotal bool
 }
 
 // Meta is the pagination envelope, matching Grit's existing response shape.
+// Cursor mode populates NextCursor + HasMore; offset mode populates
+// Page + Pages. Total is shared (always set in offset mode; opt-in in
+// cursor mode via Config.IncludeTotal).
 type Meta struct {
-	Total    int64 ` + "`" + `json:"total"` + "`" + `
-	Page     int   ` + "`" + `json:"page"` + "`" + `
-	PageSize int   ` + "`" + `json:"page_size"` + "`" + `
-	Pages    int   ` + "`" + `json:"pages"` + "`" + `
+	Total      int64  ` + "`" + `json:"total,omitempty"` + "`" + `
+	Page       int    ` + "`" + `json:"page,omitempty"` + "`" + `
+	PageSize   int    ` + "`" + `json:"page_size"` + "`" + `
+	Pages      int    ` + "`" + `json:"pages,omitempty"` + "`" + `
+	NextCursor string ` + "`" + `json:"next_cursor,omitempty"` + "`" + `
+	HasMore    bool   ` + "`" + `json:"has_more,omitempty"` + "`" + `
 }
 
 // Result wraps the paginated data in the canonical { data, meta } envelope.
@@ -2283,6 +2359,7 @@ func Bind(c *gin.Context) Params {
 		Search:    c.Query("search"),
 		SortBy:    c.Query("sort_by"),
 		SortOrder: c.Query("sort_order"),
+		Cursor:    c.Query("cursor"),
 	}
 }
 
@@ -2325,6 +2402,10 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 		query = query.Where(clause, args...)
 	}
 
+	if cfg.CursorMode {
+		return listCursor[T](query, p, cfg, sortBy, sortOrder)
+	}
+
 	var result Result[T]
 
 	// Count first (before Order/Offset/Limit so Count reflects the whole match).
@@ -2350,6 +2431,123 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 	}
 
 	return result, nil
+}
+
+// listCursor implements cursor-based pagination. The cursor is an
+// opaque base64 of (sort_value, id) so pages stay stable when rows
+// insert mid-pagination. We fetch PageSize+1 rows to detect HasMore
+// without a separate count query.
+func listCursor[T any](query *gorm.DB, p Params, cfg Config, sortBy, sortOrder string) (Result[T], error) {
+	var result Result[T]
+
+	if cfg.IncludeTotal {
+		countQuery := query.Session(&gorm.Session{})
+		if err := countQuery.Count(&result.Meta.Total).Error; err != nil {
+			return result, err
+		}
+	}
+
+	if p.Cursor != "" {
+		sortVal, lastID, err := decodeCursor(p.Cursor)
+		if err == nil {
+			op := "<"
+			if sortOrder == "asc" {
+				op = ">"
+			}
+			// Postgres tuple comparison: (sort_col, id) < (val, id).
+			// Works on SQLite too. The id tiebreaker keeps the cursor
+			// stable when sort_value collides on multiple rows.
+			query = query.Where(fmt.Sprintf("(%s, id) %s (?, ?)", sortBy, op), sortVal, lastID)
+		}
+	}
+
+	limit := p.PageSize + 1
+	if err := query.
+		Order(sortBy + " " + sortOrder).
+		Order("id " + sortOrder).
+		Limit(limit).
+		Find(&result.Data).Error; err != nil {
+		return result, err
+	}
+
+	if len(result.Data) > p.PageSize {
+		result.Data = result.Data[:p.PageSize]
+		result.Meta.HasMore = true
+	}
+
+	if len(result.Data) > 0 {
+		last := result.Data[len(result.Data)-1]
+		sortVal, id := extractCursor(last, sortBy)
+		if id != "" {
+			result.Meta.NextCursor = encodeCursor(sortVal, id)
+		}
+	}
+
+	result.Meta.PageSize = p.PageSize
+	return result, nil
+}
+
+// EncodeCursor / DecodeCursor are exported for handlers that build
+// custom cursors (e.g. nested resource links).
+func EncodeCursor(sortValue, id string) string { return encodeCursor(sortValue, id) }
+func DecodeCursor(s string) (string, string, error) { return decodeCursor(s) }
+
+func encodeCursor(sortVal, id string) string {
+	return base64.URLEncoding.EncodeToString([]byte(sortVal + "|" + id))
+}
+
+func decodeCursor(s string) (string, string, error) {
+	b, err := base64.URLEncoding.DecodeString(s)
+	if err != nil {
+		return "", "", fmt.Errorf("invalid cursor: %w", err)
+	}
+	parts := strings.SplitN(string(b), "|", 2)
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("invalid cursor format")
+	}
+	return parts[0], parts[1], nil
+}
+
+// extractCursor reflects on the last row to pull out the sort field
+// + ID. The sort field is stored as snake_case (matching the column),
+// so we convert to PascalCase for the Go struct field lookup.
+func extractCursor(item interface{}, sortBy string) (string, string) {
+	rv := reflect.ValueOf(item)
+	if rv.Kind() == reflect.Ptr {
+		rv = rv.Elem()
+	}
+	if rv.Kind() != reflect.Struct {
+		return "", ""
+	}
+
+	idVal := rv.FieldByName("ID")
+	if !idVal.IsValid() || idVal.Kind() != reflect.String {
+		return "", ""
+	}
+	id := idVal.String()
+
+	goFieldName := snakeToPascal(sortBy)
+	sortField := rv.FieldByName(goFieldName)
+	if !sortField.IsValid() {
+		return "", id
+	}
+
+	if t, ok := sortField.Interface().(time.Time); ok {
+		return t.Format(time.RFC3339Nano), id
+	}
+	return fmt.Sprintf("%v", sortField.Interface()), id
+}
+
+// snakeToPascal turns "created_at" into "CreatedAt".
+func snakeToPascal(s string) string {
+	parts := strings.Split(s, "_")
+	for i, p := range parts {
+		if p == "" {
+			continue
+		}
+		parts[i] = strings.ToUpper(p[:1]) + p[1:]
+	}
+	return strings.Join(parts, "")
 }
 
 // buildSearchClause builds "col1 ILIKE ? OR col2 ILIKE ? OR ..." with the

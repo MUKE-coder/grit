@@ -101,9 +101,22 @@ func (f Field) GORMTag() string {
 
 	parts := []string{}
 
+	name := strings.ToLower(f.Name)
+
 	switch FieldType(f.Type) {
 	case FieldString:
-		parts = append(parts, "size:255")
+		// Heuristic: URL-shaped fields blow past 255 in the wild
+		// (UTM-tagged tracking links, signed S3 URLs, etc.). Bump to 500.
+		// Long-form "description"-style fields really want type:text so
+		// PG doesn't truncate. Default everything else to size:255.
+		switch {
+		case isURLField(name):
+			parts = append(parts, "size:500")
+		case isLongTextField(name):
+			parts = append(parts, "type:text")
+		default:
+			parts = append(parts, "size:255")
+		}
 	case FieldText, FieldRichtext:
 		parts = append(parts, "type:text")
 	case FieldDate:
@@ -115,6 +128,14 @@ func (f Field) GORMTag() string {
 		parts = append(parts, "size:36", "index")
 	case FieldStringArray:
 		parts = append(parts, "type:json")
+	case FieldFloat:
+		// Heuristic: money-shaped fields need fixed-precision storage
+		// to avoid float rounding (1.99 + 0.01 = 1.9999999...).
+		// Use decimal(12,2) — 10 digits before the decimal, 2 after —
+		// which is plenty for any individual transaction.
+		if isMoneyField(name) {
+			parts = append(parts, "type:decimal(12,2)")
+		}
 	}
 
 	if f.Unique && FieldType(f.Type) != FieldSlug {
@@ -302,4 +323,45 @@ func (f Field) RelatedModelName() string {
 	name = strings.TrimSuffix(name, "_id")
 	name = strings.TrimSuffix(name, "Id")
 	return toPascalCase(name)
+}
+
+// isURLField returns true for field names that are very likely to hold
+// a URL — those blow past size:255 in the wild (UTM-tagged links,
+// signed S3 URLs, profile picture URLs from external IDPs).
+func isURLField(name string) bool {
+	if strings.HasSuffix(name, "_url") {
+		return true
+	}
+	switch name {
+	case "url", "image", "avatar", "thumbnail", "logo", "cover", "icon", "banner", "photo":
+		return true
+	}
+	return false
+}
+
+// isLongTextField returns true for field names that conventionally
+// hold long-form text — these really want PG TEXT instead of VARCHAR.
+func isLongTextField(name string) bool {
+	switch name {
+	case "description", "notes", "content", "body", "summary", "bio", "details", "comment", "comments", "message":
+		return true
+	}
+	return false
+}
+
+// isMoneyField returns true for float field names that conventionally
+// hold money — those need fixed-precision storage to avoid float
+// rounding artifacts (decimal(12,2) gives 10 whole digits + 2 cents).
+func isMoneyField(name string) bool {
+	suffixes := []string{"_amount", "_price", "_total", "_cost", "_fee", "_balance", "_rent", "_salary", "_wage", "_value", "_revenue", "_deposit"}
+	for _, suf := range suffixes {
+		if strings.HasSuffix(name, suf) {
+			return true
+		}
+	}
+	switch name {
+	case "amount", "price", "total", "cost", "fee", "balance", "subtotal":
+		return true
+	}
+	return false
 }

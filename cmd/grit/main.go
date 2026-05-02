@@ -20,7 +20,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
-var version = "3.16.0"
+var version = "3.17.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -31,6 +31,7 @@ func main() {
 
 	rootCmd.AddCommand(newCmd())
 	rootCmd.AddCommand(newDesktopCmd())
+	rootCmd.AddCommand(initCmd())
 	rootCmd.AddCommand(generateCmd())
 	rootCmd.AddCommand(removeCmd())
 	rootCmd.AddCommand(addCmd())
@@ -62,6 +63,43 @@ func versionCmd() *cobra.Command {
 			fmt.Printf("grit version %s\n", version)
 		},
 	}
+}
+
+func initCmd() *cobra.Command {
+	var force bool
+	cmd := &cobra.Command{
+		Use:   "init",
+		Short: "Write CLAUDE.md / AGENTS.md framework convention docs to the project root",
+		Long: `Write the framework's hard-rules documentation as CLAUDE.md and AGENTS.md
+in the current directory. Both files have the same content — different LLM
+tooling looks for different filenames.
+
+Skips files that already exist unless --force is passed. Re-run with --force
+after a major framework upgrade to refresh the rules.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+			written, err := scaffold.WriteAgentsDoc(cwd, force)
+			if err != nil {
+				return err
+			}
+			if len(written) == 0 {
+				fmt.Println("\n  CLAUDE.md and AGENTS.md already exist — re-run with --force to overwrite.")
+				return nil
+			}
+			fmt.Println()
+			for _, name := range written {
+				fmt.Printf("  ✓ %s\n", name)
+			}
+			fmt.Printf("\n  ✅ Framework conventions written. Commit these so contributors\n")
+			fmt.Printf("     (and AI assistants) get the rules right on first PR.\n\n")
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&force, "force", false, "Overwrite existing files")
+	return cmd
 }
 
 func newCmd() *cobra.Command {
