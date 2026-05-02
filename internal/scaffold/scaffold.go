@@ -564,6 +564,8 @@ func createDirectories(root string, opts Options) error {
 		filepath.Join(root, "apps", "api", "internal", "paginate"),
 		filepath.Join(root, "apps", "api", "internal", "realtime"),
 		filepath.Join(root, "apps", "api", "internal", "sync"),
+		filepath.Join(root, "apps", "api", "internal", "export"),
+		filepath.Join(root, "apps", "api", "internal", "respond"),
 		filepath.Join(root, "apps", "api", "internal", "routes"),
 		filepath.Join(root, "apps", "api", "internal", "mail", "templates"),
 		filepath.Join(root, "apps", "api", "internal", "storage"),

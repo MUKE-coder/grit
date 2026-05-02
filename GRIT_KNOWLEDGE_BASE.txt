@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.15.0
+Version: 3.16.0
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -898,7 +898,34 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.15.0 (Current):
+v3.16.0 (Current):
+  - Three issues in one release: #15 (CSV/Excel export per resource),
+    #32 (activity logger middleware), #27 (apiErrorMessage helper).
+  - Activity audit log: new ActivityLog model + ActivityLogger
+    middleware mounted on every protected mutation route. Records
+    user_id + method + path + status + payload digest (sha256) + IP +
+    UA + duration. Fire-and-forget insert (goroutine) so audit DB
+    latency never blocks the response. New GET /api/admin/activity
+    endpoint with paginate.List filtering by user_id / method / path.
+  - Export package internal/export: CSV() and XLSX() helpers with a
+    Column{Header, Field, Format} config. Format strings: "currency:CCC",
+    "date:layout", "datetime", "bool". Field uses dot-notation for
+    associations ("Tenant.Name"). Resource generator now emits an
+    Export(c *gin.Context) handler method that streams CSV (default)
+    or XLSX and reuses the same searchable columns as List. Routes
+    inject GET /<resource>/export automatically.
+  - github.com/xuri/excelize/v2 v2.8.1 added to scaffolded go.mod.
+  - apiErrorMessage(err, fallback?) frontend helper in
+    packages/shared/types/api.ts. Walks the standard envelope chain
+    (response.data.error.message → axios message → fallback). Plus
+    apiErrorCode(err) for branching on codes (e.g. VERSION_CONFLICT)
+    and apiErrorFields(err) for per-field validation surfacing.
+  - New internal/respond package: respond.NotFound / Validation /
+    Forbidden / Conflict / Internal etc. Replaces ad-hoc inline
+    c.JSON(500, gin.H{"error": err.Error()}) with a consistent
+    envelope. Generated handlers can use these going forward.
+
+v3.15.0:
   - Frontend stdlib + form primitives — closes 7 GitHub issues at once.
   - lib/format.ts (#33): formatCurrency, formatDate, formatDateTime,
     humanize, initials. Locale + currency configurable via

@@ -28,6 +28,112 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.16.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.16.0
+                </span>
+                <span className="text-sm text-muted-foreground">May 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  Three coherent admin-operations features at once:
+                  CSV/Excel export per resource (
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/15" target="_blank" rel="noopener noreferrer">#15</a>),
+                  activity audit log middleware (
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/32" target="_blank" rel="noopener noreferrer">#32</a>),
+                  and the <code>apiErrorMessage</code> frontend helper (
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/27" target="_blank" rel="noopener noreferrer">#27</a>).
+                </p>
+
+                <h3>CSV / Excel export per resource — #15</h3>
+                <ul>
+                  <li>
+                    New <code>internal/export</code> package: <code>CSV(w, items, opts)</code>{' '}
+                    and <code>XLSX(w, items, opts)</code> with a typed{' '}
+                    <code>Column{'{Header, Field, Format}'}</code> config. Field uses
+                    dot-notation for associations (<code>"Tenant.Name"</code>).
+                  </li>
+                  <li>
+                    Format strings: <code>"currency:UGX"</code>, <code>"date:2006-01-02"</code>,{' '}
+                    <code>"datetime"</code>, <code>"bool"</code>. Empty string falls back to{' '}
+                    <code>fmt.Sprintf("%v")</code>.
+                  </li>
+                  <li>
+                    Resource generator now emits an <code>Export(c *gin.Context)</code>{' '}
+                    handler method on every new resource, with columns derived from the
+                    field list. Routes inject <code>GET /api/{'<plural>'}/export</code>{' '}
+                    automatically.
+                  </li>
+                  <li>
+                    Honours the same <code>search</code> param as List, so users can
+                    export a filtered subset.
+                  </li>
+                  <li>
+                    Adds <code>github.com/xuri/excelize/v2 v2.8.1</code> to scaffolded{' '}
+                    <code>go.mod</code>.
+                  </li>
+                </ul>
+
+                <h3>Activity audit log — #32</h3>
+                <ul>
+                  <li>
+                    New <code>models.ActivityLog</code> with user_id + method + path +
+                    status + payload digest (sha256, not raw body) + IP + user-agent +
+                    duration. UUID PK; <code>created_at</code> indexed for time-range queries.
+                  </li>
+                  <li>
+                    New <code>middleware.ActivityLogger(db)</code> mounted on every
+                    protected mutation route. Skips safe methods + non-2xx responses +
+                    unauthenticated requests.
+                  </li>
+                  <li>
+                    Insert is fire-and-forget (goroutine). Audit DB latency never
+                    blocks the response path; if the DB is down the entry drops
+                    rather than failing the request.
+                  </li>
+                  <li>
+                    New endpoint <code>GET /api/admin/activity</code> (admin-only) with{' '}
+                    <code>paginate.List</code> filtering by <code>user_id</code>,{' '}
+                    <code>method</code>, and <code>path</code> prefix. Drop in any audit-log UI.
+                  </li>
+                </ul>
+
+                <h3>apiErrorMessage helper — #27</h3>
+                <ul>
+                  <li>
+                    Three helpers in <code>packages/shared/types/api.ts</code>:{' '}
+                    <code>apiErrorMessage(err, fallback?)</code>,{' '}
+                    <code>apiErrorCode(err)</code>,{' '}
+                    <code>apiErrorFields(err)</code>.
+                  </li>
+                  <li>
+                    Walks the standard envelope chain
+                    (<code>response.data.error.message</code>) plus axios{' '}
+                    <code>err.message</code> plus a fallback so{' '}
+                    <code>toast.error(apiErrorMessage(err))</code> is always meaningful.
+                  </li>
+                  <li>
+                    <code>apiErrorCode</code> returns the envelope's <code>code</code>{' '}
+                    string (<code>"VALIDATION_ERROR"</code>,{' '}
+                    <code>"VERSION_CONFLICT"</code>, etc.) for branching logic.
+                  </li>
+                  <li>
+                    <code>apiErrorFields</code> surfaces per-field validation details so
+                    forms can highlight specific inputs.
+                  </li>
+                  <li>
+                    New <code>internal/respond</code> package on the server side too:{' '}
+                    <code>respond.NotFound / Validation / Forbidden / Conflict /
+                    Internal</code> for handlers, replacing ad-hoc inline{' '}
+                    <code>c.JSON(500, gin.H{'{...}'})</code>.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.15.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -68,6 +68,7 @@ func (g *Generator) injectAll(names Names) error {
 	%sGroup.Use(middleware.RequireRole(%s))
 	{
 		%sGroup.GET("", %sHandler.List)
+		%sGroup.GET("/export", %sHandler.Export)
 		%sGroup.GET("/:id", %sHandler.GetByID)
 		%sGroup.POST("", %sHandler.Create)
 		%sGroup.PUT("/:id", %sHandler.Update)
@@ -80,6 +81,7 @@ func (g *Generator) injectAll(names Names) error {
 				names.Camel, names.Camel,
 				names.Camel, names.Camel,
 				names.Camel, names.Camel,
+				names.Camel, names.Camel,
 				names.Camel, names.Camel)
 			if err := injectBefore(routesFile, "// grit:routes:custom", customRoutes); err != nil {
 				return fmt.Errorf("injecting role-restricted routes: %w", err)
@@ -88,9 +90,11 @@ func (g *Generator) injectAll(names Names) error {
 		} else {
 			// Default: CRUD in protected, DELETE in admin
 			protectedRoutes := fmt.Sprintf(`		protected.GET("/%s", %sHandler.List)
+		protected.GET("/%s/export", %sHandler.Export)
 		protected.GET("/%s/:id", %sHandler.GetByID)
 		protected.POST("/%s", %sHandler.Create)
 		protected.PUT("/%s/:id", %sHandler.Update)`,
+				names.Plural, names.Camel,
 				names.Plural, names.Camel,
 				names.Plural, names.Camel,
 				names.Plural, names.Camel,

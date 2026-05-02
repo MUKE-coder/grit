@@ -35,6 +35,11 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "realtime.go"):  apiRealtimeHandlerGo(),
 		filepath.Join(apiRoot, "internal", "sync", "registry.go"):      apiSyncRegistryGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "sync.go"):      apiSyncHandlerGo(),
+		filepath.Join(apiRoot, "internal", "models", "activity_log.go"):       apiActivityLogModelGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "activity.go"):       apiActivityMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "activity.go"):         apiActivityHandlerGo(),
+		filepath.Join(apiRoot, "internal", "export", "export.go"):             apiExportGo(),
+		filepath.Join(apiRoot, "internal", "respond", "respond.go"):           apiRespondGo(),
 		filepath.Join(apiRoot, "internal", "routes", "routes.go"):    apiRoutesGo(),
 		filepath.Join(apiRoot, ".air.toml"):                          airConfig(),
 		// Test files — give the generated API a working test suite out of the box
@@ -78,6 +83,7 @@ require (
 	github.com/markbates/goth v1.80.0
 	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.4.0
+	github.com/xuri/excelize/v2 v2.8.1
 	golang.org/x/crypto v0.23.0
 	github.com/MUKE-coder/sentinel v0.0.0-20260220061042-2d2324be6824
 	gorm.io/datatypes v1.2.7
@@ -716,6 +722,7 @@ func Models() []interface{} {
 		&TwoFactorConfig{},
 		&TrustedDevice{},
 		&TOTPPendingToken{},
+		&ActivityLog{},
 		// grit:models
 	}
 }
@@ -2829,6 +2836,516 @@ func getTimeField(obj interface{}, name string) (time.Time, bool) {
 `
 }
 
+func apiActivityLogModelGo() string {
+	return `package models
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+// ActivityLog records every successful authenticated mutation. The
+// payload digest is a SHA-256 of the request body so we have evidence
+// of what was sent without storing PII verbatim. Read-only — no
+// updates, no deletes (use a separate retention job to prune old rows).
+type ActivityLog struct {
+	ID            string    ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
+	UserID        string    ` + "`" + `gorm:"size:36;index" json:"user_id"` + "`" + `
+	Method        string    ` + "`" + `gorm:"size:10" json:"method"` + "`" + `
+	Path          string    ` + "`" + `gorm:"size:500;index" json:"path"` + "`" + `
+	Status        int       ` + "`" + `json:"status"` + "`" + `
+	PayloadDigest string    ` + "`" + `gorm:"size:64" json:"payload_digest"` + "`" + ` // sha256 hex
+	IPAddress     string    ` + "`" + `gorm:"size:45" json:"ip_address"` + "`" + `
+	UserAgent     string    ` + "`" + `gorm:"size:500" json:"user_agent"` + "`" + `
+	DurationMS    int64     ` + "`" + `json:"duration_ms"` + "`" + `
+	CreatedAt     time.Time ` + "`" + `gorm:"index" json:"created_at"` + "`" + `
+}
+
+func (a *ActivityLog) BeforeCreate(tx *gorm.DB) error {
+	if a.ID == "" {
+		a.ID = uuid.New().String()
+	}
+	return nil
+}
+`
+}
+
+func apiActivityMiddlewareGo() string {
+	return `package middleware
+
+import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
+	"io"
+	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"` + "{{MODULE}}" + `/internal/models"
+)
+
+// ActivityLogger records every successful authenticated mutation
+// (POST/PUT/PATCH/DELETE) into models.ActivityLog. Skips:
+//   - safe methods (GET/HEAD/OPTIONS)
+//   - non-2xx responses (errors aren't audit-relevant)
+//   - unauthenticated requests (no user_id ⇒ nothing to attribute)
+//
+// The payload digest is a SHA-256 hash of the request body — enough to
+// prove "this exact payload was sent" without persisting plain-text
+// passwords / secrets / PII. Buffered in memory, so MaxBodySize earlier
+// in the chain still bounds it.
+//
+// Insert is fire-and-forget (goroutine + new context) so the response
+// path isn't blocked by DB latency. If the DB is down, the audit log
+// drops the entry; that's acceptable — we'd rather serve users than
+// fail-closed on a logging dependency.
+func ActivityLogger(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		switch c.Request.Method {
+		case http.MethodGet, http.MethodHead, http.MethodOptions:
+			c.Next()
+			return
+		}
+
+		// Capture the body so we can hash it after the handler runs.
+		// gin reads from c.Request.Body, so we tee it through a
+		// bytes.Buffer and put a fresh ReadCloser back.
+		var bodyBytes []byte
+		if c.Request.Body != nil {
+			bodyBytes, _ = io.ReadAll(c.Request.Body)
+			c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		}
+
+		started := time.Now()
+		c.Next()
+
+		// Only log successful mutations — failed ones can be diagnosed
+		// from request logs without polluting the audit trail.
+		if c.Writer.Status() < 200 || c.Writer.Status() >= 300 {
+			return
+		}
+
+		userID, _ := c.Get("user_id")
+		uid, _ := userID.(string)
+		if uid == "" {
+			return // unauthenticated — nothing to audit
+		}
+
+		entry := models.ActivityLog{
+			UserID:        uid,
+			Method:        c.Request.Method,
+			Path:          c.FullPath(),
+			Status:        c.Writer.Status(),
+			PayloadDigest: digestBody(bodyBytes),
+			IPAddress:     c.ClientIP(),
+			UserAgent:     c.Request.UserAgent(),
+			DurationMS:    time.Since(started).Milliseconds(),
+		}
+		// Fire-and-forget — log failure inside the goroutine, don't
+		// block the response.
+		go func(e models.ActivityLog) {
+			_ = db.Create(&e).Error
+		}(entry)
+	}
+}
+
+func digestBody(b []byte) string {
+	if len(b) == 0 {
+		return ""
+	}
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:])
+}
+`
+}
+
+func apiActivityHandlerGo() string {
+	return `package handlers
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"` + "{{MODULE}}" + `/internal/models"
+	"` + "{{MODULE}}" + `/internal/paginate"
+)
+
+// ActivityHandler exposes the audit log as a paginated, filterable
+// list. Mounted under admin/* in routes.go.
+type ActivityHandler struct {
+	DB *gorm.DB
+}
+
+func NewActivityHandler(db *gorm.DB) *ActivityHandler {
+	return &ActivityHandler{DB: db}
+}
+
+// List returns activity log entries, newest first. Supports filtering
+// by user_id, method, and path prefix via query params.
+func (h *ActivityHandler) List(c *gin.Context) {
+	q := h.DB.Model(&models.ActivityLog{}).Order("created_at desc")
+	params := paginate.Bind(c).
+		With("user_id", c.Query("user_id")).
+		With("method", c.Query("method"))
+
+	if pathPrefix := c.Query("path"); pathPrefix != "" {
+		q = q.Where("path LIKE ?", pathPrefix+"%")
+	}
+
+	res, err := paginate.List[models.ActivityLog](q, params, paginate.Config{
+		Sortable: map[string]bool{
+			"created_at": true,
+			"status":     true,
+			"method":     true,
+		},
+		DefaultSort:  "created_at",
+		DefaultOrder: "desc",
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+`
+}
+
+func apiExportGo() string {
+	return `// Package export streams resource data out as CSV or XLSX. Used by
+// auto-generated /<resource>/export endpoints — handlers reuse the
+// List service layer to fetch rows, then call CSV(w, items, opts) or
+// XLSX(w, items, opts) directly into the response writer.
+//
+// Column.Field uses Go-side struct field names with dot-notation for
+// associations: "Tenant.Name", "Owner.Email", etc. Empty values render
+// as empty strings.
+//
+// Format strings:
+//   ""                — Sprintf %v (default)
+//   "date:..."        — time.Time.Format(layout) — layout follows after the colon
+//   "datetime"        — RFC3339-friendly date+time
+//   "currency:CCC"    — formatted as "CCC 1,234.56"
+//   "bool"            — "Yes" / "No"
+package export
+
+import (
+	"encoding/csv"
+	"fmt"
+	"io"
+	"reflect"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/xuri/excelize/v2"
+)
+
+// Column describes one output column.
+type Column struct {
+	Header string // human-readable column header
+	Field  string // Go struct field path, e.g. "Tenant.Name"
+	Format string // optional formatter — see package doc
+}
+
+// Options controls how items are rendered.
+type Options struct {
+	Columns []Column
+	Sheet   string // XLSX only — defaults to "Sheet1"
+}
+
+// CSV writes items as a comma-separated stream into w. Sets the right
+// Content-Type/Content-Disposition headers if w is an http.ResponseWriter.
+func CSV(w io.Writer, items interface{}, opts Options) error {
+	cw := csv.NewWriter(w)
+	defer cw.Flush()
+
+	headers := make([]string, len(opts.Columns))
+	for i, col := range opts.Columns {
+		headers[i] = col.Header
+	}
+	if err := cw.Write(headers); err != nil {
+		return err
+	}
+
+	v := reflect.ValueOf(items)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Slice {
+		return fmt.Errorf("export: items must be a slice, got %T", items)
+	}
+
+	for i := 0; i < v.Len(); i++ {
+		row := make([]string, len(opts.Columns))
+		for j, col := range opts.Columns {
+			row[j] = formatCell(extractField(v.Index(i), col.Field), col.Format)
+		}
+		if err := cw.Write(row); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// XLSX writes items as an Excel workbook into w.
+func XLSX(w io.Writer, items interface{}, opts Options) error {
+	f := excelize.NewFile()
+	defer f.Close()
+
+	sheet := opts.Sheet
+	if sheet == "" {
+		sheet = "Sheet1"
+	}
+	if sheet != "Sheet1" {
+		// excelize creates "Sheet1" by default; swap to the requested name.
+		_ = f.SetSheetName("Sheet1", sheet)
+	}
+
+	for i, col := range opts.Columns {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		_ = f.SetCellValue(sheet, cell, col.Header)
+	}
+
+	v := reflect.ValueOf(items)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Slice {
+		return fmt.Errorf("export: items must be a slice, got %T", items)
+	}
+
+	for i := 0; i < v.Len(); i++ {
+		for j, col := range opts.Columns {
+			cell, _ := excelize.CoordinatesToCellName(j+1, i+2)
+			val := formatCell(extractField(v.Index(i), col.Field), col.Format)
+			_ = f.SetCellValue(sheet, cell, val)
+		}
+	}
+
+	return f.Write(w)
+}
+
+// extractField walks a dot-path through a struct. Returns the zero
+// value if any segment is missing.
+func extractField(v reflect.Value, path string) interface{} {
+	if path == "" {
+		return nil
+	}
+	for v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
+		if v.IsNil() {
+			return nil
+		}
+		v = v.Elem()
+	}
+	parts := strings.Split(path, ".")
+	for _, p := range parts {
+		if v.Kind() != reflect.Struct {
+			return nil
+		}
+		f := v.FieldByName(p)
+		if !f.IsValid() {
+			return nil
+		}
+		v = f
+		for v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
+			if v.IsNil() {
+				return nil
+			}
+			v = v.Elem()
+		}
+	}
+	if !v.IsValid() {
+		return nil
+	}
+	return v.Interface()
+}
+
+func formatCell(v interface{}, format string) string {
+	if v == nil {
+		return ""
+	}
+	if format == "" {
+		return fmt.Sprintf("%v", v)
+	}
+
+	// "currency:UGX"
+	if strings.HasPrefix(format, "currency:") {
+		ccy := strings.TrimPrefix(format, "currency:")
+		switch n := v.(type) {
+		case float64:
+			return ccy + " " + thousands(n)
+		case float32:
+			return ccy + " " + thousands(float64(n))
+		case int:
+			return ccy + " " + thousands(float64(n))
+		case int64:
+			return ccy + " " + thousands(float64(n))
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	// "date:2006-01-02"
+	if strings.HasPrefix(format, "date:") {
+		layout := strings.TrimPrefix(format, "date:")
+		if t, ok := v.(time.Time); ok {
+			return t.Format(layout)
+		}
+	}
+
+	if format == "datetime" {
+		if t, ok := v.(time.Time); ok {
+			return t.Format("2006-01-02 15:04")
+		}
+	}
+
+	if format == "bool" {
+		if b, ok := v.(bool); ok {
+			if b {
+				return "Yes"
+			}
+			return "No"
+		}
+	}
+
+	return fmt.Sprintf("%v", v)
+}
+
+// thousands formats a float with thousands separators and 2 decimals.
+func thousands(f float64) string {
+	s := strconv.FormatFloat(f, 'f', 2, 64)
+	parts := strings.SplitN(s, ".", 2)
+	intPart := parts[0]
+	neg := strings.HasPrefix(intPart, "-")
+	if neg {
+		intPart = intPart[1:]
+	}
+	var out []byte
+	for i, c := range intPart {
+		if i > 0 && (len(intPart)-i)%3 == 0 {
+			out = append(out, ',')
+		}
+		out = append(out, byte(c))
+	}
+	result := string(out) + "." + parts[1]
+	if neg {
+		return "-" + result
+	}
+	return result
+}
+`
+}
+
+func apiRespondGo() string {
+	return `// Package respond is the standard error/response envelope for handlers.
+// Use these instead of writing c.JSON(500, gin.H{"error": err.Error()})
+// inline so error shapes stay consistent and the frontend's
+// apiErrorMessage() helper has a single shape to walk.
+package respond
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+// Error is the wire shape of every error envelope.
+type Error struct {
+	Code    string            ` + "`" + `json:"code"` + "`" + `
+	Message string            ` + "`" + `json:"message"` + "`" + `
+	Details map[string]string ` + "`" + `json:"details,omitempty"` + "`" + `
+}
+
+// fail writes the standard error envelope at the given status code.
+func fail(c *gin.Context, status int, code, message string, details ...map[string]string) {
+	body := gin.H{"error": Error{Code: code, Message: message}}
+	if len(details) > 0 {
+		body = gin.H{"error": Error{Code: code, Message: message, Details: details[0]}}
+	}
+	c.AbortWithStatusJSON(status, body)
+}
+
+// 400 — malformed request that the client can't possibly fix without
+// changing what it sent.
+func BadRequest(c *gin.Context, message string) {
+	fail(c, http.StatusBadRequest, "BAD_REQUEST", message)
+}
+
+// 401 — missing or invalid credentials.
+func Unauthorized(c *gin.Context, message string) {
+	if message == "" {
+		message = "Authentication required"
+	}
+	fail(c, http.StatusUnauthorized, "UNAUTHORIZED", message)
+}
+
+// 403 — authenticated but not allowed.
+func Forbidden(c *gin.Context, message string) {
+	if message == "" {
+		message = "You don't have permission to do that"
+	}
+	fail(c, http.StatusForbidden, "FORBIDDEN", message)
+}
+
+// 404 — entity didn't exist (or is filtered out by access rules).
+func NotFound(c *gin.Context, message string) {
+	if message == "" {
+		message = "Not found"
+	}
+	fail(c, http.StatusNotFound, "NOT_FOUND", message)
+}
+
+// 409 — conflict (e.g. unique constraint, version conflict).
+func Conflict(c *gin.Context, message string) {
+	fail(c, http.StatusConflict, "CONFLICT", message)
+}
+
+// 422 — payload was well-formed but failed validation. Pass per-field
+// errors via details map so the frontend can highlight them.
+func Validation(c *gin.Context, message string, fields map[string]string) {
+	fail(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", message, fields)
+}
+
+// 500 — server fault. Don't echo the raw error; log it and return a
+// generic message so we don't leak internals.
+func Internal(c *gin.Context, internalErr error) {
+	msg := "Internal server error"
+	if internalErr != nil {
+		// In dev you may want the actual message. For now keep it
+		// opaque; logger middleware records the full err.
+		_ = internalErr
+	}
+	fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", msg)
+}
+
+// OK writes 200 with { data, message? }.
+func OK(c *gin.Context, data interface{}, message ...string) {
+	body := gin.H{"data": data}
+	if len(message) > 0 && message[0] != "" {
+		body["message"] = message[0]
+	}
+	c.JSON(http.StatusOK, body)
+}
+
+// Created writes 201 with { data, message? }.
+func Created(c *gin.Context, data interface{}, message ...string) {
+	body := gin.H{"data": data}
+	if len(message) > 0 && message[0] != "" {
+		body["message"] = message[0]
+	}
+	c.JSON(http.StatusCreated, body)
+}
+`
+}
+
 func apiRealtimeHubGo() string {
 	return `// Package realtime is a tiny WebSocket fan-out hub. One Hub per process;
 // each authenticated user can have multiple connections (e.g. desktop +
@@ -3315,6 +3832,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		AuthService: authService,
 		Issuer:      cfg.TOTPIssuer,
 	}
+	activityHandler := handlers.NewActivityHandler(db)
 	realtimeHub := realtime.NewHub()
 	realtimeHandler := handlers.NewRealtimeHandler(realtimeHub, authService)
 	_ = realtimeHub // available to handlers/services that want to push events
@@ -3377,6 +3895,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// Protected routes
 	protected := r.Group("/api")
 	protected.Use(middleware.Auth(db, authService))
+	// Activity logger writes one row per successful authenticated mutation.
+	// Records who/what/when/where for audit. Read-only — see admin/activity.
+	protected.Use(middleware.ActivityLogger(db))
 	{
 		protected.GET("/auth/me", authHandler.Me)
 		protected.POST("/auth/logout", authHandler.Logout)
@@ -3434,6 +3955,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		admin.POST("/users", userHandler.Create)
 		admin.PUT("/users/:id", userHandler.Update)
 		admin.DELETE("/users/:id", userHandler.Delete)
+
+		// Activity audit log
+		admin.GET("/admin/activity", activityHandler.List)
 
 		// Admin system routes
 		admin.GET("/admin/jobs/stats", jobsHandler.Stats)

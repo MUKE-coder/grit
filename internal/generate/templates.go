@@ -437,6 +437,31 @@ func (g *Generator) writeGoHandler(names Names) error {
 
 	searchCols := g.buildHandlerSearchCols()
 
+	// Build export columns from the field list. Skips relationships
+	// (we don't try to traverse associations in the default export).
+	// Time fields get a "date:..." format string; bools get "bool".
+	exportCols := "\t\t\t{Header: \"ID\", Field: \"ID\"},\n"
+	for _, f := range g.Definition.Fields {
+		if f.IsRelationship() {
+			continue
+		}
+		header := strings.ReplaceAll(toPascalCase(f.Name), "ID", " ID")
+		fieldGoName := toPascalCase(f.Name)
+		format := ""
+		switch {
+		case f.GoType() == "time.Time" || f.GoType() == "*time.Time":
+			format = "date:2006-01-02"
+		case f.GoType() == "bool":
+			format = "bool"
+		}
+		if format != "" {
+			exportCols += fmt.Sprintf("\t\t\t{Header: %q, Field: %q, Format: %q},\n", header, fieldGoName, format)
+		} else {
+			exportCols += fmt.Sprintf("\t\t\t{Header: %q, Field: %q},\n", header, fieldGoName)
+		}
+	}
+	exportCols += "\t\t\t{Header: \"Created At\", Field: \"CreatedAt\", Format: \"date:2006-01-02\"},"
+
 	// Check if any field needs "time" import
 	needsTimeImport := false
 	needsHandlerDatatypes := false
@@ -465,6 +490,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 		"{{Plural}}", names.PluralPascal,
 		"{{SORT_COLS}}", sortCols,
 		"{{SEARCH_COLS}}", searchCols,
+		"{{EXPORT_COLS}}", exportCols,
 		"{{CREATE_FIELDS}}", createFields,
 		"{{CREATE_ASSIGN}}", createAssignments,
 		"{{UPDATE_FIELDS}}", updateFields,
@@ -485,6 +511,7 @@ import (
 	"github.com/gin-gonic/gin"{{DATATYPES_IMPORT}}
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/export"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
 )
@@ -517,6 +544,68 @@ func (h *{{Pascal}}Handler) List(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, res)
+}
+
+// Export streams the full filtered list as CSV (default) or XLSX.
+// Honours the same search/filter query params as List but skips
+// pagination — you get every matching row in one file.
+//
+//	GET /api/{{plural}}/export?format=csv
+//	GET /api/{{plural}}/export?format=xlsx&search=foo
+func (h *{{Pascal}}Handler) Export(c *gin.Context) {
+	format := c.DefaultQuery("format", "csv")
+	search := c.Query("search")
+
+	query := h.DB.Model(&models.{{Pascal}}{}){{PRELOADS}}.Order("created_at desc")
+	if search != "" && len([]string{{{SEARCH_COLS}}}) > 0 {
+		// Reuse the same searchable columns as List.
+		searchable := []string{{{SEARCH_COLS}}}
+		clause := ""
+		args := []any{}
+		wild := "%" + search + "%"
+		for i, col := range searchable {
+			if i > 0 {
+				clause += " OR "
+			}
+			clause += col + " ILIKE ?"
+			args = append(args, wild)
+		}
+		query = query.Where(clause, args...)
+	}
+
+	var items []models.{{Pascal}}
+	if err := query.Find(&items).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to fetch {{plural}}"},
+		})
+		return
+	}
+
+	opts := export.Options{
+		Sheet: "{{Plural}}",
+		Columns: []export.Column{
+{{EXPORT_COLS}}
+		},
+	}
+
+	if format == "xlsx" {
+		c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+		c.Header("Content-Disposition", ` + "`" + `attachment; filename="{{plural}}.xlsx"` + "`" + `)
+		if err := export.XLSX(c.Writer, items, opts); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": gin.H{"code": "EXPORT_FAILED", "message": err.Error()},
+			})
+		}
+		return
+	}
+
+	c.Header("Content-Type", "text/csv")
+	c.Header("Content-Disposition", ` + "`" + `attachment; filename="{{plural}}.csv"` + "`" + `)
+	if err := export.CSV(c.Writer, items, opts); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "EXPORT_FAILED", "message": err.Error()},
+		})
+	}
 }
 
 // GetByID returns a single {{lower}} by ID.
