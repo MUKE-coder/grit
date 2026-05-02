@@ -40,6 +40,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "activity.go"):         apiActivityHandlerGo(),
 		filepath.Join(apiRoot, "internal", "export", "export.go"):             apiExportGo(),
 		filepath.Join(apiRoot, "internal", "respond", "respond.go"):           apiRespondGo(),
+		filepath.Join(apiRoot, "internal", "pdf", "pdf.go"):                   apiPDFGo(),
+		filepath.Join(apiRoot, "internal", "pdf", "invoice.go"):               apiPDFInvoiceGo(),
 		filepath.Join(apiRoot, "internal", "routes", "routes.go"):    apiRoutesGo(),
 		filepath.Join(apiRoot, ".air.toml"):                          airConfig(),
 		// Test files — give the generated API a working test suite out of the box
@@ -75,6 +77,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.51.0
 	github.com/disintegration/imaging v1.6.2
 	github.com/gin-gonic/gin v1.10.0
+	github.com/go-pdf/fpdf v0.9.0
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/sessions v1.4.0
@@ -3540,6 +3543,358 @@ func Created(c *gin.Context, data interface{}, message ...string) {
 		body["message"] = message[0]
 	}
 	c.JSON(http.StatusCreated, body)
+}
+`
+}
+
+func apiPDFGo() string {
+	return `// Package pdf is a tiny styled-PDF builder backed by go-pdf/fpdf.
+//
+// The package exports two layers:
+//
+//   1) Doc primitives — Header, KV, Table, Totals, Notes, Footer — that
+//      apply Grit's default styling (Helvetica, 20mm margins, blue
+//      accent, A4 portrait). Compose them to build any document.
+//
+//   2) Pre-built templates — RenderInvoice (in invoice.go) — for the
+//      common business-app cases. Copy + adapt these for receipts,
+//      leases, statements, etc.
+//
+// When the helpers don't fit, the embedded *fpdf.Fpdf gives you the
+// full underlying API. Call d.Bytes() at the end to finalize.
+package pdf
+
+import (
+	"bytes"
+	"fmt"
+	"strings"
+
+	"github.com/go-pdf/fpdf"
+)
+
+// Doc wraps fpdf.Fpdf with section helpers + Grit's default colors.
+// Mutate Accent on the returned Doc to retheme.
+type Doc struct {
+	*fpdf.Fpdf
+	Accent [3]int // RGB; default Grit blue (30, 126, 245)
+	Muted  [3]int // RGB; default neutral gray (110, 110, 110)
+}
+
+// New returns a fresh A4 portrait document with Grit's default styling.
+// Adds the first page automatically — call d.AddPage() for additional
+// pages.
+func New() *Doc {
+	pdf := fpdf.New("P", "mm", "A4", "")
+	pdf.SetMargins(20, 18, 20)
+	pdf.AddPage()
+	pdf.SetFont("Helvetica", "", 10)
+	return &Doc{
+		Fpdf:   pdf,
+		Accent: [3]int{30, 126, 245},
+		Muted:  [3]int{110, 110, 110},
+	}
+}
+
+// Header writes the standard top-of-document title bar — accent-colored
+// title in 22pt + a smaller secondary line below in muted gray.
+//
+//	d.Header("INVOICE", "INV-202605-0001")
+//	d.Header("RECEIPT", "RCT-202605-0042")
+func (d *Doc) Header(title, subtitle string) {
+	d.SetFont("Helvetica", "B", 22)
+	d.SetTextColor(d.Accent[0], d.Accent[1], d.Accent[2])
+	d.CellFormat(0, 10, strings.ToUpper(title), "", 1, "L", false, 0, "")
+	if subtitle != "" {
+		d.SetTextColor(d.Muted[0], d.Muted[1], d.Muted[2])
+		d.SetFont("Helvetica", "", 10)
+		d.CellFormat(0, 5, subtitle, "", 1, "L", false, 0, "")
+	}
+	d.SetTextColor(0, 0, 0)
+	d.Ln(6)
+}
+
+// KV writes a "label: value" pair. Label is bold + small caps style;
+// value is regular weight on the next line. Used for "Bill To",
+// "Issue Date", "Reference Number", etc.
+func (d *Doc) KV(label, value string) {
+	d.SetFont("Helvetica", "B", 9)
+	d.SetTextColor(d.Muted[0], d.Muted[1], d.Muted[2])
+	d.CellFormat(0, 5, strings.ToUpper(label), "", 1, "L", false, 0, "")
+	d.SetFont("Helvetica", "", 10)
+	d.SetTextColor(0, 0, 0)
+	d.CellFormat(0, 5, value, "", 1, "L", false, 0, "")
+	d.Ln(3)
+}
+
+// TwoColumnKV writes two KV pairs side by side — useful for fitting
+// "BILL TO" + "ISSUE DATE" or "FROM" + "TO" on one row.
+func (d *Doc) TwoColumnKV(leftLabel, leftValue, rightLabel, rightValue string) {
+	d.SetFont("Helvetica", "B", 9)
+	d.SetTextColor(d.Muted[0], d.Muted[1], d.Muted[2])
+	d.CellFormat(95, 5, strings.ToUpper(leftLabel), "", 0, "L", false, 0, "")
+	d.CellFormat(0, 5, strings.ToUpper(rightLabel), "", 1, "L", false, 0, "")
+	d.SetFont("Helvetica", "", 10)
+	d.SetTextColor(0, 0, 0)
+	d.CellFormat(95, 5, leftValue, "", 0, "L", false, 0, "")
+	d.CellFormat(0, 5, rightValue, "", 1, "L", false, 0, "")
+	d.Ln(3)
+}
+
+// Table writes a styled table. headers + rows are matched by index.
+// colWidths are in mm — pass 0 for the last column to fill remaining
+// width. Header row gets a light gray background; data rows are plain.
+//
+//	d.Table(
+//	    []string{"DESCRIPTION", "QTY", "UNIT", "TOTAL"},
+//	    [][]string{
+//	        {"Office rent — June", "1", "1,500,000", "1,500,000"},
+//	        {"Service charge",      "1",   "120,000",   "120,000"},
+//	    },
+//	    []float64{105, 15, 25, 0},
+//	    []string{"L", "R", "R", "R"},
+//	)
+func (d *Doc) Table(headers []string, rows [][]string, colWidths []float64, aligns []string) {
+	if len(headers) == 0 || len(colWidths) != len(headers) {
+		return
+	}
+	if len(aligns) != len(headers) {
+		// Default all-left if alignment slice is malformed.
+		aligns = make([]string, len(headers))
+		for i := range aligns {
+			aligns[i] = "L"
+		}
+	}
+
+	// Header row
+	d.SetFillColor(244, 244, 245)
+	d.SetFont("Helvetica", "B", 9)
+	d.SetTextColor(120, 120, 120)
+	for i, h := range headers {
+		end := 0
+		if i == len(headers)-1 {
+			end = 1
+		}
+		d.CellFormat(colWidths[i], 7, h, "", end, aligns[i], true, 0, "")
+	}
+
+	// Data rows
+	d.SetTextColor(0, 0, 0)
+	d.SetFont("Helvetica", "", 10)
+	for _, row := range rows {
+		for i, cell := range row {
+			if i >= len(colWidths) {
+				break
+			}
+			end := 0
+			if i == len(row)-1 {
+				end = 1
+			}
+			d.CellFormat(colWidths[i], 6, cell, "", end, aligns[i], false, 0, "")
+		}
+	}
+}
+
+// TotalLine is one entry in a Totals stack.
+type TotalLine struct {
+	Label string
+	Value string // pre-formatted with currency + thousands separators
+	Bold  bool   // bold + accent color (for the grand total line)
+}
+
+// Totals writes a right-aligned totals stack. The last "Bold" line
+// gets accent coloring + a slightly larger size — typically used for
+// the grand total or outstanding balance.
+func (d *Doc) Totals(lines []TotalLine) {
+	for _, line := range lines {
+		d.CellFormat(120, 6, "", "", 0, "L", false, 0, "")
+		d.SetFont("Helvetica", "", 10)
+		d.SetTextColor(d.Muted[0], d.Muted[1], d.Muted[2])
+		d.CellFormat(20, 6, line.Label, "", 0, "R", false, 0, "")
+		if line.Bold {
+			d.SetFont("Helvetica", "B", 11)
+			d.SetTextColor(d.Accent[0], d.Accent[1], d.Accent[2])
+		} else {
+			d.SetFont("Helvetica", "", 10)
+			d.SetTextColor(0, 0, 0)
+		}
+		d.CellFormat(0, 6, line.Value, "", 1, "R", false, 0, "")
+	}
+	d.SetTextColor(0, 0, 0)
+}
+
+// Notes writes a "NOTES" header + the body text wrapped to page width.
+// Skipped silently when text is empty.
+func (d *Doc) Notes(text string) {
+	if text == "" {
+		return
+	}
+	d.Ln(4)
+	d.SetFont("Helvetica", "B", 10)
+	d.SetTextColor(0, 0, 0)
+	d.CellFormat(0, 5, "NOTES", "", 1, "L", false, 0, "")
+	d.SetFont("Helvetica", "", 10)
+	d.SetTextColor(82, 82, 91)
+	d.MultiCell(0, 5, text, "", "L", false)
+	d.Ln(4)
+}
+
+// Footer writes a centered italic footer 25mm from the bottom of the
+// page. Use for "Generated 2 Jun 2026 14:30" or terms of service URLs.
+func (d *Doc) Footer(text string) {
+	d.SetY(-25)
+	d.SetFont("Helvetica", "I", 9)
+	d.SetTextColor(d.Muted[0], d.Muted[1], d.Muted[2])
+	d.CellFormat(0, 5, text, "", 1, "C", false, 0, "")
+}
+
+// Bytes finalizes the document and returns the PDF bytes. Call this
+// once at the very end — the underlying fpdf is not reusable after.
+func (d *Doc) Bytes() ([]byte, error) {
+	var buf bytes.Buffer
+	if err := d.Output(&buf); err != nil {
+		return nil, fmt.Errorf("pdf output: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+`
+}
+
+func apiPDFInvoiceGo() string {
+	return `package pdf
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+)
+
+// Invoice is the data shape RenderInvoice consumes. Build one from
+// your domain model in the handler and pass it through.
+type Invoice struct {
+	Number    string    // "INV-202605-0001"
+	IssueDate time.Time
+	DueDate   time.Time
+	BillTo    Party
+	From      Party     // your company — optional, shown in the header area
+	Items     []LineItem
+	Subtotal  float64
+	Tax       float64   // tax amount (not rate)
+	Total     float64
+	Paid      float64   // amount already paid; if > 0, an "Outstanding" line is added
+	Currency  string    // "UGX", "USD", etc. — prefixed to every amount
+	Notes     string    // free-text footer notes
+	Status    string    // shown in the document footer ("paid", "overdue", "draft")
+}
+
+// Party is a name + free-text contact block (phone, email, address).
+type Party struct {
+	Name    string
+	Contact string
+}
+
+// LineItem is one row in the invoice's items table.
+type LineItem struct {
+	Description string
+	Quantity    float64
+	UnitPrice   float64
+	Total       float64
+}
+
+// RenderInvoice returns the invoice as PDF bytes ready to stream to
+// the response writer. Composition over inheritance: it's just a Doc
+// with the section helpers called in order — copy this file as a
+// starting point for receipts / leases / statements / quotes.
+//
+//	GET /api/invoices/:id/pdf
+//	    inv := h.Service.GetByID(c.Param("id"))
+//	    bytes, _ := pdf.RenderInvoice(toInvoice(inv))
+//	    c.Data(200, "application/pdf", bytes)
+func RenderInvoice(inv Invoice) ([]byte, error) {
+	d := New()
+
+	d.Header("INVOICE", inv.Number)
+	d.TwoColumnKV("BILL TO", inv.BillTo.Name, "ISSUE DATE", inv.IssueDate.Format("2 Jan 2006"))
+	if inv.BillTo.Contact != "" {
+		d.SetFont("Helvetica", "", 10)
+		d.SetTextColor(d.Muted[0], d.Muted[1], d.Muted[2])
+		d.CellFormat(95, 5, inv.BillTo.Contact, "", 0, "L", false, 0, "")
+		d.SetTextColor(0, 0, 0)
+		d.SetFont("Helvetica", "B", 9)
+		d.CellFormat(0, 5, "DUE DATE", "", 1, "L", false, 0, "")
+		d.CellFormat(95, 5, "", "", 0, "L", false, 0, "")
+		d.SetFont("Helvetica", "", 10)
+		d.CellFormat(0, 5, inv.DueDate.Format("2 Jan 2006"), "", 1, "L", false, 0, "")
+	}
+	d.Ln(8)
+
+	// Items table
+	rows := make([][]string, len(inv.Items))
+	for i, it := range inv.Items {
+		rows[i] = []string{
+			it.Description,
+			strconv.FormatFloat(it.Quantity, 'f', -1, 64),
+			formatAmount(it.UnitPrice),
+			formatAmount(it.Total),
+		}
+	}
+	d.Table(
+		[]string{"DESCRIPTION", "QTY", "UNIT", "TOTAL"},
+		rows,
+		[]float64{105, 15, 25, 0},
+		[]string{"L", "R", "R", "R"},
+	)
+	d.Ln(4)
+
+	// Totals
+	totals := []TotalLine{
+		{Label: "Subtotal", Value: inv.Currency + " " + formatAmount(inv.Subtotal)},
+	}
+	if inv.Tax > 0 {
+		totals = append(totals, TotalLine{Label: "Tax", Value: inv.Currency + " " + formatAmount(inv.Tax)})
+	}
+	totals = append(totals, TotalLine{Label: "Total", Value: inv.Currency + " " + formatAmount(inv.Total), Bold: true})
+	if inv.Paid > 0 {
+		totals = append(totals,
+			TotalLine{Label: "Paid", Value: inv.Currency + " " + formatAmount(inv.Paid)},
+			TotalLine{Label: "Outstanding", Value: inv.Currency + " " + formatAmount(inv.Total - inv.Paid), Bold: true},
+		)
+	}
+	d.Totals(totals)
+
+	d.Notes(inv.Notes)
+
+	footer := fmt.Sprintf("Generated %s", time.Now().Format("2 Jan 2006 15:04"))
+	if inv.Status != "" {
+		footer += " · Status: " + inv.Status
+	}
+	d.Footer(footer)
+
+	return d.Bytes()
+}
+
+// formatAmount renders 1234567.89 as "1,234,567.89" — matches the
+// thousands-separator convention used by the export package.
+func formatAmount(n float64) string {
+	s := strconv.FormatFloat(n, 'f', 2, 64)
+	parts := strings.SplitN(s, ".", 2)
+	intPart := parts[0]
+	neg := strings.HasPrefix(intPart, "-")
+	if neg {
+		intPart = intPart[1:]
+	}
+	var out []byte
+	for i, c := range intPart {
+		if i > 0 && (len(intPart)-i)%3 == 0 {
+			out = append(out, ',')
+		}
+		out = append(out, byte(c))
+	}
+	result := string(out) + "." + parts[1]
+	if neg {
+		return "-" + result
+	}
+	return result
 }
 `
 }

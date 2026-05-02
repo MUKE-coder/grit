@@ -28,6 +28,93 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.18.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.18.0
+                </span>
+                <span className="text-sm text-muted-foreground">May 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  PDF generation module (
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/13" target="_blank" rel="noopener noreferrer">#13</a>).
+                  Every scaffolded API ships <code>internal/pdf/</code> with Grit-styled
+                  section helpers + a worked <code>RenderInvoice</code> template. Pure Go,
+                  no Chromium / wkhtmltopdf native dependencies.
+                </p>
+
+                <h3>The Doc primitives</h3>
+                <p>
+                  <code>pdf.New()</code> returns a <code>*Doc</code> preconfigured with
+                  Helvetica + 20mm margins + A4 portrait + Grit blue accent. Embeds the
+                  underlying <code>*fpdf.Fpdf</code> so the full library is available when
+                  helpers don't fit.
+                </p>
+                <ul>
+                  <li>
+                    <code>Header(title, subtitle)</code> — accent-colored 22pt title +
+                    muted-gray subtitle line.
+                  </li>
+                  <li>
+                    <code>KV(label, value)</code> + <code>TwoColumnKV(...)</code> — small-caps
+                    label + body value pairs.
+                  </li>
+                  <li>
+                    <code>Table(headers, rows, widths, aligns)</code> — light gray header
+                    row, plain data rows, configurable widths + alignment per column.
+                  </li>
+                  <li>
+                    <code>Totals([]TotalLine)</code> — right-aligned totals stack; the bold
+                    line gets accent coloring + slightly larger size for the grand total.
+                  </li>
+                  <li>
+                    <code>Notes(text)</code> — labeled multiline section, skipped when empty.
+                  </li>
+                  <li>
+                    <code>Footer(text)</code> — centered italic 25mm above the page bottom.
+                  </li>
+                  <li>
+                    <code>d.Bytes()</code> finalizes and returns the PDF byte slice ready
+                    to stream to <code>c.Data(200, "application/pdf", b)</code>.
+                  </li>
+                </ul>
+
+                <h3>RenderInvoice — worked example</h3>
+                <pre><code>{`pdf.RenderInvoice(pdf.Invoice{
+    Number:    "INV-202605-0001",
+    IssueDate: time.Now(),
+    DueDate:   time.Now().Add(14 * 24 * time.Hour),
+    BillTo:    pdf.Party{Name: "Abu Seal", Contact: "abu@example.com"},
+    Items: []pdf.LineItem{
+        {Description: "Office rent — June", Quantity: 1, UnitPrice: 1500000, Total: 1500000},
+        {Description: "Service charge",      Quantity: 1, UnitPrice:  120000, Total:  120000},
+    },
+    Subtotal: 1620000, Total: 1620000,
+    Currency: "UGX",
+    Notes:    "Pay by mobile money: +256...",
+})`}</code></pre>
+                <p>
+                  Returns <code>([]byte, error)</code> — wire it to a handler:
+                </p>
+                <pre><code>{`func (h *InvoiceHandler) PDF(c *gin.Context) {
+    inv, _ := h.Service.GetByID(c.Param("id"))
+    bytes, err := pdf.RenderInvoice(toInvoice(inv))
+    if err != nil { respond.Internal(c, err); return }
+    c.Header("Content-Disposition", \`attachment; filename="\` + inv.Number + \`.pdf"\`)
+    c.Data(200, "application/pdf", bytes)
+}`}</code></pre>
+                <p className="text-sm text-muted-foreground">
+                  Copy <code>invoice.go</code> as a starting point for receipts, leases,
+                  statements, quotes — the same primitives compose all of them. Add
+                  <code> github.com/go-pdf/fpdf v0.9.0</code> dependency lands automatically
+                  in scaffolded <code>go.mod</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.17.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

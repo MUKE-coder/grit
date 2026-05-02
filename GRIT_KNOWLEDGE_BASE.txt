@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.17.0
+Version: 3.18.0
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -898,7 +898,24 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.17.0 (Current):
+v3.18.0 (Current):
+  - PDF generation module (#13). New internal/pdf package wraps
+    go-pdf/fpdf with Grit-styled section helpers + a worked Invoice
+    template. Pure Go, no native dependencies (no Chromium/wkhtmltopdf).
+  - pdf.New() returns a *Doc preconfigured with Helvetica + 20mm margins
+    + A4 portrait + Grit blue accent. Embeds *fpdf.Fpdf so the full
+    underlying API is available when helpers don't fit.
+  - Section primitives: Header(title, subtitle), KV(label, value),
+    TwoColumnKV(left, right), Table(headers, rows, widths, aligns),
+    Totals([]TotalLine), Notes(text), Footer(text).
+  - Worked example: pdf.RenderInvoice(inv) produces a complete styled
+    invoice — bill-to + dates + line items table + subtotal/tax/total
+    stack + paid/outstanding rows + notes + generated-at footer.
+    Copy invoice.go as the starting point for receipts / leases /
+    statements / quotes.
+  - Dependency: github.com/go-pdf/fpdf v0.9.0 added to scaffolded go.mod.
+
+v3.17.0:
   - Quality-of-life bundle: 4 issues closed (#12, #31, #35, #43).
   - #35 grit init: new command writes CLAUDE.md + AGENTS.md to the
     current directory with the framework's hard rules (forms / data /
