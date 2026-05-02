@@ -60,10 +60,11 @@ func writeDesktopClientFiles(root string, opts Options) error {
 
 		// Layout components
 		filepath.Join(desktopRoot, "frontend", "src", "components", "layout", "title-bar.tsx"):       desktopClientTitleBar(opts),
-		filepath.Join(desktopRoot, "frontend", "src", "components", "layout", "sidebar.tsx"):         desktopClientSidebar(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "layout", "sidebar.tsx"):         desktopClientSidebarV2(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "layout", "topbar.tsx"):          desktopClientTopbar(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "layout", "page-header.tsx"):     desktopClientPageHeader(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "layout", "command-palette.tsx"): desktopClientCommandPalette(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "layout", "app-shell.tsx"):       desktopClientAppShell(),
 
 		// UI components
 		filepath.Join(desktopRoot, "frontend", "src", "components", "ui", "button.tsx"):       desktopClientButton(),
@@ -78,6 +79,15 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "components", "two-pane.tsx"):    desktopClientTwoPane(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "form.tsx"):        desktopClientForm(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "filter-chip.tsx"): desktopClientFilterChip(),
+
+		// Frontend stdlib + form primitives (v3.15)
+		filepath.Join(desktopRoot, "frontend", "src", "lib", "format.ts"):                    desktopClientFormatLib(),
+		filepath.Join(desktopRoot, "frontend", "src", "lib", "nav-config.ts"):                desktopClientNavConfig(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "currency-field.tsx"):    desktopClientCurrencyField(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "searchable-select.tsx"): desktopClientSearchableSelect(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "date-field.tsx"):        desktopClientDateField(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "drawer.tsx"):            desktopClientDrawer(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "status-badge.tsx"):      desktopClientStatusBadge(),
 
 		// Lib (API client, auth, utils, shortcuts, Wails bridge)
 		filepath.Join(desktopRoot, "frontend", "src", "lib", "api-client.ts"):     desktopClientApiClientTS(),

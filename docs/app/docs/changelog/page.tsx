@@ -28,6 +28,129 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.15.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.15.0
+                </span>
+                <span className="text-sm text-muted-foreground">May 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  Frontend stdlib + form primitives. Closes seven GitHub issues at once
+                  (<a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/19" target="_blank" rel="noopener noreferrer">#19</a>,{' '}
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/20" target="_blank" rel="noopener noreferrer">#20</a>,{' '}
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/21" target="_blank" rel="noopener noreferrer">#21</a>,{' '}
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/22" target="_blank" rel="noopener noreferrer">#22</a>,{' '}
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/23" target="_blank" rel="noopener noreferrer">#23</a>,{' '}
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/33" target="_blank" rel="noopener noreferrer">#33</a>,{' '}
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/34" target="_blank" rel="noopener noreferrer">#34</a>).
+                  Every primitive lifted from real Grit-built business apps.
+                </p>
+
+                <h3>Format helpers (<code>lib/format.ts</code>) — #33</h3>
+                <ul>
+                  <li>
+                    <code>formatCurrency(amount, currency?)</code> — locale-aware,
+                    no-decimal mode for UGX / JPY / KRW / RWF / TZS / VND.
+                  </li>
+                  <li>
+                    <code>formatDate(value, fmt?)</code> — token formatter (yyyy / MMMM /
+                    MMM / MM / dd / HH / mm / ss). Default <code>"MMM d, yyyy"</code>.
+                  </li>
+                  <li>
+                    <code>formatDateTime(value)</code> — &quot;May 2, 2026 · 2:30 PM&quot;.
+                  </li>
+                  <li>
+                    <code>humanize("checked_in")</code> → &quot;Checked in&quot;.
+                  </li>
+                  <li>
+                    <code>initials("Abu Seal")</code> → &quot;AS&quot;.
+                  </li>
+                  <li>
+                    <code>setFormatConfig({"{ locale, currency }"})</code> at boot to
+                    override.
+                  </li>
+                </ul>
+
+                <h3><code>{'<CurrencyField>'}</code> — #19</h3>
+                <p>
+                  Live comma formatting as the user types
+                  (&quot;3000&quot; → &quot;3,000&quot;), paste-friendly
+                  (&quot;$1,234.56&quot; works), emits raw <code>number</code> to{' '}
+                  <code>onChange</code>. Optional <code>prefix</code> slot for currency
+                  code. Auto-toggles between formatted display (blur) and raw digits
+                  (focus) so editing isn't a fight.
+                </p>
+
+                <h3><code>{'<SearchableSelect>'}</code> — #20</h3>
+                <p>
+                  Combobox with typeahead, ↑/↓/Enter/Esc keyboard nav, portaled
+                  dropdown (escapes overflow:hidden ancestors), optional clear button.
+                  Replaces native <code>{'<select>'}</code> for FK fields and any enum
+                  with &gt; 5 values.
+                </p>
+
+                <h3><code>{'<DateField>'}</code> + <code>{'<DateRangeFilter>'}</code> — #21</h3>
+                <ul>
+                  <li>
+                    <code>{'<DateField>'}</code> wraps native{' '}
+                    <code>{'<input type="date">'}</code> with the standard label/hint/
+                    error chrome — picked the native one for a11y, RTL, and i18n.
+                  </li>
+                  <li>
+                    <code>{'<DateRangeFilter>'}</code> — preset chip bar (Today / Last 7 /
+                    Last 30 / This month / Last month / Last 90 / This year / All) +
+                    custom-range fallback.
+                  </li>
+                  <li>
+                    <code>presetRange("last90")</code> helper exposed for non-UI uses.
+                  </li>
+                </ul>
+
+                <h3><code>{'<Drawer>'}</code> — #22</h3>
+                <p>
+                  Right-edge slide-in panel. Closes on Esc + backdrop + X button.
+                  Configurable widths (<code>sm</code>/<code>md</code>/<code>lg</code>/<code>xl</code>).
+                  Optional sticky footer slot for the typical Cancel/Save row. Pair
+                  with <code>{'<FormGrid>'}</code> + <code>{'<FormActions>'}</code>{' '}
+                  from v3.11 for the standard create/edit experience.
+                </p>
+
+                <h3><code>{'<StatusBadge>'}</code> — #34</h3>
+                <p>
+                  Status string → coloured pill. Default map covers
+                  paid / active / completed / pending / overdue / cancelled / draft / archived /
+                  checked_in / in_progress and friends. Override or extend per app:
+                </p>
+                <pre><code>{`setStatusVariants({
+  shipped: "info",
+  on_hold: "warning",
+});`}</code></pre>
+
+                <h3><code>{'<AppShell>'}</code> + grouped sidebar — #23</h3>
+                <ul>
+                  <li>
+                    New <code>lib/nav-config.ts</code> — single source of truth for
+                    sidebar sections. Adding a new section is a one-line config edit.
+                  </li>
+                  <li>
+                    <code>components/layout/sidebar.tsx</code> rewritten as a
+                    config-driven grouped sidebar (section title + items with icons +
+                    optional badges).
+                  </li>
+                  <li>
+                    New <code>components/layout/app-shell.tsx</code> — bundles
+                    TitleBar + Sidebar + Topbar + scrollable content + Cmd/Ctrl-K
+                    command palette in one component. Wrap your dashboard{' '}
+                    <code>Outlet</code> with this.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.14.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

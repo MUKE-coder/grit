@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.14.0
+Version: 3.15.0
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -898,7 +898,39 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.14.0 (Current):
+v3.15.0 (Current):
+  - Frontend stdlib + form primitives — closes 7 GitHub issues at once.
+  - lib/format.ts (#33): formatCurrency, formatDate, formatDateTime,
+    humanize, initials. Locale + currency configurable via
+    setFormatConfig({...}). UGX/JPY/KRW/RWF/TZS/VND get no-decimals
+    style; everything else uses standard Intl currency formatting.
+  - components/currency-field.tsx (#19): CurrencyInput + CurrencyField.
+    Live comma formatting as the user types ("3000" -> "3,000"),
+    paste-friendly ("$1,234.56" works), emits raw number to onChange.
+    Optional currency prefix slot.
+  - components/searchable-select.tsx (#20): SearchableSelect +
+    SearchableSelectField. Typeahead combobox with keyboard nav
+    (arrows/enter/esc), portaled dropdown (no overflow clipping),
+    optional clear button. Replaces native <select> for FK + large enums.
+  - components/date-field.tsx (#21): DateField (single date) +
+    DateRangeFilter (preset chip bar: Today / Last 7 / Last 30 /
+    This month / Last month / Last 90 / This year / All / custom).
+    presetRange("last90") helper exposed.
+  - components/drawer.tsx (#22): right-edge slide-in panel with Esc/
+    backdrop close, configurable width (sm/md/lg/xl), optional
+    sticky footer for cancel/save row.
+  - components/status-badge.tsx (#34): StatusBadge with default map
+    (paid/active/completed -> success, pending/partial -> warning,
+    overdue/cancelled -> danger, draft/archived -> muted, etc).
+    setStatusVariants({...}) extends/overrides per app.
+  - lib/nav-config.ts + components/layout/app-shell.tsx (#23): grouped
+    sidebar config (sections with optional titles + items with icons +
+    optional badges) and AppShell composer that bundles TitleBar +
+    Sidebar + Topbar + scrollable content + Cmd/Ctrl-K command palette.
+  - components/layout/sidebar.tsx replaced with a config-driven
+    grouped version that reads NAV_SECTIONS from nav-config.ts.
+
+v3.14.0:
   - Offline-first foundation: Git-style sync model. Work locally, click
     Sync explicitly, resolve conflicts per-field, push one-by-one.
   - Server: Version int column added to User, Upload, Blog. BeforeUpdate
