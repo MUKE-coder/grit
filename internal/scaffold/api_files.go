@@ -43,6 +43,10 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "pdf", "pdf.go"):                   apiPDFGo(),
 		filepath.Join(apiRoot, "internal", "pdf", "invoice.go"):               apiPDFInvoiceGo(),
 		filepath.Join(apiRoot, "internal", "audit", "audit.go"):               apiAuditGo(),
+		filepath.Join(apiRoot, "internal", "models", "webhook_event.go"):      apiWebhookEventModelGo(),
+		filepath.Join(apiRoot, "internal", "webhooks", "webhooks.go"):         apiWebhooksGo(),
+		filepath.Join(apiRoot, "internal", "webhooks", "verifiers.go"):        apiWebhooksVerifiersGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "webhooks.go"):         apiWebhooksHandlerGo(),
 		filepath.Join(apiRoot, "internal", "routes", "routes.go"):    apiRoutesGo(),
 		filepath.Join(apiRoot, ".air.toml"):                          airConfig(),
 		// Test files — give the generated API a working test suite out of the box
@@ -728,6 +732,7 @@ func Models() []interface{} {
 		&TrustedDevice{},
 		&TOTPPendingToken{},
 		&ActivityLog{},
+		&WebhookEvent{},
 		// grit:models
 	}
 }
@@ -3254,6 +3259,602 @@ func VerifyChain(db *gorm.DB) (ChainStatus, error) {
 `
 }
 
+func apiWebhookEventModelGo() string {
+	return `package models
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
+)
+
+// WebhookEvent persists every webhook the API receives. ExternalID is
+// the provider's own event ID — we use it as the idempotency key, so
+// duplicate deliveries (Stripe retries, partner pings) become no-ops.
+//
+// Status lifecycle:
+//   pending   — received + verified, handler not yet run
+//   processed — handler returned nil
+//   failed    — handler returned an error; HandlerError holds the message
+//   skipped   — duplicate ExternalID — handler was bypassed
+type WebhookEvent struct {
+	ID           string         ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
+	Provider     string         ` + "`" + `gorm:"size:50;index;not null" json:"provider"` + "`" + `
+	EventType    string         ` + "`" + `gorm:"size:100;index" json:"event_type"` + "`" + `
+	ExternalID   string         ` + "`" + `gorm:"size:255;index" json:"external_id"` + "`" + ` // provider's event id
+	Payload      datatypes.JSON ` + "`" + `gorm:"type:jsonb" json:"payload"` + "`" + `
+	Status       string         ` + "`" + `gorm:"size:20;index;not null;default:pending" json:"status"` + "`" + `
+	HandlerError string         ` + "`" + `gorm:"type:text" json:"handler_error,omitempty"` + "`" + `
+	RetryCount   int            ` + "`" + `gorm:"not null;default:0" json:"retry_count"` + "`" + `
+	ProcessedAt  *time.Time     ` + "`" + `json:"processed_at,omitempty"` + "`" + `
+	CreatedAt    time.Time      ` + "`" + `gorm:"index" json:"created_at"` + "`" + `
+}
+
+func (w *WebhookEvent) BeforeCreate(tx *gorm.DB) error {
+	if w.ID == "" {
+		w.ID = uuid.New().String()
+	}
+	return nil
+}
+
+// Composite unique index on (provider, external_id) gives us
+// idempotent receipt: a duplicate delivery from the same provider
+// with the same event id fails the INSERT, which we treat as
+// "already processed".
+func (WebhookEvent) Indexes() string {
+	return "CREATE UNIQUE INDEX IF NOT EXISTS idx_webhook_events_provider_external_id ON webhook_events(provider, external_id) WHERE external_id <> ''"
+}
+`
+}
+
+func apiWebhooksGo() string {
+	return `// Package webhooks is the receive-side framework for inbound
+// webhooks (Stripe, GitHub, WhatsApp, Twilio, Slack, anything that
+// pings you). The shape:
+//
+//   webhooks.Register("stripe", webhooks.Provider{
+//       SecretEnv: "STRIPE_WEBHOOK_SECRET",
+//       Verify:    webhooks.StripeVerifier,
+//       Extract:   webhooks.StripeExtractor,
+//   })
+//
+//   webhooks.On("stripe", "invoice.paid", func(ctx context.Context, e *models.WebhookEvent) error {
+//       // process the event…
+//       return nil
+//   })
+//
+// At app boot, call webhooks.Setup(db) once. The HTTP handler is
+// already wired in routes.go at POST /webhooks/:provider — it does:
+//   1. Look up the provider config (404 if unknown)
+//   2. Read raw body + headers
+//   3. Verify signature via Provider.Verify
+//   4. Extract event type + external id via Provider.Extract
+//   5. INSERT into webhook_events (unique on provider+external_id —
+//      duplicate delivery becomes a no-op, status=skipped)
+//   6. Run the registered handler for (provider, event_type)
+//   7. Update event row with processed/failed status
+//
+// Failed handlers stay in the table with status=failed; the admin
+// endpoint POST /api/admin/webhooks/:id/replay re-runs the handler.
+package webhooks
+
+import (
+	"context"
+	"fmt"
+	"sync"
+
+	"gorm.io/gorm"
+
+	"` + "{{MODULE}}" + `/internal/models"
+)
+
+// VerifyFunc validates a request's signature. Returns an error if the
+// payload was tampered with or the signature is missing/invalid.
+type VerifyFunc func(secret string, body []byte, headers map[string]string) error
+
+// ExtractFunc pulls (eventType, externalID) from a verified payload.
+// EventType drives handler dispatch; ExternalID drives idempotency.
+type ExtractFunc func(body []byte, headers map[string]string) (eventType string, externalID string, err error)
+
+// Handler is the user-defined function that processes a verified +
+// deduplicated webhook. Errors are persisted to webhook_events.handler_error.
+type Handler func(ctx context.Context, e *models.WebhookEvent) error
+
+// Provider is the per-source configuration.
+type Provider struct {
+	SecretEnv string      // env var holding the signing secret
+	Verify    VerifyFunc  // signature verifier (StripeVerifier, GitHubVerifier, HMACVerifier, etc.)
+	Extract   ExtractFunc // event type + external id extractor
+}
+
+var (
+	mu        sync.RWMutex
+	providers = map[string]Provider{}
+	handlers  = map[string]map[string]Handler{} // provider → eventType → handler
+	db        *gorm.DB
+)
+
+// Setup wires the package to the project's *gorm.DB. Call once at app
+// boot from routes.Setup or main.
+func Setup(database *gorm.DB) {
+	mu.Lock()
+	defer mu.Unlock()
+	db = database
+}
+
+// Register adds a provider configuration. Call from package init() or
+// from a setup function in your handlers package.
+func Register(name string, p Provider) {
+	mu.Lock()
+	defer mu.Unlock()
+	providers[name] = p
+	if _, ok := handlers[name]; !ok {
+		handlers[name] = map[string]Handler{}
+	}
+}
+
+// On binds a handler to (provider, eventType). Use the empty string
+// "" as eventType to register a catch-all handler — it runs for any
+// event from this provider that doesn't have a specific handler.
+func On(provider, eventType string, h Handler) {
+	mu.Lock()
+	defer mu.Unlock()
+	if _, ok := handlers[provider]; !ok {
+		handlers[provider] = map[string]Handler{}
+	}
+	handlers[provider][eventType] = h
+}
+
+// LookupProvider returns the Provider config for name.
+func LookupProvider(name string) (Provider, bool) {
+	mu.RLock()
+	defer mu.RUnlock()
+	p, ok := providers[name]
+	return p, ok
+}
+
+// Dispatch finds a handler for (provider, eventType). Falls back to
+// the catch-all "" handler if no specific match. Returns nil if no
+// handler is registered (the event is still persisted, just unprocessed).
+func Dispatch(ctx context.Context, e *models.WebhookEvent) error {
+	mu.RLock()
+	pmap, ok := handlers[e.Provider]
+	mu.RUnlock()
+	if !ok {
+		return nil
+	}
+	mu.RLock()
+	h, exact := pmap[e.EventType]
+	if !exact {
+		h = pmap[""] // catch-all
+	}
+	mu.RUnlock()
+	if h == nil {
+		return nil
+	}
+	return h(ctx, e)
+}
+
+// DB returns the registered *gorm.DB or nil if Setup hasn't been called.
+// Used by the HTTP handler — exposed so admin endpoints can re-use it.
+func DB() *gorm.DB {
+	mu.RLock()
+	defer mu.RUnlock()
+	return db
+}
+
+// IsDuplicateError reports whether err looks like a unique-constraint
+// violation on (provider, external_id). Postgres + SQLite both surface
+// these distinctly, but the message format varies — check substrings.
+func IsDuplicateError(err error) bool {
+	if err == nil {
+		return false
+	}
+	s := err.Error()
+	return contains(s, "duplicate key") ||
+		contains(s, "UNIQUE constraint") ||
+		contains(s, "duplicate entry")
+}
+
+func contains(s, sub string) bool {
+	return len(s) >= len(sub) && (indexOf(s, sub) >= 0)
+}
+
+func indexOf(s, sub string) int {
+	for i := 0; i+len(sub) <= len(s); i++ {
+		if s[i:i+len(sub)] == sub {
+			return i
+		}
+	}
+	return -1
+}
+
+// MissingProviderError is returned when an unregistered provider is hit.
+type MissingProviderError struct{ Name string }
+
+func (e MissingProviderError) Error() string {
+	return fmt.Sprintf("webhooks: provider %q not registered", e.Name)
+}
+`
+}
+
+func apiWebhooksVerifiersGo() string {
+	return `package webhooks
+
+import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+)
+
+// HMACVerifier returns a VerifyFunc that validates a hex-encoded
+// HMAC-SHA256 signature found in the named header. Most simple
+// providers (custom partners, self-rolled webhooks) use this scheme.
+//
+//	webhooks.Register("partner", webhooks.Provider{
+//	    SecretEnv: "PARTNER_WEBHOOK_SECRET",
+//	    Verify:    webhooks.HMACVerifier("X-Signature"),
+//	    Extract:   webhooks.JSONFieldExtractor("type", "id"),
+//	})
+func HMACVerifier(header string) VerifyFunc {
+	return func(secret string, body []byte, headers map[string]string) error {
+		if secret == "" {
+			return fmt.Errorf("webhooks: signing secret is empty")
+		}
+		got := headers[header]
+		if got == "" {
+			got = headers[strings.ToLower(header)]
+		}
+		if got == "" {
+			return fmt.Errorf("webhooks: missing signature header %q", header)
+		}
+		mac := hmac.New(sha256.New, []byte(secret))
+		mac.Write(body)
+		expected := hex.EncodeToString(mac.Sum(nil))
+		if !hmac.Equal([]byte(got), []byte(expected)) {
+			return fmt.Errorf("webhooks: signature mismatch")
+		}
+		return nil
+	}
+}
+
+// StripeVerifier validates Stripe's "Stripe-Signature" header, which
+// has the form "t=<unix>,v1=<hex>" where v1 = HMAC-SHA256 of
+// "<timestamp>.<payload>" using the webhook signing secret. Tolerance
+// of 5 minutes guards against replay.
+//
+// See https://stripe.com/docs/webhooks/signatures
+func StripeVerifier(secret string, body []byte, headers map[string]string) error {
+	const tolerance = 5 * time.Minute
+	if secret == "" {
+		return fmt.Errorf("webhooks: stripe secret is empty")
+	}
+	header := headers["Stripe-Signature"]
+	if header == "" {
+		header = headers["stripe-signature"]
+	}
+	if header == "" {
+		return fmt.Errorf("webhooks: missing Stripe-Signature header")
+	}
+
+	var ts int64
+	var sigs []string
+	for _, part := range strings.Split(header, ",") {
+		kv := strings.SplitN(strings.TrimSpace(part), "=", 2)
+		if len(kv) != 2 {
+			continue
+		}
+		switch kv[0] {
+		case "t":
+			ts, _ = strconv.ParseInt(kv[1], 10, 64)
+		case "v1":
+			sigs = append(sigs, kv[1])
+		}
+	}
+	if ts == 0 || len(sigs) == 0 {
+		return fmt.Errorf("webhooks: malformed Stripe-Signature header")
+	}
+	if time.Since(time.Unix(ts, 0)) > tolerance {
+		return fmt.Errorf("webhooks: stripe timestamp outside tolerance")
+	}
+
+	signed := strconv.FormatInt(ts, 10) + "." + string(body)
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(signed))
+	expected := hex.EncodeToString(mac.Sum(nil))
+	for _, s := range sigs {
+		if hmac.Equal([]byte(s), []byte(expected)) {
+			return nil
+		}
+	}
+	return fmt.Errorf("webhooks: stripe signature mismatch")
+}
+
+// GitHubVerifier validates GitHub's "X-Hub-Signature-256" header,
+// which is "sha256=<hex>" — HMAC-SHA256 of the raw body using the
+// webhook secret.
+func GitHubVerifier(secret string, body []byte, headers map[string]string) error {
+	if secret == "" {
+		return fmt.Errorf("webhooks: github secret is empty")
+	}
+	header := headers["X-Hub-Signature-256"]
+	if header == "" {
+		header = headers["x-hub-signature-256"]
+	}
+	if header == "" {
+		return fmt.Errorf("webhooks: missing X-Hub-Signature-256 header")
+	}
+	prefix := "sha256="
+	if !strings.HasPrefix(header, prefix) {
+		return fmt.Errorf("webhooks: unexpected X-Hub-Signature-256 format")
+	}
+	got := header[len(prefix):]
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write(body)
+	expected := hex.EncodeToString(mac.Sum(nil))
+	if !hmac.Equal([]byte(got), []byte(expected)) {
+		return fmt.Errorf("webhooks: github signature mismatch")
+	}
+	return nil
+}
+
+// JSONFieldExtractor returns an ExtractFunc that pulls type + id from
+// top-level JSON fields in the body. Stripe-style payloads use
+// JSONFieldExtractor("type", "id") — the most common shape.
+func JSONFieldExtractor(typeField, idField string) ExtractFunc {
+	return func(body []byte, headers map[string]string) (string, string, error) {
+		var raw map[string]interface{}
+		if err := json.Unmarshal(body, &raw); err != nil {
+			return "", "", fmt.Errorf("decoding payload: %w", err)
+		}
+		t, _ := raw[typeField].(string)
+		id, _ := raw[idField].(string)
+		return t, id, nil
+	}
+}
+
+// StripeExtractor pulls (type, id) from Stripe's standard
+// { "type": "...", "id": "evt_..." } envelope.
+var StripeExtractor = JSONFieldExtractor("type", "id")
+
+// GitHubExtractor reads the event type from the "X-GitHub-Event"
+// header and the delivery ID from "X-GitHub-Delivery".
+func GitHubExtractor(body []byte, headers map[string]string) (string, string, error) {
+	t := headers["X-GitHub-Event"]
+	if t == "" {
+		t = headers["x-github-event"]
+	}
+	id := headers["X-GitHub-Delivery"]
+	if id == "" {
+		id = headers["x-github-delivery"]
+	}
+	return t, id, nil
+}
+`
+}
+
+func apiWebhooksHandlerGo() string {
+	return `package handlers
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
+
+	"` + "{{MODULE}}" + `/internal/models"
+	"` + "{{MODULE}}" + `/internal/paginate"
+	"` + "{{MODULE}}" + `/internal/webhooks"
+)
+
+// WebhookHandler is the universal entry point for inbound webhooks.
+// One handler, one route — POST /webhooks/:provider routes by the
+// provider path param and dispatches to whatever was registered.
+type WebhookHandler struct {
+	DB *gorm.DB
+}
+
+func NewWebhookHandler(db *gorm.DB) *WebhookHandler {
+	return &WebhookHandler{DB: db}
+}
+
+// Receive is mounted at POST /webhooks/:provider. It:
+//
+//  1. Looks up the provider in the registry (404 if unknown).
+//  2. Reads the raw body + collects headers.
+//  3. Calls Provider.Verify — 401 on signature mismatch.
+//  4. Calls Provider.Extract to get (event_type, external_id).
+//  5. Inserts a WebhookEvent (unique on provider+external_id — a
+//     duplicate becomes status=skipped and we 200 immediately).
+//  6. Calls webhooks.Dispatch in the request context.
+//  7. Updates status=processed or status=failed with HandlerError.
+//
+// Always returns 200 to the provider on a verified+stored event so
+// they don't retry forever — handler failures are surfaced via the
+// admin replay endpoint.
+func (h *WebhookHandler) Receive(c *gin.Context) {
+	providerName := c.Param("provider")
+	provider, ok := webhooks.LookupProvider(providerName)
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": gin.H{"code": "UNKNOWN_PROVIDER", "message": "no webhook provider registered for " + providerName},
+		})
+		return
+	}
+
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{"code": "READ_BODY_FAILED", "message": err.Error()},
+		})
+		return
+	}
+
+	headers := flattenHeaders(c.Request.Header)
+	secret := os.Getenv(provider.SecretEnv)
+	if err := provider.Verify(secret, body, headers); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": gin.H{"code": "INVALID_SIGNATURE", "message": err.Error()},
+		})
+		return
+	}
+
+	eventType, externalID, err := provider.Extract(body, headers)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{"code": "EXTRACT_FAILED", "message": err.Error()},
+		})
+		return
+	}
+
+	event := models.WebhookEvent{
+		Provider:   providerName,
+		EventType:  eventType,
+		ExternalID: externalID,
+		Payload:    datatypes.JSON(body),
+		Status:     "pending",
+	}
+	if err := h.DB.Create(&event).Error; err != nil {
+		// Duplicate (provider, external_id) — already processed.
+		// Return 200 so the provider doesn't retry, and skip the handler.
+		if webhooks.IsDuplicateError(err) {
+			c.JSON(http.StatusOK, gin.H{"status": "skipped", "reason": "duplicate"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "PERSIST_FAILED", "message": err.Error()},
+		})
+		return
+	}
+
+	// Dispatch in the request context so handlers can attach DB
+	// timeouts / cancellation. Failures are recorded but never bubble
+	// up — the provider already got a 200 once we persisted.
+	if dispatchErr := webhooks.Dispatch(c.Request.Context(), &event); dispatchErr != nil {
+		now := time.Now()
+		h.DB.Model(&event).Updates(map[string]interface{}{
+			"status":        "failed",
+			"handler_error": dispatchErr.Error(),
+			"processed_at":  &now,
+		})
+		c.JSON(http.StatusOK, gin.H{"status": "received", "id": event.ID, "handler": "failed"})
+		return
+	}
+	now := time.Now()
+	h.DB.Model(&event).Updates(map[string]interface{}{
+		"status":       "processed",
+		"processed_at": &now,
+	})
+	c.JSON(http.StatusOK, gin.H{"status": "processed", "id": event.ID})
+}
+
+// List returns the recent webhook events with the standard paginate envelope.
+//
+//	GET /api/admin/webhooks?provider=stripe&status=failed
+func (h *WebhookHandler) List(c *gin.Context) {
+	q := h.DB.Model(&models.WebhookEvent{})
+	params := paginate.Bind(c).
+		With("provider", c.Query("provider")).
+		With("status", c.Query("status"))
+
+	res, err := paginate.List[models.WebhookEvent](q, params, paginate.Config{
+		Sortable:     map[string]bool{"created_at": true, "status": true, "provider": true, "event_type": true},
+		DefaultSort:  "created_at",
+		DefaultOrder: "desc",
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// Replay re-runs the handler for an existing webhook event. Used to
+// recover from a transient handler failure or a deploy that fixed a
+// bug. Increments retry_count + records the new outcome.
+//
+//	POST /api/admin/webhooks/:id/replay
+func (h *WebhookHandler) Replay(c *gin.Context) {
+	id := c.Param("id")
+	var event models.WebhookEvent
+	if err := h.DB.First(&event, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": gin.H{"code": "NOT_FOUND", "message": "webhook event not found"},
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+
+	dispatchErr := webhooks.Dispatch(c.Request.Context(), &event)
+	now := time.Now()
+	updates := map[string]interface{}{
+		"retry_count":  event.RetryCount + 1,
+		"processed_at": &now,
+	}
+	if dispatchErr == nil {
+		updates["status"] = "processed"
+		updates["handler_error"] = ""
+	} else {
+		updates["status"] = "failed"
+		updates["handler_error"] = dispatchErr.Error()
+	}
+	if err := h.DB.Model(&event).Updates(updates).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+	if dispatchErr != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"status":        "failed",
+			"handler_error": dispatchErr.Error(),
+			"retry_count":   event.RetryCount + 1,
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "processed", "retry_count": event.RetryCount + 1})
+}
+
+// flattenHeaders turns http.Header (multi-value) into a single-value
+// map for the Verify / Extract callbacks. Keeps the framework API
+// simple — nobody needs the multi-value form for webhook signing.
+func flattenHeaders(h http.Header) map[string]string {
+	out := make(map[string]string, len(h))
+	for k, v := range h {
+		if len(v) > 0 {
+			out[k] = v[0]
+		}
+	}
+	return out
+}
+
+// Dispatch is exposed so app code can fire a synthetic event in tests.
+var _ = context.Background
+var _ = fmt.Sprint
+`
+}
+
 func apiActivityMiddlewareGo() string {
 	return `package middleware
 
@@ -4415,6 +5016,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/services"
 	"` + "{{MODULE}}" + `/internal/storage"
 	"` + "{{MODULE}}" + `/internal/sync"
+	"` + "{{MODULE}}" + `/internal/webhooks"
 )
 
 // Services holds all Phase 4 services for dependency injection.
@@ -4595,6 +5197,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		Issuer:      cfg.TOTPIssuer,
 	}
 	activityHandler := handlers.NewActivityHandler(db)
+	webhookHandler := handlers.NewWebhookHandler(db)
+	webhooks.Setup(db)
 	realtimeHub := realtime.NewHub()
 	realtimeHandler := handlers.NewRealtimeHandler(realtimeHub, authService)
 	_ = realtimeHub // available to handlers/services that want to push events
@@ -4621,6 +5225,12 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// WebSocket: realtime hub. Auth via ?token=<jwt> on the handshake
 	// because browsers can't set custom headers on WS upgrade.
 	r.GET("/api/ws", realtimeHandler.Connect)
+
+	// Public webhook receiver — no auth on the route itself; each
+	// provider's signature verification is the real auth boundary.
+	// POST /webhooks/:provider routes to whatever was registered via
+	// webhooks.Register(...) at app boot.
+	r.POST("/webhooks/:provider", webhookHandler.Receive)
 
 	// Public Grit UI component registry (shadcn-compatible)
 	r.GET("/r.json", uiRegistryHandler.GetRegistry)
@@ -4721,6 +5331,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// Activity audit log + tamper-evident chain verification
 		admin.GET("/admin/activity", activityHandler.List)
 		admin.GET("/admin/activity/integrity", activityHandler.VerifyIntegrity)
+
+		// Webhook receiver admin (review + replay failed events)
+		admin.GET("/admin/webhooks", webhookHandler.List)
+		admin.POST("/admin/webhooks/:id/replay", webhookHandler.Replay)
 
 		// Admin system routes
 		admin.GET("/admin/jobs/stats", jobsHandler.Stats)

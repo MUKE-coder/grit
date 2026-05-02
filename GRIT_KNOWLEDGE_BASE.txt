@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.19.0
+Version: 3.20.0
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -898,7 +898,34 @@ When users ask about learning Grit:
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.19.0 (Current):
+v3.20.0 (Current):
+  - Webhook receiver framework (#57). Wiring up Stripe / GitHub /
+    WhatsApp / any HMAC-signed webhook is now <10 lines.
+  - New internal/webhooks package: Register(name, Provider) +
+    On(provider, event, handler). One universal HTTP entry at
+    POST /webhooks/:provider routes by path param to whatever the app
+    registered at boot.
+  - Shipped verifiers: HMACVerifier(header) for generic HMAC-SHA256;
+    StripeVerifier (timestamp + v1 signature, 5-min replay window);
+    GitHubVerifier (X-Hub-Signature-256). Roll your own VerifyFunc
+    for anything weirder.
+  - Shipped extractors: JSONFieldExtractor("type", "id") for
+    Stripe-shaped {type, id} envelopes; StripeExtractor (alias);
+    GitHubExtractor reads X-GitHub-Event + X-GitHub-Delivery headers.
+  - WebhookEvent model persists every received event with a unique
+    index on (provider, external_id). Duplicate deliveries become
+    no-op skipped entries — Stripe retries can hammer freely without
+    double-processing.
+  - Lifecycle: pending -> processed | failed | skipped. Failed
+    handlers stay in the table; admin can replay them.
+  - Admin endpoints: GET /api/admin/webhooks (paginated list with
+    provider/status filters), POST /api/admin/webhooks/:id/replay
+    (re-run handler, increments retry_count, records new outcome).
+  - Failed handlers don't 500 the provider — we already persisted the
+    event, so we always 200 once verified. Provider doesn't retry
+    forever; ops replays via the admin endpoint when a fix lands.
+
+v3.19.0:
   - Tamper-evident audit log via append-only hash chain (#48). Builds
     on the v3.16 ActivityLog — each row now carries PrevHash + Hash
     columns; Hash = SHA-256(PrevHash || canonical(row)). Mutating any

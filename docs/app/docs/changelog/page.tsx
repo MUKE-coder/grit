@@ -28,6 +28,129 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.20.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.20.0
+                </span>
+                <span className="text-sm text-muted-foreground">May 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  Webhook receiver framework (
+                  <a className="text-primary hover:underline" href="https://github.com/MUKE-coder/grit/issues/57" target="_blank" rel="noopener noreferrer">#57</a>).
+                  Wiring up Stripe / GitHub / WhatsApp / any HMAC-signed inbound webhook
+                  is now {'<'}10 lines of app code. Signature verification, idempotency,
+                  failed-handler replay — all framework concerns now.
+                </p>
+
+                <h3>The shape</h3>
+                <pre><code>{`// In your app boot (e.g. internal/webhooks/handlers.go)
+func init() {
+    webhooks.Register("stripe", webhooks.Provider{
+        SecretEnv: "STRIPE_WEBHOOK_SECRET",
+        Verify:    webhooks.StripeVerifier,
+        Extract:   webhooks.StripeExtractor,
+    })
+
+    webhooks.On("stripe", "invoice.paid", func(ctx context.Context, e *models.WebhookEvent) error {
+        // … process the event
+        return nil
+    })
+}`}</code></pre>
+                <p>
+                  The framework already mounted <code>POST /webhooks/:provider</code> in
+                  routes — the path param picks the registered provider. No per-provider
+                  routing code in your app.
+                </p>
+
+                <h3>Pipeline</h3>
+                <ol>
+                  <li>Route hits → look up provider (404 if unknown).</li>
+                  <li>Read raw body + headers.</li>
+                  <li>
+                    <code>provider.Verify(secret, body, headers)</code> — 401 on signature
+                    mismatch.
+                  </li>
+                  <li>
+                    <code>provider.Extract(body, headers)</code> returns{' '}
+                    <code>(eventType, externalID)</code>.
+                  </li>
+                  <li>
+                    Insert into <code>webhook_events</code> — UNIQUE on{' '}
+                    <code>(provider, external_id)</code> means duplicate deliveries
+                    become <code>status=skipped</code> no-ops.
+                  </li>
+                  <li>
+                    <code>webhooks.Dispatch(ctx, event)</code> runs the registered handler
+                    for <code>(provider, eventType)</code>, falling back to a catch-all{' '}
+                    <code>""</code> handler if no specific match.
+                  </li>
+                  <li>
+                    Handler success → <code>status=processed</code>; handler error →{' '}
+                    <code>status=failed</code> + <code>handler_error</code> recorded.
+                    Provider always gets <code>200</code> once we persisted the event,
+                    so retries don't hammer.
+                  </li>
+                </ol>
+
+                <h3>Shipped verifiers</h3>
+                <ul>
+                  <li>
+                    <code>HMACVerifier(header)</code> — generic hex HMAC-SHA256 in a
+                    named header. Most simple partners use this.
+                  </li>
+                  <li>
+                    <code>StripeVerifier</code> — Stripe's <code>t=...,v1=...</code>{' '}
+                    scheme with 5-minute replay tolerance.
+                  </li>
+                  <li>
+                    <code>GitHubVerifier</code> — GitHub's <code>X-Hub-Signature-256: sha256=...</code>{' '}
+                    header.
+                  </li>
+                  <li>
+                    Roll your own <code>VerifyFunc</code> for anything else — it's just{' '}
+                    <code>func(secret string, body []byte, headers map[string]string) error</code>.
+                  </li>
+                </ul>
+
+                <h3>Shipped extractors</h3>
+                <ul>
+                  <li>
+                    <code>JSONFieldExtractor("type", "id")</code> — pulls top-level fields
+                    from the JSON body. The most common shape (Stripe-style envelopes).
+                  </li>
+                  <li>
+                    <code>GitHubExtractor</code> — reads <code>X-GitHub-Event</code> +{' '}
+                    <code>X-GitHub-Delivery</code> headers.
+                  </li>
+                </ul>
+
+                <h3>Admin endpoints</h3>
+                <ul>
+                  <li>
+                    <code>GET /api/admin/webhooks?provider=stripe&status=failed</code> —
+                    paginated list with the standard envelope. Filters: provider, status.
+                  </li>
+                  <li>
+                    <code>POST /api/admin/webhooks/:id/replay</code> — re-runs the
+                    handler for an existing event. Increments <code>retry_count</code>{' '}
+                    and records the new outcome. Use this after a deploy fixes a
+                    handler bug.
+                  </li>
+                </ul>
+
+                <p className="text-sm text-muted-foreground">
+                  Pairs naturally with the v3.10 idempotency middleware — both are
+                  &quot;safe replay&quot; primitives, just on different sides of the
+                  network. Outbound retries reuse <code>Idempotency-Key</code>; inbound
+                  duplicates dedupe on <code>(provider, external_id)</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.19.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
