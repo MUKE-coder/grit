@@ -29,7 +29,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto flex flex-col items-center text-center pt-24 pb-20 md:pt-36 md:pb-28 px-6">
           <div className="flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 mb-8">
             <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-            <span className="text-xs font-mono font-medium text-primary/80 tracking-wide">v3.5 — 5 ARCHITECTURES, 2 FRONTENDS</span>
+            <span className="text-xs font-mono font-medium text-primary/80 tracking-wide">v3.21 — OFFLINE-FIRST · AUDIT CHAIN · FEATURE FLAGS</span>
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-foreground mb-6 leading-[1.1]">
@@ -41,7 +41,8 @@ export default function HomePage() {
 
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
             One CLI scaffolds your entire application — Go API, React frontend, admin panel,
-            auth, file uploads, background jobs, and more. Choose your architecture. Ship fast.
+            auth, offline-first desktop, audit log, feature flags, webhook receiver, and more.
+            Choose your architecture. Ship fast.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 mb-16">
@@ -70,9 +71,9 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center stagger-children">
             {[
               { number: '5', label: 'Architecture Modes', sub: 'single, double, triple, api, mobile' },
-              { number: '21', label: 'CLI Commands', sub: 'scaffold, generate, deploy, routes...' },
+              { number: '24', label: 'CLI Commands', sub: 'scaffold, generate, init, deploy...' },
               { number: '100+', label: 'UI Components', sub: 'shadcn-compatible registry' },
-              { number: '10', label: 'Official Plugins', sub: 'websockets, stripe, oauth...' },
+              { number: 'v3.21', label: 'Latest Release', sub: 'feature flags + A/B testing' },
             ].map((stat) => (
               <div key={stat.label}>
                 <div className="text-4xl md:text-5xl font-bold text-foreground mb-1 animate-count">{stat.number}</div>
@@ -299,6 +300,102 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
         </div>
       </section>
 
+      {/* ═══ OPS-GRADE PRIMITIVES ═══ */}
+      <section className="py-24 px-6 border-t border-border/40">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">New in v3.10–v3.21</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Ops-grade primitives</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Reliability, auditability, and rollout control — usually a year of integration work — wired into every scaffolded project.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Offline-first */}
+            <div className="lg:col-span-2 rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                  <svg className="h-5 w-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><line x1="12" y1="20" x2="12.01" y2="20" /></svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Offline-first desktop sync</h3>
+                  <p className="text-xs text-muted-foreground">Git-style: work locally → click Sync → resolve conflicts → push</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                Local SQLite mirror + outbox with squash semantics. Manual Sync button.
+                Field-level conflict dialog when the server moved on. Versioned writes with
+                optimistic-lock. <Link href="/docs/desktop/offline" className="text-primary hover:underline">Read the guide →</Link>
+              </p>
+              <code className="text-xs text-primary/80 font-mono bg-primary/5 px-2 py-1 rounded">
+                grit new app --triple --vite --desktop
+              </code>
+            </div>
+
+            {/* Audit + chain */}
+            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300">
+              <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-4">
+                <svg className="h-5 w-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /><ellipse cx="12" cy="5" rx="9" ry="3" /></svg>
+              </div>
+              <h3 className="font-semibold text-foreground mb-2">Tamper-evident audit log</h3>
+              <p className="text-sm text-muted-foreground mb-2">
+                Every authenticated mutation auto-logged. SHA-256 hash chain proves the log
+                wasn&apos;t edited via SQL.
+              </p>
+              <code className="text-[11px] text-primary/80 font-mono">GET /admin/activity/integrity</code>
+            </div>
+
+            {/* Feature flags */}
+            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300">
+              <div className="h-10 w-10 rounded-lg bg-violet-500/10 flex items-center justify-center mb-4">
+                <svg className="h-5 w-5 text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></svg>
+              </div>
+              <h3 className="font-semibold text-foreground mb-2">Feature flags + A/B</h3>
+              <p className="text-sm text-muted-foreground mb-2">
+                In-memory engine, sticky bucketing, percentage rollouts, allow/blocklists,
+                realtime push when admin toggles.
+              </p>
+              <code className="text-[11px] text-primary/80 font-mono">flags.IsEnabled(c, &quot;new_ui&quot;)</code>
+            </div>
+
+            {/* Webhook receiver */}
+            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300">
+              <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center mb-4">
+                <svg className="h-5 w-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2" /><path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06" /><path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8" /></svg>
+              </div>
+              <h3 className="font-semibold text-foreground mb-2">Webhook receiver</h3>
+              <p className="text-sm text-muted-foreground mb-2">
+                Stripe / GitHub / HMAC verifiers shipped. Auto-dedupe on (provider, external_id).
+                Failed handlers replay from admin.
+              </p>
+              <code className="text-[11px] text-primary/80 font-mono">webhooks.On(&quot;stripe&quot;, ...)</code>
+            </div>
+
+            {/* Realtime + idempotency — wider card */}
+            <div className="lg:col-span-2 rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 rounded-lg bg-rose-500/10 flex items-center justify-center">
+                  <svg className="h-5 w-5 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Realtime hub + Idempotency-Key + PDF + CSV/Excel export</h3>
+                  <p className="text-xs text-muted-foreground">All the &quot;every business app needs this&quot; primitives, baked in</p>
+                </div>
+              </div>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-muted-foreground">
+                <li>• <strong className="text-foreground/80">WebSocket fan-out hub</strong> at <code className="text-primary text-xs">GET /api/ws</code> — SendToUser / Broadcast helpers</li>
+                <li>• <strong className="text-foreground/80">Idempotency-Key</strong> auto-attached on POST/PUT/PATCH/DELETE — 24h dedup</li>
+                <li>• <strong className="text-foreground/80">PDF generation</strong> (<code className="text-primary text-xs">internal/pdf</code>) with worked Invoice template</li>
+                <li>• <strong className="text-foreground/80">CSV / Excel export</strong> auto-emitted per resource (<code className="text-primary text-xs">/export?format=xlsx</code>)</li>
+                <li>• <strong className="text-foreground/80">Cursor-based pagination</strong> opt-in for List endpoints — sticky pages</li>
+                <li>• <strong className="text-foreground/80">Verbose AutoMigrate</strong> with column-level diff on every boot</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ═══ COMPARISON TABLE ═══ */}
       <section className="py-24 px-6 border-t border-border/40">
         <div className="max-w-5xl mx-auto">
@@ -332,6 +429,10 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
                   { feature: 'One-Command Deploy', grit: true, next: false, laravel: false, goravel: true },
                   { feature: 'Multiple Architectures', grit: true, next: false, laravel: false, goravel: false },
                   { feature: 'Desktop App', grit: true, next: false, laravel: false, goravel: false },
+                  { feature: 'Offline-First Sync', grit: true, next: false, laravel: false, goravel: false },
+                  { feature: 'Audit Log + Hash Chain', grit: true, next: false, laravel: false, goravel: false },
+                  { feature: 'Feature Flags', grit: true, next: false, laravel: false, goravel: false },
+                  { feature: 'Webhook Receiver', grit: true, next: false, laravel: 'partial', goravel: false },
                 ].map((row) => (
                   <tr key={row.feature} className="hover:bg-accent/20 transition-colors">
                     <td className="px-5 py-3 font-medium text-foreground/90 text-[13px]">{row.feature}</td>

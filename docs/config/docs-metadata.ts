@@ -421,6 +421,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Generate full-stack CRUD resources for desktop apps. Models, services, TanStack Router route files, and 10 automatic code injections.',
   },
+  '/docs/desktop/offline': {
+    title: 'Building an Offline-First Desktop App',
+    description:
+      'Use Grit\'s built-in sync engine to ship desktop apps that work fully offline. Local SQLite mirror, outbox with squash semantics, manual Sync button, field-level conflict resolution, versioned writes — Git workflow applied to your data.',
+  },
   '/docs/desktop/building': {
     title: 'Building & Distribution',
     description:

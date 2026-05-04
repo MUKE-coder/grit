@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Globe, Monitor, Smartphone, Clock, ArrowRight, BookOpen, Zap, Server, Dumbbell, ShoppingCart, FileText, Shield, Activity, Database, Code2, Rocket, Bot, Receipt, TestTube2, HardDrive, MessageSquare, CreditCard, Newspaper, GitBranch, Wrench, Palette } from "lucide-react"
+import { Globe, Monitor, Smartphone, Clock, ArrowRight, BookOpen, Zap, Server, Dumbbell, ShoppingCart, FileText, Shield, Activity, Database, Code2, Rocket, Bot, Receipt, TestTube2, HardDrive, MessageSquare, CreditCard, Newspaper, GitBranch, Wrench, Palette, Wifi, ShieldCheck, Flag, Cable, Layers, FileSpreadsheet } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import type { Metadata } from "next"
 
@@ -52,12 +52,13 @@ const categories: CourseCategory[] = [
     subtitle: "Building Desktop Applications",
     icon: Monitor,
     href: "/courses/grit-desktop",
-    courseCount: 5,
-    totalTime: "~2.5 hours",
+    courseCount: 6,
+    totalTime: "~3 hours",
     courses: [
       "Your First Desktop App",
       "Desktop CRUD & Data",
       "Custom UI & Theming",
+      "Offline-First with Sync Engine",
       "PDF & Excel Export",
       "Build & Distribution",
     ],
@@ -80,6 +81,12 @@ const categories: CourseCategory[] = [
 ]
 
 const standaloneCourses = [
+  { title: "Offline-First Desktop", subtitle: "Local SQLite + outbox + Git-style sync", href: "/docs/desktop/offline", icon: Wifi, duration: "30 min" },
+  { title: "Audit Log + Hash Chain", subtitle: "Tamper-evident activity tracking for SOC2", href: "/courses/audit-log", icon: ShieldCheck, duration: "30 min" },
+  { title: "Feature Flags & A/B Testing", subtitle: "Sticky bucketing, percentage rollouts, realtime push", href: "/courses/feature-flags", icon: Flag, duration: "30 min" },
+  { title: "Webhook Receiver", subtitle: "Stripe / GitHub / HMAC verifiers + replay", href: "/courses/webhook-receiver", icon: Cable, duration: "30 min" },
+  { title: "CSV / Excel Export", subtitle: "Auto-generated per resource via grit generate", href: "/courses/export", icon: FileSpreadsheet, duration: "30 min" },
+  { title: "Realtime + WebSocket Hub", subtitle: "SendToUser, Broadcast, useRealtimeEvent", href: "/courses/realtime-chat", icon: Layers, duration: "30 min" },
   { title: "Batteries Included", subtitle: "Every feature that ships with Grit", href: "/courses/batteries", icon: Zap, duration: "30 min" },
   { title: "API-Only Masterclass", subtitle: "Build & deploy a REST API with Go", href: "/courses/api-masterclass", icon: Server, duration: "30 min" },
   { title: "Build a Fitness App", subtitle: "Go API + Expo React Native", href: "/courses/mobile-fitness-app", icon: Dumbbell, duration: "30 min" },

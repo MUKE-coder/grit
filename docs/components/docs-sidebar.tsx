@@ -191,6 +191,7 @@ const navItems: NavItem[] = [
       { title: 'Your First Desktop App', href: '/docs/desktop/first-app' },
       { title: 'Build a POS App', href: '/docs/desktop/pos-app' },
       { title: 'Resource Generation', href: '/docs/desktop/resource-generation' },
+      { title: 'Offline-First Apps', href: '/docs/desktop/offline' },
       { title: 'Building & Distribution', href: '/docs/desktop/building' },
       { title: '20 Project Ideas', href: '/docs/desktop/project-ideas' },
       { title: 'LLM Reference', href: '/docs/desktop/llm-reference' },

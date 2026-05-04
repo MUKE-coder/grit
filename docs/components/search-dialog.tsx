@@ -23,6 +23,8 @@ import {
   Lightbulb,
   Wand2,
   FileText,
+  Monitor,
+  Plug,
 } from 'lucide-react'
 
 interface SearchItem {
@@ -103,6 +105,20 @@ const searchIndex: SearchItem[] = [
   // AI Workflows
   { title: 'Using Grit with Claude', href: '/docs/ai-workflows/claude', section: 'AI Workflows', keywords: 'claude code ai spec workflow plan build prompt project description phases' },
   { title: 'Using Grit with Antigravity', href: '/docs/ai-workflows/antigravity', section: 'AI Workflows', keywords: 'antigravity cursor ide ai spec workflow plan build composer inline' },
+
+  // Desktop (Wails)
+  { title: 'Desktop Overview', href: '/docs/desktop', section: 'Desktop (Wails)', keywords: 'desktop wails native overview windows macos linux electron' },
+  { title: 'Desktop Getting Started', href: '/docs/desktop/getting-started', section: 'Desktop (Wails)', keywords: 'desktop install wails prerequisites setup new-desktop' },
+  { title: 'Your First Desktop App', href: '/docs/desktop/first-app', section: 'Desktop (Wails)', keywords: 'desktop first app tutorial wails dev hello hands on' },
+  { title: 'Build a POS App', href: '/docs/desktop/pos-app', section: 'Desktop (Wails)', keywords: 'desktop pos point of sale tutorial wails inventory receipts sales transactions' },
+  { title: 'Desktop Resource Generation', href: '/docs/desktop/resource-generation', section: 'Desktop (Wails)', keywords: 'desktop generate resource wails crud model service tanstack injection' },
+  { title: 'Offline-First Desktop Apps', href: '/docs/desktop/offline', section: 'Desktop (Wails)', keywords: 'offline desktop sync local sqlite outbox conflict resolution wails git push pull versioned mirror' },
+  { title: 'Building & Distribution', href: '/docs/desktop/building', section: 'Desktop (Wails)', keywords: 'desktop build distribution wails package executable nsis installer cross compile' },
+  { title: '20 Desktop Project Ideas', href: '/docs/desktop/project-ideas', section: 'Desktop (Wails)', keywords: 'desktop project ideas examples inspiration 20 wails grit' },
+  { title: 'Desktop LLM Reference', href: '/docs/desktop/llm-reference', section: 'Desktop (Wails)', keywords: 'desktop llm ai reference assistant wails complete cheat sheet' },
+
+  // Plugins
+  { title: 'Plugins Overview', href: '/docs/plugins', section: 'Plugins', keywords: 'plugins extensions websockets stripe oauth grit-websockets grit-stripe grit-oauth packages' },
 ]
 
 const sectionIcons: Record<string, React.ReactNode> = {
@@ -117,6 +133,8 @@ const sectionIcons: Record<string, React.ReactNode> = {
   'Tutorials': <BookOpen className="h-3.5 w-3.5" />,
   'For AI Assistants': <Lightbulb className="h-3.5 w-3.5" />,
   'AI Workflows': <Wand2 className="h-3.5 w-3.5" />,
+  'Desktop (Wails)': <Monitor className="h-3.5 w-3.5" />,
+  'Plugins': <Plug className="h-3.5 w-3.5" />,
 }
 
 export function SearchDialog() {
