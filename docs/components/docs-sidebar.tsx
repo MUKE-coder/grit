@@ -57,6 +57,7 @@ const navItems: NavItem[] = [
     icon: <Rocket className="h-3.5 w-3.5" />,
     items: [
       { title: 'Introduction', href: '/docs' },
+      { title: 'Stack Selector — Pick a Combo', href: '/docs/stack-selector' },
       { title: 'Philosophy & Inspiration', href: '/docs/getting-started/philosophy' },
       { title: 'Quick Start', href: '/docs/getting-started/quick-start' },
       { title: 'Your First App', href: '/docs/tutorials/contact-app' },

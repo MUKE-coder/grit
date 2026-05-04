@@ -39,14 +39,21 @@ export function SiteHeader() {
         <nav className="hidden md:flex items-center gap-1">
           {[
             { label: 'Docs', href: '/docs' },
+            { label: 'Stack Selector', href: '/docs/stack-selector', highlight: true },
+            { label: 'Tutorials', href: '/docs/tutorials/learn' },
             { label: 'Components', href: '/docs/admin/resources' },
             { label: 'Courses', href: '/courses' },
+            { label: 'Changelog', href: '/docs/changelog' },
             { label: 'Showcase', href: '/showcase' },
           ].map((item) => (
             <Link
               key={item.label}
               href={item.href}
-              className="px-3 py-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
+              className={
+                item.highlight
+                  ? 'px-3 py-1.5 text-[13px] font-medium text-primary hover:text-primary/80 transition-colors'
+                  : 'px-3 py-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors'
+              }
             >
               {item.label}
             </Link>

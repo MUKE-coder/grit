@@ -36,13 +36,16 @@ interface SearchItem {
 
 const searchIndex: SearchItem[] = [
   // Getting Started
-  { title: 'Introduction', href: '/docs', section: 'Getting Started', keywords: 'overview what is grit start begin' },
-  { title: 'Philosophy & Inspiration', href: '/docs/getting-started/philosophy', section: 'Getting Started', keywords: 'why design decisions laravel rails' },
-  { title: 'Quick Start', href: '/docs/getting-started/quick-start', section: 'Getting Started', keywords: 'setup first project tutorial begin hello' },
-  { title: 'Installation', href: '/docs/getting-started/installation', section: 'Getting Started', keywords: 'install go node pnpm setup requirements' },
-  { title: 'Project Structure', href: '/docs/getting-started/project-structure', section: 'Getting Started', keywords: 'folders files directory layout monorepo apps' },
-  { title: 'Configuration', href: '/docs/getting-started/configuration', section: 'Getting Started', keywords: 'env config environment variables settings' },
-  { title: 'Troubleshooting', href: '/docs/getting-started/troubleshooting', section: 'Getting Started', keywords: 'errors fix debug issues problems help' },
+  { title: 'Introduction', href: '/docs', section: 'Getting Started', keywords: 'overview what is grit start begin home introduction welcome' },
+  { title: 'Stack Selector — Pick a Combo', href: '/docs/stack-selector', section: 'Getting Started', keywords: 'choose stack combo architecture which what should I pick build single double triple api mobile desktop offline web portal saas internal tool dashboard kitchen sink multi-platform decision tree recommendation capability matrix vite next nextjs tanstack' },
+  { title: 'Philosophy & Inspiration', href: '/docs/getting-started/philosophy', section: 'Getting Started', keywords: 'why design decisions laravel rails inspiration manifesto principles' },
+  { title: 'Quick Start', href: '/docs/getting-started/quick-start', section: 'Getting Started', keywords: 'setup first project tutorial begin hello new install run dev' },
+  { title: 'Installation', href: '/docs/getting-started/installation', section: 'Getting Started', keywords: 'install go node pnpm setup requirements prerequisites cli go install brew' },
+  { title: 'Project Structure', href: '/docs/getting-started/project-structure', section: 'Getting Started', keywords: 'folders files directory layout monorepo apps tree organization' },
+  { title: 'Configuration', href: '/docs/getting-started/configuration', section: 'Getting Started', keywords: 'env config environment variables settings dotenv' },
+  { title: 'Troubleshooting', href: '/docs/getting-started/troubleshooting', section: 'Getting Started', keywords: 'errors fix debug issues problems help broken stuck' },
+  { title: 'Create without Docker', href: '/docs/getting-started/create-without-docker', section: 'Getting Started', keywords: 'no docker without docker sqlite minimal setup local' },
+  { title: 'CLI Cheatsheet', href: '/docs/getting-started/cli-cheatsheet', section: 'Getting Started', keywords: 'cli commands cheatsheet reference grit new generate sync migrate seed' },
 
   // Core Concepts
   { title: 'Architecture Overview', href: '/docs/concepts/architecture', section: 'Core Concepts', keywords: 'design monorepo api frontend shared structure' },
@@ -53,15 +56,15 @@ const searchIndex: SearchItem[] = [
   { title: 'Style Variants', href: '/docs/concepts/styles', section: 'Core Concepts', keywords: 'style variant theme modern minimal glass default auth dashboard layout design' },
 
   // Backend
-  { title: 'Models & Database', href: '/docs/backend/models', section: 'Backend (Go API)', keywords: 'gorm model struct database table fields columns' },
-  { title: 'Handlers', href: '/docs/backend/handlers', section: 'Backend (Go API)', keywords: 'api endpoint handler controller request response gin' },
-  { title: 'Services', href: '/docs/backend/services', section: 'Backend (Go API)', keywords: 'business logic service layer repository' },
-  { title: 'Middleware', href: '/docs/backend/middleware', section: 'Backend (Go API)', keywords: 'auth cors logger rate limit middleware' },
-  { title: 'Authentication', href: '/docs/backend/authentication', section: 'Backend (Go API)', keywords: 'jwt login register auth token password' },
-  { title: 'API Response Format', href: '/docs/backend/response-format', section: 'Backend (Go API)', keywords: 'json response error pagination format api' },
-  { title: 'Migrations', href: '/docs/backend/migrations', section: 'Backend (Go API)', keywords: 'migrate database schema table create alter fresh' },
-  { title: 'Seeders', href: '/docs/backend/seeders', section: 'Backend (Go API)', keywords: 'seed data demo users populate database initial' },
-  { title: 'RBAC & Roles', href: '/docs/backend/rbac', section: 'Backend (Go API)', keywords: 'roles rbac admin editor user permissions access control' },
+  { title: 'Models & Database', href: '/docs/backend/models', section: 'Backend (Go API)', keywords: 'gorm model struct database table fields columns version belongsto manytomany uuid pk' },
+  { title: 'Handlers', href: '/docs/backend/handlers', section: 'Backend (Go API)', keywords: 'api endpoint handler controller request response gin paginate list' },
+  { title: 'Services', href: '/docs/backend/services', section: 'Backend (Go API)', keywords: 'business logic service layer repository getByID update delete' },
+  { title: 'Middleware', href: '/docs/backend/middleware', section: 'Backend (Go API)', keywords: 'auth cors logger rate limit middleware idempotency activity audit cache gzip security headers' },
+  { title: 'Authentication', href: '/docs/backend/authentication', section: 'Backend (Go API)', keywords: 'jwt login register auth token password 2fa totp oauth google github trusted devices backup codes refresh' },
+  { title: 'API Response Format', href: '/docs/backend/response-format', section: 'Backend (Go API)', keywords: 'json response error pagination format api envelope respond meta data message error code apiErrorMessage' },
+  { title: 'Migrations', href: '/docs/backend/migrations', section: 'Backend (Go API)', keywords: 'migrate database schema table create alter fresh automigrate column diff verbose' },
+  { title: 'Seeders', href: '/docs/backend/seeders', section: 'Backend (Go API)', keywords: 'seed data demo users populate database initial fixtures' },
+  { title: 'RBAC & Roles', href: '/docs/backend/rbac', section: 'Backend (Go API)', keywords: 'roles rbac admin editor user permissions access control require role middleware' },
 
   // Admin Panel
   { title: 'Admin Overview', href: '/docs/admin/overview', section: 'Admin Panel', keywords: 'admin panel dashboard overview filament' },
@@ -72,17 +75,25 @@ const searchIndex: SearchItem[] = [
   { title: 'Dashboard & Widgets', href: '/docs/admin/widgets', section: 'Admin Panel', keywords: 'dashboard stats chart widget cards analytics' },
 
   // Frontend
-  { title: 'Web App', href: '/docs/frontend/web-app', section: 'Frontend (Next.js)', keywords: 'nextjs react web app pages routes components' },
-  { title: 'React Query Hooks', href: '/docs/frontend/hooks', section: 'Frontend (Next.js)', keywords: 'react query hooks tanstack fetch data mutation cache' },
-  { title: 'Shared Package', href: '/docs/frontend/shared-package', section: 'Frontend (Next.js)', keywords: 'shared types schemas constants zod validation' },
+  { title: 'Web App', href: '/docs/frontend/web-app', section: 'Frontend (Next.js)', keywords: 'nextjs react web app pages routes components vite tanstack router' },
+  { title: 'React Query Hooks', href: '/docs/frontend/hooks', section: 'Frontend (Next.js)', keywords: 'react query hooks tanstack fetch data mutation cache useQuery useMutation' },
+  { title: 'Shared Package', href: '/docs/frontend/shared-package', section: 'Frontend (Next.js)', keywords: 'shared types schemas constants zod validation packages monorepo apiErrorMessage' },
 
   // Batteries
-  { title: 'File Storage', href: '/docs/batteries/storage', section: 'Batteries', keywords: 's3 minio upload file image storage cloudflare r2' },
-  { title: 'Email System', href: '/docs/batteries/email', section: 'Batteries', keywords: 'email resend mail template send smtp' },
-  { title: 'Background Jobs', href: '/docs/batteries/jobs', section: 'Batteries', keywords: 'jobs queue background worker asynq redis async' },
+  { title: 'File Storage', href: '/docs/batteries/storage', section: 'Batteries', keywords: 's3 minio upload file image storage cloudflare r2 presigned url thumbnail' },
+  { title: 'Email System', href: '/docs/batteries/email', section: 'Batteries', keywords: 'email resend mail template send smtp transactional html' },
+  { title: 'Background Jobs', href: '/docs/batteries/jobs', section: 'Batteries', keywords: 'jobs queue background worker asynq redis async dlq retry' },
   { title: 'Cron Scheduler', href: '/docs/batteries/cron', section: 'Batteries', keywords: 'cron schedule periodic task timer recurring' },
   { title: 'Redis Caching', href: '/docs/batteries/caching', section: 'Batteries', keywords: 'redis cache middleware ttl performance' },
-  { title: 'AI Integration', href: '/docs/batteries/ai', section: 'Batteries', keywords: 'ai claude openai gemini llm chat stream completion' },
+  { title: 'AI Integration', href: '/docs/batteries/ai', section: 'Batteries', keywords: 'ai claude openai gemini llm chat stream completion sonnet anthropic gateway' },
+  { title: 'Idempotency Middleware', href: '/docs/backend/middleware', section: 'Batteries', keywords: 'idempotency idempotency-key safe retry replay 24h cache stripe-style middleware unsafe methods POST PUT PATCH DELETE' },
+  { title: 'Activity Log + Hash Chain', href: '/docs/backend/middleware', section: 'Batteries', keywords: 'activity log audit trail tamper evident hash chain sha256 SOC2 mutation tracking compliance integrity verification' },
+  { title: 'Feature Flags + A/B Testing', href: '/docs/backend/middleware', section: 'Batteries', keywords: 'feature flags ab testing rollout percentage allowlist blocklist sticky bucketing variants launchdarkly posthog kill switch experiments' },
+  { title: 'Webhook Receiver', href: '/docs/backend/middleware', section: 'Batteries', keywords: 'webhook receiver inbound stripe github twilio whatsapp signature verification HMAC verify replay deduplication' },
+  { title: 'Realtime WebSocket Hub', href: '/docs/backend/middleware', section: 'Batteries', keywords: 'realtime websocket hub broadcast SendToUser fan-out chat notifications useRealtimeEvent' },
+  { title: 'PDF Generation', href: '/docs/batteries/storage', section: 'Batteries', keywords: 'pdf generation invoice receipt lease fpdf go-pdf doc primitives header table totals' },
+  { title: 'CSV / Excel Export', href: '/docs/batteries/storage', section: 'Batteries', keywords: 'csv excel xlsx export resource download streaming excelize' },
+  { title: 'Cursor-based Pagination', href: '/docs/backend/response-format', section: 'Batteries', keywords: 'cursor pagination offset paginate next_cursor has_more sticky pages stable' },
 
   // Infrastructure
   { title: 'Docker Setup', href: '/docs/infrastructure/docker', section: 'Infrastructure', keywords: 'docker compose container postgresql redis minio' },

@@ -17,6 +17,11 @@ export const docsMetadata: Record<string, DocPage> = {
   },
 
   // Getting Started
+  '/docs/stack-selector': {
+    title: 'Stack Selector — Pick the Right Grit Combo',
+    description:
+      'Eleven Grit architecture combos with use cases, exact commands, trade-offs, and a capability matrix. Helps humans (and AI assistants) pick the right scaffold for what they\'re building — web portal, offline desktop, multi-platform, API only, and everything in between.',
+  },
   '/docs/getting-started/installation': {
     title: 'Installation',
     description:
