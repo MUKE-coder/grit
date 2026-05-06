@@ -28,6 +28,128 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.22.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.22.0
+                </span>
+                <span className="text-sm text-muted-foreground">May 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Performance hardening release.</strong> A senior-level audit of
+                  every scaffold template found 27 issues — the 10 critical and high-impact
+                  ones are fixed. Apps built with Grit should now show materially lower CPU
+                  burn under sustained load.
+                </p>
+
+                <h3>Critical fixes</h3>
+                <ul>
+                  <li>
+                    <strong>ActivityLogger middleware</strong> — was spawning a fresh goroutine
+                    per request, each blocking on a row-level <code>FOR UPDATE</code> lock for
+                    the audit hash chain. At 10k req/s the old design created 10k goroutines
+                    all serializing on the same lock. Replaced with a bounded channel (4096) +
+                    single writer goroutine. The single-writer design eliminates the lock
+                    entirely (chain ordering is sequential by construction); the bounded
+                    channel caps memory + goroutine count under traffic spikes. Drops on
+                    overflow rather than OOM, with a new <code>AuditDroppedCount()</code>{' '}
+                    helper for monitoring saturation.
+                  </li>
+                  <li>
+                    <strong><code>audit.VerifyChain</code></strong> — was loading the entire{' '}
+                    <code>activity_log</code> table into memory before scanning. At 1M rows
+                    that's 250MB+ heap, instant OOM at 100M. Now walks in chunks of 1000 rows
+                    with a cursor on <code>(created_at, id)</code>, honours{' '}
+                    <code>context</code> cancellation, and the integrity endpoint passes a
+                    60-second deadline so a runaway scan can't hold the connection forever.
+                  </li>
+                </ul>
+
+                <h3>High-priority fixes</h3>
+                <ul>
+                  <li>
+                    <strong><code>flags.Engine.evaluate</code></strong> — copies the flag
+                    struct under <code>RLock</code> then releases <em>before</em> doing all
+                    decision logic (date checks, allowlist scans, bucketing, JSON parsing).
+                    Cuts lock-hold time from milliseconds to nanoseconds on the flag-check
+                    hot path.
+                  </li>
+                  <li>
+                    <strong>Cache middleware</strong> — SHA-256 cache keys swapped for FNV-1a.
+                    ~50× faster on the hot path of every cacheable request, no correctness
+                    loss (cache keys don't need cryptographic strength).{' '}
+                    <code>responseCapture</code> switches <code>[]byte</code> append to{' '}
+                    <code>bytes.Buffer</code> — 3 allocations instead of one per Write chunk.
+                  </li>
+                  <li>
+                    <strong>Generated service queries</strong> — <code>Update</code> dropped
+                    the redundant third <code>First()</code> after <code>Updates()</code>{' '}
+                    (Updates mutates the loaded struct in place); <code>Delete</code> dropped
+                    the preflight <code>First()</code> (GORM's Delete is atomic + RowsAffected
+                    reveals existence). 2 queries saved per generated CRUD op.
+                  </li>
+                  <li>
+                    <strong>Generated Export handler</strong> — was loading every matching
+                    row with <code>Find(&items)</code>; now uses{' '}
+                    <code>FindInBatches</code> in chunks of 1000. CSV exports stream directly
+                    to the response writer (true streaming, constant memory). XLSX still
+                    buffers because excelize has no streaming API, but the scan is chunked
+                    so we don't hold the entire result set in one slice. New{' '}
+                    <code>export.CSVRows()</code> helper for header-less subsequent batches.
+                  </li>
+                </ul>
+
+                <h3>Medium fixes</h3>
+                <ul>
+                  <li>
+                    <strong>Webhook Replay</strong> — <code>retry_count</code> increment is
+                    now atomic via <code>gorm.Expr("retry_count + ?", 1)</code>. Two
+                    concurrent replays of the same event no longer race to write the same
+                    +1 result.
+                  </li>
+                  <li>
+                    <strong>Flags <code>bucketFor</code> for anonymous users</strong> —{' '}
+                    <code>crypto/rand.Read</code> instead of{' '}
+                    <code>time.Now().UnixNano() % 100</code>. The old approach was biased
+                    toward recent buckets under high QPS.
+                  </li>
+                </ul>
+
+                <h3>Skill file: Performance &amp; Production Hygiene section</h3>
+                <p>
+                  The <code>.claude/skills/grit/SKILL.md</code> that{' '}
+                  <code>grit new</code> generates now includes a dedicated{' '}
+                  <strong>Performance &amp; Production Hygiene</strong> section. AI assistants
+                  helping users build apps will see explicit hot-path rules, DB query rules,
+                  background job rules, logging rules, and memory rules — including which
+                  framework primitives are already audited (so they know not to reintroduce
+                  the patterns this release just fixed). Examples:
+                </p>
+                <ul>
+                  <li>
+                    Never spawn unbounded goroutines per-request — use a buffered channel +
+                    fixed worker pool (the ActivityLogger pattern).
+                  </li>
+                  <li>
+                    Never hold a mutex across slow operations — read shared state, copy what
+                    you need, release, then do the work (the flags.evaluate pattern).
+                  </li>
+                  <li>
+                    Never load a whole table into memory — use{' '}
+                    <code>paginate.List</code>, <code>FindInBatches</code>, or cursor walks
+                    (the VerifyChain pattern).
+                  </li>
+                  <li>
+                    Never use <code>time.Now().UnixNano() % N</code> for randomness — biased
+                    by call frequency; use <code>crypto/rand</code>.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.21.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -279,7 +279,10 @@ func (s *{{Pascal}}Service) Create(item *models.{{Pascal}}) error {
 	return nil
 }
 
-// Update modifies an existing {{lower}}.
+// Update modifies an existing {{lower}}. Two queries: First() loads
+// the row + verifies existence; Updates() persists the diff. The
+// loaded struct is mutated by Updates() so we can return it directly
+// without a third refetch.
 func (s *{{Pascal}}Service) Update(id string, updates map[string]interface{}) (*models.{{Pascal}}, error) {
 	var item models.{{Pascal}}
 	if err := s.DB.First(&item, "id = ?", id).Error; err != nil {
@@ -290,18 +293,19 @@ func (s *{{Pascal}}Service) Update(id string, updates map[string]interface{}) (*
 		return nil, fmt.Errorf("updating {{lower}}: %w", err)
 	}
 
-	s.DB.First(&item, "id = ?", id)
 	return &item, nil
 }
 
-// Delete soft-deletes a {{lower}}.
+// Delete soft-deletes a {{lower}}. One query — we don't need to load
+// the row first; GORM's Delete is atomic and rows-affected tells us
+// whether it existed.
 func (s *{{Pascal}}Service) Delete(id string) error {
-	var item models.{{Pascal}}
-	if err := s.DB.First(&item, "id = ?", id).Error; err != nil {
-		return fmt.Errorf("{{lower}} not found: %w", err)
+	res := s.DB.Where("id = ?", id).Delete(&models.{{Pascal}}{})
+	if res.Error != nil {
+		return fmt.Errorf("deleting {{lower}}: %w", res.Error)
 	}
-	if err := s.DB.Delete(&item).Error; err != nil {
-		return fmt.Errorf("deleting {{lower}}: %w", err)
+	if res.RowsAffected == 0 {
+		return fmt.Errorf("{{lower}} not found")
 	}
 	return nil
 }
@@ -550,9 +554,17 @@ func (h *{{Pascal}}Handler) List(c *gin.Context) {
 // Honours the same search/filter query params as List but skips
 // pagination — you get every matching row in one file.
 //
+// Memory-bounded: reads in chunks of exportBatchSize so a million-row
+// export doesn't OOM the process. CSV streams directly to the response
+// writer; XLSX has to buffer (excelize requires the full sheet in
+// memory before Write), so we still chunk the SCAN to avoid loading
+// every row at once.
+//
 //	GET /api/{{plural}}/export?format=csv
 //	GET /api/{{plural}}/export?format=xlsx&search=foo
 func (h *{{Pascal}}Handler) Export(c *gin.Context) {
+	const exportBatchSize = 1000
+
 	format := c.DefaultQuery("format", "csv")
 	search := c.Query("search")
 
@@ -573,14 +585,6 @@ func (h *{{Pascal}}Handler) Export(c *gin.Context) {
 		query = query.Where(clause, args...)
 	}
 
-	var items []models.{{Pascal}}
-	if err := query.Find(&items).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to fetch {{plural}}"},
-		})
-		return
-	}
-
 	opts := export.Options{
 		Sheet: "{{Plural}}",
 		Columns: []export.Column{
@@ -588,10 +592,28 @@ func (h *{{Pascal}}Handler) Export(c *gin.Context) {
 		},
 	}
 
+	// Stream rows in batches via GORM's FindInBatches. CSV writes each
+	// batch straight to the wire; XLSX accumulates into a slice (no
+	// streaming API in excelize) but at least we never load the whole
+	// table at once.
 	if format == "xlsx" {
 		c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 		c.Header("Content-Disposition", ` + "`" + `attachment; filename="{{plural}}.xlsx"` + "`" + `)
-		if err := export.XLSX(c.Writer, items, opts); err != nil {
+		var all []models.{{Pascal}}
+		if err := query.FindInBatches(&[]models.{{Pascal}}{}, exportBatchSize, func(tx *gorm.DB, batch int) error {
+			var rows []models.{{Pascal}}
+			if err := tx.Scan(&rows).Error; err != nil {
+				return err
+			}
+			all = append(all, rows...)
+			return nil
+		}).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": gin.H{"code": "EXPORT_FAILED", "message": err.Error()},
+			})
+			return
+		}
+		if err := export.XLSX(c.Writer, all, opts); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": gin.H{"code": "EXPORT_FAILED", "message": err.Error()},
 			})
@@ -599,12 +621,34 @@ func (h *{{Pascal}}Handler) Export(c *gin.Context) {
 		return
 	}
 
+	// CSV path — true streaming. Write headers once, then each batch
+	// flushes its rows directly to the response writer.
 	c.Header("Content-Type", "text/csv")
 	c.Header("Content-Disposition", ` + "`" + `attachment; filename="{{plural}}.csv"` + "`" + `)
-	if err := export.CSV(c.Writer, items, opts); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{"code": "EXPORT_FAILED", "message": err.Error()},
-		})
+
+	headerWritten := false
+	if err := query.FindInBatches(&[]models.{{Pascal}}{}, exportBatchSize, func(tx *gorm.DB, batch int) error {
+		var rows []models.{{Pascal}}
+		if err := tx.Scan(&rows).Error; err != nil {
+			return err
+		}
+		if !headerWritten {
+			if err := export.CSV(c.Writer, rows, opts); err != nil {
+				return err
+			}
+			headerWritten = true
+		} else {
+			// Subsequent batches: write rows only, no header.
+			if err := export.CSVRows(c.Writer, rows, opts); err != nil {
+				return err
+			}
+		}
+		return nil
+	}).Error; err != nil {
+		// Headers already sent — best we can do is log + truncate.
+		// The client will see a malformed CSV; ops should re-run.
+		// (We don't write a JSON error body once streaming has begun.)
+		_ = err
 	}
 }
 

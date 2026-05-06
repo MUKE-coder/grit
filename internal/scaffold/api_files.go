@@ -3118,10 +3118,12 @@ func apiAuditGo() string {
 package audit
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -3175,9 +3177,13 @@ func ComputeHash(prevHash string, canonical []byte) string {
 }
 
 // AppendChained inserts a new ActivityLog with PrevHash + Hash filled
-// in atomically. The FOR UPDATE lock on the previous row serializes
-// concurrent appends so the chain never forks. Call from inside a
-// goroutine if you don't want to block the request path.
+// in. Intended for ad-hoc / one-off audit writes from app code (NOT
+// the hot-path middleware — that uses the buffered worker pattern).
+//
+// Concurrency note: this function takes a row-level FOR UPDATE lock
+// on the latest row to serialize concurrent callers. Use sparingly;
+// for any high-throughput audit source, route through the middleware's
+// channel writer instead.
 func AppendChained(db *gorm.DB, entry *models.ActivityLog) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		var prev models.ActivityLog
@@ -3215,50 +3221,87 @@ type ChainStatus struct {
 // position and offending row's ID — everything before that position
 // is trustworthy.
 //
-// Cost is O(n) — a few seconds per million rows on a warm cache.
-// Wire to a nightly cron and a /api/admin/activity/integrity endpoint.
-func VerifyChain(db *gorm.DB) (ChainStatus, error) {
-	var entries []models.ActivityLog
-	if err := db.Order("created_at asc, id asc").Find(&entries).Error; err != nil {
-		return ChainStatus{}, err
-	}
+// Memory-bounded: iterates in batches of verifyBatchSize so a 100M-row
+// log doesn't OOM the process. Honours context cancellation so the
+// caller can attach a deadline (the admin endpoint should pass
+// c.Request.Context() with a 30s timeout).
+//
+// Cost is O(n) — about a second per million rows on a warm cache.
+// Wire to a nightly cron + a /api/admin/activity/integrity endpoint.
+const verifyBatchSize = 1000
 
+func VerifyChain(ctx context.Context, db *gorm.DB) (ChainStatus, error) {
 	prevHash := ""
-	for i := range entries {
-		e := &entries[i]
-		canonical, err := Canonical(e)
-		if err != nil {
-			return ChainStatus{}, err
+	total := 0
+	var lastCreatedAt time.Time
+	var lastID string
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ChainStatus{TotalEntries: total}, ctx.Err()
+		default:
 		}
-		expected := ComputeHash(prevHash, canonical)
-		if expected != e.Hash {
-			return ChainStatus{
-				Valid:        false,
-				TotalEntries: len(entries),
-				BrokenAtID:   e.ID,
-				BrokenAt:     i,
-				Expected:     expected,
-				Got:          e.Hash,
-				Message:      "hash mismatch — row was modified, deleted, or inserted out of order",
-			}, nil
+
+		var batch []models.ActivityLog
+		q := db.Order("created_at asc, id asc").Limit(verifyBatchSize)
+		if total > 0 {
+			// Cursor on (created_at, id) so we don't re-read rows
+			// already verified in the previous batch.
+			q = q.Where("(created_at, id) > (?, ?)", lastCreatedAt, lastID)
 		}
-		if e.PrevHash != prevHash {
-			return ChainStatus{
-				Valid:        false,
-				TotalEntries: len(entries),
-				BrokenAtID:   e.ID,
-				BrokenAt:     i,
-				Expected:     prevHash,
-				Got:          e.PrevHash,
-				Message:      "prev_hash mismatch — chain link broken",
-			}, nil
+		if err := q.Find(&batch).Error; err != nil {
+			return ChainStatus{TotalEntries: total}, err
 		}
-		prevHash = e.Hash
+		if len(batch) == 0 {
+			break
+		}
+
+		for i := range batch {
+			e := &batch[i]
+			canonical, err := Canonical(e)
+			if err != nil {
+				return ChainStatus{TotalEntries: total}, err
+			}
+			expected := ComputeHash(prevHash, canonical)
+			if expected != e.Hash {
+				return ChainStatus{
+					Valid:        false,
+					TotalEntries: total + i,
+					BrokenAtID:   e.ID,
+					BrokenAt:     total + i,
+					Expected:     expected,
+					Got:          e.Hash,
+					Message:      "hash mismatch — row was modified, deleted, or inserted out of order",
+				}, nil
+			}
+			if e.PrevHash != prevHash {
+				return ChainStatus{
+					Valid:        false,
+					TotalEntries: total + i,
+					BrokenAtID:   e.ID,
+					BrokenAt:     total + i,
+					Expected:     prevHash,
+					Got:          e.PrevHash,
+					Message:      "prev_hash mismatch — chain link broken",
+				}, nil
+			}
+			prevHash = e.Hash
+		}
+
+		last := &batch[len(batch)-1]
+		lastCreatedAt = last.CreatedAt
+		lastID = last.ID
+		total += len(batch)
+
+		if len(batch) < verifyBatchSize {
+			break // last page
+		}
 	}
 
 	return ChainStatus{
 		Valid:        true,
-		TotalEntries: len(entries),
+		TotalEntries: total,
 	}, nil
 }
 `
@@ -3813,8 +3856,11 @@ func (h *WebhookHandler) Replay(c *gin.Context) {
 
 	dispatchErr := webhooks.Dispatch(c.Request.Context(), &event)
 	now := time.Now()
+	// Atomic retry_count increment via gorm.Expr — two concurrent
+	// replays of the same event are safe (each adds 1 instead of
+	// both reading the same baseline and writing the same +1 result).
 	updates := map[string]interface{}{
-		"retry_count":  event.RetryCount + 1,
+		"retry_count":  gorm.Expr("retry_count + ?", 1),
 		"processed_at": &now,
 	}
 	if dispatchErr == nil {
@@ -3830,15 +3876,18 @@ func (h *WebhookHandler) Replay(c *gin.Context) {
 		})
 		return
 	}
+	// Re-read to get the post-increment count; the original event.RetryCount
+	// is stale after the gorm.Expr update.
+	_ = h.DB.Select("retry_count").First(&event, "id = ?", id).Error
 	if dispatchErr != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"status":        "failed",
 			"handler_error": dispatchErr.Error(),
-			"retry_count":   event.RetryCount + 1,
+			"retry_count":   event.RetryCount,
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "processed", "retry_count": event.RetryCount + 1})
+	c.JSON(http.StatusOK, gin.H{"status": "processed", "retry_count": event.RetryCount})
 }
 
 // flattenHeaders turns http.Header (multi-value) into a single-value
@@ -3996,6 +4045,7 @@ package flags
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
 	"log"
@@ -4122,18 +4172,31 @@ func (e *Engine) VariantForUser(userID, name string) string {
 //   "disabled"   — flag exists but rules deny the user
 //   "enabled"    — boolean flag passed; user is in the rollout
 //   "<variant>"  — A/B flag passed; the user's bucket maps to this variant
+//
+// Lock discipline: the read lock is held only long enough to copy the
+// flag struct + ID. All decision logic (date checks, allowlist scans,
+// bucketing) runs unlocked. Under sustained read load this turns the
+// flag check into a near-zero-contention path.
 func (e *Engine) evaluate(userID, name string) string {
 	e.mu.RLock()
-	flag, ok := e.flags[name]
-	e.mu.RUnlock()
+	cached, ok := e.flags[name]
 	if !ok {
+		e.mu.RUnlock()
 		return ""
 	}
-	if !flag.Enabled {
+	flagID := cached.ID
+	enabled := cached.Enabled
+	rulesJSON := cached.Rules
+	e.mu.RUnlock()
+
+	if !enabled {
 		return "disabled"
 	}
 
-	rules := flag.ParsedRules()
+	// Decode rules outside the lock — JSON parsing is the slowest
+	// part of the flag check and we don't want it serializing.
+	flagForParse := models.FeatureFlag{Rules: rulesJSON}
+	rules := flagForParse.ParsedRules()
 
 	// Date window — out-of-window short-circuits before bucketing.
 	now := time.Now()
@@ -4171,17 +4234,17 @@ func (e *Engine) evaluate(userID, name string) string {
 	// A/B mode — assign variant by bucket.
 	if len(rules.Variants) > 0 {
 		v := rules.Variants[bucket%len(rules.Variants)]
-		e.trackExposure(flag.ID, name, userID, v)
+		e.trackExposure(flagID, name, userID, v)
 		return v
 	}
 
 	// Boolean mode — percentage rollout. Allowlisted users always
 	// pass; everyone else is gated by the percentage.
 	if allowed || bucket < rules.RolloutPercentage {
-		e.trackExposure(flag.ID, name, userID, "enabled")
+		e.trackExposure(flagID, name, userID, "enabled")
 		return "enabled"
 	}
-	e.trackExposure(flag.ID, name, userID, "disabled")
+	e.trackExposure(flagID, name, userID, "disabled")
 	return "disabled"
 }
 
@@ -4217,10 +4280,17 @@ func (e *Engine) trackExposure(flagID, flagName, userID, variant string) {
 // running flag checks in a hot loop — sub-microsecond cost is fine.
 func bucketFor(userID, name string) int {
 	if userID == "" {
-		// Anonymous users get a random bucket. Not sticky, but the
-		// alternative (deterministic-by-IP) leaks a random property
-		// of the request into the rollout decision in a confusing way.
-		return int(time.Now().UnixNano() % 100)
+		// Anonymous users get a uniform random bucket. We avoid
+		// UnixNano%100 because nanosecond timing is biased toward
+		// recent buckets under high QPS. crypto/rand gives us a
+		// uniform draw without that artifact.
+		var b [4]byte
+		if _, err := rand.Read(b[:]); err != nil {
+			// rand should never fail on a healthy OS; if it does,
+			// fall back to bucket 0 so behavior is deterministic.
+			return 0
+		}
+		return int(binary.BigEndian.Uint32(b[:]) % 100)
 	}
 	h := sha256.Sum256([]byte(userID + ":" + name))
 	return int(binary.BigEndian.Uint32(h[:4]) % 100)
@@ -4449,6 +4519,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -4469,11 +4540,12 @@ import (
 // passwords / secrets / PII. Buffered in memory, so MaxBodySize earlier
 // in the chain still bounds it.
 //
-// Insert is fire-and-forget (goroutine + new context) so the response
-// path isn't blocked by DB latency. If the DB is down, the audit log
-// drops the entry; that's acceptable — we'd rather serve users than
-// fail-closed on a logging dependency.
+// Insert is fire-and-forget via a bounded channel + single writer
+// goroutine. The single-writer design eliminates lock contention on
+// the hash chain — only one goroutine ever appends — and the bounded
+// channel caps memory + goroutine count under traffic spikes.
 func ActivityLogger(db *gorm.DB) gin.HandlerFunc {
+	auditOnce.Do(func() { go startAuditWorker(db) })
 	return func(c *gin.Context) {
 		switch c.Request.Method {
 		case http.MethodGet, http.MethodHead, http.MethodOptions:
@@ -4516,14 +4588,80 @@ func ActivityLogger(db *gorm.DB) gin.HandlerFunc {
 			DurationMS:    time.Since(started).Milliseconds(),
 			CreatedAt:     time.Now(), // explicit — Canonical hashes this field
 		}
-		// Fire-and-forget — chain-aware append serializes on a row-level
-		// FOR UPDATE lock so concurrent writes can't fork the chain.
-		// Failures are logged but never block the response path.
-		go func(e models.ActivityLog) {
-			if err := audit.AppendChained(db, &e); err != nil {
-				log.Printf("[audit] append failed: %v", err)
-			}
-		}(entry)
+		// Non-blocking enqueue. Channel is bounded so a runaway request
+		// rate can't spawn unbounded goroutines or exhaust the DB pool.
+		// On overflow we drop — better to lose an audit row than to
+		// stall the request path or OOM the process.
+		select {
+		case auditChan <- entry:
+		default:
+			auditDropped.Add(1)
+		}
+	}
+}
+
+// auditChan is the bounded backlog for the single audit writer. 4096
+// is enough to absorb a few-second burst (10k req/s for 0.4s) without
+// blocking. The single-worker design also removes the need for a
+// row-level FOR UPDATE lock on every write — chain integrity comes
+// for free from sequential writes.
+var (
+	auditChan    = make(chan models.ActivityLog, 4096)
+	auditOnce    sync.Once
+	auditDropped atomicCounter
+)
+
+// auditDropped is exported via the integrity endpoint so ops can
+// monitor when the audit channel saturates (signal to scale or
+// reduce log noise).
+type atomicCounter struct {
+	mu sync.Mutex
+	n  uint64
+}
+
+func (c *atomicCounter) Add(n uint64) {
+	c.mu.Lock()
+	c.n += n
+	c.mu.Unlock()
+}
+
+// AuditDroppedCount returns the number of audit entries dropped due
+// to channel saturation. Read this from a /healthz or admin endpoint
+// to detect sustained back-pressure.
+func AuditDroppedCount() uint64 {
+	auditDropped.mu.Lock()
+	defer auditDropped.mu.Unlock()
+	return auditDropped.n
+}
+
+// startAuditWorker drains auditChan and writes each entry to the
+// database with the hash chain attached. Single goroutine — no lock
+// contention, no goroutine explosion, deterministic ordering.
+//
+// On boot the worker reads the latest persisted hash so the chain
+// continues across restarts.
+func startAuditWorker(db *gorm.DB) {
+	var prev models.ActivityLog
+	prevHash := ""
+	if err := db.Order("created_at desc, id desc").Limit(1).First(&prev).Error; err == nil {
+		prevHash = prev.Hash
+	}
+
+	for entry := range auditChan {
+		canonical, err := audit.Canonical(&entry)
+		if err != nil {
+			log.Printf("[audit] canonicalize failed: %v", err)
+			continue
+		}
+		entry.PrevHash = prevHash
+		entry.Hash = audit.ComputeHash(prevHash, canonical)
+		if err := db.Create(&entry).Error; err != nil {
+			log.Printf("[audit] insert failed: %v", err)
+			// Don't advance prevHash on failure — the next successful
+			// write should chain off the last persisted row.
+			continue
+		}
+		prevHash = entry.Hash
 	}
 }
 
@@ -4541,7 +4679,9 @@ func apiActivityHandlerGo() string {
 	return `package handlers
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -4596,13 +4736,19 @@ func (h *ActivityHandler) List(c *gin.Context) {
 // was modified, deleted, or inserted out of order — the response
 // pinpoints which row broke the chain.
 //
+// Bounded by a 60-second deadline so a runaway scan can't hold the
+// connection forever — if you have hundreds of millions of rows,
+// run this from a cron job instead of an HTTP request.
+//
 //	GET /api/admin/activity/integrity
 //	→ { "valid": true, "total_entries": 12345 }
 //	→ { "valid": false, "broken_at": 47, "broken_at_id": "uuid",
 //	    "expected": "abc...", "got": "def...",
 //	    "message": "hash mismatch — row was modified..." }
 func (h *ActivityHandler) VerifyIntegrity(c *gin.Context) {
-	status, err := audit.VerifyChain(h.DB)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
+	defer cancel()
+	status, err := audit.VerifyChain(ctx, h.DB)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
@@ -4657,8 +4803,9 @@ type Options struct {
 	Sheet   string // XLSX only — defaults to "Sheet1"
 }
 
-// CSV writes items as a comma-separated stream into w. Sets the right
-// Content-Type/Content-Disposition headers if w is an http.ResponseWriter.
+// CSV writes items as a comma-separated stream into w. Includes the
+// header row. For streaming exports (write headers once, then many
+// batches) call CSV() for the first batch and CSVRows() for the rest.
 func CSV(w io.Writer, items interface{}, opts Options) error {
 	cw := csv.NewWriter(w)
 	defer cw.Flush()
@@ -4670,7 +4817,19 @@ func CSV(w io.Writer, items interface{}, opts Options) error {
 	if err := cw.Write(headers); err != nil {
 		return err
 	}
+	return writeCSVRows(cw, items, opts)
+}
 
+// CSVRows writes items WITHOUT a header row — used by streaming
+// exports for batches after the first one (the header was already
+// written by the initial CSV() call).
+func CSVRows(w io.Writer, items interface{}, opts Options) error {
+	cw := csv.NewWriter(w)
+	defer cw.Flush()
+	return writeCSVRows(cw, items, opts)
+}
+
+func writeCSVRows(cw *csv.Writer, items interface{}, opts Options) error {
 	v := reflect.ValueOf(items)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()

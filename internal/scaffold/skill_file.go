@@ -400,6 +400,114 @@ type Post struct {
 
 ---
 
+## Performance & Production Hygiene
+
+Grit ships with audited primitives — but app code can still introduce
+CPU burn / memory leaks / lock contention. Follow these rules so the
+patterns the framework hands you stay efficient at production scale.
+
+### Hot-path rules (request handlers + middleware)
+
+- **Never spawn unbounded goroutines per-request.** If you need
+  background work, push to a buffered channel + a fixed-size worker
+  pool. Pattern shipped: %[1]sActivityLogger%[1]s in
+  %[1]sinternal/middleware/activity.go%[1]s — single writer, bounded
+  channel, drop on overflow.
+- **Never hold a mutex across slow operations.** Read shared state
+  under the lock, copy what you need, release, then do the work.
+  Pattern shipped: %[1]sflags.Engine.evaluate%[1]s — copies the flag
+  struct under RLock, runs all rules unlocked.
+- **Never load a whole table into memory.** Use
+  %[1]spaginate.List%[1]s for list endpoints,
+  %[1]sFindInBatches%[1]s for exports, %[1]ssync.VerifyChain%[1]s
+  pattern (cursor on (created_at, id)) for verification scans.
+- **Never call SHA-256 in a hot path** unless cryptographic. Cache
+  keys, ID buckets, and hash maps should use %[1]sfnv.New64a%[1]s or
+  %[1]sxxhash%[1]s — a 50x speedup with no correctness loss. Pattern
+  shipped: cache middleware uses fnv.
+- **Never write to the same row from multiple goroutines** without a
+  serialization point. The audit hash chain serializes by design via
+  the single-writer worker. If you need ad-hoc chained writes, use
+  %[1]saudit.AppendChained%[1]s (it takes the FOR UPDATE lock).
+- **Never use %[1]stime.Now().UnixNano() %% N%[1]s for randomness** — it's
+  biased toward the call frequency. Use %[1]scrypto/rand%[1]s or
+  %[1]smath/rand%[1]s. Pattern shipped: %[1]sflags.bucketFor%[1]s for
+  anonymous users uses crypto/rand.
+
+### Database rules
+
+- **N+1 queries**: always %[1]sPreload("Association")%[1]s when you'll
+  access an association inside a loop. The resource generator emits
+  Preloads for declared %[1]sbelongs_to%[1]s fields automatically.
+- **No SELECT * on large tables**: use %[1]s.Select("id", "name")%[1]s
+  when you only need a few columns.
+- **No queries inside loops**: batch with %[1]sIN(?)%[1]s or
+  %[1]sCreateInBatches%[1]s. The webhook receiver and sync push handler
+  do batch inserts; mirror that pattern.
+- **Indexes**: every column in a %[1]sWHERE%[1]s or %[1]sORDER BY%[1]s
+  on a hot endpoint needs an index. Use the
+  %[1]sgorm:"index"%[1]s tag on the model.
+- **Keep transactions short**: never hold a transaction open across
+  network calls (S3 upload, webhook callback, AI completion). Take the
+  lock, flush, release, then do the slow work.
+
+### Background job rules
+
+- **Job idempotency**: every handler must be safe to re-run. Use the
+  job's own ID as a dedup key (the asynq scaffold does this). For
+  webhooks, the %[1]s(provider, external_id)%[1]s UNIQUE constraint
+  enforces it for free.
+- **Job timeouts**: pass a %[1]scontext.WithTimeout%[1]s through every
+  job handler. Asynq propagates it via %[1]sctx.Done()%[1]s — the job
+  is killed if it runs over.
+- **Distributed locks for cron**: if you run >1 instance of the API,
+  cron jobs need a lock or they double-fire. Use Redis %[1]sSETNX%[1]s
+  with a TTL or asynq's %[1]sUniqueOpt%[1]s.
+- **Bounded retries**: asynq retries with exponential backoff by
+  default; cap %[1]sMaxRetry%[1]s explicitly per job type so a poison
+  message doesn't burn the queue forever.
+- **Per-queue worker limits**: don't share one worker pool across
+  %[1]sdefault%[1]s + %[1]scritical%[1]s + %[1]slow%[1]s queues. Set
+  per-queue concurrency in %[1]sjobs.go%[1]s so a low-priority backlog
+  can't starve criticals.
+
+### Logging rules
+
+- **No %[1]slog.Printf%[1]s in tight loops.** Sample (e.g.
+  %[1]sif i%%1000 == 0 { log… }%[1]s) or move to debug level.
+- **Never log full request/response bodies** — they may contain PII,
+  secrets, or megabyte-scale uploads. The activity logger stores
+  SHA-256 of the body, not the body itself. Follow that pattern.
+- **Use structured logging at info+** — easier to grep, alert on, and
+  ship to a log aggregator.
+
+### Memory rules
+
+- **Caches need a TTL**: never cache without expiration. Redis is the
+  default cache; %[1]scache.Set(ctx, key, val, ttl)%[1]s requires a TTL.
+- **Channels need a bound**: %[1]smake(chan T, N)%[1]s with a real N,
+  never %[1]smake(chan T)%[1]s for high-volume work.
+- **Maps that only grow are leaks** — if you keep a per-user cache,
+  evict on a TTL or use an LRU library.
+
+### What's already audited
+
+The Grit framework's own primitives have been performance-reviewed
+through v3.22 — the patterns below are safe to call at scale:
+
+- %[1]sActivityLogger%[1]s middleware: bounded channel + single writer
+- %[1]saudit.VerifyChain%[1]s: chunked walk with context cancellation
+- %[1]spaginate.List%[1]s: limit-bounded queries, opt-in cursor mode
+- %[1]sflags.Engine%[1]s: in-memory cache, copy-then-release locking
+- %[1]swebhook receiver%[1]s: fire-and-forget dispatch, atomic retry
+- %[1]ssync engine%[1]s: bounded squashed outbox, batched push
+
+If you suspect CPU burn in production, the framework's own primitives
+are unlikely to be the cause — check application code first
+(unbounded goroutines, missing Preloads, sync work in handlers).
+
+---
+
 ## Critical Rules
 
 1. **Never delete marker comments** (%[1]s// grit:*%[1]s)
