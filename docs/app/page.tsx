@@ -1,11 +1,10 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { ArrowRight, Github, Terminal, Layers, Zap, Shield, Database, Bot, Server, Smartphone, ChevronDown, Quote } from 'lucide-react'
+import { ArrowRight, Github, Terminal, Layers, Zap, Shield, Database, Bot, Server, Smartphone, ChevronDown, Quote, Check, AlertCircle, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { CodeBlock } from '@/components/code-block'
 import { SoftwareApplicationSchema, FAQPageSchema } from '@/components/structured-data'
-import { HeroTerminal } from '@/components/hero-terminal'
 
 export const metadata: Metadata = {
   title: 'Grit — Go + React Full-Stack Framework',
@@ -20,73 +19,413 @@ export default function HomePage() {
       <FAQPageSchema />
       <SiteHeader />
 
-      {/* ═══ HERO ═══ */}
+      {/* ═══ HERO — saturated block with side-by-side editor ═══ */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-primary/[0.06] rounded-full blur-[120px]" />
-        </div>
+        {/* Saturated gradient backdrop */}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700" />
+        {/* Faint grid pattern */}
+        <div className="absolute inset-0 -z-10 opacity-[0.08]" style={{ backgroundImage: 'linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        {/* Decorative cubes — faint */}
+        <div className="absolute -top-10 left-10 w-48 h-48 rounded-3xl border border-white/10 -rotate-12 hidden lg:block" />
+        <div className="absolute top-20 right-10 w-32 h-32 rounded-2xl border border-white/10 rotate-12 hidden lg:block" />
 
-        <div className="max-w-6xl mx-auto flex flex-col items-center text-center pt-24 pb-20 md:pt-36 md:pb-28 px-6">
-          <div className="flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 mb-8">
-            <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-            <span className="text-xs font-mono font-medium text-primary/80 tracking-wide">v3.21 — OFFLINE-FIRST · AUDIT CHAIN · FEATURE FLAGS</span>
+        <div className="relative max-w-6xl mx-auto pt-20 pb-12 md:pt-28 md:pb-16 px-6">
+
+          {/* Architecture badge row — Inertia-style framework icons */}
+          <div className="flex items-center justify-center gap-2 mb-10">
+            {[
+              { letter: 'S', tone: 'bg-amber-400/90 text-amber-950', title: 'Single — Go + embedded SPA' },
+              { letter: 'D', tone: 'bg-violet-400/90 text-violet-950', title: 'Double — Web + API' },
+              { letter: 'T', tone: 'bg-emerald-400/90 text-emerald-950', title: 'Triple — Web + Admin + API' },
+              { letter: 'A', tone: 'bg-rose-400/90 text-rose-950', title: 'API — Go backend only' },
+              { letter: 'M', tone: 'bg-cyan-400/90 text-cyan-950', title: 'Mobile — API + Expo' },
+            ].map((arch) => (
+              <div
+                key={arch.letter}
+                title={arch.title}
+                className={`h-10 w-10 rounded-full ${arch.tone} flex items-center justify-center font-bold text-sm shadow-lg ring-2 ring-white/30`}
+              >
+                {arch.letter}
+              </div>
+            ))}
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-foreground mb-6 leading-[1.1]">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white text-center mb-6 leading-[1.1]">
             Build full-stack apps<br />
-            <span className="bg-gradient-to-r from-primary via-blue-400 to-cyan-400 bg-clip-text text-transparent">
-              with Go + React
-            </span>
+            with the backend you trust
           </h1>
 
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-            One CLI scaffolds your entire application — Go API, React frontend, admin panel,
-            auth, offline-first desktop, audit log, feature flags, webhook receiver, and more.
-            Choose your architecture. Ship fast.
+          <p className="text-base md:text-lg text-white/85 max-w-2xl mx-auto text-center mb-10 leading-relaxed">
+            Scaffold a Go API + React frontend + admin panel in one command. Auth, OAuth, file
+            storage, jobs, AI, observability, security headers — meticulously optimized for
+            production. No boilerplate required.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center gap-4 mb-16">
-            <Button size="lg" className="bg-primary hover:bg-primary/80 text-primary-foreground px-8 h-12 text-base rounded-full" asChild>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
+            <Button size="lg" className="bg-white text-sky-700 hover:bg-white/95 hover:text-sky-800 px-7 h-11 text-sm rounded-full font-medium shadow-lg" asChild>
               <Link href="/docs/getting-started/quick-start">
-                Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                Learn more
               </Link>
             </Button>
-            <Button variant="outline" size="lg" className="border-border/60 text-foreground hover:bg-accent/30 px-8 h-12 text-base rounded-full" asChild>
-              <Link href="https://github.com/MUKE-coder/grit" target="_blank">
-                <Github className="mr-2 h-4 w-4" /> GitHub
+            <Button variant="outline" size="lg" className="border-white/30 bg-white/5 text-white hover:bg-white/15 hover:text-white px-7 h-11 text-sm rounded-full font-medium" asChild>
+              <Link href="/docs">
+                Read docs
               </Link>
             </Button>
           </div>
 
-          {/* Animated hero terminal */}
-          <div className="w-full max-w-3xl">
-            <HeroTerminal />
+          {/* Side-by-side code editor — backend ↔ frontend, both generated by one command */}
+          <div className="rounded-xl overflow-hidden border border-white/15 shadow-2xl bg-slate-950 text-left">
+            <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/10">
+              <div>
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-900/80 border-b border-white/10">
+                  <span className="text-[10px] font-mono text-white/40">{'</>'}</span>
+                  <span className="text-xs font-mono text-white/70">internal/handlers/product.go</span>
+                </div>
+                <pre className="px-4 py-4 text-[12px] leading-[1.6] font-mono text-slate-100 overflow-x-auto"><code>{`package handlers
+
+import (
+    "net/http"
+    "github.com/gin-gonic/gin"
+)
+
+func (h *ProductHandler) List(c *gin.Context) {
+    var products []models.Product
+    h.DB.
+        Where("user_id = ?", c.GetString("user_id")).
+        Find(&products)
+
+    c.JSON(http.StatusOK, gin.H{
+        "data": products,
+    })
+}`}</code></pre>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-900/80 border-b border-white/10">
+                  <span className="text-[10px] font-mono text-cyan-400">⚛</span>
+                  <span className="text-xs font-mono text-white/70">frontend/src/hooks/use-products.ts</span>
+                </div>
+                <pre className="px-4 py-4 text-[12px] leading-[1.6] font-mono text-slate-100 overflow-x-auto"><code>{`import { useQuery } from '@tanstack/react-query'
+import { api } from '@/lib/api'
+
+export function useProducts() {
+  return useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const res = await api
+        .get('/api/products')
+      return res.data.data
+    },
+  })
+}`}</code></pre>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900/60 border-t border-white/10">
+              <Terminal className="h-3 w-3 text-white/50" />
+              <span className="text-[11px] font-mono text-white/60">
+                Both files generated by <span className="text-cyan-300">grit generate resource Product</span>
+              </span>
+            </div>
           </div>
+
         </div>
       </section>
 
-      {/* ═══ STATS BAR ═══ */}
-      <section className="border-y border-border/40 bg-card/50">
+      {/* ═══ FEATURES INTRO + STATS BY NUMBERS ═══ */}
+      <section className="py-20 px-6 border-b border-border/40">
+        <div className="max-w-5xl mx-auto text-center">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Features
+          </span>
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground mb-5">
+            Elevate your stack<br />
+            with the modern Go monolith
+          </h2>
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Grit ships with production-ready features that accelerate development
+            and make building full-stack apps in Go a breeze.
+          </p>
+        </div>
+      </section>
+
+      {/* "BY NUMBERS" stats row — Inertia-style minimal */}
+      <section className="border-b border-border/40">
         <div className="max-w-6xl mx-auto px-6 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center stagger-children">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="h-7 w-7 rounded-md bg-primary/10 flex items-center justify-center">
+                  <span className="text-primary font-mono font-bold text-xs">G</span>
+                </div>
+                <span className="text-xs font-mono font-medium text-foreground/70 tracking-wider">GRIT<br className="hidden lg:block" /> BY NUMBERS</span>
+              </div>
+            </div>
             {[
-              { number: '5', label: 'Architecture Modes', sub: 'single, double, triple, api, mobile' },
-              { number: '24', label: 'CLI Commands', sub: 'scaffold, generate, init, deploy...' },
-              { number: '100+', label: 'UI Components', sub: 'shadcn-compatible registry' },
-              { number: 'v3.21', label: 'Latest Release', sub: 'feature flags + A/B testing' },
+              { number: '5', label: 'ARCHITECTURE MODES' },
+              { number: '100+', label: 'UI COMPONENTS' },
+              { number: 'v3.23', label: 'LATEST RELEASE' },
             ].map((stat) => (
-              <div key={stat.label}>
-                <div className="text-4xl md:text-5xl font-bold text-foreground mb-1 animate-count">{stat.number}</div>
-                <div className="text-sm font-medium text-foreground/80 mb-0.5">{stat.label}</div>
-                <div className="text-xs text-muted-foreground">{stat.sub}</div>
+              <div key={stat.label} className="text-center md:text-left">
+                <div className="text-4xl md:text-5xl font-bold text-foreground mb-1 tracking-tight">{stat.number}</div>
+                <div className="text-[10px] font-mono font-medium text-muted-foreground tracking-widest">{stat.label}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══ BENTO GRID ═══ */}
-      <section className="py-24 px-6">
+      {/* ═══ 3-COLUMN FEATURE GRID — illustrated cards ═══ */}
+      <section className="py-20 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            {/* Multi-architecture */}
+            <div>
+              <h3 className="font-semibold text-foreground mb-2">5 architectures, one CLI</h3>
+              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+                Pick the scaffold that fits — embed your SPA in the binary, or split web /
+                admin / API into a monorepo. Same generators across all of them.
+              </p>
+              <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+                <div className="flex items-center justify-center h-32 relative">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="grid grid-cols-3 gap-2.5">
+                      {['single', 'double', 'triple', 'api', 'mobile', 'desktop'].map((name, i) => (
+                        <div key={name} className={`h-10 w-10 rounded-xl border ${i === 2 ? 'border-primary/40 bg-primary/15 ring-2 ring-primary/20' : 'border-border/40 bg-background'} flex items-center justify-center`}>
+                          {i === 0 && <Zap className="h-4 w-4 text-sky-400" />}
+                          {i === 1 && <Layers className="h-4 w-4 text-violet-400" />}
+                          {i === 2 && <Server className="h-4 w-4 text-emerald-400" />}
+                          {i === 3 && <Database className="h-4 w-4 text-amber-400" />}
+                          {i === 4 && <Smartphone className="h-4 w-4 text-rose-400" />}
+                          {i === 5 && <Terminal className="h-4 w-4 text-cyan-400" />}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* More than just Go */}
+            <div>
+              <h3 className="font-semibold text-foreground mb-2">More than just Go</h3>
+              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+                Grit works with Gin, GORM, asynq, Resend, Sentinel, Pulse, and a curated
+                stack designed to play together — so you always have what your team adores.
+              </p>
+              <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+                <div className="grid grid-cols-3 gap-2.5">
+                  {[
+                    { c: 'bg-sky-500/15 text-sky-400', l: 'Go' },
+                    { c: 'bg-cyan-500/15 text-cyan-400', l: 'Gin' },
+                    { c: 'bg-rose-500/15 text-rose-400', l: 'GORM' },
+                    { c: 'bg-violet-500/15 text-violet-400', l: 'PG' },
+                    { c: 'bg-red-500/15 text-red-400', l: 'Redis' },
+                    { c: 'bg-amber-500/15 text-amber-400', l: 'R2' },
+                    { c: 'bg-emerald-500/15 text-emerald-400', l: 'JWT' },
+                    { c: 'bg-pink-500/15 text-pink-400', l: 'Resend' },
+                    { c: 'bg-indigo-500/15 text-indigo-400', l: 'AI' },
+                  ].map((t) => (
+                    <div key={t.l} className={`h-12 rounded-xl ${t.c} flex items-center justify-center font-mono font-bold text-xs`}>
+                      {t.l}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Flexible frontend */}
+            <div>
+              <h3 className="font-semibold text-foreground mb-2">Flexible frontend</h3>
+              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+                Ship a Next.js SaaS or a Vite + TanStack Router SPA. Generated hooks +
+                types match either, so swapping the frontend never rewrites your API.
+              </p>
+              <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+                <div className="space-y-2.5">
+                  {[
+                    { name: 'users.tsx', sel: false, ico: '⚛' },
+                    { name: 'use-users.ts', sel: false, ico: '⚛' },
+                    { name: 'products.tsx', sel: true, ico: '⚛' },
+                  ].map((f, i) => (
+                    <div key={i} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-mono ${f.sel ? 'bg-primary/10 border border-primary/30 text-primary' : 'bg-background border border-border/40 text-muted-foreground'}`}>
+                      <span className={f.sel ? 'text-primary' : 'text-cyan-400/60'}>{f.ico}</span>
+                      {f.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ FORMS / SECURITY / PERFORMANCE — Inertia-style mockup cards ═══ */}
+      <section className="py-12 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            {/* Forms */}
+            <div>
+              <h3 className="font-semibold text-foreground mb-2">Form Builder</h3>
+              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+                Grit streamlines form management with simple submissions, intuitive slots
+                and props, and fully typed event handlers for a seamless experience.
+              </p>
+              <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+                <div className="space-y-2">
+                  {[
+                    { icon: <Check className="h-3.5 w-3.5 text-emerald-400" />, label: 'Validation' },
+                    { icon: <Upload className="h-3.5 w-3.5 text-sky-400" />, label: 'File Uploads' },
+                    { icon: <AlertCircle className="h-3.5 w-3.5 text-rose-400" />, label: 'Error Handling' },
+                    { icon: <Check className="h-3.5 w-3.5 text-emerald-400" />, label: '16+ Field Types' },
+                  ].map((row) => (
+                    <div key={row.label} className="flex items-center gap-3 rounded-lg border border-border/40 bg-background px-4 py-2.5">
+                      <span className="h-5 w-5 rounded-full bg-card flex items-center justify-center">{row.icon}</span>
+                      <span className="text-sm text-foreground/80">{row.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Security / Performance / Observability — three score circles */}
+            <div>
+              <h3 className="font-semibold text-foreground mb-2">Production-grade by default</h3>
+              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+                Enjoy out-of-the-box security headers, percentile latency tracking, and a
+                Lighthouse-ready frontend the moment you run <code>grit new</code>.
+              </p>
+              <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'SECURITY', score: '100', tone: 'text-emerald-400', ring: 'stroke-emerald-400', sub: 'OWASP 2025' },
+                    { label: 'PERFORMANCE', score: '98', tone: 'text-amber-400', ring: 'stroke-amber-400', sub: 'Pulse SLO' },
+                    { label: 'OBSERVABILITY', score: '100', tone: 'text-sky-400', ring: 'stroke-sky-400', sub: 'p50/p95/p99' },
+                  ].map((s) => (
+                    <div key={s.label} className="flex flex-col items-center">
+                      <div className="relative h-16 w-16 mb-2">
+                        <svg className="h-16 w-16 -rotate-90" viewBox="0 0 36 36">
+                          <circle cx="18" cy="18" r="15.9" fill="none" className="stroke-border/40" strokeWidth="2.5" />
+                          <circle cx="18" cy="18" r="15.9" fill="none" className={s.ring} strokeWidth="2.5" strokeDasharray={`${s.score}, 100`} strokeLinecap="round" />
+                        </svg>
+                        <div className={`absolute inset-0 flex items-center justify-center font-bold text-base ${s.tone}`}>{s.score}</div>
+                      </div>
+                      <div className="text-[9px] font-mono font-medium text-foreground/80 tracking-wider">{s.label}</div>
+                      <div className="text-[9px] text-muted-foreground mt-0.5">{s.sub}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ 6-CELL TEXT FEATURE LIST — Inertia 3×2 ═══ */}
+      <section className="py-12 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-8">
+            {[
+              { title: 'Background jobs', desc: 'Redis-backed asynq queue. Image processing, email sending, scheduled cleanup — wired in.' },
+              { title: 'Realtime hub', desc: 'WebSocket fan-out at /api/ws. SendToUser and Broadcast helpers; useRealtimeEvent hook on the client.' },
+              { title: 'Idempotency-Key', desc: 'Auto-attached on unsafe methods. Replay the original 2xx response for 24h — safe retries everywhere.' },
+              { title: 'CSV / Excel export', desc: 'Every generated resource ships /export?format=xlsx. Streaming CSV, chunked XLSX, constant memory.' },
+              { title: 'PDF generation', desc: 'internal/pdf with a worked Invoice template — typeset, branded, ready to email or download.' },
+              { title: 'Feature flags', desc: 'In-memory engine, sticky bucketing, percentage rollouts, allow/blocklists, realtime admin push.' },
+            ].map((item) => (
+              <div key={item.title}>
+                <h4 className="font-semibold text-foreground text-sm mb-2">{item.title}</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ 3-COLUMN VISUAL FEATURE CARDS — Inertia bottom row ═══ */}
+      <section className="py-12 px-6 mb-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            {/* Offline-first */}
+            <div>
+              <h3 className="font-semibold text-foreground mb-2">Offline-first sync</h3>
+              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+                Local SQLite mirror + outbox with squash semantics. Click Sync, resolve
+                field-level conflicts, push.
+              </p>
+              <div className="rounded-xl border border-border/40 bg-card/50 p-6">
+                <Button className="w-full rounded-full bg-primary/90 hover:bg-primary text-primary-foreground" size="sm">
+                  Sync now
+                </Button>
+                <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span>Last synced</span>
+                  <span className="font-mono">12s ago</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Audit chain */}
+            <div>
+              <h3 className="font-semibold text-foreground mb-2">Tamper-evident audit log</h3>
+              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+                Every mutation is appended to a SHA-256 hash chain. Verify integrity from
+                the admin in one click.
+              </p>
+              <div className="rounded-xl border border-border/40 bg-card/50 p-6 space-y-2">
+                {[
+                  { hash: 'a3f1...c92', user: 'maya@acme.com', action: 'POST /api/invoices' },
+                  { hash: 'b9d2...44e', user: 'jb@grit.dev', action: 'PUT /api/users/42' },
+                  { hash: 'c1e7...8af', user: 'maya@acme.com', action: 'DELETE /api/blogs/9' },
+                ].map((row) => (
+                  <div key={row.hash} className="flex items-center justify-between text-[11px]">
+                    <code className="text-emerald-400/80 font-mono">{row.hash}</code>
+                    <span className="text-muted-foreground/70 truncate">{row.action}</span>
+                  </div>
+                ))}
+                <div className="mt-2 pt-2 border-t border-border/30 flex items-center gap-1.5 text-[10px] text-emerald-400 font-mono">
+                  <Check className="h-3 w-3" /> integrity verified
+                </div>
+              </div>
+            </div>
+
+            {/* Infinite scrolling / pagination */}
+            <div>
+              <h3 className="font-semibold text-foreground mb-2">Cursor pagination</h3>
+              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+                Sticky-page pagination on every generated list endpoint. No skipped rows
+                when data shifts mid-scroll.
+              </p>
+              <div className="rounded-xl border border-border/40 bg-card/50 p-6 space-y-2">
+                {[
+                  { id: '#1284', name: 'Invoice — Acme Inc', tone: 'text-emerald-400 bg-emerald-400/10', tag: 'Paid' },
+                  { id: '#1283', name: 'Invoice — Globex', tone: 'text-amber-400 bg-amber-400/10', tag: 'Pending' },
+                  { id: '#1282', name: 'Invoice — Initech', tone: 'text-rose-400 bg-rose-400/10', tag: 'Overdue' },
+                ].map((row) => (
+                  <div key={row.id} className="flex items-center justify-between text-[11px]">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-muted-foreground/70">{row.id}</span>
+                      <span className="text-foreground/80 truncate">{row.name}</span>
+                    </div>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${row.tone}`}>{row.tag}</span>
+                  </div>
+                ))}
+                <div className="mt-2 pt-2 border-t border-border/30 text-[10px] text-muted-foreground font-mono">
+                  has_more · cursor: eyJ0ID...
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ BENTO GRID — original auth/admin/AI/storage/codegen ═══ */}
+      <section className="py-24 px-6 border-t border-border/40">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">Everything Included</p>
@@ -304,10 +643,10 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
       <section className="py-24 px-6 border-t border-border/40">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">New in v3.10–v3.21</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Ops-grade primitives</h2>
+            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">New in v3.23</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">OWASP 2025 hardened</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Reliability, auditability, and rollout control — usually a year of integration work — wired into every scaffolded project.
+              Reliability, auditability, and security — usually a year of integration work — wired into every scaffolded project.
             </p>
           </div>
 
@@ -346,6 +685,19 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
               <code className="text-[11px] text-primary/80 font-mono">GET /admin/activity/integrity</code>
             </div>
 
+            {/* SSRF defence */}
+            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300">
+              <div className="h-10 w-10 rounded-lg bg-rose-500/10 flex items-center justify-center mb-4">
+                <Shield className="h-5 w-5 text-rose-400" />
+              </div>
+              <h3 className="font-semibold text-foreground mb-2">SSRF + IDOR closed</h3>
+              <p className="text-sm text-muted-foreground mb-2">
+                <code className="text-primary text-xs">safefetch.Get</code> blocks private/IMDS IPs with DNS-rebind defence.{' '}
+                <code className="text-primary text-xs">authz.MustOwn</code> returns 404 to prevent enumeration.
+              </p>
+              <code className="text-[11px] text-primary/80 font-mono">OWASP A01 closed</code>
+            </div>
+
             {/* Feature flags */}
             <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300">
               <div className="h-10 w-10 rounded-lg bg-violet-500/10 flex items-center justify-center mb-4">
@@ -359,37 +711,24 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
               <code className="text-[11px] text-primary/80 font-mono">flags.IsEnabled(c, &quot;new_ui&quot;)</code>
             </div>
 
-            {/* Webhook receiver */}
-            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300">
-              <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center mb-4">
-                <svg className="h-5 w-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2" /><path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06" /><path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8" /></svg>
-              </div>
-              <h3 className="font-semibold text-foreground mb-2">Webhook receiver</h3>
-              <p className="text-sm text-muted-foreground mb-2">
-                Stripe / GitHub / HMAC verifiers shipped. Auto-dedupe on (provider, external_id).
-                Failed handlers replay from admin.
-              </p>
-              <code className="text-[11px] text-primary/80 font-mono">webhooks.On(&quot;stripe&quot;, ...)</code>
-            </div>
-
             {/* Realtime + idempotency — wider card */}
             <div className="lg:col-span-2 rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300">
               <div className="flex items-center gap-3 mb-4">
-                <div className="h-10 w-10 rounded-lg bg-rose-500/10 flex items-center justify-center">
-                  <svg className="h-5 w-5 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                  <svg className="h-5 w-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground">Realtime hub + Idempotency-Key + PDF + CSV/Excel export</h3>
-                  <p className="text-xs text-muted-foreground">All the &quot;every business app needs this&quot; primitives, baked in</p>
+                  <h3 className="font-semibold text-foreground">Webhook receiver + k6 load test suite + security CI</h3>
+                  <p className="text-xs text-muted-foreground">The &quot;every business app needs this&quot; primitives, baked in</p>
                 </div>
               </div>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                <li>• <strong className="text-foreground/80">WebSocket fan-out hub</strong> at <code className="text-primary text-xs">GET /api/ws</code> — SendToUser / Broadcast helpers</li>
-                <li>• <strong className="text-foreground/80">Idempotency-Key</strong> auto-attached on POST/PUT/PATCH/DELETE — 24h dedup</li>
-                <li>• <strong className="text-foreground/80">PDF generation</strong> (<code className="text-primary text-xs">internal/pdf</code>) with worked Invoice template</li>
-                <li>• <strong className="text-foreground/80">CSV / Excel export</strong> auto-emitted per resource (<code className="text-primary text-xs">/export?format=xlsx</code>)</li>
-                <li>• <strong className="text-foreground/80">Cursor-based pagination</strong> opt-in for List endpoints — sticky pages</li>
-                <li>• <strong className="text-foreground/80">Verbose AutoMigrate</strong> with column-level diff on every boot</li>
+                <li>• <strong className="text-foreground/80">Stripe / GitHub / HMAC verifiers</strong> with auto-dedup on (provider, external_id)</li>
+                <li>• <strong className="text-foreground/80">k6 test suite</strong> — smoke / load / stress / spike / soak / breakpoint</li>
+                <li>• <strong className="text-foreground/80">Dependabot + govulncheck + CodeQL</strong> CI on every PR</li>
+                <li>• <strong className="text-foreground/80">CSRF middleware</strong> double-submit cookie for OAuth flows</li>
+                <li>• <strong className="text-foreground/80">Security event log</strong> with typed events + hash chain</li>
+                <li>• <strong className="text-foreground/80">CSP / COOP / CORP</strong> headers strict by default</li>
               </ul>
             </div>
           </div>
@@ -432,7 +771,7 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
                   { feature: 'Offline-First Sync', grit: true, next: false, laravel: false, goravel: false },
                   { feature: 'Audit Log + Hash Chain', grit: true, next: false, laravel: false, goravel: false },
                   { feature: 'Feature Flags', grit: true, next: false, laravel: false, goravel: false },
-                  { feature: 'Webhook Receiver', grit: true, next: false, laravel: 'partial', goravel: false },
+                  { feature: 'OWASP 2025 Hardened', grit: true, next: false, laravel: 'partial', goravel: false },
                 ].map((row) => (
                   <tr key={row.feature} className="hover:bg-accent/20 transition-colors">
                     <td className="px-5 py-3 font-medium text-foreground/90 text-[13px]">{row.feature}</td>
@@ -570,40 +909,112 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
         </div>
       </section>
 
-      {/* ═══ CTA ═══ */}
-      <section className="py-24 px-6 border-t border-border/40 bg-card/30">
+      {/* ═══ CTA — "Start using Grit today" ═══ */}
+      <section className="relative py-32 px-6 border-t border-border/40 overflow-hidden">
+        {/* faint decorative grid */}
+        <div className="absolute inset-0 -z-10 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(to right, hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--foreground)) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Start building in 30 seconds</h2>
-          <p className="text-muted-foreground mb-8 text-lg">Install the CLI and scaffold your first project.</p>
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground mb-4">
+            Start using Grit today
+          </h2>
+          <p className="text-muted-foreground mb-8 text-lg">
+            Install the CLI and scaffold your first project. Or dive into the docs
+            to plan your architecture first.
+          </p>
           <CodeBlock language="bash" className="mb-8 text-left" code={`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest
 grit new my-app`} />
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" className="bg-primary hover:bg-primary/80 text-primary-foreground px-8 h-12 text-base rounded-full" asChild>
-              <Link href="/docs/getting-started/quick-start">Read the docs <ArrowRight className="ml-2 h-4 w-4" /></Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-7 h-11 text-sm rounded-full" asChild>
+              <Link href="/docs/getting-started/quick-start">Read the docs <ArrowRight className="ml-2 h-3.5 w-3.5" /></Link>
             </Button>
-            <Button variant="outline" size="lg" className="border-border/60 text-foreground hover:bg-accent/30 px-8 h-12 text-base rounded-full" asChild>
-              <Link href="https://github.com/MUKE-coder/grit" target="_blank"><Github className="mr-2 h-4 w-4" /> Star on GitHub</Link>
+            <Button variant="outline" size="lg" className="border-border/60 text-foreground hover:bg-accent/30 px-7 h-11 text-sm rounded-full" asChild>
+              <Link href="/docs/stack-selector">Explore architectures</Link>
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border/40 py-8 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10">
-              <span className="text-primary font-mono font-bold text-[10px]">G</span>
+      {/* ═══ RICH FOOTER ═══ */}
+      <footer className="border-t border-border/40 px-6 pt-16 pb-8 overflow-hidden">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+            {/* Brand column */}
+            <div className="col-span-2 md:col-span-2">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
+                  <span className="text-primary font-mono font-bold text-xs">G</span>
+                </div>
+                <span className="font-semibold text-foreground">Grit Framework</span>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-5 max-w-xs">
+                The fastest way to build, deploy, and operate full-stack apps in Go.
+              </p>
+              <div className="flex items-center gap-3">
+                <Link href="https://github.com/MUKE-coder/grit" target="_blank" className="h-8 w-8 rounded-md border border-border/40 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border/60 transition-colors">
+                  <Github className="h-3.5 w-3.5" />
+                </Link>
+                <Link href="https://www.youtube.com/@GritFramework" target="_blank" className="h-8 w-8 rounded-md border border-border/40 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border/60 transition-colors">
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.582 7.146a2.78 2.78 0 0 0-1.957-1.967C17.882 4.7 12 4.7 12 4.7s-5.882 0-7.625.479A2.78 2.78 0 0 0 2.418 7.146C1.94 8.892 1.94 12 1.94 12s0 3.108.478 4.854a2.78 2.78 0 0 0 1.957 1.967C6.118 19.3 12 19.3 12 19.3s5.882 0 7.625-.479a2.78 2.78 0 0 0 1.957-1.967C22.06 15.108 22.06 12 22.06 12s0-3.108-.478-4.854zM9.94 15.3V8.7l5.715 3.3-5.715 3.3z" /></svg>
+                </Link>
+                <Link href="https://www.linkedin.com/company/grit-framework" target="_blank" className="h-8 w-8 rounded-md border border-border/40 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border/60 transition-colors">
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14zM8.339 18.337v-8.59H5.667v8.59h2.672zM7.003 8.574a1.548 1.548 0 1 0 0-3.096 1.548 1.548 0 0 0 0 3.096zm11.335 9.763V13.64c0-2.465-1.338-3.612-3.123-3.612-1.44 0-2.087.791-2.448 1.348v-1.157h-2.671c.034.751 0 8.59 0 8.59h2.671v-4.79c0-.243.018-.487.09-.66.196-.485.642-.989 1.39-.989.982 0 1.376.752 1.376 1.852v4.587h2.715z" /></svg>
+                </Link>
+              </div>
             </div>
-            <span className="text-sm text-muted-foreground">Grit Framework</span>
+
+            {/* Products */}
+            <div>
+              <h4 className="text-xs font-mono font-medium text-foreground/70 tracking-wider mb-4">PRODUCTS</h4>
+              <ul className="space-y-2.5 text-sm">
+                <li><Link href="/docs" className="text-muted-foreground hover:text-foreground transition-colors">Grit CLI</Link></li>
+                <li><Link href="https://gritcms.com" target="_blank" className="text-muted-foreground hover:text-foreground transition-colors">GritCMS</Link></li>
+                <li><Link href="https://github.com/MUKE-coder/gorm-studio" target="_blank" className="text-muted-foreground hover:text-foreground transition-colors">GORM Studio</Link></li>
+                <li><Link href="/showcase" className="text-muted-foreground hover:text-foreground transition-colors">Showcase</Link></li>
+              </ul>
+            </div>
+
+            {/* Packages */}
+            <div>
+              <h4 className="text-xs font-mono font-medium text-foreground/70 tracking-wider mb-4">PACKAGES</h4>
+              <ul className="space-y-2.5 text-sm">
+                <li><Link href="https://github.com/MUKE-coder/sentinel" target="_blank" className="text-muted-foreground hover:text-foreground transition-colors">Sentinel</Link></li>
+                <li><Link href="https://github.com/MUKE-coder/pulse" target="_blank" className="text-muted-foreground hover:text-foreground transition-colors">Pulse</Link></li>
+                <li><Link href="https://github.com/MUKE-coder/gin-docs" target="_blank" className="text-muted-foreground hover:text-foreground transition-colors">gin-docs</Link></li>
+                <li><Link href="/docs/plugins" className="text-muted-foreground hover:text-foreground transition-colors">Plugins</Link></li>
+              </ul>
+            </div>
+
+            {/* Resources */}
+            <div>
+              <h4 className="text-xs font-mono font-medium text-foreground/70 tracking-wider mb-4">RESOURCES</h4>
+              <ul className="space-y-2.5 text-sm">
+                <li><Link href="/docs" className="text-muted-foreground hover:text-foreground transition-colors">Documentation</Link></li>
+                <li><Link href="/docs/getting-started/quick-start" className="text-muted-foreground hover:text-foreground transition-colors">Quick Start</Link></li>
+                <li><Link href="/docs/security" className="text-muted-foreground hover:text-foreground transition-colors">Security Guide</Link></li>
+                <li><Link href="/docs/testing" className="text-muted-foreground hover:text-foreground transition-colors">Testing</Link></li>
+                <li><Link href="/docs/changelog" className="text-muted-foreground hover:text-foreground transition-colors">Changelog</Link></li>
+                <li><Link href="/courses" className="text-muted-foreground hover:text-foreground transition-colors">Courses</Link></li>
+                <li><Link href="/hire" className="text-muted-foreground hover:text-foreground transition-colors">Hire Us</Link></li>
+              </ul>
+            </div>
           </div>
-          <div className="flex items-center gap-6">
-            <Link href="/docs" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Docs</Link>
-            <Link href="https://github.com/MUKE-coder/grit" target="_blank" className="text-xs text-muted-foreground hover:text-foreground transition-colors">GitHub</Link>
-            <Link href="/showcase" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Showcase</Link>
-            <Link href="/hire" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Hire Us</Link>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-8 border-t border-border/40">
+            <p className="text-xs text-muted-foreground">© 2026 Grit Framework. MIT licensed.</p>
+            <div className="flex items-center gap-5">
+              <Link href="/docs" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Docs</Link>
+              <Link href="https://github.com/MUKE-coder/grit" target="_blank" className="text-xs text-muted-foreground hover:text-foreground transition-colors">GitHub</Link>
+              <Link href="/showcase" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Showcase</Link>
+              <span className="text-xs text-muted-foreground/60">Built with Grit v3.23</span>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground/60">Built with Grit v3.5</p>
+
+          {/* Giant decorative GRIT wordmark */}
+          <div className="relative mt-12 -mb-4 select-none pointer-events-none">
+            <div className="text-center font-bold tracking-tighter leading-none text-primary/[0.08]" style={{ fontSize: 'clamp(80px, 22vw, 320px)' }}>
+              GRIT
+            </div>
+          </div>
         </div>
       </footer>
     </div>
