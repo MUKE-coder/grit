@@ -1,4 +1,4 @@
-# stoka — Single App Makefile
+# gritdemo — Single App Makefile
 
 .PHONY: dev build clean
 
@@ -13,8 +13,8 @@ build:
 	@echo "Building frontend..."
 	@cd frontend && pnpm install && pnpm build
 	@echo "Building Go binary..."
-	@go build -o bin/stoka .
-	@echo "Done! Binary at bin/stoka"
+	@go build -o bin/gritdemo .
+	@echo "Done! Binary at bin/gritdemo"
 
 # Clean build artifacts
 clean:

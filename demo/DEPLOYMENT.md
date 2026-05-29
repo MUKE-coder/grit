@@ -18,7 +18,7 @@
 │  └────────────────────────────────┘  │
 │              │                       │
 │         Reverse Proxy (Traefik)      │
-│         stoka.yourdomain.com         │
+│         gritdemo.yourdomain.com         │
 └──────────────────────────────────────┘
            │
     Cloudflare R2 (images)
@@ -33,7 +33,7 @@ Single binary serves both API and frontend. PostgreSQL and Redis run as Docker s
 
 Ensure Dokploy is running on your VPS. You need:
 - Docker & Docker Compose
-- A domain pointed to your VPS IP (e.g., `stoka.yourdomain.com`)
+- A domain pointed to your VPS IP (e.g., `gritdemo.yourdomain.com`)
 
 ---
 
@@ -63,9 +63,9 @@ Edit `.env.production` with your real values:
 
 ```env
 # REQUIRED — change all of these:
-APP_URL=https://stoka.yourdomain.com
-FRONTEND_URL=https://stoka.yourdomain.com
-DATABASE_URL=postgres://stoka:YOUR_DB_PASSWORD@postgres:5432/stoka?sslmode=disable
+APP_URL=https://gritdemo.yourdomain.com
+FRONTEND_URL=https://gritdemo.yourdomain.com
+DATABASE_URL=postgres://gritdemo:YOUR_DB_PASSWORD@postgres:5432/gritdemo?sslmode=disable
 JWT_SECRET=YOUR_64_CHAR_SECRET
 INTERNAL_API_KEY=stk_prod_YOUR_KEY
 VITE_INTERNAL_API_KEY=stk_prod_YOUR_KEY    # Must match INTERNAL_API_KEY
@@ -76,7 +76,7 @@ R2_BUCKET=gritdemo-images
 RESEND_API_KEY=re_YOUR_KEY
 MAIL_FROM=noreply@yourdomain.com
 REDIS_URL=redis://:YOUR_REDIS_PASSWORD@redis:6379
-CORS_ORIGINS=https://stoka.yourdomain.com
+CORS_ORIGINS=https://gritdemo.yourdomain.com
 POSTGRES_PASSWORD=YOUR_DB_PASSWORD          # Must match DATABASE_URL
 REDIS_PASSWORD=YOUR_REDIS_PASSWORD          # Must match REDIS_URL
 ```
@@ -90,10 +90,10 @@ REDIS_PASSWORD=YOUR_REDIS_PASSWORD          # Must match REDIS_URL
 ### Option A: Deploy from GitHub (Recommended)
 
 1. In Dokploy, create a new **Compose** application
-2. Connect your GitHub repo: `https://github.com/MUKE-coder/stoka.git`
+2. Connect your GitHub repo: `https://github.com/MUKE-coder/grit.git`
 3. Set the compose file path to `docker-compose.yml`
 4. Add all environment variables from `.env.production` in Dokploy's environment settings
-5. Set the domain: `stoka.yourdomain.com`
+5. Set the domain: `gritdemo.yourdomain.com`
 6. Enable auto-SSL (Let's Encrypt via Traefik)
 7. Deploy
 
@@ -101,8 +101,8 @@ REDIS_PASSWORD=YOUR_REDIS_PASSWORD          # Must match REDIS_URL
 
 ```bash
 # Clone the repo
-git clone https://github.com/MUKE-coder/stoka.git
-cd stoka
+git clone https://github.com/MUKE-coder/grit.git
+cd grit/demo
 
 # Copy and edit production env
 cp .env.production .env.production.local
@@ -116,7 +116,7 @@ cp .env.production.local .env.production
 docker compose up -d --build
 
 # Check logs
-docker compose logs -f stoka
+docker compose logs -f gritdemo
 ```
 
 ---
@@ -127,7 +127,7 @@ After the first deploy, run migrations to create database tables:
 
 ```bash
 # Via docker exec
-docker compose exec stoka ./stoka migrate
+docker compose exec gritdemo ./gritdemo migrate
 
 # Or if you have the binary locally:
 # DATABASE_URL=postgres://... go run ./cmd/migrate
@@ -138,17 +138,17 @@ If using Dokploy, you can run this as a one-time command in the container termin
 **Alternative:** The app auto-migrates on startup if tables don't exist (via GORM AutoMigrate in the seed command). To seed demo data:
 
 ```bash
-docker compose exec stoka ./stoka seed
+docker compose exec gritdemo ./gritdemo seed
 ```
 
 ---
 
 ## Step 6: Verify
 
-1. Visit `https://stoka.yourdomain.com` — should show the login page
+1. Visit `https://gritdemo.yourdomain.com` — should show the login page
 2. Register a new account or use seeded credentials:
    - Admin: `admin@nakawafashion.com` / `password123`
-3. Check the health endpoint: `https://stoka.yourdomain.com/api/health`
+3. Check the health endpoint: `https://gritdemo.yourdomain.com/api/health`
 
 ---
 
@@ -156,11 +156,11 @@ docker compose exec stoka ./stoka seed
 
 In Dokploy:
 1. Go to your application → **Domains**
-2. Add domain: `stoka.yourdomain.com`
+2. Add domain: `gritdemo.yourdomain.com`
 3. Port: `8080`
 4. Enable HTTPS (Dokploy handles Let's Encrypt automatically via Traefik)
 
-Make sure your DNS has an **A record** pointing `stoka.yourdomain.com` to your VPS IP.
+Make sure your DNS has an **A record** pointing `gritdemo.yourdomain.com` to your VPS IP.
 
 ---
 
@@ -171,7 +171,7 @@ Push to `main` → trigger redeploy in Dokploy (or enable auto-deploy)
 
 ### Manual
 ```bash
-cd stoka
+cd grit/demo
 git pull
 docker compose up -d --build
 ```
@@ -185,7 +185,7 @@ docker compose up -d --build
 docker compose logs -f
 
 # Just the app
-docker compose logs -f stoka
+docker compose logs -f gritdemo
 
 # Database
 docker compose logs -f postgres
@@ -201,17 +201,17 @@ docker compose ps
 ### Database
 ```bash
 # Dump
-docker compose exec postgres pg_dump -U stoka stoka > backup_$(date +%Y%m%d).sql
+docker compose exec postgres pg_dump -U gritdemo gritdemo > backup_$(date +%Y%m%d).sql
 
 # Restore
-cat backup.sql | docker compose exec -T postgres psql -U stoka stoka
+cat backup.sql | docker compose exec -T postgres psql -U gritdemo gritdemo
 ```
 
 ### Volumes
 ```bash
 # Find volume paths
-docker volume inspect stoka_postgres_data
-docker volume inspect stoka_redis_data
+docker volume inspect gritdemo_postgres_data
+docker volume inspect gritdemo_redis_data
 ```
 
 ---
@@ -225,7 +225,7 @@ docker volume inspect stoka_redis_data
 | CORS errors | Add your domain to `CORS_ORIGINS` |
 | Images not loading | Check R2 credentials and bucket name |
 | Emails not sending | Verify `RESEND_API_KEY` and `MAIL_FROM` domain is verified in Resend |
-| Container keeps restarting | Check `docker compose logs stoka` for the error |
+| Container keeps restarting | Check `docker compose logs gritdemo` for the error |
 
 ---
 
