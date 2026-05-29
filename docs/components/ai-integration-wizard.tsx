@@ -288,8 +288,13 @@ export function AIIntegrationWizard() {
         {step === 3 && kit && <StepPrompt prompt={generatedPrompt} kitSlug={kit} />}
       </div>
 
-      {/* Nav buttons */}
-      <div className="flex items-center justify-between">
+      {/*
+        Nav buttons. The Nexora chat widget mounts a fixed bottom-right
+        button (~96px square + label). Bottom padding here ensures the Next
+        button never sits beneath it; the right-side spacer on `Next` keeps
+        them side-by-side on narrow screens instead of stacked.
+      */}
+      <div className="flex items-center justify-between gap-3 pb-28">
         <button
           type="button"
           onClick={handleBack}
@@ -305,7 +310,7 @@ export function AIIntegrationWizard() {
           Back
         </button>
 
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs text-muted-foreground hidden sm:block">
           Step {step + 1} of {STEPS.length}
         </span>
 
@@ -315,7 +320,7 @@ export function AIIntegrationWizard() {
             onClick={handleNext}
             disabled={!canAdvance}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-medium transition-colors',
+              'inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-medium transition-colors sm:mr-32',
               canAdvance
                 ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                 : 'bg-primary/30 text-primary-foreground/70 cursor-not-allowed',
@@ -328,7 +333,7 @@ export function AIIntegrationWizard() {
           <button
             type="button"
             onClick={handleRestart}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-5 py-2 text-sm font-medium text-foreground hover:bg-accent/40 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-5 py-2 text-sm font-medium text-foreground hover:bg-accent/40 transition-colors sm:mr-32"
           >
             Start over
           </button>

@@ -42,8 +42,6 @@ export function SiteHeader() {
         <nav className="hidden md:flex items-center gap-1">
           {[
             { label: 'Docs', href: '/docs' },
-            { label: 'Stack Selector', href: '/docs/stack-selector', highlight: true },
-            { label: 'Tutorials', href: '/docs/tutorials/learn' },
             { label: 'Tech Kits', href: '/docs/tech-kits' },
             { label: 'AI Integration', href: '/docs/ai-integration', highlight: true },
             { label: 'Courses', href: '/courses' },
