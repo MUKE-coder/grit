@@ -2,6 +2,7 @@ import { Server, Shield, Database, Layers, Bot, Activity, Cpu, FileCode2, Contai
 import { TechKitLayout, IncludedRow } from '@/components/tech-kit-layout'
 import { BrowserFrame } from '@/components/ui/device-frames'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { buildKitPrompt } from '@/lib/kit-prompts'
 
 export const metadata = getDocMetadata('/docs/tech-kits/triple')
 
@@ -73,6 +74,7 @@ export default function TripleKitPage() {
         { icon: DockerIcon, title: 'Three Dockerfiles',  body: 'One per app; docker-compose for local + grit deploy for prod.' },
       ]}
       architectureDeepLink="/docs/concepts/architecture-modes/triple"
+      starterPrompt={buildKitPrompt('triple')}
       prev={{ label: 'Double', href: '/docs/tech-kits/double' }}
       next={{ label: 'API only', href: '/docs/tech-kits/api' }}
     />

@@ -2,6 +2,7 @@ import { Monitor, Shield, Database, FileCode2, FileSpreadsheet, Container as Doc
 import { TechKitLayout, IncludedRow } from '@/components/tech-kit-layout'
 import { DesktopFrame } from '@/components/ui/device-frames'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { buildKitPrompt } from '@/lib/kit-prompts'
 
 export const metadata = getDocMetadata('/docs/tech-kits/desktop')
 
@@ -88,6 +89,7 @@ export default function DesktopKitPage() {
         { icon: Wifi,             title: 'Frameless window',    body: 'Draggable panels, custom titlebar, dark/light theme.' },
       ]}
       architectureDeepLink="/docs/concepts/architecture-modes"
+      starterPrompt={buildKitPrompt('desktop')}
       prev={{ label: 'Mobile', href: '/docs/tech-kits/mobile' }}
     />
   )

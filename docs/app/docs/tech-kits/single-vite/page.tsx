@@ -2,6 +2,7 @@ import { Zap, Shield, Database, Layers, Bot, Activity, Cpu, FileCode2, Container
 import { TechKitLayout, IncludedRow } from '@/components/tech-kit-layout'
 import { BrowserFrame } from '@/components/ui/device-frames'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { buildKitPrompt } from '@/lib/kit-prompts'
 
 export const metadata = getDocMetadata('/docs/tech-kits/single-vite')
 
@@ -72,6 +73,7 @@ export default function SingleViteKitPage() {
         { icon: DockerIcon, title: 'Docker + deploy',    body: 'Single binary, single Docker image, one TLS hop.' },
       ]}
       architectureDeepLink="/docs/concepts/architecture-modes/single"
+      starterPrompt={buildKitPrompt('single-vite')}
       prev={{ label: 'Single (Next)', href: '/docs/tech-kits/single' }}
       next={{ label: 'Double', href: '/docs/tech-kits/double' }}
     />

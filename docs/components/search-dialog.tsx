@@ -104,6 +104,7 @@ const searchIndex: SearchItem[] = [
 
   // Tech Kits
   { title: 'Tech Kits — All', href: '/docs/tech-kits', section: 'Tech Kits', keywords: 'tech kits starter kits starter pack scaffold templates single double triple api mobile desktop wails expo nextjs vite tanstack architecture modes' },
+  { title: 'AI Integration Helper', href: '/docs/ai-integration', section: 'Tech Kits', keywords: 'ai integration helper wizard claude code cursor lovable bolt v0 windsurf copilot aider cline prompt generator starter prompt project description phases design style guide planning files coding agent' },
   { title: 'Single Tech Kit', href: '/docs/tech-kits/single', section: 'Tech Kits', keywords: 'single binary embedded spa nextjs go embed single file deploy fastest small monolith' },
   { title: 'Single + Vite Tech Kit', href: '/docs/tech-kits/single-vite', section: 'Tech Kits', keywords: 'single vite tanstack router spa fast cold start refresh on 401 auth refresh' },
   { title: 'Double Tech Kit', href: '/docs/tech-kits/double', section: 'Tech Kits', keywords: 'double monorepo turborepo apps web apps api nextjs go shared zod schemas types two apps deploy separate' },

@@ -45,6 +45,7 @@ export function SiteHeader() {
             { label: 'Stack Selector', href: '/docs/stack-selector', highlight: true },
             { label: 'Tutorials', href: '/docs/tutorials/learn' },
             { label: 'Tech Kits', href: '/docs/tech-kits' },
+            { label: 'AI Integration', href: '/docs/ai-integration', highlight: true },
             { label: 'Courses', href: '/courses' },
             { label: 'Changelog', href: '/docs/changelog' },
             { label: 'Showcase', href: '/showcase' },

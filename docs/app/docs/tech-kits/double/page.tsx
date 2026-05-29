@@ -2,6 +2,7 @@ import { Layers, Shield, Database, Activity, Bot, Cpu, FileCode2, Container as D
 import { TechKitLayout, IncludedRow } from '@/components/tech-kit-layout'
 import { BrowserFrame } from '@/components/ui/device-frames'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { buildKitPrompt } from '@/lib/kit-prompts'
 
 export const metadata = getDocMetadata('/docs/tech-kits/double')
 
@@ -61,6 +62,7 @@ export default function DoubleKitPage() {
         { icon: DockerIcon, title: 'Two Dockerfiles',    body: 'One per app; compose ships for local dev.' },
       ]}
       architectureDeepLink="/docs/concepts/architecture-modes/double"
+      starterPrompt={buildKitPrompt('double')}
       prev={{ label: 'Single + Vite', href: '/docs/tech-kits/single-vite' }}
       next={{ label: 'Triple', href: '/docs/tech-kits/triple' }}
     />

@@ -2,6 +2,7 @@ import { Smartphone, Shield, Database, Bot, Activity, Cpu, FileCode2, Container 
 import { TechKitLayout, IncludedRow } from '@/components/tech-kit-layout'
 import { MobileFrame } from '@/components/ui/device-frames'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { buildKitPrompt } from '@/lib/kit-prompts'
 
 export const metadata = getDocMetadata('/docs/tech-kits/mobile')
 
@@ -74,6 +75,7 @@ export default function MobileKitPage() {
         { icon: DockerIcon, title: 'EAS Build',          body: 'eas.json shipped; OTA updates through Expo.' },
       ]}
       architectureDeepLink="/docs/concepts/architecture-modes/mobile"
+      starterPrompt={buildKitPrompt('mobile')}
       prev={{ label: 'API only', href: '/docs/tech-kits/api' }}
       next={{ label: 'Desktop', href: '/docs/tech-kits/desktop' }}
     />

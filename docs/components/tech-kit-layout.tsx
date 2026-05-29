@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { StarterPromptCard } from '@/components/starter-prompt-card'
 
 export interface TechKitFeature {
   /** Lucide icon component. */
@@ -29,6 +30,13 @@ export interface TechKitProps {
   features: TechKitFeature[]
   /** Path to the matching `/docs/concepts/architecture-modes/<slug>` deep-dive. */
   architectureDeepLink: string
+  /**
+   * Starter prompt that the user copies into claude.ai to generate the four
+   * planning files (project-description, project-phases, design-style-guide,
+   * prompt.md) for this kit. When provided, renders a `<StarterPromptCard>`
+   * between the features grid and the "Ready to build?" strip.
+   */
+  starterPrompt?: string
   /** Prev / next nav at the bottom. */
   prev?: { label: string; href: string }
   next?: { label: string; href: string }
@@ -42,6 +50,7 @@ export function TechKitLayout({
   mockup,
   features,
   architectureDeepLink,
+  starterPrompt,
   prev,
   next,
 }: TechKitProps) {
@@ -120,6 +129,15 @@ export function TechKitLayout({
                 })}
               </div>
             </div>
+
+            {/* Starter prompt for claude.ai (renders only when provided) */}
+            {starterPrompt && (
+              <StarterPromptCard
+                kitLabel={name}
+                command={command}
+                prompt={starterPrompt}
+              />
+            )}
 
             {/* Ready-to-build CTA strip */}
             <div className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-6 mb-12 text-center">

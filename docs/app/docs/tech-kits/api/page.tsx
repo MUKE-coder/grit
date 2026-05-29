@@ -2,6 +2,7 @@ import { Database, Shield, Bot, Activity, Cpu, FileCode2, Container as DockerIco
 import { TechKitLayout, IncludedRow } from '@/components/tech-kit-layout'
 import { BrowserFrame } from '@/components/ui/device-frames'
 import { getDocMetadata } from '@/config/docs-metadata'
+import { buildKitPrompt } from '@/lib/kit-prompts'
 
 export const metadata = getDocMetadata('/docs/tech-kits/api')
 
@@ -66,6 +67,7 @@ export default function ApiKitPage() {
         { icon: FileCode2,    title: 'Audit log',            body: 'Tamper-evident SHA-256 chain on every mutation.' },
       ]}
       architectureDeepLink="/docs/concepts/architecture-modes/api-only"
+      starterPrompt={buildKitPrompt('api')}
       prev={{ label: 'Triple', href: '/docs/tech-kits/triple' }}
       next={{ label: 'Mobile', href: '/docs/tech-kits/mobile' }}
     />

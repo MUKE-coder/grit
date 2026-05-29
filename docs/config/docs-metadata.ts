@@ -214,6 +214,13 @@ export const docsMetadata: Record<string, DocPage> = {
       'A live, full-stack Grit demo built on grit new --single --vite: motorcycle dealership management, POS, loans + repayments, daily-boda fleet tracking, multi-tenant RBAC, in-app Security (Sentinel) + Observability (Pulse) dashboards. Source on GitHub, login pre-filled, database reset nightly.',
   },
 
+  // AI Integration — wizard that generates the starter prompt for a chosen kit
+  '/docs/ai-integration': {
+    title: 'AI Integration — Generate a Grit Prompt for Your AI Agent',
+    description:
+      'Four-question wizard that produces a complete prompt for Claude Code, Cursor, Windsurf, Lovable, or any AI coding agent. Pick the platform, tech kit, and project shape — get back a paste-ready prompt that tells the agent exactly how to scaffold your idea with Grit and produce the four planning files (project-description, project-phases, design-style-guide, prompt.md).',
+  },
+
   // Tech Kits — Laravel-style starter-kit hub + 7 detail pages
   '/docs/tech-kits': {
     title: 'Tech Kits — Starter Kits',
