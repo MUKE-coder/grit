@@ -321,9 +321,8 @@ export function useProducts() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center">
             <div className="flex flex-col">
               <div className="flex items-center gap-2 mb-1">
-                <div className="h-7 w-7 rounded-md bg-primary/10 flex items-center justify-center">
-                  <span className="text-primary font-mono font-bold text-xs">G</span>
-                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/grit_logo.png" alt="Grit" className="h-7 w-7 rounded-md" />
                 <span className="text-xs font-mono font-medium text-foreground/70 tracking-wider">GRIT<br className="hidden lg:block" /> BY NUMBERS</span>
               </div>
             </div>
@@ -1539,9 +1538,8 @@ grit new my-app`} />
             {/* Brand column */}
             <div className="col-span-2 md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
-                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
-                  <span className="text-primary font-mono font-bold text-xs">G</span>
-                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/grit_logo.png" alt="Grit" className="h-7 w-7 rounded-md" />
                 <span className="font-semibold text-foreground">Grit Framework</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed mb-5 max-w-xs">

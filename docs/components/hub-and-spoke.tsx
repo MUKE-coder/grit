@@ -218,9 +218,12 @@ export function HubAndSpoke() {
 
               <div className="relative rounded-2xl border-2 border-primary/40 bg-card px-6 py-5 shadow-[0_24px_64px_-16px_rgba(0,0,0,0.35),0_0_0_4px_hsl(var(--primary)/0.08)]">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-sky-400 flex items-center justify-center font-bold text-white text-lg shadow-[inset_0_-2px_0_rgba(0,0,0,0.15),0_4px_12px_-2px_hsl(var(--primary)/0.4)]">
-                    G
-                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/grit_logo.png"
+                    alt="Grit"
+                    className="h-10 w-10 rounded-xl shadow-[0_4px_12px_-2px_hsl(var(--primary)/0.4)]"
+                  />
                   <div>
                     <div className="font-bold text-foreground leading-tight">Grit Framework</div>
                     <div className="text-[10px] font-mono text-muted-foreground tracking-wider uppercase">Your Project</div>

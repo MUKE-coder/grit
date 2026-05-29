@@ -380,9 +380,8 @@ export function MobileNav() {
       <SheetContent side="left" className="w-72 p-0 bg-background border-border/30">
         <SheetHeader className="px-4 py-3 border-b border-border/30">
           <SheetTitle className="flex items-center gap-2 text-left">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/15 border border-primary/20">
-              <span className="text-primary font-mono font-bold text-[10px]">G</span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/grit_logo.png" alt="Grit" className="h-6 w-6 rounded-md" />
             <span className="text-sm font-semibold tracking-tight">Grit Docs</span>
           </SheetTitle>
         </SheetHeader>

@@ -23,9 +23,12 @@ export function SiteHeader() {
         {/* Logo */}
         <div className="mr-6 lg:mr-8 flex items-center">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 transition-colors group-hover:bg-primary/20">
-              <span className="text-primary font-mono font-bold text-xs">G</span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/grit_logo.png"
+              alt="Grit"
+              className="h-7 w-7 rounded-md transition-transform group-hover:scale-105"
+            />
             <span className="font-semibold text-[15px] tracking-tight text-foreground">
               Grit
             </span>

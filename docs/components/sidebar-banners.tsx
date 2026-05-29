@@ -49,9 +49,8 @@ export function RightSideBanners() {
           className="group block rounded-lg border border-primary/20 bg-primary/[0.06] p-3 transition-all hover:border-primary/35 hover:bg-primary/[0.10]"
         >
           <div className="flex items-center gap-2 mb-1.5">
-            <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/20">
-              <span className="text-[10px] font-mono font-bold text-primary">G</span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/grit_logo.png" alt="" className="h-5 w-5 rounded" />
             <span className="text-[12px] font-semibold text-foreground/90 group-hover:text-primary transition-colors">
               GritCMS
             </span>
