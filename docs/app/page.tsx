@@ -10,6 +10,8 @@ import { CpuArchitecture } from '@/components/ui/cpu-architecture'
 import { MagneticButton, GSAPSection, FadeIn, GlowOrb } from '@/components/motion-primitives'
 import { GoLogo, ReactLogo, VueLogo, SvelteLogo, NextLogo, TanStackLogo, TypeScriptLogo, TailwindLogo, PostgresLogo, RedisLogo, DockerLogo } from '@/components/framework-logos'
 import { HubAndSpoke } from '@/components/hub-and-spoke'
+import { ThreePlatforms } from '@/components/three-platforms'
+import { WhatIsGrit } from '@/components/what-is-grit'
 
 export const metadata: Metadata = {
   title: 'Grit — Go + React Full-Stack Framework',
@@ -339,6 +341,12 @@ export function useProducts() {
           </div>
         </div>
       </section>
+
+      {/* ═══ NEW: WHAT IS GRIT (60-second tour) ═══ */}
+      <WhatIsGrit />
+
+      {/* ═══ NEW: THREE PLATFORMS, ONE FRAMEWORK (Web · Desktop · Mobile mockups) ═══ */}
+      <ThreePlatforms />
 
       {/* ═══ CPU ARCHITECTURE — Grit as the central chip ═══ */}
       <section className="relative py-24 px-6 overflow-hidden border-t border-border/40">
