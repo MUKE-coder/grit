@@ -332,6 +332,93 @@ export function useProducts() {
         </div>
       </section>
 
+      {/* ═══ CPU ARCHITECTURE — Grit as the central chip ═══ */}
+      <section className="relative py-24 px-6 overflow-hidden border-t border-border/40">
+        {/* Layered backdrop — subtle radial + dotted grid */}
+        <div className="absolute inset-0 -z-30 bg-gradient-to-b from-background via-card/20 to-background" />
+        <div
+          className="absolute inset-0 -z-20 opacity-[0.4]"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.08) 1px, transparent 0)',
+            backgroundSize: '24px 24px',
+          }}
+        />
+        <GlowOrb className="-top-40 left-1/2 -translate-x-1/2 h-[700px] w-[700px] bg-primary/[0.06]" duration={20} />
+
+        <div className="max-w-6xl mx-auto">
+
+          <GSAPSection>
+            <div className="text-center mb-14" data-gsap-reveal>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-5">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" /> The Grit Core
+              </span>
+              <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground mb-5 leading-[1.1]">
+                One CLI &mdash; eight production<br />primitives wired together
+              </h2>
+              <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                Grit is the chip on the board. Auth, jobs, storage, AI, observability,
+                webhooks, realtime, and cache all light up the moment you scaffold,
+                so you spend your time on product not plumbing.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+
+              {/* CPU canvas — center 6 cols on desktop, full width below */}
+              <div className="lg:col-span-7 order-2 lg:order-1" data-gsap-reveal>
+                <div className="relative rounded-2xl border-2 border-border/50 bg-card/60 backdrop-blur p-8 shadow-[0_24px_64px_-16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.04)]">
+                  {/* Corner bracket decorations */}
+                  <div className="absolute top-3 left-3 h-4 w-4 border-t-2 border-l-2 border-primary/40" />
+                  <div className="absolute top-3 right-3 h-4 w-4 border-t-2 border-r-2 border-primary/40" />
+                  <div className="absolute bottom-3 left-3 h-4 w-4 border-b-2 border-l-2 border-primary/40" />
+                  <div className="absolute bottom-3 right-3 h-4 w-4 border-b-2 border-r-2 border-primary/40" />
+                  <CpuArchitecture
+                    className="text-foreground/30 dark:text-foreground/25"
+                    text="GRIT"
+                  />
+                  {/* Stamp footer */}
+                  <div className="mt-4 flex items-center justify-between px-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">v3.23 · production-ready</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-muted-foreground/50">GRIT-FW-A1</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Feature spokes — 2-col on desktop, full grid on mobile */}
+              <div className="lg:col-span-5 order-1 lg:order-2 grid grid-cols-2 gap-3" data-gsap-reveal>
+                {[
+                  { label: 'Auth',          sub: 'JWT · OAuth · 2FA',     dot: 'bg-sky-400' },
+                  { label: 'AI Gateway',    sub: '100+ models · stream',  dot: 'bg-violet-400' },
+                  { label: 'File Storage',  sub: 'S3 · R2 · MinIO',       dot: 'bg-amber-400' },
+                  { label: 'Background Jobs', sub: 'asynq · retries',     dot: 'bg-orange-400' },
+                  { label: 'Webhooks',      sub: 'Stripe · HMAC · replay', dot: 'bg-emerald-400' },
+                  { label: 'Realtime Hub',  sub: 'WebSockets · channels', dot: 'bg-rose-400' },
+                  { label: 'Redis Cache',   sub: 'middleware · TTL',      dot: 'bg-red-400' },
+                  { label: 'Transactional Mail', sub: 'Resend · templates', dot: 'bg-cyan-400' },
+                ].map((f) => (
+                  <div
+                    key={f.label}
+                    className="group relative rounded-xl border border-border/50 bg-card/50 p-4 hover:border-primary/40 hover:bg-card/80 transition-all shadow-sm hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.3)]"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`h-1.5 w-1.5 rounded-full ${f.dot} shadow-[0_0_8px_currentColor]`} />
+                      <span className="font-semibold text-foreground text-sm">{f.label}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground font-mono">{f.sub}</p>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          </GSAPSection>
+
+        </div>
+      </section>
+
       {/* ═══ FRAMEWORK FOR DEVELOPERS & AGENTS — tabbed code section ═══ */}
       <section className="relative py-24 px-6 overflow-hidden">
         {/* Soft warm gradient backdrop */}
