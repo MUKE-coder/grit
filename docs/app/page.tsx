@@ -9,6 +9,7 @@ import { FeatureTabs } from '@/components/feature-tabs'
 import { CpuArchitecture } from '@/components/ui/cpu-architecture'
 import { MagneticButton, GSAPSection, FadeIn, GlowOrb } from '@/components/motion-primitives'
 import { GoLogo, ReactLogo, VueLogo, SvelteLogo, NextLogo, TanStackLogo, TypeScriptLogo, TailwindLogo, PostgresLogo, RedisLogo, DockerLogo } from '@/components/framework-logos'
+import { HubAndSpoke } from '@/components/hub-and-spoke'
 
 export const metadata: Metadata = {
   title: 'Grit — Go + React Full-Stack Framework',
@@ -367,7 +368,7 @@ export function useProducts() {
 
               {/* CPU canvas — center 6 cols on desktop, full width below */}
               <div className="lg:col-span-7 order-2 lg:order-1" data-gsap-reveal>
-                <div className="relative rounded-2xl border-2 border-border/50 bg-card/60 backdrop-blur p-8 shadow-[0_24px_64px_-16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.04)]">
+                <div className="relative conic-border rounded-2xl bg-card/60 backdrop-blur p-8 shadow-[0_24px_64px_-16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.04)]">
                   {/* Corner bracket decorations */}
                   <div className="absolute top-3 left-3 h-4 w-4 border-t-2 border-l-2 border-primary/40" />
                   <div className="absolute top-3 right-3 h-4 w-4 border-t-2 border-r-2 border-primary/40" />
@@ -418,6 +419,9 @@ export function useProducts() {
 
         </div>
       </section>
+
+      {/* ═══ HUB & SPOKE — Hubfly-style with animated flow lines ═══ */}
+      <HubAndSpoke />
 
       {/* ═══ FRAMEWORK FOR DEVELOPERS & AGENTS — tabbed code section ═══ */}
       <section className="relative py-24 px-6 overflow-hidden">
@@ -495,8 +499,8 @@ export function useProducts() {
                 </Link>
               </Button>
 
-              {/* Pulse dashboard mockup */}
-              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden shadow-xl">
+              {/* Pulse dashboard mockup — conic animated border for wow factor */}
+              <div className="relative conic-border rounded-xl bg-card/80 overflow-hidden shadow-[0_24px_48px_-16px_rgba(0,0,0,0.35),0_2px_8px_-2px_rgba(0,0,0,0.15)]">
                 <div className="flex">
                   {/* Sidebar */}
                   <div className="hidden sm:block w-32 border-r border-border/40 bg-background/60 px-3 py-3">

@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import { CodeBlock } from './code-block'
 
 interface CodeFile {
   name: string
   icon: 'go' | 'ts' | 'tsx' | 'sql' | 'sh'
+  language?: string
   code: string
 }
 
@@ -407,20 +409,20 @@ export function FeatureTabs() {
         </div>
       </div>
 
-      {/* Code editor */}
-      <div className="rounded-xl overflow-hidden border border-border/40 bg-slate-950 shadow-2xl">
+      {/* Code editor — GitHub-themed shell that mirrors CodeBlock chrome */}
+      <div className="rounded-xl overflow-hidden border-2 border-slate-200/80 bg-white shadow-[0_1px_0_rgba(27,31,35,0.04),0_24px_64px_-16px_rgba(15,23,42,0.18)] dark:border-white/10 dark:bg-[#0d1117] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_64px_-16px_rgba(0,0,0,0.6)]">
         {/* File tabs */}
-        <div className="flex items-center gap-0 bg-slate-900/80 border-b border-white/10 overflow-x-auto">
+        <div className="flex items-center gap-0 bg-[#f6f8fa] dark:bg-[#161b22] border-b border-[#d0d7de] dark:border-white/[0.08] overflow-x-auto">
           {active.files.map((file, i) => (
             <button
               key={file.name}
               type="button"
               onClick={() => setActiveFileIdx(i)}
               className={cn(
-                'flex items-center gap-2 px-4 py-2.5 text-xs font-mono whitespace-nowrap transition-colors border-r border-white/5',
+                'flex items-center gap-2 px-4 py-2.5 text-xs font-mono whitespace-nowrap transition-colors border-r border-[#d0d7de]/60 dark:border-white/[0.06]',
                 i === activeFileIdx
-                  ? 'text-white bg-slate-950'
-                  : 'text-white/50 hover:text-white/80'
+                  ? 'text-[#24292f] dark:text-white bg-white dark:bg-[#0d1117] -mb-px'
+                  : 'text-[#57606a] dark:text-white/50 hover:text-[#24292f] dark:hover:text-white/80'
               )}
             >
               <FileIcon kind={file.icon} />
@@ -429,10 +431,14 @@ export function FeatureTabs() {
           ))}
         </div>
 
-        {/* Code body */}
-        <pre className="px-5 py-5 text-[12.5px] leading-[1.65] font-mono text-slate-100 overflow-x-auto min-h-[360px]">
-          <code>{activeFile.code}</code>
-        </pre>
+        {/* Code body — uses CodeBlock so syntax highlighting matches everywhere */}
+        <div className="min-h-[360px]">
+          <CodeBlock
+            code={activeFile.code}
+            language={activeFile.language || (activeFile.icon === 'sh' ? 'bash' : activeFile.icon === 'tsx' ? 'tsx' : activeFile.icon === 'ts' ? 'typescript' : activeFile.icon === 'sql' ? 'sql' : 'go')}
+            className="!border-0 !rounded-none !shadow-none !bg-transparent dark:!bg-transparent !m-0"
+          />
+        </div>
       </div>
     </div>
   )
