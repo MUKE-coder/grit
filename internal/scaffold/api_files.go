@@ -77,7 +77,8 @@ go 1.21
 require (
 	github.com/MUKE-coder/gin-docs v0.0.0-20260222113017-4d647cb4e7aa
 	github.com/MUKE-coder/gorm-studio v1.0.1
-	github.com/MUKE-coder/pulse v0.0.0-20260223005903-6f5d6e356231
+	// Pinned to the v1.0.0 commit on main.
+	github.com/MUKE-coder/pulse v0.0.0-20260529025319-478cdfa8ce5f
 	github.com/aws/aws-sdk-go-v2 v1.25.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.0
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.0
@@ -96,7 +97,12 @@ require (
 	github.com/redis/go-redis/v9 v9.4.0
 	github.com/xuri/excelize/v2 v2.8.1
 	golang.org/x/crypto v0.23.0
-	github.com/MUKE-coder/sentinel v0.0.0-20260220061042-2d2324be6824
+	// Pinned to the v2.0.1 commit on main. Upstream is tagged v2.0.1
+	// but the module path lacks the /v2 suffix Go modules requires for
+	// major versions >= 2, so the tag fails go.sum verification. A
+	// pseudo-version side-steps the rule; the underlying code is the
+	// same as the tag. Advance the pin once sentinel re-tags with /v2.
+	github.com/MUKE-coder/sentinel v0.0.0-20260529033414-0e945440db7f
 	gorm.io/datatypes v1.2.7
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.25.12
@@ -181,6 +187,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/jobs"
 	"` + "{{MODULE}}" + `/internal/mail"
 	"` + "{{MODULE}}" + `/internal/routes"
+	"` + "{{MODULE}}" + `/internal/services"
 	"` + "{{MODULE}}" + `/internal/storage"
 )
 
@@ -273,16 +280,31 @@ func main() {
 	}
 
 	// Build services
+	var secObsBridge *services.SecObsBridge
+	if cfg.SentinelEnabled || cfg.PulseEnabled {
+		secObsBridge = services.NewSecObsBridge(cfg)
+	}
+
 	svc := &routes.Services{
 		Cache:   cacheService,
 		Storage: storageService,
 		Mailer:  mailer,
 		AI:      aiService,
 		Jobs:    jobClient,
+		SecObs:  secObsBridge,
 	}
 
 	// Setup router
 	router := routes.Setup(db, cfg, svc)
+
+	// Start the SecObs notification poller (turns Sentinel/Pulse findings
+	// into in-app notifications). Runs once a minute on its own goroutine;
+	// no-op when the bridge is nil.
+	var secObsPoller *services.SecObsPoller
+	if secObsBridge != nil {
+		secObsPoller = services.NewSecObsPoller(db, secObsBridge)
+		secObsPoller.Start()
+	}
 
 	// Start background worker
 	var workerStop func()
@@ -348,6 +370,10 @@ func main() {
 	<-quit
 
 	log.Println("Shutting down server...")
+
+	if secObsPoller != nil {
+		secObsPoller.Stop()
+	}
 
 	// Stop cron scheduler
 	if cronScheduler != nil {
@@ -440,15 +466,25 @@ type Config struct {
 	TOTPIssuer string
 
 	// Security (Sentinel)
-	SentinelEnabled   bool
-	SentinelUsername   string
-	SentinelPassword  string
-	SentinelSecretKey string
+	SentinelEnabled        bool
+	SentinelUsername       string
+	SentinelPassword       string
+	SentinelSecretKey      string
+	// Sentinel v2.0 — CIDRs allowed to send X-Forwarded-For / X-Real-IP.
+	// Empty (default) means "ignore those headers entirely" — safe when
+	// the app speaks to the public internet directly; populate when
+	// you're behind a known reverse proxy (Caddy/Traefik/Cloudflare).
+	SentinelTrustedProxies []string
 
-	// Observability (Pulse)
-	PulseEnabled   bool
-	PulseUsername   string
-	PulsePassword  string
+	// Observability (Pulse v1.0)
+	PulseEnabled    bool
+	PulseUsername    string
+	PulsePassword   string
+	// Pulse v1.0 storage. Defaults to in-memory ring buffer (no disk).
+	// Set PULSE_STORAGE=sqlite + PULSE_STORAGE_DSN=pulse.db to enable
+	// the new persistent backend (WAL, busy_timeout=5s, survives restart).
+	PulseStorage    string // "memory" (default) | "sqlite"
+	PulseStorageDSN string // path for sqlite, e.g. "pulse.db" or ":memory:"
 
 	// OAuth2 Social Login
 	GoogleClientID     string
@@ -493,14 +529,17 @@ func Load() (*Config, error) {
 
 		TOTPIssuer: getEnv("TOTP_ISSUER", getEnv("APP_NAME", "grit-app")),
 
-		SentinelEnabled:   getEnv("SENTINEL_ENABLED", "true") == "true",
-		SentinelUsername:   getEnv("SENTINEL_USERNAME", "admin"),
-		SentinelPassword:  getEnv("SENTINEL_PASSWORD", "sentinel"),
-		SentinelSecretKey: getEnv("SENTINEL_SECRET_KEY", "sentinel-secret-change-me"),
+		SentinelEnabled:        getEnv("SENTINEL_ENABLED", "true") == "true",
+		SentinelUsername:       getEnv("SENTINEL_USERNAME", "admin"),
+		SentinelPassword:       getEnv("SENTINEL_PASSWORD", "sentinel"),
+		SentinelSecretKey:      getEnv("SENTINEL_SECRET_KEY", "sentinel-secret-change-me"),
+		SentinelTrustedProxies: splitCSV(getEnv("SENTINEL_TRUSTED_PROXIES", "")),
 
-		PulseEnabled:  getEnv("PULSE_ENABLED", "true") == "true",
-		PulseUsername: getEnv("PULSE_USERNAME", "admin"),
-		PulsePassword: getEnv("PULSE_PASSWORD", "pulse"),
+		PulseEnabled:    getEnv("PULSE_ENABLED", "true") == "true",
+		PulseUsername:    getEnv("PULSE_USERNAME", "admin"),
+		PulsePassword:   getEnv("PULSE_PASSWORD", "pulse"),
+		PulseStorage:    getEnv("PULSE_STORAGE", "memory"),
+		PulseStorageDSN: getEnv("PULSE_STORAGE_DSN", "pulse.db"),
 
 		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
@@ -579,6 +618,22 @@ func getEnv(key, fallback string) string {
 		return val
 	}
 	return fallback
+}
+
+// splitCSV trims and splits a comma-separated env var. Empty strings
+// after trimming are dropped so "a, ,b" yields ["a","b"].
+func splitCSV(s string) []string {
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 `
 }
@@ -738,6 +793,7 @@ func Models() []interface{} {
 		&WebhookEvent{},
 		&FeatureFlag{},
 		&FlagExposure{},
+		&Notification{},
 		// grit:models
 	}
 }
@@ -5802,6 +5858,10 @@ type Services struct {
 	Mailer  *mail.Mailer
 	AI      *ai.AI
 	Jobs    *jobs.Client
+	// SecObsBridge talks to Sentinel + Pulse over loopback so the
+	// in-app Security/Observability dashboards can show summary cards
+	// without iframing. Nil when Sentinel/Pulse are both disabled.
+	SecObs  *services.SecObsBridge
 }
 
 // Setup configures all routes and returns the Gin engine.
@@ -5843,11 +5903,16 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			}
 		}
 
-		sentinel.Mount(r, db, sentinel.Config{
+		// Sentinel v2.0.1 — use MountE so we can recover gracefully on
+		// misconfiguration in dev instead of log.Fatalf-ing the host.
+		if err := sentinel.MountE(r, db, sentinel.Config{
 			Dashboard: sentinel.DashboardConfig{
-				Username:  cfg.SentinelUsername,
-				Password:  cfg.SentinelPassword,
-				SecretKey: cfg.SentinelSecretKey,
+				Username:               cfg.SentinelUsername,
+				Password:               cfg.SentinelPassword,
+				SecretKey:              cfg.SentinelSecretKey,
+				// v2.0 refuses default credentials in gin.ReleaseMode;
+				// opt-in only for dev so prod can't ship forgeable JWTs.
+				AllowInsecureDefaults:  isDev,
 			},
 			WAF: sentinel.WAFConfig{
 				Enabled: true,
@@ -5855,24 +5920,33 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 					if isDev { return sentinel.ModeLog }
 					return sentinel.ModeBlock
 				}(),
+				// v2.0 X-Forwarded-For trust closed. Empty list = ignore
+				// XFF entirely (the safe default). Operators behind a known
+				// reverse proxy should populate via SENTINEL_TRUSTED_PROXIES.
+				TrustedProxies:        cfg.SentinelTrustedProxies,
+				// v2.0 body-inspection cap; rejects bodies larger than
+				// MaxBodyBytes outright so attackers can't pad past it.
+				MaxBodyBytes:          64 * 1024,
+				RejectOversizedBody:   true,
 			},
 			RateLimit: sentinel.RateLimitConfig{
-				Enabled: !isDev, // Disabled in development, enabled in production
+				Enabled: !isDev,
 				ByIP:    ipLimit,
 				ByRoute: routeLimits,
 			},
 			AuthShield: sentinel.AuthShieldConfig{
-				Enabled:    !isDev, // Disabled in development
+				Enabled:    !isDev,
 				LoginRoute: "/api/auth/login",
+				// v2.0 CAPTCHA tier sits between soft and hard thresholds.
+				// Wire a provider by setting CaptchaProvider in your app code.
 			},
-			Anomaly: sentinel.AnomalyConfig{
-				Enabled: !isDev, // Disabled in development
-			},
-			Geo: sentinel.GeoConfig{
-				Enabled: !isDev, // Disabled in development
-			},
-		})
-		log.Println("Sentinel security suite mounted at /sentinel")
+			Anomaly: sentinel.AnomalyConfig{Enabled: !isDev},
+			Geo:     sentinel.GeoConfig{Enabled: !isDev},
+		}); err != nil {
+			log.Printf("Warning: Sentinel mount failed: %v", err)
+		} else {
+			log.Println("Sentinel v2.0 mounted at /sentinel")
+		}
 	}
 
 	// Mount GORM Studio
@@ -5906,21 +5980,26 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 
 	// Mount Pulse observability (request tracing, DB monitoring, runtime metrics, error tracking)
 	if cfg.PulseEnabled {
-		p := pulse.Mount(r, db, pulse.Config{
-			AppName: cfg.AppName,
-			DevMode: cfg.IsDevelopment(),
-			Dashboard: pulse.DashboardConfig{
-				Username: cfg.PulseUsername,
-				Password: cfg.PulsePassword,
-			},
-			Tracing: pulse.TracingConfig{
-				ExcludePaths: []string{"/studio/*", "/sentinel/*", "/docs/*", "/pulse/*"},
-			},
-			Alerts: pulse.AlertConfig{},
-			Prometheus: pulse.PrometheusConfig{
-				Enabled: true,
-			},
-		})
+		// Pulse v1.0 uses functional options + a context. The context
+		// drives clean shutdown of the dashboard's WebSocket + background
+		// samplers; we hand it the request context so a server shutdown
+		// also unwinds Pulse.
+		pulseOpts := []pulse.Option{
+			pulse.WithAppName(cfg.AppName),
+			pulse.WithCredentials(cfg.PulseUsername, cfg.PulsePassword),
+			pulse.WithExcludePaths("/studio/*", "/sentinel/*", "/docs/*", "/pulse/*"),
+			pulse.WithPrometheus(),
+		}
+		if cfg.IsDevelopment() {
+			pulseOpts = append(pulseOpts, pulse.WithDevMode())
+		}
+		// Pulse v1.0 SQLite-backed storage — request/query/error data
+		// survives a restart. Stay on the in-memory ring buffer for peak
+		// write throughput.
+		if cfg.PulseStorage == "sqlite" && cfg.PulseStorageDSN != "" {
+			pulseOpts = append(pulseOpts, pulse.WithSQLite(cfg.PulseStorageDSN))
+		}
+		p := pulse.Mount(context.Background(), r, db, pulseOpts...)
 
 		// Register health checks for connected services
 		if svc.Cache != nil {
@@ -5980,6 +6059,12 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	featureFlagHandler := handlers.NewFeatureFlagHandler(db, flagsEngine)
 	realtimeHandler := handlers.NewRealtimeHandler(realtimeHub, authService)
 	_ = realtimeHub // available to handlers/services that want to push events
+
+	// In-app Security + Observability dashboards — read from Sentinel/Pulse APIs
+	// over loopback. notificationHandler powers the admin bell.
+	notificationHandler := &handlers.NotificationHandler{DB: db}
+	securityHandler := &handlers.SecurityHandler{Bridge: svc.SecObs}
+	observabilityHandler := &handlers.ObservabilityHandler{Bridge: svc.SecObs}
 
 	// Sync registry — list every model that should be syncable from
 	// offline-first desktop clients. The resource generator injects
@@ -6085,6 +6170,13 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		protected.GET("/ui-components", uiRegistryHandler.ListComponents)
 		protected.GET("/ui-components/:name", uiRegistryHandler.GetComponentDetail)
 
+		// In-app notification bell — every authenticated user. Pulls
+		// from a single Notification table that the SecObs poller
+		// writes into when Sentinel/Pulse fires a high-severity event.
+		protected.GET("/notifications", notificationHandler.List)
+		protected.POST("/notifications/:id/read", notificationHandler.MarkRead)
+		protected.POST("/notifications/read-all", notificationHandler.MarkAllRead)
+
 		// grit:routes:protected
 	}
 
@@ -6138,6 +6230,15 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		admin.POST("/admin/ui-components", uiRegistryHandler.CreateComponent)
 		admin.PUT("/admin/ui-components/:name", uiRegistryHandler.UpdateComponent)
 		admin.DELETE("/admin/ui-components/:name", uiRegistryHandler.DeleteComponent)
+
+		// In-app Security dashboard — aggregates Sentinel APIs into one
+		// envelope so the React page does a single round-trip. Operators
+		// who want to dig deeper open /sentinel/ui directly.
+		admin.GET("/admin/security/summary", securityHandler.Summary)
+		// In-app Observability dashboard — same pattern against Pulse.
+		// Operators who want a flame graph or the full SLO timeline open
+		// /pulse/ui directly.
+		admin.GET("/admin/observability/summary", observabilityHandler.Summary)
 
 		// grit:routes:admin
 	}

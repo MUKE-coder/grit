@@ -364,6 +364,7 @@ export function Sidebar({ user, collapsed, mobileOpen, onMobileClose }: SidebarP
         { label: "Cron", href: "/system/cron", icon: "Calendar" },
         { label: "Mail", href: "/system/mail", icon: "Mail" },
         { label: "Security", href: "/system/security", icon: "Shield" },
+        { label: "Observability", href: "/system/observability", icon: "Activity" },
       ]
     : [];
 

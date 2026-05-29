@@ -315,6 +315,9 @@ func Run(opts Options) error {
 	if err := writeTestingFiles(root, opts); err != nil {
 		return fmt.Errorf("writing testing files: %w", err)
 	}
+	if err := writeSecurityObservabilityFiles(root, opts); err != nil {
+		return fmt.Errorf("writing security/observability files: %w", err)
+	}
 
 	// Write blog example files
 	spinner.Printf("  → Adding blog example...\n")
@@ -487,6 +490,9 @@ func RunSingle(opts Options) error {
 	}
 	if err := writeTestingFiles(root, opts); err != nil {
 		return fmt.Errorf("writing testing files: %w", err)
+	}
+	if err := writeSecurityObservabilityFiles(root, opts); err != nil {
+		return fmt.Errorf("writing security/observability files: %w", err)
 	}
 
 	// Write blog example

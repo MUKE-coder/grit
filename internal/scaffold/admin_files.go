@@ -293,8 +293,9 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "files", "page.tsx"): adminFilesPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "cron", "page.tsx"):  adminCronPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "mail", "page.tsx"):     adminMailPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "security", "page.tsx"): adminSecurityPage(),
-		filepath.Join(adminRoot, "public", ".gitkeep"):                                   "",
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "security", "page.tsx"):      adminSecurityPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "observability", "page.tsx"): adminObservabilityPage(),
+		filepath.Join(adminRoot, "public", ".gitkeep"):                                        "",
 	}
 
 	for path, content := range files {
