@@ -213,6 +213,48 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'A live, full-stack Grit demo built on grit new --single --vite: motorcycle dealership management, POS, loans + repayments, daily-boda fleet tracking, multi-tenant RBAC, in-app Security (Sentinel) + Observability (Pulse) dashboards. Source on GitHub, login pre-filled, database reset nightly.',
   },
+
+  // Tech Kits — Laravel-style starter-kit hub + 7 detail pages
+  '/docs/tech-kits': {
+    title: 'Tech Kits — Starter Kits',
+    description:
+      'Pick the tech kit that matches the shape of your next app — single Go binary, Web + API monorepo, Triple (Web + Admin + API), Mobile (Expo), Desktop (Wails), or API-only. Each kit ships authentication, audit log, in-app Security + Observability dashboards, and the same code generator.',
+  },
+  '/docs/tech-kits/single': {
+    title: 'Single Tech Kit — Go + embedded SPA',
+    description:
+      'Single Go binary with React (Next.js) embedded via go:embed. Smallest possible deploy. JWT auth, OAuth, 2FA, Pulse + Sentinel, code generator — all in one file.',
+  },
+  '/docs/tech-kits/single-vite': {
+    title: 'Single + Vite Tech Kit — TanStack Router SPA',
+    description:
+      'Same single-binary shape, but with Vite + TanStack Router instead of Next.js. Sub-second cold starts, smaller bundle, lib/auth.ts with refresh-on-401 baked in.',
+  },
+  '/docs/tech-kits/double': {
+    title: 'Double Tech Kit — Web + API monorepo',
+    description:
+      'apps/web (Next.js) + apps/api (Go) in a Turborepo. Shared Zod schemas and TS types in packages/shared. Deploy each app on its own schedule.',
+  },
+  '/docs/tech-kits/triple': {
+    title: 'Triple Tech Kit — Web + Admin + API',
+    description:
+      'The full SaaS shape. Public marketing site, Filament-style admin panel, Go API — one monorepo. RBAC, invitation flow, audit log, and in-app Security + Observability dashboards pre-wired.',
+  },
+  '/docs/tech-kits/api': {
+    title: 'API Tech Kit — Go backend only',
+    description:
+      'Pure Gin + GORM API. No frontend; bring your own. OpenAPI 3.0 auto-served at /docs. JWT, OAuth, 2FA, jobs, AI, audit log — same batteries as the full kits.',
+  },
+  '/docs/tech-kits/mobile': {
+    title: 'Mobile Tech Kit — Expo + API',
+    description:
+      'Expo (React Native) frontend on a Grit API. Shared Zod schemas, mobile-friendly auth with refresh tokens in AsyncStorage, EAS Build configuration, OTA-ready.',
+  },
+  '/docs/tech-kits/desktop': {
+    title: 'Desktop Tech Kit — Wails + GORM',
+    description:
+      'Native desktop binary with Wails v2 + React + Tailwind on the front and Go + GORM (SQLite or Postgres) on the back. Local auth, PDF + Excel export, frameless window, draggable panels.',
+  },
   '/docs/backend/response-format': {
     title: 'API Response Format',
     description:

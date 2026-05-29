@@ -60,6 +60,20 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    title: 'Tech Kits',
+    icon: <Box className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'All Tech Kits', href: '/docs/tech-kits' },
+      { title: 'Single (Next.js)', href: '/docs/tech-kits/single' },
+      { title: 'Single + Vite', href: '/docs/tech-kits/single-vite' },
+      { title: 'Double — Web + API', href: '/docs/tech-kits/double' },
+      { title: 'Triple — Web + Admin + API', href: '/docs/tech-kits/triple' },
+      { title: 'API only', href: '/docs/tech-kits/api' },
+      { title: 'Mobile (Expo)', href: '/docs/tech-kits/mobile' },
+      { title: 'Desktop (Wails)', href: '/docs/tech-kits/desktop' },
+    ],
+  },
+  {
     title: 'Getting Started',
     icon: <Rocket className="h-3.5 w-3.5" />,
     items: [

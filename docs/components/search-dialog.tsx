@@ -102,6 +102,16 @@ const searchIndex: SearchItem[] = [
   // Demo
   { title: 'Demo Application — Grit Motors', href: '/docs/demo', section: 'Demo', keywords: 'demo application grit motors kayula motorcycle dealership pos sales loans repayments borrowers spares stock multi-tenant rbac sentinel pulse security observability self host live demo source code' },
 
+  // Tech Kits
+  { title: 'Tech Kits — All', href: '/docs/tech-kits', section: 'Tech Kits', keywords: 'tech kits starter kits starter pack scaffold templates single double triple api mobile desktop wails expo nextjs vite tanstack architecture modes' },
+  { title: 'Single Tech Kit', href: '/docs/tech-kits/single', section: 'Tech Kits', keywords: 'single binary embedded spa nextjs go embed single file deploy fastest small monolith' },
+  { title: 'Single + Vite Tech Kit', href: '/docs/tech-kits/single-vite', section: 'Tech Kits', keywords: 'single vite tanstack router spa fast cold start refresh on 401 auth refresh' },
+  { title: 'Double Tech Kit', href: '/docs/tech-kits/double', section: 'Tech Kits', keywords: 'double monorepo turborepo apps web apps api nextjs go shared zod schemas types two apps deploy separate' },
+  { title: 'Triple Tech Kit', href: '/docs/tech-kits/triple', section: 'Tech Kits', keywords: 'triple monorepo web admin api filament-style panel rbac roles invitation flow audit log saas full' },
+  { title: 'API Tech Kit', href: '/docs/tech-kits/api', section: 'Tech Kits', keywords: 'api only headless go gin gorm openapi swagger scalar pure backend no frontend' },
+  { title: 'Mobile Tech Kit', href: '/docs/tech-kits/mobile', section: 'Tech Kits', keywords: 'mobile expo react native eas build ota updates push notifications shared types ios android' },
+  { title: 'Desktop Tech Kit', href: '/docs/tech-kits/desktop', section: 'Tech Kits', keywords: 'desktop wails offline-first sqlite local auth bcrypt pdf excel export frameless window draggable native binary' },
+
   // Infrastructure
   { title: 'Docker Setup', href: '/docs/infrastructure/docker', section: 'Infrastructure', keywords: 'docker compose container postgresql redis minio' },
   { title: 'Docker Cheat Sheet', href: '/docs/infrastructure/docker-cheatsheet', section: 'Infrastructure', keywords: 'docker commands cheat sheet reference' },
