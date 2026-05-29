@@ -53,6 +53,13 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    title: 'Demo',
+    icon: <Rocket className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Demo Application', href: '/docs/demo' },
+    ],
+  },
+  {
     title: 'Getting Started',
     icon: <Rocket className="h-3.5 w-3.5" />,
     items: [
@@ -114,13 +121,6 @@ const navItems: NavItem[] = [
     items: [
       { title: 'Security Guide', href: '/docs/security' },
       { title: 'Performance & Pentest Testing', href: '/docs/testing' },
-    ],
-  },
-  {
-    title: 'Demo',
-    icon: <Rocket className="h-3.5 w-3.5" />,
-    items: [
-      { title: 'Demo Application', href: '/docs/demo' },
     ],
   },
   {
