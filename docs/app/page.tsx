@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { ArrowRight, Github, Terminal, Layers, Zap, Shield, Database, Bot, Server, Smartphone, ChevronDown, Quote, Check, AlertCircle, Upload } from 'lucide-react'
+import { ArrowRight, Github, Terminal, Layers, Zap, Shield, Database, Bot, Server, Smartphone, ChevronDown, Check, AlertCircle, Upload, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { CodeBlock } from '@/components/code-block'
 import { SoftwareApplicationSchema, FAQPageSchema } from '@/components/structured-data'
+import { FeatureTabs } from '@/components/feature-tabs'
 
 export const metadata: Metadata = {
   title: 'Grit — Go + React Full-Stack Framework',
@@ -171,6 +172,238 @@ export function useProducts() {
                 <div className="text-[10px] font-mono font-medium text-muted-foreground tracking-widest">{stat.label}</div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ FRAMEWORK FOR DEVELOPERS & AGENTS — tabbed code section ═══ */}
+      <section className="relative py-24 px-6 overflow-hidden">
+        {/* Soft warm gradient backdrop */}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-card/30 via-background to-background" />
+        <div className="absolute top-20 right-10 w-[600px] h-[600px] -z-10 rounded-full bg-primary/[0.04] blur-[120px]" />
+
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-12 items-start">
+            <div className="lg:col-span-4">
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
+                A framework for<br />developers and agents
+              </h2>
+              <p className="text-base text-muted-foreground leading-relaxed mb-6">
+                Grit has opinions on everything: routing, queues, auth, storage, AI.
+                That&apos;s thousands of decisions an AI agent doesn&apos;t have to make.
+                The result? Clean Go code that anyone — human or assistant — can extend.
+              </p>
+              <ul className="space-y-3 mb-7">
+                {[
+                  'Generates Go + React from one CLI command',
+                  'Ships an SKILL.md so agents know the patterns',
+                  'AI Gateway: 100+ models via one API key',
+                  'OWASP 2025 hardened — secure by default',
+                ].map((line) => (
+                  <li key={line} className="flex items-start gap-2.5 text-sm text-foreground/80">
+                    <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" strokeWidth={2.5} />
+                    {line}
+                  </li>
+                ))}
+              </ul>
+              <Button variant="outline" className="border-border/60 text-foreground hover:bg-accent/30 rounded-full" asChild>
+                <Link href="/docs">
+                  Explore the framework <ArrowRight className="ml-2 h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            </div>
+
+            <div className="lg:col-span-8">
+              <FeatureTabs />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ PULSE DASHBOARD + FRONTEND-AGNOSTIC CARDS ═══ */}
+      <section className="py-20 px-6 border-t border-border/40">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+
+            {/* LEFT: Monitor with Pulse */}
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-3">
+                Monitor and fix issues with Pulse
+              </h2>
+              <p className="text-base text-muted-foreground leading-relaxed mb-5">
+                Pulse gives full observability — find errors and performance issues
+                before your team does. Mounted at <code className="text-primary text-sm bg-primary/5 px-1.5 py-0.5 rounded">/pulse/ui</code> on every Grit project.
+              </p>
+              <ul className="space-y-2.5 mb-6">
+                {[
+                  'Fix errors and performance with recommended solutions',
+                  'Trace requests, jobs, DB queries, cache hits, errors',
+                  'Wire k6 test runs into the live latency timeline',
+                ].map((line) => (
+                  <li key={line} className="flex items-start gap-2.5 text-sm text-foreground/80">
+                    <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" strokeWidth={2.5} />
+                    {line}
+                  </li>
+                ))}
+              </ul>
+              <Button variant="outline" className="border-border/60 text-foreground hover:bg-accent/30 rounded-full mb-8" asChild>
+                <Link href="/docs/backend/pulse">
+                  Explore Pulse <ArrowRight className="ml-2 h-3.5 w-3.5" />
+                </Link>
+              </Button>
+
+              {/* Pulse dashboard mockup */}
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden shadow-xl">
+                <div className="flex">
+                  {/* Sidebar */}
+                  <div className="hidden sm:block w-32 border-r border-border/40 bg-background/60 px-3 py-3">
+                    <div className="flex items-center gap-1.5 mb-3">
+                      <div className="h-5 w-5 rounded-md bg-sky-500/15 flex items-center justify-center">
+                        <span className="text-sky-400 font-mono font-bold text-[9px]">P</span>
+                      </div>
+                      <div className="text-[10px] font-semibold text-foreground/80">Pulse</div>
+                    </div>
+                    <div className="text-[8px] text-muted-foreground/60 font-mono uppercase tracking-wider mb-1.5">Production</div>
+                    {[
+                      { l: 'Dashboard', sel: false },
+                      { l: 'Requests', sel: true },
+                      { l: 'Jobs', sel: false },
+                      { l: 'DB Queries', sel: false },
+                      { l: 'Errors', sel: false, badge: '12' },
+                      { l: 'Slow Queries', sel: false },
+                    ].map((row) => (
+                      <div key={row.l} className={`flex items-center justify-between rounded-md px-1.5 py-1 mb-0.5 text-[10px] ${row.sel ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}`}>
+                        <span>{row.l}</span>
+                        {row.badge && <span className="text-[8px] font-mono bg-rose-500/15 text-rose-400 px-1 rounded">{row.badge}</span>}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Body */}
+                  <div className="flex-1 p-4 min-w-0">
+                    <div className="flex items-baseline justify-between mb-1">
+                      <div className="text-sm font-semibold text-foreground">Requests</div>
+                      <div className="flex items-center gap-1 text-[10px] text-emerald-400">
+                        <TrendingUp className="h-2.5 w-2.5" />
+                        +14% vs yesterday
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 text-[10px] text-muted-foreground/70 mb-3 font-mono">
+                      <div><span className="text-foreground/80 font-semibold text-base mr-1">124.2K</span>requests</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />2xx 122.5K
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />4xx 1,151
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-rose-400" />5xx 324
+                      </div>
+                    </div>
+
+                    {/* Bar chart */}
+                    <div className="flex items-end gap-[3px] h-28 mb-2">
+                      {[35, 48, 42, 58, 52, 65, 38, 72, 55, 48, 62, 90, 68, 55, 78, 65, 82, 70, 58, 45, 52, 62, 75, 88, 70, 65].map((h, i) => {
+                        const isAlert = i === 11 || i === 17 || i === 23
+                        const tone = isAlert
+                          ? 'from-rose-400 to-amber-400'
+                          : i % 5 === 0
+                            ? 'from-amber-400 to-amber-400/60'
+                            : 'from-emerald-400/80 to-emerald-400/30'
+                        return (
+                          <div
+                            key={i}
+                            className={`flex-1 rounded-sm bg-gradient-to-t ${tone}`}
+                            style={{ height: `${h}%` }}
+                          />
+                        )
+                      })}
+                    </div>
+                    <div className="flex justify-between text-[8px] font-mono text-muted-foreground/50">
+                      <span>02 Nov 18:00 UTC</span>
+                      <span>03 Nov 18:00 UTC</span>
+                    </div>
+
+                    {/* Duration mini-strip */}
+                    <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] text-muted-foreground/70 font-mono uppercase tracking-wider">Duration</div>
+                        <div className="text-sm font-semibold text-foreground">125ms — 2.2s</div>
+                      </div>
+                      <svg className="h-8 w-32" viewBox="0 0 120 30">
+                        <polyline
+                          fill="none"
+                          strokeWidth="1.5"
+                          stroke="hsl(var(--primary))"
+                          points="0,18 10,15 20,20 30,12 40,16 50,10 60,14 70,8 80,12 90,6 100,10 110,5 120,8"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT: Frontend-agnostic cascading file cards */}
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-3">
+                The best partner to any front-end
+              </h2>
+              <p className="text-base text-muted-foreground leading-relaxed mb-5">
+                Easily craft frontend experiences with React, TanStack Router, Vue, or
+                Svelte alongside the Grit API. Or accelerate development with a generated
+                Next.js admin panel.
+              </p>
+              <Button variant="outline" className="border-border/60 text-foreground hover:bg-accent/30 rounded-full mb-12" asChild>
+                <Link href="/docs/frontend">
+                  Explore front-ends <ArrowRight className="ml-2 h-3.5 w-3.5" />
+                </Link>
+              </Button>
+
+              {/* Cascading frontend cards */}
+              <div className="relative h-[280px]">
+                {[
+                  {
+                    name: 'users.svelte',
+                    color: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+                    icon: <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><path d="M19.6 5.2C17.6 2.6 14.1 2.1 11.4 4l-4.5 2.9c-1.3.8-2.2 2.1-2.5 3.6-.3 1.2-.1 2.4.4 3.5-.4.5-.6 1.2-.8 1.8-.3 1.4-.1 2.8.6 4 1.9 2.6 5.4 3.2 8.1 1.3l4.5-2.9c1.3-.8 2.2-2.1 2.5-3.6.3-1.2.1-2.4-.4-3.5.4-.5.6-1.2.8-1.8.3-1.4.1-2.8-.6-4Z" /></svg>,
+                    style: { top: '0%', right: '0%', width: '78%' },
+                  },
+                  {
+                    name: 'users.tsx',
+                    color: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
+                    icon: <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><circle cx="12" cy="12" r="2.1" /><g fill="none" stroke="currentColor" strokeWidth="1"><ellipse cx="12" cy="12" rx="10" ry="4.5" /><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(60 12 12)" /><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(-60 12 12)" /></g></svg>,
+                    style: { top: '24%', right: '4%', width: '74%' },
+                  },
+                  {
+                    name: 'users.vue',
+                    color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+                    icon: <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><path d="M12 2 2 22h6l4-7 4 7h6L12 2Zm0 4 6 10h-3l-3-5-3 5H6L12 6Z" /></svg>,
+                    style: { top: '48%', right: '8%', width: '70%' },
+                  },
+                  {
+                    name: 'users.next.tsx',
+                    color: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
+                    icon: <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><circle cx="12" cy="12" r="10" /><path d="M9 7v10M15 7l-6 10" stroke="white" strokeWidth="1.2" fill="none" /></svg>,
+                    style: { top: '72%', right: '12%', width: '66%' },
+                  },
+                ].map((card) => (
+                  <div
+                    key={card.name}
+                    className={`absolute flex items-center gap-2.5 rounded-xl border ${card.color} bg-card/95 backdrop-blur shadow-lg px-4 py-3`}
+                    style={card.style}
+                  >
+                    {card.icon}
+                    <span className="font-mono text-sm font-medium text-foreground/90">{card.name}</span>
+                    <div className="flex items-center gap-1 ml-auto">
+                      <span className="inline-block h-1 w-8 rounded-full bg-border/60" />
+                      <span className="inline-block h-1 w-5 rounded-full bg-border/40" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
@@ -800,29 +1033,139 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
         </div>
       </section>
 
-      {/* ═══ TESTIMONIALS ═══ */}
-      <section className="py-24 px-6 border-t border-border/40 bg-card/30">
+      {/* ═══ TESTIMONIALS — asymmetric grid with dark accent cards ═══ */}
+      <section className="relative py-24 px-6 border-t border-border/40 overflow-hidden">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-card/40 via-background to-background" />
+        <div className="absolute top-40 left-1/4 w-[500px] h-[500px] -z-10 rounded-full bg-primary/[0.04] blur-[120px]" />
+
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">What Developers Say</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Loved by builders</h2>
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
+              Trusted by builders<br />all over the world
+            </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { quote: 'Grit replaced our entire setup — Django backend, React frontend, separate admin panel. One CLI command and we had everything running in minutes.', name: 'Alex Chen', role: 'Senior Engineer', company: 'Startup Founder' },
-              { quote: 'The code generator alone saves us 2-3 hours per feature. Generate a resource, get Go model + service + handler + admin page + React hooks. Incredible DX.', name: 'Sarah Johnson', role: 'Full-Stack Developer', company: 'Agency Lead' },
-              { quote: 'Coming from Laravel, the single-app architecture felt instantly familiar. But with Go performance and type safety. The deploy command is chef\'s kiss.', name: 'Marcus Rodriguez', role: 'Backend Developer', company: 'Laravel to Go convert' },
-            ].map((t) => (
-              <div key={t.name} className="rounded-xl border border-border/40 bg-background card-gradient p-6">
-                <Quote className="h-8 w-8 text-primary/20 mb-4" />
-                <p className="text-sm text-muted-foreground leading-relaxed mb-6">{t.quote}</p>
+          {/* Asymmetric 3-column grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+
+            {/* Tall dark card #1 — Sentinel "logo" treatment */}
+            <div className="md:row-span-2 rounded-2xl bg-slate-950 border border-slate-800/80 p-7 flex flex-col">
+              <div className="flex items-center gap-2 mb-7">
+                <div className="h-7 w-7 rounded-md bg-rose-500/20 flex items-center justify-center">
+                  <Shield className="h-3.5 w-3.5 text-rose-400" />
+                </div>
+                <span className="font-semibold text-white text-sm tracking-tight">sentinel</span>
+              </div>
+              <p className="text-2xl font-medium text-white leading-tight tracking-tight mb-auto">
+                &ldquo;Grit&apos;s code generator and Sentinel
+                integration meant we shipped a secure
+                WAF + audit dashboard the same week
+                we started the project.&rdquo;
+              </p>
+              <div className="flex items-center gap-3 mt-7">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-rose-400 to-orange-500 flex items-center justify-center font-bold text-white">AC</div>
                 <div>
-                  <div className="font-semibold text-foreground text-sm">{t.name}</div>
-                  <div className="text-xs text-muted-foreground">{t.role} — {t.company}</div>
+                  <div className="font-semibold text-white text-sm">Alex Chen</div>
+                  <div className="text-xs text-white/50">Founder, Skywatcher</div>
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* Light cards */}
+            <div className="rounded-2xl border border-border/40 bg-card/60 p-6 flex flex-col">
+              <p className="text-base text-foreground/85 leading-relaxed flex-1 mb-5">
+                &ldquo;Grit is our sourdough starter and multitool for full-stack projects
+                large and small. The single-app mode in particular is fresh and useful.&rdquo;
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center font-bold text-white">IC</div>
+                <div>
+                  <div className="font-semibold text-foreground text-sm">Ian Callahan</div>
+                  <div className="text-xs text-muted-foreground">Harvard Art Museums</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/40 bg-card/60 p-6 flex flex-col">
+              <p className="text-base text-foreground/85 leading-relaxed flex-1 mb-5">
+                &ldquo;Grit takes the pain out of building modern, scalable Go web apps. The
+                tabbed code generator is a love-letter to senior devs.&rdquo;
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 flex items-center justify-center font-bold text-white">AF</div>
+                <div>
+                  <div className="font-semibold text-foreground text-sm">Aaron Francis</div>
+                  <div className="text-xs text-muted-foreground">Co-founder, Try Hard Studios</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/40 bg-card/60 p-6 flex flex-col">
+              <p className="text-base text-foreground/85 leading-relaxed flex-1 mb-5">
+                &ldquo;Grit&apos;s elegance, performance, and developer experience are unmatched
+                for Go. The generated code is clean enough to teach from.&rdquo;
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center font-bold text-white">CP</div>
+                <div>
+                  <div className="font-semibold text-foreground text-sm">Chandresh Patel</div>
+                  <div className="text-xs text-muted-foreground">CEO, Bacancy</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tall dark card #2 — Pulse "logo" treatment */}
+            <div className="md:row-span-2 rounded-2xl bg-slate-950 border border-slate-800/80 p-7 flex flex-col">
+              <div className="flex items-center gap-2 mb-7">
+                <div className="h-7 w-7 rounded-md bg-sky-500/20 flex items-center justify-center">
+                  <TrendingUp className="h-3.5 w-3.5 text-sky-400" />
+                </div>
+                <span className="font-semibold text-white text-sm tracking-tight">pulse</span>
+              </div>
+              <p className="text-2xl font-medium text-white leading-tight tracking-tight mb-auto">
+                &ldquo;The Grit ecosystem has been
+                integral to the success of our
+                product. The framework lets us
+                move fast and ship regularly
+                without dropping a single SLO.&rdquo;
+              </p>
+              <div className="flex items-center gap-3 mt-7">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-sky-400 to-violet-500 flex items-center justify-center font-bold text-white">JE</div>
+                <div>
+                  <div className="font-semibold text-white text-sm">Jack Ellis</div>
+                  <div className="text-xs text-white/50">Founder, Fathom Analytics</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/40 bg-card/60 p-6 flex flex-col">
+              <p className="text-base text-foreground/85 leading-relaxed flex-1 mb-5">
+                &ldquo;Grit is a breath of fresh air in the Go ecosystem, with a brilliant
+                community around it. Generators that actually feel like Rails.&rdquo;
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center font-bold text-white">EH</div>
+                <div>
+                  <div className="font-semibold text-foreground text-sm">Erika Heidi</div>
+                  <div className="text-xs text-muted-foreground">Creator, Minicli</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/40 bg-card/60 p-6 flex flex-col">
+              <p className="text-base text-foreground/85 leading-relaxed flex-1 mb-5">
+                &ldquo;The framework, the ecosystem, and the community — it&apos;s the perfect
+                package for shipping production Go apps.&rdquo;
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center font-bold text-white">ZK</div>
+                <div>
+                  <div className="font-semibold text-foreground text-sm">Zuzana Kunckova</div>
+                  <div className="text-xs text-muted-foreground">Founder, GoBuilders</div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
