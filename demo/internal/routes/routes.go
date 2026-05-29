@@ -49,12 +49,18 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// ─── Sentinel security suite (mounts /sentinel/ui + /sentinel/api) ───
 	if cfg.SentinelEnabled {
 		isDev := cfg.AppEnv != "production"
+		// AllowInsecureDefaults is also enabled when DEMO_MODE=true. The
+		// live demo is publicly poke-able by design; refusing to start
+		// because the password is "sentinel" defeats the demo. For real
+		// apps, set strong SENTINEL_USERNAME / PASSWORD / SECRET_KEY env
+		// vars and leave DEMO_MODE off.
+		allowDefaults := isDev || cfg.DemoMode
 		if err := sentinel.MountE(r, db, sentinel.Config{
 			Dashboard: sentinel.DashboardConfig{
 				Username:              cfg.SentinelUsername,
 				Password:              cfg.SentinelPassword,
 				SecretKey:             cfg.SentinelSecretKey,
-				AllowInsecureDefaults: isDev,
+				AllowInsecureDefaults: allowDefaults,
 			},
 			WAF: sentinel.WAFConfig{
 				Enabled: true,
@@ -95,6 +101,12 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		}
 		if cfg.AppEnv != "production" {
 			opts = append(opts, pulse.WithDevMode())
+		}
+		// In DEMO_MODE, opt in to Pulse's default-credentials override —
+		// see the matching note on Sentinel above. Real production
+		// deploys should set strong PULSE_USERNAME / PULSE_PASSWORD.
+		if cfg.DemoMode {
+			opts = append(opts, pulse.WithAllowDefaultCredentials())
 		}
 		if cfg.PulseStorage == "sqlite" && cfg.PulseStorageDSN != "" {
 			opts = append(opts, pulse.WithSQLite(cfg.PulseStorageDSN))
