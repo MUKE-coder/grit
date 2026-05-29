@@ -47,9 +47,19 @@ func main() {
 	}
 	log.Println("Migrations complete")
 
-	// Auto-seed demo data (idempotent — skips if data exists)
+	// Canonical seed — admin user + Grit Motors business + Main Branch.
+	// Idempotent; runs on every boot.
 	if err := database.Seed(db); err != nil {
 		log.Printf("Warning: seeding failed: %v", err)
+	}
+	// Demo cohort — staff, categories, products, stock, motorcycles, loan
+	// products, borrowers, loans + schedules + repayments, cash sales,
+	// POS history, daily-boda. Each step idempotent. Same code path the
+	// nightly demo-reset cron uses after wiping mutable rows.
+	if cfg.DemoMode {
+		if err := database.SeedDemo(db); err != nil {
+			log.Printf("Warning: demo seeding failed: %v", err)
+		}
 	}
 
 	// Redis cache

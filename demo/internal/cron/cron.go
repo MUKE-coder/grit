@@ -92,5 +92,9 @@ func (s *Scheduler) runDemoReset() {
 		log.Printf("cron: demo reseed failed: %v", err)
 		return
 	}
+	if err := database.SeedDemo(s.db); err != nil {
+		log.Printf("cron: demo cohort reseed failed: %v", err)
+		return
+	}
 	log.Println("cron: demo reset complete")
 }
