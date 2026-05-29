@@ -111,22 +111,16 @@ export default function HomePage() {
                 {[
                   { src: '/images/icons/go.svg', alt: 'Go' },
                   { src: '/images/icons/postgressql.png', alt: 'Postgres' },
-                  { letter: 'R', tone: 'bg-red-500', alt: 'Redis' },
-                  { letter: 'D', tone: 'bg-sky-500', alt: 'Docker' },
-                ].map((logo, i) => (
+                  { src: '/images/icons/redis-logo-svgrepo-com.svg', alt: 'Redis' },
+                  { src: '/images/icons/docker-svgrepo-com.svg', alt: 'Docker' },
+                ].map((logo) => (
                   <div
-                    key={i}
+                    key={logo.alt}
                     title={logo.alt}
                     className="h-8 w-8 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.15),inset_0_-1px_0_rgba(0,0,0,0.05)] flex items-center justify-center"
                   >
-                    {logo.src ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={logo.src} alt={logo.alt} className="h-5 w-5 object-contain" />
-                    ) : (
-                      <div className={`h-5 w-5 rounded-full ${logo.tone} text-white font-bold text-[10px] flex items-center justify-center`}>
-                        {logo.letter}
-                      </div>
-                    )}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={logo.src} alt={logo.alt} className="h-5 w-5 object-contain" />
                   </div>
                 ))}
               </div>
