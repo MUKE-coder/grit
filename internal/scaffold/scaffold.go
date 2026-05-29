@@ -309,6 +309,12 @@ func Run(opts Options) error {
 	if err := writeTOTPFiles(root, opts); err != nil {
 		return fmt.Errorf("writing TOTP files: %w", err)
 	}
+	if err := writeSecurityFiles(root, opts); err != nil {
+		return fmt.Errorf("writing security files: %w", err)
+	}
+	if err := writeTestingFiles(root, opts); err != nil {
+		return fmt.Errorf("writing testing files: %w", err)
+	}
 
 	// Write blog example files
 	spinner.Printf("  → Adding blog example...\n")
@@ -476,6 +482,12 @@ func RunSingle(opts Options) error {
 	if err := writeTOTPFiles(root, opts); err != nil {
 		return fmt.Errorf("writing TOTP files: %w", err)
 	}
+	if err := writeSecurityFiles(root, opts); err != nil {
+		return fmt.Errorf("writing security files: %w", err)
+	}
+	if err := writeTestingFiles(root, opts); err != nil {
+		return fmt.Errorf("writing testing files: %w", err)
+	}
 
 	// Write blog example
 	spinner.Printf("  → Adding blog example...\n")
@@ -513,9 +525,11 @@ func RunSingle(opts Options) error {
 }
 
 // createSingleDirectories creates the flat directory structure for a single app.
+// Note: no cmd/server/ — the single-app main.go lives at the project root so
+// the //go:embed all:frontend/dist directive resolves correctly. cmd/migrate
+// and cmd/seed remain as separate binaries.
 func createSingleDirectories(root string) error {
 	dirs := []string{
-		filepath.Join(root, "cmd", "server"),
 		filepath.Join(root, "cmd", "migrate"),
 		filepath.Join(root, "cmd", "seed"),
 		filepath.Join(root, "internal", "config"),
@@ -532,6 +546,8 @@ func createSingleDirectories(root string) error {
 		filepath.Join(root, "internal", "cache"),
 		filepath.Join(root, "internal", "ai"),
 		filepath.Join(root, "internal", "totp"),
+		filepath.Join(root, "internal", "safefetch"),
+		filepath.Join(root, "internal", "authz"),
 		filepath.Join(root, "frontend", "src", "routes"),
 		filepath.Join(root, "frontend", "src", "components"),
 		filepath.Join(root, "frontend", "src", "hooks"),
@@ -578,6 +594,8 @@ func createDirectories(root string, opts Options) error {
 		filepath.Join(root, "apps", "api", "internal", "cache"),
 		filepath.Join(root, "apps", "api", "internal", "ai"),
 		filepath.Join(root, "apps", "api", "internal", "docs"),
+		filepath.Join(root, "apps", "api", "internal", "safefetch"),
+		filepath.Join(root, "apps", "api", "internal", "authz"),
 	}
 
 	if opts.ShouldIncludeWeb() {

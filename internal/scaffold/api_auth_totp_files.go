@@ -448,7 +448,7 @@ func (h *TOTPHandler) Verify(c *gin.Context) {
 
 	// Load the user for token generation
 	var user models.User
-	if err := h.DB.First(&user, pending.UserID).Error; err != nil {
+	if err := h.DB.Where("id = ?", pending.UserID).First(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "USER_ERROR", "message": "User not found"},
 		})
@@ -531,7 +531,7 @@ func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
 
 	// Load user and generate tokens
 	var user models.User
-	if err := h.DB.First(&user, pending.UserID).Error; err != nil {
+	if err := h.DB.Where("id = ?", pending.UserID).First(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "USER_ERROR", "message": "User not found"},
 		})
@@ -575,7 +575,7 @@ func (h *TOTPHandler) Disable(c *gin.Context) {
 
 	// Verify password
 	var user models.User
-	if err := h.DB.First(&user, userID).Error; err != nil {
+	if err := h.DB.Where("id = ?", userID).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{"code": "NOT_FOUND", "message": "User not found"},
 		})

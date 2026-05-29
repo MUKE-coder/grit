@@ -823,6 +823,36 @@ export function Providers({ children }: { children: React.ReactNode }) {
 `
 }
 
+// viteAPIClient is the Vite/TanStack-flavoured API client. It uses
+// import.meta.env.VITE_API_URL (the Vite convention) instead of
+// process.env.NEXT_PUBLIC_API_URL (which is a Next.js-only prefix and
+// undefined in a Vite project). Default is '' so the embedded single-binary
+// deploy serves SPA + API from the same origin without configuration.
+func viteAPIClient() string {
+	return `import axios from "axios";
+
+const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
+
+export const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// Auto-attach Idempotency-Key on unsafe methods so any mutation gets
+// safe-retry semantics for free.
+api.interceptors.request.use((config) => {
+  const method = (config.method || "get").toUpperCase();
+  const unsafe = method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE";
+  if (unsafe && config.headers && !config.headers["Idempotency-Key"]) {
+    config.headers["Idempotency-Key"] = crypto.randomUUID();
+  }
+  return config;
+});
+`
+}
+
 func webAPIClient() string {
 	return `import axios from "axios";
 
@@ -898,6 +928,15 @@ export function usePublicBlog(slug: string) {
     enabled: !!slug,
   });
 }
+
+// Vite/TanStack blog routes import { useBlogs, useBlog } from this hook.
+// Aliases so a single file works for both Next.js and Vite scaffolds.
+export function useBlogs(page = 1, pageSize = 20) {
+  const result = usePublicBlogs(page, pageSize);
+  return { ...result, data: result.data?.blogs };
+}
+
+export const useBlog = usePublicBlog;
 `
 }
 

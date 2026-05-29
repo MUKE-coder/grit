@@ -1625,7 +1625,7 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 	id := c.Param("id")
 
 	var user models.User
-	if err := h.DB.First(&user, id).Error; err != nil {
+	if err := h.DB.Where("id = ?", id).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -1645,7 +1645,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 
 	var user models.User
-	if err := h.DB.First(&user, id).Error; err != nil {
+	if err := h.DB.Where("id = ?", id).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -1727,7 +1727,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 	}
 
 	// Reload to get updated values
-	h.DB.First(&user, id)
+	h.DB.Where("id = ?", id).First(&user)
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":    user,
@@ -1740,7 +1740,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 
 	var user models.User
-	if err := h.DB.First(&user, id).Error; err != nil {
+	if err := h.DB.Where("id = ?", id).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -1770,7 +1770,7 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
 	var user models.User
-	if err := h.DB.First(&user, userID).Error; err != nil {
+	if err := h.DB.Where("id = ?", userID).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -1790,7 +1790,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
 	var user models.User
-	if err := h.DB.First(&user, userID).Error; err != nil {
+	if err := h.DB.Where("id = ?", userID).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -1863,7 +1863,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	h.DB.First(&user, userID)
+	h.DB.Where("id = ?", userID).First(&user)
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":    user,
@@ -1876,7 +1876,7 @@ func (h *UserHandler) DeleteProfile(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
 	var user models.User
-	if err := h.DB.First(&user, userID).Error; err != nil {
+	if err := h.DB.Where("id = ?", userID).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
 				"code":    "NOT_FOUND",
@@ -1956,9 +1956,12 @@ func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 			return
 		}
 
-		// Load user from database
+		// Load user from database.
+		// Use Where("id = ?") rather than First(&user, id) — GORM's shorthand
+		// emits the bare value into the WHERE clause and Postgres rejects UUID
+		// primary keys with "trailing junk after numeric literal".
 		var user models.User
-		if err := db.First(&user, claims.UserID).Error; err != nil {
+		if err := db.Where("id = ?", claims.UserID).First(&user).Error; err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": gin.H{
 					"code":    "UNAUTHORIZED",
@@ -2136,15 +2139,44 @@ func (g *gzipResponseWriter) WriteString(s string) (int, error) {
 	return g.Writer.Write([]byte(s))
 }
 
-// SecurityHeaders adds production security headers to all responses.
+// SecurityHeaders adds production security headers to every response.
+//
+// Coverage against OWASP Top 10:2025 — A02 Security Misconfiguration,
+// A05 Injection (XSS hardening via CSP), A04 Cryptographic Failures
+// (HSTS forces TLS), plus mitigations for clickjacking, MIME sniffing,
+// referrer leakage, and Spectre-class cross-origin attacks.
+//
+// CSP is deliberately strict-by-default. The scaffold's SPA serves /api
+// from the same origin, so 'self' covers the normal case. Customise
+// CSPDirectives via config when adding a CDN / inline scripts.
 func SecurityHeaders() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("X-Content-Type-Options", "nosniff")
 		c.Header("X-Frame-Options", "DENY")
-		c.Header("X-XSS-Protection", "1; mode=block")
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
-		c.Header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
-		// HSTS only in production (when behind HTTPS)
+		c.Header("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()")
+		// Spectre-class defence: isolate this origin from cross-origin reads
+		// and require explicit opt-in for cross-origin embedders.
+		c.Header("Cross-Origin-Opener-Policy", "same-origin")
+		c.Header("Cross-Origin-Resource-Policy", "same-origin")
+		// Content-Security-Policy — strict default, blocks inline script
+		// (XSS A05 hardening). Skip on /docs and /studio which serve
+		// vendored UIs that rely on inline styles.
+		path := c.Request.URL.Path
+		if !strings.HasPrefix(path, "/docs") && !strings.HasPrefix(path, "/studio") && !strings.HasPrefix(path, "/sentinel") && !strings.HasPrefix(path, "/pulse") {
+			c.Header("Content-Security-Policy",
+				"default-src 'self'; "+
+					"script-src 'self'; "+
+					"style-src 'self' 'unsafe-inline'; "+
+					"img-src 'self' data: blob: https:; "+
+					"font-src 'self' data:; "+
+					"connect-src 'self'; "+
+					"frame-ancestors 'none'; "+
+					"base-uri 'self'; "+
+					"form-action 'self'; "+
+					"object-src 'none'")
+		}
+		// HSTS only when actually on HTTPS (don't break dev on http://).
 		if c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https" {
 			c.Header("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
 		}

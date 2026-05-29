@@ -13,7 +13,9 @@ func writeWebTanStackFiles(root string, opts Options) error {
 		filepath.Join(webRoot, "vite.config.ts"):                           webTanStackViteConfig(),
 		filepath.Join(webRoot, "index.html"):                               webTanStackIndexHTML(opts),
 		filepath.Join(webRoot, "tailwind.config.ts"):                       webTanStackTailwindConfig(),
-		filepath.Join(webRoot, "postcss.config.js"):                        webPostCSSConfig(),
+		// .cjs (not .js) because package.json sets "type": "module" and PostCSS
+		// config still uses CommonJS module.exports.
+		filepath.Join(webRoot, "postcss.config.cjs"):                       webPostCSSConfig(),
 		filepath.Join(webRoot, "tsconfig.json"):                            webTanStackTSConfig(),
 		filepath.Join(webRoot, "src", "main.tsx"):                          webTanStackMain(),
 		filepath.Join(webRoot, "src", "globals.css"):                       webGlobalCSS(),
@@ -25,7 +27,7 @@ func writeWebTanStackFiles(root string, opts Options) error {
 		filepath.Join(webRoot, "src", "components", "footer.tsx"):          webFooter(opts),
 		filepath.Join(webRoot, "src", "components", "providers.tsx"):       webTanStackProviders(),
 		filepath.Join(webRoot, "src", "lib", "utils.ts"):                   webUtils(),
-		filepath.Join(webRoot, "src", "lib", "api.ts"):                     webAPIClient(),
+		filepath.Join(webRoot, "src", "lib", "api.ts"):                     viteAPIClient(),
 		filepath.Join(webRoot, "src", "hooks", "use-blogs.ts"):             webUseBlogsHook(),
 		filepath.Join(webRoot, "public", ".gitkeep"):                       "",
 	}

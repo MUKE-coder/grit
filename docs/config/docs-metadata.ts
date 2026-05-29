@@ -198,6 +198,16 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Self-hosted observability for Grit APIs with Pulse: request tracing, database monitoring, runtime metrics, error tracking, health checks, alerting, and Prometheus export.',
   },
+  '/docs/security': {
+    title: 'Security Guide — OWASP Top 10:2025 defences',
+    description:
+      'How Grit defends every category of the OWASP Top 10:2025 by default — broken access control / IDOR via authz.MustOwn, SSRF via the safefetch package, injection via parameterised GORM queries, XSS via React escaping + CSP, auth flaws via Sentinel rate-limiting + JWT algorithm pinning + TOTP, security misconfiguration via the SecurityHeaders middleware, supply-chain via Dependabot + govulncheck, and tamper-evident audit logging.',
+  },
+  '/docs/testing': {
+    title: 'Performance & Security Testing',
+    description:
+      'Run k6 load tests (smoke / average-load / stress / spike / soak / breakpoint) and methodology-driven penetration tests against a Grit app. Includes the 5-phase pentest methodology, the attack catalogue, CVSS scoring, and the audit-report structure that justifies a $2k–$10k engagement.',
+  },
   '/docs/backend/response-format': {
     title: 'API Response Format',
     description:

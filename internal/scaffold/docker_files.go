@@ -7,19 +7,29 @@ import (
 
 func writeDockerFiles(root string, opts Options) error {
 	files := map[string]string{
-		filepath.Join(root, "docker-compose.yml"):      dockerCompose(opts),
-		filepath.Join(root, "docker-compose.prod.yml"): dockerComposeProd(opts),
-		filepath.Join(root, "apps", "api", "Dockerfile"): dockerfileAPI(),
+		filepath.Join(root, "docker-compose.yml"): dockerCompose(opts),
 	}
 
-	if opts.ShouldIncludeWeb() {
-		files[filepath.Join(root, "apps", "web", "Dockerfile")] = dockerfileNextJS("web")
-	}
-	if opts.ShouldIncludeAdmin() {
-		files[filepath.Join(root, "apps", "admin", "Dockerfile")] = dockerfileNextJS("admin")
-	}
-	if opts.ShouldIncludeDocs() {
-		files[filepath.Join(root, "apps", "docs", "Dockerfile")] = dockerfileNextJS("docs")
+	if opts.Architecture == ArchSingle {
+		// Single-app: one binary (Go server + embedded SPA), one Dockerfile at
+		// the project root. We deliberately skip apps/api/Dockerfile + the
+		// multi-app docker-compose.prod.yml because both expect a monorepo
+		// layout (apps/api/go.mod, apps/web, ...) that doesn't exist in
+		// --single. PaaS tools like Dokploy auto-detect Dockerfiles, so any
+		// leftover apps/api/Dockerfile gets picked up and fails the build.
+		files[filepath.Join(root, "Dockerfile")] = dockerfileSingle()
+	} else {
+		files[filepath.Join(root, "docker-compose.prod.yml")] = dockerComposeProd(opts)
+		files[filepath.Join(root, "apps", "api", "Dockerfile")] = dockerfileAPI()
+		if opts.ShouldIncludeWeb() {
+			files[filepath.Join(root, "apps", "web", "Dockerfile")] = dockerfileNextJS("web")
+		}
+		if opts.ShouldIncludeAdmin() {
+			files[filepath.Join(root, "apps", "admin", "Dockerfile")] = dockerfileNextJS("admin")
+		}
+		if opts.ShouldIncludeDocs() {
+			files[filepath.Join(root, "apps", "docs", "Dockerfile")] = dockerfileNextJS("docs")
+		}
 	}
 
 	if opts.Architecture != ArchAPI {
@@ -238,6 +248,77 @@ volumes:
 	return result
 }
 
+// dockerfileSingle is the Dockerfile for --single architecture: one binary
+// that bundles the Go server and an embedded SPA. Multi-stage:
+//
+//  1. node:22-alpine   builds the frontend bundle to /app/frontend/dist
+//  2. golang:1.24-alpine builds the Go binary with //go:embed picking up
+//     the frontend output from the project root
+//  3. alpine:3.19      runtime, drops to a non-root user
+//
+// Notes that paid for themselves debugging real deploys:
+//   - pnpm is pinned to a version compatible with Node 22 (pnpm@latest
+//     started pulling pnpm 11 which assumes node:sqlite from Node 22.x and
+//     broke node:20 base images).
+//   - chown /app to the runtime user BEFORE the USER directive. Otherwise
+//     Sentinel/Pulse fail to open their embedded SQLite stores and report
+//     the misleading "out of memory (14)" — which is actually
+//     SQLITE_CANTOPEN for permission-denied.
+func dockerfileSingle() string {
+	return `# syntax=docker/dockerfile:1.7
+# ---------- Stage 1: build the SPA bundle ----------
+FROM node:22-alpine AS frontend
+WORKDIR /app/frontend
+
+# Pin pnpm — pnpm@latest started resolving to pnpm 11 which needs Node 22's
+# node:sqlite builtin; pinning avoids surprise breakage from that drift.
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
+COPY frontend/package.json frontend/pnpm-lock.yaml* ./
+RUN pnpm install --no-frozen-lockfile
+
+COPY frontend/ ./
+RUN pnpm build
+
+# ---------- Stage 2: build the Go binary ----------
+FROM golang:1.24-alpine AS gobuild
+WORKDIR /app
+
+RUN apk add --no-cache git
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source, then drop the freshly-built SPA bundle into the location the
+# //go:embed all:frontend/dist directive expects (project root).
+COPY . .
+COPY --from=frontend /app/frontend/dist ./frontend/dist
+
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/server .
+
+# ---------- Stage 3: minimal runtime ----------
+FROM alpine:3.19
+RUN apk add --no-cache ca-certificates tzdata
+
+# Create non-root user.
+RUN addgroup -S app && adduser -S -G app app
+
+WORKDIR /app
+COPY --from=gobuild /out/server ./server
+
+# IMPORTANT: chown happens before the USER directive. Sentinel/Pulse open
+# embedded SQLite stores relative to CWD; without write access here they
+# crash with "unable to open database file: out of memory (14)".
+RUN chown -R app:app /app
+
+USER app
+
+EXPOSE 8080
+ENV PORT=8080
+
+CMD ["./server"]
+`
+}
+
 func dockerfileAPI() string {
 	return `# Build stage
 FROM golang:1.24-alpine AS builder
@@ -259,9 +340,18 @@ FROM alpine:3.19
 
 RUN apk --no-cache add ca-certificates tzdata
 
+# Non-root runtime user — Sentinel/Pulse open embedded SQLite stores under
+# /app, so chown before USER or those fail with the misleading
+# "out of memory (14)" SQLITE_CANTOPEN error.
+RUN addgroup -S app && adduser -S -G app app
+
 WORKDIR /app
 
 COPY --from=builder /app/server .
+
+RUN chown -R app:app /app
+
+USER app
 
 EXPOSE 8080
 
@@ -271,9 +361,11 @@ CMD ["./server"]
 
 func dockerfileNextJS(app string) string {
 	return fmt.Sprintf(`# Build stage
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 
-RUN corepack enable
+# Pin pnpm — pnpm@latest started resolving to pnpm 11 which needs Node 22's
+# node:sqlite builtin. Pinning here avoids surprise breakage on rebuilds.
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 # Install dependencies
 FROM base AS deps
@@ -311,6 +403,10 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/apps/%s/.next/standalone ./
 COPY --from=builder /app/apps/%s/.next/static ./apps/%s/.next/static
 COPY --from=builder /app/apps/%s/public ./apps/%s/public
+
+# chown before USER so the runtime user can write to /app (Next.js writes
+# build manifests + cache here at startup).
+RUN chown -R nextjs:nodejs /app
 
 USER nextjs
 

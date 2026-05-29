@@ -398,9 +398,12 @@ func TestCreateSingleDirectories(t *testing.T) {
 		t.Fatalf("createSingleDirectories error: %v", err)
 	}
 
-	// Go internal dirs at root level (no apps/api/)
+	// Go internal dirs at root level (no apps/api/).
+	// Note: no cmd/server/ — main.go lives at the project root so the
+	// //go:embed all:frontend/dist directive resolves to <root>/frontend/dist.
 	for _, dir := range []string{
-		filepath.Join(root, "cmd", "server"),
+		filepath.Join(root, "cmd", "migrate"),
+		filepath.Join(root, "cmd", "seed"),
 		filepath.Join(root, "internal", "config"),
 		filepath.Join(root, "internal", "models"),
 		filepath.Join(root, "internal", "handlers"),
@@ -496,21 +499,27 @@ func TestSingleMainGoEmbed(t *testing.T) {
 		t.Fatalf("writeSingleMainGo: %v", err)
 	}
 
-	mainPath := filepath.Join(root, "cmd", "server", "main.go")
+	mainPath := filepath.Join(root, "main.go")
 	data, err := os.ReadFile(mainPath)
 	if err != nil {
 		t.Fatalf("reading main.go: %v", err)
 	}
 
 	content := string(data)
-	if !strings.Contains(content, "go:embed frontend/dist") {
-		t.Error("single app main.go should contain go:embed directive")
+	if !strings.Contains(content, "go:embed all:frontend/dist") {
+		t.Error("single app main.go should contain //go:embed all:frontend/dist directive")
 	}
 	if !strings.Contains(content, "my-single-app/internal") {
 		t.Error("single app main.go should use root module path imports")
 	}
 	if strings.Contains(content, "apps/api") {
 		t.Error("single app main.go should NOT reference apps/api")
+	}
+
+	// The placeholder dist/index.html should exist so `go build` works on
+	// a fresh clone before `pnpm build` has run.
+	if _, err := os.Stat(filepath.Join(root, "frontend", "dist", "index.html")); err != nil {
+		t.Errorf("expected placeholder frontend/dist/index.html: %v", err)
 	}
 }
 

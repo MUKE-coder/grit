@@ -109,6 +109,14 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    title: 'Security & Testing',
+    icon: <Shield className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Security Guide', href: '/docs/security' },
+      { title: 'Performance & Pentest Testing', href: '/docs/testing' },
+    ],
+  },
+  {
     title: 'Admin Panel',
     icon: <Shield className="h-3.5 w-3.5" />,
     items: [

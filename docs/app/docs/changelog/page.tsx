@@ -28,6 +28,243 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.23.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.23.0
+                </span>
+                <span className="text-sm text-muted-foreground">May 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Security &amp; deploy hardening release.</strong> Three threads
+                  in one ship: (1) the deploy-day fixes uncovered by a real production
+                  build on <code>--single --vite</code>; (2) the React/Vite UI primitives
+                  every Grit project ends up writing by hand; (3) a full pass against
+                  the OWASP Top 10:2025 with code-level defences and a documented
+                  testing methodology. Two new docs pages — <code>/docs/security</code>{' '}
+                  and <code>/docs/testing</code> — are the audit checklist clients will
+                  walk with you.
+                </p>
+
+                <h3>Deploy reliability</h3>
+                <ul>
+                  <li>
+                    <strong><code>cron.Start(cfg, cache)</code> ships.</strong>{' '}
+                    The single-app <code>main.go</code> was importing a function that
+                    didn&apos;t exist; project wouldn&apos;t compile out of the box.
+                    The new helper wraps the existing <code>Scheduler</code> and
+                    returns <code>(*Scheduler, error)</code> so callers can stop it on
+                    shutdown.
+                  </li>
+                  <li>
+                    <strong>asynq worker now actually starts.</strong>{' '}
+                    The single-app <code>main.go</code> was queueing jobs without ever
+                    starting <code>jobs.StartWorker</code>, so the token-cleanup task
+                    and every email/SMS/cron job sat in Redis forever. Worker startup +
+                    graceful shutdown wired in.
+                  </li>
+                  <li>
+                    <strong>SPA fallback no longer loops behind reverse proxies.</strong>{' '}
+                    <code>c.FileFromFS(&quot;index.html&quot;, ...)</code> triggered{' '}
+                    <code>http.FileServer</code>&apos;s canonical-URL 301 rule and
+                    ping-ponged forever behind Traefik / Cloudflare
+                    (<code>ERR_TOO_MANY_REDIRECTS</code>). The scaffold now pre-reads{' '}
+                    <code>index.html</code> once and serves via <code>c.Data()</code>.
+                  </li>
+                  <li>
+                    <strong>UUID primary keys no longer 401 every request.</strong>{' '}
+                    GORM&apos;s <code>db.First(&amp;user, id)</code> shorthand assumes
+                    an integer PK; with the scaffold&apos;s UUID-string PK Postgres
+                    rejected it with{' '}
+                    <em>&quot;trailing junk after numeric literal&quot;</em>. All eight
+                    call sites (auth middleware + UserHandler + TOTP) switched to{' '}
+                    <code>db.Where(&quot;id = ?&quot;, id).First(...)</code>.
+                  </li>
+                  <li>
+                    <strong>Single-app layout cleaned up.</strong>{' '}
+                    <code>main.go</code> moved to the project root so{' '}
+                    <code>//go:embed all:frontend/dist</code> resolves on a fresh
+                    clone; a placeholder <code>frontend/dist/index.html</code> ships so{' '}
+                    <code>go build</code> works before <code>pnpm build</code>;{' '}
+                    <code>apps/api/Dockerfile</code> + the multi-app{' '}
+                    <code>docker-compose.prod.yml</code> are no longer generated in{' '}
+                    <code>--single</code> mode (Dokploy was auto-detecting them and
+                    failing). A new root Dockerfile pins pnpm to 9.15.0,{' '}
+                    <code>chown</code>s before <code>USER</code> (fixes Sentinel/Pulse{' '}
+                    <em>&quot;out of memory (14)&quot;</em> SQLite errors).
+                  </li>
+                  <li>
+                    <strong>Auto-migrate + first-boot seed.</strong>{' '}
+                    Single-app <code>main.go</code> now runs{' '}
+                    <code>models.Migrate(db)</code> on startup (gate via{' '}
+                    <code>AUTO_MIGRATE=false</code>) and seeds when the users table is
+                    empty (gate via <code>AUTO_SEED</code>; off by default in
+                    production). Fresh-deploy → working-login is a single command.
+                  </li>
+                  <li>
+                    <strong>Vite scaffold fixes</strong> — <code>postcss.config.cjs</code>{' '}
+                    (was <code>.js</code>, broke ESM <code>package.json</code>);{' '}
+                    <code>api.ts</code> uses <code>import.meta.env.VITE_API_URL</code>{' '}
+                    instead of <code>process.env.NEXT_PUBLIC_API_URL</code>;{' '}
+                    <code>vite-env.d.ts</code> declares the type so{' '}
+                    <code>tsc --noEmit</code> stops erroring; navbar/footer use TanStack
+                    Router&apos;s <code>Link</code> + <code>useRouterState</code>{' '}
+                    instead of <code>next/link</code> / <code>usePathname</code>;{' '}
+                    <code>@tanstack/router-cli</code> in devDeps + a postinstall hook
+                    so <code>routeTree.gen.ts</code> exists on a fresh clone.
+                  </li>
+                </ul>
+
+                <h3>Vite UI primitives (every project ends up writing these)</h3>
+                <ul>
+                  <li>
+                    <strong><code>lib/auth.ts</code></strong> — handles the actual{' '}
+                    <code>&#123;data:&#123;user, tokens:&#123;access_token, refresh_token, expires_at&#125;&#125;&#125;</code>{' '}
+                    envelope, persists tokens, exports{' '}
+                    <code>login</code> / <code>register</code> / <code>me</code> /{' '}
+                    <code>refresh</code> / <code>logout</code> / <code>clearAuth</code>.
+                    Handles the TOTP-challenge response shape too.
+                  </li>
+                  <li>
+                    <strong><code>lib/api.ts</code></strong> — auto-attaches{' '}
+                    <code>Authorization: Bearer</code>, transparently retries once on
+                    401 via <code>/api/auth/refresh</code>. Single-flight refresh so a
+                    burst of 401s doesn&apos;t fan out into N refresh calls.
+                  </li>
+                  <li>
+                    <strong><code>ConfirmDialog</code> + <code>useConfirm</code></strong>{' '}
+                    — Promise-based confirm:{' '}
+                    <code>const ok = await confirm(&#123; title, message, tone: &apos;danger&apos; &#125;)</code>.
+                    Esc cancels, Enter confirms.
+                  </li>
+                  <li>
+                    <strong><code>MoneyInput</code></strong> — Intl.NumberFormat
+                    thousands separators, prefix slot,{' '}
+                    <code>value: number | null</code>.
+                  </li>
+                  <li>
+                    <strong><code>Combobox</code></strong> — keyboard-friendly
+                    (Arrow Up/Down/Enter/Esc), filter on label + sublabel.
+                  </li>
+                  <li>
+                    <strong><code>SessionExpiryMonitor</code></strong> — decodes JWT{' '}
+                    <code>exp</code>, shows a Stay / Logout modal 30s before expiry.
+                    Stay calls <code>refresh()</code>.
+                  </li>
+                  <li>
+                    <strong><code>StatusBadge&lt;TStatus&gt;</code></strong> — typed
+                    status → tone (success / warning / danger / info / neutral) with a
+                    default tone map for paid / pending / overdue / etc.
+                  </li>
+                  <li>
+                    <strong><code>StatsRow</code></strong> — list-page stat cards
+                    (label, value, sub, icon, tone).
+                  </li>
+                </ul>
+
+                <h3>OWASP Top 10:2025 hardening</h3>
+                <p>
+                  Every fresh <code>grit new</code> project now ships defences for
+                  every category by default. The new{' '}
+                  <Link href="/docs/security" className="text-primary hover:underline">
+                    Security Guide
+                  </Link>{' '}
+                  walks each one category-by-category.
+                </p>
+                <ul>
+                  <li>
+                    <strong>A01 IDOR — <code>internal/authz</code></strong> ·{' '}
+                    <code>authz.MustOwn(c, db, dest, id)</code> returns 404 (not 403) on
+                    every failure so existence isn&apos;t leaked through error-message
+                    differences. <code>authz.RequireRoles(&quot;admin&quot;)</code>{' '}
+                    middleware for admin routes.
+                  </li>
+                  <li>
+                    <strong>A01 SSRF — <code>internal/safefetch</code></strong> · drop-in{' '}
+                    <code>safefetch.Get(ctx, url)</code> validates scheme + host
+                    pre-flight AND re-checks the resolved IP at TCP-connect time via{' '}
+                    <code>net.Dialer.Control</code> — closes the DNS-rebind TOCTOU.
+                    Blocks loopback, RFC1918, link-local, CGNAT (100.64/10), AWS IMDS
+                    (169.254.169.254 + <code>fd00:ec2::/32</code>),{' '}
+                    <code>metadata.google.internal</code>.
+                  </li>
+                  <li>
+                    <strong>A02 — <code>SecurityHeaders</code> middleware extended</strong>{' '}
+                    · strict <code>Content-Security-Policy</code>{' '}
+                    (<code>default-src &apos;self&apos;</code> + script allowlist +{' '}
+                    <code>frame-ancestors &apos;none&apos;</code> + <code>object-src &apos;none&apos;</code>),
+                    plus <code>Cross-Origin-Opener-Policy</code> and{' '}
+                    <code>Cross-Origin-Resource-Policy</code>. Skipped on{' '}
+                    <code>/docs</code>, <code>/studio</code>, <code>/sentinel</code>,{' '}
+                    <code>/pulse</code> which serve vendored UIs.
+                  </li>
+                  <li>
+                    <strong>A03 Supply chain</strong> ·{' '}
+                    <code>.github/dependabot.yml</code> (Go modules + npm + GitHub
+                    Actions, weekly) and{' '}
+                    <code>.github/workflows/security.yml</code> running{' '}
+                    <code>govulncheck</code> + <code>pnpm audit</code> (high+) +
+                    CodeQL Go/JS on every PR and weekly.
+                  </li>
+                  <li>
+                    <strong>A01-adjacent CSRF — <code>middleware.CSRF</code></strong>{' '}
+                    · double-submit-cookie defence for cookie-auth routes (OAuth flow).
+                    SameSite=Strict on the token cookie.
+                  </li>
+                  <li>
+                    <strong>A09 — <code>middleware.LogSecurityEvent</code></strong>{' '}
+                    · typed event constants for login success/failure, logout, password
+                    change, TOTP enable/disable, role change, account lock, authZ
+                    denial. Rides the existing tamper-evident ActivityLog hash chain.
+                  </li>
+                </ul>
+
+                <h3>Performance &amp; security testing methodology</h3>
+                <ul>
+                  <li>
+                    <strong>k6 suite</strong> in <code>tests/k6/</code> — all six
+                    test types from the testing course (smoke / average-load / stress /
+                    spike / soak / breakpoint) share one user journey in{' '}
+                    <code>lib/common.js</code>. SLO-aligned thresholds; smoke +
+                    average-load suitable as a CI regression gate.
+                  </li>
+                  <li>
+                    <strong>New{' '}
+                    <Link href="/docs/testing" className="text-primary hover:underline">
+                      /docs/testing
+                    </Link>{' '}
+                    page</strong> — k6 install + reading results, the 5-phase pentest
+                    methodology, the attack catalogue with curl one-liners against a
+                    Grit app (IDOR / SQLi / XSS / SSRF / brute-force / misconfig),
+                    CVSS scoring + audit-report structure.
+                  </li>
+                  <li>
+                    <strong>Sentinel and Pulse issues</strong> filed for the
+                    cross-project improvements this release uncovered: Sentinel{' '}
+                    <a href="https://github.com/MUKE-coder/sentinel/issues/2" className="text-primary hover:underline">#2</a>{' '}
+                    CSP report endpoint,{' '}
+                    <a href="https://github.com/MUKE-coder/sentinel/issues/3" className="text-primary hover:underline">#3</a>{' '}
+                    SSRF guard,{' '}
+                    <a href="https://github.com/MUKE-coder/sentinel/issues/4" className="text-primary hover:underline">#4</a>{' '}
+                    user-scoped rate limit + CAPTCHA,{' '}
+                    <a href="https://github.com/MUKE-coder/sentinel/issues/5" className="text-primary hover:underline">#5</a>{' '}
+                    CVSS finding model + alerts. Pulse{' '}
+                    <a href="https://github.com/MUKE-coder/pulse/issues/1" className="text-primary hover:underline">#1</a>{' '}
+                    p50/p95/p99 + SLO alerts,{' '}
+                    <a href="https://github.com/MUKE-coder/pulse/issues/2" className="text-primary hover:underline">#2</a>{' '}
+                    N+1 detector,{' '}
+                    <a href="https://github.com/MUKE-coder/pulse/issues/3" className="text-primary hover:underline">#3</a>{' '}
+                    USE method dashboard,{' '}
+                    <a href="https://github.com/MUKE-coder/pulse/issues/4" className="text-primary hover:underline">#4</a>{' '}
+                    k6 timeline + flame graphs.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.22.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

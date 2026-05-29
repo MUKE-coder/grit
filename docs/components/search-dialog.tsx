@@ -95,6 +95,10 @@ const searchIndex: SearchItem[] = [
   { title: 'CSV / Excel Export', href: '/docs/batteries/storage', section: 'Batteries', keywords: 'csv excel xlsx export resource download streaming excelize' },
   { title: 'Cursor-based Pagination', href: '/docs/backend/response-format', section: 'Batteries', keywords: 'cursor pagination offset paginate next_cursor has_more sticky pages stable' },
 
+  // Security & Testing
+  { title: 'Security Guide', href: '/docs/security', section: 'Security & Testing', keywords: 'security owasp top 10 2025 idor sqli xss csrf ssrf broken access control authentication authorization injection cryptography secrets headers csp hsts dependabot supply chain audit log hardening checklist sentinel waf rate limiting' },
+  { title: 'Performance & Pentest Testing', href: '/docs/testing', section: 'Security & Testing', keywords: 'testing k6 load test smoke average stress spike soak breakpoint pentest penetration test methodology burp ffuf nmap sqlmap nuclei cvss audit report vulnerability scan govulncheck pnpm audit codeql ptes owasp wstg' },
+
   // Infrastructure
   { title: 'Docker Setup', href: '/docs/infrastructure/docker', section: 'Infrastructure', keywords: 'docker compose container postgresql redis minio' },
   { title: 'Docker Cheat Sheet', href: '/docs/infrastructure/docker-cheatsheet', section: 'Infrastructure', keywords: 'docker commands cheat sheet reference' },

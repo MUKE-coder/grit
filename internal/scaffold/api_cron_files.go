@@ -11,8 +11,9 @@ func writeCronFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "cron", "cron.go"):       cronSchedulerGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "cron.go"):   cronHandlerGo(),
+		filepath.Join(apiRoot, "internal", "cron", "cron.go"):     cronSchedulerGo(),
+		filepath.Join(apiRoot, "internal", "cron", "start.go"):    cronStartGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "cron.go"): cronHandlerGo(),
 	}
 
 	for path, content := range files {
@@ -91,6 +92,48 @@ func (s *Scheduler) Start() error {
 // Stop shuts down the scheduler gracefully.
 func (s *Scheduler) Stop() {
 	s.scheduler.Shutdown()
+}
+`
+}
+
+// cronStartGo returns a batteries-included cron.Start(cfg, cache) helper
+// that wires up the asynq scheduler. This is what `cmd/server/main.go` for
+// the single-app architecture imports — it lets the main.go stay tight and
+// gives `grit add cron-task` a place to inject new tasks.
+func cronStartGo() string {
+	return `package cron
+
+import (
+	"log"
+
+	"{{MODULE}}/internal/cache"
+	"{{MODULE}}/internal/config"
+)
+
+// Start initializes the cron scheduler with the project's default tasks and
+// begins executing scheduled jobs in the background.
+//
+// Returns the running Scheduler (so callers can Stop() it on shutdown) and
+// any startup error. The cache argument is reserved for tasks that need
+// shared cache access — it is currently unused but kept stable so adding a
+// cache-backed task later is a drop-in change.
+func Start(cfg *config.Config, _ *cache.Cache) (*Scheduler, error) {
+	if cfg.RedisURL == "" {
+		log.Println("Cron scheduler disabled: REDIS_URL not configured")
+		return nil, nil
+	}
+
+	s, err := New(cfg.RedisURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.Start(); err != nil {
+		return nil, err
+	}
+
+	log.Println("Cron scheduler started")
+	return s, nil
 }
 `
 }
