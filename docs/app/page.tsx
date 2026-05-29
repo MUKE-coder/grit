@@ -196,6 +196,20 @@ export default function HomePage() {
             </div>
           </FadeIn>
 
+          {/* INSTALL pill — one-line copyable command, lives right above the editor */}
+          <FadeIn delay={0.28}>
+            <div className="max-w-2xl mx-auto mb-10 mt-2">
+              <div className="rounded-xl border border-white/15 bg-white/[0.05] backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)]">
+                <CodeBlock
+                  terminal
+                  filename="Quick install"
+                  code={`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest && grit new my-app`}
+                  className="!border-0 !rounded-xl !bg-transparent dark:!bg-transparent !m-0"
+                />
+              </div>
+            </div>
+          </FadeIn>
+
           {/* SIDE-BY-SIDE GITHUB EDITOR — bold border, layered shadow, file tabs row at top */}
           <FadeIn delay={0.32}>
             <div className="relative rounded-2xl overflow-hidden bg-[#ffffff] dark:bg-[#0d1117] border-2 border-white/30 shadow-[0_24px_64px_-16px_rgba(2,6,23,0.6),0_8px_24px_-8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)]">
@@ -362,7 +376,7 @@ export function useProducts() {
 
               {/* CPU canvas — center 6 cols on desktop, full width below */}
               <div className="lg:col-span-7 order-2 lg:order-1" data-gsap-reveal>
-                <div className="relative conic-border rounded-2xl bg-card/60 backdrop-blur p-8 shadow-[0_24px_64px_-16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.04)]">
+                <div className="relative rounded-2xl border-2 border-border/60 bg-card/60 backdrop-blur p-8 shadow-[0_24px_64px_-16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.04),0_0_0_4px_hsl(var(--primary)/0.04)]">
                   {/* Corner bracket decorations */}
                   <div className="absolute top-3 left-3 h-4 w-4 border-t-2 border-l-2 border-primary/40" />
                   <div className="absolute top-3 right-3 h-4 w-4 border-t-2 border-r-2 border-primary/40" />
@@ -493,8 +507,8 @@ export function useProducts() {
                 </Link>
               </Button>
 
-              {/* Pulse dashboard mockup — conic animated border for wow factor */}
-              <div className="relative conic-border rounded-xl bg-card/80 overflow-hidden shadow-[0_24px_48px_-16px_rgba(0,0,0,0.35),0_2px_8px_-2px_rgba(0,0,0,0.15)]">
+              {/* Pulse dashboard mockup */}
+              <div className="relative rounded-xl border-2 border-border/60 bg-card/80 overflow-hidden shadow-[0_24px_48px_-16px_rgba(0,0,0,0.35),0_2px_8px_-2px_rgba(0,0,0,0.15),0_0_0_4px_hsl(var(--primary)/0.04)]">
                 <div className="flex">
                   {/* Sidebar */}
                   <div className="hidden sm:block w-32 border-r border-border/40 bg-background/60 px-3 py-3">

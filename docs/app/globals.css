@@ -336,21 +336,4 @@
   animation: dash-draw 3s linear infinite;
 }
 
-/* ═══ Conic-gradient border glow (premium CTA) ═══ */
-@keyframes conic-spin {
-  to { transform: rotate(360deg); }
-}
-.conic-border::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: 9999px;
-  padding: 2px;
-  background: conic-gradient(from 0deg, transparent 0deg, hsl(var(--primary)) 90deg, transparent 180deg, hsl(var(--primary)) 270deg, transparent 360deg);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  animation: conic-spin 4s linear infinite;
-  pointer-events: none;
-}
+/* (conic-border removed — replaced with static borders + soft primary halo) */

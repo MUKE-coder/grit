@@ -102,28 +102,33 @@ export function CodeBlock({
         </div>
       )}
 
-      {/* Code content */}
+      {/* Code content — terminal mode adds a $ prompt gutter and forces
+          language=bash so shell commands get real syntax highlighting
+          instead of falling back to plain text. */}
       {terminal ? (
-        <div className="p-4 font-mono text-[13px] leading-6 overflow-x-auto">
-          {trimmedCode.split('\n').map((line, i) => {
-            if (line.trim() === '') {
-              return <div key={i} className="h-5" />
-            }
-            if (line.trimStart().startsWith('#')) {
-              return (
-                <div key={i}>
-                  <span className="text-slate-500 dark:text-slate-500 text-xs">{line}</span>
-                </div>
-              )
-            }
-            return (
-              <div key={i} className="flex">
-                <span className="text-sky-600/70 dark:text-sky-400/60 select-none mr-2">$</span>
-                <span className="text-slate-800 dark:text-slate-300">{line}</span>
-              </div>
-            )
-          })}
-        </div>
+        <Highlight theme={theme} code={trimmedCode.replace(/^\$\s*/gm, '')} language="bash">
+          {({ tokens, getLineProps, getTokenProps }) => (
+            <pre className="p-4 text-[13px] leading-6 font-mono overflow-x-auto" style={{ background: 'transparent' }}>
+              {tokens.map((line, i) => {
+                const raw = trimmedCode.split('\n')[i] ?? ''
+                if (raw.trim() === '') return <div key={i} className="h-5" />
+                const isComment = raw.trimStart().startsWith('#')
+                return (
+                  <div key={i} {...getLineProps({ line })} className="flex">
+                    {!isComment && (
+                      <span className="text-sky-600/70 dark:text-sky-400/60 select-none mr-2 shrink-0">$</span>
+                    )}
+                    <span className={isComment ? 'text-slate-500 dark:text-slate-500 text-xs' : ''}>
+                      {line.map((token, key) => (
+                        <span key={key} {...getTokenProps({ token })} />
+                      ))}
+                    </span>
+                  </div>
+                )
+              })}
+            </pre>
+          )}
+        </Highlight>
       ) : (
         <Highlight theme={theme} code={trimmedCode} language={language}>
           {({ tokens, getLineProps, getTokenProps }) => (
