@@ -286,3 +286,71 @@
 .prose-grit strong {
   @apply font-semibold text-foreground;
 }
+
+/* ═══ CPU Architecture animation paths (21st.dev) ═══ */
+.cpu-architecture {
+  offset-anchor: 10px 0px;
+  animation: animation-path;
+  animation-iteration-count: infinite;
+  animation-timing-function: cubic-bezier(0.75, -0.01, 0, 0.99);
+}
+.cpu-line-1 { offset-path: path("M 10 20 h 79.5 q 5 0 5 5 v 30"); animation-duration: 5s; animation-delay: 1s; }
+.cpu-line-2 { offset-path: path("M 180 10 h -69.7 q -5 0 -5 5 v 40"); animation-delay: 6s; animation-duration: 2s; }
+.cpu-line-3 { offset-path: path("M 130 20 v 21.8 q 0 5 -5 5 h -25"); animation-delay: 4s; animation-duration: 6s; }
+.cpu-line-4 { offset-path: path("M 170 80 v -21.8 q 0 -5 -5 -5 h -65"); animation-delay: 3s; animation-duration: 3s; }
+.cpu-line-5 { offset-path: path("M 135 65 h 15 q 5 0 5 5 v 10 q 0 5 -5 5 h -39.8 q -5 0 -5 -5 v -35"); animation-delay: 9s; animation-duration: 4s; }
+.cpu-line-6 { offset-path: path("M 94.8 95 v -46"); animation-delay: 3s; animation-duration: 7s; }
+.cpu-line-7 { offset-path: path("M 88 88 v -15 q 0 -5 -5 -5 h -10 q -5 0 -5 -5 v -5 q 0 -5 5 -5 h 28"); animation-delay: 4s; animation-duration: 4s; }
+.cpu-line-8 { offset-path: path("M 30 30 h 25 q 5 0 5 5 v 6.5 q 0 5 5 5 h 35"); animation-delay: 3s; animation-duration: 3s; }
+@keyframes animation-path {
+  0% { offset-distance: 0%; }
+  100% { offset-distance: 100%; }
+}
+
+/* ═══ Hero ASCII-grid corner decoration ═══ */
+.hero-corner-grid {
+  background-image:
+    linear-gradient(to right, hsl(var(--primary) / 0.18) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--primary) / 0.18) 1px, transparent 1px);
+  background-size: 24px 24px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at center, black 0%, transparent 70%);
+          mask-image: radial-gradient(ellipse 80% 60% at center, black 0%, transparent 70%);
+}
+
+/* ═══ Animated glow pulse for hero pills ═══ */
+@keyframes pill-glow {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.3), 0 8px 24px -4px hsl(var(--primary) / 0.4); }
+  50% { box-shadow: 0 0 0 8px hsl(var(--primary) / 0.0), 0 12px 32px -4px hsl(var(--primary) / 0.6); }
+}
+.pill-pulse {
+  animation: pill-glow 3s ease-in-out infinite;
+}
+
+/* ═══ Connector dashed line draw animation ═══ */
+@keyframes dash-draw {
+  to { stroke-dashoffset: 0; }
+}
+.dash-animate {
+  stroke-dasharray: 4 4;
+  stroke-dashoffset: 100;
+  animation: dash-draw 3s linear infinite;
+}
+
+/* ═══ Conic-gradient border glow (premium CTA) ═══ */
+@keyframes conic-spin {
+  to { transform: rotate(360deg); }
+}
+.conic-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  padding: 2px;
+  background: conic-gradient(from 0deg, transparent 0deg, hsl(var(--primary)) 90deg, transparent 180deg, hsl(var(--primary)) 270deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: conic-spin 4s linear infinite;
+  pointer-events: none;
+}

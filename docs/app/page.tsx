@@ -6,11 +6,53 @@ import { SiteHeader } from '@/components/site-header'
 import { CodeBlock } from '@/components/code-block'
 import { SoftwareApplicationSchema, FAQPageSchema } from '@/components/structured-data'
 import { FeatureTabs } from '@/components/feature-tabs'
+import { CpuArchitecture } from '@/components/ui/cpu-architecture'
+import { MagneticButton, GSAPSection, FadeIn, GlowOrb } from '@/components/motion-primitives'
+import { GoLogo, ReactLogo, VueLogo, SvelteLogo, NextLogo, TanStackLogo, TypeScriptLogo, TailwindLogo, PostgresLogo, RedisLogo, DockerLogo } from '@/components/framework-logos'
 
 export const metadata: Metadata = {
   title: 'Grit — Go + React Full-Stack Framework',
   description: 'Build production-ready full-stack applications with Go and React. One CLI, 5 architectures, batteries included.',
   alternates: { canonical: 'https://gritframework.dev' },
+}
+
+// AsciiCube — Inertia-style ASCII/dotted 3D cube wireframe for hero corners.
+// Pure SVG so it scales infinitely + costs nothing to render. The `flip`
+// prop mirrors it for the opposing corner so the two read as a matched pair.
+function AsciiCube({ className, flip = false }: { className?: string; flip?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 200 200"
+      className={className}
+      style={{ transform: flip ? 'scaleX(-1)' : undefined }}
+      aria-hidden
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="0.6"
+    >
+      {/* Bottom face (a parallelogram) */}
+      <g strokeDasharray="2 3">
+        <path d="M 30 130 L 100 170 L 170 130 L 100 90 Z" />
+        {/* Front face */}
+        <path d="M 30 130 L 30 60 L 100 20 L 100 90 Z" />
+        {/* Right face */}
+        <path d="M 100 90 L 100 20 L 170 60 L 170 130 Z" />
+        {/* Inner grid — dotted lines suggesting cube subdivisions */}
+        <line x1="30" y1="90" x2="100" y2="50" />
+        <line x1="60" y1="115" x2="60" y2="40" />
+        <line x1="80" y1="130" x2="80" y2="55" />
+        <line x1="170" y1="90" x2="100" y2="50" />
+        <line x1="130" y1="115" x2="130" y2="40" />
+        <line x1="150" y1="105" x2="150" y2="45" />
+        <line x1="65" y1="150" x2="135" y2="150" />
+        <line x1="50" y1="140" x2="150" y2="140" />
+      </g>
+      {/* Dots at vertices */}
+      {[[30, 130], [30, 60], [100, 20], [100, 90], [170, 130], [170, 60], [100, 170]].map(([cx, cy], i) => (
+        <circle key={i} cx={cx} cy={cy} r="1.4" fill="currentColor" stroke="none" />
+      ))}
+    </svg>
+  )
 }
 
 export default function HomePage() {
@@ -20,74 +62,182 @@ export default function HomePage() {
       <FAQPageSchema />
       <SiteHeader />
 
-      {/* ═══ HERO — saturated block with side-by-side editor ═══ */}
-      <section className="relative overflow-hidden">
-        {/* Saturated gradient backdrop */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700" />
-        {/* Faint grid pattern */}
-        <div className="absolute inset-0 -z-10 opacity-[0.08]" style={{ backgroundImage: 'linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-        {/* Decorative cubes — faint */}
-        <div className="absolute -top-10 left-10 w-48 h-48 rounded-3xl border border-white/10 -rotate-12 hidden lg:block" />
-        <div className="absolute top-20 right-10 w-32 h-32 rounded-2xl border border-white/10 rotate-12 hidden lg:block" />
+      {/* ═══ HERO — saturated block, glass pills, ASCII grid corners, GitHub editor ═══ */}
+      <section className="relative overflow-hidden isolate">
+        {/* Layer 1 — saturated gradient backdrop */}
+        <div
+          className="absolute inset-0 -z-30"
+          style={{
+            background:
+              'radial-gradient(ellipse 80% 60% at 50% 0%, #0284c7 0%, #0369a1 35%, #082f49 100%)',
+          }}
+        />
+        {/* Layer 2 — fine grid */}
+        <div
+          className="absolute inset-0 -z-20 opacity-[0.10]"
+          style={{
+            backgroundImage:
+              'linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)',
+            backgroundSize: '48px 48px',
+          }}
+        />
+        {/* Layer 3 — radial vignette so the grid fades at edges */}
+        <div
+          className="absolute inset-0 -z-10"
+          style={{
+            background:
+              'radial-gradient(ellipse 70% 50% at 50% 30%, transparent 0%, rgba(8,47,73,0.55) 80%)',
+          }}
+        />
 
-        <div className="relative max-w-6xl mx-auto pt-20 pb-12 md:pt-28 md:pb-16 px-6">
+        {/* ASCII-cube corner decorations */}
+        <AsciiCube className="absolute -top-8 -left-8 w-[280px] h-[280px] hidden md:block opacity-[0.18] text-white" />
+        <AsciiCube className="absolute -top-12 -right-8 w-[320px] h-[320px] hidden md:block opacity-[0.18] text-white" flip />
+        <AsciiCube className="absolute -bottom-16 -left-16 w-[260px] h-[260px] hidden lg:block opacity-[0.15] text-white" />
+        <AsciiCube className="absolute -bottom-8 -right-12 w-[280px] h-[280px] hidden lg:block opacity-[0.15] text-white" flip />
 
-          {/* Architecture badge row — Inertia-style framework icons */}
-          <div className="flex items-center justify-center gap-2 mb-10">
-            {[
-              { letter: 'S', tone: 'bg-amber-400/90 text-amber-950', title: 'Single — Go + embedded SPA' },
-              { letter: 'D', tone: 'bg-violet-400/90 text-violet-950', title: 'Double — Web + API' },
-              { letter: 'T', tone: 'bg-emerald-400/90 text-emerald-950', title: 'Triple — Web + Admin + API' },
-              { letter: 'A', tone: 'bg-rose-400/90 text-rose-950', title: 'API — Go backend only' },
-              { letter: 'M', tone: 'bg-cyan-400/90 text-cyan-950', title: 'Mobile — API + Expo' },
-            ].map((arch) => (
-              <div
-                key={arch.letter}
-                title={arch.title}
-                className={`h-10 w-10 rounded-full ${arch.tone} flex items-center justify-center font-bold text-sm shadow-lg ring-2 ring-white/30`}
-              >
-                {arch.letter}
+        {/* Floating glow orbs */}
+        <GlowOrb className="-top-32 left-1/4 h-[400px] w-[400px] bg-sky-400/30" duration={18} />
+        <GlowOrb className="top-40 right-1/4 h-[300px] w-[300px] bg-cyan-300/20" delay={2} duration={16} />
+
+        <div className="relative max-w-6xl mx-auto pt-20 pb-16 md:pt-28 md:pb-20 px-6">
+
+          {/* GLASS PILL ROW — backend stack → arrow → frontend stack */}
+          <FadeIn delay={0.05}>
+            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-12">
+              {/* Backend pill */}
+              <div className="pill-pulse flex items-center gap-1.5 rounded-full border border-white/25 bg-white/[0.08] backdrop-blur-xl px-2 py-1.5 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)]">
+                {[
+                  { src: '/images/icons/go.svg', alt: 'Go' },
+                  { src: '/images/icons/postgressql.png', alt: 'Postgres' },
+                  { letter: 'R', tone: 'bg-red-500', alt: 'Redis' },
+                  { letter: 'D', tone: 'bg-sky-500', alt: 'Docker' },
+                ].map((logo, i) => (
+                  <div
+                    key={i}
+                    title={logo.alt}
+                    className="h-8 w-8 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.15),inset_0_-1px_0_rgba(0,0,0,0.05)] flex items-center justify-center"
+                  >
+                    {logo.src ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={logo.src} alt={logo.alt} className="h-5 w-5 object-contain" />
+                    ) : (
+                      <div className={`h-5 w-5 rounded-full ${logo.tone} text-white font-bold text-[10px] flex items-center justify-center`}>
+                        {logo.letter}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white text-center mb-6 leading-[1.1]">
-            Build full-stack apps<br />
-            with the backend you trust
-          </h1>
+              {/* Dotted connector with arrowhead */}
+              <svg className="h-3 w-12 hidden sm:block" viewBox="0 0 48 12" fill="none">
+                <line x1="0" y1="6" x2="40" y2="6" stroke="white" strokeOpacity="0.55" strokeWidth="1.5" strokeDasharray="3 3" className="dash-animate" />
+                <path d="M40 2 L46 6 L40 10" stroke="white" strokeOpacity="0.8" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
 
-          <p className="text-base md:text-lg text-white/85 max-w-2xl mx-auto text-center mb-10 leading-relaxed">
-            Scaffold a Go API + React frontend + admin panel in one command. Auth, OAuth, file
-            storage, jobs, AI, observability, security headers — meticulously optimized for
-            production. No boilerplate required.
-          </p>
+              {/* Frontend pill */}
+              <div className="pill-pulse flex items-center gap-1.5 rounded-full border border-white/25 bg-white/[0.08] backdrop-blur-xl px-2 py-1.5 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)]">
+                {[
+                  { node: <ReactLogo className="h-5 w-5" />, alt: 'React' },
+                  { img: '/images/icons/Next.js.svg', alt: 'Next.js' },
+                  { node: <VueLogo className="h-5 w-5" />, alt: 'Vue' },
+                  { node: <SvelteLogo className="h-5 w-5" />, alt: 'Svelte' },
+                  { img: '/images/icons/tanstack-seeklogo.svg', alt: 'TanStack' },
+                ].map((logo, i) => (
+                  <div
+                    key={i}
+                    title={logo.alt}
+                    className="h-8 w-8 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.15),inset_0_-1px_0_rgba(0,0,0,0.05)] flex items-center justify-center"
+                  >
+                    {logo.node ?? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={logo.img} alt={logo.alt} className="h-5 w-5 object-contain" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </FadeIn>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
-            <Button size="lg" className="bg-white text-sky-700 hover:bg-white/95 hover:text-sky-800 px-7 h-11 text-sm rounded-full font-medium shadow-lg" asChild>
-              <Link href="/docs/getting-started/quick-start">
-                Learn more
-              </Link>
-            </Button>
-            <Button variant="outline" size="lg" className="border-white/30 bg-white/5 text-white hover:bg-white/15 hover:text-white px-7 h-11 text-sm rounded-full font-medium" asChild>
-              <Link href="/docs">
-                Read docs
-              </Link>
-            </Button>
-          </div>
+          <FadeIn delay={0.12}>
+            <h1 className="text-4xl md:text-6xl lg:text-[5.5rem] font-bold tracking-tight text-white text-center mb-6 leading-[1.05]"
+                style={{ textShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+              Build full-stack apps<br />
+              <span className="bg-gradient-to-b from-white via-white to-sky-100 bg-clip-text text-transparent">
+                with the backend you trust
+              </span>
+            </h1>
+          </FadeIn>
 
-          {/* Side-by-side code editor — backend ↔ frontend, both generated by one command */}
-          <div className="rounded-xl overflow-hidden border border-white/15 shadow-2xl bg-slate-950 text-left">
-            <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/10">
-              <div>
-                <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-900/80 border-b border-white/10">
-                  <span className="text-[10px] font-mono text-white/40">{'</>'}</span>
-                  <span className="text-xs font-mono text-white/70">internal/handlers/product.go</span>
+          <FadeIn delay={0.18}>
+            <p className="text-base md:text-lg text-white/85 max-w-2xl mx-auto text-center mb-10 leading-relaxed">
+              Scaffold a Go API + React frontend + admin panel in one command.
+              Auth, OAuth, file storage, jobs, AI, observability, OWASP-2025 hardened
+              — meticulously optimized for production. No boilerplate required.
+            </p>
+          </FadeIn>
+
+          {/* Premium CTAs — magnetic + glass */}
+          <FadeIn delay={0.24}>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
+              <MagneticButton>
+                <Link
+                  href="/docs/getting-started/quick-start"
+                  className="group relative inline-flex items-center justify-center gap-2 h-12 px-7 rounded-full bg-white text-sky-700 font-semibold text-sm shadow-[0_8px_24px_-4px_rgba(0,0,0,0.3),0_2px_4px_rgba(0,0,0,0.1),inset_0_-2px_0_rgba(2,132,199,0.15)] hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.35),0_2px_4px_rgba(0,0,0,0.1),inset_0_-2px_0_rgba(2,132,199,0.2)] transition-all"
+                >
+                  Get started
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </MagneticButton>
+              <MagneticButton>
+                <Link
+                  href="/docs"
+                  className="inline-flex items-center justify-center h-12 px-7 rounded-full border border-white/25 bg-white/[0.08] backdrop-blur-xl text-white font-medium text-sm hover:bg-white/[0.14] hover:border-white/35 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all"
+                >
+                  Read docs
+                </Link>
+              </MagneticButton>
+            </div>
+          </FadeIn>
+
+          {/* SIDE-BY-SIDE GITHUB EDITOR — bold border, layered shadow, file tabs row at top */}
+          <FadeIn delay={0.32}>
+            <div className="relative rounded-2xl overflow-hidden bg-[#ffffff] dark:bg-[#0d1117] border-2 border-white/30 shadow-[0_24px_64px_-16px_rgba(2,6,23,0.6),0_8px_24px_-8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)]">
+              {/* Editor chrome — file tab strip */}
+              <div className="flex items-center gap-0 bg-[#f6f8fa] dark:bg-[#161b22] border-b border-[#d0d7de] dark:border-white/[0.08]">
+                {/* Window dots */}
+                <div className="flex items-center gap-1.5 px-4 py-2.5 border-r border-[#d0d7de]/60 dark:border-white/[0.06]">
+                  <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                 </div>
-                <pre className="px-4 py-4 text-[12px] leading-[1.6] font-mono text-slate-100 overflow-x-auto"><code>{`package handlers
+                {/* Active file tabs */}
+                <div className="flex items-center gap-2 px-3 py-2.5 border-r border-[#d0d7de]/60 dark:border-white/[0.06] bg-white dark:bg-[#0d1117] -mb-px">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/images/icons/go.svg" alt="" className="h-3.5 w-3.5" />
+                  <span className="text-[12px] font-mono text-[#24292f] dark:text-slate-300">internal/handlers/product.go</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-2.5">
+                  <ReactLogo className="h-3.5 w-3.5" />
+                  <span className="text-[12px] font-mono text-[#57606a] dark:text-slate-500">frontend/src/hooks/use-products.ts</span>
+                  <span className="ml-1 text-[9px] font-mono text-[#57606a]/70 dark:text-slate-500/70 uppercase tracking-wider">tsx</span>
+                </div>
+                <div className="ml-auto text-[10px] font-mono text-[#57606a] dark:text-slate-500 px-4 hidden md:block">
+                  generated · 2 files
+                </div>
+              </div>
+
+              {/* Two-pane code body — GitHub theme, light/dark aware */}
+              <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#d0d7de] dark:divide-white/[0.06] bg-white dark:bg-[#0d1117]">
+                <div className="text-left">
+                  <CodeBlock
+                    code={`package handlers
 
 import (
     "net/http"
     "github.com/gin-gonic/gin"
+    "myapp/internal/authz"
 )
 
 func (h *ProductHandler) List(c *gin.Context) {
@@ -99,15 +249,14 @@ func (h *ProductHandler) List(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{
         "data": products,
     })
-}`}</code></pre>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-900/80 border-b border-white/10">
-                  <span className="text-[10px] font-mono text-cyan-400">⚛</span>
-                  <span className="text-xs font-mono text-white/70">frontend/src/hooks/use-products.ts</span>
+}`}
+                    language="go"
+                    className="!border-0 !rounded-none !shadow-none !bg-transparent dark:!bg-transparent !m-0"
+                  />
                 </div>
-                <pre className="px-4 py-4 text-[12px] leading-[1.6] font-mono text-slate-100 overflow-x-auto"><code>{`import { useQuery } from '@tanstack/react-query'
+                <div className="text-left">
+                  <CodeBlock
+                    code={`import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 
 export function useProducts() {
@@ -119,16 +268,23 @@ export function useProducts() {
       return res.data.data
     },
   })
-}`}</code></pre>
+}`}
+                    language="tsx"
+                    className="!border-0 !rounded-none !shadow-none !bg-transparent dark:!bg-transparent !m-0"
+                  />
+                </div>
+              </div>
+
+              {/* Footer attribution strip */}
+              <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#f6f8fa] dark:bg-[#161b22] border-t border-[#d0d7de] dark:border-white/[0.08]">
+                <Terminal className="h-3 w-3 text-[#57606a] dark:text-slate-500" />
+                <span className="text-[11px] font-mono text-[#57606a] dark:text-slate-400">
+                  Both files generated by{' '}
+                  <span className="text-sky-700 dark:text-sky-400 font-semibold">grit generate resource Product</span>
+                </span>
               </div>
             </div>
-            <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900/60 border-t border-white/10">
-              <Terminal className="h-3 w-3 text-white/50" />
-              <span className="text-[11px] font-mono text-white/60">
-                Both files generated by <span className="text-cyan-300">grit generate resource Product</span>
-              </span>
-            </div>
-          </div>
+          </FadeIn>
 
         </div>
       </section>

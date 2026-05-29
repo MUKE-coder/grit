@@ -1,29 +1,49 @@
 'use client'
 
 import { Highlight, type PrismTheme } from 'prism-react-renderer'
+import { useTheme } from 'next-themes'
+import { useEffect, useState } from 'react'
 import { CopyButton } from './copy-button'
 
-const theme: PrismTheme = {
-  plain: {
-    color: '#e2e8f0',
-    backgroundColor: 'transparent',
-  },
+// GitHub Dark — tuned for our dark theme (matches gh.com syntax pal).
+const githubDark: PrismTheme = {
+  plain: { color: '#c9d1d9', backgroundColor: 'transparent' },
   styles: [
-    { types: ['comment', 'prolog', 'doctype', 'cdata'], style: { color: '#64748b', fontStyle: 'italic' as const } },
-    { types: ['keyword', 'tag', 'operator', 'builtin'], style: { color: '#c792ea' } },
-    { types: ['string', 'attr-value', 'template-string'], style: { color: '#c3e88d' } },
-    { types: ['number', 'boolean'], style: { color: '#f78c6c' } },
-    { types: ['function', 'method'], style: { color: '#82aaff' } },
-    { types: ['class-name', 'type-name', 'maybe-class-name'], style: { color: '#ffcb6b' } },
-    { types: ['punctuation'], style: { color: '#94a3b8' } },
-    { types: ['variable', 'constant'], style: { color: '#f07178' } },
-    { types: ['attr-name'], style: { color: '#ffcb6b' } },
-    { types: ['selector', 'property'], style: { color: '#82aaff' } },
-    { types: ['namespace'], style: { color: '#b2ccd6', opacity: 0.7 } },
-    { types: ['deleted'], style: { color: '#ff6b6b' } },
-    { types: ['inserted'], style: { color: '#c3e88d' } },
-    { types: ['char', 'symbol'], style: { color: '#80cbc4' } },
-    { types: ['regex'], style: { color: '#89ddff' } },
+    { types: ['comment', 'prolog', 'doctype', 'cdata'], style: { color: '#8b949e', fontStyle: 'italic' as const } },
+    { types: ['keyword', 'tag', 'operator', 'builtin'], style: { color: '#ff7b72' } },
+    { types: ['string', 'attr-value', 'template-string', 'char'], style: { color: '#a5d6ff' } },
+    { types: ['number', 'boolean'], style: { color: '#79c0ff' } },
+    { types: ['function', 'method'], style: { color: '#d2a8ff' } },
+    { types: ['class-name', 'type-name', 'maybe-class-name'], style: { color: '#ffa657' } },
+    { types: ['punctuation'], style: { color: '#c9d1d9' } },
+    { types: ['variable', 'constant'], style: { color: '#79c0ff' } },
+    { types: ['attr-name'], style: { color: '#7ee787' } },
+    { types: ['selector', 'property'], style: { color: '#79c0ff' } },
+    { types: ['namespace'], style: { color: '#8b949e' } },
+    { types: ['deleted'], style: { color: '#ffa198', backgroundColor: '#67060c' } },
+    { types: ['inserted'], style: { color: '#aff5b4', backgroundColor: '#033a16' } },
+    { types: ['regex'], style: { color: '#79c0ff' } },
+  ],
+}
+
+// GitHub Light — the canonical gh.com light palette.
+const githubLight: PrismTheme = {
+  plain: { color: '#24292f', backgroundColor: 'transparent' },
+  styles: [
+    { types: ['comment', 'prolog', 'doctype', 'cdata'], style: { color: '#6e7781', fontStyle: 'italic' as const } },
+    { types: ['keyword', 'tag', 'operator', 'builtin'], style: { color: '#cf222e' } },
+    { types: ['string', 'attr-value', 'template-string', 'char'], style: { color: '#0a3069' } },
+    { types: ['number', 'boolean'], style: { color: '#0550ae' } },
+    { types: ['function', 'method'], style: { color: '#8250df' } },
+    { types: ['class-name', 'type-name', 'maybe-class-name'], style: { color: '#953800' } },
+    { types: ['punctuation'], style: { color: '#24292f' } },
+    { types: ['variable', 'constant'], style: { color: '#0550ae' } },
+    { types: ['attr-name'], style: { color: '#116329' } },
+    { types: ['selector', 'property'], style: { color: '#0550ae' } },
+    { types: ['namespace'], style: { color: '#6e7781' } },
+    { types: ['deleted'], style: { color: '#82071e', backgroundColor: '#ffebe9' } },
+    { types: ['inserted'], style: { color: '#116329', backgroundColor: '#dafbe1' } },
+    { types: ['regex'], style: { color: '#0550ae' } },
   ],
 }
 
@@ -46,26 +66,38 @@ export function CodeBlock({
 }: CodeBlockProps) {
   const trimmedCode = code.trim()
 
+  // Theme-aware Prism palette. Defer the hook reading until after mount
+  // to avoid hydration mismatches (next-themes returns undefined on first
+  // server render).
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  const theme = !mounted ? githubDark : resolvedTheme === 'light' ? githubLight : githubDark
+
   return (
-    <div className={`rounded-lg border border-slate-200 dark:border-border/40 bg-slate-900 overflow-hidden relative group ${className}`}>
+    <div
+      className={`rounded-lg overflow-hidden relative group ${className}
+        border-2 border-slate-200/80 bg-white shadow-[0_1px_0_rgba(27,31,35,0.04),0_8px_24px_-12px_rgba(15,23,42,0.15)]
+        dark:border-white/10 dark:bg-[#0d1117] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_20px_40px_-12px_rgba(0,0,0,0.6)]`}
+    >
       {/* Header */}
       {(filename || terminal) && (
-        <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700/50">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-white/[0.06] bg-slate-50/70 dark:bg-white/[0.02]">
           <div className="flex items-center gap-2.5">
             {terminal && (
               <div className="flex items-center gap-1.5 mr-1">
-                <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]/80" />
-                <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]/80" />
-                <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]/80" />
+                <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
               </div>
             )}
-            <span className="text-[12px] font-mono text-slate-500">
+            <span className="text-[12px] font-mono text-slate-600 dark:text-slate-400">
               {filename || 'Terminal'}
             </span>
           </div>
           <CopyButton
             text={terminal ? trimmedCode.replace(/^\$\s*/gm, '') : trimmedCode}
-            className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 text-slate-500 hover:text-slate-300"
+            className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
           />
         </div>
       )}
@@ -80,14 +112,14 @@ export function CodeBlock({
             if (line.trimStart().startsWith('#')) {
               return (
                 <div key={i}>
-                  <span className="text-slate-600 text-xs">{line}</span>
+                  <span className="text-slate-500 dark:text-slate-500 text-xs">{line}</span>
                 </div>
               )
             }
             return (
               <div key={i} className="flex">
-                <span className="text-sky-400/60 select-none mr-2">$</span>
-                <span className="text-slate-300">{line}</span>
+                <span className="text-sky-600/70 dark:text-sky-400/60 select-none mr-2">$</span>
+                <span className="text-slate-800 dark:text-slate-300">{line}</span>
               </div>
             )
           })}
@@ -121,7 +153,7 @@ export function CodeBlock({
         <div className="absolute top-2 right-2">
           <CopyButton
             text={trimmedCode}
-            className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 text-slate-500 hover:text-slate-300"
+            className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
           />
         </div>
       )}
