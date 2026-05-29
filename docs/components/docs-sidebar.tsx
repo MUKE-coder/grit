@@ -117,6 +117,13 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    title: 'Demo',
+    icon: <Rocket className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Demo Application', href: '/docs/demo' },
+    ],
+  },
+  {
     title: 'Admin Panel',
     icon: <Shield className="h-3.5 w-3.5" />,
     items: [

@@ -1,0 +1,29 @@
+# Binary
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+tmp/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.tanstack/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/

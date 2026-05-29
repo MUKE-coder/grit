@@ -208,6 +208,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Run k6 load tests (smoke / average-load / stress / spike / soak / breakpoint) and methodology-driven penetration tests against a Grit app. Includes the 5-phase pentest methodology, the attack catalogue, CVSS scoring, and the audit-report structure that justifies a $2k–$10k engagement.',
   },
+  '/docs/demo': {
+    title: 'Demo Application — Grit Motors',
+    description:
+      'A live, full-stack Grit demo built on grit new --single --vite: motorcycle dealership management, POS, loans + repayments, daily-boda fleet tracking, multi-tenant RBAC, in-app Security (Sentinel) + Observability (Pulse) dashboards. Source on GitHub, login pre-filled, database reset nightly.',
+  },
   '/docs/backend/response-format': {
     title: 'API Response Format',
     description:

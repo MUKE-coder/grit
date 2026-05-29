@@ -1,0 +1,175 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap');
+
+/* ═══════════════════════════════════════════════════════════════════
+   Kayula Motors — Design System Tokens
+   Light-first, blue-accent, Onest typography. Inspired by the auth
+   modal reference (sign-up / OTP verification) and the BordUp light
+   sidebar. See design-style-guide.md.
+   ═══════════════════════════════════════════════════════════════════ */
+@theme {
+  /* Surfaces */
+  --color-background      : #F9FAFB;       /* page bg — never pure white */
+  --color-surface         : #FFFFFF;       /* cards, panels, modal cards */
+  --color-surface-2       : #F3F4F6;       /* wells, hover, disabled */
+  --color-surface-hover   : #F3F4F6;       /* row + button hover */
+
+  /* Text */
+  --color-foreground            : #020202;
+  --color-foreground-secondary  : #3F4F66;
+  --color-foreground-muted      : #8F95A3;
+
+  /* Borders */
+  --color-border          : #E5E7EB;
+  --color-border-subtle   : #F3F4F6;
+
+  /* Primary accent — blue */
+  --color-accent          : #1E7EF5;
+  --color-accent-hover    : #1565C0;
+  --color-accent-active   : #0D47A1;
+  --color-accent-light    : #E3F2FD;
+  --color-accent-tint     : rgba(30, 126, 245, 0.10);
+
+  /* Status — semantic */
+  --color-success         : #10B981;
+  --color-success-light   : #D1FAE5;
+  --color-success-dark    : #059669;
+
+  --color-warning         : #F59E0B;
+  --color-warning-light   : #FEF3C7;
+  --color-warning-dark    : #D97706;
+
+  --color-danger          : #EF4444;
+  --color-danger-light    : #FEE2E2;
+  --color-danger-dark     : #DC2626;
+
+  --color-info            : #3B82F6;
+  --color-info-light      : #DBEAFE;
+  --color-info-dark       : #2563EB;
+
+  /* Sidebar — LIGHT, matches BordUp reference */
+  --color-sidebar         : #FFFFFF;
+  --color-sidebar-hover   : #F3F4F6;
+  --color-sidebar-active  : #EBF3FE;       /* very pale blue */
+
+  /* Role badges */
+  --color-role-admin      : #9333EA;
+  --color-role-manager    : #3B82F6;
+  --color-role-cashier    : #10B981;
+  --color-role-stock-clerk: #F97316;
+
+  /* Layout sizes */
+  --spacing-listpane      : 22rem;          /* 352px — list pane width */
+  --spacing-sidebar       : 16rem;          /* 256px — sidebar expanded */
+  --spacing-sidebar-collapsed: 4rem;        /* 64px  — sidebar collapsed */
+  --spacing-titlebar      : 0;
+
+  /* Type */
+  --font-sans: 'Onest', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* ─── Legacy aliases (mapped to new blue) — kept while we finish the
+       migration. Will be deleted once every reference is converted. */
+  --color-grit-blue     : #1E7EF5;
+  --color-grit-blue-light: #3B82F6;
+  --color-grit-blue-dark: #1565C0;
+  --color-grit-blue-50  : #E3F2FD;
+  --color-grit-blue-100 : #DBEAFE;
+  --color-grit-blue-500 : #1E7EF5;
+  --color-grit-blue-600 : #1565C0;
+  --color-grit-blue-700 : #0D47A1;
+  --color-text-primary    : #020202;
+  --color-text-muted      : #3F4F66;
+  --color-text-light      : #8F95A3;
+  --color-error           : #EF4444;
+}
+
+/* Base */
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tabular numerals for tables of money */
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* Slim, neutral scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 999px;
+  border: 2px solid var(--color-background);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-foreground-muted); }
+
+/* Focus rings — accent, accessible */
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Drawer slide-in (used by Drawer.tsx) — right side on desktop */
+@keyframes slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in { animation: slide-in 0.18s ease-out; }
+
+/* Bottom-sheet slide-up (used by mobile drawers + the More menu sheet) */
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.animate-slide-up { animation: slide-up 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* Subtle drop-shadow for cards. Tailwind's shadow-sm is too heavy for
+   the 8h/day reading context, so we define one tighter step. */
+.shadow-xs {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+}
+
+/* Print rules — receipts only */
+@media print {
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print\:hidden, nav, aside, header, .no-print {
+    display: none !important;
+  }
+  #receipt-content {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    max-width: 80mm;
+    margin: 0 auto;
+    font-size: 12px;
+  }
+}
+
+/* Utilities */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}

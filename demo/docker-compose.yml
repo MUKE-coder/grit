@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kayula}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-kayula}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kayula}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  stoka:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_INTERNAL_API_KEY: ${VITE_INTERNAL_API_KEY}
+        VITE_APP_NAME: ${VITE_APP_NAME:-Grit Motors}
+    restart: unless-stopped
+    expose:
+      - "8080"
+    networks:
+      - dokploy-network
+      - default
+    environment:
+      - APP_NAME=${APP_NAME}
+      - APP_ENV=${APP_ENV}
+      - APP_PORT=${APP_PORT:-8080}
+      - APP_URL=${APP_URL}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ACCESS_EXPIRY=${JWT_ACCESS_EXPIRY:-8h}
+      - JWT_REFRESH_EXPIRY=${JWT_REFRESH_EXPIRY:-720h}
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+      - STORAGE_DRIVER=${STORAGE_DRIVER:-r2}
+      - R2_ENDPOINT=${R2_ENDPOINT}
+      - R2_ACCESS_KEY=${R2_ACCESS_KEY}
+      - R2_SECRET_KEY=${R2_SECRET_KEY}
+      - R2_BUCKET=${R2_BUCKET}
+      - R2_REGION=${R2_REGION:-auto}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - MAIL_FROM=${MAIL_FROM}
+      - REDIS_URL=${REDIS_URL}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - GORM_STUDIO_ENABLED=${GORM_STUDIO_ENABLED:-false}
+      - GORM_STUDIO_USERNAME=${GORM_STUDIO_USERNAME:-admin}
+      - GORM_STUDIO_PASSWORD=${GORM_STUDIO_PASSWORD:-studio}
+      - PULSE_ENABLED=${PULSE_ENABLED:-false}
+      - SENTINEL_ENABLED=${SENTINEL_ENABLED:-false}
+      - DGATEWAY_API_KEY=${DGATEWAY_API_KEY}
+      - DGATEWAY_BASE_URL=${DGATEWAY_BASE_URL}
+      - DGATEWAY_DEFAULT_PROVIDER=${DGATEWAY_DEFAULT_PROVIDER:-iotec}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  dokploy-network:
+    external: true

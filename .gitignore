@@ -14,3 +14,9 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# Demo runtime artefacts
+demo/pulse.db
+demo/pulse.db-shm
+demo/pulse.db-wal
+demo/sentinel.db

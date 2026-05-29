@@ -1,0 +1,5 @@
+{
+  "architecture": "single",
+  "frontend": "tanstack",
+  "version": "3.3.0"
+}
