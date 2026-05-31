@@ -198,25 +198,32 @@ export default function HomePage() {
             </div>
           </FadeIn>
 
-          {/* INSTALL + UPDATE pills — one-line copyable commands, lives right above the editor */}
+          {/* INSTALL pills — install-or-update one-liners, lives right above the editor.
+              One command works whether you already have grit or not: it detects an existing
+              install and runs `grit update` (idempotent), otherwise downloads the matching
+              release binary for your OS / arch. */}
           <FadeIn delay={0.28}>
             <div className="max-w-2xl mx-auto mb-10 mt-2 space-y-2.5">
               <div className="rounded-xl border border-white/15 bg-white/[0.05] backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)]">
                 <CodeBlock
                   terminal
-                  filename="Quick install"
-                  code={`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest && grit new my-app`}
+                  filename="Install or update — macOS / Linux"
+                  code={`curl -fsSL https://gritframework.dev/install.sh | sh`}
                   className="!border-0 !rounded-xl !bg-transparent dark:!bg-transparent !m-0"
                 />
               </div>
               <div className="rounded-xl border border-white/15 bg-white/[0.05] backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)]">
                 <CodeBlock
                   terminal
-                  filename="Already have grit? Update to the latest"
-                  code={`grit update`}
+                  filename="Install or update — Windows (PowerShell)"
+                  code={`iwr -useb https://gritframework.dev/install.ps1 | iex`}
                   className="!border-0 !rounded-xl !bg-transparent dark:!bg-transparent !m-0"
                 />
               </div>
+              <p className="text-center text-xs text-white/50 pt-1">
+                Detects an existing install and runs <code className="text-white/70">grit update</code>; otherwise pulls the right binary for your OS/arch.
+                Prefer Go? <code className="text-white/70">go install github.com/MUKE-coder/grit/v3/cmd/grit@latest</code>
+              </p>
             </div>
           </FadeIn>
 

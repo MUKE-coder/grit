@@ -72,13 +72,24 @@ export default function InstallationPage() {
               number="01"
               title="Install Grit"
               description={
-                <p>
-                  Install the Grit CLI globally using <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">go install</code>.
-                  This gives you the <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">grit</code> command
-                  anywhere on your system.
-                </p>
+                <>
+                  <p>
+                    Use the one-line install script. It detects an existing install and
+                    runs <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">grit update</code> (idempotent —
+                    no-ops if already on latest); otherwise it downloads the binary from the
+                    matching GitHub release for your OS / arch and puts it on PATH.
+                  </p>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Prefer Go? <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[12px]">go install github.com/MUKE-coder/grit/v3/cmd/grit@latest</code> does
+                    the same thing if you have the Go toolchain.
+                  </p>
+                </>
               }
-              code={`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest`}
+              code={`# macOS / Linux
+curl -fsSL https://gritframework.dev/install.sh | sh
+
+# Windows (PowerShell)
+iwr -useb https://gritframework.dev/install.ps1 | iex`}
               filename="Terminal"
               language="bash"
             />
