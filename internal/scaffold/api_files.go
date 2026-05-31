@@ -645,31 +645,50 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/glebarez/sqlite"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
 // Connect establishes a database connection using the provided DSN.
+//
+// Driver is chosen by DSN shape:
+//   - "sqlite://path" or "sqlite:path"  → SQLite (file or :memory:)
+//   - anything else                     → Postgres
+//
+// Examples:
+//   DATABASE_URL=sqlite:./bench.db
+//   DATABASE_URL=sqlite::memory:
+//   DATABASE_URL=postgres://user:pass@host:5432/db?sslmode=disable
 func Connect(dsn string) (*gorm.DB, error) {
-	// Use Warn level by default — only logs slow queries and errors.
-	// Set DB_LOG_LEVEL=info for verbose SQL logging during debugging.
-	// In production, Warn prevents log flooding during AutoMigrate.
 	logLevel := logger.Warn
 	if os.Getenv("DB_LOG_LEVEL") == "info" {
 		logLevel = logger.Info
 	} else if os.Getenv("DB_LOG_LEVEL") == "silent" {
 		logLevel = logger.Silent
 	}
+	gormCfg := &gorm.Config{Logger: logger.Default.LogMode(logLevel)}
 
-	db, err := gorm.Open(postgres.New(postgres.Config{
-		DSN:                  dsn,
-		PreferSimpleProtocol: true, // Avoids prepared statement issues with schema changes
-	}), &gorm.Config{
-		Logger: logger.Default.LogMode(logLevel),
-	})
+	var (
+		db  *gorm.DB
+		err error
+	)
+
+	switch {
+	case strings.HasPrefix(dsn, "sqlite://"):
+		db, err = gorm.Open(sqlite.Open(strings.TrimPrefix(dsn, "sqlite://")), gormCfg)
+	case strings.HasPrefix(dsn, "sqlite:"):
+		db, err = gorm.Open(sqlite.Open(strings.TrimPrefix(dsn, "sqlite:")), gormCfg)
+	default:
+		db, err = gorm.Open(postgres.New(postgres.Config{
+			DSN:                  dsn,
+			PreferSimpleProtocol: true,
+		}), gormCfg)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
@@ -679,7 +698,9 @@ func Connect(dsn string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
 	}
 
-	// Connection pool settings
+	// Connection pool settings. SQLite ignores most of these — single-writer
+	// semantics mean MaxOpenConns above 1 only helps concurrent reads, and
+	// SQLite serialises writes internally. Postgres uses every knob.
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(30 * time.Minute)

@@ -49,7 +49,13 @@ APP_PORT=8080
 APP_URL=http://localhost:8080
 
 # Database
+# Postgres (default, requires docker compose up -d postgres):
 DATABASE_URL=postgres://grit:grit@localhost:5432/%s?sslmode=disable
+# Or SQLite (no Docker needed — uncomment the line below and comment the
+# Postgres one above). Pure-Go driver (glebarez/sqlite), no CGO required.
+#   DATABASE_URL=sqlite:./app.db
+# Or in-memory (gone on restart, great for tests):
+#   DATABASE_URL=sqlite::memory:
 
 # JWT
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
@@ -137,7 +143,10 @@ APP_ENV=development         # Environment: development, staging, production
 APP_PORT=8080               # API server port
 APP_URL=http://localhost:8080
 
-# Database — PostgreSQL connection
+# Database — Postgres (default) or SQLite
+#   postgres://...        → Postgres (requires docker compose up -d postgres)
+#   sqlite:./app.db       → SQLite file (no Docker, pure-Go driver)
+#   sqlite::memory:       → SQLite in memory (great for tests; gone on restart)
 DATABASE_URL=postgres://grit:grit@localhost:5432/myapp?sslmode=disable
 
 # JWT — Authentication tokens
