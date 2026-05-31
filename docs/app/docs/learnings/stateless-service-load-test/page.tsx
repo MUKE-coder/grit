@@ -90,6 +90,7 @@ export default function StatelessServiceLoadTestPage() {
                 {[
                   'Go 1.21+ installed (verify with `go version`)',
                   'Grit CLI installed (`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest`)',
+                  'Docker + Docker Compose — Postgres comes up via `docker compose up -d postgres`',
                   'k6 — install instructions in Step 4 below',
                   'Either curl or any HTTP client to sanity-check the endpoint',
                 ].map((item) => (
@@ -105,35 +106,58 @@ export default function StatelessServiceLoadTestPage() {
             <Step n={1} title="Scaffold the stateless API">
               <p className="text-[14px] text-muted-foreground leading-relaxed mb-4">
                 The <code>--api</code> flag tells Grit to produce a headless Go API kit — pure
-                Gin + GORM, no frontend at all. That&apos;s exactly what we want: the smallest possible
-                surface area to load-test.
+                Gin + GORM, no frontend at all. That&apos;s exactly what we want: the smallest
+                possible surface area to load-test.
               </p>
 
               <CodeBlock terminal code={`grit new bench-api --api\ncd bench-api`} className="mb-4" />
 
               <p className="text-[14px] text-muted-foreground leading-relaxed mb-3">
-                The scaffolder creates the project root with this shape (trimmed to what matters
-                for this exercise):
+                The scaffolder creates a small monorepo with the Go API inside{' '}
+                <code>apps/api/</code>. Trimmed to what matters for this exercise:
               </p>
 
               <CodeBlock language="text" filename="bench-api/" code={`bench-api/
-├── go.mod
-├── main.go
+├── .env                       ← DATABASE_URL, JWT_SECRET, etc. live here
 ├── .env.example
-└── internal/
-    ├── config/
-    ├── database/
-    ├── handlers/
-    ├── middleware/
-    ├── models/
-    ├── routes/
-    │   └── routes.go      ← the /api/health route lives here
-    └── services/`} className="mb-4" />
+├── docker-compose.yml         ← Postgres + Redis + MinIO for local dev
+├── grit.json
+└── apps/
+    └── api/
+        ├── go.mod
+        ├── .air.toml          ← hot reload via air
+        ├── cmd/
+        │   ├── server/        ← main.go is here — entry point for the API
+        │   ├── migrate/
+        │   └── seed/
+        └── internal/
+            ├── config/        ← loads .env, exposes typed Config struct
+            ├── database/      ← Postgres connection + AutoMigrate
+            ├── handlers/
+            ├── middleware/
+            ├── models/
+            ├── routes/
+            │   └── routes.go  ← the /api/health route lives here
+            └── services/`} className="mb-4" />
 
-              <Callout tone="info">
-                Don&apos;t see <code>--api</code> on your Grit version? Run{' '}
-                <code>grit --help</code> to confirm. The flag landed in v3.0 and is in every
-                v3.x release since.
+              <Callout tone="warning">
+                <strong>Two things to know up front:</strong>
+                <ol className="mt-2 ml-4 space-y-1.5 list-decimal">
+                  <li>
+                    <code>--api</code> still produces a <strong>monorepo</strong> (<code>apps/api/</code>)
+                    — not a flat single-folder project. The <code>main.go</code> entry point is at{' '}
+                    <code>apps/api/cmd/server/main.go</code>.
+                  </li>
+                  <li>
+                    The <code>.env</code> sits at <strong>project root</strong>{' '}
+                    (<code>bench-api/.env</code>), and the config loader expects you to run the
+                    server with the project root as your working directory. If you{' '}
+                    <code>cd</code> into <code>apps/api/cmd/server</code> and run <code>go run .</code>,{' '}
+                    <code>.env</code> won&apos;t be loaded and you&apos;ll see{' '}
+                    <code>Failed to load config: DATABASE_URL is required</code>. Step 3 shows the
+                    right invocation.
+                  </li>
+                </ol>
               </Callout>
             </Step>
 
@@ -141,12 +165,12 @@ export default function StatelessServiceLoadTestPage() {
             <Step n={2} title="Tour the health-check endpoint">
               <p className="text-[14px] text-muted-foreground leading-relaxed mb-4">
                 Grit pre-wires <code>/api/health</code> as a public, no-auth endpoint. Open{' '}
-                <code>internal/routes/routes.go</code> and find it:
+                <code>apps/api/internal/routes/routes.go</code> and find it:
               </p>
 
               <CodeBlock
                 language="go"
-                filename="internal/routes/routes.go"
+                filename="apps/api/internal/routes/routes.go"
                 code={`// Health check
 r.GET("/api/health", func(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{
@@ -173,20 +197,35 @@ r.GET("/api/health", func(c *gin.Context) {
             </Step>
 
             {/* STEP 3 */}
-            <Step n={3} title="Run the API">
+            <Step n={3} title="Start Postgres + run the API">
               <p className="text-[14px] text-muted-foreground leading-relaxed mb-3">
-                Copy <code>.env.example</code> to <code>.env</code>, then start the server.
-                For this benchmark you can use SQLite (no Docker needed) — set{' '}
-                <code>DATABASE_URL=sqlite:./bench.db</code> in <code>.env</code>.
+                The scaffold defaults to Postgres (the <code>internal/database</code> package
+                is wired for it). The cleanest local-dev path is to use the docker-compose
+                Postgres service that <code>grit new</code> ships with.
               </p>
 
-              <CodeBlock terminal code={`cp .env.example .env
-# (edit .env to point DATABASE_URL at sqlite:./bench.db)
-go run .`} className="mb-4" />
+              <CodeBlock terminal code={`# from the project root (bench-api/)
+docker compose up -d postgres redis`} className="mb-4" />
 
               <p className="text-[14px] text-muted-foreground leading-relaxed mb-3">
-                You should see Grit&apos;s startup banner and a line like{' '}
-                <code>listening on :8080</code>. In another terminal, prove it&apos;s alive:
+                The <code>.env</code> at project root already points at the compose Postgres
+                (<code>postgres://grit:grit@localhost:5432/bench-api?sslmode=disable</code>) and
+                ships with a generated <code>JWT_SECRET</code>. No edits needed for the
+                benchmark.
+              </p>
+
+              <p className="text-[14px] text-muted-foreground leading-relaxed mb-3">
+                Run the server. <strong>Stay at project root</strong> — the config loader
+                reads <code>./.env</code>:
+              </p>
+
+              <CodeBlock terminal code={`# still from project root
+go run ./apps/api/cmd/server`} className="mb-4" />
+
+              <p className="text-[14px] text-muted-foreground leading-relaxed mb-3">
+                You should see Grit&apos;s startup banner, <code>Database connected successfully</code>,
+                and finally a line like <code>listening on :8080</code>. In another terminal,
+                prove it&apos;s alive:
               </p>
 
               <CodeBlock terminal code={`curl -i http://localhost:8080/api/health
@@ -198,9 +237,31 @@ Content-Length: 33
 {"status":"ok","version":"0.1.0"}`} className="mb-4" />
 
               <Callout tone="warning">
-                <strong>Run in release mode before you bench.</strong> Set <code>APP_ENV=production</code>{' '}
-                in <code>.env</code> so Gin runs in release mode — debug mode adds non-trivial
-                overhead and skews numbers. Restart the server after editing.
+                <strong>Don&apos;t run from <code>apps/api/cmd/server/</code>.</strong>{' '}
+                If you <code>cd</code> in and run <code>go run .</code>, the config loader
+                can&apos;t find the project-root <code>.env</code> and exits with{' '}
+                <code>Failed to load config: DATABASE_URL is required</code>. Run from project
+                root with <code>go run ./apps/api/cmd/server</code> instead — or pass env vars
+                explicitly:{' '}
+                <code className="text-[12px]">
+                  DATABASE_URL=... JWT_SECRET=... go run .
+                </code>
+              </Callout>
+
+              <Callout tone="warning">
+                <strong>Run in release mode before you bench.</strong> Set{' '}
+                <code>APP_ENV=production</code> in <code>.env</code> so Gin runs in release
+                mode — debug mode adds non-trivial overhead and skews numbers. Restart the
+                server after editing.
+              </Callout>
+
+              <Callout tone="info">
+                <strong>Air for hot reload (optional).</strong> The scaffold drops{' '}
+                <code>apps/api/.air.toml</code> — if you have{' '}
+                <Link href="https://github.com/air-verse/air" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">air</Link>{' '}
+                installed, you can <code>cd apps/api &amp;&amp; air</code> for rebuild-on-save.
+                Either way, the benchmark runs against a built binary so reload behaviour
+                doesn&apos;t affect the numbers.
               </Callout>
             </Step>
 
