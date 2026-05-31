@@ -89,8 +89,7 @@ export default function StatelessServiceLoadTestPage() {
               <ul className="space-y-2.5">
                 {[
                   'Go 1.21+ installed (verify with `go version`)',
-                  'Grit CLI installed (`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest`)',
-                  'Docker + Docker Compose — Postgres comes up via `docker compose up -d postgres`',
+                  'Grit CLI installed (`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest`) — needs to be from v3.24+ for SQLite support',
                   'k6 — install instructions in Step 4 below',
                   'Either curl or any HTTP client to sanity-check the endpoint',
                 ].map((item) => (
@@ -197,35 +196,41 @@ r.GET("/api/health", func(c *gin.Context) {
             </Step>
 
             {/* STEP 3 */}
-            <Step n={3} title="Start Postgres + run the API">
+            <Step n={3} title="Switch to SQLite &amp; run the API">
               <p className="text-[14px] text-muted-foreground leading-relaxed mb-3">
-                The scaffold defaults to Postgres (the <code>internal/database</code> package
-                is wired for it). The cleanest local-dev path is to use the docker-compose
-                Postgres service that <code>grit new</code> ships with.
+                The scaffold defaults to Postgres (via the docker-compose service it ships).
+                For a benchmark we want zero infrastructure, so let&apos;s flip the connection to
+                SQLite — Grit&apos;s database package supports both. Open{' '}
+                <code>.env</code> at project root and edit the <code>DATABASE_URL</code> line:
               </p>
 
-              <CodeBlock terminal code={`# from the project root (bench-api/)
-docker compose up -d postgres redis`} className="mb-4" />
+              <CodeBlock
+                language="dotenv"
+                filename="bench-api/.env"
+                code={`# Database — Postgres (default) or SQLite
+#   postgres://...        → Postgres (requires docker compose up -d postgres)
+#   sqlite:./app.db       → SQLite file (no Docker, pure-Go driver)
+#   sqlite::memory:       → SQLite in memory (great for tests; gone on restart)
+DATABASE_URL=sqlite:./bench.db
+APP_ENV=production`}
+                className="mb-4"
+              />
 
               <p className="text-[14px] text-muted-foreground leading-relaxed mb-3">
-                The <code>.env</code> at project root already points at the compose Postgres
-                (<code>postgres://grit:grit@localhost:5432/bench-api?sslmode=disable</code>) and
-                ships with a generated <code>JWT_SECRET</code>. No edits needed for the
-                benchmark.
+                Now run the server. The Go module lives at{' '}
+                <code>apps/api/go.mod</code>, so <code>go run</code> needs to start there.
+                <strong> Crucially</strong>: don&apos;t <code>cd</code> all the way into{' '}
+                <code>cmd/server</code> — the config loader expects the working directory
+                to be <code>apps/api/</code> so it can find <code>../../.env</code>.
               </p>
 
-              <p className="text-[14px] text-muted-foreground leading-relaxed mb-3">
-                Run the server. <strong>Stay at project root</strong> — the config loader
-                reads <code>./.env</code>:
-              </p>
-
-              <CodeBlock terminal code={`# still from project root
-go run ./apps/api/cmd/server`} className="mb-4" />
+              <CodeBlock terminal code={`cd apps/api
+go run ./cmd/server`} className="mb-4" />
 
               <p className="text-[14px] text-muted-foreground leading-relaxed mb-3">
-                You should see Grit&apos;s startup banner, <code>Database connected successfully</code>,
-                and finally a line like <code>listening on :8080</code>. In another terminal,
-                prove it&apos;s alive:
+                You should see Grit&apos;s startup banner,{' '}
+                <code>Database connected successfully</code>, and a line like{' '}
+                <code>listening on :8080</code>. In another terminal, prove it&apos;s alive:
               </p>
 
               <CodeBlock terminal code={`curl -i http://localhost:8080/api/health
@@ -239,29 +244,25 @@ Content-Length: 33
               <Callout tone="warning">
                 <strong>Don&apos;t run from <code>apps/api/cmd/server/</code>.</strong>{' '}
                 If you <code>cd</code> in and run <code>go run .</code>, the config loader
-                can&apos;t find the project-root <code>.env</code> and exits with{' '}
-                <code>Failed to load config: DATABASE_URL is required</code>. Run from project
-                root with <code>go run ./apps/api/cmd/server</code> instead — or pass env vars
-                explicitly:{' '}
-                <code className="text-[12px]">
-                  DATABASE_URL=... JWT_SECRET=... go run .
-                </code>
-              </Callout>
-
-              <Callout tone="warning">
-                <strong>Run in release mode before you bench.</strong> Set{' '}
-                <code>APP_ENV=production</code> in <code>.env</code> so Gin runs in release
-                mode — debug mode adds non-trivial overhead and skews numbers. Restart the
-                server after editing.
+                can&apos;t find <code>../../.env</code> (which resolves to <code>apps/api/.env</code>{' '}
+                from there — wrong location) and exits with{' '}
+                <code>Failed to load config: DATABASE_URL is required</code>. The fix is to
+                run from <code>apps/api/</code> with <code>go run ./cmd/server</code>.
               </Callout>
 
               <Callout tone="info">
-                <strong>Air for hot reload (optional).</strong> The scaffold drops{' '}
-                <code>apps/api/.air.toml</code> — if you have{' '}
-                <Link href="https://github.com/air-verse/air" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">air</Link>{' '}
-                installed, you can <code>cd apps/api &amp;&amp; air</code> for rebuild-on-save.
-                Either way, the benchmark runs against a built binary so reload behaviour
-                doesn&apos;t affect the numbers.
+                <strong>Why we set <code>APP_ENV=production</code>:</strong> Gin runs in
+                debug mode by default — it adds non-trivial per-request overhead (extra
+                logging, route printing on startup, slower error rendering). Always bench in
+                release mode. Restart the server after editing <code>.env</code>.
+              </Callout>
+
+              <Callout tone="info">
+                <strong>Prefer Postgres?</strong> Skip the .env edit, keep the original{' '}
+                <code>postgres://...</code> DSN, and run <code>docker compose up -d postgres</code>{' '}
+                from project root before starting the API. The rest of the tutorial works
+                identically — the latency numbers will be slightly different (Postgres has its
+                own connection round-trip) but the methodology is the same.
               </Callout>
             </Step>
 
