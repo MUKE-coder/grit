@@ -18,9 +18,10 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/prompt"
 	"github.com/MUKE-coder/grit/v3/internal/routeparser"
 	"github.com/MUKE-coder/grit/v3/internal/scaffold"
+	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.24.0"
+var version = "3.25.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -584,20 +585,53 @@ func upgradeCmd() *cobra.Command {
 }
 
 func updateCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "update",
-		Short: "Update the Grit CLI to the latest version",
-		Long:  "Removes the current Grit binary and installs the latest version from GitHub using go install.",
+	var forceRelease bool
+
+	cmd := &cobra.Command{
+		Use:     "update",
+		Aliases: []string{"self-update"},
+		Short:   "Update the Grit CLI to the latest version",
+		Long: `Update Grit to the latest version.
+
+Behaviour:
+  1. Checks the latest version on GitHub.
+  2. If you're already on latest, exits without doing anything.
+  3. If Go is installed, runs 'go install ...@latest' (fast, idempotent).
+  4. If Go is NOT installed, downloads the matching binary from the
+     GitHub release for your OS / arch and atomically swaps it in.
+
+Flags:
+  --from-release   Skip the 'go install' path and always pull the
+                   binary directly from GitHub releases.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
-
 			purple := color.New(color.FgHiMagenta, color.Bold)
 			green := color.New(color.FgHiGreen, color.Bold)
 			spinner := color.New(color.FgHiBlack)
 
-			purple.Printf("\n  Updating Grit CLI (current: v%s)...\n\n", version)
+			purple.Printf("\n  Grit self-update — current: v%s\n\n", version)
 
-			// Find the current binary path
+			// Prefer the GitHub-binary swap path when --from-release is set
+			// OR when Go isn't available on PATH.
+			useRelease := forceRelease
+			if !useRelease {
+				if _, err := exec.LookPath("go"); err != nil {
+					spinner.Println("  → Go toolchain not found on PATH — using GitHub binary.")
+					useRelease = true
+				}
+			}
+
+			if useRelease {
+				if err := selfupdate.Run(version); err != nil {
+					return fmt.Errorf("self-update: %w", err)
+				}
+				fmt.Println()
+				return nil
+			}
+
+			// `go install` path — fast and lets the user reuse their existing
+			// $GOPATH/bin install. Skip the rename dance if we're already on
+			// latest, otherwise atomically replace the running binary.
 			binPath, err := os.Executable()
 			if err != nil {
 				return fmt.Errorf("finding current binary: %w", err)
@@ -607,11 +641,10 @@ func updateCmd() *cobra.Command {
 				return fmt.Errorf("resolving binary path: %w", err)
 			}
 
-			// On Windows, a running binary can't be deleted but can be renamed
+			// On Windows, a running binary can't be deleted but can be renamed.
 			if runtime.GOOS == "windows" {
 				oldPath := binPath + ".old"
-				// Clean up any previous .old file
-				os.Remove(oldPath)
+				os.Remove(oldPath) // any leftover from a previous run
 				spinner.Printf("  → Renaming old binary: %s\n", binPath)
 				if err := os.Rename(binPath, oldPath); err != nil {
 					return fmt.Errorf("renaming old binary: %w", err)
@@ -623,7 +656,7 @@ func updateCmd() *cobra.Command {
 				}
 			}
 
-			spinner.Println("  → Installing latest version...")
+			spinner.Println("  → Running: go install github.com/MUKE-coder/grit/v3/cmd/grit@latest")
 			c := exec.Command("go", "install", "github.com/MUKE-coder/grit/v3/cmd/grit@latest")
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
@@ -631,7 +664,6 @@ func updateCmd() *cobra.Command {
 				return fmt.Errorf("installing latest version: %w", err)
 			}
 
-			// Clean up renamed binary on Windows
 			if runtime.GOOS == "windows" {
 				os.Remove(binPath + ".old")
 			}
@@ -640,10 +672,13 @@ func updateCmd() *cobra.Command {
 			green.Println("  ✓ Grit CLI updated successfully!")
 			spinner.Println("  Run 'grit version' to verify the new version.")
 			fmt.Println()
-
 			return nil
 		},
 	}
+
+	cmd.Flags().BoolVar(&forceRelease, "from-release", false,
+		"Skip 'go install' and download the binary directly from the GitHub release")
+	return cmd
 }
 
 func startCmd() *cobra.Command {

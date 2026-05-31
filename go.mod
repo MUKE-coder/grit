@@ -5,6 +5,7 @@ go 1.24.2
 require (
 	github.com/charmbracelet/huh v1.0.0
 	github.com/fatih/color v1.16.0
+	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf
 	github.com/spf13/cobra v1.8.0
 	gopkg.in/yaml.v3 v3.0.1
 )

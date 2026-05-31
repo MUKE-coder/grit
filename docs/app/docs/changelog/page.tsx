@@ -28,6 +28,69 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.25.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.25.0
+                </span>
+                <span className="text-sm text-muted-foreground">May 31, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>One command to update: <code>grit update</code>.</strong>{' '}
+                  The CLI now checks GitHub for the latest version, compares
+                  against the running binary, and — depending on whether Go is
+                  on your PATH — either runs <code>go install ...@latest</code> or
+                  downloads the matching binary from the GitHub release and
+                  swaps it in place. Atomic swap is handled by{' '}
+                  <code>inconshreveable/go-update</code>, so it works correctly
+                  even on Windows where you can&apos;t overwrite a running binary.
+                </p>
+
+                <h3>What changed</h3>
+                <ul>
+                  <li>
+                    <strong>Smart <code>grit update</code></strong> — first
+                    checks GitHub releases. If you&apos;re already on latest, exits
+                    in a single round-trip with{' '}
+                    <code>Already on the latest version</code>. No more wasted{' '}
+                    <code>go install</code> runs.
+                  </li>
+                  <li>
+                    <strong>No-Go-toolchain mode.</strong> If the{' '}
+                    <code>go</code> binary isn&apos;t on PATH, <code>grit update</code>{' '}
+                    falls back to the GitHub-binary path automatically. Means
+                    grit can keep itself current even for users who installed
+                    from the prebuilt archive and never touched Go.
+                  </li>
+                  <li>
+                    <strong><code>--from-release</code> flag</strong> forces the
+                    GitHub-binary path even when Go is installed. Useful if
+                    you&apos;re behind a corporate proxy that blocks the module
+                    proxy but allows github.com.
+                  </li>
+                  <li>
+                    <strong>Alias <code>grit self-update</code></strong> for
+                    discoverability — same command, clearer intent than{' '}
+                    <code>update</code>.
+                  </li>
+                </ul>
+
+                <h3>How to get it</h3>
+                <p>
+                  This is the bootstrap release — you need to install v3.25.0
+                  manually one time, then future versions are a single command:
+                </p>
+                <pre><code>{`# from any directory, with Go on PATH:
+go install github.com/MUKE-coder/grit/v3/cmd/grit@v3.25.0
+
+# from then on:
+grit update`}</code></pre>
+              </div>
+            </div>
+
             {/* v3.24.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
