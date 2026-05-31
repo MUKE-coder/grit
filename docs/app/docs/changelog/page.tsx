@@ -28,6 +28,93 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.24.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.24.0
+                </span>
+                <span className="text-sm text-muted-foreground">May 31, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>SQLite, AI prompts everywhere, and a Learnings journal.</strong>{' '}
+                  Three shipping threads: (1) the scaffolded API now speaks SQLite, not
+                  just Postgres — flip <code>DATABASE_URL=sqlite:./app.db</code> in{' '}
+                  <code>.env</code> and you skip Docker entirely; (2) every tech-kit page
+                  now ships a copyable starter prompt for{' '}
+                  <Link href="https://claude.ai" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">claude.ai</Link>{' '}
+                  plus a new four-step{' '}
+                  <Link href="/docs/ai-integration" className="text-primary hover:underline">AI Integration wizard</Link>{' '}
+                  that generates a tailored planning prompt; (3) a new{' '}
+                  <Link href="/docs/learnings" className="text-primary hover:underline">Learnings</Link>{' '}
+                  section opens an engineering journal — first entry walks a stateless
+                  service + k6 load test from <code>grit new --api</code> all the way
+                  to a committed p50/p95/p99 latency chart.
+                </p>
+
+                <h3>Scaffold &amp; framework</h3>
+                <ul>
+                  <li>
+                    <strong>SQLite support.</strong>{' '}
+                    <code>internal/database/database.Connect</code> now branches on
+                    DSN prefix: <code>sqlite://path</code>, <code>sqlite:path</code>,
+                    <code> sqlite::memory:</code>, or Postgres for anything else. Uses{' '}
+                    <code>github.com/glebarez/sqlite</code> (pure Go, no CGO) so it
+                    works on Windows without a C toolchain. Existing Postgres setups
+                    are unchanged.
+                  </li>
+                  <li>
+                    <strong>.env documentation.</strong> Both <code>.env</code> and{' '}
+                    <code>.env.example</code> now show all three DSN shapes inline.
+                  </li>
+                  <li>
+                    <strong>Demo DEMO_MODE bypass.</strong>{' '}
+                    Sentinel v2 + Pulse v1 refuse to start in release mode with default
+                    credentials. The public Grit demo now opts in via{' '}
+                    <code>DEMO_MODE=true</code> in <code>demo/internal/routes/routes.go</code>{' '}
+                    — production deploys still get the gate; the publicly pokeable demo
+                    skips it.
+                  </li>
+                </ul>
+
+                <h3>Docs site</h3>
+                <ul>
+                  <li>
+                    <strong>Per-kit starter prompts.</strong> All 7{' '}
+                    <Link href="/docs/tech-kits" className="text-primary hover:underline">tech-kit pages</Link>{' '}
+                    (single, single-vite, double, triple, api, mobile, desktop) now
+                    have a &quot;Plan this kit with an AI&quot; section. One copy
+                    button gives you a prompt to paste into claude.ai with your idea —
+                    Claude returns project-description.md, project-phases.md,
+                    design-style-guide.md, and prompt.md, the four planning files
+                    you feed to Claude Code.
+                  </li>
+                  <li>
+                    <strong>New <Link href="/docs/ai-integration" className="text-primary hover:underline">AI Integration page</Link>.</strong>{' '}
+                    A four-step wizard (Platform → Tech Kit → Use case → Your prompt)
+                    that customizes the prompt per project shape. Modelled on the
+                    DGateway integration helper.
+                  </li>
+                  <li>
+                    <strong>New Learnings section.</strong>{' '}
+                    <Link href="/docs/learnings" className="text-primary hover:underline">/docs/learnings</Link>{' '}
+                    is an engineering journal. The first entry — a stateless service
+                    + k6 load test walkthrough — covers everything end to end:
+                    scaffold, install k6, smoke test, average-load profile,
+                    JSON output, three charting options, percentile interpretation
+                    table, and committing the milestone.
+                  </li>
+                  <li>
+                    <strong>Navbar trim.</strong> Dropped Stack Selector and Tutorials
+                    from the top nav (still reachable from the sidebar and search).
+                    Replaced with the AI Integration link as a top-level highlighted item.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.23.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
