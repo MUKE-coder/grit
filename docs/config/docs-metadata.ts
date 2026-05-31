@@ -214,6 +214,18 @@ export const docsMetadata: Record<string, DocPage> = {
       'A live, full-stack Grit demo built on grit new --single --vite: motorcycle dealership management, POS, loans + repayments, daily-boda fleet tracking, multi-tenant RBAC, in-app Security (Sentinel) + Observability (Pulse) dashboards. Source on GitHub, login pre-filled, database reset nightly.',
   },
 
+  // Learnings — engineering journal: hands-on challenges, write-ups, what I learned
+  '/docs/learnings': {
+    title: 'Learnings — Engineering Journal',
+    description:
+      "A running log of hands-on challenges built on top of the Grit framework. Each entry walks through the problem, the solution, the numbers, and what was learned — load tests, security drills, performance tuning, and more.",
+  },
+  '/docs/learnings/stateless-service-load-test': {
+    title: 'Stateless Service + k6 Load Test — Recording p50 / p95 / p99',
+    description:
+      "Scaffold a stateless Go API with `grit new myapp --api`, load-test the health endpoint with k6, capture p50 / p95 / p99 latency, and commit a chart of the run. Every command, every script, every metric explained from scratch.",
+  },
+
   // AI Integration — wizard that generates the starter prompt for a chosen kit
   '/docs/ai-integration': {
     title: 'AI Integration — Generate a Grit Prompt for Your AI Agent',

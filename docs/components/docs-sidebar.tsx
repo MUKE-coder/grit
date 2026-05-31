@@ -60,6 +60,14 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    title: 'Learnings',
+    icon: <Lightbulb className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Overview', href: '/docs/learnings' },
+      { title: 'Stateless Service + k6 Load Test', href: '/docs/learnings/stateless-service-load-test' },
+    ],
+  },
+  {
     title: 'Tech Kits',
     icon: <Box className="h-3.5 w-3.5" />,
     items: [

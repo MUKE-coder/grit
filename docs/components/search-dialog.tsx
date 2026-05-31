@@ -105,6 +105,10 @@ const searchIndex: SearchItem[] = [
   // Tech Kits
   { title: 'Tech Kits — All', href: '/docs/tech-kits', section: 'Tech Kits', keywords: 'tech kits starter kits starter pack scaffold templates single double triple api mobile desktop wails expo nextjs vite tanstack architecture modes' },
   { title: 'AI Integration Helper', href: '/docs/ai-integration', section: 'Tech Kits', keywords: 'ai integration helper wizard claude code cursor lovable bolt v0 windsurf copilot aider cline prompt generator starter prompt project description phases design style guide planning files coding agent' },
+
+  // Learnings — engineering journal
+  { title: 'Learnings — Overview', href: '/docs/learnings', section: 'Learnings', keywords: 'learnings journal engineering challenges write-ups load testing security performance tuning grit framework experiments' },
+  { title: 'Stateless Service + k6 Load Test', href: '/docs/learnings/stateless-service-load-test', section: 'Learnings', keywords: 'k6 load test stateless service health check api p50 p95 p99 latency percentile grafana autocannon throughput rps requests per second chart milestone benchmark performance smoke spike soak threshold vus virtual users iterations http duration ttfb tls connecting blocked sending waiting receiving' },
   { title: 'Single Tech Kit', href: '/docs/tech-kits/single', section: 'Tech Kits', keywords: 'single binary embedded spa nextjs go embed single file deploy fastest small monolith' },
   { title: 'Single + Vite Tech Kit', href: '/docs/tech-kits/single-vite', section: 'Tech Kits', keywords: 'single vite tanstack router spa fast cold start refresh on 401 auth refresh' },
   { title: 'Double Tech Kit', href: '/docs/tech-kits/double', section: 'Tech Kits', keywords: 'double monorepo turborepo apps web apps api nextjs go shared zod schemas types two apps deploy separate' },
