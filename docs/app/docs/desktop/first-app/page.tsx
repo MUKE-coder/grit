@@ -120,7 +120,11 @@ export default function DesktopFirstAppPage() {
               </div>
               <CodeBlock
                 terminal
-                code="go install github.com/MUKE-coder/grit/v3/cmd/grit@latest"
+                code={`# macOS / Linux
+curl -fsSL https://gritframework.dev/install.sh | sh
+
+# Windows (PowerShell)
+iwr -useb https://gritframework.dev/install.ps1 | iex`}
                 className="mb-4"
               />
 

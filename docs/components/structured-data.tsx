@@ -86,7 +86,7 @@ export function FAQPageSchema() {
             name: 'How do I install Grit?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'Install Grit with: go install github.com/MUKE-coder/grit/v3/cmd/grit@latest. Then run "grit new my-project" to scaffold a full-stack project. You need Go 1.21+, Node.js 18+, and pnpm installed.',
+              text: 'Install Grit with one line: curl -fsSL https://gritframework.dev/install.sh | sh on macOS/Linux, or iwr -useb https://gritframework.dev/install.ps1 | iex on Windows. The script detects an existing install and self-updates, otherwise downloads the right binary for your OS. Go users can also run: go install github.com/MUKE-coder/grit/v3/cmd/grit@latest. Then run "grit new my-project" to scaffold a full-stack project.',
             },
           },
           {

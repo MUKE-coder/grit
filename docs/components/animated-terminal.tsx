@@ -9,9 +9,9 @@ interface TerminalLine {
 }
 
 const lines: TerminalLine[] = [
-  { type: 'command', text: 'go install github.com/MUKE-coder/grit/v3/cmd/grit@latest' },
+  { type: 'command', text: 'curl -fsSL https://gritframework.dev/install.sh | sh' },
   { type: 'step', text: 'Downloading grit CLI...', delay: 400 },
-  { type: 'success', text: 'Installed grit v0.14.0', delay: 300 },
+  { type: 'success', text: 'Installed grit v3.25.2', delay: 300 },
   { type: 'command', text: 'grit new myapp', delay: 600 },
   { type: 'step', text: 'Creating directory structure...', delay: 250 },
   { type: 'step', text: 'Scaffolding Go API (Gin + GORM)...', delay: 250 },

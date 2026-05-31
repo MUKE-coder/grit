@@ -173,7 +173,9 @@ export default function LLMGuidePage() {
                   <SectionNum n={3} />All CLI Commands
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Install once with{' '}
+                  Install once with the one-line script (<code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">curl -fsSL https://gritframework.dev/install.sh | sh</code>{' '}
+                  on macOS / Linux, <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">iwr -useb https://gritframework.dev/install.ps1 | iex</code>{' '}
+                  on Windows) — or with Go directly via{' '}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">go install github.com/MUKE-coder/grit/v3/cmd/grit@latest</code>.
                   Every command is idempotent — safe to re-run.
                 </p>
@@ -1391,7 +1393,11 @@ pnpm --filter admin dev    # http://localhost:3001`} />
                   <SectionNum n={16} />Quick Build Reference
                 </h2>
                 <div className="space-y-4">
-                  <CodeBlock language="bash" filename="Start a new project (with Docker)" code={`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest
+                  <CodeBlock language="bash" filename="Start a new project (with Docker)" code={`# Install the CLI (pick one — both end with the same binary on PATH)
+curl -fsSL https://gritframework.dev/install.sh | sh   # macOS / Linux
+# iwr -useb https://gritframework.dev/install.ps1 | iex   # Windows
+# go install github.com/MUKE-coder/grit/v3/cmd/grit@latest   # power users with Go
+
 grit new myapp && cd myapp
 cp .env.example .env          # fill in values
 docker compose up -d          # starts PostgreSQL, Redis, MinIO, Mailhog

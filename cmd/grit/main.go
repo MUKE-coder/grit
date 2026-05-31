@@ -21,7 +21,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.25.1"
+var version = "3.25.2"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -607,16 +607,37 @@ Flags:
 			printLogo()
 			purple := color.New(color.FgHiMagenta, color.Bold)
 			green := color.New(color.FgHiGreen, color.Bold)
+			yellow := color.New(color.FgHiYellow)
 			spinner := color.New(color.FgHiBlack)
 
 			purple.Printf("\n  Grit self-update — current: v%s\n\n", version)
 
-			// Prefer the GitHub-binary swap path when --from-release is set
-			// OR when Go isn't available on PATH.
+			// 1. Check latest first. Both strategies (go install / GitHub binary)
+			//    do the same thing when already on latest — namely, nothing. Do
+			//    a single cheap HTTP round-trip up front and bail if there's
+			//    nothing to do. Saves a full 'go install' cycle (which would
+			//    otherwise hit the module proxy and recompile every time the
+			//    user runs `grit update`).
+			spinner.Println("  → Checking GitHub for the latest release...")
+			latest, upToDate, verr := selfupdate.LatestVersion(version)
+			if verr != nil {
+				// Network failure shouldn't be fatal — fall through to the
+				// strategy that may have a cached copy.
+				yellow.Printf("  ! Couldn't query GitHub: %v\n", verr)
+				yellow.Println("  ! Proceeding with the update anyway.")
+			} else if upToDate {
+				fmt.Println()
+				green.Printf("  ✓ Already on the latest version (v%s). Nothing to do.\n\n", version)
+				return nil
+			} else {
+				spinner.Printf("  → New version available: v%s → v%s\n", version, latest)
+			}
+
+			// 2. Pick a strategy: GitHub binary swap or `go install`.
 			useRelease := forceRelease
 			if !useRelease {
 				if _, err := exec.LookPath("go"); err != nil {
-					spinner.Println("  → Go toolchain not found on PATH — using GitHub binary.")
+					spinner.Println("  → Go toolchain not on PATH — using GitHub binary.")
 					useRelease = true
 				}
 			}
@@ -629,9 +650,7 @@ Flags:
 				return nil
 			}
 
-			// `go install` path — fast and lets the user reuse their existing
-			// $GOPATH/bin install. Skip the rename dance if we're already on
-			// latest, otherwise atomically replace the running binary.
+			// 3. `go install` strategy — overwrites the binary in $GOBIN.
 			binPath, err := os.Executable()
 			if err != nil {
 				return fmt.Errorf("finding current binary: %w", err)
@@ -641,18 +660,34 @@ Flags:
 				return fmt.Errorf("resolving binary path: %w", err)
 			}
 
-			// On Windows, a running binary can't be deleted but can be renamed.
+			// Binary-replacement strategy by OS:
+			//
+			//   Linux / macOS: POSIX keeps the running process's inode alive
+			//                  even if the file at the path is overwritten,
+			//                  so 'go install' can write straight over the
+			//                  current binary. We don't touch anything — go
+			//                  install handles it.
+			//
+			//   Windows:       .exe files are locked while running, so the
+			//                  binary must be moved aside before 'go install'
+			//                  can write. We rename to .old, run go install,
+			//                  then delete the .old. On failure we rename
+			//                  back so the user is never stranded without a
+			//                  working binary.
+			var rollback func() // populated on Windows; nil elsewhere
 			if runtime.GOOS == "windows" {
 				oldPath := binPath + ".old"
-				os.Remove(oldPath) // any leftover from a previous run
-				spinner.Printf("  → Renaming old binary: %s\n", binPath)
+				os.Remove(oldPath) // any leftover from a prior run
+				spinner.Printf("  → Moving running binary aside: %s → .old\n", binPath)
 				if err := os.Rename(binPath, oldPath); err != nil {
-					return fmt.Errorf("renaming old binary: %w", err)
+					return fmt.Errorf("renaming current binary: %w", err)
 				}
-			} else {
-				spinner.Printf("  → Removing old binary: %s\n", binPath)
-				if err := os.Remove(binPath); err != nil {
-					return fmt.Errorf("removing old binary: %w", err)
+				rollback = func() {
+					// If go install didn't write a new binary at binPath,
+					// put the original back.
+					if _, err := os.Stat(binPath); os.IsNotExist(err) {
+						_ = os.Rename(oldPath, binPath)
+					}
 				}
 			}
 
@@ -661,16 +696,25 @@ Flags:
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
 			if err := c.Run(); err != nil {
+				if rollback != nil {
+					rollback()
+					yellow.Println("  ! Restored the original binary.")
+				}
 				return fmt.Errorf("installing latest version: %w", err)
 			}
 
 			if runtime.GOOS == "windows" {
-				os.Remove(binPath + ".old")
+				// go install succeeded — drop the rename'd backup.
+				_ = os.Remove(binPath + ".old")
 			}
 
 			fmt.Println()
-			green.Println("  ✓ Grit CLI updated successfully!")
-			spinner.Println("  Run 'grit version' to verify the new version.")
+			if latest != "" {
+				green.Printf("  ✓ Updated to v%s\n", latest)
+			} else {
+				green.Println("  ✓ Grit CLI updated successfully!")
+			}
+			spinner.Println("  Run 'grit version' to verify.")
 			fmt.Println()
 			return nil
 		},

@@ -88,12 +88,20 @@ export default function QuickStartPage() {
               </div>
               <div className="prose-grit mb-4">
                 <p>
-                  Install the Grit CLI globally using <code>go install</code>.
-                  This gives you the <code>grit</code> command available
-                  anywhere on your system.
+                  One line, works on every platform. The script detects an
+                  existing install and runs <code>grit update</code>; otherwise it
+                  downloads the matching release binary for your OS / arch.
                 </p>
               </div>
-              <CodeBlock terminal code="go install github.com/MUKE-coder/grit/v3/cmd/grit@latest" className="mb-0 glow-purple-sm" />
+              <CodeBlock
+                terminal
+                code={`# macOS / Linux
+curl -fsSL https://gritframework.dev/install.sh | sh
+
+# Windows (PowerShell)
+iwr -useb https://gritframework.dev/install.ps1 | iex`}
+                className="mb-0 glow-purple-sm"
+              />
               <div className="prose-grit mt-4">
                 <p>
                   Verify the installation by running <code>grit --help</code>.

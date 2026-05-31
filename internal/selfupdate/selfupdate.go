@@ -38,6 +38,18 @@ type release struct {
 	Assets  []asset `json:"assets"`
 }
 
+// LatestVersion returns the latest published tag (without leading "v")
+// alongside a flag indicating whether `current` matches it. Lets the caller
+// decide what to do without committing to a full download cycle.
+func LatestVersion(current string) (latest string, upToDate bool, err error) {
+	rel, err := fetchLatest()
+	if err != nil {
+		return "", false, err
+	}
+	latest = strings.TrimPrefix(rel.TagName, "v")
+	return latest, normalize(current) == normalize(latest), nil
+}
+
 // Run performs the self-update flow. `current` is the version string compiled
 // into the binary (e.g. "3.24.0"). Returns nil when the update succeeded or
 // the binary was already on the latest version.

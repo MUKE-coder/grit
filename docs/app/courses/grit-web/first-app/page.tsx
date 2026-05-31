@@ -146,12 +146,21 @@ export default function FirstAppCourse() {
           <h2 className="text-2xl font-bold text-foreground mb-4">Install Grit</h2>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Grit is installed using Go{"'"}s <Code>go install</Code> command.
-            This downloads the Grit CLI binary and puts it in your Go bin directory.
+            The easiest way: a one-line install script. It detects an existing
+            install and runs <Code>grit update</Code>; otherwise it downloads
+            the release binary for your OS / arch. If you have Go installed,
+            <Code>go install</Code> works too (shown below the script).
           </p>
 
           <CodeBlock filename="Terminal">
-{`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest`}
+{`# macOS / Linux
+curl -fsSL https://gritframework.dev/install.sh | sh
+
+# Windows (PowerShell)
+iwr -useb https://gritframework.dev/install.ps1 | iex
+
+# Power users with Go installed (alternative)
+go install github.com/MUKE-coder/grit/v3/cmd/grit@latest`}
           </CodeBlock>
 
           <h3 className="text-lg font-semibold text-foreground mb-3 mt-6">Command Explained</h3>

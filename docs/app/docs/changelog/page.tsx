@@ -28,6 +28,68 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.25.2 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.25.2
+                </span>
+                <span className="text-sm text-muted-foreground">May 31, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Smarter <code>grit update</code> + docs sweep.</strong>{' '}
+                  Two follow-ups to the v3.25 install/update flow.
+                </p>
+
+                <h3>Update command</h3>
+                <ul>
+                  <li>
+                    <strong>Short-circuits when already on latest.</strong> The
+                    version check that previously only ran on the GitHub-binary
+                    path is now lifted to the top of <code>grit update</code>{' '}
+                    — both the Go-install and GitHub-binary strategies skip
+                    their work when there&apos;s nothing to do. One HTTP round-trip,
+                    then exit. (Was: always rename + go install + cleanup,
+                    even when already current.)
+                  </li>
+                  <li>
+                    <strong>Unix path no longer deletes before installing.</strong>{' '}
+                    POSIX keeps the running process&apos;s inode alive when the
+                    file at the same path is overwritten, so <code>go install</code>{' '}
+                    can write straight on top. We previously did{' '}
+                    <code>os.Remove</code> first, which left the user stranded
+                    if <code>go install</code> failed.
+                  </li>
+                  <li>
+                    <strong>Windows rename now rolls back on failure.</strong>{' '}
+                    The .exe-locked-while-running dance (rename current to{' '}
+                    <code>.old</code> → write new → delete .old) now restores
+                    the original binary if <code>go install</code> fails before
+                    writing the new one, so a flaky network or proxy issue
+                    can&apos;t leave the user with no usable <code>grit</code>.
+                  </li>
+                </ul>
+
+                <h3>Docs sweep</h3>
+                <ul>
+                  <li>
+                    Replaced every <code>go install github.com/MUKE-coder/grit/...</code>{' '}
+                    install reference across docs pages, tutorials, courses,
+                    and the structured-data FAQ schema with the v3.25 one-line
+                    install script (with <code>go install</code> kept as a
+                    secondary option for power users with Go installed).
+                  </li>
+                  <li>
+                    Hero terminal animation now opens with{' '}
+                    <code>curl -fsSL https://gritframework.dev/install.sh | sh</code>{' '}
+                    instead of <code>go install</code>.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.25.1 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

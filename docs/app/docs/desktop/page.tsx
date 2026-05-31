@@ -63,7 +63,15 @@ export default function DesktopOverviewPage() {
                   <a href="https://wails.io/docs/gettingstarted/installation" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Wails v2</a>{' '}
                   installed. Then install the Grit CLI:
                 </p>
-                <CodeBlock terminal code="go install github.com/MUKE-coder/grit/v3/cmd/grit@latest" className="mb-4 glow-purple-sm" />
+                <CodeBlock
+                  terminal
+                  code={`# macOS / Linux
+curl -fsSL https://gritframework.dev/install.sh | sh
+
+# Windows (PowerShell)
+iwr -useb https://gritframework.dev/install.ps1 | iex`}
+                  className="mb-4 glow-purple-sm"
+                />
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Scaffold a new desktop app and start developing:
                 </p>

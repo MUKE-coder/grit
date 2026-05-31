@@ -39,7 +39,7 @@ export default function CreateWithoutDockerPage() {
                 <li><strong>Go 1.21+</strong> &mdash; <code>go version</code></li>
                 <li><strong>Node.js 18+</strong> &mdash; <code>node --version</code></li>
                 <li><strong>pnpm</strong> &mdash; <code>npm install -g pnpm</code></li>
-                <li><strong>Grit CLI</strong> &mdash; <code>go install github.com/MUKE-coder/grit/v3/cmd/grit@latest</code></li>
+                <li><strong>Grit CLI</strong> &mdash; <code>curl -fsSL https://gritframework.dev/install.sh | sh</code> (or <code>iwr -useb https://gritframework.dev/install.ps1 | iex</code> on Windows)</li>
               </ul>
             </div>
 
