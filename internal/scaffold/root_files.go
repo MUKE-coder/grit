@@ -1,9 +1,27 @@
 package scaffold
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"path/filepath"
 )
+
+// randomHex returns 2*n hex characters of cryptographically random bytes.
+// Used to seed JWT, Sentinel and Pulse secrets at scaffold time so a fresh
+// `grit new` project boots cleanly in production mode without the user
+// having to manually replace placeholder credentials.
+func randomHex(n int) string {
+	b := make([]byte, n)
+	if _, err := rand.Read(b); err != nil {
+		// crypto/rand should never fail on a real OS; if it did the scaffold
+		// would be unusable. Fall back to a clearly-fake string so the user
+		// at least sees something obvious to change rather than a silent
+		// weak default.
+		return "REPLACE_ME_crypto_rand_failed"
+	}
+	return hex.EncodeToString(b)
+}
 
 func writeRootFiles(root string, opts Options) error {
 	files := map[string]string{
@@ -40,6 +58,13 @@ func writeRootFiles(root string, opts Options) error {
 }
 
 func envFile(opts Options) string {
+	// Generated per-scaffold so APP_ENV=production works out of the box.
+	// Rotate these any time with `openssl rand -hex 32`.
+	jwtSecret := randomHex(32)
+	sentinelPassword := randomHex(16)
+	sentinelSecretKey := randomHex(32)
+	pulsePassword := randomHex(16)
+
 	return fmt.Sprintf(`# %s — Environment Variables
 
 # App
@@ -53,12 +78,12 @@ APP_URL=http://localhost:8080
 DATABASE_URL=postgres://grit:grit@localhost:5432/%s?sslmode=disable
 # Or SQLite (no Docker needed — uncomment the line below and comment the
 # Postgres one above). Pure-Go driver (glebarez/sqlite), no CGO required.
-#   DATABASE_URL=sqlite:./app.db
+# DATABASE_URL=sqlite:./app.db
 # Or in-memory (gone on restart, great for tests):
-#   DATABASE_URL=sqlite::memory:
+# DATABASE_URL=sqlite::memory:
 
-# JWT
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
+# JWT — generated at scaffold time. Rotate with: openssl rand -hex 32
+JWT_SECRET=%s
 JWT_ACCESS_EXPIRY=15m
 JWT_REFRESH_EXPIRY=168h
 
@@ -124,16 +149,28 @@ AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
 TOTP_ISSUER=%s
 
 # Observability — Pulse performance monitoring dashboard
+# Pulse refuses to mount in APP_ENV=production with the literal default
+# password "pulse" — the value below is generated at scaffold time so the
+# gate is satisfied. Rotate with: openssl rand -hex 16
 PULSE_ENABLED=true
 PULSE_USERNAME=admin
-PULSE_PASSWORD=pulse
+PULSE_PASSWORD=%s
 
 # Security — Sentinel WAF, rate limiting, threat detection
+# Same as Pulse: Sentinel refuses to mount in production with default
+# credentials. SECRET_KEY needs at least 32 bytes of entropy — both values
+# below are generated per scaffold. Rotate with: openssl rand -hex 16 (password)
+# / openssl rand -hex 32 (secret key).
 SENTINEL_ENABLED=true
 SENTINEL_USERNAME=admin
-SENTINEL_PASSWORD=sentinel
-SENTINEL_SECRET_KEY=change-me-in-production
-`, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
+SENTINEL_PASSWORD=%s
+SENTINEL_SECRET_KEY=%s
+`,
+		opts.ProjectName, opts.ProjectName, opts.ProjectName,
+		jwtSecret,
+		opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName,
+		pulsePassword, sentinelPassword, sentinelSecretKey,
+	)
 }
 
 func envExampleFile(opts Options) string {

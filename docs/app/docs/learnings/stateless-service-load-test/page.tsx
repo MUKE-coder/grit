@@ -212,7 +212,13 @@ r.GET("/api/health", func(c *gin.Context) {
 #   sqlite:./app.db       → SQLite file (no Docker, pure-Go driver)
 #   sqlite::memory:       → SQLite in memory (great for tests; gone on restart)
 DATABASE_URL=sqlite:./bench.db
-APP_ENV=production`}
+APP_ENV=production
+
+# Turn Sentinel (WAF) and Pulse (observability) OFF for the benchmark.
+# Both sit in the request middleware chain — leaving them on means we'd be
+# benchmarking them, not Gin. Re-enable them when you're done.
+SENTINEL_ENABLED=false
+PULSE_ENABLED=false`}
                 className="mb-4"
               />
 

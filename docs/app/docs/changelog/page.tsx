@@ -28,6 +28,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.25.1 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.25.1
+                </span>
+                <span className="text-sm text-muted-foreground">May 31, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Scaffold now generates real secrets — and SQLite uncommenting is clean.</strong>{' '}
+                  Two papercuts that turned into roadblocks the moment anyone flipped{' '}
+                  <code>APP_ENV=production</code> on a fresh project.
+                </p>
+
+                <h3>Fixes</h3>
+                <ul>
+                  <li>
+                    <strong>Random secrets at scaffold time.</strong>{' '}
+                    <code>grit new</code> now generates cryptographically random values
+                    (<code>crypto/rand</code> → hex) for <code>JWT_SECRET</code>,{' '}
+                    <code>SENTINEL_PASSWORD</code>, <code>SENTINEL_SECRET_KEY</code>, and{' '}
+                    <code>PULSE_PASSWORD</code> when writing <code>.env</code>. Previously
+                    these shipped as <code>your-super-secret-...</code> and{' '}
+                    <code>admin/sentinel</code> / <code>admin/pulse</code>, which Sentinel v2
+                    and Pulse v1 explicitly refuse to start with in release mode. A fresh
+                    scaffold now boots cleanly in production mode with both dashboards
+                    mounted — no manual <code>openssl rand</code> step required.
+                  </li>
+                  <li>
+                    <strong>Clean SQLite uncomment line.</strong> The commented-out SQLite
+                    DSN previously had multiple leading spaces (<code># &nbsp;&nbsp;DATABASE_URL=sqlite:...</code>),
+                    so removing the <code>#&nbsp;</code> left a line with leading
+                    whitespace. godotenv tolerated it, but it was ugly and confusing.
+                    Now single-<code>#</code>-prefixed for a clean uncomment.
+                  </li>
+                  <li>
+                    <strong>k6 tutorial: turn Sentinel + Pulse off for the bench.</strong>{' '}
+                    Both sit in the request middleware chain. Leaving them on while
+                    load-testing means measuring <em>them</em>, not Gin. Step 3 now sets{' '}
+                    <code>SENTINEL_ENABLED=false</code> +{' '}
+                    <code>PULSE_ENABLED=false</code> alongside the SQLite switch.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.25.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
