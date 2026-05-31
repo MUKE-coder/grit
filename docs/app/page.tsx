@@ -198,14 +198,22 @@ export default function HomePage() {
             </div>
           </FadeIn>
 
-          {/* INSTALL pill — one-line copyable command, lives right above the editor */}
+          {/* INSTALL + UPDATE pills — one-line copyable commands, lives right above the editor */}
           <FadeIn delay={0.28}>
-            <div className="max-w-2xl mx-auto mb-10 mt-2">
+            <div className="max-w-2xl mx-auto mb-10 mt-2 space-y-2.5">
               <div className="rounded-xl border border-white/15 bg-white/[0.05] backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)]">
                 <CodeBlock
                   terminal
                   filename="Quick install"
                   code={`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest && grit new my-app`}
+                  className="!border-0 !rounded-xl !bg-transparent dark:!bg-transparent !m-0"
+                />
+              </div>
+              <div className="rounded-xl border border-white/15 bg-white/[0.05] backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)]">
+                <CodeBlock
+                  terminal
+                  filename="Already have grit? Update to the latest"
+                  code={`grit update`}
                   className="!border-0 !rounded-xl !bg-transparent dark:!bg-transparent !m-0"
                 />
               </div>
