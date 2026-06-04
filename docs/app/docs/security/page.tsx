@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight, ShieldCheck, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ShieldCheck, AlertTriangle, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
@@ -312,7 +312,7 @@ export default function SecurityGuidePage() {
             </div>
 
             <div className="prose-grit">
-              <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6 flex gap-3">
+              <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-4 flex gap-3">
                 <ShieldCheck className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm text-foreground/90 mb-1">
@@ -321,6 +321,36 @@ export default function SecurityGuidePage() {
                     already wired. You don&apos;t add security — you opt out of pieces you
                     don&apos;t want.
                   </p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg border border-primary/30 bg-primary/[0.06] mb-6 flex gap-3">
+                <ExternalLink className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm text-foreground/90 mb-2">
+                    <strong>Prefer the attacker&apos;s perspective?</strong> The companion
+                    page maps each attack from JB&apos;s{' '}
+                    <Link
+                      href="https://jb.desishub.com/blog/defenders-handbook-how-hackers-break-in"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      Defender&apos;s Handbook
+                    </Link>{' '}
+                    to Grit&apos;s defence — nmap, Gobuster, Hydra, SQLi, hash cracking,
+                    TOTP seed theft, SIM swap, AitM proxies, SSL strip, DDoS — with the
+                    actual code path for each, plus a bonus list of defences Grit ships
+                    that the handbook doesn&apos;t cover (SSRF, IDOR, CSRF, HMAC webhooks,
+                    idempotency, tamper-evident audit log).
+                  </p>
+                  <Link
+                    href="/docs/security/defenders-handbook"
+                    className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1"
+                  >
+                    Read Defender&apos;s Handbook ↔ Grit
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
                 </div>
               </div>
 

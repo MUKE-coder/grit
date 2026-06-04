@@ -226,6 +226,13 @@ export const docsMetadata: Record<string, DocPage> = {
       "Scaffold a stateless Go API with `grit new myapp --api`, load-test the health endpoint with k6, capture p50 / p95 / p99 latency, and commit a chart of the run. Every command, every script, every metric explained from scratch.",
   },
 
+  // Security — Defender's Handbook attack-by-attack mapping
+  '/docs/security/defenders-handbook': {
+    title: "Defender's Handbook ↔ Grit — Attack-by-Attack Defence Map",
+    description:
+      "Walks JB's Defender's Handbook chapter by chapter — nmap recon, Gobuster brute-force, Hydra login spray, SQL injection (UNION / blind / time-based), hash cracking, TOTP seed theft, SIM swap, AitM phishing proxies, MITM / SSL strip, evil-twin Wi-Fi, DDoS — and shows exactly how Grit defends each one by default, with file paths and code. Plus a bonus list of defences Grit ships beyond the handbook: SSRF (safefetch), IDOR (authz.MustOwn), CSRF middleware, HMAC webhook signatures, idempotency, tamper-evident audit log, Sentinel WAF + AuthShield + Anomaly + Geo, Pulse observability, JWT alg pinning, and the k6 6-test suite.",
+  },
+
   // AI Integration — wizard that generates the starter prompt for a chosen kit
   '/docs/ai-integration': {
     title: 'AI Integration — Generate a Grit Prompt for Your AI Agent',

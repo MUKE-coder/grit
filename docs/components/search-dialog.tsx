@@ -97,6 +97,7 @@ const searchIndex: SearchItem[] = [
 
   // Security & Testing
   { title: 'Security Guide', href: '/docs/security', section: 'Security & Testing', keywords: 'security owasp top 10 2025 idor sqli xss csrf ssrf broken access control authentication authorization injection cryptography secrets headers csp hsts dependabot supply chain audit log hardening checklist sentinel waf rate limiting' },
+  { title: "Defender's Handbook ↔ Grit", href: '/docs/security/defenders-handbook', section: 'Security & Testing', keywords: 'defenders handbook jb desishub hackers break in attack defense nmap reconnaissance gobuster directory brute force hydra login credential stuffing username enumeration sql injection union select blind time based password hash cracking bcrypt argon2 salt rainbow table totp seed theft sim swap adversary in the middle aitm evilginx phishing reverse shell meterpreter mimikatz browser saved passwords mitm ssl strip evil twin arp poisoning dns hijacking ddos mirai botnet least privilege defense in depth' },
   { title: 'Performance & Pentest Testing', href: '/docs/testing', section: 'Security & Testing', keywords: 'testing k6 load test smoke average stress spike soak breakpoint pentest penetration test methodology burp ffuf nmap sqlmap nuclei cvss audit report vulnerability scan govulncheck pnpm audit codeql ptes owasp wstg' },
 
   // Demo
