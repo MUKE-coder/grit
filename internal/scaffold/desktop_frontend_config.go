@@ -71,6 +71,16 @@ func desktopViteConfig() string {
 import react from "@vitejs/plugin-react";
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 import path from "path";
+import fs from "node:fs";
+
+// Read the Wails config so the React side knows what version it
+// is — used by the auto-updater UI ("Update available: v1.2.3").
+// scripts/release-desktop.sh bumps wails.json + version.go together,
+// so this stays a single source of truth.
+const wailsJson = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, "../wails.json"), "utf-8"),
+);
+const APP_VERSION: string = wailsJson?.info?.productVersion ?? "0.0.0";
 
 export default defineConfig({
   plugins: [TanStackRouterVite(), react()],
@@ -78,6 +88,9 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
   },
 });
 `

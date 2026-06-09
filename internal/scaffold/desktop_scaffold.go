@@ -75,6 +75,16 @@ func RunDesktop(opts DesktopOptions) error {
 		return fmt.Errorf("writing frontend table/form files: %w", err)
 	}
 
+	dim.Printf("  → Writing in-app auto-updater...\n")
+	if err := writeDesktopUpdaterFiles(root, opts); err != nil {
+		return fmt.Errorf("writing updater files: %w", err)
+	}
+
+	dim.Printf("  → Writing Windows NSIS installers + release script...\n")
+	if err := writeDesktopInstallerFiles(root, opts); err != nil {
+		return fmt.Errorf("writing installer files: %w", err)
+	}
+
 	dim.Printf("  → Running go mod tidy...\n")
 	tidy := exec.Command("go", "mod", "tidy")
 	tidy.Dir = root
@@ -104,6 +114,9 @@ func createDesktopDirectories(root string) error {
 		filepath.Join(root, "frontend", "src", "routes", "_layout"),
 		filepath.Join(root, "frontend", "src", "hooks"),
 		filepath.Join(root, "frontend", "src", "lib"),
+		// Auto-updater + Windows installer assets
+		filepath.Join(root, "scripts"),
+		filepath.Join(root, "build", "windows", "installer", "webview2"),
 	}
 
 	for _, dir := range dirs {

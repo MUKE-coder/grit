@@ -233,6 +233,13 @@ export const docsMetadata: Record<string, DocPage> = {
       "Walks JB's Defender's Handbook chapter by chapter — nmap recon, Gobuster brute-force, Hydra login spray, SQL injection (UNION / blind / time-based), hash cracking, TOTP seed theft, SIM swap, AitM phishing proxies, MITM / SSL strip, evil-twin Wi-Fi, DDoS — and shows exactly how Grit defends each one by default, with file paths and code. Plus a bonus list of defences Grit ships beyond the handbook: SSRF (safefetch), IDOR (authz.MustOwn), CSRF middleware, HMAC webhook signatures, idempotency, tamper-evident audit log, Sentinel WAF + AuthShield + Anomaly + Geo, Pulse observability, JWT alg pinning, and the k6 6-test suite.",
   },
 
+  // Desktop — auto-updater + installers + release pipeline
+  '/docs/desktop/auto-update': {
+    title: 'Desktop Auto-Update + Installers — Binary Swap, NSIS Full + Slim',
+    description:
+      "Every grit new-desktop project ships with an in-app Wails-bound auto-updater (binary-swap on Windows, POSIX inode swap on Linux/macOS), two Windows installers (full ~150 MB with bundled WebView2 runtime, slim ~22 MB with online bootstrapper), and a one-shot release script that builds and publishes both to a GitHub release. Adapted from JB's production walkthrough.",
+  },
+
   // AI Integration — wizard that generates the starter prompt for a chosen kit
   '/docs/ai-integration': {
     title: 'AI Integration — Generate a Grit Prompt for Your AI Agent',

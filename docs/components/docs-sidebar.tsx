@@ -233,6 +233,7 @@ const navItems: NavItem[] = [
       { title: 'Resource Generation', href: '/docs/desktop/resource-generation' },
       { title: 'Offline-First Apps', href: '/docs/desktop/offline' },
       { title: 'Building & Distribution', href: '/docs/desktop/building' },
+      { title: 'Auto-Update + Installers', href: '/docs/desktop/auto-update' },
       { title: '20 Project Ideas', href: '/docs/desktop/project-ideas' },
       { title: 'LLM Reference', href: '/docs/desktop/llm-reference' },
     ],

@@ -26,6 +26,7 @@ func desktopMainGo() string {
 	return `package main
 
 import (
+	"context"
 	"embed"
 	"log"
 
@@ -55,6 +56,12 @@ func main() {
 
 	app := NewApp(authSvc, blogSvc, contactSvc, exportSvc, /* grit:app-args */)
 
+	// In-app auto-updater. Best-effort cleanup of the .exe.old left
+	// behind by a previous in-app update runs in the background so
+	// startup isn't held up by a busy filesystem.
+	updater := NewUpdater()
+	go updater.CleanupOldOnStartup()
+
 	err := wails.Run(&options.App{
 		Title:     cfg.AppName,
 		Width:     1280,
@@ -66,9 +73,13 @@ func main() {
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 10, G: 10, B: 15, A: 1},
-		OnStartup:        app.startup,
+		OnStartup: func(ctx context.Context) {
+			app.startup(ctx)
+			updater.SetContext(ctx)
+		},
 		Bind: []interface{}{
 			app,
+			updater,
 		},
 		CSSDragProperty: "--wails-draggable",
 		CSSDragValue:    "drag",

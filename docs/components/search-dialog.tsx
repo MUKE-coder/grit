@@ -148,6 +148,7 @@ const searchIndex: SearchItem[] = [
   { title: 'Desktop Resource Generation', href: '/docs/desktop/resource-generation', section: 'Desktop (Wails)', keywords: 'desktop generate resource wails crud model service tanstack injection' },
   { title: 'Offline-First Desktop Apps', href: '/docs/desktop/offline', section: 'Desktop (Wails)', keywords: 'offline desktop sync local sqlite outbox conflict resolution wails git push pull versioned mirror' },
   { title: 'Building & Distribution', href: '/docs/desktop/building', section: 'Desktop (Wails)', keywords: 'desktop build distribution wails package executable nsis installer cross compile' },
+  { title: 'Auto-Update + Installers', href: '/docs/desktop/auto-update', section: 'Desktop (Wails)', keywords: 'auto update updater self update binary swap wails github releases installer nsis full slim webview2 evergreen bootstrapper standalone offline online progress modal banner version bump release script makensis signtool code signing smartscreen gatekeeper notarization download exe portable msi inconshreveable go-update' },
   { title: '20 Desktop Project Ideas', href: '/docs/desktop/project-ideas', section: 'Desktop (Wails)', keywords: 'desktop project ideas examples inspiration 20 wails grit' },
   { title: 'Desktop LLM Reference', href: '/docs/desktop/llm-reference', section: 'Desktop (Wails)', keywords: 'desktop llm ai reference assistant wails complete cheat sheet' },
 

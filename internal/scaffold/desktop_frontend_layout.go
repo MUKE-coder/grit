@@ -170,6 +170,7 @@ import { useEffect } from "react";
 import { useAuth } from "../hooks/use-auth";
 import TitleBar from "../components/layout/title-bar";
 import Sidebar from "../components/layout/sidebar";
+import { UpdateBanner } from "../components/update-banner";
 
 export const Route = createFileRoute("/_layout")({
   component: LayoutComponent,
@@ -198,6 +199,7 @@ function LayoutComponent() {
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
       <TitleBar />
+      <UpdateBanner />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <main className="flex-1 overflow-auto p-6">
