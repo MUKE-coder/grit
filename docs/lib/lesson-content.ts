@@ -66,6 +66,25 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
 
   'go-api/deploy/grit-deploy': () => import('@/content/lessons/go-api/deploy/grit-deploy'),
   'go-api/deploy/env-config': () => import('@/content/lessons/go-api/deploy/env-config'),
+
+  /* ─── Mobile course ──────────────────────────────────── */
+  'mobile/scaffold/scaffold': () => import('@/content/lessons/mobile/scaffold/scaffold'),
+  'mobile/scaffold/expo-tour': () => import('@/content/lessons/mobile/scaffold/expo-tour'),
+  'mobile/scaffold/first-run': () => import('@/content/lessons/mobile/scaffold/first-run'),
+
+  'mobile/shared-types/grit-sync-mobile': () => import('@/content/lessons/mobile/shared-types/grit-sync-mobile'),
+  'mobile/shared-types/api-client': () => import('@/content/lessons/mobile/shared-types/api-client'),
+
+  'mobile/auth/login-ui': () => import('@/content/lessons/mobile/auth/login-ui'),
+  'mobile/auth/secure-storage': () => import('@/content/lessons/mobile/auth/secure-storage'),
+  'mobile/auth/refresh': () => import('@/content/lessons/mobile/auth/refresh'),
+
+  'mobile/push-notifications/register': () => import('@/content/lessons/mobile/push-notifications/register'),
+  'mobile/push-notifications/send-from-api': () => import('@/content/lessons/mobile/push-notifications/send-from-api'),
+
+  'mobile/ship/eas-build': () => import('@/content/lessons/mobile/ship/eas-build'),
+  'mobile/ship/submit': () => import('@/content/lessons/mobile/ship/submit'),
+  'mobile/ship/ota': () => import('@/content/lessons/mobile/ship/ota'),
 }
 
 export async function loadLessonContent(

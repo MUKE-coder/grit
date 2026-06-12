@@ -729,7 +729,7 @@ const mobileCourse: Course = {
     'EAS Build and store submission',
   ],
   whoThisIsFor: ['Web devs adding mobile', 'Mobile devs new to typed shared schemas'],
-  status: 'coming-soon',
+  status: 'available',
   emoji: '📱',
   accent: 'from-rose-500/30 via-pink-500/20 to-rose-500/10',
   chapters: [
@@ -739,17 +739,27 @@ const mobileCourse: Course = {
       title: 'Scaffold + Tour',
       tagline: 'grit new --mobile and the Expo project layout.',
       learningGoals: ['Scaffold a mobile project', 'Run on simulator + physical device', 'Understand the monorepo shape'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Setup',
           lessons: [
-            { slug: 'scaffold', title: 'Scaffolding mobile', tagline: 'The command + flags.', minutes: 5, difficulty: 'easy', status: 'coming-soon' },
-            { slug: 'expo-tour', title: 'Expo project tour', tagline: 'app/, components/, hooks/.', minutes: 7, difficulty: 'easy', status: 'coming-soon' },
-            { slug: 'first-run', title: 'First run', tagline: 'Simulator vs. Expo Go vs. dev build.', minutes: 6, difficulty: 'easy', status: 'coming-soon' },
+            { slug: 'scaffold', title: 'Scaffolding mobile', tagline: 'The command + flags.', minutes: 5, difficulty: 'easy', status: 'available' },
+            { slug: 'expo-tour', title: 'Expo project tour', tagline: 'app/, components/, hooks/.', minutes: 7, difficulty: 'easy', status: 'available' },
+            { slug: 'first-run', title: 'First run', tagline: 'Simulator vs. Expo Go vs. dev build.', minutes: 6, difficulty: 'easy', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Run the scaffold on a real device',
+        brief:
+          'Scaffold `my-mobile --mobile`, get it running on either an iOS simulator (macOS) or an Android emulator, AND on a physical device via Expo Go. Screenshot both.',
+        successCriteria: [
+          'Scaffold completed and `pnpm install` ran clean',
+          'Simulator/emulator shows the app',
+          'Physical device shows the app via Expo Go',
+        ],
+      },
     },
     {
       slug: 'shared-types',
@@ -757,16 +767,26 @@ const mobileCourse: Course = {
       title: 'Shared Types + API Client',
       tagline: 'grit sync ties API + mobile together type-safely.',
       learningGoals: ['Run grit sync', 'Generate a typed API client', 'Use React Query for data'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Integration',
           lessons: [
-            { slug: 'grit-sync-mobile', title: 'grit sync for mobile', tagline: 'Types flow from Go structs.', minutes: 6, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'api-client', title: 'Typed API client', tagline: 'fetch wrapper + React Query.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'grit-sync-mobile', title: 'grit sync for mobile', tagline: 'Types flow from Go structs.', minutes: 6, difficulty: 'medium', status: 'available' },
+            { slug: 'api-client', title: 'Typed API client', tagline: 'fetch wrapper + React Query.', minutes: 8, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Wire a typed fetch from mobile',
+        brief:
+          'Add a `useUsers()` React Query hook in your mobile app that calls your Grit API. Render the list on a screen. Verify TypeScript autocompletes the User fields.',
+        successCriteria: [
+          'grit sync runs and generates packages/shared types',
+          'Mobile app imports the User type without errors',
+          'A screen renders the list from the API',
+        ],
+      },
     },
     {
       slug: 'auth',
@@ -774,17 +794,27 @@ const mobileCourse: Course = {
       title: 'Mobile Auth',
       tagline: 'Login screens + secure token storage.',
       learningGoals: ['Build login UI', 'Store JWT securely', 'Handle refresh + logout'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Auth flow',
           lessons: [
-            { slug: 'login-ui', title: 'Login + register screens', tagline: 'Forms + validation + errors.', minutes: 9, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'secure-storage', title: 'SecureStore + Keychain', tagline: 'Where tokens go on iOS + Android.', minutes: 6, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'refresh', title: 'Token refresh', tagline: 'Silent refresh on 401.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'login-ui', title: 'Login + register screens', tagline: 'Forms + validation + errors.', minutes: 9, difficulty: 'medium', status: 'available' },
+            { slug: 'secure-storage', title: 'SecureStore + Keychain', tagline: 'Where tokens go on iOS + Android.', minutes: 6, difficulty: 'medium', status: 'available' },
+            { slug: 'refresh', title: 'Token refresh', tagline: 'Silent refresh on 401.', minutes: 7, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'End-to-end auth on a device',
+        brief:
+          'Sign up + log in from your physical phone. Confirm SecureStore holds the refresh token. Kill the app, reopen, you should still be signed in.',
+        successCriteria: [
+          'Login works on the device, not just the simulator',
+          'Refresh token is in SecureStore / Keychain',
+          'App reopens signed in after a force-close',
+        ],
+      },
     },
     {
       slug: 'push-notifications',
@@ -792,16 +822,26 @@ const mobileCourse: Course = {
       title: 'Push Notifications',
       tagline: 'Expo Push + your Grit API talking to APNs/FCM.',
       learningGoals: ['Register for push', 'Send from the API', 'Handle taps + deep links'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Push',
           lessons: [
-            { slug: 'register', title: 'Registering for push', tagline: 'Permissions + token capture.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'send-from-api', title: 'Sending from the API', tagline: 'Grit job worker → Expo Push.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'register', title: 'Registering for push', tagline: 'Permissions + token capture.', minutes: 7, difficulty: 'medium', status: 'available' },
+            { slug: 'send-from-api', title: 'Sending from the API', tagline: 'Grit job worker → Expo Push.', minutes: 8, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Send yourself a push',
+        brief:
+          'Wire the mobile app to register an Expo push token. Save it to your Grit API. Add an API endpoint that enqueues an Asynq job which sends a push via Expo. Trigger it from curl.',
+        successCriteria: [
+          'Push token is persisted on the user row',
+          'Curl call enqueues a job',
+          'Push arrives on your phone',
+        ],
+      },
     },
     {
       slug: 'ship',
@@ -809,17 +849,27 @@ const mobileCourse: Course = {
       title: 'Ship It',
       tagline: 'EAS Build, app store submission, OTA updates.',
       learningGoals: ['Build for iOS + Android', 'Submit to stores', 'Push OTA updates'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Release',
           lessons: [
-            { slug: 'eas-build', title: 'EAS Build', tagline: 'Cloud builds without local Xcode pain.', minutes: 9, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'submit', title: 'Store submission', tagline: 'App Store Connect + Play Console.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'ota', title: 'OTA updates', tagline: 'Push JS updates without a new build.', minutes: 6, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'eas-build', title: 'EAS Build', tagline: 'Cloud builds without local Xcode pain.', minutes: 9, difficulty: 'medium', status: 'available' },
+            { slug: 'submit', title: 'Store submission', tagline: 'App Store Connect + Play Console.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'ota', title: 'OTA updates', tagline: 'Push JS updates without a new build.', minutes: 6, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'EAS build + OTA test',
+        brief:
+          'Run `eas build --platform android --profile preview` to produce a real APK. Install it on your phone. Then ship a small UI change via `eas update --branch preview`; reopen the app and confirm the change appears without a re-install.',
+        successCriteria: [
+          'APK installs and runs on a physical Android device',
+          'OTA update is published',
+          'Reopening the app picks up the OTA without re-installing',
+        ],
+      },
     },
   ],
 }
