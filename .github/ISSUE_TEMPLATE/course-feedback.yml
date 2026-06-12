@@ -1,0 +1,73 @@
+name: 📚 Course feedback
+description: Suggest an improvement, report a bug, or request a feature for a Grit course chapter.
+title: "[Course feedback]: "
+labels: ["course-feedback", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping us improve the Grit courses! The more specific you
+        can be, the faster we can act on the feedback.
+
+  - type: input
+    id: chapter-url
+    attributes:
+      label: Chapter URL
+      description: The URL of the chapter or lesson you're giving feedback on.
+      placeholder: https://gritframework.dev/courses/concepts/welcome
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type of feedback
+      options:
+        - 💡 Idea / improvement suggestion
+        - 🐛 Bug or error in the content (typo, broken code, wrong claim)
+        - 🚀 Feature request (new lesson, new chapter, missing topic)
+        - ❓ Confusing — needs clarification
+        - ✏️ Wording could be better
+        - 🔗 Broken link
+        - 🎯 Exercise / Knowledge Check feedback
+        - 💬 Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: feedback
+    attributes:
+      label: Your feedback
+      description: |
+        Describe what you'd like changed and why.
+        If reporting a bug, include the lesson section and what's wrong.
+        If suggesting a feature, describe the use case.
+      placeholder: |
+        Example: "In the Routing module, the example for nested layouts doesn't
+        show how to share state between layouts. Adding a 2-line example would
+        prevent the question I just had to Google."
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested fix or improvement (optional)
+      description: If you have a concrete proposal — wording, code snippet, diagram — paste it here.
+      placeholder: |
+        Example: "Add this snippet before the existing example: ..."
+
+  - type: input
+    id: your-experience
+    attributes:
+      label: Your background (optional)
+      description: Helps us target lesson difficulty. e.g., "10 years frontend, new to Go".
+      placeholder: 2 years JS, first time with Go
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of conduct
+      options:
+        - label: I agree to keep feedback constructive and respectful.
+          required: true

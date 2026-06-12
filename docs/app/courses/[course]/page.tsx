@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { findCourse, flatLessons, COURSES, courseTotalMinutes } from '@/config/courses'
 import { cn } from '@/lib/utils'
+import { NoAITip } from '@/components/course/no-ai-tip'
 
 interface PageProps {
   params: Promise<{ course: string }>
@@ -120,6 +121,9 @@ export default async function CourseLandingPage({ params }: PageProps) {
           </div>
         </div>
       </div>
+
+      {/* No-AI reminder — the goal is to learn, not ship fastest. */}
+      <NoAITip />
 
       {/* What you'll build */}
       <div className="mb-12">

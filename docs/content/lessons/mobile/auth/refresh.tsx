@@ -2,6 +2,7 @@ import { CodeBlock } from '@/components/code-block'
 import { TipBox } from '@/components/course/tip-box'
 import { Exercise } from '@/components/course/exercise'
 import { KnowledgeCheck } from '@/components/course/knowledge-check'
+import { Diagram } from '@/components/course/diagram'
 
 export default function Lesson() {
   return (
@@ -13,15 +14,30 @@ export default function Lesson() {
       </p>
 
       <h2>The flow</h2>
-      <CodeBlock
-        language="text"
-        code={`Mobile sends request with access_token
-  → API returns 401 UNAUTHORIZED (token expired)
-Mobile catches 401, calls /api/auth/refresh with refresh_token
-  → API returns new access_token (+ rotated refresh_token)
-Mobile saves new tokens, retries the original request
-  → API returns 200 — request succeeds, user sees no interruption`}
-      />
+      <Diagram label="Silent refresh sequence" caption="The whole dance happens silently. The user sees no interruption.">
+{`   ┌─────────┐                  ┌─────────┐                 ┌───────────┐
+   │ Mobile  │                  │   API   │                 │SecureStore│
+   └────┬────┘                  └────┬────┘                 └─────┬─────┘
+        │  GET /api/users + access   │                            │
+        ├───────────────────────────►│                            │
+        │  401 Unauthorized          │                            │
+        │◄───────────────────────────┤                            │
+        │                            │                            │
+        │  read refresh ─────────────┼───────────────────────────►│
+        │◄────────────────────── refresh value ──────────────────┤
+        │                            │                            │
+        │  POST /api/auth/refresh    │                            │
+        ├───────────────────────────►│                            │
+        │  200 + new access+refresh  │                            │
+        │◄───────────────────────────┤                            │
+        │                            │                            │
+        │  save new tokens ──────────┼───────────────────────────►│
+        │                            │                            │
+        │  GET /api/users + new access                            │
+        ├───────────────────────────►│                            │
+        │  200 OK + data             │                            │
+        │◄───────────────────────────┤                            │`}
+      </Diagram>
       <p>
         The whole dance happens silently. The user doesn&apos;t see a thing.
       </p>

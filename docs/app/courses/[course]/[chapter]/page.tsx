@@ -11,6 +11,8 @@ import {
   Target,
   Sparkles,
   Zap,
+  Github,
+  MessageSquarePlus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { findChapter, findCourse, COURSES } from '@/config/courses'
@@ -213,6 +215,40 @@ export default async function ChapterLandingPage({ params }: PageProps) {
           </Button>
         </div>
       )}
+
+      {/* Suggest improvement — one-click GitHub issue with the chapter URL pre-filled. */}
+      <div className="my-10 rounded-2xl border border-border/60 bg-card/30 p-5">
+        <div className="flex items-start gap-4">
+          <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+            <MessageSquarePlus className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-semibold mb-1">
+              Spot a typo? Have an idea?
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+              Help us improve this chapter. One click opens a GitHub issue
+              with this chapter&apos;s URL pre-filled — suggest a clearer
+              wording, report a bug, or request a new lesson. The course
+              keeps improving thanks to learners like you.
+            </p>
+            <a
+              href={`https://github.com/MUKE-coder/grit/issues/new?template=course-feedback.yml&title=${encodeURIComponent(
+                `[Course feedback] ${course.shortName} · ch.${chapter.number}: ${chapter.title}`,
+              )}&chapter-url=${encodeURIComponent(
+                `https://gritframework.dev/courses/${course.slug}/${chapter.slug}`,
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium px-4 py-2 transition-colors"
+            >
+              <Github className="h-3.5 w-3.5" />
+              Suggest an improvement on GitHub
+              <ArrowRight className="h-3 w-3" />
+            </a>
+          </div>
+        </div>
+      </div>
 
       {/* Prev / Next chapter nav */}
       <div className="flex items-center justify-between pt-6 border-t border-border/30">

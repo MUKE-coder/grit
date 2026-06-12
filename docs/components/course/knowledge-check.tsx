@@ -27,15 +27,15 @@ export function KnowledgeCheck({ question, choices }: Props) {
   const [picked, setPicked] = useState<number | null>(null)
 
   return (
-    <div className="not-prose my-8 rounded-2xl border border-border/50 bg-card/30">
-      <div className="px-5 py-4 border-b border-border/40">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono mb-1.5 inline-flex items-center gap-1.5">
-          <HelpCircle className="h-3 w-3" />
+    <div className="not-prose my-8 rounded-2xl border border-primary/30 bg-primary/[0.03]">
+      <div className="px-5 py-4 border-b border-primary/20 bg-primary/[0.05]">
+        <p className="text-[10px] uppercase tracking-wider text-primary font-mono mb-1.5 inline-flex items-center gap-1.5">
+          <HelpCircle className="h-3.5 w-3.5" />
           Quick check
         </p>
-        <div className="text-sm font-medium text-foreground/90 leading-relaxed">{question}</div>
+        <div className="text-base font-semibold text-foreground leading-relaxed">{question}</div>
       </div>
-      <div className="px-5 py-4 space-y-2">
+      <div className="px-5 py-5 space-y-2.5">
         {choices.map((c, i) => {
           const selected = picked === i
           const showState = picked !== null && selected
@@ -45,24 +45,28 @@ export function KnowledgeCheck({ question, choices }: Props) {
               type="button"
               onClick={() => setPicked(i)}
               className={cn(
-                'w-full text-left rounded-lg border px-3 py-2.5 text-sm transition-colors flex items-start gap-2.5',
-                !showState && 'border-border/40 hover:border-primary/40 hover:bg-card/60',
-                showState && c.correct && 'border-emerald-500/40 bg-emerald-500/10',
-                showState && !c.correct && 'border-rose-500/40 bg-rose-500/10',
+                'w-full text-left rounded-xl border-2 px-4 py-3 text-sm transition-all flex items-start gap-3 group',
+                !showState && 'border-border bg-card/60 hover:border-primary/50 hover:bg-primary/[0.04]',
+                showState && c.correct && 'border-emerald-500 bg-emerald-500/[0.08]',
+                showState && !c.correct && 'border-rose-500 bg-rose-500/[0.08]',
               )}
             >
+              {/* Radio with clear ring + filled state */}
               <span
                 className={cn(
-                  'h-5 w-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5',
-                  !showState && 'border-border/60',
-                  showState && c.correct && 'border-emerald-500 bg-emerald-500/20',
-                  showState && !c.correct && 'border-rose-500 bg-rose-500/20',
+                  'relative h-6 w-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors',
+                  !showState && 'border-border bg-background group-hover:border-primary/70',
+                  showState && c.correct && 'border-emerald-500 bg-emerald-500',
+                  showState && !c.correct && 'border-rose-500 bg-rose-500',
                 )}
               >
-                {showState && c.correct && <Check className="h-3 w-3 text-emerald-500" />}
-                {showState && !c.correct && <X className="h-3 w-3 text-rose-500" />}
+                {showState && c.correct && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+                {showState && !c.correct && <X className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+                {!showState && (
+                  <span className="h-2.5 w-2.5 rounded-full bg-transparent group-hover:bg-primary/30 transition-colors" />
+                )}
               </span>
-              <span className="flex-1">{c.label}</span>
+              <span className="flex-1 text-foreground/95 leading-relaxed">{c.label}</span>
             </button>
           )
         })}

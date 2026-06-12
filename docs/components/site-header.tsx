@@ -2,15 +2,23 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Github, Youtube, Heart, Sun, Moon } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { SearchDialog } from '@/components/search-dialog'
 import { MobileNav } from '@/components/docs-sidebar'
+import { cn } from '@/lib/utils'
 
 export function SiteHeader() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const pathname = usePathname() ?? ''
+
+  // A navbar item is active when the current path is the item or any nested
+  // route under it (e.g., /courses, /courses/concepts/welcome/what-is-grit
+  // both highlight "Courses").
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
   useEffect(() => setMounted(true), [])
 
@@ -47,19 +55,28 @@ export function SiteHeader() {
             { label: 'Courses', href: '/courses' },
             { label: 'Changelog', href: '/docs/changelog' },
             { label: 'Showcase', href: '/showcase' },
-          ].map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={
-                item.highlight
-                  ? 'px-3 py-1.5 text-[13px] font-medium text-primary hover:text-primary/80 transition-colors'
-                  : 'px-3 py-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors'
-              }
-            >
-              {item.label}
-            </Link>
-          ))}
+          ].map((item) => {
+            const active = isActive(item.href)
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={cn(
+                  'relative px-3 py-1.5 text-[13px] transition-colors',
+                  active
+                    ? 'font-semibold text-primary'
+                    : item.highlight
+                      ? 'font-medium text-primary hover:text-primary/80'
+                      : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {item.label}
+                {active && (
+                  <span className="absolute left-3 right-3 -bottom-0.5 h-[2px] rounded-full bg-primary" />
+                )}
+              </Link>
+            )
+          })}
         </nav>
 
         {/* Right side */}
