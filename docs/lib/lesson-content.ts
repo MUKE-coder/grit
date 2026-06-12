@@ -36,6 +36,18 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
   'concepts/generators/what-got-generated': () => import('@/content/lessons/concepts/generators/what-got-generated'),
   'concepts/generators/grit-sync': () => import('@/content/lessons/concepts/generators/grit-sync'),
 
+  'concepts/frameworks-patterns/gin-basics': () => import('@/content/lessons/concepts/frameworks-patterns/gin-basics'),
+  'concepts/frameworks-patterns/gorm-basics': () => import('@/content/lessons/concepts/frameworks-patterns/gorm-basics'),
+  'concepts/frameworks-patterns/handler-service-pattern': () => import('@/content/lessons/concepts/frameworks-patterns/handler-service-pattern'),
+  'concepts/frameworks-patterns/crud-walkthrough': () => import('@/content/lessons/concepts/frameworks-patterns/crud-walkthrough'),
+
+  'concepts/batteries/batteries-overview': () => import('@/content/lessons/concepts/batteries/batteries-overview'),
+  'concepts/batteries/redis-cache': () => import('@/content/lessons/concepts/batteries/redis-cache'),
+  'concepts/batteries/s3-storage': () => import('@/content/lessons/concepts/batteries/s3-storage'),
+  'concepts/batteries/mail-resend': () => import('@/content/lessons/concepts/batteries/mail-resend'),
+  'concepts/batteries/async-jobs': () => import('@/content/lessons/concepts/batteries/async-jobs'),
+  'concepts/batteries/ai-integration': () => import('@/content/lessons/concepts/batteries/ai-integration'),
+
   'concepts/architecture-modes/single-mode': () => import('@/content/lessons/concepts/architecture-modes/single-mode'),
   'concepts/architecture-modes/triple-mode': () => import('@/content/lessons/concepts/architecture-modes/triple-mode'),
   'concepts/architecture-modes/specialized-modes': () => import('@/content/lessons/concepts/architecture-modes/specialized-modes'),
@@ -143,6 +155,20 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
 
   'multiplatform/releases/compat-matrix': () => import('@/content/lessons/multiplatform/releases/compat-matrix'),
   'multiplatform/releases/staggered': () => import('@/content/lessons/multiplatform/releases/staggered'),
+
+  /* ─── Load Testing with K6 ──────────────────────── */
+  'load-testing/fundamentals/why-load-test': () => import('@/content/lessons/load-testing/fundamentals/why-load-test'),
+  'load-testing/fundamentals/install-k6': () => import('@/content/lessons/load-testing/fundamentals/install-k6'),
+  'load-testing/fundamentals/first-script': () => import('@/content/lessons/load-testing/fundamentals/first-script'),
+
+  /* ─── Security ──────────────────────────────────── */
+  'security/mindset/threat-model': () => import('@/content/lessons/security/mindset/threat-model'),
+  'security/mindset/owasp-tour': () => import('@/content/lessons/security/mindset/owasp-tour'),
+  'security/access-control/idor': () => import('@/content/lessons/security/access-control/idor'),
+
+  /* ─── Benchmarking ──────────────────────────────── */
+  'benchmarking/fundamentals/first-bench': () => import('@/content/lessons/benchmarking/fundamentals/first-bench'),
+  'benchmarking/fundamentals/reading-output': () => import('@/content/lessons/benchmarking/fundamentals/reading-output'),
 }
 
 export async function loadLessonContent(

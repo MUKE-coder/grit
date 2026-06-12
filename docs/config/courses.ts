@@ -436,8 +436,159 @@ const conceptsCourse: Course = {
       },
     },
     {
-      slug: 'architecture-modes',
+      slug: 'frameworks-patterns',
       number: 5,
+      title: 'Frameworks & Patterns',
+      tagline: 'The Go side demystified — Gin, GORM, CRUD, and the Handler → Service pattern that every resource follows.',
+      learningGoals: [
+        'Explain what Gin and GORM are, in one sentence each',
+        'Walk a request from URL → handler → service → DB → response',
+        'Write the four CRUD operations by hand and reason about why each line is there',
+        'Decide whether new logic belongs in the handler or the service',
+      ],
+      status: 'available',
+      modules: [
+        {
+          title: 'The frameworks',
+          lessons: [
+            {
+              slug: 'gin-basics',
+              title: 'What is Gin?',
+              tagline: 'The HTTP router behind every Grit API — routes, context, middleware.',
+              minutes: 8,
+              difficulty: 'easy',
+              status: 'available',
+            },
+            {
+              slug: 'gorm-basics',
+              title: 'What is GORM?',
+              tagline: 'The ORM that turns Go structs into SQL — models, queries, relations.',
+              minutes: 9,
+              difficulty: 'medium',
+              status: 'available',
+            },
+          ],
+        },
+        {
+          title: 'The pattern',
+          lessons: [
+            {
+              slug: 'handler-service-pattern',
+              title: 'Handler → Service pattern',
+              tagline: 'Why we split, what goes where, and how to keep handlers thin.',
+              minutes: 9,
+              difficulty: 'medium',
+              status: 'available',
+            },
+            {
+              slug: 'crud-walkthrough',
+              title: 'CRUD end-to-end',
+              tagline: 'GET / POST / PATCH / DELETE — written by hand, line by line.',
+              minutes: 10,
+              difficulty: 'medium',
+              status: 'available',
+            },
+          ],
+        },
+      ],
+      assignment: {
+        title: 'Hand-write a Note resource',
+        brief:
+          "Without using `grit generate`, hand-write a Note resource: model, service, handler, routes. List notes, create one, update, delete. Then run `grit generate resource Note` in a fresh project and DIFF the two — note where your code differs from the generated. One paragraph in notes.md on what you learned.",
+        successCriteria: [
+          'All 4 CRUD endpoints work via curl/Postman',
+          'Handler is thin (no DB calls)',
+          'Service contains all DB work',
+          'You can explain every line you wrote',
+        ],
+      },
+    },
+    {
+      slug: 'batteries',
+      number: 6,
+      title: 'The Batteries',
+      tagline: 'Redis, S3, Mail, Jobs, AI — what each one does, where it lives, and how to modify it.',
+      learningGoals: [
+        'Identify each battery, what it does, and when you need it',
+        'Find the file you would edit to change each battery\'s behaviour',
+        'Wire a new use of a battery into your project (e.g., add a cache, send a transactional email, queue a job)',
+      ],
+      status: 'available',
+      modules: [
+        {
+          title: 'Caching & files',
+          lessons: [
+            {
+              slug: 'batteries-overview',
+              title: 'What are the Batteries?',
+              tagline: 'The included-out-of-the-box services and what they save you.',
+              minutes: 5,
+              difficulty: 'easy',
+              status: 'available',
+            },
+            {
+              slug: 'redis-cache',
+              title: 'Redis cache',
+              tagline: 'Speed up reads, throttle, and store ephemeral state.',
+              minutes: 7,
+              difficulty: 'medium',
+              status: 'available',
+            },
+            {
+              slug: 's3-storage',
+              title: 'S3-compatible file storage',
+              tagline: 'Upload files, store on R2/MinIO/AWS, serve with signed URLs.',
+              minutes: 8,
+              difficulty: 'medium',
+              status: 'available',
+            },
+          ],
+        },
+        {
+          title: 'Async & integrations',
+          lessons: [
+            {
+              slug: 'mail-resend',
+              title: 'Mail (Resend)',
+              tagline: 'Transactional + marketing email with templates you can edit.',
+              minutes: 7,
+              difficulty: 'easy',
+              status: 'available',
+            },
+            {
+              slug: 'async-jobs',
+              title: 'Background jobs (asynq)',
+              tagline: 'Queue work, retry on failure, schedule with cron — without blocking requests.',
+              minutes: 9,
+              difficulty: 'medium',
+              status: 'available',
+            },
+            {
+              slug: 'ai-integration',
+              title: 'AI (Claude + OpenAI)',
+              tagline: 'Streaming chat, embeddings, and how the abstraction lets you swap providers.',
+              minutes: 8,
+              difficulty: 'medium',
+              status: 'available',
+            },
+          ],
+        },
+      ],
+      assignment: {
+        title: 'Cache + email + job — a real use of three batteries',
+        brief:
+          "Build a small feature using three batteries: when a new Order is created, (1) cache the order total in Redis with a 5-min TTL, (2) enqueue a job that sends a confirmation email via Resend, (3) the job worker actually sends it. Test the whole loop with a real Resend test key.",
+        successCriteria: [
+          'Order create returns under 50ms (because email is async)',
+          'Email lands in your Resend dashboard',
+          'GET on the order pulls from Redis (you can see the X-Cache header)',
+          'You can explain WHERE in the code each battery is wired',
+        ],
+      },
+    },
+    {
+      slug: 'architecture-modes',
+      number: 7,
       title: 'Architecture Modes',
       tagline: 'The five shapes a Grit project can take — pick the right one for your idea.',
       learningGoals: [
@@ -1494,6 +1645,371 @@ const multiplatformCourse: Course = {
   ],
 }
 
+/* ─────────────────────────────────────────────────────────────────── */
+/*  Performance & Quality courses                                       */
+/* ─────────────────────────────────────────────────────────────────── */
+
+const loadTestingCourse: Course = {
+  slug: 'load-testing',
+  name: 'Load Testing with K6',
+  shortName: 'K6 Load Testing',
+  tagline: 'Prove your API holds up before users find out it doesn\'t.',
+  description:
+    "Hands-on load testing for a Grit API: write k6 scripts, run smoke / load / stress / spike / soak tests, read p95 latency, find the bottleneck, fix it, prove the fix. The mindset and the tool, with real numbers.",
+  level: 'intermediate',
+  estimatedHours: 4,
+  prerequisites: ['Completed Building a Go API', 'Comfortable in a terminal'],
+  whatYoullBuild:
+    "A k6 test suite for your Grit API with 6 scenario types, run locally and in CI, that catches regressions before they ship.",
+  whatYoullLearn: [
+    'When to load-test (and when not)',
+    'k6 fundamentals — VUs, iterations, scenarios, thresholds',
+    'The 5 test types: smoke, load, stress, spike, soak',
+    'Reading p50/p95/p99 and what each tells you',
+    'Finding the bottleneck: API, DB, network, or your test rig',
+    'Wiring k6 into GitHub Actions so PRs that regress get blocked',
+  ],
+  whoThisIsFor: [
+    'Devs shipping APIs to production',
+    'SREs setting up performance gates',
+    'Teams who got burned by a surprise outage at launch',
+  ],
+  status: 'available',
+  emoji: '⚡',
+  accent: 'from-yellow-500/30 via-amber-500/20 to-yellow-500/10',
+  chapters: [
+    {
+      slug: 'fundamentals',
+      number: 1,
+      title: 'k6 Fundamentals',
+      tagline: 'Install, write your first test, understand the output.',
+      learningGoals: ['Install k6', 'Write a 20-line test', 'Read the summary at the end'],
+      status: 'available',
+      modules: [
+        {
+          title: 'Setup',
+          lessons: [
+            { slug: 'why-load-test', title: 'Why load test?', tagline: 'When it pays for itself — and when it\'s premature.', minutes: 5, difficulty: 'easy', status: 'available' },
+            { slug: 'install-k6', title: 'Install k6', tagline: 'One binary, no Node, no deps.', minutes: 3, difficulty: 'easy', status: 'available' },
+            { slug: 'first-script', title: 'Your first k6 script', tagline: 'A 20-line script that hits /healthz with 10 VUs.', minutes: 8, difficulty: 'easy', status: 'available' },
+          ],
+        },
+      ],
+      assignment: {
+        title: 'Run your first test',
+        brief: 'Install k6, write a 20-line script against your Grit API\'s /healthz endpoint, run it with 10 VUs for 30 seconds, and paste the summary into notes.md. Explain in 2 sentences what p95 means in plain English.',
+        successCriteria: ['k6 installed and runs', 'Summary shows http_req_duration metrics', 'You can explain p95 to a non-engineer'],
+      },
+    },
+    {
+      slug: 'scenarios',
+      number: 2,
+      title: 'The Five Test Types',
+      tagline: 'Smoke, load, stress, spike, soak — when to run each.',
+      learningGoals: ['Pick the right test for the question being asked', 'Define thresholds that fail the build on regression'],
+      status: 'available',
+      modules: [
+        {
+          title: 'Scenario types',
+          lessons: [
+            { slug: 'smoke-load', title: 'Smoke + load tests', tagline: 'Sanity check + steady-state expected traffic.', minutes: 7, difficulty: 'easy', status: 'available' },
+            { slug: 'stress-spike', title: 'Stress + spike tests', tagline: 'Push to breaking point; sudden traffic surges.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'soak-test', title: 'Soak test', tagline: 'Run for hours to catch leaks the short tests miss.', minutes: 6, difficulty: 'medium', status: 'available' },
+          ],
+        },
+      ],
+      assignment: {
+        title: 'A 6-test suite',
+        brief: 'Build a k6 suite in `tests/k6/` with one script per scenario type (smoke, load, stress, spike, soak) plus a registration-flow scenario. Document what each tests in a README.',
+        successCriteria: ['All 6 scripts run', 'Each has thresholds that fail on regression', 'README explains when to run each'],
+      },
+    },
+    {
+      slug: 'finding-bottlenecks',
+      number: 3,
+      title: 'Finding the Bottleneck',
+      tagline: 'When the test fails, where do you look?',
+      learningGoals: ['Use Pulse + DB metrics + system stats to localise the problem', 'Distinguish API CPU, DB CPU, network, and test-rig limits'],
+      status: 'available',
+      modules: [
+        {
+          title: 'Diagnosis',
+          lessons: [
+            { slug: 'reading-metrics', title: 'Reading the numbers', tagline: 'p50 vs p95 vs p99 — what each tells you.', minutes: 7, difficulty: 'medium', status: 'available' },
+            { slug: 'common-bottlenecks', title: 'Common bottlenecks', tagline: 'DB connection pool, N+1, cold caches, GC pauses.', minutes: 9, difficulty: 'medium', status: 'available' },
+            { slug: 'fix-and-prove', title: 'Fix and prove it', tagline: 'Make a change, re-run, compare — disciplined performance work.', minutes: 7, difficulty: 'medium', status: 'available' },
+          ],
+        },
+      ],
+      assignment: {
+        title: 'Find + fix + prove',
+        brief: 'Pick the endpoint with the worst p95 from your suite. Use Pulse + DB logs to identify the bottleneck. Fix it (add an index, add caching, fix N+1). Re-run the same scenario. Paste before/after numbers in notes.md with a 1-paragraph writeup.',
+        successCriteria: ['p95 improved by ≥30%', 'You can explain the root cause in one sentence', 'The fix is committed'],
+      },
+    },
+    {
+      slug: 'ci-integration',
+      number: 4,
+      title: 'k6 in CI',
+      tagline: 'Block regressions in PRs.',
+      learningGoals: ['Run k6 in GitHub Actions', 'Fail the build on threshold breach'],
+      status: 'available',
+      modules: [
+        {
+          title: 'Automation',
+          lessons: [
+            { slug: 'github-actions', title: 'Running k6 in GitHub Actions', tagline: 'One workflow, one Docker image, automatic on PR.', minutes: 8, difficulty: 'medium', status: 'available' },
+          ],
+        },
+      ],
+      assignment: {
+        title: 'PR-gating perf check',
+        brief: 'Wire k6 smoke + load tests into a GitHub Action that runs on every PR. Open a PR with an intentional regression (e.g., remove a DB index). Confirm the PR check fails.',
+        successCriteria: ['CI runs k6 on every PR', 'A regression-PR fails the check', 'The action artifact has the summary'],
+      },
+    },
+  ],
+}
+
+const securityCourse: Course = {
+  slug: 'security',
+  name: 'Security & Pen Testing for Grit APIs',
+  shortName: 'Security',
+  tagline: 'OWASP Top 10, hands-on — attack your own API, then defend it.',
+  description:
+    "Walk the OWASP Top 10 against your own Grit API. Each lesson: how the attack works, exploit it on a deliberately-vulnerable endpoint, then ship the fix. Plus the defensive stack Grit gives you out of the box (Sentinel rate-limit, safefetch, authz, CSRF, audit logs).",
+  level: 'advanced',
+  estimatedHours: 6,
+  prerequisites: ['Completed Building a Go API', 'Comfortable with HTTP, JWT, and CORS'],
+  whatYoullBuild:
+    "A security-hardened Grit API with hands-on confidence in detecting + fixing IDOR, SSRF, broken auth, mass assignment, injection, and the rest of the OWASP Top 10.",
+  whatYoullLearn: [
+    'How each OWASP Top 10 vulnerability works in practice',
+    'Exploit your own endpoint to feel the risk',
+    'Ship the fix and verify the exploit no longer works',
+    'The Grit defensive stack: Sentinel, safefetch, authz, CSRF, security headers',
+    'Threat modelling — what to worry about, what not to',
+  ],
+  whoThisIsFor: [
+    'Devs shipping public APIs',
+    'Security-aware founders without a dedicated security team',
+    'Anyone tired of mystery 3am pages',
+  ],
+  status: 'available',
+  emoji: '🛡️',
+  accent: 'from-rose-500/30 via-red-500/20 to-rose-500/10',
+  chapters: [
+    {
+      slug: 'mindset',
+      number: 1,
+      title: 'The Attacker\'s Mindset',
+      tagline: 'Think like the attacker before you defend like one.',
+      learningGoals: ['Frame every endpoint as &quot;what could go wrong?&quot;', 'Map the OWASP Top 10 to real Grit endpoints'],
+      status: 'available',
+      modules: [
+        {
+          title: 'Foundation',
+          lessons: [
+            { slug: 'threat-model', title: 'A threat model in 15 minutes', tagline: 'What you protect, from whom, with what.', minutes: 6, difficulty: 'easy', status: 'available' },
+            { slug: 'owasp-tour', title: 'OWASP Top 10 — the speedrun tour', tagline: 'One sentence per category, in plain English.', minutes: 8, difficulty: 'easy', status: 'available' },
+          ],
+        },
+      ],
+      assignment: {
+        title: 'Threat-model your API',
+        brief: 'Write a 1-page threat model for your Grit API in notes.md: 5 assets, 5 actors (user, admin, attacker, bot, partner), and 10 threats (one per OWASP category). One paragraph each.',
+        successCriteria: ['Document covers all 10 OWASP categories', 'Each threat has a Grit endpoint it applies to', 'You can defend the priorities you set'],
+      },
+    },
+    {
+      slug: 'access-control',
+      number: 2,
+      title: 'Broken Access Control',
+      tagline: 'IDOR, missing role checks, and the &quot;just check user_id&quot; rule.',
+      learningGoals: ['Spot an IDOR in a code review', 'Add authorization checks the right way'],
+      status: 'available',
+      modules: [
+        {
+          title: 'Attack + defend',
+          lessons: [
+            { slug: 'idor', title: 'IDOR — the most common bug in the wild', tagline: 'Cross-account access by guessing IDs.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'authz-package', title: 'The authz package', tagline: 'Centralized authorization in Grit and how to use it.', minutes: 7, difficulty: 'medium', status: 'available' },
+          ],
+        },
+      ],
+      assignment: {
+        title: 'Exploit + patch an IDOR',
+        brief: 'In a fresh Grit project, create two users (A and B), one note owned by A. As B, attempt to PATCH and DELETE A\'s note. Document the exploit, then add the authorization check. Re-test — must return 403.',
+        successCriteria: ['Exploit works initially (proves the bug)', 'After patch, returns 403', 'Test added so a regression fails CI'],
+      },
+    },
+    {
+      slug: 'injection-ssrf',
+      number: 3,
+      title: 'Injection & SSRF',
+      tagline: 'SQL injection, command injection, and the URL trap.',
+      learningGoals: ['Recognise dangerous string-concat patterns', 'Use the safefetch package for any URL the user controls'],
+      status: 'available',
+      modules: [
+        {
+          title: 'Attack + defend',
+          lessons: [
+            { slug: 'sql-injection', title: 'SQL injection in Go', tagline: 'How GORM protects you, and how Sprintf undoes that protection.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'ssrf-safefetch', title: 'SSRF + safefetch', tagline: 'The internal-network attack and how Grit\'s safefetch blocks it.', minutes: 9, difficulty: 'hard', status: 'available' },
+          ],
+        },
+      ],
+      assignment: {
+        title: 'Try to break your own API',
+        brief: 'Use curl to attempt SQL injection on your search endpoints, and SSRF on any URL-fetching endpoint (e.g., webhook validation, OG-image preview). Document each attempt + the response. Add safefetch where missing.',
+        successCriteria: ['All injection attempts return clean errors, not data leaks', 'No internal IPs reachable via your API', 'Tests added for the most dangerous endpoints'],
+      },
+    },
+    {
+      slug: 'auth-secrets',
+      number: 4,
+      title: 'Auth + Secret Management',
+      tagline: 'JWT pitfalls, session security, and where to put your keys.',
+      learningGoals: ['Configure JWT correctly (audience, expiry, rotation)', 'Identify secrets that should never be in code'],
+      status: 'available',
+      modules: [
+        {
+          title: 'Hardening',
+          lessons: [
+            { slug: 'jwt-pitfalls', title: 'JWT pitfalls', tagline: 'alg=none, missing expiry, leaked secrets.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'secrets', title: 'Where do your secrets live?', tagline: '.env, vaults, KMS — what to use when.', minutes: 6, difficulty: 'medium', status: 'available' },
+          ],
+        },
+      ],
+      assignment: {
+        title: 'Audit your tokens + secrets',
+        brief: 'Document where every secret lives. Rotate JWT_SECRET in dev — what breaks? Add audience + expiry validation to your JWT verify. Add one Sentinel rate-limit rule to /api/auth/login.',
+        successCriteria: ['Token rotation works without downtime', 'No secrets in committed .env', 'Rate limit verified by k6 test'],
+      },
+    },
+    {
+      slug: 'defensive-stack',
+      number: 5,
+      title: 'The Grit Defensive Stack',
+      tagline: 'Sentinel, security headers, CSRF, audit log — wire them all.',
+      learningGoals: ['Enable + tune each defence', 'Understand what each blocks and what it doesn\'t'],
+      status: 'available',
+      modules: [
+        {
+          title: 'Defence in depth',
+          lessons: [
+            { slug: 'sentinel-rate-limit', title: 'Sentinel rate limiting', tagline: 'Per-IP, per-user, per-endpoint throttles.', minutes: 7, difficulty: 'medium', status: 'available' },
+            { slug: 'csrf-cors', title: 'CSRF + CORS', tagline: 'Why both, when each matters.', minutes: 8, difficulty: 'hard', status: 'available' },
+            { slug: 'audit-log', title: 'Audit log', tagline: 'Who did what, when. The black-box recorder for incidents.', minutes: 6, difficulty: 'medium', status: 'available' },
+          ],
+        },
+      ],
+      assignment: {
+        title: 'Full defence audit',
+        brief: 'Verify every defence is enabled + tuned: Sentinel limits, CSP headers, CSRF on form endpoints, audit log on sensitive ops. Document each in a `SECURITY.md` at the repo root.',
+        successCriteria: ['SECURITY.md exists and lists every active defence', 'curl against deliberately-broken inputs returns the right status', 'Audit log captures admin actions'],
+      },
+    },
+  ],
+}
+
+const benchmarkingCourse: Course = {
+  slug: 'benchmarking',
+  name: 'Benchmarking Your Go Code',
+  shortName: 'Benchmarking',
+  tagline: 'Go\'s built-in microbenchmarks — measure first, optimise second.',
+  description:
+    "Go has world-class benchmarking built in. This short course teaches you to write `BenchmarkXxx` functions, read the output, profile with pprof, and refuse to optimise without data. Antidote to vibes-based performance work.",
+  level: 'intermediate',
+  estimatedHours: 3,
+  prerequisites: ['Completed Building a Go API', 'Comfortable writing Go tests'],
+  whatYoullBuild:
+    "A benchmark suite for your Go service hot paths, with a baseline, a profiling workflow, and one measured optimisation.",
+  whatYoullLearn: [
+    'Write a Benchmark function in 10 lines',
+    'Read ns/op, B/op, allocs/op',
+    'Profile with pprof — CPU + heap',
+    'Make ONE measured change and prove the win',
+    'Compare two implementations with benchstat',
+  ],
+  whoThisIsFor: [
+    'Devs guessing at performance',
+    'Anyone tempted to micro-optimise without data',
+    'Backend engineers shipping latency-sensitive features',
+  ],
+  status: 'available',
+  emoji: '📊',
+  accent: 'from-cyan-500/30 via-sky-500/20 to-cyan-500/10',
+  chapters: [
+    {
+      slug: 'fundamentals',
+      number: 1,
+      title: 'Microbenchmarks 101',
+      tagline: 'BenchmarkXxx, b.N, and what the output means.',
+      learningGoals: ['Write your first benchmark', 'Read ns/op and allocs/op without lookup'],
+      status: 'available',
+      modules: [
+        {
+          title: 'The basics',
+          lessons: [
+            { slug: 'first-bench', title: 'Your first benchmark', tagline: 'A `BenchmarkPluralize` in 10 lines.', minutes: 7, difficulty: 'easy', status: 'available' },
+            { slug: 'reading-output', title: 'Reading the output', tagline: 'ns/op, B/op, allocs/op — what each tells you.', minutes: 6, difficulty: 'easy', status: 'available' },
+          ],
+        },
+      ],
+      assignment: {
+        title: 'Benchmark a hot path',
+        brief: 'Pick the most-called function in your service (often a serialiser, parser, or auth check). Write a benchmark. Run it 3 times and confirm the numbers are stable. Paste the output in notes.md.',
+        successCriteria: ['Benchmark function exists in `_test.go`', 'Numbers stable across 3 runs', 'You can interpret each column'],
+      },
+    },
+    {
+      slug: 'profiling',
+      number: 2,
+      title: 'Profiling with pprof',
+      tagline: 'Where is the time really going?',
+      learningGoals: ['Capture CPU + heap profiles', 'Read a flame graph'],
+      status: 'available',
+      modules: [
+        {
+          title: 'Tools',
+          lessons: [
+            { slug: 'cpu-profile', title: 'CPU profile', tagline: 'Capture, open in pprof, find the hot frame.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'heap-profile', title: 'Heap profile', tagline: 'Find allocation sources and reduce GC pressure.', minutes: 8, difficulty: 'medium', status: 'available' },
+          ],
+        },
+      ],
+      assignment: {
+        title: 'Profile + diagnose',
+        brief: 'Capture a CPU + heap profile of your benchmark. Identify the hottest function. Write 1 paragraph describing what surprises you (almost always there\'s a surprise).',
+        successCriteria: ['CPU + heap profiles saved', 'You named the hottest function', 'You explain WHY in 1 paragraph'],
+      },
+    },
+    {
+      slug: 'optimise',
+      number: 3,
+      title: 'Measure → Change → Measure',
+      tagline: 'The only legitimate way to optimise.',
+      learningGoals: ['Use benchstat to compare runs', 'Make one change and prove the win or roll back'],
+      status: 'available',
+      modules: [
+        {
+          title: 'Disciplined optimisation',
+          lessons: [
+            { slug: 'benchstat', title: 'benchstat — compare two runs', tagline: 'Statistical significance, not vibes.', minutes: 6, difficulty: 'medium', status: 'available' },
+            { slug: 'one-optimisation', title: 'Ship one measured optimisation', tagline: 'Pick, change, re-run, decide.', minutes: 8, difficulty: 'medium', status: 'available' },
+          ],
+        },
+      ],
+      assignment: {
+        title: 'One real, measured win',
+        brief: 'Make ONE change to your service\'s hot path. Re-run benchmarks. Use benchstat to verify the change is real (p<0.05). If not, roll back. Paste before/after in notes.md.',
+        successCriteria: ['benchstat shows significant improvement', 'OR you rolled back honestly', 'Either way you commit data, not vibes'],
+      },
+    },
+  ],
+}
+
 export const COURSES: Course[] = [
   conceptsCourse,
   goApiCourse,
@@ -1502,4 +2018,7 @@ export const COURSES: Course[] = [
   webTanstackCourse,
   desktopCourse,
   multiplatformCourse,
+  loadTestingCourse,
+  securityCourse,
+  benchmarkingCourse,
 ]

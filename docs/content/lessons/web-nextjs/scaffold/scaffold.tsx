@@ -2,6 +2,7 @@ import { CodeBlock } from '@/components/code-block'
 import { TipBox } from '@/components/course/tip-box'
 import { Exercise } from '@/components/course/exercise'
 import { KnowledgeCheck } from '@/components/course/knowledge-check'
+import { PrereqLinks } from '@/components/course/prereq-links'
 
 export default function Lesson() {
   return (
@@ -12,6 +13,17 @@ export default function Lesson() {
         admin, api). By the end of this lesson, you&apos;ll have scaffolded a
         SaaS-shaped project ready for the rest of the course.
       </p>
+
+      <PrereqLinks
+        prereqs={['nextjs', 'golang', 'docker']}
+        intro={
+          <>
+            New to App Router or Go? Read the relevant primers first —
+            this course assumes basic familiarity with both, plus
+            running Docker containers locally.
+          </>
+        }
+      />
 
       <h2>The command</h2>
       <CodeBlock terminal code={`grit new saas --triple`} />

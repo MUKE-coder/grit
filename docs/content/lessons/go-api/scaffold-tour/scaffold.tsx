@@ -2,6 +2,7 @@ import { CodeBlock } from '@/components/code-block'
 import { TipBox } from '@/components/course/tip-box'
 import { Exercise } from '@/components/course/exercise'
 import { KnowledgeCheck } from '@/components/course/knowledge-check'
+import { PrereqLinks } from '@/components/course/prereq-links'
 
 export default function Lesson() {
   return (
@@ -12,6 +13,17 @@ export default function Lesson() {
         requests. This first lesson is the scaffold itself — 5 minutes, one
         command, you&apos;re ready.
       </p>
+
+      <PrereqLinks
+        prereqs={['golang', 'docker']}
+        intro={
+          <>
+            This course assumes you can read Go syntax (structs, methods,
+            error handling) and run a Docker container locally. If either is
+            shaky, skim the primers first — they take 15 minutes each.
+          </>
+        }
+      />
 
       <h2>The command</h2>
       <CodeBlock

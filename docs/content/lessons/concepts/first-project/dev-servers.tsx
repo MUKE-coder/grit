@@ -2,6 +2,7 @@ import { CodeBlock } from '@/components/code-block'
 import { TipBox } from '@/components/course/tip-box'
 import { Exercise } from '@/components/course/exercise'
 import { KnowledgeCheck } from '@/components/course/knowledge-check'
+import { PrereqLinks } from '@/components/course/prereq-links'
 
 export default function Lesson() {
   return (
@@ -11,6 +12,18 @@ export default function Lesson() {
         API, the web app, and the admin panel will all be running together
         and you&apos;ll have URLs to open in your browser.
       </p>
+
+      <PrereqLinks
+        prereqs={['docker']}
+        intro={
+          <>
+            We&apos;ll use Docker Compose to boot infra (Postgres, Redis,
+            MinIO, Mailhog). If you&apos;ve never used containers or
+            compose files, the Docker primer is a 10-minute read that
+            makes the rest of this lesson click.
+          </>
+        }
+      />
 
       <h2>1. Start the infrastructure</h2>
       <CodeBlock
