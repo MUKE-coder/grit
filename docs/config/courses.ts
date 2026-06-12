@@ -1174,7 +1174,7 @@ const desktopCourse: Course = {
     'GitHub Actions release pipeline',
   ],
   whoThisIsFor: ['Devs building POS, kiosks, field apps', 'Teams that need offline-first'],
-  status: 'coming-soon',
+  status: 'available',
   emoji: '🖥️',
   accent: 'from-indigo-500/30 via-violet-500/20 to-indigo-500/10',
   chapters: [
@@ -1184,17 +1184,27 @@ const desktopCourse: Course = {
       title: 'Scaffold + First Run',
       tagline: 'grit new-desktop and the Wails dev loop.',
       learningGoals: ['Scaffold a desktop project', 'Run wails dev', 'Build a release binary'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Setup',
           lessons: [
-            { slug: 'scaffold', title: 'Scaffolding', tagline: 'grit new-desktop walkthrough.', minutes: 6, difficulty: 'easy', status: 'coming-soon' },
-            { slug: 'wails-dev', title: 'wails dev loop', tagline: 'Hot reload + dev tools.', minutes: 6, difficulty: 'easy', status: 'coming-soon' },
-            { slug: 'first-build', title: 'First production build', tagline: 'wails build -nsis.', minutes: 6, difficulty: 'easy', status: 'coming-soon' },
+            { slug: 'scaffold', title: 'Scaffolding', tagline: 'grit new-desktop walkthrough.', minutes: 6, difficulty: 'easy', status: 'available' },
+            { slug: 'wails-dev', title: 'wails dev loop', tagline: 'Hot reload + dev tools.', minutes: 6, difficulty: 'easy', status: 'available' },
+            { slug: 'first-build', title: 'First production build', tagline: 'wails build -nsis.', minutes: 6, difficulty: 'easy', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Build + install + uninstall',
+        brief:
+          'Scaffold `field-pos --desktop`, run `wails dev`, then `wails build -nsis`. Install the resulting Setup.exe, launch the app from the Start menu, uninstall via Settings.',
+        successCriteria: [
+          'wails dev opens a window in <5s',
+          'Setup .exe installed without UAC prompt (per-user install)',
+          'App launches from Start menu and uninstalls cleanly',
+        ],
+      },
     },
     {
       slug: 'offline',
@@ -1202,17 +1212,27 @@ const desktopCourse: Course = {
       title: 'Offline-First',
       tagline: 'SQLite + outbox + sync to the API.',
       learningGoals: ['Use local SQLite', 'Queue local changes', 'Sync when online'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Offline',
           lessons: [
-            { slug: 'sqlite', title: 'Local SQLite', tagline: 'GORM against a local file.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'outbox', title: 'Outbox pattern', tagline: 'Queue mutations, sync later.', minutes: 9, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'sync', title: 'Sync engine', tagline: 'Push + pull + conflicts.', minutes: 8, difficulty: 'hard', status: 'coming-soon' },
+            { slug: 'sqlite', title: 'Local SQLite', tagline: 'GORM against a local file.', minutes: 7, difficulty: 'medium', status: 'available' },
+            { slug: 'outbox', title: 'Outbox pattern', tagline: 'Queue mutations, sync later.', minutes: 9, difficulty: 'medium', status: 'available' },
+            { slug: 'sync', title: 'Sync engine', tagline: 'Push + pull + conflicts.', minutes: 8, difficulty: 'hard', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Make a sale offline + sync',
+        brief:
+          'Disconnect from the internet. Record three sales in your app. Reconnect. Confirm all three sync to the server within 30 seconds and appear on the admin panel.',
+        successCriteria: [
+          'Sales recorded offline persisted to local SQLite',
+          'Outbox rows visible while offline',
+          'After reconnect, sales appear on the server side',
+        ],
+      },
     },
     {
       slug: 'frameless',
@@ -1220,16 +1240,26 @@ const desktopCourse: Course = {
       title: 'Frameless Window UI',
       tagline: 'Custom titlebar, drag regions, polished feel.',
       learningGoals: ['Build a custom titlebar', 'Wire drag regions', 'Window controls (min/max/close)'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Shell',
           lessons: [
-            { slug: 'titlebar', title: 'Custom titlebar', tagline: '--wails-draggable + Tailwind.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'window-controls', title: 'Window controls', tagline: 'Min, max, close, traffic lights.', minutes: 6, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'titlebar', title: 'Custom titlebar', tagline: '--wails-draggable + Tailwind.', minutes: 7, difficulty: 'medium', status: 'available' },
+            { slug: 'window-controls', title: 'Window controls', tagline: 'Min, max, close, traffic lights.', minutes: 6, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Polished titlebar with controls',
+        brief:
+          'Build a custom titlebar with your app icon on the left, title centred, and minimise/maximise/close buttons on the right. Make the empty area draggable.',
+        successCriteria: [
+          'Dragging anywhere on the empty titlebar moves the window',
+          'Min / Max / Close all work',
+          'Buttons are NOT in the drag region (don\'t move the window when clicked)',
+        ],
+      },
     },
     {
       slug: 'auto-update',
@@ -1237,17 +1267,27 @@ const desktopCourse: Course = {
       title: 'In-App Auto-Update',
       tagline: 'Binary swap + GitHub releases + modal UI.',
       learningGoals: ['Wire the updater', 'Build the modal UI', 'Cut a release that auto-distributes'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Updater',
           lessons: [
-            { slug: 'updater-go', title: 'updater.go', tagline: 'The Wails binding + binary swap.', minutes: 9, difficulty: 'hard', status: 'coming-soon' },
-            { slug: 'modal-ui', title: 'Modal + banner UI', tagline: 'React components shipping in scaffold.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'release-script', title: 'release-desktop.sh', tagline: 'One-shot pipeline.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'updater-go', title: 'updater.go', tagline: 'The Wails binding + binary swap.', minutes: 9, difficulty: 'hard', status: 'available' },
+            { slug: 'modal-ui', title: 'Modal + banner UI', tagline: 'React components shipping in scaffold.', minutes: 7, difficulty: 'medium', status: 'available' },
+            { slug: 'release-script', title: 'release-desktop.sh', tagline: 'One-shot pipeline.', minutes: 8, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Cut v0.1.1 and watch v0.1.0 auto-update',
+        brief:
+          'Install v0.1.0 of your app. Change a small thing, bump version to 0.1.1, run release-desktop.sh. The running v0.1.0 should detect the new release, prompt the user, and swap to v0.1.1.',
+        successCriteria: [
+          'GitHub release v0.1.1 published with installer + raw .exe',
+          'Running v0.1.0 shows update banner',
+          'Clicking Install swaps the binary; relaunch shows v0.1.1',
+        ],
+      },
     },
     {
       slug: 'installers',
@@ -1255,17 +1295,27 @@ const desktopCourse: Course = {
       title: 'Branded Installers',
       tagline: 'NSIS full + slim, branded MUI bitmaps.',
       learningGoals: ['Customize NSIS', 'Choose between full + slim', 'Generate branded bitmaps'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'NSIS',
           lessons: [
-            { slug: 'project-nsi', title: 'project.nsi (full)', tagline: 'Bundled WebView2 — no internet needed.', minutes: 8, difficulty: 'hard', status: 'coming-soon' },
-            { slug: 'project-slim', title: 'project-slim.nsi', tagline: 'Online bootstrapper — small download.', minutes: 6, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'bitmaps', title: 'Branded bitmaps', tagline: 'header.bmp + welcome.bmp from icon.ico.', minutes: 5, difficulty: 'easy', status: 'coming-soon' },
+            { slug: 'project-nsi', title: 'project.nsi (full)', tagline: 'Bundled WebView2 — no internet needed.', minutes: 8, difficulty: 'hard', status: 'available' },
+            { slug: 'project-slim', title: 'project-slim.nsi', tagline: 'Online bootstrapper — small download.', minutes: 6, difficulty: 'medium', status: 'available' },
+            { slug: 'bitmaps', title: 'Branded bitmaps', tagline: 'header.bmp + welcome.bmp from icon.ico.', minutes: 5, difficulty: 'easy', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Two installers, both branded',
+        brief:
+          'Generate the full installer (~150MB, bundled WebView2) AND the slim installer (~22MB, online bootstrap). Both should have a branded MUI Welcome page with your icon. Install both, uninstall both.',
+        successCriteria: [
+          'Full installer works on a machine with no internet',
+          'Slim installer downloads + installs WebView2 if missing',
+          'Both show the branded Welcome bitmap',
+        ],
+      },
     },
   ],
 }

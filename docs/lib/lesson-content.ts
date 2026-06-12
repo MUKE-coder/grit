@@ -104,6 +104,26 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
   'web-nextjs/tenants/tenant-models': () => import('@/content/lessons/web-nextjs/tenants/tenant-models'),
   'web-nextjs/tenants/role-gates': () => import('@/content/lessons/web-nextjs/tenants/role-gates'),
   'web-nextjs/tenants/invitations': () => import('@/content/lessons/web-nextjs/tenants/invitations'),
+
+  /* ─── Desktop (Wails) course ──────────────────────── */
+  'desktop/scaffold/scaffold': () => import('@/content/lessons/desktop/scaffold/scaffold'),
+  'desktop/scaffold/wails-dev': () => import('@/content/lessons/desktop/scaffold/wails-dev'),
+  'desktop/scaffold/first-build': () => import('@/content/lessons/desktop/scaffold/first-build'),
+
+  'desktop/offline/sqlite': () => import('@/content/lessons/desktop/offline/sqlite'),
+  'desktop/offline/outbox': () => import('@/content/lessons/desktop/offline/outbox'),
+  'desktop/offline/sync': () => import('@/content/lessons/desktop/offline/sync'),
+
+  'desktop/frameless/titlebar': () => import('@/content/lessons/desktop/frameless/titlebar'),
+  'desktop/frameless/window-controls': () => import('@/content/lessons/desktop/frameless/window-controls'),
+
+  'desktop/auto-update/updater-go': () => import('@/content/lessons/desktop/auto-update/updater-go'),
+  'desktop/auto-update/modal-ui': () => import('@/content/lessons/desktop/auto-update/modal-ui'),
+  'desktop/auto-update/release-script': () => import('@/content/lessons/desktop/auto-update/release-script'),
+
+  'desktop/installers/project-nsi': () => import('@/content/lessons/desktop/installers/project-nsi'),
+  'desktop/installers/project-slim': () => import('@/content/lessons/desktop/installers/project-slim'),
+  'desktop/installers/bitmaps': () => import('@/content/lessons/desktop/installers/bitmaps'),
 }
 
 export async function loadLessonContent(
