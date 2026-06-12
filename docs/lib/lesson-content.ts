@@ -85,6 +85,25 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
   'mobile/ship/eas-build': () => import('@/content/lessons/mobile/ship/eas-build'),
   'mobile/ship/submit': () => import('@/content/lessons/mobile/ship/submit'),
   'mobile/ship/ota': () => import('@/content/lessons/mobile/ship/ota'),
+
+  /* ─── Web (Next.js) course ──────────────────────────── */
+  'web-nextjs/scaffold/scaffold': () => import('@/content/lessons/web-nextjs/scaffold/scaffold'),
+  'web-nextjs/scaffold/tour': () => import('@/content/lessons/web-nextjs/scaffold/tour'),
+  'web-nextjs/scaffold/shared-package': () => import('@/content/lessons/web-nextjs/scaffold/shared-package'),
+
+  'web-nextjs/public-site/landing': () => import('@/content/lessons/web-nextjs/public-site/landing'),
+  'web-nextjs/public-site/seo': () => import('@/content/lessons/web-nextjs/public-site/seo'),
+
+  'web-nextjs/dashboard/signup': () => import('@/content/lessons/web-nextjs/dashboard/signup'),
+  'web-nextjs/dashboard/dashboard-widgets': () => import('@/content/lessons/web-nextjs/dashboard/dashboard-widgets'),
+
+  'web-nextjs/admin-panel/define-resource': () => import('@/content/lessons/web-nextjs/admin-panel/define-resource'),
+  'web-nextjs/admin-panel/datatable': () => import('@/content/lessons/web-nextjs/admin-panel/datatable'),
+  'web-nextjs/admin-panel/formbuilder': () => import('@/content/lessons/web-nextjs/admin-panel/formbuilder'),
+
+  'web-nextjs/tenants/tenant-models': () => import('@/content/lessons/web-nextjs/tenants/tenant-models'),
+  'web-nextjs/tenants/role-gates': () => import('@/content/lessons/web-nextjs/tenants/role-gates'),
+  'web-nextjs/tenants/invitations': () => import('@/content/lessons/web-nextjs/tenants/invitations'),
 }
 
 export async function loadLessonContent(

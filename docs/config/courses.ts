@@ -894,7 +894,7 @@ const webNextCourse: Course = {
     'Building marketing pages that ship fast',
   ],
   whoThisIsFor: ['Devs who completed Grit Concepts', 'React devs new to the App Router or full-stack'],
-  status: 'coming-soon',
+  status: 'available',
   emoji: '🌐',
   accent: 'from-emerald-500/30 via-green-500/20 to-emerald-500/10',
   chapters: [
@@ -904,17 +904,27 @@ const webNextCourse: Course = {
       title: 'Scaffold + Tour',
       tagline: 'grit new --triple — three apps at once.',
       learningGoals: ['Scaffold the triple kit', 'Understand the monorepo wiring', 'Run all three apps together'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Setup',
           lessons: [
-            { slug: 'scaffold', title: 'Scaffolding the triple', tagline: 'The command + what it produces.', minutes: 6, difficulty: 'easy', status: 'coming-soon' },
-            { slug: 'tour', title: 'apps/web + apps/admin + apps/api', tagline: 'Three apps, one monorepo.', minutes: 8, difficulty: 'easy', status: 'coming-soon' },
-            { slug: 'shared-package', title: 'packages/shared', tagline: 'Where types + schemas live.', minutes: 5, difficulty: 'easy', status: 'coming-soon' },
+            { slug: 'scaffold', title: 'Scaffolding the triple', tagline: 'The command + what it produces.', minutes: 6, difficulty: 'easy', status: 'available' },
+            { slug: 'tour', title: 'apps/web + apps/admin + apps/api', tagline: 'Three apps, one monorepo.', minutes: 8, difficulty: 'easy', status: 'available' },
+            { slug: 'shared-package', title: 'packages/shared', tagline: 'Where types + schemas live.', minutes: 5, difficulty: 'easy', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'All three apps running locally',
+        brief:
+          'Scaffold `saas --triple`, get web on :3000, admin on :3001, API on :8080. Log in as the seeded admin. Screenshot all three.',
+        successCriteria: [
+          'web, admin, api respond on their ports',
+          'You can log into admin with the seeded credentials',
+          'Three screenshots in notes.md',
+        ],
+      },
     },
     {
       slug: 'public-site',
@@ -922,16 +932,26 @@ const webNextCourse: Course = {
       title: 'The Public Site',
       tagline: 'Marketing pages that load fast.',
       learningGoals: ['Build a landing page', 'Add a blog', 'SEO + Open Graph'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Marketing',
           lessons: [
-            { slug: 'landing', title: 'Landing page', tagline: 'Hero, features, CTA — the standard parts.', minutes: 9, difficulty: 'easy', status: 'coming-soon' },
-            { slug: 'seo', title: 'SEO + OG', tagline: 'Metadata + sitemap + robots.', minutes: 6, difficulty: 'easy', status: 'coming-soon' },
+            { slug: 'landing', title: 'Landing page', tagline: 'Hero, features, CTA — the standard parts.', minutes: 9, difficulty: 'easy', status: 'available' },
+            { slug: 'seo', title: 'SEO + OG', tagline: 'Metadata + sitemap + robots.', minutes: 6, difficulty: 'easy', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Ship a marketing site',
+        brief:
+          'Build a landing page for your product with a hero, three features, and a CTA. Add OG image + metadata + sitemap. Verify with Lighthouse — performance + SEO both 90+.',
+        successCriteria: [
+          'Landing page renders with hero/features/CTA',
+          'Lighthouse SEO score >= 90',
+          'OG image renders in the Facebook debugger',
+        ],
+      },
     },
     {
       slug: 'dashboard',
@@ -939,16 +959,26 @@ const webNextCourse: Course = {
       title: 'The User Dashboard',
       tagline: 'Signup → dashboard → settings.',
       learningGoals: ['Wire signup + login', 'Build dashboard widgets', 'Settings page with profile'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Auth UI',
           lessons: [
-            { slug: 'signup', title: 'Signup + login forms', tagline: 'Server actions + Zod.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'dashboard-widgets', title: 'Dashboard widgets', tagline: 'Stats, charts, activity feed.', minutes: 9, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'signup', title: 'Signup + login forms', tagline: 'Server actions + Zod.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'dashboard-widgets', title: 'Dashboard widgets', tagline: 'Stats, charts, activity feed.', minutes: 9, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Working dashboard',
+        brief:
+          'Sign up a new user. Land them on a dashboard with three stat cards (users, posts, revenue) and an activity feed of recent actions.',
+        successCriteria: [
+          'Signup creates an account on the API and stores tokens in cookies',
+          'Dashboard renders three stat cards',
+          'Activity feed shows real DB rows',
+        ],
+      },
     },
     {
       slug: 'admin-panel',
@@ -956,17 +986,27 @@ const webNextCourse: Course = {
       title: 'The Admin Panel',
       tagline: 'Filament-style resource panel for staff.',
       learningGoals: ['Use defineResource()', 'Customize DataTable', 'Build forms with FormBuilder'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Admin',
           lessons: [
-            { slug: 'define-resource', title: 'defineResource()', tagline: 'The runtime resource definition.', minutes: 9, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'datatable', title: 'DataTable', tagline: 'Sort, filter, select, paginate.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'formbuilder', title: 'FormBuilder', tagline: '8 field types, validation, dependent fields.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'define-resource', title: 'defineResource()', tagline: 'The runtime resource definition.', minutes: 9, difficulty: 'medium', status: 'available' },
+            { slug: 'datatable', title: 'DataTable', tagline: 'Sort, filter, select, paginate.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'formbuilder', title: 'FormBuilder', tagline: '8 field types, validation, dependent fields.', minutes: 8, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Full CRUD for Product',
+        brief:
+          'Generate a Product resource. Use defineResource() to build the admin page. List view shows price formatted as money, name searchable, status filterable. Form has name, price, stock, description, isActive.',
+        successCriteria: [
+          'Product admin lists, filters, sorts, paginates correctly',
+          'Form creates + edits products without crashes',
+          'Price column shows formatted money',
+        ],
+      },
     },
     {
       slug: 'tenants',
@@ -974,17 +1014,27 @@ const webNextCourse: Course = {
       title: 'Tenants + Roles',
       tagline: 'Multi-tenant SaaS the right way.',
       learningGoals: ['Add tenants to your models', 'Wire role-based UI', 'Invitation flow end-to-end'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Multi-tenancy',
           lessons: [
-            { slug: 'tenant-models', title: 'Tenant models', tagline: 'Tenant-scoped queries on every read.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'role-gates', title: 'Role gates in the UI', tagline: 'Hide actions the user can\'t do.', minutes: 6, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'invitations', title: 'Invitation flow', tagline: 'Email invite + accept + role assign.', minutes: 9, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'tenant-models', title: 'Tenant models', tagline: 'Tenant-scoped queries on every read.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'role-gates', title: 'Role gates in the UI', tagline: 'Hide actions the user can\'t do.', minutes: 6, difficulty: 'medium', status: 'available' },
+            { slug: 'invitations', title: 'Invitation flow', tagline: 'Email invite + accept + role assign.', minutes: 9, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Invite a team member end-to-end',
+        brief:
+          'As an admin, invite a teammate by email. They click the link, set a password, land in your tenant with `staff` role. They can see customers but not invoices (a role gate).',
+        successCriteria: [
+          'Invitation email lands in Mailhog',
+          'Accepting the invite creates the user with the right role + tenant',
+          'A role-gated page hides itself for the staff user',
+        ],
+      },
     },
   ],
 }
