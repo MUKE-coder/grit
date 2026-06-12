@@ -1,7 +1,8 @@
 import Link from "next/link"
-import { Globe, Monitor, Smartphone, Clock, ArrowRight, BookOpen, Zap, Server, Dumbbell, ShoppingCart, FileText, Shield, Activity, Database, Code2, Rocket, Bot, Receipt, TestTube2, HardDrive, MessageSquare, CreditCard, Newspaper, GitBranch, Wrench, Palette, Wifi, ShieldCheck, Flag, Cable, Layers, FileSpreadsheet } from "lucide-react"
+import { Globe, Monitor, Smartphone, Clock, ArrowRight, BookOpen, Zap, Server, Dumbbell, ShoppingCart, FileText, Shield, Activity, Database, Code2, Rocket, Bot, Receipt, TestTube2, HardDrive, MessageSquare, CreditCard, Newspaper, GitBranch, Wrench, Palette, Wifi, ShieldCheck, Flag, Cable, Layers, FileSpreadsheet, GraduationCap, Trophy, ListChecks, Construction, Sparkles } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import type { Metadata } from "next"
+import { COURSES, flatLessons, courseTotalMinutes } from "@/config/courses"
 
 export const metadata: Metadata = {
   title: "Grit Courses",
@@ -139,9 +140,101 @@ export default function CoursesPage() {
           </div>
         </section>
 
-        {/* Course categories */}
+        {/* Learning Paths — kit-based multi-chapter courses */}
+        <section className="py-16 border-b border-border/30">
+          <div className="container max-w-screen-xl px-6">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 rounded-full bg-violet-500/10 border border-violet-500/20 px-3 py-1 text-xs font-mono font-medium text-violet-400 mb-4">
+                <GraduationCap className="h-3.5 w-3.5" />
+                Learning Paths
+              </div>
+              <h2 className="text-3xl font-bold text-foreground tracking-tight mb-3">
+                Pick your kit, follow a path
+              </h2>
+              <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                Multi-chapter courses built around the seven Grit tech kits. Each has
+                its own chapters, lessons, exercises, and end-of-chapter assignments —
+                tuned for beginners and designed to be worked through in order.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-4">
+              {COURSES.map((course) => {
+                const lessons = flatLessons(course).length
+                const hours = Math.round(courseTotalMinutes(course) / 60)
+                const isComing = course.status === "coming-soon"
+                return (
+                  <Link
+                    key={course.slug}
+                    href={`/courses/${course.slug}`}
+                    className={`group relative overflow-hidden rounded-2xl border border-border/40 bg-card/30 p-5 hover:border-primary/40 hover:bg-card/60 transition-all flex flex-col`}
+                  >
+                    <div className={`absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gradient-to-br ${course.accent} blur-2xl opacity-50 pointer-events-none`} />
+                    <div className="relative flex items-start gap-3 mb-3">
+                      <span className="text-3xl shrink-0" aria-hidden="true">{course.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors leading-tight mb-1">
+                          {course.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                          {course.tagline}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="relative flex items-center gap-3 text-[10px] font-mono text-muted-foreground/80 mb-4">
+                      <span className="inline-flex items-center gap-1">
+                        <BookOpen className="h-2.5 w-2.5" />
+                        {course.chapters.length} ch
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <ListChecks className="h-2.5 w-2.5" />
+                        {lessons} lessons
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-2.5 w-2.5" />
+                        ~{hours}h
+                      </span>
+                    </div>
+                    <div className="relative mt-auto flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-primary group-hover:gap-2.5 transition-all">
+                        {isComing ? "Preview outline" : "Start course"}
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </span>
+                      {isComing && (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-mono text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-full px-1.5 py-0.5">
+                          <Construction className="h-2.5 w-2.5" />
+                          In production
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+
+            <p className="text-center text-xs text-muted-foreground/70 mt-6">
+              <Sparkles className="inline h-3 w-3 mr-1 text-primary" />
+              Start with <Link href="/courses/concepts" className="text-primary hover:underline">Grit Concepts</Link> if you&apos;re new — every other path assumes it.
+            </p>
+          </div>
+        </section>
+
+        {/* Focused Tutorials (legacy categories) */}
         <section className="py-16">
           <div className="container max-w-screen-xl px-6">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-4">
+                <Zap className="h-3.5 w-3.5" />
+                Focused Tutorials
+              </div>
+              <h2 className="text-3xl font-bold text-foreground tracking-tight mb-3">
+                Bite-sized walk-throughs
+              </h2>
+              <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                Shorter, focused tutorials on specific topics — pick one, finish in
+                ~30 minutes, build something concrete.
+              </p>
+            </div>
             <div className="grid gap-6 md:grid-cols-3">
               {categories.map((cat) => (
                 <Link

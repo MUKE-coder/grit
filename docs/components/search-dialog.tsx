@@ -25,13 +25,58 @@ import {
   FileText,
   Monitor,
   Plug,
+  GraduationCap,
 } from 'lucide-react'
+import { COURSES } from '@/config/courses'
 
 interface SearchItem {
   title: string
   href: string
   section: string
   keywords: string
+}
+
+// Auto-generated course entries: every course, every chapter, every lesson
+// becomes searchable. Pulls from courses.ts so a new lesson just needs to
+// land in the data model — no manual search-index updates.
+function buildCourseSearchItems(): SearchItem[] {
+  const out: SearchItem[] = []
+  for (const course of COURSES) {
+    const section = `Courses · ${course.shortName}`
+    out.push({
+      title: `Course: ${course.name}`,
+      href: `/courses/${course.slug}`,
+      section,
+      keywords: `${course.name} ${course.shortName} ${course.tagline} ${course.whatYoullLearn.join(' ')} ${course.emoji} learning path course curriculum`,
+    })
+    for (const chapter of course.chapters) {
+      out.push({
+        title: `${course.shortName} · ch.${chapter.number}: ${chapter.title}`,
+        href: `/courses/${course.slug}/${chapter.slug}`,
+        section,
+        keywords: `${chapter.title} ${chapter.tagline} ${chapter.learningGoals.join(' ')} chapter ${chapter.number}`,
+      })
+      for (const module of chapter.modules) {
+        for (const lesson of module.lessons) {
+          out.push({
+            title: `${course.shortName} · ${lesson.title}`,
+            href: `/courses/${course.slug}/${chapter.slug}/${lesson.slug}`,
+            section,
+            keywords: `${lesson.title} ${lesson.tagline} ${module.title} ${chapter.title} lesson ${lesson.minutes}m ${lesson.difficulty}`,
+          })
+        }
+      }
+      if (chapter.assignment) {
+        out.push({
+          title: `${course.shortName} · ch.${chapter.number} Assignment: ${chapter.assignment.title}`,
+          href: `/courses/${course.slug}/${chapter.slug}/assignment`,
+          section,
+          keywords: `${chapter.assignment.title} ${chapter.assignment.brief} assignment exercise practice ${chapter.title}`,
+        })
+      }
+    }
+  }
+  return out
 }
 
 const searchIndex: SearchItem[] = [
@@ -154,6 +199,9 @@ const searchIndex: SearchItem[] = [
 
   // Plugins
   { title: 'Plugins Overview', href: '/docs/plugins', section: 'Plugins', keywords: 'plugins extensions websockets stripe oauth grit-websockets grit-stripe grit-oauth packages' },
+
+  // Auto-generated learning-path entries (every course, chapter, lesson, assignment)
+  ...buildCourseSearchItems(),
 ]
 
 const sectionIcons: Record<string, React.ReactNode> = {
@@ -170,6 +218,10 @@ const sectionIcons: Record<string, React.ReactNode> = {
   'AI Workflows': <Wand2 className="h-3.5 w-3.5" />,
   'Desktop (Wails)': <Monitor className="h-3.5 w-3.5" />,
   'Plugins': <Plug className="h-3.5 w-3.5" />,
+  // Every course's section icon — auto-applied via the COURSES list above.
+  ...Object.fromEntries(
+    COURSES.map((c) => [`Courses · ${c.shortName}`, <GraduationCap key={c.slug} className="h-3.5 w-3.5" />]),
+  ),
 }
 
 export function SearchDialog() {

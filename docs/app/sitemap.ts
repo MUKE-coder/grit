@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next'
+import { COURSES } from '@/config/courses'
 
 const baseUrl = 'https://gritframework.dev'
 
@@ -151,6 +152,35 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Course (legacy single course page)
     { path: '/course', priority: 0.5, changeFrequency: 'monthly' as const },
   ]
+
+  // Learning Paths — auto-generate routes for every course, chapter, lesson,
+  // and assignment from courses.ts so a sitemap entry exists for each.
+  for (const course of COURSES) {
+    routes.push({ path: `/courses/${course.slug}`, priority: 0.9, changeFrequency: 'weekly' as const })
+    for (const chapter of course.chapters) {
+      routes.push({
+        path: `/courses/${course.slug}/${chapter.slug}`,
+        priority: 0.7,
+        changeFrequency: 'monthly' as const,
+      })
+      for (const module of chapter.modules) {
+        for (const lesson of module.lessons) {
+          routes.push({
+            path: `/courses/${course.slug}/${chapter.slug}/${lesson.slug}`,
+            priority: lesson.status === 'available' ? 0.7 : 0.4,
+            changeFrequency: 'monthly' as const,
+          })
+        }
+      }
+      if (chapter.assignment) {
+        routes.push({
+          path: `/courses/${course.slug}/${chapter.slug}/assignment`,
+          priority: 0.6,
+          changeFrequency: 'monthly' as const,
+        })
+      }
+    }
+  }
 
   return routes.map((route) => ({
     url: `${baseUrl}${route.path}`,
