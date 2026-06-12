@@ -40,6 +40,32 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
   'concepts/architecture-modes/triple-mode': () => import('@/content/lessons/concepts/architecture-modes/triple-mode'),
   'concepts/architecture-modes/specialized-modes': () => import('@/content/lessons/concepts/architecture-modes/specialized-modes'),
   'concepts/architecture-modes/choosing-a-kit': () => import('@/content/lessons/concepts/architecture-modes/choosing-a-kit'),
+
+  /* ─── Building a Go API course ─────────────────────── */
+  'go-api/scaffold-tour/scaffold': () => import('@/content/lessons/go-api/scaffold-tour/scaffold'),
+  'go-api/scaffold-tour/project-tour': () => import('@/content/lessons/go-api/scaffold-tour/project-tour'),
+  'go-api/scaffold-tour/first-request': () => import('@/content/lessons/go-api/scaffold-tour/first-request'),
+
+  'go-api/models/gorm-basics': () => import('@/content/lessons/go-api/models/gorm-basics'),
+  'go-api/models/relations': () => import('@/content/lessons/go-api/models/relations'),
+  'go-api/models/migrations': () => import('@/content/lessons/go-api/models/migrations'),
+
+  'go-api/auth/jwt': () => import('@/content/lessons/go-api/auth/jwt'),
+  'go-api/auth/oauth': () => import('@/content/lessons/go-api/auth/oauth'),
+  'go-api/auth/totp': () => import('@/content/lessons/go-api/auth/totp'),
+  'go-api/auth/rbac': () => import('@/content/lessons/go-api/auth/rbac'),
+
+  'go-api/batteries/jobs': () => import('@/content/lessons/go-api/batteries/jobs'),
+  'go-api/batteries/mail': () => import('@/content/lessons/go-api/batteries/mail'),
+  'go-api/batteries/storage': () => import('@/content/lessons/go-api/batteries/storage'),
+  'go-api/batteries/ai': () => import('@/content/lessons/go-api/batteries/ai'),
+
+  'go-api/security-observability/sentinel': () => import('@/content/lessons/go-api/security-observability/sentinel'),
+  'go-api/security-observability/pulse': () => import('@/content/lessons/go-api/security-observability/pulse'),
+  'go-api/security-observability/audit-log': () => import('@/content/lessons/go-api/security-observability/audit-log'),
+
+  'go-api/deploy/grit-deploy': () => import('@/content/lessons/go-api/deploy/grit-deploy'),
+  'go-api/deploy/env-config': () => import('@/content/lessons/go-api/deploy/env-config'),
 }
 
 export async function loadLessonContent(

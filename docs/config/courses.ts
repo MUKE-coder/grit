@@ -528,7 +528,7 @@ const goApiCourse: Course = {
     'Deploying to a VPS with grit deploy',
   ],
   whoThisIsFor: ['Devs who finished Grit Concepts', 'Backend devs new to Go but experienced elsewhere'],
-  status: 'coming-soon',
+  status: 'available',
   emoji: '🦫',
   accent: 'from-sky-500/30 via-cyan-500/20 to-sky-500/10',
   chapters: [
@@ -538,17 +538,27 @@ const goApiCourse: Course = {
       title: 'Scaffold + Tour',
       tagline: 'grit new --api and a deep tour of the Go-only project shape.',
       learningGoals: ['Scaffold an API-only project', 'Identify every Go file', 'Run + curl /api/health'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Start',
           lessons: [
-            { slug: 'scaffold', title: 'Scaffolding the API', tagline: 'grit new my-api --api walkthrough.', minutes: 5, difficulty: 'easy', status: 'coming-soon' },
-            { slug: 'project-tour', title: 'Project tour', tagline: 'cmd/server, internal/, the Services pattern.', minutes: 8, difficulty: 'easy', status: 'coming-soon' },
-            { slug: 'first-request', title: 'Your first request', tagline: 'docker compose up, run the API, hit /api/health.', minutes: 4, difficulty: 'easy', status: 'coming-soon' },
+            { slug: 'scaffold', title: 'Scaffolding the API', tagline: 'grit new my-api --api walkthrough.', minutes: 5, difficulty: 'easy', status: 'available' },
+            { slug: 'project-tour', title: 'Project tour', tagline: 'cmd/server, internal/, the Services pattern.', minutes: 8, difficulty: 'easy', status: 'available' },
+            { slug: 'first-request', title: 'Your first request', tagline: 'docker compose up, run the API, hit /api/health.', minutes: 4, difficulty: 'easy', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Scaffold, run, and document',
+        brief:
+          'Scaffold `bench-api --api`, get it running, hit /api/health, and capture a short README in your notes.md describing what each top-level folder is for.',
+        successCriteria: [
+          '`grit new bench-api --api` ran to completion',
+          'GET /api/health returns 200 with the version envelope',
+          'notes.md describes apps/api/cmd/server/, internal/, and the root .env in one sentence each',
+        ],
+      },
     },
     {
       slug: 'models',
@@ -556,17 +566,27 @@ const goApiCourse: Course = {
       title: 'Modeling with GORM',
       tagline: 'Define your data layer the Grit way.',
       learningGoals: ['Design relational models', 'Use AutoMigrate', 'Apply constraints and indexes'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Core',
           lessons: [
-            { slug: 'gorm-basics', title: 'GORM basics', tagline: 'Models, tags, the convention surface.', minutes: 7, difficulty: 'easy', status: 'coming-soon' },
-            { slug: 'relations', title: 'Relations', tagline: 'HasMany, BelongsTo, ManyToMany.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'migrations', title: 'Migrations', tagline: 'Auto vs. explicit, when to switch.', minutes: 6, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'gorm-basics', title: 'GORM basics', tagline: 'Models, tags, the convention surface.', minutes: 7, difficulty: 'easy', status: 'available' },
+            { slug: 'relations', title: 'Relations', tagline: 'HasMany, BelongsTo, ManyToMany.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'migrations', title: 'Migrations', tagline: 'Auto vs. explicit, when to switch.', minutes: 6, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Model a small invoice domain',
+        brief:
+          'Add three models: Customer (has many Invoices), Invoice (belongs to Customer, has many LineItems), LineItem (belongs to Invoice). Run `grit migrate` and confirm the foreign keys exist via GORM Studio.',
+        successCriteria: [
+          'Three models exist with the relations wired',
+          'AutoMigrate created the tables + FK columns',
+          'GORM Studio shows the relationships',
+        ],
+      },
     },
     {
       slug: 'auth',
@@ -574,23 +594,33 @@ const goApiCourse: Course = {
       title: 'Auth & RBAC',
       tagline: 'JWT, OAuth2, 2FA, and role-based access.',
       learningGoals: ['Add JWT auth', 'Wire OAuth2 (Google + GitHub)', 'Add TOTP 2FA', 'Apply role guards'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Auth',
           lessons: [
-            { slug: 'jwt', title: 'JWT auth', tagline: 'Login, refresh, middleware.', minutes: 9, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'oauth', title: 'OAuth2', tagline: 'Google + GitHub sign-in.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'totp', title: 'TOTP 2FA', tagline: 'Authenticator-app codes.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'jwt', title: 'JWT auth', tagline: 'Login, refresh, middleware.', minutes: 9, difficulty: 'medium', status: 'available' },
+            { slug: 'oauth', title: 'OAuth2', tagline: 'Google + GitHub sign-in.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'totp', title: 'TOTP 2FA', tagline: 'Authenticator-app codes.', minutes: 7, difficulty: 'medium', status: 'available' },
           ],
         },
         {
           title: 'Access control',
           lessons: [
-            { slug: 'rbac', title: 'RBAC + invitations', tagline: 'Roles, ownership, team invites.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'rbac', title: 'RBAC + invitations', tagline: 'Roles, ownership, team invites.', minutes: 8, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Lock down a route',
+        brief:
+          'Add a `/api/admin/stats` endpoint that returns user counts. Protect it with the Auth middleware AND `RequireRoles("admin")`. Verify a regular user gets 404 and an admin gets 200.',
+        successCriteria: [
+          'Endpoint exists and is reachable from the admin role',
+          'Non-admin users receive 404 (not 403 — see lesson 3.4)',
+          'You can paste both responses (curl) into notes.md',
+        ],
+      },
     },
     {
       slug: 'batteries',
@@ -598,18 +628,28 @@ const goApiCourse: Course = {
       title: 'Batteries: Jobs, Mail, Storage, AI',
       tagline: 'The included primitives that ship with every Grit API.',
       learningGoals: ['Run background jobs', 'Send transactional email', 'Upload files', 'Call the AI Gateway'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Async + IO',
           lessons: [
-            { slug: 'jobs', title: 'Background jobs (Asynq)', tagline: 'Enqueue, retry, schedule.', minutes: 9, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'mail', title: 'Transactional email', tagline: 'Resend + HTML templates.', minutes: 6, difficulty: 'easy', status: 'coming-soon' },
-            { slug: 'storage', title: 'File storage', tagline: 'S3-compatible: R2, MinIO, B2.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'ai', title: 'AI Gateway', tagline: 'Streaming + 100+ models.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'jobs', title: 'Background jobs (Asynq)', tagline: 'Enqueue, retry, schedule.', minutes: 9, difficulty: 'medium', status: 'available' },
+            { slug: 'mail', title: 'Transactional email', tagline: 'Resend + HTML templates.', minutes: 6, difficulty: 'easy', status: 'available' },
+            { slug: 'storage', title: 'File storage', tagline: 'S3-compatible: R2, MinIO, B2.', minutes: 7, difficulty: 'medium', status: 'available' },
+            { slug: 'ai', title: 'AI Gateway', tagline: 'Streaming + 100+ models.', minutes: 8, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Welcome flow end-to-end',
+        brief:
+          'When a user signs up: enqueue a welcome-email job (Asynq) that sends an HTML email (Resend → Mailhog in dev), uploads a default avatar to MinIO, and writes one line of a personalised greeting via the AI Gateway. Wire all three.',
+        successCriteria: [
+          'Mailhog captures a styled welcome email',
+          'MinIO console shows the avatar upload',
+          'The greeting line shows in the email body',
+        ],
+      },
     },
     {
       slug: 'security-observability',
@@ -617,17 +657,27 @@ const goApiCourse: Course = {
       title: 'Security + Observability',
       tagline: 'Sentinel WAF + Pulse + audit log — the production safety net.',
       learningGoals: ['Configure Sentinel', 'Read Pulse', 'Wire the audit log'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Production safety',
           lessons: [
-            { slug: 'sentinel', title: 'Sentinel WAF', tagline: 'Rate limit, AuthShield, Anomaly.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'pulse', title: 'Pulse observability', tagline: 'p50/p95/p99 + per-route metrics.', minutes: 7, difficulty: 'easy', status: 'coming-soon' },
-            { slug: 'audit-log', title: 'Audit log', tagline: 'Tamper-evident SHA-256 chain.', minutes: 6, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'sentinel', title: 'Sentinel WAF', tagline: 'Rate limit, AuthShield, Anomaly.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'pulse', title: 'Pulse observability', tagline: 'p50/p95/p99 + per-route metrics.', minutes: 7, difficulty: 'easy', status: 'available' },
+            { slug: 'audit-log', title: 'Audit log', tagline: 'Tamper-evident SHA-256 chain.', minutes: 6, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Trip Sentinel + read Pulse',
+        brief:
+          'Hit `/api/auth/login` with bad credentials 6 times in a row to trigger Sentinel AuthShield. Then open Pulse and screenshot the p95 latency for `/api/health` over the last hour.',
+        successCriteria: [
+          '6th login attempt is blocked (429 or similar)',
+          'Sentinel dashboard shows the AuthShield event',
+          'Pulse screenshot includes the p95 line',
+        ],
+      },
     },
     {
       slug: 'deploy',
@@ -635,16 +685,26 @@ const goApiCourse: Course = {
       title: 'Deploy',
       tagline: 'Ship to a VPS with one command.',
       learningGoals: ['Configure production env', 'Run `grit deploy`', 'Set up HTTPS + a domain'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Shipping',
           lessons: [
-            { slug: 'grit-deploy', title: 'grit deploy', tagline: 'The deploy command, end to end.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'env-config', title: 'Production env vars', tagline: 'Secrets, JWT, database — the must-set list.', minutes: 5, difficulty: 'easy', status: 'coming-soon' },
+            { slug: 'grit-deploy', title: 'grit deploy', tagline: 'The deploy command, end to end.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'env-config', title: 'Production env vars', tagline: 'Secrets, JWT, database — the must-set list.', minutes: 5, difficulty: 'easy', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Ship to a test domain',
+        brief:
+          'Spin up a $5 VPS, point a subdomain at it, and run `grit deploy --domain api.<your-domain>`. Verify HTTPS works and `/api/health` is reachable from your phone.',
+        successCriteria: [
+          'Public URL serves /api/health over HTTPS',
+          'The Let\'s Encrypt cert is valid (green padlock)',
+          'You captured the response from a non-localhost client',
+        ],
+      },
     },
   ],
 }

@@ -23,9 +23,15 @@ export function CourseSidebar({ course }: Props) {
     pathname.startsWith(`/courses/${course.slug}/${ch.slug}`),
   )
 
-  const [openChapters, setOpenChapters] = useState<Set<string>>(
-    new Set(currentChapter ? [currentChapter.slug] : course.chapters.map((c) => c.slug)),
-  )
+  // Collapsed by default. Open the current chapter if we're inside one;
+  // otherwise open only the first chapter (so users always have a starting
+  // point visible without having to fight a wall of sections).
+  const initialOpen = currentChapter
+    ? [currentChapter.slug]
+    : course.chapters[0]
+    ? [course.chapters[0].slug]
+    : []
+  const [openChapters, setOpenChapters] = useState<Set<string>>(new Set(initialOpen))
 
   const toggle = (slug: string) => {
     setOpenChapters((prev) => {
@@ -62,9 +68,14 @@ export function CourseSidebarMobile({ course }: Props) {
   const currentChapter = course.chapters.find((ch) =>
     pathname.startsWith(`/courses/${course.slug}/${ch.slug}`),
   )
-  const [openChapters, setOpenChapters] = useState<Set<string>>(
-    new Set(currentChapter ? [currentChapter.slug] : []),
-  )
+  // Mobile drawer also defaults to just the active chapter, or the first
+  // when on the course landing.
+  const initialOpen = currentChapter
+    ? [currentChapter.slug]
+    : course.chapters[0]
+    ? [course.chapters[0].slug]
+    : []
+  const [openChapters, setOpenChapters] = useState<Set<string>>(new Set(initialOpen))
   const toggle = (slug: string) => {
     setOpenChapters((prev) => {
       const next = new Set(prev)
