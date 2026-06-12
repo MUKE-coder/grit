@@ -1343,7 +1343,7 @@ const multiplatformCourse: Course = {
     'When to use which surface for which feature',
   ],
   whoThisIsFor: ['Senior devs building multi-surface products', 'Teams scaling from web to mobile + desktop'],
-  status: 'coming-soon',
+  status: 'available',
   emoji: '🌍',
   accent: 'from-amber-500/30 via-orange-500/20 to-amber-500/10',
   chapters: [
@@ -1353,16 +1353,28 @@ const multiplatformCourse: Course = {
       title: 'The Foundation',
       tagline: 'grit new --triple + adding mobile + desktop on top.',
       learningGoals: ['Scaffold the full stack', 'Understand the monorepo wiring', 'Run all four surfaces'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Setup',
           lessons: [
-            { slug: 'scaffold', title: 'Scaffolding the full stack', tagline: 'Triple + mobile + desktop.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'monorepo-wiring', title: 'Monorepo wiring', tagline: 'pnpm workspaces, turbo, go module.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'scaffold', title: 'Scaffolding the full stack', tagline: 'Triple + mobile + desktop.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'monorepo-wiring', title: 'Monorepo wiring', tagline: 'pnpm workspaces, turbo, go module.', minutes: 7, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Scaffold a four-surface project',
+        brief:
+          "Run `grit new` with --triple, then layer the mobile and desktop kits on top. Boot all four (api, web, admin, mobile, desktop) and capture a screenshot of each surface showing the seeded data.",
+        successCriteria: [
+          'API runs on :8080',
+          'Web (port 3000) + Admin (port 3001) both load',
+          'Expo mobile shows the dev menu',
+          'Wails desktop launches a window',
+          'All four read from the same DB',
+        ],
+      },
     },
     {
       slug: 'shared-types',
@@ -1370,16 +1382,27 @@ const multiplatformCourse: Course = {
       title: 'Shared Types Everywhere',
       tagline: 'One source of truth for 4 surfaces.',
       learningGoals: ['grit sync across surfaces', 'Type-safe API client', 'Shared Zod schemas'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Types',
           lessons: [
-            { slug: 'grit-sync-multi', title: 'grit sync — multi-surface', tagline: 'One Go model, three TS frontends.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'shared-zod', title: 'Shared Zod schemas', tagline: 'Validate input on every surface.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'grit-sync-multi', title: 'grit sync — multi-surface', tagline: 'One Go model, three TS frontends.', minutes: 7, difficulty: 'medium', status: 'available' },
+            { slug: 'shared-zod', title: 'Shared Zod schemas', tagline: 'Validate input on every surface.', minutes: 7, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Add a field and feel the wave',
+        brief:
+          "Add an `IsFeatured bool` field to the Product model in the Go API. Run `grit sync`. Confirm the TypeScript type and Zod schema both regenerate, and that web / admin / mobile / desktop all type-check against the new field without any per-surface edits.",
+        successCriteria: [
+          'IsFeatured appears in shared/types/product.ts',
+          'IsFeatured appears in shared/zod/product.ts',
+          'TS build passes on web + admin + mobile + desktop',
+          'No per-surface edits needed beyond using the new field',
+        ],
+      },
     },
     {
       slug: 'feature-implementation',
@@ -1387,18 +1410,29 @@ const multiplatformCourse: Course = {
       title: 'Building a Feature Across All Three',
       tagline: 'Pick a real feature — implement it everywhere.',
       learningGoals: ['Build a feature in web', 'Implement on mobile', 'Add to desktop'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Cross-surface',
           lessons: [
-            { slug: 'pick-feature', title: 'Picking the feature', tagline: 'What ships well across surfaces.', minutes: 5, difficulty: 'easy', status: 'coming-soon' },
-            { slug: 'web-impl', title: 'Web implementation', tagline: 'Next.js page + admin.', minutes: 9, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'mobile-impl', title: 'Mobile implementation', tagline: 'Expo screens.', minutes: 9, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'desktop-impl', title: 'Desktop implementation', tagline: 'Wails screens.', minutes: 9, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'pick-feature', title: 'Picking the feature', tagline: 'What ships well across surfaces.', minutes: 5, difficulty: 'easy', status: 'available' },
+            { slug: 'web-impl', title: 'Web implementation', tagline: 'Next.js page + admin.', minutes: 9, difficulty: 'medium', status: 'available' },
+            { slug: 'mobile-impl', title: 'Mobile implementation', tagline: 'Expo screens.', minutes: 9, difficulty: 'medium', status: 'available' },
+            { slug: 'desktop-impl', title: 'Desktop implementation', tagline: 'Wails screens.', minutes: 9, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Ship Bookmarks on three surfaces',
+        brief:
+          "Add a Bookmarks feature: pick from your API's catalog, save to a personal list, view + delete from any surface. Implement on web, mobile, and desktop. Each surface should share the same Bookmark type + Zod schema from shared/.",
+        successCriteria: [
+          'Add/Remove bookmark works on all three surfaces',
+          'The list reflects updates within seconds (no full refresh)',
+          'You hit the same /api/bookmarks endpoint from all three',
+          'No duplicate type / Zod definitions',
+        ],
+      },
     },
     {
       slug: 'sync',
@@ -1406,17 +1440,28 @@ const multiplatformCourse: Course = {
       title: 'Sync + Offline',
       tagline: 'Mobile + desktop sync to the same API.',
       learningGoals: ['Mobile offline reads', 'Desktop outbox', 'Resolve conflicts'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Offline',
           lessons: [
-            { slug: 'mobile-offline', title: 'Mobile offline', tagline: 'React Query persistence.', minutes: 8, difficulty: 'medium', status: 'coming-soon' },
-            { slug: 'desktop-outbox', title: 'Desktop outbox', tagline: 'Queue + push + pull.', minutes: 9, difficulty: 'hard', status: 'coming-soon' },
-            { slug: 'conflicts', title: 'Conflict resolution', tagline: 'Last-write-wins vs. CRDT-light.', minutes: 8, difficulty: 'hard', status: 'coming-soon' },
+            { slug: 'mobile-offline', title: 'Mobile offline', tagline: 'React Query persistence.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'desktop-outbox', title: 'Desktop outbox', tagline: 'Queue + push + pull.', minutes: 9, difficulty: 'hard', status: 'available' },
+            { slug: 'conflicts', title: 'Conflict resolution', tagline: 'Last-write-wins vs. CRDT-light.', minutes: 8, difficulty: 'hard', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Survive a flaky network',
+        brief:
+          "Toggle airplane mode on mobile + desktop while the user is mid-flow. Confirm both keep working (offline reads + queued writes). Re-enable network. Confirm both flush their queues and converge to the same state without manual refresh.",
+        successCriteria: [
+          'Offline reads work on mobile (React Query persistence)',
+          'Offline writes queue on desktop (outbox)',
+          'Both flush on reconnect and reach the same server state',
+          'A conflict between desktop + mobile resolves deterministically',
+        ],
+      },
     },
     {
       slug: 'releases',
@@ -1424,16 +1469,27 @@ const multiplatformCourse: Course = {
       title: 'Coordinated Releases',
       tagline: 'Ship to all surfaces together.',
       learningGoals: ['Version compatibility matrix', 'Stagger releases safely', 'Roll back across surfaces'],
-      status: 'coming-soon',
+      status: 'available',
       modules: [
         {
           title: 'Releases',
           lessons: [
-            { slug: 'compat-matrix', title: 'Compatibility matrix', tagline: 'Which API versions support which clients.', minutes: 7, difficulty: 'hard', status: 'coming-soon' },
-            { slug: 'staggered', title: 'Staggered releases', tagline: 'Web first, then desktop, then mobile.', minutes: 7, difficulty: 'medium', status: 'coming-soon' },
+            { slug: 'compat-matrix', title: 'Compatibility matrix', tagline: 'Which API versions support which clients.', minutes: 7, difficulty: 'hard', status: 'available' },
+            { slug: 'staggered', title: 'Staggered releases', tagline: 'Web first, then desktop, then mobile.', minutes: 7, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
+      assignment: {
+        title: 'Cut a coordinated release',
+        brief:
+          "Ship v1.1.0 across all four surfaces using a staggered plan: API + web first, then desktop, then mobile. Document the compatibility matrix in `notes.md` (API v1.0 supports clients ≥ 1.0; API v1.1 supports clients ≥ 1.0). Roll back ONE surface as a fire drill and confirm the others still work.",
+        successCriteria: [
+          'A compatibility matrix written down',
+          'Web + API deploy first, desktop second, mobile third',
+          'A simulated rollback of one surface does not break the others',
+          '`notes.md` lists the release order + rollback playbook',
+        ],
+      },
     },
   ],
 }

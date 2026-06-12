@@ -124,6 +124,25 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
   'desktop/installers/project-nsi': () => import('@/content/lessons/desktop/installers/project-nsi'),
   'desktop/installers/project-slim': () => import('@/content/lessons/desktop/installers/project-slim'),
   'desktop/installers/bitmaps': () => import('@/content/lessons/desktop/installers/bitmaps'),
+
+  /* ─── Multi-platform course ──────────────────────── */
+  'multiplatform/foundation/scaffold': () => import('@/content/lessons/multiplatform/foundation/scaffold'),
+  'multiplatform/foundation/monorepo-wiring': () => import('@/content/lessons/multiplatform/foundation/monorepo-wiring'),
+
+  'multiplatform/shared-types/grit-sync-multi': () => import('@/content/lessons/multiplatform/shared-types/grit-sync-multi'),
+  'multiplatform/shared-types/shared-zod': () => import('@/content/lessons/multiplatform/shared-types/shared-zod'),
+
+  'multiplatform/feature-implementation/pick-feature': () => import('@/content/lessons/multiplatform/feature-implementation/pick-feature'),
+  'multiplatform/feature-implementation/web-impl': () => import('@/content/lessons/multiplatform/feature-implementation/web-impl'),
+  'multiplatform/feature-implementation/mobile-impl': () => import('@/content/lessons/multiplatform/feature-implementation/mobile-impl'),
+  'multiplatform/feature-implementation/desktop-impl': () => import('@/content/lessons/multiplatform/feature-implementation/desktop-impl'),
+
+  'multiplatform/sync/mobile-offline': () => import('@/content/lessons/multiplatform/sync/mobile-offline'),
+  'multiplatform/sync/desktop-outbox': () => import('@/content/lessons/multiplatform/sync/desktop-outbox'),
+  'multiplatform/sync/conflicts': () => import('@/content/lessons/multiplatform/sync/conflicts'),
+
+  'multiplatform/releases/compat-matrix': () => import('@/content/lessons/multiplatform/releases/compat-matrix'),
+  'multiplatform/releases/staggered': () => import('@/content/lessons/multiplatform/releases/staggered'),
 }
 
 export async function loadLessonContent(
