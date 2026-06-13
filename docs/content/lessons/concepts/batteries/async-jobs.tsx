@@ -221,17 +221,106 @@ func (h *Handlers) SendWelcome(ctx context.Context, t *asynq.Task) error {
   order := models.Order{...}
   if err := s.db.WithContext(ctx).Create(&order).Error; err != nil { return Order{}, err }
 
-  // 3 jobs, fire-and-forget — never block the create
-  _ = s.jobs.Enqueue(ctx, "send_receipt",   map[string]any{"order_id": order.ID})
-  _ = s.jobs.Enqueue(ctx, "update_inventory", map[string]any{"order_id": order.ID})
-  _ = s.jobs.EnqueueIn(ctx, "ask_for_review", map[string]any{"order_id": order.ID}, 7*24*time.Hour)
+  // 3 jobs, fire-and-forget — never block the create.
+  // The IdempotencyKey makes a same-order retry safe — the receipt won't
+  // fire twice even if the caller retries, even if a load-balancer
+  // double-delivers, even if the job worker crashed mid-process.
+  _ = s.jobs.EnqueueSendEmail(ctx, in.Email, "Receipt", "receipt",
+      map[string]any{"order_id": order.ID},
+      jobs.EnqueueOption{IdempotencyKey: "receipt:" + order.ID},
+  )
+  _ = s.jobs.Enqueue(ctx, "update_inventory",
+      map[string]any{"order_id": order.ID},
+      jobs.EnqueueOption{IdempotencyKey: "inventory:" + order.ID},
+  )
+  _ = s.jobs.Enqueue(ctx, "ask_for_review",
+      map[string]any{"order_id": order.ID},
+      jobs.EnqueueOption{
+          Delay:          7 * 24 * time.Hour,
+          IdempotencyKey: "review_request:" + order.ID,
+      },
+  )
 
   return order, nil
 }`}
       />
       <p>
         Receipt: now. Inventory update: now. Review request: in 7 days.
-        Customer&apos;s checkout response still returns in 50ms.
+        Customer&apos;s checkout response still returns in 50ms — and
+        none of these jobs fire twice for the same order.
+      </p>
+
+      <h2>Idempotency keys — the safety net for retries</h2>
+      <p>
+        Retries cause duplicates. The most common production incident:
+        a payment job fires, the worker crashes mid-flight, the next
+        worker picks it up and charges the customer twice. Idempotency
+        keys fix this at the queue level.
+      </p>
+      <p>
+        Pass an <code>IdempotencyKey</code> in <code>EnqueueOption</code>{' '}
+        and the queue refuses to enqueue a second task with the same
+        key during the window (default 24h). The first call wins; the
+        second silently returns success (the operation is already on
+        its way, which is what the caller wanted).
+      </p>
+      <CodeBlock
+        language="go"
+        code={`// First call enqueues
+err := s.jobs.Enqueue(ctx, "charge_card", payload, jobs.EnqueueOption{
+    IdempotencyKey: "charge:" + invoice.ID,
+})
+// err == nil
+
+// A retry within the window — dedup'd
+err = s.jobs.Enqueue(ctx, "charge_card", payload, jobs.EnqueueOption{
+    IdempotencyKey: "charge:" + invoice.ID,
+})
+// err == nil — the EnqueueSendEmail/EnqueueProcessImage helpers swallow
+// the ErrDuplicateTask sentinel so you don't have to check for it on
+// fire-and-forget paths. Use the generic Enqueue if you want to detect it.`}
+      />
+
+      <h3>Picking a good key</h3>
+      <p>
+        The key should be a natural business identifier for the
+        action — not the payload, not a timestamp, not random bytes:
+      </p>
+      <ul>
+        <li><code>&quot;receipt:&quot; + order.ID</code> — one receipt per order.</li>
+        <li><code>&quot;welcome:&quot; + user.ID</code> — one welcome email per user.</li>
+        <li><code>&quot;charge:&quot; + invoice.ID</code> — one charge per invoice.</li>
+        <li><code>&quot;digest:&quot; + user.ID + &quot;:&quot; + today</code> — one digest per user per day.</li>
+      </ul>
+
+      <h2>Retry backoff — what actually happens on failure</h2>
+      <p>
+        Return an error from a job handler and asynq re-runs it with
+        exponential backoff. Grit&apos;s explicit schedule (set via{' '}
+        <code>ExponentialBackoff</code> in <code>workers.go</code>):
+      </p>
+      <CodeBlock
+        language="text"
+        code={`Attempt 1:  immediate
+Attempt 2:  +1s     (after first failure)
+Attempt 3:  +2s
+Attempt 4:  +4s
+Attempt 5:  +8s
+Attempt 6:  +16s
+Attempt 7:  +32s
+Attempt 8:  +64s
+Attempt 9:  +128s
+Attempt 10: +256s
+…           capped at 5 minutes
+After DefaultMaxRetries failures (5 by default): dead-letter queue`}
+      />
+      <p>
+        The total budget at default settings is ~16 minutes — long
+        enough to ride out a typical downstream outage, short enough
+        that the dead queue doesn&apos;t fill with hours-old work. Tune{' '}
+        <code>MaxRetries</code> per-task when the failure mode warrants
+        it (e.g., a webhook delivery to a flaky third party might want{' '}
+        <code>MaxRetries: 25</code>).
       </p>
 
       <h2>How to modify this battery</h2>

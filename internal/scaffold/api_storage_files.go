@@ -416,9 +416,13 @@ func (h *UploadHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Enqueue image processing job if it's an image
+	// Enqueue image processing job if it's an image.
+	// IdempotencyKey = upload.ID so a client retry of the same upload
+	// (rare but possible after a network drop) doesn't re-process.
 	if h.Jobs != nil && storage.IsImageMimeType(mimeType) {
-		_ = h.Jobs.EnqueueProcessImage(upload.ID, key, mimeType)
+		_ = h.Jobs.EnqueueProcessImage(c.Request.Context(), upload.ID, key, mimeType, jobs.EnqueueOption{
+			IdempotencyKey: "image:process:" + upload.ID,
+		})
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
@@ -624,9 +628,13 @@ func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 		return
 	}
 
-	// Enqueue image processing job if it's an image
+	// Enqueue image processing job if it's an image.
+	// IdempotencyKey = upload.ID so a client retry of the same upload
+	// (rare but possible after a network drop) doesn't re-process.
 	if h.Jobs != nil && storage.IsImageMimeType(req.ContentType) {
-		_ = h.Jobs.EnqueueProcessImage(upload.ID, req.Key, req.ContentType)
+		_ = h.Jobs.EnqueueProcessImage(c.Request.Context(), upload.ID, req.Key, req.ContentType, jobs.EnqueueOption{
+			IdempotencyKey: "image:process:" + upload.ID,
+		})
 	}
 
 	c.JSON(http.StatusCreated, gin.H{

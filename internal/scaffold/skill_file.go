@@ -795,8 +795,17 @@ Templates: %[1]swelcome%[1]s, %[1]spassword-reset%[1]s, %[1]semail-verification%
 ### Background Jobs
 
 %[1]sgo
-jobs.EnqueueSendEmail("user@example.com", "Welcome", "welcome", data)
-jobs.EnqueueProcessImage(uploadID, key, mimeType)
+// Fire-and-forget enqueue (uses framework defaults: 5 max retries,
+// exponential backoff 1s/2s/4s.../5min cap, 5min per-attempt timeout).
+jobs.EnqueueSendEmail(ctx, "user@example.com", "Welcome", "welcome", data)
+
+// Idempotency key — a retry of the same operation is deduped within
+// the 24h window. Critical for charge/notify/order-confirmation work.
+jobs.EnqueueSendEmail(ctx, user.Email, "Receipt", "receipt", data, jobs.EnqueueOption{
+    IdempotencyKey: "receipt:" + order.ID,
+})
+
+jobs.EnqueueProcessImage(ctx, uploadID, key, mimeType)
 %[1]s
 
 ### Redis Cache
