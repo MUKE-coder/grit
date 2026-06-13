@@ -40,6 +40,13 @@ type Options struct {
 	Force          bool // Allow scaffolding into non-empty directory (--force)
 	IncludeDesktop bool // Add apps/desktop (Wails client that shares the monorepo API)
 
+	// Version is the Grit CLI version that scaffolded this project (e.g. "3.25.2").
+	// Injected by cmd/grit/main.go so scaffolded README + docs reflect the real
+	// version instead of a hardcoded constant. Falls back to DefaultVersion
+	// in Normalize() so callers that forget to set it (tests, library users)
+	// still get a sensible value.
+	Version string
+
 	// Deprecated: use Architecture instead. Kept for backward compatibility.
 	APIOnly     bool
 	IncludeExpo bool
@@ -47,9 +54,18 @@ type Options struct {
 	Full        bool
 }
 
+// DefaultVersion is the fallback string written into scaffolded README/docs
+// when Options.Version is empty. Kept in sync with cmd/grit/main.go's
+// version variable on release.
+const DefaultVersion = "3.25.2"
+
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
 func (o *Options) Normalize() {
+	if o.Version == "" {
+		o.Version = DefaultVersion
+	}
+
 	// If Architecture is already set, it takes priority
 	if o.Architecture != "" {
 		return

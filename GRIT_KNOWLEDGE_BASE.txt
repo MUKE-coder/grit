@@ -1,12 +1,13 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.22.0
+Version: 3.25.2
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
 License: MIT
 Tagline: Go + React. Built with Grit.
+Last updated: 2026-06-13
 
 
 WHAT IS GRIT?
@@ -818,87 +819,194 @@ API endpoints:
   GET /r/:name.json — Get single component (JSON metadata + TSX source)
 
 
+SECURITY DEFAULTS (READ BEFORE WIRING AUTH)
+===========================================
+
+Grit's authentication storage policy across all clients. This supersedes any
+older guidance in the docs (which previously suggested localStorage was
+"acceptable for most applications" — that recommendation is wrong and has been
+removed from the docs).
+
+NEVER store JWT access or refresh tokens in localStorage or sessionStorage.
+Anything readable from JavaScript is reachable by any XSS vector — a
+compromised npm package, a stored XSS bug in a comment field, a browser
+extension. Tokens in localStorage are persistent, unscoped, and exfiltrate-able
+with a single line of script. The OWASP guidance and Grit's own scaffolds use
+the policy below:
+
+  Client            | Storage                                        | How the API receives it
+  ------------------|------------------------------------------------|------------------------------------
+  Web (Next.js)     | HttpOnly + Secure + SameSite=Lax cookies       | Browser attaches automatically;
+                    | (grit_access, grit_refresh) set by the API     | client uses withCredentials: true
+  Mobile (Expo)     | expo-secure-store (iOS Keychain /              | Authorization: Bearer <token>
+                    | Android Keystore)                              |
+  Desktop (Wails)   | OS keychain via Go binding                     | Authorization: Bearer <token>
+
+CSRF: cookie-auth APIs are vulnerable to CSRF. SameSite=Lax mitigates the
+common cases. Defence-in-depth is a CSRF token on every state-changing
+endpoint. Grit's scaffolded middleware emits a grit_csrf cookie and validates
+an X-CSRF-Token header on POST/PATCH/PUT/DELETE.
+
+The auth middleware reads the access token from the grit_access cookie first,
+falling back to the Authorization: Bearer header so native mobile/desktop
+clients can keep using bearer tokens without CSRF concerns (they're not in a
+browser).
+
+Reference: /docs/backend/authentication on the docs site has the full code
+sample for the SetAuthCookies / ClearAuthCookies helpers and the Next.js
+client interceptor.
+
+
 GRIT LEARNING PLATFORM
 ======================
 
-Grit has a comprehensive, free learning platform at gritframework.dev/courses. All courses are self-paced, DIY format (Do It Yourself) — you read the material, follow along with code examples, and complete challenges to practice.
+Grit has a comprehensive, free learning platform at gritframework.dev/courses.
+All material is hand-written (no AI fluff). The platform was redesigned around
+KIT-BASED LEARNING PATHS — one course per architecture mode you might pick.
+Every lesson has: hand-written prose, code blocks, optional knowledge checks,
+chapter assignments, and a "Suggest an improvement on GitHub" button that
+opens a pre-filled issue.
 
-Course Format:
-- Each course is ~30 minutes
-- W3Schools-style teaching: concept → explanation → code example → "explained" → challenge
-- Every new term is defined in a Definition box
-- 10-18 hands-on challenges per course embedded throughout (not at the end)
-- Previous/Next navigation between courses
-- No videos required — text + code + practice
+A) KIT-BASED LEARNING PATHS (10 courses — the primary catalog)
 
-COURSE TRACKS (19 courses with individual lesson pages):
+These courses share components (PrereqLinks → /docs/prerequisites/golang,
+nextjs, docker; PlaygroundChallenge → /playground; Diagram for ASCII
+illustrations; NoAITip on every course landing).
 
-Grit Web — Building Web Applications (9 courses, ~4.5 hours, 115 challenges):
-  Course 0: Introduction to Grit — what it is, motivation, tech stack, philosophy, comparison
-  Course 1: Your First Grit App — install, scaffold, project structure, Docker, dev servers
-  Course 2: Code Generator Mastery — grit generate, field types, modifiers, relationships, slug, removal
-  Course 3: Authentication & Authorization — JWT, bcrypt, RBAC, TOTP 2FA, backup codes, OAuth2
-  Course 4: Admin Panel Customization — DataTable, FormBuilder, widgets, multi-step forms, styles
-  Course 5: File Storage & Uploads — presigned URLs, MinIO, S3, R2, image processing
-  Course 6: Background Jobs & Email — asynq, Redis, cron, Resend, Mailhog, templates
-  Course 7: AI-Powered Features — Vercel AI Gateway, completions, chat, SSE streaming
-  Course 8: Deploy to Production — grit deploy, systemd, Caddy, auto-TLS, Docker
+  1. Grit Concepts You Need to Know — /courses/concepts
+     7 chapters covering: What is Grit, your first project, conventions,
+     code generation, Frameworks & Patterns (Gin, GORM, Handler->Service,
+     CRUD walkthrough), The Batteries (overview + per-battery deep dives
+     for Redis cache, S3 storage, Resend mail, asynq jobs, AI), and
+     architecture modes. The starting point for everyone.
 
-Grit Desktop — Building Desktop Applications (5 courses, ~2.5 hours, 54 challenges):
-  Course 1: Your First Desktop App — Wails, SQLite, project structure, dev mode
-  Course 2: Desktop CRUD & Data — resource generation, Wails bindings, TanStack Router
-  Course 3: Custom UI & Theming — frameless window, title bar, sidebar, dark theme
-  Course 4: PDF & Excel Export — PDF, XLSX, CSV generation, download flow
-  Course 5: Build & Distribution — native binary, platforms, app icon, distribution
+  2. Building a Go API — /courses/go-api
+     Scaffold to deploy: models, handlers, auth (JWT + OAuth + TOTP),
+     batteries (jobs, mail, storage, AI), observability (Pulse, Sentinel,
+     audit log), deploy.
 
-Grit Mobile — Building Mobile Applications (5 courses, ~2.5 hours, 54 challenges):
-  Course 1: Your First Mobile App — Expo, React Native, monorepo, shared types
-  Course 2: Mobile Auth & Navigation — SecureStore, Expo Router, tab/stack navigation
-  Course 3: API Integration & Offline — TanStack Query, pull-to-refresh, offline cache
-  Course 4: Push Notifications — Expo push, FCM, APNS, local notifications
-  Course 5: Build & App Store — EAS Build, TestFlight, Play Store, OTA updates
+  3. Building a Mobile App — /courses/mobile
+     Expo + React Native. Auth (incl. refresh), push notifications, EAS
+     Build + submit, OTA updates, offline-first with React Query
+     persistence.
 
-STANDALONE COURSES (20 courses, ~30 min each):
+  4. Building Web with Next.js — /courses/web-nextjs
+     App Router public site + dashboard + admin panel + multi-tenancy
+     patterns.
 
-Practical Builds:
-  - Build & Deploy a REST API with Go (API-Only Masterclass) — /courses/api-masterclass
-  - Build a Fitness App: Go API + Expo React Native — /courses/mobile-fitness-app
-  - Build an E-commerce Store: Single App Architecture — /courses/ecommerce-spa
-  - Build a Blog & CMS: Complete Content Management System — /courses/blog-cms
-  - Build a SaaS with Grit + Claude Code — /courses/saas-with-ai
-  - Build an Invoice Generator: Desktop App with Wails — /courses/invoice-desktop
-  - Build a Real-Time Chat App with WebSockets — /courses/realtime-chat
+  5. Building Web with TanStack Router — /courses/web-tanstack
+     (coming soon) Vite-based SPA alternative for those who don't want
+     SSR.
 
-Deep Dives:
-  - Batteries Included: Every Feature That Ships with Grit — /courses/batteries
-  - Security Deep Dive: Auth, 2FA, WAF & Rate Limiting — /courses/security-deep-dive
-  - Database Mastery with GORM: Models, Migrations & Queries — /courses/gorm-mastery
-  - Performance Analytics with Pulse: Tracing & Monitoring — /courses/pulse-analytics
-  - GORM Studio: The Visual Database Browser — /courses/gorm-studio
-  - Auto-Generated API Docs: Scalar & Swagger — /courses/api-docs-scalar
-  - Testing Your Grit App: Go, Vitest & Playwright — /courses/testing
-  - Custom Middleware & Hooks: Extending Grit — /courses/custom-middleware
+  6. Building Desktop with Go API — /courses/desktop
+     Wails: scaffold, offline (SQLite + outbox + sync), frameless window
+     controls, in-app auto-updater, NSIS installers (full + slim).
 
-Guides:
-  - React + Vite + Go: Building with TanStack Router — /courses/react-vite-go
-  - Deployment Guide: Dokploy, Orbita, VPS & Vercel — /courses/deployment-guide
-  - Stripe Payments & Subscriptions for SaaS — /courses/stripe-payments
-  - Grit UI: Using the 100-Component Registry — /courses/grit-ui-components
-  - CI/CD with GitHub Actions: Automated Testing & Deployment — /courses/cicd-github
+  7. Building Web + Desktop + Mobile — /courses/multiplatform
+     One Go API powering all three surfaces. Shared types via grit sync,
+     a feature implemented across all three, offline/sync per platform,
+     conflict resolution, staggered releases.
 
-TOTAL: 39 courses, ~500 challenges, all free at gritframework.dev/courses
+  8. Load Testing with K6 — /courses/load-testing
+     Why load test, install k6, first script, the 5 test types (smoke,
+     load, stress, spike, soak), finding bottlenecks, CI integration.
 
-When users ask about learning Grit:
-- Beginners: Start with "Introduction to Grit" (Course 0) then "Your First Grit App" (Course 1)
-- Specific topics: Point to the relevant standalone course
-- Building something specific: Point to the practical build course (Blog, E-commerce, SaaS, etc.)
-- Advanced users: Point to Testing, Custom Middleware, CI/CD, Security Deep Dive
+  9. Security & Pen Testing for Grit APIs — /courses/security
+     OWASP Top 10 hands-on. Threat modeling, IDOR attack + fix, SQL
+     injection + SSRF, JWT/secret hardening, the Grit defensive stack
+     (Sentinel, safefetch, authz, CSRF, audit log).
+
+  10. Benchmarking Your Go Code — /courses/benchmarking
+      BenchmarkXxx + b.N, reading ns/op + B/op + allocs/op, profiling
+      with pprof (CPU + heap), measure-change-measure discipline with
+      benchstat.
+
+B) SUPPLEMENTARY STANDALONE COURSES (still live, deep-dives + practical builds)
+
+  Practical builds:
+    /courses/api-masterclass         REST API with Go
+    /courses/mobile-fitness-app      Go API + Expo
+    /courses/ecommerce-spa           Single-app e-commerce
+    /courses/blog-cms                Blog + CMS
+    /courses/saas-with-ai            SaaS with Grit + Claude Code
+    /courses/invoice-desktop         Invoice generator (Wails)
+    /courses/realtime-chat           WebSockets chat
+
+  Deep dives:
+    /courses/batteries               Every feature that ships with Grit
+    /courses/security-deep-dive      Auth, 2FA, WAF, rate limiting
+    /courses/gorm-mastery            GORM models, migrations, queries
+    /courses/pulse-analytics         Tracing + monitoring
+    /courses/gorm-studio             Visual database browser
+    /courses/api-docs-scalar         Scalar + Swagger
+    /courses/testing                 Go + Vitest + Playwright
+    /courses/custom-middleware       Extending Grit
+
+  Guides:
+    /courses/react-vite-go           Vite + TanStack Router
+    /courses/deployment-guide        Dokploy, Orbita, VPS, Vercel
+    /courses/stripe-payments         Stripe + subscriptions
+    /courses/grit-ui-components      100-component registry tour
+    /courses/cicd-github             GitHub Actions
+
+C) HOW LESSONS ARE STRUCTURED
+
+Each kit-based lesson follows the same template so learners build muscle
+memory:
+  - Short hook paragraph
+  - PrereqLinks (golang / nextjs / docker) when relevant
+  - 3-5 sections with code blocks + ASCII Diagrams for tricky concepts
+  - TipBox callouts (info / warning / success / danger)
+  - KnowledgeCheck multiple-choice with immediate feedback
+  - Exercise with prompt + hint + revealable solution
+  - "What's next" pointer to the following lesson
+  - GitHub feedback button at the bottom of every lesson
+
+Chapter landing pages include a chapter assignment with success criteria.
+The course landing page renders What You'll Build + What You'll Learn +
+prerequisites and a NoAITip nudging learners to disable Copilot/Cursor for
+this material.
+
+D) WHEN USERS ASK ABOUT LEARNING GRIT
+
+- Absolute beginner: /courses/concepts (the foundation every other course
+  assumes).
+- New to Go specifically: /docs/prerequisites/golang first, then /courses/concepts.
+- New to Next.js: /docs/prerequisites/nextjs.
+- New to Docker: /docs/prerequisites/docker.
+- Building a specific surface: point to the kit course (go-api, mobile,
+  web-nextjs, desktop) directly.
+- Building multi-surface: /courses/multiplatform (assumes concepts + one
+  surface course done).
+- Shipping to prod: pair the relevant kit course with /courses/load-testing
+  and /courses/security.
+- Performance work: /courses/benchmarking before optimising anything.
 
 
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.22.0 (Current):
+v3.25.2 (Current):
+  - Docs hardening: removed "localStorage acceptable" guidance from
+    /docs/backend/authentication and rewrote the Token Storage section with
+    HttpOnly + Secure + SameSite=Lax cookies as the primary recommendation,
+    plus expo-secure-store for mobile and OS keychain for desktop. Also
+    swept the localStorage references out of /docs/concepts/architecture,
+    /docs/concepts/architecture-modes/multi-client, /docs/prerequisites/nextjs,
+    and /docs/frontend/tanstack-router.
+  - Fixed issue #67 (scaffolded README + docs reference stale Grit version
+    v0.13.0). Added a Version field to scaffold.Options + DefaultVersion
+    constant, wired cmd/grit/main.go to inject the live CLI version, and
+    swapped the three template functions (readmeFile, docsDocsLayout,
+    docsContentGettingStarted) to use opts.Version. Existing scaffold tests
+    pass unchanged thanks to the Normalize() fallback.
+  - Kit-based learning paths fully shipped (see GRIT LEARNING PLATFORM
+    section): 10 courses with hand-written lessons, knowledge checks,
+    assignments, prereq links to /docs/prerequisites/*, playground
+    challenges to /playground, and a GitHub feedback button on every
+    lesson + chapter page.
+
+v3.22.0:
   - Performance hardening release. Senior-level audit of every scaffold
     template found 27 issues; the 10 critical and high-impact ones are
     fixed. Apps built with Grit should now show materially lower CPU

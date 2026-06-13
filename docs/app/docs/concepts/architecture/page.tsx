@@ -384,7 +384,7 @@ export function useCreatePost() {
                 <div className="space-y-3">
                   {[
                     { step: '1', title: 'User interaction', desc: 'User clicks "Save" in the admin panel form. React calls the useCreatePost() mutation hook.' },
-                    { step: '2', title: 'API client', desc: 'The hook calls apiClient.post("/api/posts", data). Axios automatically attaches the JWT access token from localStorage to the Authorization header.' },
+                    { step: '2', title: 'API client', desc: 'The hook calls apiClient.post("/api/posts", data). The browser automatically sends the HttpOnly grit_access cookie that the API set on login — JavaScript never reads the token, so XSS cannot exfiltrate it.' },
                     { step: '3', title: 'CORS middleware', desc: 'The Go API receives the request. CORS middleware validates the origin (localhost:3001) and allows it.' },
                     { step: '4', title: 'Auth middleware', desc: 'JWT middleware extracts the token, validates its signature and expiry, and attaches the authenticated user to the Gin context.' },
                     { step: '5', title: 'Handler', desc: 'The PostHandler.Create handler parses the JSON body using ShouldBindJSON, validates required fields via struct binding tags, and calls the service.' },
@@ -477,12 +477,12 @@ studio.Mount(router, db, []interface{}{
                 <ol className="space-y-2.5 mb-4 list-decimal list-inside">
                   {[
                     'User submits login form with email and password',
-                    'Go API validates credentials and returns an access token (15 min) and refresh token (7 days)',
-                    'Frontend stores tokens in localStorage and attaches the access token to every API request via Axios interceptor',
-                    'When the access token expires, the Axios interceptor catches the 401, calls /api/auth/refresh with the refresh token, gets a new access token, and retries the original request',
-                    'Protected routes in the frontend check for a valid token and redirect to /login if missing',
-                    'The Go API auth middleware validates the token signature, checks expiry, and attaches the user to the Gin context',
-                    'Role-based middleware (RequireRole("admin")) checks the user\'s role from the context',
+                    'Go API validates credentials and sets two HttpOnly cookies: grit_access (15 min, Secure, SameSite=Lax) and grit_refresh (7 days, Path=/api/auth)',
+                    'Frontend uses withCredentials: true on its fetch/axios client — the browser attaches the cookies automatically. The JS code never sees the tokens, so XSS cannot read them.',
+                    'When the access token expires, the response interceptor catches the 401, calls /api/auth/refresh once (browser sends grit_refresh), the API issues a fresh grit_access cookie, and the original request is retried.',
+                    'Protected routes in the frontend check the /api/auth/me response (or a server-side check) and redirect to /login if missing.',
+                    'The Go API auth middleware reads the token from the grit_access cookie (falling back to Authorization: Bearer for native mobile/desktop clients), validates the signature and expiry, and attaches the user to the Gin context.',
+                    'Role-based middleware (RequireRole("admin")) checks the user\'s role from the context. CSRF middleware enforces an X-CSRF-Token header on state-changing methods to mitigate cookie-auth CSRF.',
                   ].map((item, i) => (
                     <li key={i} className="text-[14px] text-muted-foreground pl-1">
                       {item}

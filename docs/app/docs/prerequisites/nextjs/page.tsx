@@ -439,27 +439,29 @@ export function useCreateUser() {
 const apiClientCode = `// lib/api-client.ts
 import axios from "axios";
 
+// withCredentials = true tells the browser to send (and accept) the
+// HttpOnly auth cookies the API sets. We do NOT touch tokens from JS —
+// localStorage is XSS-readable and not safe for auth tokens.
 export const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
   headers: { "Content-Type": "application/json" },
+  withCredentials: true,
 });
 
-// Automatically attach JWT token to every request
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = \`Bearer \${token}\`;
-  }
-  return config;
-});
-
-// Handle 401 responses (expired token)
+// Handle 401 responses (expired access token).
+// The browser still holds the HttpOnly refresh cookie, so we just hit /refresh.
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
+  async (error) => {
+    const original = error.config;
+    if (error.response?.status === 401 && !original._retry) {
+      original._retry = true;
+      try {
+        await apiClient.post("/api/auth/refresh");
+        return apiClient(original);
+      } catch {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }

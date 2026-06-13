@@ -397,7 +397,7 @@ pnpm build:desktop    # Build desktop app for production (wails build)`}
                     </tr>
                     <tr className="border-b border-border/20">
                       <td className="px-4 py-2.5 font-mono text-xs">Token storage</td>
-                      <td className="px-4 py-2.5">js-cookie / localStorage</td>
+                      <td className="px-4 py-2.5">HttpOnly cookies set by API (never localStorage)</td>
                       <td className="px-4 py-2.5">expo-secure-store</td>
                       <td className="px-4 py-2.5">OS keychain (via Wails bridge)</td>
                     </tr>
@@ -605,8 +605,8 @@ wails build -platform linux/amd64
                 <li>
                   <strong className="text-foreground">Dev without Wails.</strong> You can run the desktop frontend in a
                   regular browser with <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">cd apps/desktop/frontend &amp;&amp; pnpm dev</code>{' '}
-                  (it falls back to localStorage for tokens). Useful for quick UI iteration without
-                  launching the full Wails window.
+                  (it falls back to HttpOnly cookies set by the dev API). Useful for quick UI iteration without
+                  launching the full Wails window. Tokens are never written to <code>localStorage</code> in either mode.
                 </li>
                 <li>
                   <strong className="text-foreground">Match platform expectations.</strong> macOS users expect traffic lights

@@ -142,6 +142,7 @@ func newCmd() *cobra.Command {
 				InPlace:        inPlace,
 				Force:          force,
 				IncludeDesktop: includeDesktop,
+				Version:        version, // inject the current CLI version into scaffolded files
 				// Legacy flags
 				APIOnly:     apiOnly,
 				IncludeExpo: includeExpo,

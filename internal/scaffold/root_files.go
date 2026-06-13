@@ -681,8 +681,8 @@ No Docker needed — just your API keys and `+"``"+`go run`+"``"+`.
 
 ---
 
-*Built with Grit v0.13.0*
-`, opts.ProjectName, opts.ProjectName)
+*Built with Grit v%s*
+`, opts.ProjectName, opts.ProjectName, opts.Version)
 }
 
 func gritJSON(opts Options) string {

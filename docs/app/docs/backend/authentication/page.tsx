@@ -359,69 +359,193 @@ const (
 
               {/* ── Token Storage (Frontend) ─────────────────────────────── */}
               <h2 id="token-storage">Token Storage on the Frontend</h2>
+
+              <div className="p-4 rounded-lg border border-destructive/30 bg-destructive/5 mb-6">
+                <p className="text-sm text-foreground/85 mb-0">
+                  <strong className="text-destructive">Do not store tokens in <code>localStorage</code> for the web client.</strong>{' '}
+                  Anything readable from JavaScript is reachable by any XSS vector — a compromised
+                  npm dependency, a stored XSS bug in a comment field, or a browser extension.
+                  Tokens in <code>localStorage</code> are persistent, unscoped, and exfiltrate-able
+                  with a single line of script. The OWASP guidance (and ours) is to put auth
+                  cookies out of JavaScript&apos;s reach.
+                </p>
+              </div>
+
+              <p>Pick the storage model that matches your client:</p>
+              <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-6">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/30 bg-accent/20">
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Client</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Token storage</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Why</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-muted-foreground">
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-medium text-foreground">Web (Next.js)</td>
+                      <td className="px-4 py-2.5"><code>httpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code> cookies set by the API</td>
+                      <td className="px-4 py-2.5">XSS cannot read them; the browser attaches them automatically.</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5 font-medium text-foreground">Mobile (Expo)</td>
+                      <td className="px-4 py-2.5"><code>expo-secure-store</code> (iOS Keychain / Android Keystore)</td>
+                      <td className="px-4 py-2.5">Hardware-backed, not readable by other apps or React Native bridges.</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-medium text-foreground">Desktop (Wails)</td>
+                      <td className="px-4 py-2.5">OS keychain via Go binding (<code>keyring</code>)</td>
+                      <td className="px-4 py-2.5">Same threat model as mobile; never the renderer.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <h3 id="token-storage-cookies">Web: cookies set by the API</h3>
               <p>
-                The Next.js frontend stores tokens and includes them in API requests using
-                an Axios interceptor. The recommended pattern:
+                The API sets two cookies on login/register/refresh: <code>grit_access</code> (short-lived)
+                and <code>grit_refresh</code> (long-lived). Both are <code>HttpOnly</code> so
+                JavaScript cannot read them, <code>Secure</code> in production so they only travel
+                over HTTPS, and <code>SameSite=Lax</code> so CSRF surface is limited to top-level
+                navigations.
               </p>
-              <CodeBlock language="typescript" filename="apps/web/lib/api-client.ts" code={`import axios from 'axios';
+              <CodeBlock language="go" filename="services/auth_cookies.go" code={`package services
+
+import (
+    "net/http"
+    "time"
+)
+
+// SetAuthCookies writes both tokens as HttpOnly cookies.
+// Called from Register / Login / Refresh handlers after generating the pair.
+func SetAuthCookies(w http.ResponseWriter, pair *TokenPair, isProd bool) {
+    http.SetCookie(w, &http.Cookie{
+        Name:     "grit_access",
+        Value:    pair.AccessToken,
+        Path:     "/",
+        HttpOnly: true,
+        Secure:   isProd,
+        SameSite: http.SameSiteLaxMode,
+        MaxAge:   int(15 * time.Minute / time.Second),
+    })
+    http.SetCookie(w, &http.Cookie{
+        Name:     "grit_refresh",
+        Value:    pair.RefreshToken,
+        Path:     "/api/auth",   // only sent to /api/auth/* — limits exposure
+        HttpOnly: true,
+        Secure:   isProd,
+        SameSite: http.SameSiteLaxMode,
+        MaxAge:   int(7 * 24 * time.Hour / time.Second),
+    })
+}
+
+// ClearAuthCookies expires both cookies on logout.
+func ClearAuthCookies(w http.ResponseWriter, isProd bool) {
+    for _, name := range []string{"grit_access", "grit_refresh"} {
+        http.SetCookie(w, &http.Cookie{
+            Name:     name,
+            Value:    "",
+            Path:     "/",
+            HttpOnly: true,
+            Secure:   isProd,
+            SameSite: http.SameSiteLaxMode,
+            MaxAge:   -1,
+        })
+    }
+}`} />
+
+              <p>
+                In the auth middleware, read the access token from the cookie BEFORE falling back
+                to the <code>Authorization</code> header (the header path stays useful for native
+                mobile / desktop clients that don&apos;t use cookies):
+              </p>
+              <CodeBlock language="go" filename="middleware/auth.go (excerpt)" code={`token := ""
+if c, err := r.Cookie("grit_access"); err == nil {
+    token = c.Value
+} else if h := r.Header.Get("Authorization"); strings.HasPrefix(h, "Bearer ") {
+    token = strings.TrimPrefix(h, "Bearer ")
+}`} />
+
+              <p>
+                The Next.js client doesn&apos;t touch tokens at all — the browser handles them.
+                Use <code>credentials: &apos;include&apos;</code> on every request:
+              </p>
+              <CodeBlock language="typescript" filename="apps/web/lib/api-client.ts" code={`import axios from 'axios'
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
-});
+  withCredentials: true,   // <- the browser sends grit_access / grit_refresh automatically
+})
 
-// Attach access token to every request
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    config.headers.Authorization = \`Bearer \${token}\`;
-  }
-  return config;
-});
-
-// Auto-refresh on 401
+// Auto-refresh on 401 — note: no token reading, no localStorage.
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
-
+    const originalRequest = error.config
     if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
+      originalRequest._retry = true
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
-        const { data } = await axios.post(
-          \`\${api.defaults.baseURL}/api/auth/refresh\`,
-          { refresh_token: refreshToken },
-        );
-
-        const { access_token, refresh_token } = data.data.tokens;
-        localStorage.setItem('access_token', access_token);
-        localStorage.setItem('refresh_token', refresh_token);
-
-        originalRequest.headers.Authorization = \`Bearer \${access_token}\`;
-        return api(originalRequest);
+        // The browser sends grit_refresh; the API sets a new grit_access cookie.
+        await api.post('/api/auth/refresh')
+        return api(originalRequest)
       } catch {
-        // Refresh failed -- redirect to login
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
+        window.location.href = '/login'
       }
     }
-
-    return Promise.reject(error);
+    return Promise.reject(error)
   },
-);
+)
 
-export default api;`} />
+export default api`} />
 
-              <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
+              <div className="p-4 rounded-lg border border-amber-500/30 bg-amber-500/5 mb-6">
                 <p className="text-sm text-foreground/80 mb-0">
-                  <strong>Security note:</strong> Storing tokens in <code>localStorage</code> is
-                  acceptable for most applications. For higher security, consider using
-                  <code>httpOnly</code> cookies by modifying the login/refresh endpoints to set
-                  cookies instead of returning tokens in the JSON body.
+                  <strong>CSRF.</strong> Cookie-auth APIs are vulnerable to CSRF (a malicious site
+                  forging a state-changing request from a logged-in user). <code>SameSite=Lax</code>{' '}
+                  blocks the common cases, but defence-in-depth is a CSRF token on every state-changing
+                  endpoint. Grit&apos;s scaffolded middleware{' '}
+                  <code>middleware.CSRF</code> emits a <code>grit_csrf</code> cookie and validates an{' '}
+                  <code>X-CSRF-Token</code> header on POST/PATCH/PUT/DELETE.
                 </p>
               </div>
+
+              <h3 id="token-storage-native">Mobile + Desktop: bearer header from secure store</h3>
+              <p>
+                Native clients can&apos;t use HttpOnly cookies cleanly across all platforms. Use
+                the secure OS-backed store and the <code>Authorization: Bearer</code> header path:
+              </p>
+              <CodeBlock language="typescript" filename="apps/mobile/lib/auth-store.ts" code={`import * as SecureStore from 'expo-secure-store'
+
+const ACCESS = 'grit_access'
+const REFRESH = 'grit_refresh'
+
+export const saveTokens = async (access: string, refresh: string) => {
+  await SecureStore.setItemAsync(ACCESS, access)
+  await SecureStore.setItemAsync(REFRESH, refresh)
+}
+
+export const loadTokens = async () => ({
+  access: await SecureStore.getItemAsync(ACCESS),
+  refresh: await SecureStore.getItemAsync(REFRESH),
+})
+
+export const clearTokens = async () => {
+  await SecureStore.deleteItemAsync(ACCESS)
+  await SecureStore.deleteItemAsync(REFRESH)
+}`} />
+              <p>
+                The <code>Authorization</code> header path on the API stays for these clients.
+                Desktop (Wails) uses an equivalent OS-keychain binding from Go and exposes
+                <code>saveTokens / loadTokens</code> to the React frontend via Wails bindings.
+              </p>
+
+              <h3 id="token-storage-summary">Summary — never use localStorage for tokens</h3>
+              <ul>
+                <li><strong>Web:</strong> HttpOnly cookies. No JS touches the token. Add CSRF protection on mutations.</li>
+                <li><strong>Mobile:</strong> <code>expo-secure-store</code> + bearer header.</li>
+                <li><strong>Desktop:</strong> OS keychain + bearer header.</li>
+                <li><strong>Never:</strong> <code>localStorage</code> / <code>sessionStorage</code> for auth tokens.</li>
+              </ul>
 
               {/* ── Password Hashing ─────────────────────────────── */}
               <h2 id="password-hashing">Password Hashing</h2>

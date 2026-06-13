@@ -23,7 +23,7 @@ func writeDocsFiles(root string, opts Options) error {
 		filepath.Join(docsRoot, "app", "layout.tsx"):                      docsRootLayout(opts),
 		filepath.Join(docsRoot, "app", "page.tsx"):                        docsHomePage(),
 		filepath.Join(docsRoot, "app", "api", "search", "route.ts"):       docsSearchRoute(),
-		filepath.Join(docsRoot, "app", "docs", "layout.tsx"):              docsDocsLayout(),
+		filepath.Join(docsRoot, "app", "docs", "layout.tsx"):              docsDocsLayout(opts),
 		filepath.Join(docsRoot, "app", "docs", "[[...slug]]", "page.tsx"): docsSlugPage(),
 
 		// Content — Core
@@ -275,8 +275,8 @@ export default function HomePage() {
 `
 }
 
-func docsDocsLayout() string {
-	return `import { DocsLayout } from "fumadocs-ui/layouts/docs";
+func docsDocsLayout(opts Options) string {
+	return fmt.Sprintf(`import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import type { ReactNode } from "react";
 import { source } from "@/app/source";
 
@@ -289,7 +289,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           <span className="flex items-center gap-2 font-bold">
             Grit Docs
             <span className="rounded-md bg-fd-primary/10 px-1.5 py-0.5 text-xs font-medium text-fd-primary">
-              v0.13.0
+              v%s
             </span>
           </span>
         ),
@@ -299,7 +299,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     </DocsLayout>
   );
 }
-`
+`, opts.Version)
 }
 
 func docsSlugPage() string {
@@ -407,7 +407,7 @@ title: Getting Started
 description: Install Grit and create your first full-stack project in minutes.
 ---
 
-**Current version: v0.13.0**
+**Current version: v%s**
 
 ## Installation
 
@@ -421,7 +421,7 @@ Verify the installation:
 
 `+"```bash"+`
 grit version
-# grit version 0.13.0
+# grit version %s
 `+"```"+`
 
 ## Quick Start
@@ -542,7 +542,7 @@ cp .env.cloud.example .env
 `+"```"+`
 
 Fill in your keys for [Neon](https://neon.tech) (Postgres), [Upstash](https://upstash.com) (Redis), [Cloudflare R2](https://dash.cloudflare.com) (storage), and [Resend](https://resend.com) (email).
-`, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
+`, opts.Version, opts.Version, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 
 func docsContentAuth() string {

@@ -162,11 +162,16 @@ function BlogDetailPage() {
             </p>
             <CodeBlock language="tsx" filename="src/routes/_dashboard.tsx" code={`import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { AdminLayout } from '@/components/layout/admin-layout'
+import { apiClient } from '@/lib/api-client'
 
+// Auth tokens live in HttpOnly cookies, so the JS guard cannot read them.
+// We ask the API instead: /api/auth/me succeeds when the cookie is valid,
+// fails (401) when it isn't. TanStack caches the resolved value per nav.
 export const Route = createFileRoute('/_dashboard')({
-  beforeLoad: () => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
+  beforeLoad: async () => {
+    try {
+      await apiClient.get('/api/auth/me')   // sends grit_access cookie automatically
+    } catch {
       throw redirect({ to: '/login' })
     }
   },
@@ -175,7 +180,7 @@ export const Route = createFileRoute('/_dashboard')({
       <Outlet />
     </AdminLayout>
   ),
-})`} highlightLines={[5, 6, 7, 8, 9]} />
+})`} highlightLines={[6, 7, 8, 9, 10, 11, 12]} />
           </div>
 
           {/* Nav */}
