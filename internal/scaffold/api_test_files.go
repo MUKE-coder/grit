@@ -241,7 +241,7 @@ import (
 	"{{MODULE}}/internal/services"
 )
 
-func newUserTestSetup(t *testing.T) (*gin.Engine, *services.AuthService, *config.Config) {
+func newUserTestSetup(t *testing.T) (*gin.Engine, *services.AuthService, *config.Config, models.User) {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 
@@ -274,11 +274,11 @@ func newUserTestSetup(t *testing.T) (*gin.Engine, *services.AuthService, *config
 	protected.GET("/users", userHandler.List)
 	protected.GET("/users/:id", userHandler.GetByID)
 
-	return r, authSvc, cfg
+	return r, authSvc, cfg, admin
 }
 
 func TestUserHandler_List_RequiresAuth(t *testing.T) {
-	r, _, _ := newUserTestSetup(t)
+	r, _, _, _ := newUserTestSetup(t)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/users", nil)
 	w := httptest.NewRecorder()
@@ -288,10 +288,10 @@ func TestUserHandler_List_RequiresAuth(t *testing.T) {
 }
 
 func TestUserHandler_List_AdminAccess(t *testing.T) {
-	r, authSvc, _ := newUserTestSetup(t)
+	r, authSvc, _, admin := newUserTestSetup(t)
 
 	// Fetch the admin we seeded — just generate a token directly
-	tokens, err := authSvc.GenerateTokenPair(1, "admin@example.com", models.RoleAdmin)
+	tokens, err := authSvc.GenerateTokenPair(admin.ID, admin.Email, admin.Role)
 	require.NoError(t, err)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/users", nil)
@@ -308,12 +308,12 @@ func TestUserHandler_List_AdminAccess(t *testing.T) {
 }
 
 func TestUserHandler_GetByID_NotFound(t *testing.T) {
-	r, authSvc, _ := newUserTestSetup(t)
+	r, authSvc, _, admin := newUserTestSetup(t)
 
-	tokens, err := authSvc.GenerateTokenPair(1, "admin@example.com", models.RoleAdmin)
+	tokens, err := authSvc.GenerateTokenPair(admin.ID, admin.Email, admin.Role)
 	require.NoError(t, err)
 
-	req := httptest.NewRequest(http.MethodGet, "/api/users/99999", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/users/00000000-0000-0000-0000-000000000000", nil)
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tokens.AccessToken))
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -322,12 +322,12 @@ func TestUserHandler_GetByID_NotFound(t *testing.T) {
 }
 
 func TestUserHandler_GetByID_Success(t *testing.T) {
-	r, authSvc, _ := newUserTestSetup(t)
+	r, authSvc, _, admin := newUserTestSetup(t)
 
-	tokens, err := authSvc.GenerateTokenPair(1, "admin@example.com", models.RoleAdmin)
+	tokens, err := authSvc.GenerateTokenPair(admin.ID, admin.Email, admin.Role)
 	require.NoError(t, err)
 
-	req := httptest.NewRequest(http.MethodGet, "/api/users/1", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/users/"+admin.ID, nil)
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tokens.AccessToken))
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)

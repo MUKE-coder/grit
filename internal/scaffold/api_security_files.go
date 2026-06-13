@@ -507,6 +507,90 @@ func newCSRFToken() (string, error) {
 	}
 	return base64.RawURLEncoding.EncodeToString(buf), nil
 }
+
+// AutoCSRF is the global, default-on CSRF guard. It only enforces CSRF
+// when the request carries the grit_access auth cookie — i.e., a browser
+// client that the API previously authenticated via cookies. Native
+// mobile / desktop clients use Authorization: Bearer (which the browser
+// never auto-sends across origins), so they're immune to CSRF and pass
+// through with no header required.
+//
+// Pair this with the cookie helpers in services/auth.go (SetAuthCookies /
+// ClearAuthCookies). Together they close OWASP A01 + A05 for cookie auth
+// without forcing every route to opt in.
+//
+// Behaviour:
+//
+//   - GET/HEAD/OPTIONS                    → issue grit_csrf cookie if missing.
+//   - POST/PUT/PATCH/DELETE with cookie   → require matching X-CSRF-Token.
+//   - POST/PUT/PATCH/DELETE bearer-only   → no-op (header auth is CSRF-safe).
+//   - Login / register / refresh routes   → skipped (they MINT the cookie).
+func AutoCSRF() gin.HandlerFunc {
+	const (
+		csrfCookie   = "grit_csrf"
+		csrfHeader   = "X-CSRF-Token"
+		accessCookie = "grit_access"
+	)
+	// Routes that bootstrap the session (login etc.) can't have a CSRF
+	// cookie yet — exempt them so users can sign in on the first try.
+	bootstrap := map[string]bool{
+		"/api/auth/login":           true,
+		"/api/auth/register":        true,
+		"/api/auth/refresh":         true,
+		"/api/auth/forgot-password": true,
+		"/api/auth/reset-password":  true,
+		"/api/auth/totp/verify":     true,
+		"/api/auth/totp/backup-codes/verify": true,
+	}
+	return func(c *gin.Context) {
+		method := strings.ToUpper(c.Request.Method)
+		path := c.Request.URL.Path
+
+		// Issue / refresh the CSRF cookie on safe methods. We do this even
+		// for unauthenticated visitors so SPA bootstrap code can read the
+		// token from a sibling /api/auth/csrf call without a chicken-and-egg.
+		if method == http.MethodGet || method == http.MethodHead || method == http.MethodOptions {
+			if existing, err := c.Cookie(csrfCookie); err != nil || existing == "" {
+				token, gerr := newCSRFToken()
+				if gerr == nil {
+					c.SetSameSite(http.SameSiteLaxMode)
+					c.SetCookie(csrfCookie, token, 86400, "/", "", c.Request.TLS != nil, false)
+				}
+			}
+			c.Next()
+			return
+		}
+
+		// Bootstrap auth endpoints are exempt — they create the session.
+		if bootstrap[path] {
+			c.Next()
+			return
+		}
+
+		// State-changing method. If the client did NOT authenticate via
+		// cookie, this is a bearer flow (or anonymous) — neither needs CSRF.
+		accessVal, _ := c.Cookie(accessCookie)
+		if accessVal == "" {
+			c.Next()
+			return
+		}
+
+		// Cookie-authenticated mutation: require the double-submit token.
+		cookieToken, _ := c.Cookie(csrfCookie)
+		headerToken := c.GetHeader(csrfHeader)
+		if cookieToken == "" || headerToken == "" ||
+			subtle.ConstantTimeCompare([]byte(cookieToken), []byte(headerToken)) != 1 {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"error": gin.H{
+					"code":    "CSRF_INVALID",
+					"message": "CSRF token missing or invalid",
+				},
+			})
+			return
+		}
+		c.Next()
+	}
+}
 `
 }
 

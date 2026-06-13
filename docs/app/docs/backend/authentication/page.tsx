@@ -402,68 +402,48 @@ const (
               </div>
 
               <h3 id="token-storage-cookies">Web: cookies set by the API</h3>
+
+              <div className="p-4 rounded-lg border border-emerald-500/30 bg-emerald-500/5 mb-6">
+                <p className="text-sm text-foreground/85 mb-0">
+                  <strong className="text-emerald-400">This is on by default.</strong>{' '}
+                  Every Grit project scaffolded with v3.25.3+ already sets{' '}
+                  <code>grit_access</code> + <code>grit_refresh</code> on
+                  Login / Register / Refresh / TOTP-verify and clears them on
+                  Logout. The <code>middleware.Auth</code> chain reads cookies
+                  first and falls back to the <code>Authorization</code> header
+                  for native bearer clients. You don&apos;t have to wire any of
+                  this yourself.
+                </p>
+              </div>
+
               <p>
                 The API sets two cookies on login/register/refresh: <code>grit_access</code> (short-lived)
-                and <code>grit_refresh</code> (long-lived). Both are <code>HttpOnly</code> so
-                JavaScript cannot read them, <code>Secure</code> in production so they only travel
-                over HTTPS, and <code>SameSite=Lax</code> so CSRF surface is limited to top-level
-                navigations.
+                and <code>grit_refresh</code> (long-lived, scoped to <code>/api/auth</code>). Both are{' '}
+                <code>HttpOnly</code> so JavaScript cannot read them, <code>Secure</code> on HTTPS
+                so they only travel over TLS, and <code>SameSite=Lax</code> so the CSRF surface
+                is limited to top-level navigations.
               </p>
-              <CodeBlock language="go" filename="services/auth_cookies.go" code={`package services
+              <p>Helpers live on the auth service for use in your own handlers:</p>
+              <CodeBlock language="go" filename="internal/services/auth.go (already in scaffold)" code={`// SetAuthCookies writes the token pair as HttpOnly cookies.
+// Called from Register / Login / Refresh / TOTP verify.
+func (s *AuthService) SetAuthCookies(c *gin.Context, pair *TokenPair) { ... }
 
-import (
-    "net/http"
-    "time"
-)
-
-// SetAuthCookies writes both tokens as HttpOnly cookies.
-// Called from Register / Login / Refresh handlers after generating the pair.
-func SetAuthCookies(w http.ResponseWriter, pair *TokenPair, isProd bool) {
-    http.SetCookie(w, &http.Cookie{
-        Name:     "grit_access",
-        Value:    pair.AccessToken,
-        Path:     "/",
-        HttpOnly: true,
-        Secure:   isProd,
-        SameSite: http.SameSiteLaxMode,
-        MaxAge:   int(15 * time.Minute / time.Second),
-    })
-    http.SetCookie(w, &http.Cookie{
-        Name:     "grit_refresh",
-        Value:    pair.RefreshToken,
-        Path:     "/api/auth",   // only sent to /api/auth/* — limits exposure
-        HttpOnly: true,
-        Secure:   isProd,
-        SameSite: http.SameSiteLaxMode,
-        MaxAge:   int(7 * 24 * time.Hour / time.Second),
-    })
-}
-
-// ClearAuthCookies expires both cookies on logout.
-func ClearAuthCookies(w http.ResponseWriter, isProd bool) {
-    for _, name := range []string{"grit_access", "grit_refresh"} {
-        http.SetCookie(w, &http.Cookie{
-            Name:     name,
-            Value:    "",
-            Path:     "/",
-            HttpOnly: true,
-            Secure:   isProd,
-            SameSite: http.SameSiteLaxMode,
-            MaxAge:   -1,
-        })
-    }
-}`} />
+// ClearAuthCookies expires both cookies. Called from Logout.
+func (s *AuthService) ClearAuthCookies(c *gin.Context) { ... }`} />
 
               <p>
-                In the auth middleware, read the access token from the cookie BEFORE falling back
-                to the <code>Authorization</code> header (the header path stays useful for native
-                mobile / desktop clients that don&apos;t use cookies):
+                The auth middleware reads cookies first, then the Authorization header — same
+                <code>middleware.Auth(db, authService)</code> covers both flows:
               </p>
-              <CodeBlock language="go" filename="middleware/auth.go (excerpt)" code={`token := ""
-if c, err := r.Cookie("grit_access"); err == nil {
-    token = c.Value
-} else if h := r.Header.Get("Authorization"); strings.HasPrefix(h, "Bearer ") {
-    token = strings.TrimPrefix(h, "Bearer ")
+              <CodeBlock language="go" filename="internal/middleware/auth.go (already in scaffold)" code={`token := ""
+if cookieValue, err := c.Cookie("grit_access"); err == nil && cookieValue != "" {
+    token = cookieValue
+} else if authHeader := c.GetHeader("Authorization"); authHeader != "" {
+    // Bearer fallback for native mobile / desktop clients
+    parts := strings.SplitN(authHeader, " ", 2)
+    if len(parts) == 2 && parts[0] == "Bearer" {
+        token = parts[1]
+    }
 }`} />
 
               <p>
@@ -498,16 +478,44 @@ api.interceptors.response.use(
 
 export default api`} />
 
-              <div className="p-4 rounded-lg border border-amber-500/30 bg-amber-500/5 mb-6">
-                <p className="text-sm text-foreground/80 mb-0">
-                  <strong>CSRF.</strong> Cookie-auth APIs are vulnerable to CSRF (a malicious site
-                  forging a state-changing request from a logged-in user). <code>SameSite=Lax</code>{' '}
-                  blocks the common cases, but defence-in-depth is a CSRF token on every state-changing
-                  endpoint. Grit&apos;s scaffolded middleware{' '}
-                  <code>middleware.CSRF</code> emits a <code>grit_csrf</code> cookie and validates an{' '}
-                  <code>X-CSRF-Token</code> header on POST/PATCH/PUT/DELETE.
+              <div className="p-4 rounded-lg border border-emerald-500/30 bg-emerald-500/5 mb-6">
+                <p className="text-sm text-foreground/85 mb-0">
+                  <strong className="text-emerald-400">CSRF is on by default for the cookie flow.</strong>{' '}
+                  Cookie-auth APIs are vulnerable to CSRF (a malicious site forging a state-changing
+                  request from a logged-in user). The scaffolded{' '}
+                  <code>middleware.AutoCSRF()</code> is wired globally and enforces a double-submit
+                  CSRF token <em>only</em> when the request carries the <code>grit_access</code>{' '}
+                  cookie. Bearer-token requests (mobile / desktop) pass through with no header
+                  required — they aren&apos;t CSRF-vulnerable because browsers never auto-send a
+                  Bearer header across origins.
                 </p>
               </div>
+
+              <p>
+                The SPA reads the token from the <code>grit_csrf</code> cookie (which is{' '}
+                <strong>not</strong> HttpOnly, so JS can read it) and echoes it back in the{' '}
+                <code>X-CSRF-Token</code> header. With Axios:
+              </p>
+              <CodeBlock language="ts" filename="apps/web/lib/api-client.ts" code={`import axios from 'axios'
+
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  withCredentials: true,
+})
+
+// Echo the CSRF token from grit_csrf cookie into the X-CSRF-Token header.
+// The middleware accepts this on every cookie-authenticated mutation.
+api.interceptors.request.use((config) => {
+  const m = document.cookie.match(/(?:^|; )grit_csrf=([^;]+)/)
+  if (m) config.headers['X-CSRF-Token'] = decodeURIComponent(m[1])
+  return config
+})
+
+export default api`} />
+              <p>
+                The first GET request (any GET) seeds the cookie; subsequent mutations carry the
+                header. No bootstrap endpoint needed.
+              </p>
 
               <h3 id="token-storage-native">Mobile + Desktop: bearer header from secure store</h3>
               <p>
@@ -541,10 +549,41 @@ export const clearTokens = async () => {
 
               <h3 id="token-storage-summary">Summary — never use localStorage for tokens</h3>
               <ul>
-                <li><strong>Web:</strong> HttpOnly cookies. No JS touches the token. Add CSRF protection on mutations.</li>
+                <li><strong>Web:</strong> HttpOnly cookies (default-on). No JS touches the access token. CSRF is auto-enforced via <code>AutoCSRF()</code>.</li>
                 <li><strong>Mobile:</strong> <code>expo-secure-store</code> + bearer header.</li>
                 <li><strong>Desktop:</strong> OS keychain + bearer header.</li>
                 <li><strong>Never:</strong> <code>localStorage</code> / <code>sessionStorage</code> for auth tokens.</li>
+              </ul>
+
+              <h3 id="token-storage-defence-in-depth">Defence-in-depth — what else is on by default</h3>
+              <ul>
+                <li>
+                  <strong>SecurityHeaders middleware</strong> — strict CSP (no inline script),
+                  X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy
+                  strict-origin-when-cross-origin, Permissions-Policy locking down camera /
+                  mic / geolocation / payments / USB, COOP + CORP for Spectre isolation, and
+                  HSTS on HTTPS. Globally applied.
+                </li>
+                <li>
+                  <strong>Sentinel AuthShield</strong> — brute-force lockout on{' '}
+                  <code>/api/auth/login</code> with progressive backoff. Default-on whenever
+                  the Sentinel suite is enabled (which it is by default in fresh scaffolds).
+                </li>
+                <li>
+                  <strong>Sentinel rate limiting</strong> — 5 requests / 15 minutes per IP on
+                  <code>/api/auth/login</code> and 3 / 15 min on <code>/api/auth/register</code>{' '}
+                  in production. Dev gets relaxed limits so testing doesn&apos;t lock you out.
+                </li>
+                <li>
+                  <strong>WAF</strong> — Sentinel runs in block mode in production, log mode in
+                  dev. Catches injection patterns at the edge before they reach handlers.
+                </li>
+                <li>
+                  <strong>safefetch package</strong> — use{' '}
+                  <code>safefetch.Client</code> for any URL the user supplies (webhooks, OG-image
+                  preview, OEmbed expansion). Blocks private IP ranges + cloud metadata hostnames
+                  and re-validates the resolved IP at TCP-connect time to defeat DNS rebinding.
+                </li>
               </ul>
 
               {/* ── Password Hashing ─────────────────────────────── */}

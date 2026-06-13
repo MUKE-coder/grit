@@ -469,6 +469,10 @@ func (h *TOTPHandler) Verify(c *gin.Context) {
 		h.createTrustedDevice(c, user.ID)
 	}
 
+	// Mirror tokens into HttpOnly cookies so the browser client doesn't
+	// need to handle them in JS. Native bearer clients use the JSON body.
+	h.AuthService.SetAuthCookies(c, tokens)
+
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"user":   user,

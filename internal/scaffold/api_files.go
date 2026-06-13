@@ -948,8 +948,11 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"net/http"
+	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -1044,6 +1047,51 @@ func (s *AuthService) generateToken(userID string, email, role string, expiry ti
 	}
 
 	return tokenString, expiresAt.Unix(), nil
+}
+
+// SetAuthCookies writes the token pair as HttpOnly cookies so the browser
+// holds the credentials out of JavaScript's reach. The native mobile and
+// desktop clients keep using the Authorization: Bearer header, which is
+// why the JSON body still includes the tokens — both paths work.
+//
+// Cookie names: grit_access (sent on every request) and grit_refresh
+// (scoped to /api/auth so it isn't sent everywhere). Both are HttpOnly,
+// Secure when on HTTPS, and SameSite=Lax so CSRF surface is limited to
+// top-level navigations. The CSRF middleware adds defence in depth.
+//
+// Reference: docs/backend/authentication §"Token Storage on the Frontend".
+func (s *AuthService) SetAuthCookies(c *gin.Context, pair *TokenPair) {
+	secure := isRequestHTTPS(c)
+	accessSeconds := int(s.AccessExpiry / time.Second)
+	refreshSeconds := int(s.RefreshExpiry / time.Second)
+
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("grit_access", pair.AccessToken, accessSeconds, "/", "", secure, true)
+	c.SetCookie("grit_refresh", pair.RefreshToken, refreshSeconds, "/api/auth", "", secure, true)
+}
+
+// ClearAuthCookies expires both auth cookies. Call this from the Logout
+// handler so a stolen browser session is cut off as soon as the user
+// signs out.
+func (s *AuthService) ClearAuthCookies(c *gin.Context) {
+	secure := isRequestHTTPS(c)
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("grit_access", "", -1, "/", "", secure, true)
+	c.SetCookie("grit_refresh", "", -1, "/api/auth", "", secure, true)
+}
+
+// isRequestHTTPS returns true when the request is on HTTPS (directly or
+// via a trusted proxy that set X-Forwarded-Proto=https). We use it to flip
+// the Secure cookie flag so the browser refuses to send these cookies
+// over an unencrypted hop.
+func isRequestHTTPS(c *gin.Context) bool {
+	if c.Request.TLS != nil {
+		return true
+	}
+	if strings.EqualFold(c.GetHeader("X-Forwarded-Proto"), "https") {
+		return true
+	}
+	return false
 }
 `
 }
@@ -1160,6 +1208,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
+	// Set HttpOnly auth cookies for browser clients.
+	h.AuthService.SetAuthCookies(c, tokens)
+
 	c.JSON(http.StatusCreated, gin.H{
 		"data": gin.H{
 			"user":   user,
@@ -1270,6 +1321,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	// Set HttpOnly auth cookies for browser clients. Native mobile/desktop
+	// clients ignore them and continue to use the Bearer header from the
+	// tokens object below — both flows work.
+	h.AuthService.SetAuthCookies(c, tokens)
+
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"user":   user,
@@ -1279,20 +1335,29 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
-// Refresh generates a new access token from a refresh token.
+// Refresh generates a new access token from a refresh token. The token is
+// read from the grit_refresh cookie first (web client) and falls back to
+// the JSON body (mobile/desktop bearer clients) — so a single endpoint
+// supports both flows.
 func (h *AuthHandler) Refresh(c *gin.Context) {
-	var req refreshRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": gin.H{
-				"code":    "VALIDATION_ERROR",
-				"message": err.Error(),
-			},
-		})
-		return
+	refreshToken := ""
+	if cookieValue, err := c.Cookie("grit_refresh"); err == nil && cookieValue != "" {
+		refreshToken = cookieValue
+	} else {
+		var req refreshRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{
+				"error": gin.H{
+					"code":    "VALIDATION_ERROR",
+					"message": err.Error(),
+				},
+			})
+			return
+		}
+		refreshToken = req.RefreshToken
 	}
 
-	claims, err := h.AuthService.ValidateToken(req.RefreshToken)
+	claims, err := h.AuthService.ValidateToken(refreshToken)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": gin.H{
@@ -1314,6 +1379,11 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		return
 	}
 
+	// Refresh the HttpOnly cookies so the new access token lands in the
+	// browser without any JS handling. The bearer JSON path is unchanged
+	// for native clients.
+	h.AuthService.SetAuthCookies(c, tokens)
+
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"tokens": tokens,
@@ -1322,9 +1392,12 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	})
 }
 
-// Logout invalidates the user's session.
+// Logout invalidates the user's session. Cookies are cleared immediately;
+// native bearer clients should also drop their stored tokens client-side.
 func (h *AuthHandler) Logout(c *gin.Context) {
-	// In a production system, you would blacklist the refresh token in Redis
+	h.AuthService.ClearAuthCookies(c)
+	// In a production system, you'd also blacklist the refresh token in Redis
+	// so a leaked token can't be reused before its natural expiry.
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Logged out successfully",
 	})
@@ -1997,31 +2070,41 @@ import (
 // Auth creates a JWT authentication middleware.
 func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
+		// Resolve the access token. The HttpOnly cookie path is the
+		// recommended flow for browser clients — JS never sees the token,
+		// so XSS cannot exfiltrate it. The Authorization: Bearer header
+		// path is the fallback for native mobile / desktop clients that
+		// can't or don't want to use cookies.
+		token := ""
+		if cookieValue, err := c.Cookie("grit_access"); err == nil && cookieValue != "" {
+			token = cookieValue
+		} else if authHeader := c.GetHeader("Authorization"); authHeader != "" {
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) != 2 || parts[0] != "Bearer" {
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error": gin.H{
+						"code":    "UNAUTHORIZED",
+						"message": "Invalid authorization header format",
+					},
+				})
+				c.Abort()
+				return
+			}
+			token = parts[1]
+		}
+
+		if token == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": gin.H{
 					"code":    "UNAUTHORIZED",
-					"message": "Authorization header is required",
+					"message": "Authentication required",
 				},
 			})
 			c.Abort()
 			return
 		}
 
-		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": gin.H{
-					"code":    "UNAUTHORIZED",
-					"message": "Invalid authorization header format",
-				},
-			})
-			c.Abort()
-			return
-		}
-
-		claims, err := authService.ValidateToken(parts[1])
+		claims, err := authService.ValidateToken(token)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": gin.H{
@@ -5902,6 +5985,12 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	r.Use(gin.Recovery())
 	r.Use(middleware.CORS(cfg.CORSOrigins))
 	r.Use(middleware.Gzip())
+
+	// CSRF defence — only enforces on cookie-authenticated mutations.
+	// Bearer (mobile/desktop) flows pass through with no header required.
+	// Pairs with services.AuthService.SetAuthCookies (the HttpOnly cookie
+	// path documented in /docs/backend/authentication).
+	r.Use(middleware.AutoCSRF())
 
 	// Idempotent retries for unsafe methods. Activates only when the client
 	// sends an Idempotency-Key header; cached for 24h on 2xx responses.
