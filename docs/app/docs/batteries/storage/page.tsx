@@ -87,12 +87,47 @@ export default function StoragePage() {
                   setup, so local development works out of the box.
                 </p>
 
-                <CodeBlock language="bash" filename=".env" code={`# Storage Configuration
-STORAGE_ENDPOINT=http://localhost:9000   # MinIO for local dev
-STORAGE_BUCKET=myapp-uploads
-STORAGE_REGION=us-east-1
-STORAGE_ACCESS_KEY=minioadmin
-STORAGE_SECRET_KEY=minioadmin`} />
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  <code>STORAGE_DRIVER</code> picks the active provider, and each
+                  provider has its own credential block. Only the block matching{' '}
+                  <code>STORAGE_DRIVER</code> is read at startup — leave the rest
+                  empty or fill them in to switch with a single env-var change.
+                </p>
+
+                <CodeBlock language="bash" filename=".env" code={`# Pick one: minio, s3, r2, b2
+STORAGE_DRIVER=minio
+
+# MinIO — local dev (default)
+MINIO_ENDPOINT=http://localhost:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=myapp-uploads
+MINIO_REGION=us-east-1
+MINIO_USE_SSL=false
+
+# AWS S3 — leave S3_ENDPOINT empty for the AWS regional default.
+# S3_ACCESS_KEY / S3_SECRET_KEY fall back to AWS_ACCESS_KEY_ID /
+# AWS_SECRET_ACCESS_KEY, so IAM role credentials on EC2 / ECS / Lambda
+# work without duplicating keys in .env.
+S3_ENDPOINT=
+S3_ACCESS_KEY=
+S3_SECRET_KEY=
+S3_BUCKET=myapp-uploads
+S3_REGION=us-east-1
+
+# Cloudflare R2
+R2_ENDPOINT=https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com
+R2_ACCESS_KEY=
+R2_SECRET_KEY=
+R2_BUCKET=myapp-uploads
+R2_REGION=auto
+
+# Backblaze B2
+B2_ENDPOINT=https://s3.us-west-004.backblazeb2.com
+B2_ACCESS_KEY=
+B2_SECRET_KEY=
+B2_BUCKET=myapp-uploads
+B2_REGION=us-west-004`} />
               </div>
 
               {/* Storage Service API */}

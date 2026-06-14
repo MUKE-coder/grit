@@ -445,7 +445,7 @@ type Config struct {
 	RedisURL string
 
 	// Storage
-	StorageDriver string        // "minio", "r2", or "b2"
+	StorageDriver string        // "minio", "s3", "r2", or "b2"
 	Storage       StorageConfig // Resolved config for the active driver
 
 	ResendAPIKey string
@@ -581,8 +581,28 @@ func (c *Config) IsDevelopment() bool {
 }
 
 // resolveStorage returns the StorageConfig for the active driver.
+//
+// For AWS S3, leave S3_ENDPOINT empty — the AWS SDK will use the
+// regional endpoint automatically (s3.<region>.amazonaws.com).
+// Credentials fall back to the AWS standard env vars
+// AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY if you don't set the S3_*
+// variants, which is convenient when running on EC2 / ECS / Lambda
+// with an IAM role and you'd rather not duplicate keys in .env.
 func resolveStorage(driver string) StorageConfig {
 	switch driver {
+	case "s3":
+		// Empty endpoint = AWS SDK uses the regional default
+		// (s3.<region>.amazonaws.com). This also flips the client into
+		// virtual-hosted style, which AWS requires for buckets created
+		// after Sep 2020.
+		return StorageConfig{
+			Endpoint:  getEnv("S3_ENDPOINT", ""),
+			AccessKey: firstNonEmpty(os.Getenv("S3_ACCESS_KEY"), os.Getenv("AWS_ACCESS_KEY_ID")),
+			SecretKey: firstNonEmpty(os.Getenv("S3_SECRET_KEY"), os.Getenv("AWS_SECRET_ACCESS_KEY")),
+			Bucket:    getEnv("S3_BUCKET", "uploads"),
+			Region:    firstNonEmpty(os.Getenv("S3_REGION"), os.Getenv("AWS_REGION"), "us-east-1"),
+			UseSSL:    true,
+		}
 	case "r2":
 		return StorageConfig{
 			Endpoint:  getEnv("R2_ENDPOINT", ""),
@@ -611,6 +631,18 @@ func resolveStorage(driver string) StorageConfig {
 			UseSSL:    getEnv("MINIO_USE_SSL", "false") == "true",
 		}
 	}
+}
+
+// firstNonEmpty returns the first non-empty string in vals, or "" if all
+// are empty. Useful for letting S3_* override AWS_* with a graceful
+// fallback.
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 func getEnv(key, fallback string) string {

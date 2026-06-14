@@ -103,7 +103,7 @@ POSTGRES_PASSWORD=change-me-in-production
 POSTGRES_DB=%s
 API_URL=http://localhost:8080
 
-# Storage — Which provider to use: minio, r2, b2
+# Storage — Which provider to use: minio, s3, r2, b2
 STORAGE_DRIVER=minio
 
 # MinIO (local development — used when STORAGE_DRIVER=minio)
@@ -113,6 +113,17 @@ MINIO_SECRET_KEY=minioadmin
 MINIO_BUCKET=%s-uploads
 MINIO_REGION=us-east-1
 MINIO_USE_SSL=false
+
+# AWS S3 (used when STORAGE_DRIVER=s3)
+# Leave S3_ENDPOINT empty to use the AWS regional default.
+# S3_ACCESS_KEY + S3_SECRET_KEY fall back to AWS_ACCESS_KEY_ID +
+# AWS_SECRET_ACCESS_KEY (and S3_REGION to AWS_REGION) so an IAM role
+# attached to your EC2 / ECS / Lambda Just Works.
+S3_ENDPOINT=
+S3_ACCESS_KEY=
+S3_SECRET_KEY=
+S3_BUCKET=
+S3_REGION=us-east-1
 
 # Cloudflare R2 (used when STORAGE_DRIVER=r2)
 R2_ENDPOINT=
@@ -209,8 +220,8 @@ POSTGRES_PASSWORD=change-me          # MUST change for production
 POSTGRES_DB=myapp                    # Database name
 API_URL=https://api.example.com      # Public API URL (baked into Next.js at build time)
 
-# Storage — Active driver: minio, r2, or b2
-STORAGE_DRIVER=minio                 # Change to "r2" or "b2" to switch providers
+# Storage — Active driver: minio, s3, r2, or b2
+STORAGE_DRIVER=minio                 # Change to "s3", "r2", or "b2" to switch providers
 
 # MinIO — Local S3-compatible storage (default for development)
 MINIO_ENDPOINT=http://localhost:9000
@@ -220,7 +231,19 @@ MINIO_BUCKET=myapp-uploads
 MINIO_REGION=us-east-1
 MINIO_USE_SSL=false
 
-# Cloudflare R2 — S3-compatible object storage
+# AWS S3 — Native AWS object storage (most common production choice)
+# Get credentials: IAM Console → Users → Security credentials → Access keys.
+# Better still: attach an IAM role to your EC2 / ECS / Lambda and leave
+# S3_ACCESS_KEY + S3_SECRET_KEY empty — the SDK auto-discovers role creds.
+# Leave S3_ENDPOINT EMPTY so the SDK uses the AWS regional endpoint and
+# virtual-hosted-style addressing (required for new buckets).
+S3_ENDPOINT=                         # Empty = AWS default (s3.<region>.amazonaws.com)
+S3_ACCESS_KEY=                       # Falls back to AWS_ACCESS_KEY_ID
+S3_SECRET_KEY=                       # Falls back to AWS_SECRET_ACCESS_KEY
+S3_BUCKET=myapp-uploads
+S3_REGION=us-east-1                  # Falls back to AWS_REGION
+
+# Cloudflare R2 — S3-compatible object storage with zero egress fees
 # Get credentials: Cloudflare Dashboard → R2 → Manage R2 API Tokens
 R2_ENDPOINT=https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com
 R2_ACCESS_KEY=                       # R2 Access Key ID
@@ -228,7 +251,7 @@ R2_SECRET_KEY=                       # R2 Secret Access Key
 R2_BUCKET=myapp-uploads
 R2_REGION=auto                       # Always "auto" for R2
 
-# Backblaze B2 — S3-compatible object storage
+# Backblaze B2 — S3-compatible object storage, low cost per GB
 # Get credentials: B2 Cloud Storage → App Keys
 B2_ENDPOINT=https://s3.us-west-004.backblazeb2.com
 B2_ACCESS_KEY=                       # B2 keyID

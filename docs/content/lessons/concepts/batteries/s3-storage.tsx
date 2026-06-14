@@ -85,13 +85,24 @@ func (s *Service) SignedURL(ctx context.Context, key string, ttl time.Duration) 
       <ul>
         <li>
           <strong>Local dev:</strong> MinIO (via{' '}
-          <code>docker-compose</code>).
+          <code>docker-compose</code>) — set <code>STORAGE_DRIVER=minio</code>.
         </li>
         <li>
-          <strong>Cheap prod:</strong> Cloudflare R2 (zero egress fees).
+          <strong>Big prod (default for most teams):</strong> AWS S3 —
+          set <code>STORAGE_DRIVER=s3</code>. Leave{' '}
+          <code>S3_ENDPOINT</code> empty so the SDK uses the regional
+          default. If your API runs on EC2/ECS/Lambda with an IAM role,
+          leave the access/secret keys empty too — the SDK auto-discovers
+          role credentials.
         </li>
         <li>
-          <strong>Big prod:</strong> AWS S3.
+          <strong>Cheap prod (zero egress fees):</strong> Cloudflare R2 —
+          set <code>STORAGE_DRIVER=r2</code> and the{' '}
+          <code>R2_*</code> block.
+        </li>
+        <li>
+          <strong>Cheapest per-GB:</strong> Backblaze B2 — set{' '}
+          <code>STORAGE_DRIVER=b2</code> and the <code>B2_*</code> block.
         </li>
       </ul>
       <p>

@@ -79,8 +79,15 @@ func New(cfg config.StorageConfig) (*Storage, error) {
 		return nil, fmt.Errorf("loading AWS config: %w", err)
 	}
 
+	// Path-style addressing is required for MinIO and works for R2 / B2.
+	// AWS S3 buckets created after Sep 2020 reject path-style and require
+	// virtual-hosted style. We use the endpoint as the signal: an empty
+	// endpoint means "go to default AWS regional endpoint" = real S3 =
+	// virtual-hosted. A non-empty endpoint means a third-party S3-clone
+	// that needs path-style.
+	usePathStyle := cfg.Endpoint != ""
 	client := s3.NewFromConfig(awsCfg, func(o *s3.Options) {
-		o.UsePathStyle = true // Required for MinIO
+		o.UsePathStyle = usePathStyle
 	})
 
 	// Verify bucket exists with a quick head request
