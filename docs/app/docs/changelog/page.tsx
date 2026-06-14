@@ -28,6 +28,89 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.26.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.26.0
+                </span>
+                <span className="text-sm text-muted-foreground">June 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Concepts ch.2 expansion, Docker hardening, and the long-overdue grit.json fix.</strong>{' '}
+                  A teaching + security release driven by real student feedback.
+                </p>
+
+                <h3>Concepts course chapter 2</h3>
+                <ul>
+                  <li>
+                    <strong>&quot;Tour of your project&quot; lesson rewritten end-to-end.</strong>{' '}
+                    The original 30-second map was missing most of what the scaffold
+                    actually produces. The new lesson walks every folder + file
+                    matched against a real fresh scaffold: every package under
+                    <code> apps/api/internal</code> (25+ packages in a reference table),
+                    the full <code>apps/web</code> + <code>apps/admin</code> layouts,
+                    <code> packages/shared</code> + <code>packages/grit-ui</code>,
+                    <code> tests/k6</code> (6 scripts), <code>e2e/</code> (Playwright),
+                    <code> .claude/</code>, <code>.github/</code>, and every root
+                    config file.
+                  </li>
+                  <li>
+                    <strong>New &quot;A Docker primer&quot; lesson</strong> inserted
+                    between project-tour and dev-servers. Most learners stall at{' '}
+                    <code>docker compose up -d</code> because nobody taught Docker
+                    first. The new lesson covers what Docker is, image/container/volume,
+                    install per OS, how Grit uses Docker, the 12 commands you&apos;ll
+                    actually type, the 6 errors learners hit + their fixes, plus a
+                    full <strong>&quot;Run Grit without Docker&quot;</strong> path
+                    (Neon + Upstash + Cloudflare R2 + Resend).
+                  </li>
+                </ul>
+
+                <h3>Docker scaffold hardening</h3>
+                <ul>
+                  <li>
+                    <strong><code>docker-compose.yml</code> binds every port to{' '}
+                    <code>127.0.0.1</code></strong>, not the Docker default{' '}
+                    <code>0.0.0.0</code>. Coffee-shop wifi can no longer reach
+                    Postgres with <code>grit:grit</code> credentials.
+                  </li>
+                  <li>
+                    <strong><code>docker-compose.prod.yml</code> documented as
+                    reverse-proxy-first.</strong> A top-of-file comment block
+                    spells out the security posture: nothing uses{' '}
+                    <code>ports:</code>, only <code>expose:</code>. Postgres + Redis
+                    have NO host binding at all in prod. Traffic must arrive via
+                    Traefik / Caddy / nginx / Dokploy on the same Docker network.
+                  </li>
+                </ul>
+
+                <h3>Scaffold fixes</h3>
+                <ul>
+                  <li>
+                    <strong><code>grit.json</code> now writes the real CLI version.</strong>{' '}
+                    Previously hardcoded to <code>3.3.0</code> (a leftover placeholder
+                    from when the grit.json schema was at 3.3). Fresh projects now
+                    show the actual scaffolding CLI version (3.26.0 today). Closes
+                    the &quot;is my project version really 3.3?&quot; confusion.
+                  </li>
+                </ul>
+
+                <h3>Docs site</h3>
+                <ul>
+                  <li>
+                    Single-source-of-truth version constant in{' '}
+                    <code>config/site.ts</code>. The header badge, install lesson
+                    example output, verify-install lesson, animated terminal, and
+                    changelog all read from one place — no more drift between the
+                    CLI version and what the website shows.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.25.2 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

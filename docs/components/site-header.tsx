@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { SearchDialog } from '@/components/search-dialog'
 import { MobileNav } from '@/components/docs-sidebar'
 import { cn } from '@/lib/utils'
+import { GRIT_VERSION } from '@/config/site'
 
 export function SiteHeader() {
   const { theme, setTheme } = useTheme()
@@ -41,7 +42,7 @@ export function SiteHeader() {
               Grit
             </span>
             <span className="hidden sm:inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-mono font-medium text-primary/80">
-              v3.25.2
+              v{GRIT_VERSION}
             </span>
           </Link>
         </div>
