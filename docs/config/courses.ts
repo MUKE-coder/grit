@@ -271,6 +271,19 @@ const conceptsCourse: Course = {
           ],
         },
         {
+          title: 'Learn before you run',
+          lessons: [
+            {
+              slug: 'learn-docker',
+              title: 'A Docker primer',
+              tagline: 'What Docker is, how Grit uses it, how to run Grit without it, and the commands you actually need.',
+              minutes: 12,
+              difficulty: 'easy',
+              status: 'available',
+            },
+          ],
+        },
+        {
           title: 'Running it',
           lessons: [
             {

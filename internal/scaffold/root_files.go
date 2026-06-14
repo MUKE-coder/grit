@@ -689,7 +689,7 @@ func gritJSON(opts Options) string {
 	return fmt.Sprintf(`{
   "architecture": "%s",
   "frontend": "%s",
-  "version": "3.3.0"
+  "version": "%s"
 }
-`, string(opts.Architecture), string(opts.Frontend))
+`, string(opts.Architecture), string(opts.Frontend), opts.Version)
 }

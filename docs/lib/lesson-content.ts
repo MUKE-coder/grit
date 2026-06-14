@@ -23,6 +23,7 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
 
   'concepts/first-project/grit-new': () => import('@/content/lessons/concepts/first-project/grit-new'),
   'concepts/first-project/project-tour': () => import('@/content/lessons/concepts/first-project/project-tour'),
+  'concepts/first-project/learn-docker': () => import('@/content/lessons/concepts/first-project/learn-docker'),
   'concepts/first-project/dev-servers': () => import('@/content/lessons/concepts/first-project/dev-servers'),
   'concepts/first-project/first-look': () => import('@/content/lessons/concepts/first-project/first-look'),
 

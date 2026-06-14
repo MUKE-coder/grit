@@ -46,13 +46,24 @@ func writeDockerFiles(root string, opts Options) error {
 }
 
 func dockerCompose(opts Options) string {
-	return fmt.Sprintf(`services:
+	return fmt.Sprintf(`# Local development infrastructure.
+#
+# Every port is bound to 127.0.0.1 — that means these services are
+# reachable from YOUR machine only, not from your LAN, not from the
+# wider internet. Public binding (the Docker default) on a laptop on
+# a coffee-shop wifi exposes Postgres with grit:grit credentials to
+# the room. Don't do that.
+#
+# If you need to share infra with a teammate, use a VPN (Tailscale,
+# Wireguard) and forward 127.0.0.1:5432 from your machine — never
+# rebind to 0.0.0.0.
+services:
   postgres:
     image: postgres:16-alpine
     container_name: %s-postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: grit
       POSTGRES_PASSWORD: grit
@@ -70,7 +81,7 @@ func dockerCompose(opts Options) string {
     container_name: %s-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -84,8 +95,8 @@ func dockerCompose(opts Options) string {
     container_name: %s-minio
     restart: unless-stopped
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
@@ -98,8 +109,8 @@ func dockerCompose(opts Options) string {
     container_name: %s-mailhog
     restart: unless-stopped
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
 
 volumes:
   postgres-data:
@@ -111,7 +122,32 @@ volumes:
 func dockerComposeProd(opts Options) string {
 	name := opts.ProjectName
 
-	result := fmt.Sprintf(`services:
+	result := fmt.Sprintf(`# Production stack.
+#
+# Security posture: nothing in this file uses ` + "`ports:`" + ` — only
+# ` + "`expose:`" + `. That means none of these services bind to the public host
+# interface. Traffic reaches the API and the front-ends ONLY through
+# your reverse proxy (Traefik, Caddy, nginx, or a managed PaaS like
+# Dokploy/Coolify), which lives on the same Docker network and routes
+# domain.com → ` + "`api:8080`" + `, app.domain.com → ` + "`admin:3000`" + `, etc.
+#
+# Postgres and Redis have NO host binding at all — they're reachable
+# only by containers on the ` + "`%s`" + ` network. That's the property you
+# want: a successful host-level compromise still has to pop a container
+# to reach the database.
+#
+# MinIO is included as an option but most production deployments use
+# Cloudflare R2 or AWS S3 (see STORAGE_* in .env). Delete the minio
+# service if you're on managed object storage.
+#
+# To configure your reverse proxy:
+#   - Point your apex domain at the api container's expose port (8080)
+#   - Point app.domain.com at the admin container (3000)
+#   - Point www.domain.com at the web container (3000)
+#   - Use Let's Encrypt or your PaaS' auto-TLS for HTTPS — never serve
+#     the API over plain HTTP in production.
+
+services:
   api:
     build:
       context: ./apps/api
@@ -134,7 +170,7 @@ func dockerComposeProd(opts Options) string {
         condition: service_healthy
     networks:
       - %s
-`, name, name, name)
+`, name, name, name, name)
 
 	if opts.ShouldIncludeWeb() {
 		result += fmt.Sprintf(`

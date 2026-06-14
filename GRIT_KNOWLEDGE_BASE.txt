@@ -1,13 +1,13 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.25.2
+Version: 3.26.0
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
 License: MIT
 Tagline: Go + React. Built with Grit.
-Last updated: 2026-06-13
+Last updated: 2026-06-14
 
 
 WHAT IS GRIT?
@@ -986,7 +986,34 @@ D) WHEN USERS ASK ABOUT LEARNING GRIT
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.25.2 (Current):
+v3.26.0 (Current):
+  - Concepts course chapter 2 expanded. The "Tour of your project" lesson
+    has been completely rewritten — instead of a 30-second map, it now
+    walks every actual folder + file the scaffold produces (the 25+
+    packages under apps/api/internal, the tests/k6 directory, packages/
+    grit-ui, .claude, .github, every root config file). Each package now
+    has a one-line purpose in a reference table.
+  - New "A Docker primer" lesson inserted between project-tour and the
+    dev-servers lesson. Most learners stalled at `docker compose up -d`
+    because nobody taught Docker; this lesson covers what Docker is, the
+    image/container/volume mental model, install per OS, how Grit uses
+    Docker (the 4 services), 12 commands you'll actually type, the 6
+    common errors + their fixes, AND a full "run Grit without Docker"
+    path with Neon + Upstash + Cloudflare R2 + Resend.
+  - Docker scaffold hardening:
+      * docker-compose.yml (dev) now binds every port to 127.0.0.1 only,
+        not the Docker default of 0.0.0.0. Coffee-shop wifi can no longer
+        reach Postgres with grit:grit credentials.
+      * docker-compose.prod.yml gets a top-of-file documentation block
+        explaining the reverse-proxy posture: nothing uses ports:, only
+        expose:, so services are reachable only through your Traefik /
+        Caddy / nginx / Dokploy proxy on the same Docker network.
+        Postgres + Redis have NO host binding at all in prod.
+  - grit.json now writes the actual CLI version (3.26.0 today) instead of
+    the hardcoded "3.3.0" placeholder it used to ship. This closes the
+    "is my project version really 3.3?" confusion from the docs site.
+
+v3.25.2:
   - Docs hardening: removed "localStorage acceptable" guidance from
     /docs/backend/authentication and rewrote the Token Storage section with
     HttpOnly + Secure + SameSite=Lax cookies as the primary recommendation,
