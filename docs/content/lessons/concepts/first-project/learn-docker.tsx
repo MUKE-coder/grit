@@ -201,10 +201,72 @@ docker system prune --volumes`}
       <CodeBlock
         language="yaml"
         code={`# Was:  "127.0.0.1:5432:5432"
-# Now:  127.0.0.1:5434:5432
+# Now:  "127.0.0.1:5434:5432"
 #         host port ─┘   └─ container port (stays 5432)
-# Then update DATABASE_URL in .env to use 5434.`}
+# Then update POSTGRES_PORT=5434 in .env so the Go API connects to the
+# right host port.`}
       />
+      <p>
+        Grit 3.26.2+ scaffolds already default the host port to{' '}
+        <code>5434</code> specifically to dodge this collision class.
+      </p>
+
+      <h3>
+        2a. Windows: <code>An attempt was made to access a socket in a way forbidden by its access permissions</code>
+      </h3>
+      <p>
+        Same family as &quot;port is already allocated&quot;, but with a
+        twist that confuses everyone the first time. You have no
+        containers, no Postgres service, nothing listening on 5432 —
+        and Docker still refuses to bind it. This is Windows reserving
+        port ranges for Hyper-V Virtual Switch / WinNAT and refusing
+        non-Administrator processes the right to bind inside them.
+      </p>
+      <p>Confirm with PowerShell:</p>
+      <CodeBlock
+        language="powershell"
+        code={`netsh int ipv4 show excludedportrange protocol=tcp
+
+# If you see something like:
+#   Start Port    End Port
+#   ----------    --------
+#   ...
+#   5360          5459
+# then 5432 is inside that reserved range and Docker can't have it.`}
+      />
+      <p>Three ways out, in order of how aggressive you want to be:</p>
+      <ul>
+        <li>
+          <strong>Cheapest fix:</strong> change the host port in{' '}
+          <code>docker-compose.yml</code> to one outside the reserved
+          range (e.g., <code>5434</code> as Grit&apos;s defaults already
+          do), and set <code>POSTGRES_PORT=5434</code> in <code>.env</code>.
+        </li>
+        <li>
+          <strong>Reset the WinNAT reservations</strong> (Administrator
+          PowerShell). This releases any ranges WinNAT grabbed at boot —
+          useful if you really want to keep 5432:
+          <CodeBlock
+            language="powershell"
+            code={`net stop winnat
+net start winnat
+# Then re-run docker compose up -d`}
+          />
+        </li>
+        <li>
+          <strong>Shift the dynamic port range</strong> so the OS stops
+          handing 5432 out (also Administrator):
+          <CodeBlock
+            language="powershell"
+            code={`netsh int ipv4 set dynamic tcp start=49152 num=16384`}
+          />
+        </li>
+      </ul>
+      <p>
+        The first option is what we recommend for daily use — there&apos;s
+        no operational reason to insist on host port 5432 when nothing
+        connects to it from outside your machine.
+      </p>
 
       <h3>3. <code>no space left on device</code></h3>
       <p>

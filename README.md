@@ -35,21 +35,21 @@ curl -fsSL https://gritframework.dev/install.sh | sh
 Pin a specific version:
 
 ```bash
-GRIT_VERSION=v3.26.1 curl -fsSL https://gritframework.dev/install.sh | sh
+GRIT_VERSION=v3.26.2 curl -fsSL https://gritframework.dev/install.sh | sh
 ```
 
 Already have Go installed? `go install` still works as an alternative:
 
 ```bash
 go install github.com/MUKE-coder/grit/v3/cmd/grit@latest
-# or pin: go install github.com/MUKE-coder/grit/v3/cmd/grit@v3.26.1
+# or pin: go install github.com/MUKE-coder/grit/v3/cmd/grit@v3.26.2
 ```
 
 Verify the install:
 
 ```bash
 grit version
-# grit version 3.26.1
+# grit version 3.26.2
 ```
 
 Update to the latest release:
@@ -173,7 +173,7 @@ grit up                                # Back online
 grit deploy --host user@server.com --domain myapp.com
 
 # Meta
-grit version                           # v3.26.1
+grit version                           # v3.26.2
 grit update                            # Self-update to latest
 grit upgrade                           # Upgrade project templates
 ```

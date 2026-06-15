@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.26.1
+Version: 3.26.2
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -986,7 +986,22 @@ D) WHEN USERS ASK ABOUT LEARNING GRIT
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.26.1 (Current):
+v3.26.2 (Current):
+  - Postgres host port default 5432 -> 5434. Dodges the Windows WinNAT /
+    Hyper-V Virtual Switch port-range reservation that produces the
+    "An attempt was made to access a socket in a way forbidden by its
+    access permissions" bind error even when no process holds 5432.
+    Container still listens on 5432 inside the Docker network; the dev
+    host port is 5434. Prod compose pins POSTGRES_PORT back to 5432 in
+    the api service environment so inter-container traffic stays on the
+    container port. Net effect: 'docker compose up -d' now succeeds on
+    Windows machines that have a Hyper-V reservation overlapping 5432
+    (Docker Desktop + WSL2 default install), without any user action.
+  - Docker primer lesson adds error 2a: the Windows-specific bind error
+    with the netsh diagnostic (excludedportrange), and three fix paths
+    (change port, restart winnat, shift dynamic range).
+
+v3.26.1:
   - Single source of truth for Postgres credentials. .env now has one
     canonical POSTGRES_* block (USER / PASSWORD / DB / HOST / PORT) with
     a 48-hex-char random POSTGRES_PASSWORD generated per scaffold.

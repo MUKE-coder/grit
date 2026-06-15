@@ -71,10 +71,10 @@ export default function Lesson() {
       <CodeBlock
         terminal
         code={`# Pin via the install script
-GRIT_VERSION=v3.26.1 curl -fsSL https://gritframework.dev/install.sh | sh
+GRIT_VERSION=v3.26.2 curl -fsSL https://gritframework.dev/install.sh | sh
 
 # Pin via go install
-go install github.com/MUKE-coder/grit/v3/cmd/grit@v3.26.1`}
+go install github.com/MUKE-coder/grit/v3/cmd/grit@v3.26.2`}
       />
 
       <TipBox tone="warning">

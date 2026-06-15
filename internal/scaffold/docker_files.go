@@ -63,7 +63,13 @@ services:
     container_name: %s-postgres
     restart: unless-stopped
     ports:
-      - "127.0.0.1:5432:5432"
+      # Host port 5434 (not the Postgres-default 5432) avoids two common
+      # collisions: a Postgres service installed on the host, and Windows
+      # WinNAT reserving 5432 inside its dynamic Hyper-V port range
+      # ("An attempt was made to access a socket in a way forbidden..."
+      # — see ` + "`netsh int ipv4 show excludedportrange protocol=tcp`" + `).
+      # The container still listens on 5432 inside the Docker network.
+      - "127.0.0.1:5434:5432"
     # Credentials come from .env (POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB).
     # Edit them ONLY in .env — never duplicate them here. The :- syntax
     # provides a fallback so 'docker compose up' still works if the env
@@ -164,11 +170,14 @@ services:
       - .env
     # POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB come from .env
     # (env_file above). We override POSTGRES_HOST so the API hits the
-    # postgres container on the Docker network instead of 'localhost'.
-    # The Go config builds DATABASE_URL from these parts at startup.
+    # postgres container on the Docker network, and POSTGRES_PORT back
+    # to 5432 because the postgres container listens on 5432 internally
+    # — only the dev host port mapping uses 5434. The Go config builds
+    # DATABASE_URL from these parts at startup.
     environment:
       APP_ENV: production
       POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
       REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: http://minio:9000
     depends_on:

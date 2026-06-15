@@ -28,6 +28,71 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.26.2 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.26.2
+                </span>
+                <span className="text-sm text-muted-foreground">June 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Postgres host port 5432 → 5434 to dodge Windows
+                  WinNAT reservations.</strong>{' '}
+                  Closes the &quot;An attempt was made to access a socket in
+                  a way forbidden by its access permissions&quot; bind error
+                  that hit Windows users on a fresh{' '}
+                  <code>docker compose up -d</code>.
+                </p>
+
+                <h3>What was wrong</h3>
+                <p>
+                  Even with no process visibly holding port 5432, Docker
+                  Desktop on Windows would refuse to bind it. Cause: the
+                  WinNAT service / Hyper-V Virtual Switch silently reserves
+                  TCP port ranges at boot, and 5432 sits inside one of the
+                  common reservations on Docker Desktop + WSL2 default
+                  installs.
+                </p>
+
+                <h3>What changed</h3>
+                <ul>
+                  <li>
+                    Dev <code>docker-compose.yml</code> now publishes Postgres
+                    on host port <code>5434</code> (not <code>5432</code>).
+                    Container port stays <code>5432</code> inside the Docker
+                    network.
+                  </li>
+                  <li>
+                    <code>.env</code> sets <code>POSTGRES_PORT=5434</code> so
+                    the Go API connects to the same host port.
+                  </li>
+                  <li>
+                    <code>docker-compose.prod.yml</code> pins{' '}
+                    <code>POSTGRES_PORT=5432</code> in the api service
+                    environment because inter-container traffic uses the
+                    container port, not the dev host port.
+                  </li>
+                  <li>
+                    Docker primer lesson gains error 2a, covering the
+                    Windows-specific bind error with the{' '}
+                    <code>netsh int ipv4 show excludedportrange</code>{' '}
+                    diagnostic and three fix paths.
+                  </li>
+                </ul>
+
+                <p>
+                  Net effect: a fresh <code>grit new</code> →{' '}
+                  <code>docker compose up -d</code> →{' '}
+                  <code>grit migrate</code> now succeeds on Windows machines
+                  whose Hyper-V reservation overlaps 5432 — without any
+                  user-side intervention.
+                </p>
+              </div>
+            </div>
+
             {/* v3.26.1 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -84,7 +84,11 @@ POSTGRES_USER=grit
 POSTGRES_PASSWORD=%s
 POSTGRES_DB=%s
 POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
+# 5434 (not the default 5432) avoids host collisions — see docker-compose.yml.
+# The container still listens on 5432 inside the Docker network, which is
+# why docker-compose.prod.yml overrides POSTGRES_PORT back to 5432 for
+# inter-container traffic.
+POSTGRES_PORT=5434
 
 # Override the connection string ONLY if you're pointing at an external
 # Postgres (Neon, Supabase, RDS) or want to use SQLite. When set, this
@@ -210,7 +214,7 @@ POSTGRES_USER=grit
 POSTGRES_PASSWORD=change-me          # MUST change in production
 POSTGRES_DB=myapp
 POSTGRES_HOST=localhost              # ` + "`postgres`" + ` inside docker-compose.prod.yml
-POSTGRES_PORT=5432
+POSTGRES_PORT=5434                   # host port; 5432 inside docker network
 
 # Override the connection string ONLY for external Postgres (Neon,
 # Supabase, RDS) or SQLite. When set, this wins over the POSTGRES_*
