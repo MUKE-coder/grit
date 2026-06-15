@@ -473,7 +473,7 @@ pnpm dev
 | Pulse (Observability) | http://localhost:8080/pulse/ui/ |
 | GORM Studio | http://localhost:8080/studio |
 | Mailhog | http://localhost:8025 |
-| MinIO Console | http://localhost:9001 |
+| MinIO Console | http://localhost:9003 |
 
 ## Project Structure
 
@@ -1396,10 +1396,10 @@ All batteries are configured via environment variables in .env:
 
 ` + "```bash" + `
 # Redis
-REDIS_URL=localhost:6379
+REDIS_URL=localhost:6380
 
 # S3 Storage
-S3_ENDPOINT=localhost:9000
+S3_ENDPOINT=localhost:9002
 S3_ACCESS_KEY=minioadmin
 S3_SECRET_KEY=minioadmin
 S3_BUCKET=uploads

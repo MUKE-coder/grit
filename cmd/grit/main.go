@@ -21,7 +21,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.26.2"
+var version = "3.26.3"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -968,9 +968,9 @@ func printSuccess(name string, opts scaffold.Options) {
 		gray.Printf("  Docs:        http://localhost:3002\n")
 	}
 
-	gray.Printf("  PostgreSQL:  localhost:5432\n")
-	gray.Printf("  Redis:       localhost:6379\n")
-	gray.Printf("  MinIO:       http://localhost:9001\n")
+	gray.Printf("  PostgreSQL:  localhost:5434\n")
+	gray.Printf("  Redis:       localhost:6380\n")
+	gray.Printf("  MinIO:       http://localhost:9003\n")
 	gray.Printf("  Mailhog:     http://localhost:8025\n")
 	gray.Println("  ─────────────────────────────────────")
 	fmt.Println()

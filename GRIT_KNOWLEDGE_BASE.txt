@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.26.2
+Version: 3.26.3
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -986,7 +986,24 @@ D) WHEN USERS ASK ABOUT LEARNING GRIT
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.26.2 (Current):
+v3.26.3 (Current):
+  - Host port defaults moved for Redis + MinIO to match the Postgres
+    shift in v3.26.2. Redis dev host port 6379 -> 6380 (collides with
+    Memurai / brew Redis / apt Redis / WSL Redis); MinIO API host port
+    9000 -> 9002 (collides with Portainer, SonarQube, monitoring stacks);
+    MinIO console host port 9001 -> 9003. Container-internal ports stay
+    at the canonical defaults (6379, 9000, 9001) so the Docker network
+    is unchanged.
+  - .env REDIS_URL default = redis://localhost:6380. MINIO_ENDPOINT
+    default = http://localhost:9002. Prod compose unchanged (inter-
+    container traffic uses redis:6379 + minio:9000 over the docker
+    network).
+  - CLI "next steps" banner after 'grit new' now prints the new host
+    ports (5434, 6380, 9003). Scaffolded README service table updated.
+    Docker primer, dev-servers, batteries/redis-cache, batteries/
+    s3-storage lessons all updated to match.
+
+v3.26.2:
   - Postgres host port default 5432 -> 5434. Dodges the Windows WinNAT /
     Hyper-V Virtual Switch port-range reservation that produces the
     "An attempt was made to access a socket in a way forbidden by its

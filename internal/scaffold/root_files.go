@@ -111,7 +111,7 @@ GITHUB_CLIENT_SECRET=
 OAUTH_FRONTEND_URL=http://localhost:3001
 
 # Redis
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://localhost:6380
 
 # Public API URL — baked into Next.js bundles at build time
 API_URL=http://localhost:8080
@@ -120,7 +120,7 @@ API_URL=http://localhost:8080
 STORAGE_DRIVER=minio
 
 # MinIO (local development — used when STORAGE_DRIVER=minio)
-MINIO_ENDPOINT=http://localhost:9000
+MINIO_ENDPOINT=http://localhost:9002
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
 MINIO_BUCKET=%s-uploads
@@ -239,7 +239,7 @@ GITHUB_CLIENT_SECRET=                # GitHub OAuth App Client Secret
 OAUTH_FRONTEND_URL=http://localhost:3001  # Where to redirect after OAuth
 
 # Redis — Cache and job queue
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://localhost:6380
 
 # Public API URL — baked into Next.js bundles at build time
 API_URL=https://api.example.com
@@ -248,7 +248,7 @@ API_URL=https://api.example.com
 STORAGE_DRIVER=minio                 # Change to "s3", "r2", or "b2" to switch providers
 
 # MinIO — Local S3-compatible storage (default for development)
-MINIO_ENDPOINT=http://localhost:9000
+MINIO_ENDPOINT=http://localhost:9002
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
 MINIO_BUCKET=myapp-uploads
@@ -678,9 +678,9 @@ pnpm dev
 | GORM Studio   | http://localhost:8080/studio  |
 | Web App       | http://localhost:3000         |
 | Admin Panel   | http://localhost:3001         |
-| PostgreSQL    | localhost:5432               |
-| Redis         | localhost:6379               |
-| MinIO Console | http://localhost:9001         |
+| PostgreSQL    | localhost:5434               |
+| Redis         | localhost:6380               |
+| MinIO Console | http://localhost:9003         |
 | Mailhog       | http://localhost:8025         |
 
 ## Development

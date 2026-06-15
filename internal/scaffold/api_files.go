@@ -509,7 +509,7 @@ func Load() (*Config, error) {
 		AppURL:      getEnv("APP_URL", "http://localhost:8080"),
 		DatabaseURL: resolveDatabaseURL(),
 		JWTSecret:   getEnv("JWT_SECRET", ""),
-		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379"),
+		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6380"),
 
 		StorageDriver: storageDriver,
 		Storage:       resolveStorage(storageDriver),
@@ -653,7 +653,7 @@ func resolveStorage(driver string) StorageConfig {
 		}
 	default: // minio
 		return StorageConfig{
-			Endpoint:  getEnv("MINIO_ENDPOINT", "http://localhost:9000"),
+			Endpoint:  getEnv("MINIO_ENDPOINT", "http://localhost:9002"),
 			AccessKey: getEnv("MINIO_ACCESS_KEY", "minioadmin"),
 			SecretKey: getEnv("MINIO_SECRET_KEY", "minioadmin"),
 			Bucket:    getEnv("MINIO_BUCKET", "uploads"),

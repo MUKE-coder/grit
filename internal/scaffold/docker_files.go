@@ -91,7 +91,10 @@ services:
     container_name: %s-redis
     restart: unless-stopped
     ports:
-      - "127.0.0.1:6379:6379"
+      # Host 6380 (not the Redis-default 6379) avoids native Redis installs
+      # — Memurai on Windows, brew/apt Redis on macOS/Linux, WSL Redis.
+      # Container still listens on 6379 inside the Docker network.
+      - "127.0.0.1:6380:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -105,8 +108,12 @@ services:
     container_name: %s-minio
     restart: unless-stopped
     ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
+      # Host 9002 / 9003 (not the MinIO-default 9000 / 9001) avoids
+      # collisions with Portainer (9000) and a handful of monitoring
+      # stacks that grab 9000/9001. Container still listens on 9000/9001
+      # inside the Docker network.
+      - "127.0.0.1:9002:9000"
+      - "127.0.0.1:9003:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin

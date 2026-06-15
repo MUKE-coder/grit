@@ -28,6 +28,73 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.26.3 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.26.3
+                </span>
+                <span className="text-sm text-muted-foreground">June 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Redis + MinIO host ports moved to dodge native-install collisions.</strong>{' '}
+                  Same pattern as v3.26.2 did for Postgres, applied to the two
+                  other ports learners actually clash on.
+                </p>
+
+                <h3>What changed</h3>
+                <ul>
+                  <li>
+                    <strong>Redis:</strong> dev host port <code>6379 → 6380</code>.
+                    Native installs (Memurai on Windows, <code>brew install redis</code>,{' '}
+                    <code>apt install redis-server</code>, WSL Redis) all bind 6379.
+                  </li>
+                  <li>
+                    <strong>MinIO S3 API:</strong> dev host port <code>9000 → 9002</code>.
+                    Portainer&apos;s admin UI defaults to 9000; SonarQube and a
+                    handful of monitoring stacks grab it too.
+                  </li>
+                  <li>
+                    <strong>MinIO console:</strong> dev host port <code>9001 → 9003</code>.
+                    Less common collision but kept in sync with the API port shift.
+                  </li>
+                  <li>
+                    <strong>Mailhog kept on 1025 / 8025.</strong> Almost zero dev
+                    machines have anything on those — shifting them just adds
+                    learner confusion without preventing real failures.
+                  </li>
+                </ul>
+
+                <h3>Inside the Docker network</h3>
+                <p>
+                  Containers still listen on the canonical ports — Redis on 6379,
+                  MinIO on 9000 + 9001. The host-port shifts only affect how you
+                  reach them from your laptop. Prod compose is unchanged because
+                  inter-container traffic uses the docker network hostnames
+                  (<code>redis</code>, <code>minio</code>) and container ports.
+                </p>
+
+                <h3>Where else this surfaces</h3>
+                <ul>
+                  <li>
+                    <code>.env</code>: <code>REDIS_URL=redis://localhost:6380</code>{' '}
+                    and <code>MINIO_ENDPOINT=http://localhost:9002</code>.
+                  </li>
+                  <li>
+                    The CLI &quot;next steps&quot; banner after <code>grit new</code> now
+                    prints the new host ports.
+                  </li>
+                  <li>
+                    Scaffolded README&apos;s services table and the docs lessons
+                    (Docker primer, dev-servers, batteries/redis-cache,
+                    batteries/s3-storage) updated to match.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.26.2 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

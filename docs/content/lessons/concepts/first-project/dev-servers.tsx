@@ -32,9 +32,11 @@ export default function Lesson() {
 docker compose up -d`}
       />
       <p>
-        Brings up Postgres (5432), Redis (6379), MinIO (9000 + 9001), and
-        Mailhog (1025 + 8025) in the background. Wait ~5 seconds for them to
-        be ready.
+        Brings up Postgres (host 5434), Redis (host 6380), MinIO (host
+        9002 + 9003), and Mailhog (1025 + 8025) in the background — the
+        host ports are intentionally offset from the canonical defaults
+        so a native install of Postgres / Redis / MinIO on your machine
+        doesn&apos;t collide. Wait ~5 seconds for them to be ready.
       </p>
 
       <TipBox tone="warning">
@@ -113,8 +115,8 @@ grit seed       # inserts the admin user + sample data`}
         hint={
           <>
             If any step fails, check that Docker is running (
-            <code>docker ps</code>) and that no port (5432, 6379, 8080, 3000,
-            3001) is already in use by another app.
+            <code>docker ps</code>) and that no port (5434, 6380, 9002, 9003,
+            8025, 8080, 3000, 3001) is already in use by another app.
           </>
         }
         solution={

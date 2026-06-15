@@ -106,10 +106,10 @@ docker run --rm hello-world
           <strong>Postgres</strong> on port 5432 — the database.
         </li>
         <li>
-          <strong>Redis</strong> on port 6379 — cache + job queue.
+          <strong>Redis</strong> on host port 6380 (container 6379) — cache + job queue.
         </li>
         <li>
-          <strong>MinIO</strong> on ports 9000 (S3 API) + 9001 (web console)
+          <strong>MinIO</strong> on host ports 9002 (S3 API) + 9003 (web console)
           — S3-compatible file storage.
         </li>
         <li>
@@ -121,10 +121,21 @@ docker run --rm hello-world
         <code>docker compose up -d</code> boots all four in the background.
         <code> docker compose down</code> stops them. You never had to install
         Postgres or Redis on your machine — they live in containers and your
-        Go API connects to them via <code>localhost:5432</code> +{' '}
-        <code>localhost:6379</code>. When you&apos;re done for the day, run{' '}
+        Go API connects to them via <code>localhost:5434</code> +{' '}
+        <code>localhost:6380</code>. When you&apos;re done for the day, run{' '}
         <code>down</code> and your laptop is back to normal.
       </p>
+
+      <TipBox tone="info">
+        <strong>Why non-default host ports?</strong> The container-internal
+        ports stay at the canonical defaults (Postgres 5432, Redis 6379,
+        MinIO 9000/9001) — that&apos;s what code inside the Docker network
+        expects. The host ports (what you type on your laptop) are deliberately
+        offset to dodge the most common collisions: a native Postgres install
+        on 5432, a Memurai / brew Redis on 6379, Portainer on 9000. Inside the
+        compose file each line looks like <code>&quot;127.0.0.1:5434:5432&quot;</code>{' '}
+        — host port left, container port right.
+      </TipBox>
 
       <TipBox tone="info">
         <strong>Grit binds these ports to 127.0.0.1 only.</strong> That means
@@ -148,7 +159,7 @@ docker compose down
 docker compose down -v
 
 # Stop EVERY running container on your machine — even ones from other
-# projects you forgot were running. Useful when port 5432 / 6379 is
+# projects you forgot were running. Useful when port 5434 / 6380 / 9002 is
 # already taken and you can't remember by what.
 docker stop $(docker ps -q)
 
@@ -194,8 +205,9 @@ docker system prune --volumes`}
 
       <h3>2. <code>port is already allocated</code></h3>
       <p>
-        Something else on your machine already owns port 5432 (or 6379, or
-        whatever). Probably a Postgres you installed via Homebrew years ago.
+        Something else on your machine already owns the host port (5434,
+        6380, 9002, or whatever). Probably a leftover container from another
+        project — or in the Postgres case, a native install you forgot about.
         Either stop it or change the port in <code>docker-compose.yml</code>:
       </p>
       <CodeBlock
@@ -496,7 +508,7 @@ grit seed                # re-seed dev data`}
                 the inbox loads (empty is fine).
               </li>
               <li>
-                Open MinIO at <code>http://localhost:9001</code> — login{' '}
+                Open MinIO at <code>http://localhost:9003</code> — login{' '}
                 <code>minioadmin / minioadmin</code>, confirm you see the
                 console.
               </li>
@@ -519,7 +531,7 @@ grit seed                # re-seed dev data`}
         hint={
           <>
             If <code>docker compose up -d</code> fails with a port conflict,
-            you have something already running on 5432 / 6379. Either stop
+            you have something already running on 5434 / 6380 / 9002. Either stop
             that service or edit the host port in{' '}
             <code>docker-compose.yml</code> as shown in the &quot;errors&quot;
             section.

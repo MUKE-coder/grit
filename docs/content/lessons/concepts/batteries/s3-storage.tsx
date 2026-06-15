@@ -275,7 +275,7 @@ func (s *Service) SignedURL(ctx context.Context, key string, ttl time.Duration) 
       />
       <CodeBlock
         language="env"
-        code={`STORAGE_ENDPOINT=localhost:9000
+        code={`STORAGE_ENDPOINT=localhost:9002
 STORAGE_ACCESS_KEY=minioadmin
 STORAGE_SECRET_KEY=minioadmin
 STORAGE_BUCKET=uploads
@@ -348,7 +348,7 @@ STORAGE_USE_SSL=false`}
           <>
             For testing the delete-old-on-replace, upload an avatar,
             then upload another, then look in the MinIO console at{' '}
-            <code>localhost:9001</code> — there should be only one
+            <code>localhost:9003</code> — there should be only one
             object for the user, not two.
           </>
         }

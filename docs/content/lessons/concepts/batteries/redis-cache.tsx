@@ -256,7 +256,7 @@ func (s *Service) Del(ctx context.Context, keys ...string) error {
       <CodeBlock
         language="env"
         filename=".env (local)"
-        code={`REDIS_URL=redis://localhost:6379`}
+        code={`REDIS_URL=redis://localhost:6380`}
       />
       <p>
         In production, point <code>REDIS_URL</code> at Upstash, Redis
