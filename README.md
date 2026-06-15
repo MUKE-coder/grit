@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://github.com/MUKE-coder/grit/releases"><img src="https://img.shields.io/github/v/release/MUKE-coder/grit?style=flat-square&color=38bdf8" alt="Release" /></a>
   <a href="https://github.com/MUKE-coder/grit/blob/main/LICENSE"><img src="https://img.shields.io/github/license/MUKE-coder/grit?style=flat-square&color=38bdf8" alt="License" /></a>
-  <a href="https://gritframework.com"><img src="https://img.shields.io/badge/docs-gritframework.com-38bdf8?style=flat-square" alt="Docs" /></a>
+  <a href="https://gritframework.dev"><img src="https://img.shields.io/badge/docs-gritframework.dev-38bdf8?style=flat-square" alt="Docs" /></a>
 </p>
 
 <p align="center">
@@ -26,8 +26,36 @@ Grit is a full-stack meta-framework that fuses **Go** (Gin + GORM) with **Next.j
 
 ## Install
 
+One-line install — works on macOS, Linux, and Windows (PowerShell or Git Bash). No Go toolchain required:
+
+```bash
+curl -fsSL https://gritframework.dev/install.sh | sh
+```
+
+Pin a specific version:
+
+```bash
+GRIT_VERSION=v3.26.0 curl -fsSL https://gritframework.dev/install.sh | sh
+```
+
+Already have Go installed? `go install` still works as an alternative:
+
 ```bash
 go install github.com/MUKE-coder/grit/v3/cmd/grit@latest
+# or pin: go install github.com/MUKE-coder/grit/v3/cmd/grit@v3.26.0
+```
+
+Verify the install:
+
+```bash
+grit version
+# grit version 3.26.0
+```
+
+Update to the latest release:
+
+```bash
+grit update
 ```
 
 ## Quick Start
@@ -145,7 +173,7 @@ grit up                                # Back online
 grit deploy --host user@server.com --domain myapp.com
 
 # Meta
-grit version                           # v3.6.0
+grit version                           # v3.26.0
 grit update                            # Self-update to latest
 grit upgrade                           # Upgrade project templates
 ```
@@ -211,7 +239,7 @@ grit upgrade                           # Upgrade project templates
 
 ## Documentation
 
-Full docs at **[gritframework.com](https://gritframework.com)** — architecture guides, tutorials, API reference, deployment, and plugin documentation.
+Full docs at **[gritframework.dev](https://gritframework.dev)** — architecture guides, tutorials, the 10-course free curriculum at [/courses](https://gritframework.dev/courses), API reference, deployment, and plugin documentation.
 
 ## License
 
