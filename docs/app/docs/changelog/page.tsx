@@ -28,6 +28,76 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.26.1 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.26.1
+                </span>
+                <span className="text-sm text-muted-foreground">June 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Single source of truth for Postgres credentials — fresh scaffolds Just Work.</strong>{' '}
+                  Closes the &quot;SQLSTATE 28P01: password authentication failed&quot;
+                  trap that bit every learner whose <code>.env</code> and{' '}
+                  <code>docker-compose.yml</code> drifted apart.
+                </p>
+
+                <h3>The bug</h3>
+                <p>
+                  v3.25.x and v3.26.0 scaffolds wrote three disagreeing copies
+                  of the DB credentials: <code>docker-compose.yml</code> hardcoded{' '}
+                  <code>grit:grit</code>, <code>.env</code>&apos;s{' '}
+                  <code>DATABASE_URL</code> used <code>grit:grit</code>, and{' '}
+                  <code>.env</code>&apos;s <code>POSTGRES_PASSWORD</code> said{' '}
+                  <code>change-me-in-production</code>. The moment a learner
+                  edited one, the others were out of sync and <code>grit migrate</code>{' '}
+                  failed.
+                </p>
+
+                <h3>The fix</h3>
+                <ul>
+                  <li>
+                    One canonical <code>POSTGRES_*</code> block in{' '}
+                    <code>.env</code> — <code>POSTGRES_USER</code> /{' '}
+                    <code>POSTGRES_PASSWORD</code> / <code>POSTGRES_DB</code> /{' '}
+                    <code>POSTGRES_HOST</code> / <code>POSTGRES_PORT</code>.
+                  </li>
+                  <li>
+                    <code>POSTGRES_PASSWORD</code> is now generated at scaffold
+                    time as a 48-hex-char random string (alongside JWT_SECRET,
+                    PULSE_PASSWORD, etc.) — even <code>APP_ENV=production</code>{' '}
+                    is safe on first boot.
+                  </li>
+                  <li>
+                    <code>docker-compose.yml</code> reads from <code>.env</code>{' '}
+                    via <code>${'${VAR:-grit}'}</code> substitution. No hardcoded
+                    credentials anywhere.
+                  </li>
+                  <li>
+                    The Go API builds <code>DATABASE_URL</code> from the same
+                    <code> POSTGRES_*</code> parts at startup. Set{' '}
+                    <code>DATABASE_URL</code> only if you want to point at
+                    external Postgres (Neon, Supabase, RDS) or SQLite — it&apos;s
+                    the explicit escape hatch.
+                  </li>
+                  <li>
+                    Prod compose now sets <code>POSTGRES_HOST=postgres</code> in
+                    the api environment so the Go binary finds the postgres
+                    container on the docker network. No embedded <code>DATABASE_URL</code>{' '}
+                    in the compose YAML anymore.
+                  </li>
+                </ul>
+
+                <p>
+                  A fresh <code>grit new</code> → <code>docker compose up -d</code>{' '}
+                  → <code>grit migrate</code> now succeeds without any editing.
+                </p>
+              </div>
+            </div>
+
             {/* v3.26.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

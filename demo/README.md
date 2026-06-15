@@ -94,4 +94,4 @@ No Docker needed — just your API keys and ``go run``.
 
 ---
 
-*Built with Grit v3.26.0*
+*Built with Grit v3.26.1*

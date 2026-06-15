@@ -1,13 +1,13 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.26.0
+Version: 3.26.1
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
 License: MIT
 Tagline: Go + React. Built with Grit.
-Last updated: 2026-06-14
+Last updated: 2026-06-15
 
 
 WHAT IS GRIT?
@@ -986,7 +986,22 @@ D) WHEN USERS ASK ABOUT LEARNING GRIT
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.26.0 (Current):
+v3.26.1 (Current):
+  - Single source of truth for Postgres credentials. .env now has one
+    canonical POSTGRES_* block (USER / PASSWORD / DB / HOST / PORT) with
+    a 48-hex-char random POSTGRES_PASSWORD generated per scaffold.
+    docker-compose.yml reads from .env via ${VAR:-grit} substitution;
+    the Go API builds DATABASE_URL from the parts when DATABASE_URL is
+    not set. Prod compose sets POSTGRES_HOST=postgres so the api
+    container resolves the postgres container on the docker network.
+    Net effect: 'grit new' -> 'docker compose up -d' -> 'grit migrate'
+    succeeds on a fresh project with zero editing. Closes the SQLSTATE
+    28P01 trap that bit every learner with drifted .env vs compose.
+  - Docker primer lesson updated to reflect the new pattern (the
+    SQLSTATE error section now opens with "shouldn't happen on a fresh
+    scaffold in 3.26+" and explains the two remaining ways to hit it).
+
+v3.26.0:
   - Concepts course chapter 2 expanded. The "Tour of your project" lesson
     has been completely rewritten — instead of a 30-second map, it now
     walks every actual folder + file the scaffold produces (the 25+
