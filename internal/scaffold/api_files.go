@@ -507,7 +507,7 @@ func Load() (*Config, error) {
 		AppEnv:      getEnv("APP_ENV", "development"),
 		Port:        getEnv("APP_PORT", "8080"),
 		AppURL:      getEnv("APP_URL", "http://localhost:8080"),
-		DatabaseURL: getEnv("DATABASE_URL", ""),
+		DatabaseURL: resolveDatabaseURL(),
 		JWTSecret:   getEnv("JWT_SECRET", ""),
 		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379"),
 
@@ -548,9 +548,10 @@ func Load() (*Config, error) {
 		OAuthFrontendURL:   getEnv("OAUTH_FRONTEND_URL", "http://localhost:3001"),
 	}
 
-	if cfg.DatabaseURL == "" {
-		return nil, fmt.Errorf("DATABASE_URL is required")
-	}
+	// DatabaseURL is always populated by resolveDatabaseURL() — either from
+	// the DATABASE_URL env var or built from POSTGRES_* parts. The actual
+	// connection attempt in cmd/server/main.go will surface a useful error
+	// if the resolved URL points at an unreachable database.
 
 	if cfg.JWTSecret == "" {
 		return nil, fmt.Errorf("JWT_SECRET is required")
@@ -578,6 +579,35 @@ func Load() (*Config, error) {
 // IsDevelopment returns true if the app is running in development mode.
 func (c *Config) IsDevelopment() bool {
 	return c.AppEnv == "development"
+}
+
+// resolveDatabaseURL returns the connection string for the database.
+//
+// Single source of truth: edit POSTGRES_USER / POSTGRES_PASSWORD /
+// POSTGRES_DB / POSTGRES_HOST / POSTGRES_PORT in .env and both
+// docker-compose.yml and this function read the SAME values, so they
+// can't drift.
+//
+// Resolution order:
+//
+//  1. If DATABASE_URL is set, use it verbatim — that's the escape hatch
+//     for external Postgres (Neon, Supabase, RDS) or SQLite. It wins over
+//     the POSTGRES_* parts so a one-line override is enough to swap.
+//  2. Otherwise build postgres://USER:PASS@HOST:PORT/DB?sslmode=disable
+//     from the parts above. Defaults match docker-compose.yml's
+//     ${VAR:-grit} fallbacks so a fresh project boots even before the
+//     user touches .env.
+func resolveDatabaseURL() string {
+	if v := os.Getenv("DATABASE_URL"); v != "" {
+		return v
+	}
+	user := getEnv("POSTGRES_USER", "grit")
+	pass := getEnv("POSTGRES_PASSWORD", "grit")
+	host := getEnv("POSTGRES_HOST", "localhost")
+	port := getEnv("POSTGRES_PORT", "5432")
+	db := getEnv("POSTGRES_DB", getEnv("APP_NAME", "grit-app"))
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		user, pass, host, port, db)
 }
 
 // resolveStorage returns the StorageConfig for the active driver.

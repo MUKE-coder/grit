@@ -233,42 +233,42 @@ docker system prune --volumes`}
 
       <h3>7. <code>password authentication failed for user &quot;grit&quot; (SQLSTATE 28P01)</code></h3>
       <p>
-        The most common Grit-specific Docker bug, and a sneaky one. Two
-        sources of credentials disagree:
+        Grit 3.26+ projects use a single source of truth for Postgres
+        credentials — the <code>POSTGRES_*</code> block in{' '}
+        <code>.env</code>. <code>docker-compose.yml</code> reads it via{' '}
+        <code>${'{POSTGRES_USER}'}</code> / <code>${'{POSTGRES_PASSWORD}'}</code> /
+        <code>${'{POSTGRES_DB}'}</code> substitution; the Go API builds{' '}
+        <code>DATABASE_URL</code> from the same parts. So this error
+        shouldn&apos;t happen on a fresh scaffold.
       </p>
+      <p>You can still hit it if you:</p>
       <ul>
         <li>
-          <code>docker-compose.yml</code> set Postgres up with username =
-          <code>X</code> and password = <code>Y</code>
+          Manually set <code>DATABASE_URL</code> in <code>.env</code> AND
+          let it disagree with <code>POSTGRES_*</code>. Solution: set one
+          OR the other, not both. <code>DATABASE_URL</code> wins when set —
+          it&apos;s the &quot;external Postgres&quot; escape hatch
+          (Neon, Supabase, RDS).
         </li>
         <li>
-          <code>.env</code>&apos;s <code>DATABASE_URL</code> tries to connect
-          as username = <code>A</code> and password = <code>B</code>
+          Change <code>POSTGRES_PASSWORD</code> in <code>.env</code> after
+          Postgres has already initialised its data volume.
         </li>
       </ul>
-      <p>
-        Most often this happens because someone edited one file and forgot
-        the other. The classic fix is to match them up:
-      </p>
-      <CodeBlock
-        language="bash"
-        code={`# .env should have the same user/password/db that docker-compose.yml uses.
-# If docker-compose.yml says POSTGRES_USER=grit POSTGRES_PASSWORD=grit
-# POSTGRES_DB=my-first-grit, then .env must say:
-DATABASE_URL=postgres://grit:grit@localhost:5432/my-first-grit?sslmode=disable`}
-      />
       <TipBox tone="warning">
-        <strong>The gotcha:</strong> Postgres only reads{' '}
-        <code>POSTGRES_USER</code> / <code>POSTGRES_PASSWORD</code> /{' '}
-        <code>POSTGRES_DB</code> on <em>first-time volume init</em>. If you
-        edit <code>docker-compose.yml</code> after the container has already
-        run once, the change is silently ignored — the password baked into
-        the volume on first boot wins. To pick up new credentials you have
-        to wipe the volume:
+        <strong>The Postgres volume gotcha:</strong> Postgres reads
+        <code> POSTGRES_USER</code> / <code>POSTGRES_PASSWORD</code> /
+        <code> POSTGRES_DB</code> from its environment <em>only on
+        first-time volume init</em>. Edit <code>.env</code> after the
+        container has already run once and the change is silently ignored
+        — the password baked into the volume on first boot wins. To pick
+        up new credentials you have to wipe the volume:
         <CodeBlock
           language="bash"
           code={`docker compose down -v   # the -v drops the postgres-data volume
-docker compose up -d     # Postgres re-initialises with the new env`}
+docker compose up -d     # Postgres re-initialises with the new password from .env
+grit migrate             # recreate the schema
+grit seed                # re-seed dev data`}
         />
         Yes, this destroys local DB data. That&apos;s why you commit a
         seeder — five seconds with <code>grit seed</code> and you&apos;re

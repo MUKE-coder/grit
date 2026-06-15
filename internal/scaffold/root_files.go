@@ -59,11 +59,12 @@ func writeRootFiles(root string, opts Options) error {
 
 func envFile(opts Options) string {
 	// Generated per-scaffold so APP_ENV=production works out of the box.
-	// Rotate these any time with `openssl rand -hex 32`.
+	// Rotate any of these any time with `openssl rand -hex 32`.
 	jwtSecret := randomHex(32)
 	sentinelPassword := randomHex(16)
 	sentinelSecretKey := randomHex(32)
 	pulsePassword := randomHex(16)
+	postgresPassword := randomHex(24) // strong default; new project just works
 
 	return fmt.Sprintf(`# %s — Environment Variables
 
@@ -73,14 +74,25 @@ APP_ENV=development
 APP_PORT=8080
 APP_URL=http://localhost:8080
 
-# Database
-# Postgres (default, requires docker compose up -d postgres):
-DATABASE_URL=postgres://grit:grit@localhost:5432/%s?sslmode=disable
-# Or SQLite (no Docker needed — uncomment the line below and comment the
-# Postgres one above). Pure-Go driver (glebarez/sqlite), no CGO required.
-# DATABASE_URL=sqlite:./app.db
-# Or in-memory (gone on restart, great for tests):
-# DATABASE_URL=sqlite::memory:
+# ─── Database (Postgres) ────────────────────────────────────────────────
+# Single source of truth: edit ONLY the POSTGRES_* values below.
+#   - docker-compose.yml reads them via ${VAR} substitution
+#   - the Go API builds DATABASE_URL from these parts when DATABASE_URL is empty
+# POSTGRES_PASSWORD is generated per-scaffold so 'grit migrate' works
+# without any editing on a fresh project.
+POSTGRES_USER=grit
+POSTGRES_PASSWORD=%s
+POSTGRES_DB=%s
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+
+# Override the connection string ONLY if you're pointing at an external
+# Postgres (Neon, Supabase, RDS) or want to use SQLite. When set, this
+# wins over the POSTGRES_* parts above.
+#   DATABASE_URL=postgres://user:pass@host:5432/db?sslmode=require
+#   DATABASE_URL=sqlite:./app.db           # pure-Go driver, no CGO
+#   DATABASE_URL=sqlite::memory:           # gone on restart, great for tests
+# DATABASE_URL=
 
 # JWT — generated at scaffold time. Rotate with: openssl rand -hex 32
 JWT_SECRET=%s
@@ -97,10 +109,7 @@ OAUTH_FRONTEND_URL=http://localhost:3001
 # Redis
 REDIS_URL=redis://localhost:6379
 
-# Docker Compose — Production (used by docker-compose.prod.yml)
-POSTGRES_USER=grit
-POSTGRES_PASSWORD=change-me-in-production
-POSTGRES_DB=%s
+# Public API URL — baked into Next.js bundles at build time
 API_URL=http://localhost:8080
 
 # Storage — Which provider to use: minio, s3, r2, b2
@@ -177,9 +186,10 @@ SENTINEL_USERNAME=admin
 SENTINEL_PASSWORD=%s
 SENTINEL_SECRET_KEY=%s
 `,
-		opts.ProjectName, opts.ProjectName, opts.ProjectName,
+		opts.ProjectName, opts.ProjectName, // banner + APP_NAME
+		postgresPassword, opts.ProjectName, // POSTGRES_PASSWORD + POSTGRES_DB
 		jwtSecret,
-		opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName,
+		opts.ProjectName, opts.ProjectName, opts.ProjectName, // MINIO_BUCKET + MAIL_FROM + TOTP_ISSUER
 		pulsePassword, sentinelPassword, sentinelSecretKey,
 	)
 }
@@ -191,11 +201,24 @@ APP_ENV=development         # Environment: development, staging, production
 APP_PORT=8080               # API server port
 APP_URL=http://localhost:8080
 
-# Database — Postgres (default) or SQLite
-#   postgres://...        → Postgres (requires docker compose up -d postgres)
-#   sqlite:./app.db       → SQLite file (no Docker, pure-Go driver)
-#   sqlite::memory:       → SQLite in memory (great for tests; gone on restart)
-DATABASE_URL=postgres://grit:grit@localhost:5432/myapp?sslmode=disable
+# ─── Database (Postgres) ────────────────────────────────────────────────
+# Single source of truth. Edit ONLY the POSTGRES_* values below — both
+# docker-compose.yml and the Go API read them. ` + "`grit new`" + ` generates a
+# strong random POSTGRES_PASSWORD per project so a fresh scaffold runs
+# without any editing.
+POSTGRES_USER=grit
+POSTGRES_PASSWORD=change-me          # MUST change in production
+POSTGRES_DB=myapp
+POSTGRES_HOST=localhost              # ` + "`postgres`" + ` inside docker-compose.prod.yml
+POSTGRES_PORT=5432
+
+# Override the connection string ONLY for external Postgres (Neon,
+# Supabase, RDS) or SQLite. When set, this wins over the POSTGRES_*
+# parts above.
+#   DATABASE_URL=postgres://user:pass@host:5432/db?sslmode=require
+#   DATABASE_URL=sqlite:./app.db
+#   DATABASE_URL=sqlite::memory:
+# DATABASE_URL=
 
 # JWT — Authentication tokens
 JWT_SECRET=change-me-in-production   # MUST change in production
@@ -214,11 +237,8 @@ OAUTH_FRONTEND_URL=http://localhost:3001  # Where to redirect after OAuth
 # Redis — Cache and job queue
 REDIS_URL=redis://localhost:6379
 
-# Docker Compose — Production overrides (used by docker-compose.prod.yml)
-POSTGRES_USER=grit                   # Postgres user (shared with DATABASE_URL)
-POSTGRES_PASSWORD=change-me          # MUST change for production
-POSTGRES_DB=myapp                    # Database name
-API_URL=https://api.example.com      # Public API URL (baked into Next.js at build time)
+# Public API URL — baked into Next.js bundles at build time
+API_URL=https://api.example.com
 
 # Storage — Active driver: minio, s3, r2, or b2
 STORAGE_DRIVER=minio                 # Change to "s3", "r2", or "b2" to switch providers

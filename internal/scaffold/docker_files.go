@@ -64,14 +64,18 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:5432:5432"
+    # Credentials come from .env (POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB).
+    # Edit them ONLY in .env — never duplicate them here. The :- syntax
+    # provides a fallback so 'docker compose up' still works if the env
+    # var is somehow missing.
     environment:
-      POSTGRES_USER: grit
-      POSTGRES_PASSWORD: grit
-      POSTGRES_DB: %s
+      POSTGRES_USER: ${POSTGRES_USER:-grit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-grit}
+      POSTGRES_DB: ${POSTGRES_DB:-%s}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U grit"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-grit}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -158,9 +162,13 @@ services:
       - "8080"
     env_file:
       - .env
+    # POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB come from .env
+    # (env_file above). We override POSTGRES_HOST so the API hits the
+    # postgres container on the Docker network instead of 'localhost'.
+    # The Go config builds DATABASE_URL from these parts at startup.
     environment:
       APP_ENV: production
-      DATABASE_URL: postgres://${POSTGRES_USER:-grit}:${POSTGRES_PASSWORD}@postgres:5432/%s?sslmode=disable
+      POSTGRES_HOST: postgres
       REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: http://minio:9000
     depends_on:
@@ -170,7 +178,7 @@ services:
         condition: service_healthy
     networks:
       - %s
-`, name, name, name, name)
+`, name, name, name)
 
 	if opts.ShouldIncludeWeb() {
 		result += fmt.Sprintf(`
@@ -228,14 +236,17 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    # Identical credentials to the api service above — they come from the
+    # SAME .env block, so they can't drift. The :-grit fallbacks below
+    # protect against a missing env var blocking startup.
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-grit}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: %s
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-grit}
+      POSTGRES_DB: ${POSTGRES_DB:-%s}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U grit -d %s"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-grit} -d ${POSTGRES_DB:-%s}"]
       interval: 5s
       timeout: 5s
       retries: 5
