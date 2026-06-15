@@ -147,6 +147,11 @@ docker compose down
 # Stop AND wipe data (use this when you want a fresh DB)
 docker compose down -v
 
+# Stop EVERY running container on your machine — even ones from other
+# projects you forgot were running. Useful when port 5432 / 6379 is
+# already taken and you can't remember by what.
+docker stop $(docker ps -q)
+
 # See what's running
 docker ps
 docker compose ps
@@ -174,7 +179,7 @@ docker system prune
 docker system prune --volumes`}
       />
       <p>
-        These twelve cover 99% of what you&apos;ll do. Bookmark this lesson —
+        These thirteen cover 99% of what you&apos;ll do. Bookmark this lesson —
         when in doubt, scroll up.
       </p>
 
