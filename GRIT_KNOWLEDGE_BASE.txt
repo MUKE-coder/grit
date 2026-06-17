@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.26.3
+Version: 3.26.4
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -986,7 +986,19 @@ D) WHEN USERS ASK ABOUT LEARNING GRIT
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.26.3 (Current):
+v3.26.4 (Current):
+  - `grit start` (no subcommand) now runs the Go API and the pnpm dev
+    pipeline IN PARALLEL inside a web project. Previously it just
+    printed help (only `grit start server` and `grit start client`
+    worked), which contradicted the command's own Long description.
+  - Output from both processes is streamed to the same terminal with a
+    coloured `[api]` / `[web]` prefix per line so a developer can tell
+    whose log is whose without splitting panes.
+  - Ctrl+C (and SIGTERM) is forwarded to both children; if either child
+    exits on its own, the other is shut down too — no zombie processes
+    left behind. Desktop projects still call `wails dev` as before.
+
+v3.26.3:
   - Host port defaults moved for Redis + MinIO to match the Postgres
     shift in v3.26.2. Redis dev host port 6379 -> 6380 (collides with
     Memurai / brew Redis / apt Redis / WSL Redis); MinIO API host port

@@ -28,6 +28,60 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.26.4 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.26.4
+                </span>
+                <span className="text-sm text-muted-foreground">June 15, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong><code>grit start</code> now actually starts both, like the help said it would.</strong>
+                </p>
+
+                <h3>The bug</h3>
+                <p>
+                  In a web project, <code>grit start</code> (no subcommand) was
+                  falling through to <code>cmd.Help()</code> — printing the
+                  available subcommands and exiting. The command&apos;s own
+                  <code>Long</code> description said it would start both the
+                  API and the client, but only <code>grit start server</code>{' '}
+                  and <code>grit start client</code> actually did anything.
+                </p>
+
+                <h3>What changed</h3>
+                <ul>
+                  <li>
+                    <code>grit start</code> in a web project now spawns{' '}
+                    <code>go run cmd/server/main.go</code> (in{' '}
+                    <code>apps/api/</code>) and <code>pnpm dev</code> (at the
+                    project root) in parallel.
+                  </li>
+                  <li>
+                    Output from both processes is streamed to the same
+                    terminal with a coloured <code>[api]</code> /{' '}
+                    <code>[web]</code> prefix per line so a developer can tell
+                    whose log is whose without splitting panes.
+                  </li>
+                  <li>
+                    Ctrl+C (and SIGTERM) is forwarded to both children. If
+                    either child exits on its own, the other is shut down too
+                    — no zombie processes left behind.
+                  </li>
+                  <li>
+                    Desktop projects are unchanged — <code>grit start</code>{' '}
+                    still calls <code>wails dev</code>. The subcommands{' '}
+                    <code>grit start server</code> and{' '}
+                    <code>grit start client</code> still work if you only want
+                    one side.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.26.3 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

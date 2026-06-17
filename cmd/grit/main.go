@@ -1,12 +1,18 @@
 package main
 
 import (
+	"bufio"
+	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
+	"syscall"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -21,7 +27,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.26.3"
+var version = "3.26.4"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -730,7 +736,7 @@ func startCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Start development servers",
-		Long:  "Start the Go API server or frontend client apps for local development. In a desktop project, runs wails dev.",
+		Long:  "With no args, starts BOTH the Go API server and the frontend apps in parallel — Ctrl+C stops both. Use 'grit start server' or 'grit start client' to run just one. In a desktop project, runs 'wails dev'.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			info, err := project.DetectProject()
 			if err != nil {
@@ -749,8 +755,12 @@ func startCmd() *cobra.Command {
 				c.Stdin = os.Stdin
 				return c.Run()
 			}
-			// Web project — show subcommand help
-			return cmd.Help()
+			// Web project — run server + client in parallel.
+			apiDir, err := findAPIDir()
+			if err != nil {
+				return err
+			}
+			return runDevPair(info.Root, apiDir)
 		},
 	}
 
@@ -758,6 +768,118 @@ func startCmd() *cobra.Command {
 	cmd.AddCommand(startServerCmd())
 
 	return cmd
+}
+
+// runDevPair launches the Go API and the pnpm dev pipeline in parallel,
+// streams their stdout/stderr with a coloured prefix per source, and
+// shuts both down cleanly on Ctrl+C. If either child exits first, the
+// other is terminated so users don't end up with a zombie process.
+//
+// projectRoot: where `pnpm dev` runs (turbo picks up apps/web + admin).
+// apiDir:      where `go run cmd/server/main.go` runs (apps/api).
+func runDevPair(projectRoot, apiDir string) error {
+	printLogo()
+	purple := color.New(color.FgHiMagenta, color.Bold)
+	purple.Println("\n  Starting API + client apps in parallel...")
+	color.New(color.FgHiBlack).Println("  Press Ctrl+C to stop both.")
+	fmt.Println()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	apiCmd := exec.CommandContext(ctx, "go", "run", "cmd/server/main.go")
+	apiCmd.Dir = apiDir
+	apiCmd.Stdin = nil // child shouldn't fight for the terminal
+
+	clientCmd := exec.CommandContext(ctx, "pnpm", "dev")
+	clientCmd.Dir = projectRoot
+	clientCmd.Stdin = nil
+
+	// Prefix each line of output so a developer can tell which process
+	// said what. ANSI colours mark the source even after copy-paste.
+	apiPrefix := color.New(color.FgHiGreen).Sprint("[api] ")
+	webPrefix := color.New(color.FgHiCyan).Sprint("[web] ")
+
+	apiOut, _ := apiCmd.StdoutPipe()
+	apiErr, _ := apiCmd.StderrPipe()
+	clientOut, _ := clientCmd.StdoutPipe()
+	clientErr, _ := clientCmd.StderrPipe()
+
+	if err := apiCmd.Start(); err != nil {
+		return fmt.Errorf("starting API: %w", err)
+	}
+	if err := clientCmd.Start(); err != nil {
+		// API already started — bring it down before returning.
+		_ = killProcess(apiCmd)
+		return fmt.Errorf("starting client: %w", err)
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(4)
+	go prefixCopy(&wg, apiPrefix, apiOut, os.Stdout)
+	go prefixCopy(&wg, apiPrefix, apiErr, os.Stderr)
+	go prefixCopy(&wg, webPrefix, clientOut, os.Stdout)
+	go prefixCopy(&wg, webPrefix, clientErr, os.Stderr)
+
+	// Forward Ctrl+C and SIGTERM to both children.
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(sigCh)
+
+	// If either child exits, the wait below resolves; we then shut down
+	// the other one so they leave together.
+	doneCh := make(chan error, 2)
+	go func() { doneCh <- apiCmd.Wait() }()
+	go func() { doneCh <- clientCmd.Wait() }()
+
+	select {
+	case <-sigCh:
+		color.New(color.FgHiBlack).Println("\n  Caught Ctrl+C — stopping API + client...")
+	case err := <-doneCh:
+		// One child exited on its own. Print why, then kill the other.
+		if err != nil {
+			color.New(color.FgHiYellow).Printf("\n  A child process exited: %v — stopping the other.\n", err)
+		} else {
+			color.New(color.FgHiBlack).Println("\n  A child process exited — stopping the other.")
+		}
+	}
+
+	// Cancelling the context delivers a kill on most platforms. We also
+	// try a polite Interrupt first so children get a chance to flush.
+	_ = apiCmd.Process.Signal(os.Interrupt)
+	_ = clientCmd.Process.Signal(os.Interrupt)
+	cancel()
+
+	// Drain whichever waits are still pending so we don't leak goroutines.
+	go func() { <-doneCh }()
+	wg.Wait()
+
+	return nil
+}
+
+// prefixCopy streams r line-by-line into w, prefixing every line with
+// prefix. Used so the API and the client share one terminal without the
+// developer guessing whose output is whose.
+func prefixCopy(wg *sync.WaitGroup, prefix string, r io.Reader, w io.Writer) {
+	defer wg.Done()
+	scanner := bufio.NewScanner(r)
+	// Default token cap is 64 KB which truncates fat lines from webpack /
+	// turbo. Lift it so we don't lose error messages.
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	for scanner.Scan() {
+		fmt.Fprintln(w, prefix+scanner.Text())
+	}
+}
+
+// killProcess sends SIGINT then falls back to Kill if the process is
+// still alive — used in error paths where we never even got both
+// children to Start.
+func killProcess(cmd *exec.Cmd) error {
+	if cmd.Process == nil {
+		return nil
+	}
+	_ = cmd.Process.Signal(os.Interrupt)
+	return cmd.Process.Kill()
 }
 
 func compileCmd() *cobra.Command {
