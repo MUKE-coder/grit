@@ -1285,6 +1285,11 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	// Set HttpOnly auth cookies for browser clients.
 	h.AuthService.SetAuthCookies(c, tokens)
 
+	// v3.30.1: emit a semantic activity row so /system/activity reflects
+	// the signup. Non-blocking — a logging failure won't fail the
+	// register request.
+	services.LogRegister(h.DB, c, user.ID, user.Email)
+
 	c.JSON(http.StatusCreated, gin.H{
 		"data": gin.H{
 			"user":   user,
@@ -1309,6 +1314,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	var user models.User
 	if err := h.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		// v3.30.1: unknown email is the most common brute-force fingerprint;
+		// surface it in /system/activity as "warn" severity so operators
+		// can spot credential-stuffing spikes.
+		services.LogLoginFailed(h.DB, c, req.Email)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": gin.H{
 				"code":    "INVALID_CREDENTIALS",
@@ -1319,6 +1328,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	if !user.Active {
+		services.LogActivity(h.DB, c, services.ActivityArgs{
+			Action:       "auth.login_blocked",
+			Severity:     "warn",
+			Summary:      "Sign-in blocked for disabled account " + user.Email,
+			ResourceType: "user",
+			ResourceID:   user.ID,
+		})
 		c.JSON(http.StatusForbidden, gin.H{
 			"error": gin.H{
 				"code":    "ACCOUNT_DISABLED",
@@ -1343,6 +1359,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	if !user.CheckPassword(req.Password) {
+		// Wrong password on a real account — distinct from "unknown email"
+		// because Sentinel's brute-force heuristics weight these higher.
+		services.LogLoginFailed(h.DB, c, req.Email)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": gin.H{
 				"code":    "INVALID_CREDENTIALS",
@@ -1399,6 +1418,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	// clients ignore them and continue to use the Bearer header from the
 	// tokens object below — both flows work.
 	h.AuthService.SetAuthCookies(c, tokens)
+
+	// v3.30.1: successful sign-in lands in /system/activity at info
+	// severity. IP + user-agent come from the request context inside
+	// LogLogin so brute-force investigation has the full pair.
+	services.LogLogin(h.DB, c, user.ID, user.Email)
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
@@ -1469,7 +1493,22 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 // Logout invalidates the user's session. Cookies are cleared immediately;
 // native bearer clients should also drop their stored tokens client-side.
 func (h *AuthHandler) Logout(c *gin.Context) {
+	// v3.30.1: read the user out of context BEFORE clearing cookies so
+	// the activity row carries the right email. The auth middleware set
+	// "user" on the gin context when the request came in.
+	var actorID, actorEmail string
+	if v, ok := c.Get("user"); ok {
+		if u, ok := v.(models.User); ok {
+			actorID = u.ID
+			actorEmail = u.Email
+		}
+	}
+
 	h.AuthService.ClearAuthCookies(c)
+
+	if actorID != "" {
+		services.LogLogout(h.DB, c, actorID, actorEmail)
+	}
 	// In a production system, you'd also blacklist the refresh token in Redis
 	// so a leaked token can't be reused before its natural expiry.
 	c.JSON(http.StatusOK, gin.H{
