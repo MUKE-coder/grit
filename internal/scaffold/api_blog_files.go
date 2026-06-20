@@ -340,6 +340,24 @@ func (h *BlogHandler) GetBySlug(c *gin.Context) {
 	})
 }
 
+// GetByID powers the admin blog detail page. Skips the
+// Cache-Control public hint that GetBySlug sets because admin views
+// expect fresh data after each save.
+func (h *BlogHandler) GetByID(c *gin.Context) {
+	id := c.Param("id")
+	blog, err := h.Service.GetByID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": gin.H{
+				"code":    "NOT_FOUND",
+				"message": "Blog not found",
+			},
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": blog})
+}
+
 // Create adds a new blog (admin).
 func (h *BlogHandler) Create(c *gin.Context) {
 	var req struct {

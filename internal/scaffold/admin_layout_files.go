@@ -866,39 +866,44 @@ function StatCardItem({ stat }: { stat: StatCard }) {
 export function PageHeader({ title, description, breadcrumbs, actions, stats }: PageHeaderProps) {
   return (
     <div className="mb-8">
-      {/* Breadcrumbs */}
-      {breadcrumbs && breadcrumbs.length > 0 && (
-        <nav className="mb-3 flex items-center gap-1.5 text-xs">
-          {breadcrumbs.map((crumb, i) => (
-            <span key={i} className="flex items-center gap-1.5">
-              {i > 0 && <span className="text-text-muted">/</span>}
-              {crumb.href && i < breadcrumbs.length - 1 ? (
-                <Link
-                  href={crumb.href}
-                  className="text-text-secondary hover:text-foreground transition-colors"
-                >
-                  {crumb.label}
-                </Link>
-              ) : (
-                <span className="text-foreground font-medium">{crumb.label}</span>
-              )}
-            </span>
-          ))}
-        </nav>
-      )}
-
-      {/* Title row */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">{title}</h1>
-          {description && (
-            <p className="mt-1 text-sm text-text-secondary">{description}</p>
+      {/* v3.31.8: Header row (breadcrumbs + title + actions) is sticky to
+          the top of the scrollable main area with a backdrop-blur background
+          and a bottom border so long tables/forms scroll behind it. The
+          stats grid stays in normal flow below — it's content, not chrome. */}
+      <div className="sticky top-0 z-20 -mx-4 border-b border-border bg-bg-primary/90 backdrop-blur supports-[backdrop-filter]:bg-bg-primary/75 md:-mx-8">
+        <div className="px-4 py-4 md:px-8">
+          {breadcrumbs && breadcrumbs.length > 0 && (
+            <nav className="mb-3 flex items-center gap-1.5 text-xs">
+              {breadcrumbs.map((crumb, i) => (
+                <span key={i} className="flex items-center gap-1.5">
+                  {i > 0 && <span className="text-text-muted">/</span>}
+                  {crumb.href && i < breadcrumbs.length - 1 ? (
+                    <Link
+                      href={crumb.href}
+                      className="text-text-secondary hover:text-foreground transition-colors"
+                    >
+                      {crumb.label}
+                    </Link>
+                  ) : (
+                    <span className="text-foreground font-medium">{crumb.label}</span>
+                  )}
+                </span>
+              ))}
+            </nav>
           )}
+
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight truncate">{title}</h1>
+              {description && (
+                <p className="mt-1 text-sm text-text-secondary line-clamp-2">{description}</p>
+              )}
+            </div>
+            {actions && <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">{actions}</div>}
+          </div>
         </div>
-        {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
       </div>
 
-      {/* Stats grid */}
       {stats && stats.length > 0 && (
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, i) => (

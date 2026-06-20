@@ -6585,6 +6585,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 
 		// Blog management (admin)
 		admin.GET("/admin/blogs", blogHandler.List)
+		admin.GET("/admin/blogs/:id", blogHandler.GetByID)
 		admin.POST("/admin/blogs", blogHandler.Create)
 		admin.PUT("/admin/blogs/:id", blogHandler.Update)
 		admin.DELETE("/admin/blogs/:id", blogHandler.Delete)

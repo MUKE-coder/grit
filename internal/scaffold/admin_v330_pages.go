@@ -306,9 +306,18 @@ export default function SupportPage() {
       </div>
 
       {isLoading ? (
-        <div className="rounded-xl border border-border bg-bg-elevated p-12 text-center">
-          <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-        </div>
+        <ul className="space-y-2 animate-pulse">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <li key={i} className="flex gap-4 rounded-xl border border-border bg-bg-elevated p-4">
+              <div className="h-16 w-32 shrink-0 rounded-lg bg-bg-hover" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-1/3 rounded bg-bg-hover" />
+                <div className="h-3 w-3/4 rounded bg-bg-hover" />
+                <div className="h-3 w-1/4 rounded bg-bg-hover" />
+              </div>
+            </li>
+          ))}
+        </ul>
       ) : tickets.length === 0 ? (
         <div className="rounded-xl border border-border bg-bg-elevated p-12 text-center">
           <MessageSquare className="mx-auto h-10 w-10 text-text-muted" />
@@ -562,8 +571,15 @@ export default function TicketThreadPage() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-bg-elevated p-12 text-center">
-        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      <div className="animate-pulse space-y-4">
+        <div className="h-16 rounded-xl bg-bg-hover" />
+        <div className="h-6 w-32 rounded bg-bg-hover" />
+        <div className="rounded-xl border border-border bg-bg-elevated p-5 space-y-3">
+          <div className="h-4 w-1/3 rounded bg-bg-hover" />
+          <div className="h-4 w-full rounded bg-bg-hover" />
+          <div className="h-4 w-5/6 rounded bg-bg-hover" />
+          <div className="h-4 w-2/3 rounded bg-bg-hover" />
+        </div>
       </div>
     );
   }

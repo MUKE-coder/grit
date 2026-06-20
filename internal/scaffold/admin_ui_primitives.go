@@ -342,9 +342,37 @@ export function ResponsiveTable<T>({
   loading,
 }: ResponsiveTableProps<T>) {
   if (loading) {
+    // Render a skeleton that mirrors the live table geometry so layout
+    // doesn't jump when data arrives. Column count drives the placeholder
+    // shape so wide and narrow tables both look right.
+    const skeletonCols = columns.length || 4;
     return (
-      <div className="rounded-xl border border-border bg-bg-elevated p-12 text-center">
-        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      <div className="animate-pulse">
+        <div className="hidden md:block overflow-hidden rounded-xl border border-border bg-bg-elevated">
+          <div className="flex gap-4 border-b border-border px-4 py-3">
+            {Array.from({ length: skeletonCols }).map((_, i) => (
+              <div key={i} className="h-3.5 flex-1 max-w-[120px] rounded bg-bg-hover" />
+            ))}
+          </div>
+          <div className="divide-y divide-border">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex gap-4 px-4 py-3.5">
+                {Array.from({ length: skeletonCols }).map((_, j) => (
+                  <div key={j} className="h-3.5 flex-1 rounded bg-bg-hover" />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+        <ul className="md:hidden space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <li key={i} className="rounded-xl border border-border bg-bg-elevated p-4 space-y-2">
+              <div className="h-3.5 w-1/2 rounded bg-bg-hover" />
+              <div className="h-3.5 w-3/4 rounded bg-bg-hover" />
+              <div className="h-3.5 w-1/3 rounded bg-bg-hover" />
+            </li>
+          ))}
+        </ul>
       </div>
     );
   }

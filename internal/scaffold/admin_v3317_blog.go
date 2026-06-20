@@ -371,7 +371,7 @@ export default function BlogDetailPage() {
   const { data: blog, isLoading } = useQuery<Blog>({
     queryKey: ["blog", params.id],
     queryFn: async () => {
-      const { data } = await apiClient.get<ApiResponse<Blog>>("/api/blogs/" + params.id);
+      const { data } = await apiClient.get<ApiResponse<Blog>>("/api/admin/blogs/" + params.id);
       return data.data;
     },
     enabled: !!params.id,
@@ -434,11 +434,7 @@ export default function BlogDetailPage() {
   };
 
   if (isLoading || !blog) {
-    return (
-      <div className="rounded-xl border border-border bg-bg-elevated p-12 text-center">
-        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-      </div>
-    );
+    return <BlogDetailSkeleton />;
   }
 
   return (
@@ -564,6 +560,25 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-text-muted">{label}</span>
       {children}
     </label>
+  );
+}
+
+// BlogDetailSkeleton paints the same shape the loaded page will use:
+// header band on top, a 3-col grid for cover + title/excerpt, then a
+// tall editor placeholder. Keeps layout from jumping when data arrives.
+function BlogDetailSkeleton() {
+  return (
+    <div className="animate-pulse">
+      <div className="mb-6 h-16 rounded-xl bg-bg-hover" />
+      <section className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="aspect-video rounded-xl bg-bg-hover lg:col-span-1" />
+        <div className="space-y-3 lg:col-span-2">
+          <div className="h-10 rounded-lg bg-bg-hover" />
+          <div className="h-20 rounded-lg bg-bg-hover" />
+        </div>
+      </section>
+      <div className="h-[500px] rounded-xl bg-bg-hover" />
+    </div>
   );
 }
 `
