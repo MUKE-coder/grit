@@ -28,7 +28,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.31.8"
+var version = "3.31.9"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -845,7 +845,27 @@ func runDevPair(projectRoot, apiDir string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	apiCmd := exec.CommandContext(ctx, "go", "run", "cmd/server/main.go")
+	// v3.31.9: prefer `air` for the API so .go file edits trigger an
+	// auto-rebuild + restart. `apps/api/.air.toml` is already scaffolded
+	// — air just needs to be on PATH (`go install github.com/air-verse/air@latest`).
+	// Falls back to `go run` so the command still works in a clean
+	// install. We surface the choice so the developer knows which loop
+	// they're in.
+	apiBin := "go"
+	apiArgs := []string{"run", "cmd/server/main.go"}
+	hotReload := false
+	if _, err := exec.LookPath("air"); err == nil {
+		apiBin = "air"
+		apiArgs = nil
+		hotReload = true
+	}
+	if hotReload {
+		color.New(color.FgHiBlack).Println("  API hot-reload via air (.go files auto-rebuild).")
+	} else {
+		color.New(color.FgYellow).Println("  Tip: install air (go install github.com/air-verse/air@latest) for Go hot-reload.")
+	}
+
+	apiCmd := exec.CommandContext(ctx, apiBin, apiArgs...)
 	apiCmd.Dir = apiDir
 	apiCmd.Stdin = nil // child shouldn't fight for the terminal
 
@@ -1033,7 +1053,7 @@ func startServerCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "server",
 		Short: "Start the Go API server",
-		Long:  "Runs 'go run cmd/server/main.go' from the apps/api directory.",
+		Long:  "Runs the Go API server. Uses 'air' when it's on PATH (so .go file edits hot-reload), falls back to 'go run cmd/server/main.go' otherwise.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			apiDir, err := findAPIDir()
 			if err != nil {
@@ -1043,7 +1063,19 @@ func startServerCmd() *cobra.Command {
 			purple := color.New(color.FgHiMagenta, color.Bold)
 			purple.Println("\n  Starting API server...")
 
-			c := exec.Command("go", "run", "cmd/server/main.go")
+			// Mirror runDevPair: prefer air when present so Go edits
+			// auto-rebuild the binary. Otherwise plain go run.
+			bin := "go"
+			args2 := []string{"run", "cmd/server/main.go"}
+			if _, err := exec.LookPath("air"); err == nil {
+				bin = "air"
+				args2 = nil
+				color.New(color.FgHiBlack).Println("  Hot-reload via air.")
+			} else {
+				color.New(color.FgYellow).Println("  Tip: install air (go install github.com/air-verse/air@latest) for Go hot-reload.")
+			}
+
+			c := exec.Command(bin, args2...)
 			c.Dir = apiDir
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
