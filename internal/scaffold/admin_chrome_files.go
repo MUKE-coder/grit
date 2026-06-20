@@ -519,7 +519,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { resources } from "@/resources";
 import { brand } from "@repo/shared/brand";
-import { useLogout, useMe } from "@/hooks/use-auth";
+import { useLogout } from "@/hooks/use-auth";
 import {
   getIcon,
   ChevronDown,
@@ -662,17 +662,20 @@ export function CollapsibleSidebar({
             onClick={onMobileClose}
           />
 
-          {groups._root.map((r) => (
-            <SidebarLink
-              key={r.slug}
-              href={"/" + r.slug}
-              icon={getIcon(r.icon, "h-5 w-5")}
-              label={r.label}
-              active={pathname.startsWith("/" + r.slug)}
-              collapsed={collapsed}
-              onClick={onMobileClose}
-            />
-          ))}
+          {groups._root.map((r) => {
+            const Icon = getIcon(r.icon);
+            return (
+              <SidebarLink
+                key={r.slug}
+                href={"/" + r.slug}
+                icon={<Icon className="h-5 w-5" />}
+                label={r.label?.plural ?? r.name}
+                active={pathname.startsWith("/" + r.slug)}
+                collapsed={collapsed}
+                onClick={onMobileClose}
+              />
+            );
+          })}
 
           {Object.entries(groups)
             .filter(([k]) => k !== "_root")
@@ -693,17 +696,20 @@ export function CollapsibleSidebar({
                     />
                   </button>
                 )}
-                {(collapsed || expandedGroups[groupName]) && items.map((r) => (
-                  <SidebarLink
-                    key={r.slug}
-                    href={"/" + r.slug}
-                    icon={getIcon(r.icon, "h-5 w-5")}
-                    label={r.label}
-                    active={pathname.startsWith("/" + r.slug)}
-                    collapsed={collapsed}
-                    onClick={onMobileClose}
-                  />
-                ))}
+                {(collapsed || expandedGroups[groupName]) && items.map((r) => {
+                  const Icon = getIcon(r.icon);
+                  return (
+                    <SidebarLink
+                      key={r.slug}
+                      href={"/" + r.slug}
+                      icon={<Icon className="h-5 w-5" />}
+                      label={r.label?.plural ?? r.name}
+                      active={pathname.startsWith("/" + r.slug)}
+                      collapsed={collapsed}
+                      onClick={onMobileClose}
+                    />
+                  );
+                })}
               </div>
             ))}
 

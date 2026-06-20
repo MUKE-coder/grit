@@ -2244,12 +2244,23 @@ export default function ForgotPasswordPage() {
 func webAuthCallback() string {
 	return `"use client";
 
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Cookies from "js-cookie";
 import { api } from "@/lib/api";
 
+// useSearchParams forces a client bailout during prerender unless it's
+// wrapped in a Suspense boundary. The inner component does the work;
+// the page export just provides the boundary.
 export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={<CallbackSpinner />}>
+      <CallbackInner />
+    </Suspense>
+  );
+}
+
+function CallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const processed = useRef(false);
@@ -2271,7 +2282,6 @@ export default function AuthCallbackPage() {
       Cookies.set("access_token", accessToken, { expires: 1 });
       Cookies.set("refresh_token", refreshToken, { expires: 7 });
 
-      // Fetch user to confirm auth then redirect
       api
         .get("/api/auth/me", {
           headers: { Authorization: "Bearer " + accessToken },
@@ -2287,6 +2297,10 @@ export default function AuthCallbackPage() {
     }
   }, [searchParams, router]);
 
+  return <CallbackSpinner />;
+}
+
+function CallbackSpinner() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="text-center">

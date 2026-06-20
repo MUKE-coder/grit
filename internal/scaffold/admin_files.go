@@ -118,7 +118,7 @@ func socialLoginButtonsJSX() string {
 func adminAuthCallbackPage() string {
 	return `"use client";
 
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -137,7 +137,19 @@ import { useQueryClient } from "@tanstack/react-query";
 //      to the right area based on their role.
 // The tokens never travel as URL params, never sit in browser history,
 // never get logged in nginx access logs.
+//
+// useSearchParams forces a client bailout during prerender unless it's
+// wrapped in a Suspense boundary. The inner component does the work;
+// the page export just provides the boundary.
 export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={<CallbackSpinner />}>
+      <CallbackInner />
+    </Suspense>
+  );
+}
+
+function CallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
@@ -160,19 +172,23 @@ export default function AuthCallbackPage() {
     apiClient
       .get("/api/auth/me")
       .then(({ data }) => {
-          const user = data.data;
-          queryClient.setQueryData(["me"], user);
-          router.push(user.role === "USER" ? "/profile" : "/dashboard");
-        })
-        .catch(() => {
-          // /me failed even though we just landed here — either the
-          // cookies were dropped (cross-origin same-site weirdness),
-          // CORS misconfigured, or the user is disabled. Send them
-          // back to login with a generic message.
-          router.push("/login?error=Authentication+failed");
-        });
+        const user = data.data;
+        queryClient.setQueryData(["me"], user);
+        router.push(user.role === "USER" ? "/profile" : "/dashboard");
+      })
+      .catch(() => {
+        // /me failed even though we just landed here — either the
+        // cookies were dropped (cross-origin same-site weirdness),
+        // CORS misconfigured, or the user is disabled. Send them
+        // back to login with a generic message.
+        router.push("/login?error=Authentication+failed");
+      });
   }, [searchParams, router, queryClient]);
 
+  return <CallbackSpinner />;
+}
+
+function CallbackSpinner() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg-primary">
       <div className="text-center">

@@ -38,30 +38,38 @@ export function useToastedMutation<TData = unknown, TError = unknown, TVariables
 ) {
   const { successMessage, errorMessage, silentSuccess, onSuccess, onError, ...rest } = options;
 
+  // Use spread + cast to stay agnostic between react-query v4 (3-arg
+  // callbacks) and v5 (4-arg callbacks with onMutateResult + context).
+  // The wrapper only cares about data, vars, and the per-mutation context
+  // where we stamped __startedAt — everything else passes through.
   return useMutation<TData, TError, TVariables, TContext>({
     ...rest,
-    onSuccess: (data, vars, ctx) => {
+    onSuccess: ((...args: unknown[]) => {
+      const [data, , ctx] = args as [TData, TVariables, TContext];
       const elapsed = readElapsed(ctx as MutationContext | undefined);
       if (!silentSuccess) {
         const msg = typeof successMessage === "function" ? successMessage(data) : (successMessage || "Done");
         toast.success(msg + (elapsed != null ? " — " + elapsed + "ms" : ""));
       }
-      onSuccess?.(data, vars, ctx);
-    },
-    onError: (err, vars, ctx) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (onSuccess as any)?.(...args);
+    }) as never,
+    onError: ((...args: unknown[]) => {
+      const [err, , ctx] = args as [TError, TVariables, TContext];
       const elapsed = readElapsed(ctx as MutationContext | undefined);
       const fallback = pickErrorMessage(err);
       const msg = typeof errorMessage === "function" ? errorMessage(err) : (errorMessage || fallback);
       toast.error(msg + (elapsed != null ? " — " + elapsed + "ms" : ""));
-      onError?.(err, vars, ctx);
-    },
-    onMutate: async (vars) => {
-      // Stamp the start time on the mutation context so onSuccess/onError
-      // can subtract. We piggy-back on the caller's context (if they
-      // supplied an onMutate) by spreading the awaited result.
-      const userCtx = rest.onMutate ? await rest.onMutate(vars) : undefined;
-      return { ...(userCtx as object), __startedAt: performance.now() } as TContext;
-    },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (onError as any)?.(...args);
+    }) as never,
+    onMutate: ((...args: unknown[]) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const userCtxPromise = rest.onMutate ? (rest.onMutate as any)(...args) : undefined;
+      return Promise.resolve(userCtxPromise).then((userCtx) =>
+        ({ ...(userCtx as object), __startedAt: performance.now() } as TContext)
+      );
+    }) as never,
   });
 }
 

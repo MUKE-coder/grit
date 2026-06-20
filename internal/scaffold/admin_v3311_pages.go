@@ -685,7 +685,7 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      <DeleteAccountDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog} />
+      <DeleteAccountDialog open={showDeleteDialog} onClose={() => setShowDeleteDialog(false)} />
     </div>
   );
 }

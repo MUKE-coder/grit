@@ -137,6 +137,11 @@ export interface ResourceDefinition {
   form: FormDefinition;
   dashboard?: DashboardDefinition;
   stats?: StatsConfig | boolean;
+  // Optional sidebar nav grouping. Resources sharing the same group key
+  // render under a collapsible group header in the sidebar.
+  group?: string;
+  // Hide this resource from the sidebar for users without ADMIN/EDITOR role.
+  adminOnly?: boolean;
 }
 
 // Stats cards shown above the data table on every resource page.
