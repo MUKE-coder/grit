@@ -124,6 +124,9 @@ func adminIconMap() string {
   TrendingUp,
   TrendingDown,
   ArrowLeft,
+  Cpu,
+  Zap,
+  Globe,
   type LucideIcon,
 } from "lucide-react";
 
@@ -220,6 +223,10 @@ export {
   TrendingUp,
   TrendingDown,
   ArrowLeft,
+  Shield,
+  Cpu,
+  Zap,
+  Globe,
 };
 `
 }

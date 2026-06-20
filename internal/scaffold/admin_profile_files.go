@@ -395,7 +395,6 @@ func adminUseProfile() string {
 	return `import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 
 interface UpdateProfileData {
   first_name?: string;
@@ -436,11 +435,12 @@ export function useDeleteAccount() {
 
   return useMutation({
     mutationFn: async () => {
+      // The API's DELETE handler clears the auth cookies via Set-Cookie
+      // max-age=0 as part of the same response. JS doesn't need to touch
+      // anything cookie-side.
       await apiClient.delete("/api/profile");
     },
     onSuccess: () => {
-      Cookies.remove("access_token");
-      Cookies.remove("refresh_token");
       queryClient.clear();
       router.push("/login");
     },

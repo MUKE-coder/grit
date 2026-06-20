@@ -2,6 +2,7 @@ package scaffold
 
 func adminUseSystem() string {
 	return `import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { Upload, PaginatedResponse } from "@repo/shared/types";
 import { apiClient, uploadFile } from "@/lib/api-client";
 
 // ── Jobs ────────────────────────────────────────────────────────
@@ -74,30 +75,10 @@ export function useClearQueue() {
 }
 
 // ── Files ───────────────────────────────────────────────────────
-
-interface Upload {
-  id: string;
-  filename: string;
-  original_name: string;
-  mime_type: string;
-  size: number;
-  path: string;
-  url: string;
-  thumbnail_url?: string;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface UploadListResponse {
-  data: Upload[];
-  meta: {
-    total: number;
-    page: number;
-    page_size: number;
-    pages: number;
-  };
-}
+// Upload + PaginatedResponse are imported from @repo/shared/types so
+// the same shapes flow through web, admin, and the Go API (via
+// grit sync) — no inline duplicates that silently drift.
+type UploadListResponse = PaginatedResponse<Upload>;
 
 export function useUploads(page = 1, pageSize = 20) {
   return useQuery<UploadListResponse>({
@@ -114,7 +95,10 @@ export function useUploadFile() {
   return useMutation({
     mutationFn: async (file: File) => {
       const result = await uploadFile(file);
-      return result.data as Upload;
+      // uploadFile returns Record<string, unknown>; the server actually
+      // sends the Upload shape so a two-step assertion through unknown
+      // is sound and matches the shared type without a runtime cost.
+      return result.data as unknown as Upload;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "uploads"] });
@@ -695,7 +679,7 @@ func adminSecurityPage() string {
 
 import { useEffect, useState } from "react";
 import { Shield, ExternalLink, AlertTriangle, Zap, Activity, AlertCircle, Globe } from "@/lib/icons";
-import { api } from "@/lib/api";
+import { apiClient as api } from "@/lib/api-client";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -893,7 +877,7 @@ func adminObservabilityPage() string {
 
 import { useEffect, useState } from "react";
 import { Activity, ExternalLink, AlertTriangle, Cpu, Database, Zap } from "@/lib/icons";
-import { api } from "@/lib/api";
+import { apiClient as api } from "@/lib/api-client";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 

@@ -28,6 +28,133 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.27.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.27.0
+                </span>
+                <span className="text-sm text-muted-foreground">June 20, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Admin auth sweep + fresh-scaffold type-clean.</strong>{' '}
+                  Closes the last gap left by v3.26.0&apos;s HttpOnly cookie
+                  story: the admin app now uses cookies end-to-end too,{' '}
+                  <code>js-cookie</code> is gone from both frontends, OAuth
+                  no longer leaks tokens via URL params, and both{' '}
+                  <code>apps/web</code> + <code>apps/admin</code> return
+                  zero type errors on a fresh scaffold for the first time.
+                </p>
+
+                <h3>Admin uses HttpOnly cookies</h3>
+                <ul>
+                  <li>
+                    <code>apps/admin/lib/api-client.ts</code> drops{' '}
+                    <code>js-cookie</code>, adds{' '}
+                    <code>withCredentials: true</code>, and echoes the
+                    <code> grit_csrf</code> cookie into{' '}
+                    <code>X-CSRF-Token</code> on every mutation.
+                  </li>
+                  <li>
+                    <code>apps/admin/hooks/use-auth.ts</code> imports{' '}
+                    <code>User</code>, <code>LoginRequest</code>,{' '}
+                    <code>RegisterRequest</code>, <code>AuthResponse</code>,{' '}
+                    <code>ApiResponse</code> from <code>@repo/shared/types</code>{' '}
+                    instead of declaring them inline. <code>useMe</code>{' '}
+                    returns <code>null</code> on 401 instead of throwing.
+                    <code> useLogout</code> doesn&apos;t clear tokens locally
+                    — the API does it via <code>Set-Cookie</code>.
+                  </li>
+                  <li>
+                    The admin root redirect page (<code>app/page.tsx</code>)
+                    drops the <code>Cookies.get(&apos;access_token&apos;)</code>{' '}
+                    check (which couldn&apos;t see HttpOnly cookies anyway)
+                    in favour of a <code>useMe()</code> probe.
+                  </li>
+                  <li>
+                    The 401-refresh interceptor now POSTs{' '}
+                    <code>/api/auth/refresh</code> with an empty body — the
+                    API reads <code>grit_refresh</code> from the cookie and
+                    issues a new <code>grit_access</code> via{' '}
+                    <code>Set-Cookie</code>.
+                  </li>
+                  <li>
+                    <code>profile delete</code> drops <code>Cookies.remove</code>{' '}
+                    calls — the Go <code>DeleteProfile</code> handler now
+                    calls <code>ClearAuthCookies</code> as part of its
+                    response.
+                  </li>
+                  <li>
+                    <code>js-cookie</code> and{' '}
+                    <code>@types/js-cookie</code> dropped from{' '}
+                    <code>apps/admin/package.json</code>.
+                  </li>
+                </ul>
+
+                <h3>OAuth without URL leakage</h3>
+                <p>
+                  The Go OAuth callback handler now calls{' '}
+                  <code>SetAuthCookies</code> BEFORE the 307 redirect to{' '}
+                  <code>/auth/callback</code>. The cookies travel on the
+                  redirect response itself, so the callback page no longer
+                  needs to read <code>access_token</code> and{' '}
+                  <code>refresh_token</code> from the URL. Tokens never
+                  appear in browser history, server access logs, or Referer
+                  headers. Closes the gap left when v3.26.5 fixed
+                  email/password.
+                </p>
+
+                <h3>UUID vs number ID drift cleaned up</h3>
+                <ul>
+                  <li>
+                    <code>useBulkDeleteResource</code> signature{' '}
+                    <code>ids: number[]</code> → <code>ids: string[]</code>{' '}
+                    (Grit&apos;s models all use UUID primary keys).
+                  </li>
+                  <li>
+                    <code>form-modal.tsx</code> + <code>form-page.tsx</code>{' '}
+                    + their <code>-steps</code> variants stop casting{' '}
+                    <code>item.id</code> / <code>editId</code> to{' '}
+                    <code>Number</code> — they pass the IDs through as
+                    strings, matching{' '}
+                    <code>useUpdateResource</code> /{' '}
+                    <code>useResourceItem</code>.
+                  </li>
+                  <li>
+                    <code>relationship-select-field.tsx</code> +{' '}
+                    <code>multi-relationship-select-field.tsx</code> use{' '}
+                    <code>String(item.id)</code> instead of asserting{' '}
+                    <code>as number</code>.
+                  </li>
+                  <li>
+                    <code>hooks/use-system.ts</code> dropped its inline{' '}
+                    <code>Upload</code> interface and imports from{' '}
+                    <code>@repo/shared/types</code>;{' '}
+                    <code>UploadListResponse</code> is now an alias for{' '}
+                    <code>PaginatedResponse&lt;Upload&gt;</code>.
+                  </li>
+                  <li>
+                    Admin icon map: <code>Cpu</code>, <code>Zap</code>,{' '}
+                    <code>Globe</code> added; <code>Shield</code> was
+                    imported but not re-exported — fixed. System
+                    observability / security pages corrected from{' '}
+                    <code>@/lib/api</code> to <code>@/lib/api-client</code>.
+                  </li>
+                </ul>
+
+                <p>
+                  Net effect: a fresh <code>grit new</code> →{' '}
+                  <code>pnpm install</code> →{' '}
+                  <code>pnpm exec tsc --noEmit</code> on{' '}
+                  <code>apps/web</code> AND <code>apps/admin</code> returns
+                  zero type errors for the first time. The Go API builds
+                  and template tests pass unchanged.
+                </p>
+              </div>
+            </div>
+
             {/* v3.26.5 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

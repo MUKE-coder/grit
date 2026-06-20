@@ -1667,12 +1667,14 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 		return
 	}
 
-	// Redirect to frontend with tokens
-	redirectURL := fmt.Sprintf("%s/auth/callback?access_token=%s&refresh_token=%s",
-		h.Config.OAuthFrontendURL,
-		url.QueryEscape(tokens.AccessToken),
-		url.QueryEscape(tokens.RefreshToken),
-	)
+	// Set HttpOnly auth cookies BEFORE redirecting so the browser stores
+	// them as part of this same response. The callback page then just
+	// navigates — no tokens in URL, no tokens in JS, no XSS exposure.
+	h.AuthService.SetAuthCookies(c, tokens)
+
+	// Redirect to frontend callback. No query params — tokens travel as
+	// HttpOnly Set-Cookie headers on this 307 response.
+	redirectURL := fmt.Sprintf("%s/auth/callback", h.Config.OAuthFrontendURL)
 	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 }
 `
@@ -1691,11 +1693,17 @@ import (
 	"gorm.io/gorm"
 
 	"` + "{{MODULE}}" + `/internal/models"
+	"` + "{{MODULE}}" + `/internal/services"
 )
 
 // UserHandler handles user management endpoints.
 type UserHandler struct {
 	DB *gorm.DB
+	// AuthService is used by DeleteProfile to clear the HttpOnly auth
+	// cookies as part of the soft-delete response. Optional — if nil,
+	// the cookies just won't be cleared and the client's next request
+	// will 401 normally.
+	AuthService *services.AuthService
 }
 
 // Create creates a new user (admin only).
@@ -2106,6 +2114,16 @@ func (h *UserHandler) DeleteProfile(c *gin.Context) {
 			},
 		})
 		return
+	}
+
+	// Soft-delete leaves the JWT valid in theory; the auth middleware
+	// would still 401 on the next request because the user row is
+	// excluded by the default scope. We still expire the HttpOnly auth
+	// cookies on the way out so the next /api/* call from this browser
+	// doesn't even attempt — saves a round trip and a confusing 401 in
+	// the dev console.
+	if h.AuthService != nil {
+		h.AuthService.ClearAuthCookies(c)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -6202,7 +6220,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		Config:      cfg,
 	}
 	userHandler := &handlers.UserHandler{
-		DB: db,
+		DB:          db,
+		AuthService: authService,
 	}
 	uploadHandler := &handlers.UploadHandler{
 		DB:      db,

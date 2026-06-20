@@ -866,7 +866,10 @@ export function useBulkDeleteResource(endpoint: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (ids: number[]) => {
+    // ids are strings because Grit's models use UUID primary keys
+    // (the User.ID column in packages/shared/types/user.ts is 'string',
+    // and the same is true for every grit generate'd model).
+    mutationFn: async (ids: string[]) => {
       await Promise.all(ids.map((id) => apiClient.delete(` + "`" + `${endpoint}/${id}` + "`" + `)));
     },
     onSuccess: () => {

@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.26.5
+Version: 3.27.0
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -986,7 +986,46 @@ D) WHEN USERS ASK ABOUT LEARNING GRIT
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.26.5 (Current):
+v3.27.0 (Current):
+  - Admin auth sweep: the admin app now uses the same HttpOnly cookie
+    auth the web app got in v3.26.5. js-cookie + bearer tokens are gone
+    from api-client, use-auth, OAuth callback, root redirect, and the
+    profile delete flow. apiClient sets withCredentials: true and
+    echoes grit_csrf into X-CSRF-Token on every mutation. The 401-refresh
+    interceptor now POSTS /api/auth/refresh with an empty body — the API
+    reads grit_refresh from the cookie and issues a new grit_access via
+    Set-Cookie. JS never touches a token.
+  - Go OAuth handler upgraded to set HttpOnly cookies BEFORE the 307
+    redirect to /auth/callback. The callback page no longer receives
+    access_token / refresh_token in URL params — they ride as
+    Set-Cookie headers on the redirect response. Closes the
+    "tokens-in-URL leak to history + access logs" gap left by v3.26.5.
+  - DeleteProfile clears the auth cookies on the way out via
+    AuthService.ClearAuthCookies so the client's next request doesn't
+    pointlessly 401. UserHandler gains an AuthService field (optional —
+    falls back to no-op if nil so the change is non-breaking).
+  - js-cookie + @types/js-cookie dropped from apps/admin/package.json.
+    Admin now boots without ever loading the js-cookie module.
+  - ID type sweep: useBulkDeleteResource signature was 'ids: number[]'
+    but Grit's UUID models meant callers passed string[]. Now ids: string[].
+    form-modal.tsx and form-page.tsx (and their -steps variants) stopped
+    casting item.id and editId to Number; they pass the IDs through as
+    strings, matching useUpdateResource / useResourceItem signatures.
+    relationship-select-field + multi-relationship-select-field now use
+    String(item.id) instead of asserting 'as number'. apps/admin/hooks/
+    use-system.ts dropped its inline Upload interface and imports from
+    @repo/shared/types; UploadListResponse aliases PaginatedResponse<Upload>.
+  - Admin icon map: added Cpu, Zap, Globe to the lucide-react import +
+    re-export blocks. Added Shield to the re-export block (was imported
+    but not re-exported, breaking the system/security page). The system/
+    observability + system/security pages also corrected from
+    @/lib/api to @/lib/api-client.
+
+  Net effect: 'pnpm install + pnpm exec tsc --noEmit' on a fresh triple
+  scaffold now returns ZERO type errors on both apps/web AND apps/admin
+  for the first time. apps/api builds and template tests pass unchanged.
+
+v3.26.5:
   - Web hooks (use-blogs, use-auth) and the auth provider now IMPORT
     their types from @repo/shared/types instead of declaring them
     inline. Closes the doc-vs-scaffold contradiction a learner spotted:

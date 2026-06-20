@@ -116,10 +116,23 @@ func adminAuthCallbackPage() string {
 
 import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Cookies from "js-cookie";
 import { apiClient } from "@/lib/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 
+// OAuth flow (Grit 3.27+):
+//   1. /api/auth/oauth/:provider redirects to the provider
+//   2. provider hits /api/auth/oauth/:provider/callback (the GO route)
+//   3. that handler:
+//        a. exchanges code for user info
+//        b. finds-or-creates the user
+//        c. generates JWT tokens
+//        d. SETS HttpOnly grit_access + grit_refresh cookies via Set-Cookie
+//        e. redirects to this page with NO query params
+//   4. this page just probes /api/auth/me (which works because the cookies
+//      from step d arrived on the redirect response) and routes the user
+//      to the right area based on their role.
+// The tokens never travel as URL params, never sit in browser history,
+// never get logged in nginx access logs.
 export default function AuthCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -130,8 +143,6 @@ export default function AuthCallbackPage() {
     if (processed.current) return;
     processed.current = true;
 
-    const accessToken = searchParams.get("access_token");
-    const refreshToken = searchParams.get("refresh_token");
     const error = searchParams.get("error");
 
     if (error) {
@@ -139,24 +150,23 @@ export default function AuthCallbackPage() {
       return;
     }
 
-    if (accessToken && refreshToken) {
-      Cookies.set("access_token", accessToken, { expires: 1 });
-      Cookies.set("refresh_token", refreshToken, { expires: 7 });
-
-      // Fetch user to determine redirect
-      apiClient
-        .get("/api/auth/me")
-        .then(({ data }) => {
+    // The HttpOnly auth cookies are already in place (set by the Go
+    // OAuth handler before it 307-redirected here). Probe /me to grab
+    // the user and decide where to route them.
+    apiClient
+      .get("/api/auth/me")
+      .then(({ data }) => {
           const user = data.data;
           queryClient.setQueryData(["me"], user);
           router.push(user.role === "USER" ? "/profile" : "/dashboard");
         })
         .catch(() => {
-          router.push("/dashboard");
+          // /me failed even though we just landed here — either the
+          // cookies were dropped (cross-origin same-site weirdness),
+          // CORS misconfigured, or the user is disabled. Send them
+          // back to login with a generic message.
+          router.push("/login?error=Authentication+failed");
         });
-    } else {
-      router.push("/login?error=Authentication+failed");
-    }
   }, [searchParams, router, queryClient]);
 
   return (
@@ -329,7 +339,6 @@ func adminPackageJSON(opts Options) string {
     "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
-    "js-cookie": "^3.0.5",
     "lucide-react": "^0.303.0",
     "next": "^16.1.6",
     "react": "^19.0.0",
@@ -352,7 +361,6 @@ func adminPackageJSON(opts Options) string {
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.0",
     "@vitejs/plugin-react": "^4.3.0",
-    "@types/js-cookie": "^3.0.6",
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -608,48 +616,39 @@ export function Providers({ children }: { children: React.ReactNode }) {
 func adminUseAuth() string {
 	return `import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
+import type {
+  User,
+  LoginRequest,
+  RegisterRequest,
+  AuthResponse,
+  ApiResponse,
+} from "@repo/shared/types";
 import { apiClient } from "@/lib/api-client";
 
-interface User {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  role: string;
-  avatar: string;
-  job_title: string;
-  bio: string;
-  active: boolean;
-}
-
-interface AuthResponse {
-  data: {
-    user: User;
-    tokens: {
-      access_token: string;
-      refresh_token: string;
-      expires_at: number;
-    };
-  };
-}
-
-function storeTokens(tokens: { access_token: string; refresh_token: string }) {
-  Cookies.set("access_token", tokens.access_token, { expires: 1 });
-  Cookies.set("refresh_token", tokens.refresh_token, { expires: 7 });
-}
-
-function clearTokens() {
-  Cookies.remove("access_token");
-  Cookies.remove("refresh_token");
-}
+// Auth flow (Grit 3.27+):
+//   - User shape lives in packages/shared/types/user.ts (the SAME type
+//     the Go API serialises and the web app imports). Never inline it.
+//   - Login / register / OAuth set HttpOnly grit_access + grit_refresh
+//     cookies via Set-Cookie. The browser stores them; JS never reads.
+//   - apiClient has withCredentials: true so the cookies are attached
+//     automatically on every request.
+//   - useMe returns null on 401 instead of throwing so guard components
+//     can read user === null cleanly without a try/catch.
+//   - useLogout posts to /api/auth/logout — the API clears the cookies
+//     via Set-Cookie max-age=0; we just clear the query cache + redirect.
 
 export function useMe() {
-  return useQuery<User>({
+  return useQuery<User | null>({
     queryKey: ["me"],
     queryFn: async () => {
-      const { data } = await apiClient.get("/api/auth/me");
-      return data.data;
+      try {
+        const { data } = await apiClient.get<ApiResponse<User>>("/api/auth/me");
+        return data.data;
+      } catch (err: unknown) {
+        const e = err as { response?: { status?: number } };
+        if (e.response?.status === 401) return null;
+        throw err;
+      }
     },
     retry: false,
     staleTime: 10 * 60 * 1000,
@@ -661,15 +660,18 @@ export function useLogin() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (credentials: { email: string; password: string }) => {
-      const { data } = await apiClient.post<AuthResponse>(
+    mutationFn: async (credentials: LoginRequest) => {
+      // POST is enough — the API responds with Set-Cookie headers for
+      // grit_access + grit_refresh. The 'tokens' field in the JSON body
+      // is preserved for native bearer clients (mobile/desktop); the
+      // browser ignores it.
+      const { data } = await apiClient.post<ApiResponse<AuthResponse>>(
         "/api/auth/login",
         credentials
       );
       return data;
     },
     onSuccess: (data) => {
-      storeTokens(data.data.tokens);
       queryClient.setQueryData(["me"], data.data.user);
       router.push(data.data.user.role === "USER" ? "/profile" : "/dashboard");
     },
@@ -681,20 +683,14 @@ export function useRegister() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: {
-      first_name: string;
-      last_name: string;
-      email: string;
-      password: string;
-    }) => {
-      const { data: response } = await apiClient.post<AuthResponse>(
+    mutationFn: async (payload: RegisterRequest) => {
+      const { data } = await apiClient.post<ApiResponse<AuthResponse>>(
         "/api/auth/register",
-        data
+        payload
       );
-      return response;
+      return data;
     },
     onSuccess: (data) => {
-      storeTokens(data.data.tokens);
       queryClient.setQueryData(["me"], data.data.user);
       router.push(data.data.user.role === "USER" ? "/profile" : "/dashboard");
     },
@@ -709,11 +705,12 @@ export function useLogout() {
       try {
         await apiClient.post("/api/auth/logout");
       } catch {
-        // Ignore
+        // The API clears the cookies via Set-Cookie max-age=0 even on
+        // a 4xx, so falling through here is safe — local state still
+        // gets wiped by onSettled.
       }
     },
     onSettled: () => {
-      clearTokens();
       queryClient.clear();
       if (typeof window !== "undefined") {
         window.location.href = "/login";
@@ -726,25 +723,45 @@ export function useLogout() {
 
 func adminAPIClient() string {
 	return `import axios from "axios";
-import Cookies from "js-cookie";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+// Auth storage policy (Grit 3.27+):
+//   - The API issues HttpOnly grit_access + grit_refresh cookies on
+//     login / register / refresh / OAuth callback. The browser stores
+//     them automatically; JS never reads or writes the access token.
+//   - withCredentials: true tells axios to attach those cookies on every
+//     request, including cross-origin dev (admin :3001 → api :8080).
+//   - The CSRF token rides a NON-HttpOnly grit_csrf cookie. We echo it
+//     into X-CSRF-Token on every state-changing method — the API's
+//     AutoCSRF middleware requires that double-submit token for the
+//     mutation to pass.
+//   - The 401-refresh interceptor below POSTS /api/auth/refresh with no
+//     body — the API reads grit_refresh from the cookie and issues a
+//     new grit_access via Set-Cookie. JS still never sees a token.
 export const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
 });
 
 apiClient.interceptors.request.use((config) => {
-  const token = Cookies.get("access_token");
-  if (token) {
-    config.headers.Authorization = ` + "`" + `Bearer ${token}` + "`" + `;
+  // Echo grit_csrf into X-CSRF-Token. The cookie is intentionally not
+  // HttpOnly so JS can read it; the API checks both sides match
+  // (double-submit pattern) before accepting a mutation.
+  if (typeof document !== "undefined") {
+    const m = document.cookie.match(/(?:^|; )grit_csrf=([^;]+)/);
+    if (m && config.headers) {
+      config.headers["X-CSRF-Token"] = decodeURIComponent(m[1]);
+    }
   }
-  // Auto-attach Idempotency-Key on unsafe methods. The 401-refresh interceptor
-  // below replays the same config object so retries reuse this key — the
-  // server caches the first 2xx response for 24h keyed by (method, path, key).
+
+  // Auto-attach Idempotency-Key on unsafe methods. The 401-refresh
+  // interceptor below replays the same config object so retries reuse
+  // this key — the server caches the first 2xx response for 24h
+  // keyed by (method, path, key).
   const method = (config.method || "get").toUpperCase();
   const unsafe = method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE";
   if (unsafe && config.headers && !config.headers["Idempotency-Key"]) {
@@ -781,7 +798,8 @@ apiClient.interceptors.response.use(
     const isAuthEndpoint =
       url.includes("/auth/login") ||
       url.includes("/auth/register") ||
-      url.includes("/auth/refresh");
+      url.includes("/auth/refresh") ||
+      url.includes("/auth/me");
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
@@ -794,23 +812,18 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = Cookies.get("refresh_token");
-        if (!refreshToken) throw new Error("No refresh token");
-
-        const { data } = await axios.post(` + "`" + `${API_URL}/api/auth/refresh` + "`" + `, {
-          refresh_token: refreshToken,
-        });
-
-        const { access_token, refresh_token: newRefreshToken } = data.data.tokens;
-        Cookies.set("access_token", access_token, { expires: 1 });
-        Cookies.set("refresh_token", newRefreshToken, { expires: 7 });
+        // Empty body — the API reads grit_refresh from the HttpOnly
+        // cookie that the browser attached automatically, and issues a
+        // new grit_access via the Set-Cookie response header.
+        await apiClient.post("/api/auth/refresh");
 
         processQueue(null);
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
-        Cookies.remove("access_token");
-        Cookies.remove("refresh_token");
+        // The cookies are HttpOnly so we can't expire them from JS.
+        // Forcing a navigation to /login lets the user re-authenticate;
+        // the next successful login replaces the cookies via Set-Cookie.
         if (typeof window !== "undefined") {
           window.location.href = "/login";
         }
@@ -907,19 +920,24 @@ func adminRedirectPage() string {
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
+import { useMe } from "@/hooks/use-auth";
 
+// The auth cookies are HttpOnly so JS can't peek at them to decide
+// where to send the user. Instead we ask the API: /api/auth/me returns
+// the User on success and 401 (which useMe converts to null) when the
+// session is gone or expired. One short request before the redirect.
 export default function RootPage() {
   const router = useRouter();
+  const { data: user, isLoading } = useMe();
 
   useEffect(() => {
-    const token = Cookies.get("access_token");
-    if (token) {
-      router.replace("/dashboard");
+    if (isLoading) return;
+    if (user) {
+      router.replace(user.role === "USER" ? "/profile" : "/dashboard");
     } else {
       router.replace("/login");
     }
-  }, [router]);
+  }, [router, user, isLoading]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">

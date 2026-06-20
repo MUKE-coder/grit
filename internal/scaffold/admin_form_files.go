@@ -346,7 +346,7 @@ export function FormModal({ resource, item, onClose }: FormModalProps) {
   const handleSubmit = (data: Record<string, unknown>) => {
     if (isEdit) {
       update(
-        { id: Number(item.id), body: data },
+        { id: String(item.id), body: data },
         { onSuccess: () => onClose() }
       );
     } else {
@@ -409,7 +409,7 @@ export function FormPage({ resource }: FormPageProps) {
 
   const { data: item, isLoading } = useResourceItem(
     resource.endpoint,
-    editId ? Number(editId) : 0,
+    editId ?? "",
     { enabled: isEdit }
   );
 
@@ -422,7 +422,7 @@ export function FormPage({ resource }: FormPageProps) {
   const handleSubmit = (data: Record<string, unknown>) => {
     if (isEdit && editId) {
       update(
-        { id: Number(editId), body: data },
+        { id: editId, body: data },
         { onSuccess: () => router.push(` + "`" + `/resources/${resource.slug}` + "`" + `) }
       );
     } else {
@@ -847,7 +847,7 @@ export function FormModalSteps({ resource, item, onClose }: FormModalStepsProps)
   const handleSubmit = (data: Record<string, unknown>) => {
     if (isEdit) {
       update(
-        { id: Number(item.id), body: data },
+        { id: String(item.id), body: data },
         { onSuccess: () => onClose() }
       );
     } else {
@@ -910,7 +910,7 @@ export function FormPageSteps({ resource }: FormPageStepsProps) {
 
   const { data: item, isLoading } = useResourceItem(
     resource.endpoint,
-    editId ? Number(editId) : 0,
+    editId ?? "",
     { enabled: isEdit }
   );
 
@@ -923,7 +923,7 @@ export function FormPageSteps({ resource }: FormPageStepsProps) {
   const handleSubmit = (data: Record<string, unknown>) => {
     if (isEdit && editId) {
       update(
-        { id: Number(editId), body: data },
+        { id: editId, body: data },
         { onSuccess: () => router.push(` + "`" + `/resources/${resource.slug}` + "`" + `) }
       );
     } else {
@@ -1667,7 +1667,7 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
               </button>
             )}
             {filtered.map((item) => {
-              const id = item.id as number;
+              const id = String(item.id);
               const label = String(item[displayField] || item.name || item.title || item.id || "");
               return (
                 <button
@@ -1838,7 +1838,7 @@ export function MultiRelationshipSelectField({ field, value = [], onChange, erro
               </button>
             )}
             {filtered.map((item) => {
-              const id = item.id as number;
+              const id = String(item.id);
               const label = String(item[displayField] || item.name || item.title || item.id || "");
               const isSelected = value.includes(id);
               return (
