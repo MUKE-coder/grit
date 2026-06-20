@@ -218,6 +218,21 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "auth", "PulseAuthShell.tsx"):     adminPulseAuthShell(),
 		filepath.Join(adminRoot, "components", "auth", "SocialAuthButtons.tsx"):  adminAuthSocialButtons(),
 
+		// Chrome components (v3.29) — page header, dark toggle, user menu,
+		// notification bell, refactored collapsible sidebar with 2-logo brand.
+		filepath.Join(adminRoot, "components", "chrome", "PageHeader.tsx"):           adminPageHeaderComponent(),
+		filepath.Join(adminRoot, "components", "chrome", "DarkModeToggle.tsx"):       adminDarkModeToggleComponent(),
+		filepath.Join(adminRoot, "components", "chrome", "UserMenu.tsx"):             adminUserMenuComponent(),
+		filepath.Join(adminRoot, "components", "chrome", "NotificationBell.tsx"):     adminNotificationBellComponent(),
+		filepath.Join(adminRoot, "components", "chrome", "CollapsibleSidebar.tsx"):   adminCollapsibleSidebarComponent(),
+
+		// UI primitives (v3.29) — responsive form/table building blocks.
+		filepath.Join(adminRoot, "components", "ui", "ResponsiveSheet.tsx"):  adminResponsiveSheetComponent(),
+		filepath.Join(adminRoot, "components", "ui", "CurrencyInput.tsx"):    adminCurrencyInputComponent(),
+		filepath.Join(adminRoot, "components", "ui", "IconButton.tsx"):       adminIconButtonComponent(),
+		filepath.Join(adminRoot, "components", "ui", "ResponsiveTable.tsx"): adminResponsiveTableComponent(),
+		filepath.Join(adminRoot, "lib", "export.ts"):                         adminExportLib(),
+
 		// Dashboard route group layout
 		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"): adminDashboardLayout(),
 
@@ -363,6 +378,8 @@ func adminPackageJSON(opts Options) string {
     "sonner": "^1.3.0",
     "tailwind-merge": "^2.2.0",
     "tailwindcss-animate": "^1.0.7",
+    "xlsx": "^0.18.5",
+    "@react-pdf/renderer": "^4.1.5",
     "zod": "^3.22.0",
     "@repo/shared": "workspace:*"
   },
@@ -617,7 +634,7 @@ body {
   background: var(--bg-hover);
   border-radius: 3px;
 }
-`
+` + adminDarkModeCSSAddon()
 }
 
 func adminRootLayout(opts Options) string {

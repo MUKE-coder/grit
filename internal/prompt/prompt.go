@@ -51,23 +51,26 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 		opts.Frontend = scaffold.Frontend(frontend)
 	}
 
-	// Only ask for style if architecture includes admin panel
-	if opts.Architecture == scaffold.ArchTriple && opts.Style == "" {
-		var style string
+	// Theme picker — runs for any architecture that includes a frontend.
+	// Themes ship since v3.28: atlas (default), aurora (centered), pulse
+	// (carousel). The choice writes THEME=<name> to .env so the dashboard
+	// + auth pages render with matching tokens, fonts, and layouts.
+	if needsFrontend && opts.Theme == "" {
+		var theme string
 		err := huh.NewSelect[string]().
-			Title("Select admin panel style").
+			Title("Select visual theme").
+			Description("Drives auth layout, dashboard tokens, fonts, and brand colors.").
 			Options(
-				huh.NewOption("Default — Clean dark theme", "default"),
-				huh.NewOption("Modern — Gradient accents", "modern"),
-				huh.NewOption("Minimal — Ultra clean", "minimal"),
-				huh.NewOption("Glass — Glassmorphism", "glass"),
+				huh.NewOption("Atlas — split-screen, blue/white, team/organisation (Inter)", "atlas"),
+				huh.NewOption("Aurora — centered Clerk-style, pastel, consumer SaaS (Geist)", "aurora"),
+				huh.NewOption("Pulse — split + hero carousel, bold, ecommerce/brand (Onest + DM Serif)", "pulse"),
 			).
-			Value(&style).
+			Value(&theme).
 			Run()
 		if err != nil {
 			return err
 		}
-		opts.Style = style
+		opts.Theme = theme
 	}
 
 	return nil

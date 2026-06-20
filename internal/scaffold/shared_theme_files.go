@@ -32,11 +32,16 @@ export const brand = {
   description:
     "The admin dashboard for your application. Monitor, manage, and control your platform from a single screen.",
 
-  /** Logo — single-character fallback when no image is set, plus an
-   *  optional image path resolved from /public. */
+  /** Logo — single-character fallback when no image is set. The full
+   *  variant is used in the expanded sidebar + auth pages; the mark
+   *  variant is used in the collapsed sidebar and favicons. Both are
+   *  optional and resolve from /public. */
   logo: {
     text: %q,
+    /** Wide logo (text + icon) shown in the expanded sidebar. */
     image: "" as string | "",
+    /** Square mark shown in the collapsed sidebar, ~32x32. */
+    mark: "" as string | "",
   },
 
   /** Hero imagery — used by the Pulse theme's auth carousel and as a

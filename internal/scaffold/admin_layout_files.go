@@ -127,6 +127,7 @@ func adminIconMap() string {
   Cpu,
   Zap,
   Globe,
+  Menu,
   type LucideIcon,
 } from "lucide-react";
 
@@ -227,6 +228,7 @@ export {
   Cpu,
   Zap,
   Globe,
+  Menu,
 };
 `
 }
@@ -238,9 +240,12 @@ func adminLayoutComponent() string {
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useMe } from "@/hooks/use-auth";
-import { Sidebar } from "./sidebar";
-import { Navbar } from "./navbar";
+import { CollapsibleSidebar } from "@/components/chrome/CollapsibleSidebar";
+import { Menu } from "@/lib/icons";
 
+// v3.29: navbar is gone — pages now drop a <PageHeader> at the top of
+// their JSX to get title/subtitle/search/dark-toggle/bell/user-menu in
+// one consistent strip. The dashboard layout only owns sidebar + main.
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading, isError } = useMe();
   const router = useRouter();
@@ -282,34 +287,32 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   if (!user) return null;
 
   return (
-    <div className="flex min-h-screen">
-      {/* Mobile overlay */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-
-      <Sidebar
+    <div className="min-h-screen">
+      <CollapsibleSidebar
         user={user}
         collapsed={sidebarCollapsed}
+        onToggleCollapsed={toggleSidebar}
         mobileOpen={mobileMenuOpen}
         onMobileClose={() => setMobileMenuOpen(false)}
       />
 
       <div
-        className={` + "`" + `flex flex-1 flex-col transition-all duration-300 ${
-          sidebarCollapsed ? "lg:ml-16" : "lg:ml-64"
+        className={` + "`" + `flex min-h-screen flex-col transition-all duration-200 ${
+          sidebarCollapsed ? "md:ml-16" : "md:ml-64"
         }` + "`" + `}
       >
-        <Navbar
-          user={user}
-          onMenuToggle={() => setMobileMenuOpen(true)}
-          collapsed={sidebarCollapsed}
-          onToggleSidebar={toggleSidebar}
-        />
-        <main className="flex-1 p-6">{children}</main>
+        {/* Mobile menu button — only shown when the sidebar is hidden
+            on small screens. PageHeader supplies the rest of the chrome. */}
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(true)}
+          aria-label="Open menu"
+          className="fixed top-3 left-3 z-30 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-bg-elevated text-text-secondary shadow-sm md:hidden"
+        >
+          <Menu className="h-4 w-4" />
+        </button>
+
+        <main className="flex-1 px-4 py-6 md:px-8">{children}</main>
       </div>
     </div>
   );
