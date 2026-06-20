@@ -133,6 +133,15 @@ func adminIconMap() string {
   Flag,
   LogIn,
   UserPlus,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+  Highlighter,
+  Palette,
+  Table,
+  Minus,
+  Underline,
   type LucideIcon,
 } from "lucide-react";
 
@@ -245,6 +254,15 @@ export {
   Flag,
   LogIn,
   UserPlus,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+  Highlighter,
+  Palette,
+  Table,
+  Minus,
+  Underline,
 };
 `
 }

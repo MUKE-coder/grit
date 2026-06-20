@@ -353,7 +353,11 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):          adminDashboardPageForStyle(opts.Style),
 		filepath.Join(adminRoot, "app", "(dashboard)", "profile", "page.tsx"):            adminCaptivatingProfile(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"): adminUsersPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "page.tsx"): adminBlogsPage(),
+		// v3.31.7: blog list uses a two-step create flow (sheet -> redirect
+		// to detail page with WordEditor) instead of the stock resource page.
+		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "page.tsx"):       adminBlogsListPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "[id]", "page.tsx"): adminBlogDetailPage(),
+		filepath.Join(adminRoot, "components", "forms", "word-editor.tsx"):                       adminWordEditor(),
 
 		// System pages — under (dashboard) route group
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "jobs", "page.tsx"):  adminJobsPage(),
@@ -409,6 +413,17 @@ func adminPackageJSON(opts Options) string {
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "@tiptap/extension-link": "^2.1.0",
+    "@tiptap/extension-text-align": "^2.1.0",
+    "@tiptap/extension-text-style": "^2.1.0",
+    "@tiptap/extension-color": "^2.1.0",
+    "@tiptap/extension-highlight": "^2.1.0",
+    "@tiptap/extension-underline": "^2.1.0",
+    "@tiptap/extension-image": "^2.1.0",
+    "@tiptap/extension-table": "^2.1.0",
+    "@tiptap/extension-table-row": "^2.1.0",
+    "@tiptap/extension-table-cell": "^2.1.0",
+    "@tiptap/extension-table-header": "^2.1.0",
+    "@tiptap/extension-placeholder": "^2.1.0",
     "@tiptap/pm": "^2.1.0",
     "@tiptap/react": "^2.1.0",
     "@tiptap/starter-kit": "^2.1.0",
