@@ -32,13 +32,21 @@ func writeWebFiles(root string, opts Options) error {
 		filepath.Join(webRoot, "app", "components", "[name]", "page.tsx"):   webComponentDetailPage(opts),
 		filepath.Join(webRoot, "public", ".gitkeep"):                         "",
 
-		// Auth pages
-		filepath.Join(webRoot, "app", "(auth)", "login", "page.tsx"):           webAuthLogin(opts),
-		filepath.Join(webRoot, "app", "(auth)", "register", "page.tsx"):        webAuthRegister(opts),
-		filepath.Join(webRoot, "app", "(auth)", "forgot-password", "page.tsx"): webAuthForgotPassword(opts),
+		// Auth pages (v3.28.1: shell-driven, same per-theme treatment as admin)
+		filepath.Join(webRoot, "app", "(auth)", "login", "page.tsx"):           webThemedLoginPage(),
+		filepath.Join(webRoot, "app", "(auth)", "register", "page.tsx"):        webThemedRegisterPage(),
+		filepath.Join(webRoot, "app", "(auth)", "forgot-password", "page.tsx"): webThemedForgotPasswordPage(),
 		filepath.Join(webRoot, "app", "(auth)", "callback", "page.tsx"):        webAuthCallback(),
 		filepath.Join(webRoot, "hooks", "use-auth.ts"):                         webUseAuth(),
 		filepath.Join(webRoot, "lib", "auth-provider.tsx"):                     webAuthProvider(),
+
+		// Theme-aware auth shells (v3.28.1) — same components as admin, copied
+		// in so web's bundle can render without reaching across packages.
+		filepath.Join(webRoot, "components", "auth", "AuthShell.tsx"):         adminAuthShellDispatcher(),
+		filepath.Join(webRoot, "components", "auth", "AtlasAuthShell.tsx"):    adminAtlasAuthShell(),
+		filepath.Join(webRoot, "components", "auth", "AuroraAuthShell.tsx"):   adminAuroraAuthShell(),
+		filepath.Join(webRoot, "components", "auth", "PulseAuthShell.tsx"):    adminPulseAuthShell(),
+		filepath.Join(webRoot, "components", "auth", "SocialAuthButtons.tsx"): adminAuthSocialButtons(),
 	}
 
 	for path, content := range files {
@@ -157,8 +165,11 @@ const config: Config = {
         info: "var(--info)",
       },
       fontFamily: {
-        sans: ["var(--font-onest)", "system-ui", "sans-serif"],
-        mono: ["var(--font-jetbrains-mono)", "ui-monospace", "monospace"],
+        // v3.28.1: --font-display + --font-mono are set per theme in the
+        // root layout (Inter for atlas, Geist for aurora, Onest for pulse).
+        sans: ["var(--font-display)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+        serif: ["var(--font-serif)", "Georgia", "serif"],
       },
     },
   },
@@ -211,7 +222,66 @@ func webGlobalCSS() string {
 @tailwind components;
 @tailwind utilities;
 
-:root {
+/* v3.28.1 — theme-aware CSS variables. Web mirrors admin's variable
+ * system so a single THEME=<name> in .env paints both surfaces. */
+
+/* atlas (default) */
+:root,
+[data-theme="atlas"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f1f5f9;
+  --border: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #0ea5e9;
+}
+
+[data-theme="aurora"] {
+  --bg-primary: #fafaf9;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f5f5f4;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f5f5f4;
+  --border: #e7e5e4;
+  --text-primary: #1c1917;
+  --text-secondary: #57534e;
+  --text-muted: #a8a29e;
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #0ea5e9;
+}
+
+[data-theme="pulse"] {
+  --bg-primary: #fafaf9;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f5f5f4;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f5f5f4;
+  --border: #e5e5e5;
+  --text-primary: #0f0f0f;
+  --text-secondary: #525252;
+  --text-muted: #a3a3a3;
+  --accent: #0f0f0f;
+  --accent-hover: #1f1f1f;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #fbbf24;
+  --info: #0284c7;
+}
+
+[data-theme="midnight"] {
   --bg-primary: #0a0a0f;
   --bg-secondary: #111118;
   --bg-tertiary: #1a1a24;
@@ -232,7 +302,7 @@ func webGlobalCSS() string {
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: var(--font-onest), system-ui, sans-serif;
+  font-family: var(--font-display), system-ui, sans-serif;
 }
 
 * {
@@ -429,24 +499,39 @@ body {
 }
 
 func webRootLayout(opts Options) string {
+	// v3.28.1: per-theme font loading + data-theme attribute. Mirrors the
+	// admin layout — see the comment there for the trade-off (build-time
+	// font import means switching themes without re-scaffolding loses the
+	// matching family; fine for now since runtime theme switching is rare).
+	var fontImport, fontVars string
+	switch opts.Theme {
+	case "aurora":
+		fontImport = `import { Geist, Geist_Mono } from "next/font/google";
+
+const geist = Geist({ subsets: ["latin"], variable: "--font-display", weight: ["400", "500", "600", "700"] });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500", "600"] });`
+		fontVars = "${geist.variable} ${geistMono.variable}"
+	case "pulse":
+		fontImport = `import { Onest, DM_Serif_Display, JetBrains_Mono } from "next/font/google";
+
+const onest = Onest({ subsets: ["latin"], variable: "--font-display", weight: ["400", "500", "600", "700"] });
+const dmSerif = DM_Serif_Display({ subsets: ["latin"], variable: "--font-serif", weight: ["400"] });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500", "600"] });`
+		fontVars = "${onest.variable} ${dmSerif.variable} ${jetbrainsMono.variable}"
+	default: // atlas
+		fontImport = `import { Inter, JetBrains_Mono } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-display", weight: ["400", "500", "600", "700"] });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500", "600"] });`
+		fontVars = "${inter.variable} ${jetbrainsMono.variable}"
+	}
+
 	return fmt.Sprintf(`import type { Metadata } from "next";
-import { Onest, JetBrains_Mono } from "next/font/google";
+%s
 import { Providers } from "@/components/providers";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import "./globals.css";
-
-const onest = Onest({
-  subsets: ["latin"],
-  variable: "--font-onest",
-  weight: ["400", "500", "600", "700"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
-  weight: ["400", "500", "600"],
-});
 
 export const metadata: Metadata = {
   title: "%s — Go + React. Built with Grit.",
@@ -458,9 +543,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const dataTheme = process.env.NEXT_PUBLIC_THEME || "atlas";
+
   return (
-    <html lang="en" className="dark">
-      <body className={`+"`"+`${onest.variable} ${jetbrainsMono.variable} font-sans dark antialiased`+"`"+`}>
+    <html lang="en" data-theme={dataTheme}>
+      <body className={`+"`%s "+`font-sans antialiased`+"`"+`}>
         <Providers>
           <Navbar />
           <main className="min-h-screen">{children}</main>
@@ -469,8 +556,7 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
-`, opts.ProjectName)
+}`, fontImport, opts.ProjectName, fontVars)
 }
 
 func webLandingPage(opts Options) string {

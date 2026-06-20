@@ -444,8 +444,13 @@ const config: Config = {
         info: "var(--info)",
       },
       fontFamily: {
-        sans: ["var(--font-onest)", "system-ui", "sans-serif"],
-        mono: ["var(--font-jetbrains-mono)", "ui-monospace", "monospace"],
+        // v3.28.1: --font-display + --font-mono are set per theme in the
+        // root layout (Inter for atlas, Geist for aurora, Onest for pulse).
+        // System fonts trail as fallbacks so an unsupported theme name
+        // still produces readable text.
+        sans: ["var(--font-display)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+        serif: ["var(--font-serif)", "Georgia", "serif"],
       },
     },
   },
@@ -498,8 +503,80 @@ func adminGlobalCSS() string {
 @tailwind components;
 @tailwind utilities;
 
-/* Dark theme (default) */
-:root {
+/* v3.28.1 — theme-aware CSS variables.
+ *
+ * Each theme overrides the variable set via [data-theme="<name>"] on the
+ * <html> root. The root layout writes that attribute from NEXT_PUBLIC_THEME
+ * at render time, so swapping THEME in .env re-paints the whole dashboard
+ * without code edits.
+ *
+ * Defaults (:root) match the Atlas theme — that's the scaffold default.
+ * The legacy dark palette is preserved under [data-theme="midnight"] so
+ * teams that want the old look can opt in.
+ */
+
+/* atlas (default) — professional, blue/white, team/organisation */
+:root,
+[data-theme="atlas"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f1f5f9;
+  --border: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #0ea5e9;
+}
+
+/* aurora — friendly, pastel, consumer SaaS */
+[data-theme="aurora"] {
+  --bg-primary: #fafaf9;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f5f5f4;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f5f5f4;
+  --border: #e7e5e4;
+  --text-primary: #1c1917;
+  --text-secondary: #57534e;
+  --text-muted: #a8a29e;
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #0ea5e9;
+}
+
+/* pulse — bold, ecommerce/brand. Primary stays near-black so CTAs read
+ * white-on-black; the yellow brand mark lives in auth via theme tokens. */
+[data-theme="pulse"] {
+  --bg-primary: #fafaf9;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f5f5f4;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f5f5f4;
+  --border: #e5e5e5;
+  --text-primary: #0f0f0f;
+  --text-secondary: #525252;
+  --text-muted: #a3a3a3;
+  --accent: #0f0f0f;
+  --accent-hover: #1f1f1f;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #fbbf24;
+  --info: #0284c7;
+}
+
+/* midnight — legacy v3.27 dark look. Opt in by setting THEME=midnight or
+ * adding data-theme="midnight" on a specific surface. */
+[data-theme="midnight"] {
   --bg-primary: #0a0a0f;
   --bg-secondary: #111118;
   --bg-tertiary: #1a1a24;
@@ -517,29 +594,10 @@ func adminGlobalCSS() string {
   --info: #74b9ff;
 }
 
-/* Light theme */
-:root.light {
-  --bg-primary: #f8f9fc;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #f1f3f8;
-  --bg-elevated: #ffffff;
-  --bg-hover: #e8eaf0;
-  --border: #d8dbe5;
-  --text-primary: #1a1a2e;
-  --text-secondary: #555570;
-  --text-muted: #8888a0;
-  --accent: #6c5ce7;
-  --accent-hover: #5a4bd6;
-  --success: #00b894;
-  --danger: #ff6b6b;
-  --warning: #e5a800;
-  --info: #3b8beb;
-}
-
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: var(--font-onest), system-ui, sans-serif;
+  font-family: var(--font-display), system-ui, sans-serif;
 }
 
 * {
@@ -608,13 +666,14 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // v3.28.1: data-theme drives the CSS variable cascade in globals.css.
+  // Reading process.env at render time means changing THEME in .env +
+  // restarting the dev server re-paints the dashboard without code edits.
+  // Defaults to "atlas" so a missing env doesn't blank the surface.
+  const dataTheme = process.env.NEXT_PUBLIC_THEME || "atlas";
+
   return (
-    // The dark class is retained for v3.28.0 because the dashboard still
-    // uses dark-mode tokens. Auth pages paint their own light background
-    // via inline style on the theme shell, so the dark body shows through
-    // only behind the dashboard. Theming the dashboard light follows in
-    // v3.28.1.
-    <html lang="en" className="dark">
+    <html lang="en" data-theme={dataTheme}>
       <body className={`+"`%s "+`%s`+"`"+`}>
         <Providers>{children}</Providers>
       </body>
