@@ -143,12 +143,18 @@ tmp/
 }
 
 func airConfig() string {
+	// Always emit the binary with a .exe suffix and use air's modern
+	// entrypoint key. Windows requires the .exe to actually execute
+	// the binary (otherwise the OS pops a "what app should open this?"
+	// dialog). Linux + macOS don't care about the suffix — to them
+	// it's just part of the filename. One config, every platform.
 	return `root = "."
 tmp_dir = "tmp"
 
 [build]
-  bin = "./tmp/server"
-  cmd = "go build -o ./tmp/server ./cmd/server"
+  entrypoint = "./cmd/server"
+  bin = "./tmp/server.exe"
+  cmd = "go build -o ./tmp/server.exe ./cmd/server"
   delay = 1000
   exclude_dir = ["tmp", "vendor", "node_modules"]
   exclude_regex = ["_test.go"]
