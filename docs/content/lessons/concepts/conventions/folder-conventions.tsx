@@ -83,28 +83,28 @@ export default function Lesson() {
       </ul>
 
       <KnowledgeCheck
-        question="You need to add a function that validates a phone number — used by signup AND by the admin panel's user form. Where does it go?"
+        question="You need to add a phone-number validation rule — used by the public signup form, by the admin panel's user form, AND enforced server-side on POST /api/users. Where does the rule live?"
         choices={[
           {
-            label: 'apps/api/internal/services/phone.go',
+            label: 'apps/api/internal/services/phone.go (Go-only)',
             feedback:
-              "Half right — yes, if only the API uses it. But the admin form needs it too, and admin runs in the browser. A Go-only service can't validate on the frontend.",
+              "Half right — yes, if only the API needed it. But the signup form and the admin form both run in the browser and need to validate before submitting. A Go-only service can't validate on the frontend.",
           },
           {
-            label: 'apps/web/lib/phone.ts AND apps/admin/lib/phone.ts (copy)',
+            label: 'apps/web/lib/phone.ts AND apps/admin/lib/phone.ts (copy in both)',
             feedback:
-              "Wrong — duplicating shared logic is exactly what packages/shared exists to prevent. They'll drift.",
+              "Wrong — duplicating validation logic is exactly what packages/shared exists to prevent. The two copies will drift the first time someone tightens the rule.",
           },
           {
             label: 'packages/shared/src/schemas/phone.ts (Zod schema)',
             correct: true,
             feedback:
-              "Right — packages/shared is the type bridge. A Zod schema for phone validation lives there; web, admin, AND the API (via grit sync's generated counterpart) all use it.",
+              "Right — a Zod schema captures the rule once and works as both a validator AND a type. web + admin import it directly; the Go API enforces the matching rule via grit sync's generated Go counterpart. One source of truth, three surfaces.",
           },
           {
-            label: 'apps/api/internal/handlers/phone.go',
+            label: 'apps/api/internal/handlers/phone.go (in the handler)',
             feedback:
-              "Wrong — validation is not handler logic. Handlers shouldn't own business rules.",
+              "Wrong — handlers should be thin. Validation rules live in the schema layer; handlers just call .Parse() / .Validate() against the shared definition.",
           },
         ]}
       />
