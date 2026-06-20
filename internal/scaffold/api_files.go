@@ -6331,10 +6331,104 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// grit:handlers
 
 	// Health check
+	// /api/health probes every infrastructure dependency the dashboard's
+	// System Health page wants to render. Each probe is bounded by a 500ms
+	// timeout so a hung dependency doesn't pile up health requests; failing
+	// probes mark themselves down and the overall status downgrades to
+	// "degraded" rather than failing the endpoint.
 	r.GET("/api/health", func(c *gin.Context) {
+		type compStatus struct {
+			OK         bool   ` + "`" + `json:"ok"` + "`" + `
+			LatencyMS  int64  ` + "`" + `json:"latency_ms,omitempty"` + "`" + `
+			Tables     int    ` + "`" + `json:"tables,omitempty"` + "`" + `
+			QueueKeys  int    ` + "`" + `json:"queue_keys,omitempty"` + "`" + `
+			Configured bool   ` + "`" + `json:"configured,omitempty"` + "`" + `
+			Error      string ` + "`" + `json:"error,omitempty"` + "`" + `
+		}
+
+		// Database ping + table count. We probe with a 500ms deadline so a
+		// blocked write loop can't hang the health check.
+		dbStatus := compStatus{OK: true}
+		dbStart := time.Now()
+		if sqlDB, err := db.DB(); err == nil {
+			ctx, cancel := context.WithTimeout(c.Request.Context(), 500*time.Millisecond)
+			defer cancel()
+			if err := sqlDB.PingContext(ctx); err != nil {
+				dbStatus.OK = false
+				dbStatus.Error = err.Error()
+			}
+		}
+		dbStatus.LatencyMS = time.Since(dbStart).Milliseconds()
+		if dbStatus.OK {
+			// Best-effort table count — failure is non-fatal and just drops
+			// the "tables: N" tooltip on the health card.
+			var count int
+			db.Raw("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = current_schema()").Scan(&count)
+			dbStatus.Tables = count
+		}
+
+		// Redis ping. Reuse the same cache client the rest of the app uses
+		// rather than opening a new connection — that way "Redis healthy"
+		// on the dashboard means the same Redis the cache + jobs use.
+		redisStatus := compStatus{}
+		if svc.Cache != nil {
+			redisStart := time.Now()
+			ctx, cancel := context.WithTimeout(c.Request.Context(), 500*time.Millisecond)
+			defer cancel()
+			if err := svc.Cache.Client().Ping(ctx).Err(); err != nil {
+				redisStatus.OK = false
+				redisStatus.Error = err.Error()
+			} else {
+				redisStatus.OK = true
+			}
+			redisStatus.LatencyMS = time.Since(redisStart).Milliseconds()
+		}
+
+		// Background-jobs queue — count active asynq keys as a liveness
+		// signal. If asynq isn't wired (Jobs == nil), report unconfigured
+		// rather than "down" so the dashboard distinguishes the cases.
+		jobsStatus := compStatus{}
+		if svc.Jobs != nil && svc.Cache != nil {
+			ctx, cancel := context.WithTimeout(c.Request.Context(), 500*time.Millisecond)
+			defer cancel()
+			n, err := svc.Cache.Client().Eval(ctx,
+				"local total = 0\nfor _, k in ipairs(redis.call('keys', 'asynq:*')) do total = total + 1 end\nreturn total",
+				[]string{}).Int()
+			if err == nil {
+				jobsStatus.OK = true
+				jobsStatus.QueueKeys = n
+			} else {
+				// Fall back to a simple ping so a "no keys yet" install still
+				// reports OK rather than down.
+				if perr := svc.Cache.Client().Ping(ctx).Err(); perr == nil {
+					jobsStatus.OK = true
+				}
+			}
+		}
+
+		// Email is "configured" when Resend key is set + non-default. The
+		// dashboard treats unconfigured as "—" not "down".
+		mailStatus := compStatus{
+			Configured: cfg.ResendAPIKey != "" && cfg.ResendAPIKey != "re_your_api_key",
+			OK:         cfg.ResendAPIKey != "" && cfg.ResendAPIKey != "re_your_api_key",
+		}
+
+		// Overall status — ok if every wired-up component is up. Components
+		// that aren't configured (e.g. Redis off in a single-binary dev
+		// run) don't drag the overall status down.
+		overall := "ok"
+		if !dbStatus.OK || (svc.Cache != nil && !redisStatus.OK) {
+			overall = "degraded"
+		}
+
 		c.JSON(http.StatusOK, gin.H{
-			"status":  "ok",
-			"version": "0.1.0",
+			"status":   overall,
+			"version":  "0.1.0",
+			"database": dbStatus,
+			"redis":    redisStatus,
+			"api":      compStatus{OK: true},
+			"jobs":     jobsStatus,
+			"email":    mailStatus,
 		})
 	})
 

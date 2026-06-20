@@ -300,16 +300,16 @@ export default function SecurityPage() {
     <div>
       <PageHeader
         title="Security"
-        subtitle="Rate-limit pressure, IP bans, and recent threats — powered by Sentinel."
+        subtitle="IP bans, rate-limit pressure, recent threats — powered by Sentinel."
         actions={
           <Link
             href="/sentinel/ui"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-bg-elevated px-3 py-2 text-sm font-medium text-foreground hover:bg-bg-hover"
+            className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-border bg-bg-elevated px-3 py-2 text-sm font-medium text-foreground hover:bg-bg-hover"
           >
             <ExternalLink className="h-4 w-4" />
-            Open full Sentinel
+            Open Sentinel
           </Link>
         }
       />
@@ -516,16 +516,16 @@ export default function PerformancePage() {
     <div>
       <PageHeader
         title="Performance"
-        subtitle="The four Google SRE golden signals — latency, traffic, errors, saturation — plus route, query, and error detail. Powered by Pulse."
+        subtitle="Four SRE golden signals + route, query, and error detail — powered by Pulse."
         actions={
           <Link
             href="/pulse/ui"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-bg-elevated px-3 py-2 text-sm font-medium text-foreground hover:bg-bg-hover"
+            className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-border bg-bg-elevated px-3 py-2 text-sm font-medium text-foreground hover:bg-bg-hover"
           >
             <ExternalLink className="h-4 w-4" />
-            Open full Pulse
+            Open Pulse
           </Link>
         }
       />

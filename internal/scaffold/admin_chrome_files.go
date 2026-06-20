@@ -104,7 +104,7 @@ func adminUserMenuComponent() string {
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useMe, useLogout } from "@/hooks/use-auth";
-import { Activity, User as UserIcon, CreditCard, LogOut } from "@/lib/icons";
+import { Activity, User as UserIcon, LogOut } from "@/lib/icons";
 
 /**
  * Avatar button + dropdown. Click outside to close. Click items to
@@ -170,21 +170,6 @@ export function UserMenu() {
             >
               <UserIcon className="h-4 w-4" />
               Profile
-            </Link>
-            <Link
-              href="/system/billing"
-              onClick={() => setOpen(false)}
-              className="flex items-center justify-between px-4 py-2.5 text-text-secondary hover:bg-bg-hover hover:text-foreground"
-            >
-              <span className="flex items-center gap-3">
-                <CreditCard className="h-4 w-4" />
-                Billing
-              </span>
-              {user.role === "ADMIN" && (
-                <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-accent">
-                  Admin
-                </span>
-              )}
             </Link>
             <button
               type="button"
@@ -459,43 +444,52 @@ export function PageHeader({
   };
 
   return (
-    <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      {/* Title block */}
-      <div className="min-w-0 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-text-secondary">{subtitle}</p>}
-      </div>
-
-      {/* Search */}
-      {searchPlaceholder && (
-        <div className="relative w-full md:max-w-md md:flex-1 md:mx-6">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
-          <input
-            type="search"
-            value={searchValue ?? ""}
-            onChange={(e) => onSearchChange?.(e.target.value)}
-            placeholder={searchPlaceholder}
-            className="w-full rounded-lg border border-border bg-bg-elevated py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-          />
+    // v3.31.6: PageHeader is now sticky — pinned to the top of the
+    // scrollable main area with a solid background + bottom border so
+    // long page content scrolls behind it. -mx-4 md:-mx-8 cancels the
+    // main's px-* padding so the bg + border stretch to the edges, and
+    // px-* inside brings the content back inside the original gutter.
+    <header className="sticky top-0 z-20 -mx-4 mb-6 border-b border-border bg-bg-primary/90 backdrop-blur supports-[backdrop-filter]:bg-bg-primary/75 md:-mx-8">
+      <div className="flex flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-8">
+        {/* Title block — min-w-0 + flex-shrink lets the title wrap
+            cleanly when long subtitles share the row with action chrome. */}
+        <div className="min-w-0 md:flex-1">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight truncate">{title}</h1>
+          {subtitle && <p className="mt-1 text-sm text-text-secondary md:line-clamp-2">{subtitle}</p>}
         </div>
-      )}
 
-      {/* Chrome actions */}
-      <div className="flex items-center justify-end gap-2">
-        {!hideRefresh && (
-          <button
-            type="button"
-            onClick={onRefresh}
-            aria-label="Refresh"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-bg-elevated text-text-secondary hover:bg-bg-hover transition-colors"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </button>
+        {/* Search */}
+        {searchPlaceholder && (
+          <div className="relative w-full md:max-w-xs md:flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+            <input
+              type="search"
+              value={searchValue ?? ""}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-full rounded-lg border border-border bg-bg-elevated py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            />
+          </div>
         )}
-        <DarkModeToggle />
-        {actions}
-        <NotificationBell />
-        <UserMenu />
+
+        {/* Chrome actions — shrink-0 + whitespace-nowrap on the row so
+            action buttons (e.g. "Open full Pulse") don't wrap mid-label. */}
+        <div className="flex shrink-0 items-center justify-end gap-2 whitespace-nowrap">
+          {!hideRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              aria-label="Refresh"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-bg-elevated text-text-secondary hover:bg-bg-hover transition-colors"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          )}
+          <DarkModeToggle />
+          {actions}
+          <NotificationBell />
+          <UserMenu />
+        </div>
       </div>
     </header>
   );
@@ -533,7 +527,6 @@ import {
   TrendingUp,
   Shield,
   User as UserIcon,
-  CreditCard,
   LogOut,
 } from "@/lib/icons";
 import type { User } from "@repo/shared/types";
@@ -856,21 +849,6 @@ function SidebarUserMenu({ user, collapsed }: { user: User; collapsed: boolean }
             >
               <UserIcon className="h-4 w-4" />
               Profile
-            </Link>
-            <Link
-              href="/system/billing"
-              onClick={() => setOpen(false)}
-              className="flex items-center justify-between px-4 py-2.5 text-text-secondary hover:bg-bg-hover hover:text-foreground"
-            >
-              <span className="flex items-center gap-3">
-                <CreditCard className="h-4 w-4" />
-                Billing
-              </span>
-              {user.role === "ADMIN" && (
-                <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-accent">
-                  Admin
-                </span>
-              )}
             </Link>
             <button
               type="button"
