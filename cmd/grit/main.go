@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -27,7 +28,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.30.1"
+var version = "3.30.2"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -704,8 +705,19 @@ Flags:
 				}
 			}
 
-			spinner.Println("  → Running: go install github.com/MUKE-coder/grit/v3/cmd/grit@latest")
-			c := exec.Command("go", "install", "github.com/MUKE-coder/grit/v3/cmd/grit@latest")
+			// v3.30.2: pin the install target to the resolved GitHub tag
+			// instead of @latest. proxy.golang.org's view of @latest can lag
+			// minutes behind a freshly-pushed tag, which produces the
+			// surprising "self-update says X but binary reports Y" bug.
+			// Falling back to @latest only when the GitHub lookup failed —
+			// in that case the proxy is the only signal we have.
+			target := "github.com/MUKE-coder/grit/v3/cmd/grit@latest"
+			if latest != "" {
+				target = "github.com/MUKE-coder/grit/v3/cmd/grit@v" + latest
+			}
+
+			spinner.Printf("  → Running: go install %s\n", target)
+			c := exec.Command("go", "install", target)
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
 			if err := c.Run(); err != nil {
@@ -719,6 +731,22 @@ Flags:
 			if runtime.GOOS == "windows" {
 				// go install succeeded — drop the rename'd backup.
 				_ = os.Remove(binPath + ".old")
+			}
+
+			// Sanity check: ask the freshly-installed binary what version
+			// it reports. If it doesn't match the tag we asked for, surface
+			// it loudly — the user otherwise has no way to know they're
+			// running a stale binary that lied about its version.
+			if latest != "" {
+				if got, err := installedVersion(binPath); err == nil && got != "" && got != latest {
+					fmt.Println()
+					yellow.Printf("  ! Expected v%s but the installed binary reports v%s.\n", latest, got)
+					yellow.Println("    Your GOPATH/bin may have an older binary on PATH, or the Go module")
+					yellow.Println("    proxy hasn't indexed the new tag yet. Try again in a minute, or run:")
+					yellow.Printf("      go install github.com/MUKE-coder/grit/v3/cmd/grit@v%s\n", latest)
+					fmt.Println()
+					return nil
+				}
 			}
 
 			fmt.Println()
@@ -736,6 +764,30 @@ Flags:
 	cmd.Flags().BoolVar(&forceRelease, "from-release", false,
 		"Skip 'go install' and download the binary directly from the GitHub release")
 	return cmd
+}
+
+// installedVersion runs `<binPath> version` and parses out the semver.
+// Used by the self-update flow to verify that the freshly-installed
+// binary actually matches the version we asked the Go proxy for. Returns
+// the version without the leading 'v', or "" if the call fails or the
+// output doesn't contain a recognisable version line.
+//
+// We intentionally exec a fresh process (rather than reading the in-memory
+// `version` variable) — the running binary still has the old version
+// baked in, so checking ourselves would always say "no change".
+func installedVersion(binPath string) (string, error) {
+	out, err := exec.Command(binPath, "version").Output()
+	if err != nil {
+		return "", err
+	}
+	// `grit version` prints something like:
+	//   Grit CLI v3.30.2 ...
+	// We scan for the first vX.Y.Z occurrence and strip the v.
+	re := regexp.MustCompile(`v(\d+\.\d+\.\d+)`)
+	if m := re.FindStringSubmatch(string(out)); len(m) >= 2 {
+		return m[1], nil
+	}
+	return "", nil
 }
 
 func startCmd() *cobra.Command {
