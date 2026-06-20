@@ -54,6 +54,11 @@ func adminForgotPasswordPageForStyle(style string) string {
 }
 
 // adminDashboardPageForStyle returns the dashboard page for the given style variant.
+// v3.31.1: the default branch now serves the captivating dashboard
+// (stat grid + 7-day chart + severity donut + recent activity feed +
+// quick access tiles). The legacy styles still get their original look
+// so existing apps that opted into modern/minimal/glass don't visually
+// regress on upgrade.
 func adminDashboardPageForStyle(style string) string {
 	switch style {
 	case "modern":
@@ -63,10 +68,9 @@ func adminDashboardPageForStyle(style string) string {
 	case "glass":
 		return glassDashboardPage()
 	case "centered":
-		// Centered style uses the default dashboard (only auth pages differ)
-		return adminDashboardPage()
+		return adminCaptivatingDashboard()
 	default:
-		return adminDashboardPage()
+		return adminCaptivatingDashboard()
 	}
 }
 
@@ -327,7 +331,7 @@ func writeAdminFiles(root string, opts Options) error {
 
 		// Dashboard pages — (dashboard) route group (style variant)
 		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):          adminDashboardPageForStyle(opts.Style),
-		filepath.Join(adminRoot, "app", "(dashboard)", "profile", "page.tsx"):            adminProfilePage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "profile", "page.tsx"):            adminCaptivatingProfile(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"): adminUsersPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "page.tsx"): adminBlogsPage(),
 
@@ -341,7 +345,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "public", ".gitkeep"):                                        "",
 
 		// v3.30 — activity dashboard + ticket system pages
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "activity", "page.tsx"):     adminActivityDashboardPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "activity", "page.tsx"):     adminWalkieActivityPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "support", "page.tsx"):      adminSupportListPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "support", "[id]", "page.tsx"): adminTicketThreadPage(),
 	}
