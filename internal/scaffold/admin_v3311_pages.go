@@ -521,9 +521,18 @@ export default function ProfilePage() {
     <div>
       <PageHeader title="Profile" subtitle="Manage your personal details, job profile, and password." />
 
-      {/* Hero card — avatar with prominent Upload New button */}
+      {/* Hero card — Profile Picture section with explicit header so the
+          user knows what the Upload New button replaces. Layout: gradient
+          banner up top, avatar floating half-out, name/email/role next to
+          it, prominent Upload New CTA on the right. */}
       <section className="mb-6 overflow-hidden rounded-2xl border border-border bg-bg-elevated">
-        <div className="h-24 bg-gradient-to-r from-accent/30 via-accent/15 to-transparent" />
+        <header className="border-b border-border px-6 py-4">
+          <p className="text-sm font-semibold text-foreground">Profile Picture</p>
+          <p className="mt-0.5 text-xs text-text-muted">
+            Replace the image teammates and customers see on your profile.
+          </p>
+        </header>
+        <div className="h-20 bg-gradient-to-r from-accent/30 via-accent/15 to-transparent" />
         <div className="-mt-12 flex flex-col items-start gap-4 px-6 pb-6 sm:flex-row sm:items-end">
           <div className="relative">
             <span className="block h-24 w-24 overflow-hidden rounded-2xl ring-4 ring-bg-elevated bg-bg-secondary">

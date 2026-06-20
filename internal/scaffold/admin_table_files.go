@@ -279,6 +279,12 @@ export function renderCell(
     case "richtext":
       content = <RichTextCell value={String(value)} />;
       break;
+    case "user":
+      // v3.31.5: packed avatar + name + email cell. Pulls the related
+      // fields off the row so a single column shows everything you'd
+      // otherwise spread across 3-4 columns.
+      content = <UserCellInline row={_row} />;
+      break;
     default:
       content = <span>{String(value)}</span>;
   }
@@ -287,6 +293,26 @@ export function renderCell(
     return <span className={column.className}>{content}</span>;
   }
   return content;
+}
+
+function UserCellInline({ row }: { row: Record<string, unknown> }) {
+  const first = (row.first_name as string) || "";
+  const last = (row.last_name as string) || "";
+  const email = (row.email as string) || "";
+  const avatar = (row.avatar as string) || "";
+  const fullName = [first, last].filter(Boolean).join(" ") || (email || "User");
+  const initials = ((first[0] || "") + (last[0] || "")).toUpperCase() || "U";
+  return (
+    <div className="flex items-center gap-2.5 min-w-0">
+      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-1 ring-border bg-bg-elevated text-xs font-semibold text-foreground overflow-hidden">
+        {avatar ? <img src={avatar} alt={fullName} className="h-full w-full object-cover" /> : initials}
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium text-foreground">{fullName}</p>
+        {email && <p className="truncate text-xs text-text-muted">{email}</p>}
+      </div>
+    </div>
+  );
 }
 
 function BadgeCell({

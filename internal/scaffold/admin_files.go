@@ -258,8 +258,12 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "hooks", "use-toasted-mutation.ts"):         adminToastHook(),
 		filepath.Join(adminRoot, "components", "ui", "Skeleton.tsx"):         adminSkeletonComponent(),
 		filepath.Join(adminRoot, "components", "ui", "UserCell.tsx"):         adminUserCellComponent(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "page.tsx"):                 adminSystemHubPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "page.tsx"):                 adminSystemHubPageV2(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "notifications", "page.tsx"): adminNotificationsPage(),
+		// v3.31.5: dedicated System Health / Security / Performance pages.
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "health", "page.tsx"):       adminSystemHealthPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "security", "page.tsx"):     adminSecurityPageV2(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "performance", "page.tsx"):  adminPerformancePageV2(),
 
 		// Dashboard route group layout
 		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"): adminDashboardLayout(),
@@ -356,7 +360,10 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "files", "page.tsx"): adminFilesPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "cron", "page.tsx"):  adminCronPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "mail", "page.tsx"):     adminMailPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "security", "page.tsx"):      adminSecurityPage(),
+		// v3.31.5: /system/security + /system/performance were redesigned;
+		// the original adminSecurityPage / adminObservabilityPage live on as
+		// alternates under /observability (kept for compatibility) but the
+		// canonical security surface now lives at /system/security (wired above).
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "observability", "page.tsx"): adminObservabilityPage(),
 		filepath.Join(adminRoot, "public", ".gitkeep"):                                        "",
 

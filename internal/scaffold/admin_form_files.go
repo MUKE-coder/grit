@@ -355,9 +355,12 @@ export function FormModal({ resource, item, onClose }: FormModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl border border-border bg-bg-secondary shadow-2xl">
+    // Walkie-Check style: bottom sheet on mobile, right drawer on desktop.
+    // The old centered dialog cropped long forms and didn't match the rest
+    // of the app's sheet-style modals (e.g. the support New Ticket form).
+    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-stretch md:justify-end">
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-h-[90vh] overflow-y-auto rounded-t-2xl border border-border bg-bg-secondary shadow-2xl md:max-h-none md:h-full md:max-w-lg md:rounded-none md:rounded-l-2xl">
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <h2 className="text-lg font-semibold text-foreground">
             {isEdit ? "Edit" : "Create"} {resource.label?.singular ?? resource.name}
@@ -856,9 +859,9 @@ export function FormModalSteps({ resource, item, onClose }: FormModalStepsProps)
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div className={` + "`" + `relative z-10 w-full ${isVertical ? "max-w-4xl" : "max-w-2xl"} max-h-[90vh] overflow-y-auto rounded-xl border border-border bg-bg-secondary shadow-2xl` + "`" + `}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-stretch md:justify-end">
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className={` + "`" + `relative z-10 w-full max-h-[90vh] overflow-y-auto rounded-t-2xl border border-border bg-bg-secondary shadow-2xl md:max-h-none md:h-full md:rounded-none md:rounded-l-2xl ${isVertical ? "md:max-w-4xl" : "md:max-w-2xl"}` + "`" + `}>
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <h2 className="text-lg font-semibold text-foreground">
             {isEdit ? "Edit" : "Create"} {resource.label?.singular ?? resource.name}

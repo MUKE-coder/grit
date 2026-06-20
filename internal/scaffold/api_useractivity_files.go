@@ -97,6 +97,11 @@ import (
 // fail a real request. If you care about guaranteed delivery, queue
 // these via asynq instead of writing inline.
 type ActivityArgs struct {
+	// UserID overrides the actor when set. Auth handlers (login, register)
+	// pass it explicitly because the auth middleware hasn't yet populated
+	// the gin context with "user_id" — without this override every auth
+	// event would be attributed to the empty system actor.
+	UserID       string
 	Action       string
 	Severity     string                 // info | warn | critical
 	Summary      string
@@ -106,12 +111,15 @@ type ActivityArgs struct {
 }
 
 // LogActivity writes a UserActivity row. Picks actor + IP + user-agent
-// from the request context automatically.
+// from the request context automatically, falling back to args.UserID
+// when the caller is in an unauthenticated handler (auth flows).
 func LogActivity(db *gorm.DB, c *gin.Context, args ActivityArgs) {
-	userID := ""
-	if v, ok := c.Get("user_id"); ok {
-		if s, ok := v.(string); ok {
-			userID = s
+	userID := args.UserID
+	if userID == "" {
+		if v, ok := c.Get("user_id"); ok {
+			if s, ok := v.(string); ok {
+				userID = s
+			}
 		}
 	}
 
@@ -147,13 +155,19 @@ func LogActivity(db *gorm.DB, c *gin.Context, args ActivityArgs) {
 
 func LogLogin(db *gorm.DB, c *gin.Context, userID, email string) {
 	LogActivity(db, c, ActivityArgs{
-		Action:   "auth.login",
-		Severity: "info",
-		Summary:  email + " signed in",
-		ResourceType: "user", ResourceID: userID,
+		UserID:       userID,
+		Action:       "auth.login",
+		Severity:     "info",
+		Summary:      email + " signed in",
+		ResourceType: "user",
+		ResourceID:   userID,
 	})
 }
 
+// LogLoginFailed intentionally leaves UserID empty — the failed attempt
+// might be an unknown email or a real account being brute-forced; either
+// way, attributing it to a specific actor is misleading. The summary
+// captures the attempted email for audit.
 func LogLoginFailed(db *gorm.DB, c *gin.Context, email string) {
 	LogActivity(db, c, ActivityArgs{
 		Action:   "auth.login_failed",
@@ -164,6 +178,7 @@ func LogLoginFailed(db *gorm.DB, c *gin.Context, email string) {
 
 func LogLogout(db *gorm.DB, c *gin.Context, userID, email string) {
 	LogActivity(db, c, ActivityArgs{
+		UserID:   userID,
 		Action:   "auth.logout",
 		Severity: "info",
 		Summary:  email + " signed out",
@@ -173,10 +188,12 @@ func LogLogout(db *gorm.DB, c *gin.Context, userID, email string) {
 
 func LogRegister(db *gorm.DB, c *gin.Context, userID, email string) {
 	LogActivity(db, c, ActivityArgs{
-		Action:   "auth.register",
-		Severity: "info",
-		Summary:  email + " created an account",
-		ResourceType: "user", ResourceID: userID,
+		UserID:       userID,
+		Action:       "auth.register",
+		Severity:     "info",
+		Summary:      email + " created an account",
+		ResourceType: "user",
+		ResourceID:   userID,
 	})
 }
 `

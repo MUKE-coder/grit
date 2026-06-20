@@ -104,7 +104,7 @@ func adminUserMenuComponent() string {
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useMe, useLogout } from "@/hooks/use-auth";
-import { Activity, Settings, CreditCard, LogOut } from "@/lib/icons";
+import { Activity, User as UserIcon, CreditCard, LogOut } from "@/lib/icons";
 
 /**
  * Avatar button + dropdown. Click outside to close. Click items to
@@ -168,8 +168,8 @@ export function UserMenu() {
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-bg-hover hover:text-foreground"
             >
-              <Settings className="h-4 w-4" />
-              Settings
+              <UserIcon className="h-4 w-4" />
+              Profile
             </Link>
             <Link
               href="/system/billing"
@@ -530,6 +530,9 @@ import {
   MessageSquare,
   Bell,
   Settings,
+  TrendingUp,
+  Shield,
+  User as UserIcon,
   CreditCard,
   LogOut,
 } from "@/lib/icons";
@@ -548,14 +551,27 @@ const INTERNAL_NAV = [
   { href: "/system/activity",      label: "Activity",      iconKey: "Activity",       adminOnly: false },
   { href: "/system/support",       label: "Support",       iconKey: "MessageSquare",  adminOnly: false },
   { href: "/system/notifications", label: "Notifications", iconKey: "Bell",           adminOnly: false },
-  { href: "/system",               label: "System",        iconKey: "Settings",       adminOnly: true  },
+] as const;
+
+// v3.31.5: dedicated SYSTEM section for admin-only operational surfaces.
+// Health / Performance / Security live here so they're one click away
+// during an incident — the System hub at /system still aggregates every
+// surface for the broader browse case.
+const SYSTEM_NAV = [
+  { href: "/system/health",       label: "System Health", iconKey: "ActivityIcon", adminOnly: true },
+  { href: "/system/performance",  label: "Performance",   iconKey: "TrendingUp",   adminOnly: true },
+  { href: "/system/security",     label: "Security",      iconKey: "Shield",       adminOnly: true },
+  { href: "/system",              label: "System Hub",    iconKey: "Settings",     adminOnly: true },
 ] as const;
 
 const INTERNAL_ICON: Record<string, React.ReactNode> = {
   Activity: <Activity className="h-5 w-5" />,
+  ActivityIcon: <Activity className="h-5 w-5" />,
   MessageSquare: <MessageSquare className="h-5 w-5" />,
   Bell: <Bell className="h-5 w-5" />,
   Settings: <Settings className="h-5 w-5" />,
+  TrendingUp: <TrendingUp className="h-5 w-5" />,
+  Shield: <Shield className="h-5 w-5" />,
 };
 
 interface SidebarProps {
@@ -604,6 +620,7 @@ export function CollapsibleSidebar({
 
   const visibleResources = resources.filter((r) => !r.adminOnly || isAdmin);
   const visibleInternal = INTERNAL_NAV.filter((r) => !r.adminOnly || isAdmin);
+  const visibleSystem = SYSTEM_NAV.filter((r) => !r.adminOnly || isAdmin);
 
   const groups: Record<string, typeof resources> = { _root: [] };
   for (const r of visibleResources) {
@@ -667,10 +684,10 @@ export function CollapsibleSidebar({
             return (
               <SidebarLink
                 key={r.slug}
-                href={"/" + r.slug}
+                href={"/resources/" + r.slug}
                 icon={<Icon className="h-5 w-5" />}
                 label={r.label?.plural ?? r.name}
-                active={pathname.startsWith("/" + r.slug)}
+                active={pathname.startsWith("/resources/" + r.slug)}
                 collapsed={collapsed}
                 onClick={onMobileClose}
               />
@@ -701,10 +718,10 @@ export function CollapsibleSidebar({
                   return (
                     <SidebarLink
                       key={r.slug}
-                      href={"/" + r.slug}
+                      href={"/resources/" + r.slug}
                       icon={<Icon className="h-5 w-5" />}
                       label={r.label?.plural ?? r.name}
-                      active={pathname.startsWith("/" + r.slug)}
+                      active={pathname.startsWith("/resources/" + r.slug)}
                       collapsed={collapsed}
                       onClick={onMobileClose}
                     />
@@ -713,8 +730,7 @@ export function CollapsibleSidebar({
               </div>
             ))}
 
-          {/* Internal section — always at the bottom of the scroll area,
-              above the user-menu footer. Header hidden when collapsed. */}
+          {/* Internal section — Activity / Support / Notifications. */}
           <div className="pt-3">
             {!collapsed && (
               <p className="px-2 py-1 text-xs font-semibold uppercase tracking-wider text-text-muted">
@@ -733,6 +749,30 @@ export function CollapsibleSidebar({
               />
             ))}
           </div>
+
+          {/* System section — admin-only operational surfaces (Health,
+              Performance, Security, hub). Active-state uses the full path
+              so /system/security highlights without /system also lighting up. */}
+          {visibleSystem.length > 0 && (
+            <div className="pt-3">
+              {!collapsed && (
+                <p className="px-2 py-1 text-xs font-semibold uppercase tracking-wider text-text-muted">
+                  System
+                </p>
+              )}
+              {visibleSystem.map((r) => (
+                <SidebarLink
+                  key={r.href}
+                  href={r.href}
+                  icon={INTERNAL_ICON[r.iconKey]}
+                  label={r.label}
+                  active={r.href === "/system" ? pathname === "/system" : pathname.startsWith(r.href)}
+                  collapsed={collapsed}
+                  onClick={onMobileClose}
+                />
+              ))}
+            </div>
+          )}
         </nav>
 
         {/* Footer — sticky bottom: rich user menu + grit version */}
@@ -814,8 +854,8 @@ function SidebarUserMenu({ user, collapsed }: { user: User; collapsed: boolean }
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-bg-hover hover:text-foreground"
             >
-              <Settings className="h-4 w-4" />
-              Settings
+              <UserIcon className="h-4 w-4" />
+              Profile
             </Link>
             <Link
               href="/system/billing"

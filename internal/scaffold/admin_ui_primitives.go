@@ -45,9 +45,10 @@ const sizeClass: Record<NonNullable<ResponsiveSheetProps["size"]>, string> = {
 };
 
 /**
- * Adapts modal style to viewport. Desktop (>=md): a centred dialog with
- * a slight backdrop blur. Mobile: a bottom-anchored sheet that slides up
- * and stops at 90vh so the user keeps context behind it. Both lock body
+ * Adapts modal style to viewport. Desktop (>=md): a right-anchored sheet
+ * that slides in from the right edge and spans full height — keeps the
+ * dashboard context visible behind it (Walkie-Check style). Mobile: a
+ * bottom-anchored sheet that slides up and stops at 90vh. Both lock body
  * scroll when open and close on backdrop click + Escape.
  */
 export function ResponsiveSheet({
@@ -76,13 +77,14 @@ export function ResponsiveSheet({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center md:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center md:items-stretch md:justify-end"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
-      {/* Panel */}
+      {/* Panel — mobile: bottom sheet (rounded top, capped 90vh).
+          Desktop: right drawer (full height, rounded left, sized by prop). */}
       <div
         ref={ref}
         role="dialog"
@@ -90,9 +92,9 @@ export function ResponsiveSheet({
         aria-labelledby="responsive-sheet-title"
         className={
           "relative z-10 flex w-full flex-col bg-bg-elevated text-foreground shadow-2xl " +
-          "rounded-t-2xl md:rounded-2xl " +
-          "max-h-[90vh] md:max-h-[85vh] " +
-          ("md:w-auto " + sizeClass[size])
+          "rounded-t-2xl md:rounded-none md:rounded-l-2xl " +
+          "max-h-[90vh] md:max-h-none md:h-full " +
+          ("md:w-full " + sizeClass[size])
         }
       >
         <header className="flex items-start justify-between border-b border-border px-5 py-4">

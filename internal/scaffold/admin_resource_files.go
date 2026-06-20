@@ -9,7 +9,7 @@ func adminResourceTypes() string {
 
 // ─── Column Definitions ─────────────────────────────────────────────
 
-export type ColumnFormat = "text" | "badge" | "currency" | "date" | "relative" | "boolean" | "image" | "video" | "link" | "email" | "color" | "richtext";
+export type ColumnFormat = "text" | "badge" | "currency" | "date" | "relative" | "boolean" | "image" | "video" | "link" | "email" | "color" | "richtext" | "user";
 
 export interface BadgeConfig {
   [value: string]: { color: string; label: string };
@@ -225,10 +225,10 @@ export const usersResource = defineResource({
 
   table: {
     columns: [
-      { key: "id", label: "ID", sortable: true, width: "80px" },
-      { key: "first_name", label: "First Name", sortable: true, searchable: true },
-      { key: "last_name", label: "Last Name", sortable: true, searchable: true },
-      { key: "email", label: "Email", sortable: true, searchable: true },
+      // v3.31.5: dropped the raw UUID column and packed first+last+email
+      // into a single "user" cell so the table reads cleanly on small
+      // screens. The "user" format renders avatar + name + email together.
+      { key: "first_name", label: "Name", sortable: true, searchable: true, format: "user" },
       {
         key: "role",
         label: "Role",
@@ -1200,7 +1200,9 @@ export const blogsResource = defineResource({
 
   table: {
     columns: [
-      { key: "id", label: "ID", sortable: true, width: "80px" },
+      // v3.31.5: dropped the raw UUID column. Title + status + author
+      // already identify a blog row clearly; the ID lives in the URL when
+      // you open the detail view.
       { key: "title", label: "Title", sortable: true, searchable: true },
       { key: "slug", label: "Slug" },
       { key: "image", label: "Image", format: "image" },
