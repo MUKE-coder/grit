@@ -1,7 +1,7 @@
 GRIT FRAMEWORK — COMPLETE KNOWLEDGE BASE
 =========================================
 
-Version: 3.26.4
+Version: 3.26.5
 Website: https://gritframework.dev/
 GitHub: https://github.com/MUKE-coder/grit
 Creator: Muke JohnBaptist (@MUKE-coder)
@@ -986,7 +986,45 @@ D) WHEN USERS ASK ABOUT LEARNING GRIT
 VERSION HISTORY HIGHLIGHTS
 ===========================
 
-v3.26.4 (Current):
+v3.26.5 (Current):
+  - Web hooks (use-blogs, use-auth) and the auth provider now IMPORT
+    their types from @repo/shared/types instead of declaring them
+    inline. Closes the doc-vs-scaffold contradiction a learner spotted:
+    the docs teach "shared types live in packages/shared" but the
+    scaffolded hooks duplicated User and Blog inline.
+  - The web auth surface is now a proper consumer of the 3.26.0
+    HttpOnly cookie flow:
+      * axios client gets withCredentials: true so the browser actually
+        sends the grit_access / grit_refresh cookies the API issues.
+      * An interceptor echoes the grit_csrf cookie into X-CSRF-Token on
+        every state-changing request, so the AutoCSRF middleware passes.
+      * use-auth.ts dropped js-cookie + the storeTokens / clearTokens /
+        getAccessToken trio and the Bearer-header attachments. useMe
+        returns null on 401 instead of throwing.
+      * Login + register pages no longer call Cookies.set('access_token').
+        The API sets HttpOnly cookies via Set-Cookie; the browser stores
+        them; JS never touches tokens.
+  - Web app gained @repo/shared as a workspace dependency (was missing).
+    next.config.ts gets transpilePackages: ['@repo/shared'] so Next's
+    SWC pipeline picks up the TS source.
+  - Landing page dropped the inline Blog type assertion on blogs.map —
+    it was asserting image: string against the shared Blog's
+    image: string | null.
+
+  Known gaps deferred to a follow-up release:
+    * OAuth callback page (apps/web/app/auth/callback/page.tsx) still
+      reads access_token / refresh_token from URL params and sets them
+      via Cookies.set. Proper fix requires Go-side OAuth handler to
+      Set-Cookie before redirecting.
+    * Admin app still uses js-cookie + Bearer-header auth throughout.
+      Refactoring admin is much bigger (TOTP, OAuth begin/callback,
+      profile page, multi-step token refresh) and warrants its own
+      release.
+    * Pre-existing admin type errors (form-*.tsx, resource-page.tsx,
+      use-system.ts) assume number IDs where the shared User type is
+      string UUID. Unrelated to this commit but visible on tsc --noEmit.
+
+v3.26.4:
   - `grit start` (no subcommand) now runs the Go API and the pnpm dev
     pipeline IN PARALLEL inside a web project. Previously it just
     printed help (only `grit start server` and `grit start client`

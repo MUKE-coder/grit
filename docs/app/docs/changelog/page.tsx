@@ -28,6 +28,100 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.26.5 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.26.5
+                </span>
+                <span className="text-sm text-muted-foreground">June 20, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Web hooks finally consume <code>packages/shared</code> + use the v3.26.0 HttpOnly cookie auth.</strong>{' '}
+                  Closes a contradiction a learner spotted: the docs teach
+                  &quot;shared types live in <code>packages/shared</code>&quot; but
+                  the scaffolded <code>use-blogs</code> and <code>use-auth</code>{' '}
+                  hooks duplicated <code>User</code> and <code>Blog</code> inline.
+                </p>
+
+                <h3>Type imports</h3>
+                <ul>
+                  <li>
+                    <code>use-blogs.ts</code> now imports{' '}
+                    <code>Blog</code> + <code>PaginatedResponse</code> from{' '}
+                    <code>@repo/shared/types</code>.
+                  </li>
+                  <li>
+                    <code>use-auth.ts</code> imports <code>User</code>,{' '}
+                    <code>LoginRequest</code>, <code>RegisterRequest</code>,{' '}
+                    <code>AuthResponse</code>, <code>ApiResponse</code> from
+                    the same barrel.
+                  </li>
+                  <li>
+                    <code>lib/auth-provider.tsx</code> imports <code>User</code>{' '}
+                    from <code>@repo/shared/types</code> instead of a 10-line
+                    local copy.
+                  </li>
+                  <li>
+                    Web app now has <code>@repo/shared: workspace:*</code> in
+                    its <code>package.json</code> (was missing).{' '}
+                    <code>next.config.ts</code> gets{' '}
+                    <code>transpilePackages: [&apos;@repo/shared&apos;]</code>{' '}
+                    so SWC picks up the TS source.
+                  </li>
+                </ul>
+
+                <h3>Auth flow uses HttpOnly cookies end-to-end</h3>
+                <ul>
+                  <li>
+                    Axios client gets <code>withCredentials: true</code> so
+                    the browser actually attaches the{' '}
+                    <code>grit_access</code> / <code>grit_refresh</code>{' '}
+                    cookies the API issues.
+                  </li>
+                  <li>
+                    A request interceptor echoes the <code>grit_csrf</code>{' '}
+                    cookie into <code>X-CSRF-Token</code> on every
+                    state-changing request — required by the AutoCSRF
+                    middleware that v3.26.0 wired in.
+                  </li>
+                  <li>
+                    <code>use-auth.ts</code> dropped <code>js-cookie</code>,{' '}
+                    <code>storeTokens</code> / <code>clearTokens</code> /{' '}
+                    <code>getAccessToken</code>, and every{' '}
+                    <code>Authorization: Bearer</code> header attachment.{' '}
+                    <code>useMe</code> returns <code>null</code> on 401
+                    instead of throwing.
+                  </li>
+                  <li>
+                    Login + register pages no longer call{' '}
+                    <code>Cookies.set(&apos;access_token&apos;)</code>. The
+                    API sets HttpOnly cookies via{' '}
+                    <code>Set-Cookie</code>; the browser stores them; JS
+                    never touches tokens.
+                  </li>
+                </ul>
+
+                <h3>Known gaps deferred to a follow-up release</h3>
+                <ul>
+                  <li>
+                    OAuth callback page still reads tokens from URL params
+                    and sets them via <code>Cookies.set</code>. Proper fix
+                    requires the Go-side OAuth handler to set cookies before
+                    redirecting.
+                  </li>
+                  <li>
+                    Admin app still uses <code>js-cookie</code> + Bearer
+                    header auth throughout. Bigger refactor (TOTP, OAuth
+                    begin/callback, profile page, multi-step token refresh)
+                    that warrants its own release.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.26.4 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

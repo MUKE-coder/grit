@@ -98,7 +98,7 @@ export default function Lesson() {
           {
             label: 'grit downloaded the binary anyway and overwrote your install.',
             feedback:
-              "Wrong — the whole point of the version check is to skip the download when you're current. v3.26.4 added this short-circuit specifically to avoid wasted go install runs.",
+              "Wrong — the whole point of the version check is to skip the download when you're current. v3.26.5 added this short-circuit specifically to avoid wasted go install runs.",
           },
           {
             label: 'grit made a single HTTP request to GitHub, found you were current, and exited.',
@@ -160,7 +160,7 @@ export default function Lesson() {
 
 \`\`\`
 $ grit version
-grit version 3.26.4
+grit version 3.26.5
 \`\`\`
 
 \`\`\`
@@ -174,7 +174,7 @@ Available Commands:
 \`\`\`
 $ grit update
 Checking GitHub for the latest release...
-✓ Already on the latest version (v3.26.4). Nothing to do.
+✓ Already on the latest version (v3.26.5). Nothing to do.
 \`\`\``}
             />
             <p>

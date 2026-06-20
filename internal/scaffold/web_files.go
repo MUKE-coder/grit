@@ -66,6 +66,7 @@ func webPackageJSON(opts Options) string {
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@repo/shared": "workspace:*",
     "@tanstack/react-query": "^5.17.0",
     "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",
@@ -107,6 +108,10 @@ func webNextConfig() string {
 const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
+  // packages/shared ships TypeScript source rather than a built bundle,
+  // so Next needs to run it through SWC. Otherwise imports of
+  // @repo/shared/types fail with "Cannot find module" at build time.
+  transpilePackages: ["@repo/shared"],
 };
 
 export default nextConfig;
@@ -562,7 +567,7 @@ export default function HomePage() {
             </div>
           ) : blogs.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {blogs.map((blog: { id: string; title: string; slug: string; image: string; excerpt: string; published_at: string | null; created_at: string }) => (
+              {blogs.map((blog) => (
                 <Link
                   key={blog.id}
                   href={` + "`" + `/blog/${blog.slug}` + "`" + `}
@@ -863,11 +868,28 @@ export const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  // The browser attaches the HttpOnly grit_access / grit_refresh cookies
+  // set by /api/auth/login automatically. Without this, axios skips them
+  // on cross-origin requests in dev (api on :8080, web on :3000) and the
+  // server treats every request as anonymous.
+  withCredentials: true,
 });
 
-// Auto-attach Idempotency-Key on unsafe methods. Today this client is mostly
-// read-only, but any future mutation gets safe-retry semantics for free.
+// Echo the grit_csrf cookie into X-CSRF-Token on every state-changing
+// request. The cookie is intentionally not HttpOnly — it's the
+// double-submit token, paired with the cookie the AutoCSRF middleware
+// enforces. Safe-method requests don't need it; the middleware skips
+// them and issues / refreshes the cookie as a side effect.
 api.interceptors.request.use((config) => {
+  if (typeof document !== "undefined") {
+    const m = document.cookie.match(/(?:^|; )grit_csrf=([^;]+)/);
+    if (m && config.headers) {
+      config.headers["X-CSRF-Token"] = decodeURIComponent(m[1]);
+    }
+  }
+
+  // Auto-attach Idempotency-Key on unsafe methods so any mutation gets
+  // safe-retry semantics for free.
   const method = (config.method || "get").toUpperCase();
   const unsafe = method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE";
   if (unsafe && config.headers && !config.headers["Idempotency-Key"]) {
@@ -882,37 +904,26 @@ func webUseBlogsHook() string {
 	return `"use client";
 
 import { useQuery } from "@tanstack/react-query";
+import type { Blog, PaginatedResponse } from "@repo/shared/types";
 import { api } from "@/lib/api";
 
-interface Blog {
-  id: string;
-  title: string;
-  slug: string;
-  content: string;
-  image: string;
-  excerpt: string;
-  published: boolean;
-  published_at: string | null;
-  created_at: string;
-}
-
-interface BlogMeta {
-  total: number;
-  page: number;
-  page_size: number;
-  pages: number;
-}
+// Types live in packages/shared — never inline them in a hook. Reasons:
+//   - the same Blog shape is consumed by web, admin, and the Go API (via
+//     grit sync's generated counterpart). One source of truth.
+//   - editing the model in Go and running 'grit sync' updates ALL
+//     consumers in one shot; inline duplicates silently drift.
+type BlogMeta = PaginatedResponse<Blog>["meta"];
 
 export function usePublicBlogs(page = 1, pageSize = 20) {
   return useQuery({
     queryKey: ["public-blogs", page, pageSize],
-    queryFn: async () => {
-      const { data } = await api.get(
+    queryFn: async (): Promise<{ blogs: Blog[]; meta: BlogMeta | undefined }> => {
+      const { data } = await api.get<PaginatedResponse<Blog>>(
         ` + "`" + `/api/blogs?page=${page}&page_size=${pageSize}` + "`" + `
       );
       return {
-        blogs: (data.data || []) as Blog[],
-        meta: data.meta as BlogMeta | undefined,
+        blogs: data.data ?? [],
+        meta: data.meta,
       };
     },
   });
@@ -1674,7 +1685,6 @@ func webAuthLogin(_ Options) string {
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 import { api } from "@/lib/api";
 
 const inputClass = "w-full rounded-lg border border-border bg-bg-elevated px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors";
@@ -1692,9 +1702,10 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const { data } = await api.post("/api/auth/login", { email, password });
-      Cookies.set("access_token", data.data.tokens.access_token, { expires: 1 });
-      Cookies.set("refresh_token", data.data.tokens.refresh_token, { expires: 7 });
+      // The API responds with Set-Cookie: grit_access + grit_refresh
+      // (HttpOnly). The axios client has withCredentials: true, so the
+      // browser stores them automatically. We don't touch tokens in JS.
+      await api.post("/api/auth/login", { email, password });
       router.push("/");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
@@ -1829,7 +1840,6 @@ func webAuthRegister(_ Options) string {
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 import { api } from "@/lib/api";
 
 const inputClass = "w-full rounded-lg border border-border bg-bg-elevated px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors";
@@ -1861,14 +1871,15 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const { data } = await api.post("/api/auth/register", {
+      // The API sets HttpOnly grit_access + grit_refresh cookies on the
+      // response. The browser stores them automatically (axios withCredentials
+      // is on). No tokens touched in JS.
+      await api.post("/api/auth/register", {
         first_name: firstName,
         last_name: lastName,
         email,
         password,
       });
-      Cookies.set("access_token", data.data.tokens.access_token, { expires: 1 });
-      Cookies.set("refresh_token", data.data.tokens.refresh_token, { expires: 7 });
       router.push("/");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
@@ -2191,59 +2202,45 @@ export default function AuthCallbackPage() {
 func webUseAuth() string {
 	return `import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
+import type {
+  User,
+  LoginRequest,
+  RegisterRequest,
+  AuthResponse,
+  ApiResponse,
+} from "@repo/shared/types";
 import { api } from "@/lib/api";
 
-interface User {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  role: string;
-  avatar: string;
-  job_title: string;
-  bio: string;
-  active: boolean;
-}
-
-interface AuthResponse {
-  data: {
-    user: User;
-    tokens: {
-      access_token: string;
-      refresh_token: string;
-      expires_at: number;
-    };
-  };
-}
-
-function storeTokens(tokens: { access_token: string; refresh_token: string }) {
-  Cookies.set("access_token", tokens.access_token, { expires: 1 });
-  Cookies.set("refresh_token", tokens.refresh_token, { expires: 7 });
-}
-
-function clearTokens() {
-  Cookies.remove("access_token");
-  Cookies.remove("refresh_token");
-}
-
-export function getAccessToken(): string | undefined {
-  return Cookies.get("access_token");
-}
+// Token storage policy (Grit 3.26+):
+//   - The API issues HttpOnly cookies (grit_access + grit_refresh) on
+//     login/register/refresh and clears them on logout. The browser
+//     handles them automatically — JS never reads or writes the access
+//     token, so XSS can't exfiltrate it.
+//   - The axios client uses withCredentials: true so the browser
+//     attaches the cookies on every request.
+//   - There is no Bearer-header path here. Mobile/desktop bearer
+//     clients live in their own apps; the web app is cookie-only.
+//
+// Types live in packages/shared/types/user.ts — they're consumed by
+// web, admin, and the Go API (via grit sync). Never inline them.
 
 export function useMe() {
-  return useQuery<User>({
+  return useQuery<User | null>({
     queryKey: ["me"],
     queryFn: async () => {
-      const token = getAccessToken();
-      const { data } = await api.get("/api/auth/me", {
-        headers: token ? { Authorization: "Bearer " + token } : {},
-      });
-      return data.data;
+      try {
+        const { data } = await api.get<ApiResponse<User>>("/api/auth/me");
+        return data.data;
+      } catch (err: unknown) {
+        // 401 is the canonical "not logged in" — return null instead
+        // of throwing so guarded pages can read user === null cleanly.
+        const e = err as { response?: { status?: number } };
+        if (e.response?.status === 401) return null;
+        throw err;
+      }
     },
     retry: false,
     staleTime: 10 * 60 * 1000,
-    enabled: !!getAccessToken(),
   });
 }
 
@@ -2262,15 +2259,17 @@ export function useLogin() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (credentials: { email: string; password: string }) => {
-      const { data } = await api.post<AuthResponse>(
+    mutationFn: async (credentials: LoginRequest) => {
+      // POST is enough — the API sets HttpOnly cookies on the response.
+      // The 'tokens' field is still in the JSON body so native bearer
+      // clients work too, but the browser ignores it.
+      const { data } = await api.post<ApiResponse<AuthResponse>>(
         "/api/auth/login",
         credentials
       );
       return data;
     },
     onSuccess: (data) => {
-      storeTokens(data.data.tokens);
       queryClient.setQueryData(["me"], data.data.user);
       router.push("/");
     },
@@ -2282,20 +2281,14 @@ export function useRegister() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: {
-      first_name: string;
-      last_name: string;
-      email: string;
-      password: string;
-    }) => {
-      const { data } = await api.post<AuthResponse>(
+    mutationFn: async (payload: RegisterRequest) => {
+      const { data } = await api.post<ApiResponse<AuthResponse>>(
         "/api/auth/register",
         payload
       );
       return data;
     },
     onSuccess: (data) => {
-      storeTokens(data.data.tokens);
       queryClient.setQueryData(["me"], data.data.user);
       router.push("/");
     },
@@ -2307,17 +2300,14 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: async () => {
-      const token = getAccessToken();
       try {
-        await api.post("/api/auth/logout", null, {
-          headers: token ? { Authorization: "Bearer " + token } : {},
-        });
+        await api.post("/api/auth/logout");
       } catch {
-        // Ignore — always clear local state
+        // The cookies are already cleared by the API's Set-Cookie even
+        // on a 4xx; just make sure local state is wiped either way.
       }
     },
     onSettled: () => {
-      clearTokens();
       queryClient.clear();
       if (typeof window !== "undefined") {
         window.location.href = "/login";
@@ -2332,19 +2322,11 @@ func webAuthProvider() string {
 	return `"use client";
 
 import { createContext, useContext } from "react";
+import type { User } from "@repo/shared/types";
 import { useMe } from "@/hooks/use-auth";
 
-interface User {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  role: string;
-  avatar: string;
-  job_title: string;
-  bio: string;
-  active: boolean;
-}
+// User shape comes from packages/shared/types/user.ts — same shape the
+// Go API serialises, same shape the admin imports. Never inline it.
 
 interface AuthContextValue {
   user: User | null;
