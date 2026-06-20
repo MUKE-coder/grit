@@ -142,6 +142,11 @@ func adminIconMap() string {
   Table,
   Minus,
   Underline,
+  CheckCircle,
+  Server,
+  HardDrive,
+  Clock,
+  Gauge,
   type LucideIcon,
 } from "lucide-react";
 
@@ -263,6 +268,13 @@ export {
   Table,
   Minus,
   Underline,
+  // v3.31.12 — icons used by /system/health, /system/security,
+  // /system/performance pages.
+  CheckCircle,
+  Server,
+  HardDrive,
+  Clock,
+  Gauge,
 };
 `
 }
