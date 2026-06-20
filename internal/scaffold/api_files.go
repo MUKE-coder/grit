@@ -6317,7 +6317,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// when nil the ticket handler skips email-out and only writes the row
 	// + admin notifications.
 	userActivityHandler := &handlers.UserActivityHandler{DB: db}
-	ticketHandler := &handlers.TicketHandler{DB: db, Mail: mailer}
+	ticketHandler := &handlers.TicketHandler{DB: db, Mail: svc.Mailer}
 
 	// Sync registry — list every model that should be syncable from
 	// offline-first desktop clients. The resource generator injects
