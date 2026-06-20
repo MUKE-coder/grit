@@ -546,7 +546,7 @@ export default function RootLayout({
   const dataTheme = process.env.NEXT_PUBLIC_THEME || "atlas";
 
   return (
-    <html lang="en" data-theme={dataTheme}>
+    <html lang="en" data-theme={dataTheme} suppressHydrationWarning>
       <body className={`+"`%s "+`font-sans antialiased`+"`"+`}>
         <Providers>
           <Navbar />

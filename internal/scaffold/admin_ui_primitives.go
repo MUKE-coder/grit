@@ -302,6 +302,14 @@ export interface TableColumn<T> {
   hideOnMobile?: boolean;
   /** Right-align (numbers, money). */
   align?: "left" | "right";
+  /** Fixed pixel width — useful for action / status columns. */
+  width?: number;
+  /** Make this column shrink-to-fit instead of share remaining space.
+   *  Pair with the width prop for tight controls (e.g. row actions). */
+  fixed?: boolean;
+  /** Override the truncation behaviour. Default: text-ellipsis on overflow.
+   *  Set "wrap" to allow line-wrap (e.g. summary / description columns). */
+  overflow?: "truncate" | "wrap";
 }
 
 interface ResponsiveTableProps<T> {
@@ -349,9 +357,19 @@ export function ResponsiveTable<T>({
 
   return (
     <>
-      {/* Desktop table */}
+      {/* Desktop table — table-fixed so column widths follow the config
+          and long cells truncate cleanly instead of forcing horizontal
+          scroll. Columns without an explicit width share remaining space. */}
       <div className="hidden md:block overflow-x-auto rounded-xl border border-border bg-bg-elevated">
-        <table className="min-w-full divide-y divide-border">
+        <table className="w-full table-fixed divide-y divide-border">
+          <colgroup>
+            {columns.map((c) => (
+              <col
+                key={c.key}
+                style={c.width ? { width: c.width + "px" } : c.fixed ? { width: "1%" } : undefined}
+              />
+            ))}
+          </colgroup>
           <thead>
             <tr>
               {columns.map((c) => (
@@ -379,7 +397,8 @@ export function ResponsiveTable<T>({
                     key={c.key}
                     className={
                       "px-4 py-3 text-sm text-foreground " +
-                      (c.align === "right" ? "text-right" : "text-left")
+                      (c.align === "right" ? "text-right" : "text-left") + " " +
+                      (c.overflow === "wrap" ? "whitespace-normal break-words" : "truncate")
                     }
                   >
                     {c.cell(row)}

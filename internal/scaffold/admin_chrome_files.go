@@ -1,5 +1,7 @@
 package scaffold
 
+import "strings"
+
 // v3.29 chrome components for the admin dashboard.
 //
 //   components/chrome/DarkModeToggle.tsx — localStorage-backed two-mode toggle
@@ -13,58 +15,80 @@ package scaffold
 // the top of their JSX to get a consistent header strip with chrome
 // affordances pre-wired.
 
-// adminDarkModeToggleComponent generates a self-contained light/dark toggle
-// that flips data-theme-mode on <html> (independent of the theme name) and
-// persists choice to localStorage. The CSS rules under [data-theme-mode]
-// already live in globals.css; the toggle is just the input device.
+// adminDarkModeToggleComponent — robust light/dark switcher. v3.31 makes
+// the toggle defensive by writing THREE signals on every flip:
+//   1. <html data-theme-mode="dark">  — our CSS variable cascade
+//   2. <html class="dark">            — Tailwind's darkMode: "class" hook
+//   3. <html style="color-scheme: dark"> — browser chrome (scrollbars, native inputs)
+// Any one of these is sufficient to repaint the dashboard; carrying all
+// three means the toggle still works when one path breaks (e.g. a custom
+// CSS file forgets to consume data-theme-mode).
 func adminDarkModeToggleComponent() string {
 	return `"use client";
 
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "@/lib/icons";
 
+type Mode = "light" | "dark";
+
+// applyMode writes every signal a downstream consumer might key off so
+// the visual swap happens regardless of which mechanism a stylesheet is
+// using. Idempotent — safe to call on every render.
+function applyMode(mode: Mode) {
+  const root = document.documentElement;
+  root.setAttribute("data-theme-mode", mode);
+  root.classList.toggle("dark", mode === "dark");
+  root.style.colorScheme = mode;
+}
+
 /**
  * Two-mode light/dark toggle. Persists to localStorage("grit-theme-mode").
- * The chosen mode is written to <html data-theme-mode="light|dark">; the
- * data-theme attribute set by the root layout stays untouched so a user
- * can be on the Atlas palette in dark mode without losing brand colors.
  *
- * Server-render returns null to avoid a hydration mismatch; the body
- * paints once we know what's in localStorage.
+ * The button stays mounted in SSR (initial render returns the light icon)
+ * to avoid a layout jump when the client picks up the stored preference.
+ * The actual mode is settled in useEffect after hydration; before that
+ * point, the button is decorative.
  */
 export function DarkModeToggle({ className = "" }: { className?: string }) {
-  const [mode, setMode] = useState<"light" | "dark" | null>(null);
+  const [mode, setMode] = useState<Mode>("light");
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const stored = (typeof window !== "undefined"
-      ? window.localStorage.getItem("grit-theme-mode")
-      : null) as "light" | "dark" | null;
-    const initial: "light" | "dark" = stored || "light";
+      ? (window.localStorage.getItem("grit-theme-mode") as Mode | null)
+      : null);
+    // Prefer stored choice; fall back to OS-level preference; default light.
+    const osDark = typeof window !== "undefined"
+      && window.matchMedia
+      && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const initial: Mode = stored || (osDark ? "dark" : "light");
     setMode(initial);
-    document.documentElement.setAttribute("data-theme-mode", initial);
+    applyMode(initial);
+    setHydrated(true);
   }, []);
 
   const flip = () => {
-    const next: "light" | "dark" = mode === "dark" ? "light" : "dark";
+    const next: Mode = mode === "dark" ? "light" : "dark";
     setMode(next);
-    document.documentElement.setAttribute("data-theme-mode", next);
+    applyMode(next);
     try {
       window.localStorage.setItem("grit-theme-mode", next);
     } catch {
-      // private browsing or quota — non-fatal, the in-memory mode still flips.
+      // Private browsing / storage quota — the in-memory mode still flips,
+      // it just won't survive a reload. Non-fatal.
     }
   };
-
-  if (mode === null) return null;
 
   return (
     <button
       type="button"
       onClick={flip}
       aria-label={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      aria-pressed={mode === "dark"}
+      suppressHydrationWarning
       className={"inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-bg-elevated text-text-secondary hover:bg-bg-hover transition-colors " + className}
     >
-      {mode === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      {hydrated && mode === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </button>
   );
 }
@@ -113,12 +137,12 @@ export function UserMenu() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label="Open user menu"
-        className="h-9 w-9 overflow-hidden rounded-full border border-border bg-bg-elevated"
+        className="h-9 w-9 overflow-hidden rounded-full ring-2 ring-accent/40 hover:ring-accent transition-colors bg-bg-elevated"
       >
         {user.avatar ? (
           <img src={user.avatar} alt={fullName} className="h-full w-full object-cover" />
         ) : (
-          <span className="flex h-full w-full items-center justify-center text-sm font-semibold text-text-secondary">
+          <span className="flex h-full w-full items-center justify-center text-sm font-semibold text-foreground">
             {initials}
           </span>
         )}
@@ -483,22 +507,56 @@ export function PageHeader({
 // brand area and a top-mounted collapse chevron. Replaces the old sidebar
 // that put the chevron in the navbar middle. Collapsed state shrinks to
 // icon-only nav rail.
-func adminCollapsibleSidebarComponent() string {
-	return `"use client";
+func adminCollapsibleSidebarComponent(opts Options) string {
+	// {{GRIT_VERSION}} is substituted at scaffold time so the sidebar
+	// footer truthfully reports the CLI version that generated the app —
+	// helps when an upgrade later changes the scaffold and a user is
+	// figuring out which template they're running.
+	body := `"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { resources } from "@/resources";
 import { brand } from "@repo/shared/brand";
+import { useLogout, useMe } from "@/hooks/use-auth";
 import {
   getIcon,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
+  Activity,
+  MessageSquare,
+  Bell,
+  Settings,
+  CreditCard,
+  LogOut,
 } from "@/lib/icons";
 import type { User } from "@repo/shared/types";
+
+// GRIT_CLI_VERSION is the scaffold version that generated this file.
+// Surfaced in the sidebar footer so the user can quickly see what Grit
+// release their dashboard was built from. Update by re-scaffolding or
+// hand-bumping if you carry framework patches locally.
+const GRIT_CLI_VERSION = "v{{GRIT_VERSION}}";
+
+// Internal nav block — pages that exist for every Grit app regardless of
+// which resources were generated. Kept out of the resources registry so
+// developers don't accidentally remove them when editing resources.ts.
+const INTERNAL_NAV = [
+  { href: "/system/activity",      label: "Activity",      iconKey: "Activity",       adminOnly: false },
+  { href: "/system/support",       label: "Support",       iconKey: "MessageSquare",  adminOnly: false },
+  { href: "/system/notifications", label: "Notifications", iconKey: "Bell",           adminOnly: false },
+  { href: "/system",               label: "System",        iconKey: "Settings",       adminOnly: true  },
+] as const;
+
+const INTERNAL_ICON: Record<string, React.ReactNode> = {
+  Activity: <Activity className="h-5 w-5" />,
+  MessageSquare: <MessageSquare className="h-5 w-5" />,
+  Bell: <Bell className="h-5 w-5" />,
+  Settings: <Settings className="h-5 w-5" />,
+};
 
 interface SidebarProps {
   user: User;
@@ -509,20 +567,19 @@ interface SidebarProps {
 }
 
 /**
- * Collapsible left sidebar.
+ * Collapsible left sidebar. Three vertical zones:
  *
- * Layout:
  *   ┌──────────────────────┐
- *   │  [logo]      [<]     │  ← brand row + top-mounted collapse chevron
+ *   │  [logo]      [<]     │  ← brand + collapse chevron (fixed)
  *   ├──────────────────────┤
  *   │  > Dashboard         │
- *   │  > Resource A        │  ← nav items (icon-only when collapsed)
+ *   │  > Resource A        │  ← scrollable nav (overflow-y-auto)
+ *   │  > Internal section  │
  *   │  ...                 │
+ *   ├──────────────────────┤
+ *   │  [avatar] Name +     │  ← rich user menu + version (sticky bottom)
+ *   │           email      │
  *   └──────────────────────┘
- *
- * Brand row swaps between brand.logo.image (expanded) and brand.logo.mark
- * (collapsed). Both fall back to the brand.logo.text character on a
- * coloured square if no image is provided.
  */
 export function CollapsibleSidebar({
   user,
@@ -535,10 +592,8 @@ export function CollapsibleSidebar({
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   const isAdmin = user.role === "ADMIN" || user.role === "EDITOR";
-
   const toggle = (key: string) => setExpandedGroups((p) => ({ ...p, [key]: !p[key] }));
 
-  // Auto-expand any group whose child matches the current route.
   useEffect(() => {
     resources.forEach((r) => {
       if (r.group && pathname.startsWith("/" + r.slug)) {
@@ -547,12 +602,9 @@ export function CollapsibleSidebar({
     });
   }, [pathname]);
 
-  // Hide resources flagged as adminOnly when the user isn't ADMIN/EDITOR.
-  const visibleResources = resources.filter(
-    (r) => !r.adminOnly || isAdmin
-  );
+  const visibleResources = resources.filter((r) => !r.adminOnly || isAdmin);
+  const visibleInternal = INTERNAL_NAV.filter((r) => !r.adminOnly || isAdmin);
 
-  // Group resources by their group key; ungrouped resources go to "_root".
   const groups: Record<string, typeof resources> = { _root: [] };
   for (const r of visibleResources) {
     const key = r.group || "_root";
@@ -562,7 +614,6 @@ export function CollapsibleSidebar({
 
   return (
     <>
-      {/* Mobile backdrop */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/50 md:hidden"
@@ -577,8 +628,8 @@ export function CollapsibleSidebar({
           (mobileOpen ? "translate-x-0 " : "-translate-x-full md:translate-x-0 ")
         }
       >
-        {/* Brand row */}
-        <div className="relative flex h-16 items-center border-b border-border px-3">
+        {/* Brand row — fixed at top */}
+        <div className="relative flex h-16 items-center border-b border-border px-3 shrink-0">
           <Link href="/dashboard" className="flex flex-1 items-center gap-2 overflow-hidden">
             <BrandMark collapsed={collapsed} />
             {!collapsed && (
@@ -588,25 +639,20 @@ export function CollapsibleSidebar({
             )}
           </Link>
 
-          {/* Top-mounted collapse chevron. Floats over the right edge so
-              the click target stays accessible whether collapsed or not. */}
           <button
             type="button"
             onClick={onToggleCollapsed}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             className="absolute -right-3 top-1/2 hidden h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-bg-elevated text-text-secondary shadow-sm hover:text-foreground md:flex"
           >
-            {collapsed ? (
-              <ChevronRight className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronLeft className="h-3.5 w-3.5" />
-            )}
+            {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
           </button>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-3">
-          {/* Always-on Dashboard link */}
+        {/* Nav — scrollable middle zone. flex-1 + min-h-0 makes it scroll
+            instead of pushing the footer off-screen when there are many
+            items. Custom scrollbar styles keep the rail subtle. */}
+        <nav className="flex-1 min-h-0 space-y-1 overflow-y-auto px-2 py-3 [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent]">
           <SidebarLink
             href="/dashboard"
             icon={<LayoutDashboard className="h-5 w-5" />}
@@ -616,7 +662,6 @@ export function CollapsibleSidebar({
             onClick={onMobileClose}
           />
 
-          {/* Ungrouped resources */}
           {groups._root.map((r) => (
             <SidebarLink
               key={r.slug}
@@ -629,7 +674,6 @@ export function CollapsibleSidebar({
             />
           ))}
 
-          {/* Grouped resources */}
           {Object.entries(groups)
             .filter(([k]) => k !== "_root")
             .map(([groupName, items]) => (
@@ -662,21 +706,143 @@ export function CollapsibleSidebar({
                 ))}
               </div>
             ))}
+
+          {/* Internal section — always at the bottom of the scroll area,
+              above the user-menu footer. Header hidden when collapsed. */}
+          <div className="pt-3">
+            {!collapsed && (
+              <p className="px-2 py-1 text-xs font-semibold uppercase tracking-wider text-text-muted">
+                Internal
+              </p>
+            )}
+            {visibleInternal.map((r) => (
+              <SidebarLink
+                key={r.href}
+                href={r.href}
+                icon={INTERNAL_ICON[r.iconKey]}
+                label={r.label}
+                active={pathname.startsWith(r.href)}
+                collapsed={collapsed}
+                onClick={onMobileClose}
+              />
+            ))}
+          </div>
         </nav>
 
-        {/* Footer — user role chip when expanded */}
-        {!collapsed && (
-          <div className="border-t border-border px-3 py-3">
-            <div className="rounded-lg border border-accent/20 bg-accent/5 px-3 py-2">
-              <p className="text-xs font-semibold text-foreground">{user.role}</p>
-              <p className="text-[10px] text-text-muted">
-                {user.role === "ADMIN" ? "Comped — not billed" : "Member"}
-              </p>
-            </div>
-          </div>
-        )}
+        {/* Footer — sticky bottom: rich user menu + grit version */}
+        <SidebarUserMenu user={user} collapsed={collapsed} />
       </aside>
     </>
+  );
+}
+
+// SidebarUserMenu — sits at the bottom of the sidebar. Click to pop a
+// menu with profile / billing / activity / logout. When collapsed shows
+// just the avatar + indicator dot. Mirrors the top-right UserMenu but
+// renders with the user's name/email visible inline.
+function SidebarUserMenu({ user, collapsed }: { user: User; collapsed: boolean }) {
+  const { mutate: logout } = useLogout();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  const initials = ((user.first_name?.[0] || "") + (user.last_name?.[0] || "")).toUpperCase() || "U";
+  const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ") || "User";
+
+  return (
+    <div ref={ref} className="relative border-t border-border shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Open account menu"
+        className={
+          "flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-bg-hover " +
+          (collapsed ? "justify-center" : "")
+        }
+      >
+        <span
+          className={
+            "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full overflow-hidden ring-2 ring-accent/30 bg-bg-elevated text-sm font-semibold text-foreground"
+          }
+        >
+          {user.avatar ? (
+            <img src={user.avatar} alt={fullName} className="h-full w-full object-cover" />
+          ) : initials}
+        </span>
+        {!collapsed && (
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold text-foreground">{fullName}</span>
+            <span className="block truncate text-xs text-text-muted">{user.email}</span>
+          </span>
+        )}
+        {!collapsed && (
+          <ChevronDown className={"h-3.5 w-3.5 text-text-muted transition-transform " + (open ? "rotate-180" : "")} />
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute bottom-full left-2 right-2 mb-2 overflow-hidden rounded-xl border border-border bg-bg-elevated shadow-xl">
+          <div className="border-b border-border px-4 py-3">
+            <p className="text-sm font-semibold text-foreground truncate">{fullName}</p>
+            <p className="text-xs text-text-muted truncate">{user.email}</p>
+          </div>
+          <nav className="py-1 text-sm">
+            <Link
+              href="/system/activity"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-bg-hover hover:text-foreground"
+            >
+              <Activity className="h-4 w-4" />
+              User Activity
+            </Link>
+            <Link
+              href="/profile"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-bg-hover hover:text-foreground"
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </Link>
+            <Link
+              href="/system/billing"
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-between px-4 py-2.5 text-text-secondary hover:bg-bg-hover hover:text-foreground"
+            >
+              <span className="flex items-center gap-3">
+                <CreditCard className="h-4 w-4" />
+                Billing
+              </span>
+              {user.role === "ADMIN" && (
+                <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-accent">
+                  Admin
+                </span>
+              )}
+            </Link>
+            <button
+              type="button"
+              onClick={() => { setOpen(false); logout(); }}
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-text-secondary hover:bg-bg-hover hover:text-foreground"
+            >
+              <LogOut className="h-4 w-4" />
+              Log out
+            </button>
+          </nav>
+          {!collapsed && (
+            <div className="border-t border-border px-4 py-2 text-center">
+              <p className="text-[10px] uppercase tracking-wide text-text-muted">Grit {GRIT_CLI_VERSION}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -729,21 +895,26 @@ function SidebarLink({ href, icon, label, active, collapsed, onClick }: LinkProp
   );
 }
 `
+	return strings.ReplaceAll(body, "{{GRIT_VERSION}}", opts.Version)
 }
 
-// adminGlobalCSSDarkModeAddon returns the CSS block that the dark-mode
-// toggle activates. We append it to the per-theme blocks so toggling
-// data-theme-mode="dark" in browsers swaps every variable to its darker
-// counterpart while keeping the active theme's hue intent. Lives at the
-// end of globals.css (called from adminGlobalCSS via concatenation).
+// adminDarkModeCSSAddon — dark-mode variable overrides keyed off BOTH
+// the .dark class (Tailwind's canonical selector) and data-theme-mode
+// (our explicit attribute). Carrying both selectors means the toggle
+// still produces a visible repaint even if a stylesheet only listens
+// to one of them. v3.31: dropped the per-theme dark refinements that
+// were silently winning specificity over the base dark block; the
+// flat dark palette is good enough and removes a footgun.
 func adminDarkModeCSSAddon() string {
 	return `
 
-/* v3.29 — Dark mode toggle. data-theme-mode is set by DarkModeToggle on
- * the <html> root. We invert the surface variables but keep the active
- * theme's hue/contrast intent. Atlas dark = slate; Aurora dark = warm
- * stone; Pulse dark = pure-black. */
+/* v3.31 — Dark mode. The DarkModeToggle component writes three signals
+ * to <html> on every flip: class="dark", data-theme-mode="dark", and
+ * style="color-scheme: dark". We honour the two pertinent to CSS here.
+ * The active data-theme (atlas / aurora / pulse) keeps its accent hue;
+ * only the surface + text variables flip. */
 
+.dark,
 [data-theme-mode="dark"] {
   --bg-primary: #0a0a0f;
   --bg-secondary: #111118;
@@ -756,46 +927,37 @@ func adminDarkModeCSSAddon() string {
   --text-muted: #606078;
 }
 
-[data-theme="atlas"][data-theme-mode="dark"] {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-tertiary: #334155;
-  --bg-elevated: #1e293b;
-  --bg-hover: #334155;
-  --border: #334155;
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
+/* Per-theme accent lifts so blue/purple/black don't disappear on the
+ * dark canvas. These come after the base dark block on purpose — the
+ * surface tokens above stay; only the brand colours refresh. */
+
+.dark[data-theme="atlas"],
+[data-theme-mode="dark"][data-theme="atlas"] {
   --accent: #60a5fa;
   --accent-hover: #93c5fd;
 }
 
-[data-theme="aurora"][data-theme-mode="dark"] {
-  --bg-primary: #1c1917;
-  --bg-secondary: #292524;
-  --bg-tertiary: #44403c;
-  --bg-elevated: #292524;
-  --bg-hover: #44403c;
-  --border: #44403c;
-  --text-primary: #fafaf9;
-  --text-secondary: #d6d3d1;
-  --text-muted: #a8a29e;
+.dark[data-theme="aurora"],
+[data-theme-mode="dark"][data-theme="aurora"] {
   --accent: #a78bfa;
   --accent-hover: #c4b5fd;
 }
 
-[data-theme="pulse"][data-theme-mode="dark"] {
-  --bg-primary: #0a0a0a;
-  --bg-secondary: #171717;
-  --bg-tertiary: #262626;
-  --bg-elevated: #171717;
-  --bg-hover: #262626;
-  --border: #404040;
-  --text-primary: #fafafa;
-  --text-secondary: #d4d4d4;
-  --text-muted: #a3a3a3;
+.dark[data-theme="pulse"],
+[data-theme-mode="dark"][data-theme="pulse"] {
   --accent: #fbbf24;
   --accent-hover: #fcd34d;
+}
+
+/* Form controls + selection still need the dark hint or the browser
+ * renders them with the OS light scheme regardless of our vars. */
+.dark input,
+.dark textarea,
+.dark select,
+[data-theme-mode="dark"] input,
+[data-theme-mode="dark"] textarea,
+[data-theme-mode="dark"] select {
+  color-scheme: dark;
 }
 `
 }

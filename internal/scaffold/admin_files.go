@@ -224,7 +224,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "chrome", "DarkModeToggle.tsx"):       adminDarkModeToggleComponent(),
 		filepath.Join(adminRoot, "components", "chrome", "UserMenu.tsx"):             adminUserMenuComponent(),
 		filepath.Join(adminRoot, "components", "chrome", "NotificationBell.tsx"):     adminNotificationBellComponent(),
-		filepath.Join(adminRoot, "components", "chrome", "CollapsibleSidebar.tsx"):   adminCollapsibleSidebarComponent(),
+		filepath.Join(adminRoot, "components", "chrome", "CollapsibleSidebar.tsx"):   adminCollapsibleSidebarComponent(opts),
 
 		// UI primitives (v3.29) — responsive form/table building blocks.
 		filepath.Join(adminRoot, "components", "ui", "ResponsiveSheet.tsx"):  adminResponsiveSheetComponent(),
@@ -232,6 +232,14 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "ui", "IconButton.tsx"):       adminIconButtonComponent(),
 		filepath.Join(adminRoot, "components", "ui", "ResponsiveTable.tsx"): adminResponsiveTableComponent(),
 		filepath.Join(adminRoot, "lib", "export.ts"):                         adminExportLib(),
+
+		// v3.31 UX bundle — toast hook with milliseconds, skeleton, UserCell
+		// table helper, system hub page, full notifications page.
+		filepath.Join(adminRoot, "hooks", "use-toasted-mutation.ts"):         adminToastHook(),
+		filepath.Join(adminRoot, "components", "ui", "Skeleton.tsx"):         adminSkeletonComponent(),
+		filepath.Join(adminRoot, "components", "ui", "UserCell.tsx"):         adminUserCellComponent(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "page.tsx"):                 adminSystemHubPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "notifications", "page.tsx"): adminNotificationsPage(),
 
 		// Dashboard route group layout
 		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"): adminDashboardLayout(),
@@ -695,7 +703,11 @@ export default function RootLayout({
   const dataTheme = process.env.NEXT_PUBLIC_THEME || "atlas";
 
   return (
-    <html lang="en" data-theme={dataTheme}>
+    // suppressHydrationWarning: DarkModeToggle mutates html.classList +
+    // data-theme-mode + style after hydration. Without this React would
+    // log a noisy mismatch on the first paint even though the behaviour
+    // is intentional.
+    <html lang="en" data-theme={dataTheme} suppressHydrationWarning>
       <body className={`+"`%s "+`%s`+"`"+`}>
         <Providers>{children}</Providers>
       </body>

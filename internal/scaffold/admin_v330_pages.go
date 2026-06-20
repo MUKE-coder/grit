@@ -18,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { ResponsiveTable, type TableColumn } from "@/components/ui/ResponsiveTable";
 import { IconButton } from "@/components/ui/IconButton";
+import { SkeletonTable } from "@/components/ui/Skeleton";
 import { Download, AlertCircle, AlertTriangle, Info } from "@/lib/icons";
 import { apiClient } from "@/lib/api-client";
 import { exportToExcel } from "@/lib/export";
@@ -99,10 +100,15 @@ export default function ActivityPage() {
     await exportToExcel(payload, "user-activity-" + new Date().toISOString().slice(0, 10));
   };
 
+  // Columns are width-tuned so the table never horizontally scrolls on
+  // reasonable widths. Summary takes the remaining space and wraps when
+  // it would otherwise truncate, with IP + action packed beneath as a
+  // second line — drops the raw UUID user_id column entirely.
   const columns: TableColumn<ActivityRow>[] = [
     {
       key: "severity",
       header: "Severity",
+      width: 110,
       cell: (r) => {
         const Icon = severityIcon[r.severity];
         return (
@@ -113,14 +119,26 @@ export default function ActivityPage() {
         );
       },
     },
-    { key: "action", header: "Action", cell: (r) => <code className="font-mono text-xs">{r.action}</code> },
-    { key: "summary", header: "Summary", cell: (r) => <span className="text-sm">{r.summary}</span> },
-    { key: "ip", header: "IP", cell: (r) => <span className="font-mono text-xs text-text-muted">{r.ip_address || "—"}</span>, hideOnMobile: true },
+    {
+      key: "summary",
+      header: "Event",
+      overflow: "wrap",
+      cell: (r) => (
+        <div className="min-w-0">
+          <p className="text-sm text-foreground">{r.summary}</p>
+          <p className="mt-0.5 text-xs text-text-muted">
+            <code className="font-mono">{r.action}</code>
+            {r.ip_address && <span> · {r.ip_address}</span>}
+          </p>
+        </div>
+      ),
+    },
     {
       key: "time",
       header: "When",
-      cell: (r) => <span className="text-xs text-text-muted">{new Date(r.created_at).toLocaleString()}</span>,
+      width: 180,
       align: "right",
+      cell: (r) => <span className="text-xs text-text-muted">{new Date(r.created_at).toLocaleString()}</span>,
     },
   ];
 
@@ -169,13 +187,16 @@ export default function ActivityPage() {
         ))}
       </div>
 
-      <ResponsiveTable
-        columns={columns}
-        rows={rows}
-        rowKey={(r) => r.id}
-        loading={isLoading}
-        emptyMessage="No activity matches the current filter."
-      />
+      {isLoading ? (
+        <SkeletonTable rows={6} columns={3} />
+      ) : (
+        <ResponsiveTable
+          columns={columns}
+          rows={rows}
+          rowKey={(r) => r.id}
+          emptyMessage="No activity matches the current filter."
+        />
+      )}
     </div>
   );
 }
