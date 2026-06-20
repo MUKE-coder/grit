@@ -26,8 +26,8 @@ import { PageHeader } from "@/components/chrome/PageHeader";
 import { SkeletonCards } from "@/components/ui/Skeleton";
 import { apiClient } from "@/lib/api-client";
 import {
-  Activity as ActivityIcon, AlertCircle, ArrowUpRight, ArrowDownRight,
-  Users, Bell, MessageSquare, TrendingUp, Database, Shield, getIcon,
+  Activity as ActivityIcon, ArrowUpRight,
+  Users, Bell, TrendingUp, Database, Shield, getIcon,
 } from "@/lib/icons";
 
 interface MeStats {

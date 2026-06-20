@@ -128,6 +128,11 @@ func adminIconMap() string {
   Zap,
   Globe,
   Menu,
+  ArrowUpRight,
+  ArrowDownRight,
+  Flag,
+  LogIn,
+  UserPlus,
   type LucideIcon,
 } from "lucide-react";
 
@@ -229,6 +234,17 @@ export {
   Zap,
   Globe,
   Menu,
+  // v3.31.x — icons referenced by the new dashboard, profile, activity
+  // feed, and sidebar chrome.
+  Users,
+  MessageSquare,
+  ShoppingCart,
+  FileText,
+  ArrowUpRight,
+  ArrowDownRight,
+  Flag,
+  LogIn,
+  UserPlus,
 };
 `
 }
