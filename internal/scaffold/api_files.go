@@ -50,6 +50,14 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "models", "feature_flag.go"):       apiFeatureFlagModelGo(),
 		filepath.Join(apiRoot, "internal", "flags", "flags.go"):               apiFlagsGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "flags.go"):            apiFlagsHandlerGo(),
+
+		// v3.30 — semantic UserActivity log + ticket system
+		filepath.Join(apiRoot, "internal", "models", "user_activity.go"):    userActivityModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "activity.go"):       userActivityServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "user_activity.go"): userActivityHandlerGo(),
+		filepath.Join(apiRoot, "internal", "models", "ticket.go"):           ticketModelGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "ticket.go"):         ticketHandlerGo(),
+		filepath.Join(apiRoot, "internal", "services", "ticket_mail.go"):    ticketMailGo(),
 		filepath.Join(apiRoot, "internal", "routes", "routes.go"):    apiRoutesGo(),
 		filepath.Join(apiRoot, ".air.toml"):                          airConfig(),
 		// Test files — give the generated API a working test suite out of the box
@@ -877,6 +885,10 @@ func Models() []interface{} {
 		&FeatureFlag{},
 		&FlagExposure{},
 		&Notification{},
+		// v3.30
+		&UserActivity{},
+		&Ticket{},
+		&TicketReply{},
 		// grit:models
 	}
 }
@@ -6262,6 +6274,12 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	securityHandler := &handlers.SecurityHandler{Bridge: svc.SecObs}
 	observabilityHandler := &handlers.ObservabilityHandler{Bridge: svc.SecObs}
 
+	// v3.30 — semantic activity log + ticket system. Mailer is optional;
+	// when nil the ticket handler skips email-out and only writes the row
+	// + admin notifications.
+	userActivityHandler := &handlers.UserActivityHandler{DB: db}
+	ticketHandler := &handlers.TicketHandler{DB: db, Mail: mailer}
+
 	// Sync registry — list every model that should be syncable from
 	// offline-first desktop clients. The resource generator injects
 	// new resources at the marker below.
@@ -6373,6 +6391,17 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		protected.POST("/notifications/:id/read", notificationHandler.MarkRead)
 		protected.POST("/notifications/read-all", notificationHandler.MarkAllRead)
 
+		// v3.30 — tickets. Any authenticated user can open + reply; the
+		// handler scopes List/Get visibility to the caller unless they're
+		// ADMIN/EDITOR (then they see the full queue).
+		protected.POST("/tickets", ticketHandler.Create)
+		protected.GET("/tickets", ticketHandler.List)
+		protected.GET("/tickets/:id", ticketHandler.Get)
+		protected.POST("/tickets/:id/reply", ticketHandler.Reply)
+		protected.PATCH("/tickets/:id/close", ticketHandler.Close)
+		protected.PATCH("/tickets/:id/reopen", ticketHandler.Reopen)
+		protected.PATCH("/tickets/:id/assign", ticketHandler.Assign) // admin-gated inside the handler
+
 		// grit:routes:protected
 	}
 
@@ -6397,6 +6426,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// Activity audit log + tamper-evident chain verification
 		admin.GET("/admin/activity", activityHandler.List)
 		admin.GET("/admin/activity/integrity", activityHandler.VerifyIntegrity)
+
+		// v3.30 — semantic user activity dashboard (action + IP + severity).
+		// Separate from /admin/activity above which is the HTTP audit log.
+		admin.GET("/user-activity", userActivityHandler.List)
+		admin.GET("/user-activity/stats", userActivityHandler.Stats)
 
 		// Webhook receiver admin (review + replay failed events)
 		admin.GET("/admin/webhooks", webhookHandler.List)

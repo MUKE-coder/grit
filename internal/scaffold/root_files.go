@@ -156,6 +156,10 @@ B2_REGION=us-west-004
 RESEND_API_KEY=re_your_api_key
 MAIL_FROM=noreply@%s.dev
 
+# Support inbox — every ticket opened in /system/support is emailed here
+# (when RESEND_API_KEY is set). Leave empty in dev to skip email-out.
+SUPPORT_EMAIL=
+
 # CORS
 CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 
