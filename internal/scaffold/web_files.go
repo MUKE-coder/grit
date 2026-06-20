@@ -112,6 +112,13 @@ const nextConfig: NextConfig = {
   // so Next needs to run it through SWC. Otherwise imports of
   // @repo/shared/types fail with "Cannot find module" at build time.
   transpilePackages: ["@repo/shared"],
+  // Mirror THEME + SOCIAL_AUTH_ENABLED from .env into the NEXT_PUBLIC_*
+  // namespace so the active theme is visible to server components and
+  // the client bundle. Defaults keep new apps booting without env edits.
+  env: {
+    NEXT_PUBLIC_THEME: process.env.THEME || "atlas",
+    NEXT_PUBLIC_SOCIAL_AUTH_ENABLED: process.env.SOCIAL_AUTH_ENABLED || "true",
+  },
 };
 
 export default nextConfig;
@@ -1686,6 +1693,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { isSocialAuthEnabled } from "@repo/shared/themes";
+import { brand } from "@repo/shared/brand";
 
 const inputClass = "w-full rounded-lg border border-border bg-bg-elevated px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors";
 
@@ -1721,7 +1730,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-foreground">Welcome back</h1>
+          <h1 className="text-3xl font-bold text-foreground">Welcome back to {brand.name}</h1>
           <p className="mt-2 text-text-secondary">Sign in to your account</p>
         </div>
 
@@ -1787,7 +1796,8 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Social Login */}
+        {/* Social Login — hidden when SOCIAL_AUTH_ENABLED=false in .env */}
+        {isSocialAuthEnabled() && (<>
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-border" />
@@ -1820,6 +1830,7 @@ export default function LoginPage() {
             GitHub
           </a>
         </div>
+        </>)}
 
         <p className="text-center text-sm text-text-secondary">
           Don&apos;t have an account?{" "}
@@ -1841,6 +1852,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { isSocialAuthEnabled } from "@repo/shared/themes";
 
 const inputClass = "w-full rounded-lg border border-border bg-bg-elevated px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors";
 
@@ -2001,7 +2013,8 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        {/* Social Login */}
+        {/* Social Login — hidden when SOCIAL_AUTH_ENABLED=false in .env */}
+        {isSocialAuthEnabled() && (<>
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-border" />
@@ -2034,6 +2047,7 @@ export default function RegisterPage() {
             GitHub
           </a>
         </div>
+        </>)}
 
         <p className="text-center text-sm text-text-secondary">
           Already have an account?{" "}

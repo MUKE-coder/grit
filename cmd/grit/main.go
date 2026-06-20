@@ -27,7 +27,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.27.0"
+var version = "3.28.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -111,7 +111,7 @@ after a major framework upgrade to refresh the rules.`,
 
 func newCmd() *cobra.Command {
 	// New architecture/frontend flags
-	var archFlag, frontendFlag, style string
+	var archFlag, frontendFlag, style, theme string
 	var inPlace, force, includeDesktop bool
 
 	// Legacy flags (backward compatibility)
@@ -145,6 +145,7 @@ func newCmd() *cobra.Command {
 			opts := scaffold.Options{
 				ProjectName:    projectName,
 				Style:          style,
+				Theme:          theme,
 				InPlace:        inPlace,
 				Force:          force,
 				IncludeDesktop: includeDesktop,
@@ -217,6 +218,10 @@ func newCmd() *cobra.Command {
 				return err
 			}
 
+			if err := opts.ValidateTheme(); err != nil {
+				return err
+			}
+
 			// --desktop is incompatible with --single (single apps already bundle their own SPA).
 			if opts.IncludeDesktop && opts.Architecture == scaffold.ArchSingle {
 				return fmt.Errorf("--desktop is not supported with --single architecture (single apps already bundle their own frontend)")
@@ -244,6 +249,7 @@ func newCmd() *cobra.Command {
 	cmd.Flags().StringVar(&archFlag, "arch", "", "Architecture: single, double, triple, api, mobile")
 	cmd.Flags().StringVar(&frontendFlag, "frontend", "", "Frontend framework: next, vite (tanstack)")
 	cmd.Flags().StringVar(&style, "style", "", "Admin panel style variant (default, modern, minimal, glass)")
+	cmd.Flags().StringVar(&theme, "theme", "", "Full theme: atlas (default), aurora, pulse — controls auth pages, dashboard, fonts, and brand colors. Can also be overridden at runtime via THEME=<name> in .env.")
 
 	// Shorthand architecture flags
 	cmd.Flags().BoolVar(&apiOnly, "api", false, "Shorthand for --arch=api")

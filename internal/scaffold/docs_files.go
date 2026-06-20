@@ -861,8 +861,8 @@ grit seed
 
 Seeds the database with:
 
-- **Admin user** — admin@example.com / password (role: admin)
-- **Demo users** — Sample accounts for testing
+- **Admin user** — admin@example.com / admin123 (role: ADMIN)
+- **Demo users** — jane@example.com, robert@example.com, emily@example.com, michael@example.com (all admin123)
 
 The seeder is idempotent — it skips records that already exist. Add your own seeders in apps/api/internal/database/seed.go.
 
@@ -985,11 +985,11 @@ This creates:
 
 | Account | Email | Password | Role |
 |---------|-------|----------|------|
-| Admin | admin@example.com | password | admin |
-| Jane Cooper | jane@example.com | password | editor |
-| Robert Fox | robert@example.com | password | user |
-| Emily Davis | emily@example.com | password | user |
-| Michael Chen | michael@example.com | password | user (inactive) |
+| Admin | admin@example.com | admin123 | ADMIN |
+| Jane Cooper | jane@example.com | admin123 | EDITOR |
+| Robert Fox | robert@example.com | admin123 | USER |
+| Emily Davis | emily@example.com | admin123 | USER |
+| Michael Chen | michael@example.com | admin123 | USER (inactive) |
 
 ### How Seeders Work
 

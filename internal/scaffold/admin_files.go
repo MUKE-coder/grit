@@ -202,11 +202,21 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "app", "not-found.tsx"):    adminNotFoundPage(),
 		filepath.Join(adminRoot, "app", "global-error.tsx"): adminGlobalErrorPage(),
 
-		// Auth pages — (auth) route group (style variant)
-		filepath.Join(adminRoot, "app", "(auth)", "login", "page.tsx"):           adminLoginPageForStyle(opts.Style),
-		filepath.Join(adminRoot, "app", "(auth)", "sign-up", "page.tsx"):         adminSignUpPageForStyle(opts.Style),
-		filepath.Join(adminRoot, "app", "(auth)", "forgot-password", "page.tsx"): adminForgotPasswordPageForStyle(opts.Style),
+		// Auth pages — (auth) route group. v3.28: theme-aware AuthShell
+		// dispatcher renders the right layout at runtime based on THEME env,
+		// so pages stay thin and the legacy style switches are bypassed when
+		// a theme is set.
+		filepath.Join(adminRoot, "app", "(auth)", "login", "page.tsx"):           adminThemedLoginPage(),
+		filepath.Join(adminRoot, "app", "(auth)", "sign-up", "page.tsx"):         adminThemedSignUpPage(),
+		filepath.Join(adminRoot, "app", "(auth)", "forgot-password", "page.tsx"): adminThemedForgotPasswordPage(),
 		filepath.Join(adminRoot, "app", "(auth)", "callback", "page.tsx"):        adminAuthCallbackPage(),
+
+		// Theme-aware auth shells (v3.28)
+		filepath.Join(adminRoot, "components", "auth", "AuthShell.tsx"):          adminAuthShellDispatcher(),
+		filepath.Join(adminRoot, "components", "auth", "AtlasAuthShell.tsx"):     adminAtlasAuthShell(),
+		filepath.Join(adminRoot, "components", "auth", "AuroraAuthShell.tsx"):    adminAuroraAuthShell(),
+		filepath.Join(adminRoot, "components", "auth", "PulseAuthShell.tsx"):     adminPulseAuthShell(),
+		filepath.Join(adminRoot, "components", "auth", "SocialAuthButtons.tsx"):  adminAuthSocialButtons(),
 
 		// Dashboard route group layout
 		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"): adminDashboardLayout(),
@@ -384,6 +394,14 @@ const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
   transpilePackages: ["@repo/shared"],
+  // Mirror THEME + SOCIAL_AUTH_ENABLED from .env into the NEXT_PUBLIC_*
+  // namespace so server components and the client bundle both see the
+  // active theme without a flash of unstyled content. Falls back to the
+  // safe defaults when the vars aren't set (atlas, social auth on).
+  env: {
+    NEXT_PUBLIC_THEME: process.env.THEME || "atlas",
+    NEXT_PUBLIC_SOCIAL_AUTH_ENABLED: process.env.SOCIAL_AUTH_ENABLED || "true",
+  },
   // Uncomment and run "ANALYZE=true pnpm build" to inspect the bundle
   // ...(process.env.ANALYZE === "true"
   //   ? { ...require("@next/bundle-analyzer")({ enabled: true })(nextConfig) }
@@ -545,22 +563,40 @@ body {
 }
 
 func adminRootLayout(opts Options) string {
+	// Pick fonts based on the active theme. Loaded at build time, so the
+	// scaffold flag THEME locks the fonts in — switching THEME at runtime
+	// without re-scaffolding will fall back to the system font for the
+	// missing family.
+	var fontImport, fontVars, bodyClass string
+	switch opts.Theme {
+	case "aurora":
+		fontImport = `import { Geist, Geist_Mono } from "next/font/google";
+
+const geist = Geist({ subsets: ["latin"], variable: "--font-display", weight: ["400", "500", "600", "700"] });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500", "600"] });`
+		fontVars = "${geist.variable} ${geistMono.variable}"
+		bodyClass = "min-h-screen font-sans antialiased"
+	case "pulse":
+		fontImport = `import { Onest, DM_Serif_Display, JetBrains_Mono } from "next/font/google";
+
+const onest = Onest({ subsets: ["latin"], variable: "--font-display", weight: ["400", "500", "600", "700"] });
+const dmSerif = DM_Serif_Display({ subsets: ["latin"], variable: "--font-serif", weight: ["400"] });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500", "600"] });`
+		fontVars = "${onest.variable} ${dmSerif.variable} ${jetbrainsMono.variable}"
+		bodyClass = "min-h-screen font-sans antialiased"
+	default: // atlas
+		fontImport = `import { Inter, JetBrains_Mono } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-display", weight: ["400", "500", "600", "700"] });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500", "600"] });`
+		fontVars = "${inter.variable} ${jetbrainsMono.variable}"
+		bodyClass = "min-h-screen font-sans antialiased"
+	}
+
 	return fmt.Sprintf(`import type { Metadata } from "next";
-import { Onest, JetBrains_Mono } from "next/font/google";
+%s
 import "./globals.css";
 import { Providers } from "@/components/shared/providers";
-
-const onest = Onest({
-  subsets: ["latin"],
-  variable: "--font-onest",
-  weight: ["400", "500", "600", "700"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
-  weight: ["400", "500", "600"],
-});
 
 export const metadata: Metadata = {
   title: "%s Admin",
@@ -573,14 +609,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
+    // The dark class is retained for v3.28.0 because the dashboard still
+    // uses dark-mode tokens. Auth pages paint their own light background
+    // via inline style on the theme shell, so the dark body shows through
+    // only behind the dashboard. Theming the dashboard light follows in
+    // v3.28.1.
     <html lang="en" className="dark">
-      <body className={` + "`" + `${onest.variable} ${jetbrainsMono.variable} min-h-screen bg-background font-sans antialiased` + "`" + `}>
+      <body className={`+"`%s "+`%s`+"`"+`}>
         <Providers>{children}</Providers>
       </body>
     </html>
   );
 }
-`, opts.ProjectName)
+`, fontImport, opts.ProjectName, fontVars, bodyClass)
 }
 
 func adminProviders() string {

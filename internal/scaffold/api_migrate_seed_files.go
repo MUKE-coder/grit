@@ -202,26 +202,34 @@ func seedAdminUser(db *gorm.DB) error {
 		FirstName: "Admin",
 		LastName:  "User",
 		Email:     "admin@example.com",
-		Password:  "password",
-		Role:      "ADMIN",
-		Active:    true,
+		// admin123 matches the credential the Concepts course teaches in
+		// "Your first look" + "Starting the dev servers" lessons and the
+		// desktop scaffold's bundled default. Match here so a new user
+		// following the docs verbatim can log in on the first try.
+		// Change it the moment you're past dev.
+		Password: "admin123",
+		Role:     "ADMIN",
+		Active:   true,
 	}
 
 	if err := db.Create(&admin).Error; err != nil {
 		return fmt.Errorf("creating admin user: %w", err)
 	}
 
-	log.Println("Created admin user: admin@example.com / password")
+	log.Println("Created admin user: admin@example.com / admin123")
 	return nil
 }
 
 // seedDemoUsers creates sample user accounts for development.
+// All demo users share the password "admin123" — the same as the admin
+// seed — so the Concepts course / first-look lesson works without
+// remembering a second password.
 func seedDemoUsers(db *gorm.DB) error {
 	users := []models.User{
-		{FirstName: "Jane", LastName: "Cooper", Email: "jane@example.com", Password: "password", Role: "EDITOR", Active: true},
-		{FirstName: "Robert", LastName: "Fox", Email: "robert@example.com", Password: "password", Role: "USER", Active: true},
-		{FirstName: "Emily", LastName: "Davis", Email: "emily@example.com", Password: "password", Role: "USER", Active: true},
-		{FirstName: "Michael", LastName: "Chen", Email: "michael@example.com", Password: "password", Role: "USER", Active: false},
+		{FirstName: "Jane", LastName: "Cooper", Email: "jane@example.com", Password: "admin123", Role: "EDITOR", Active: true},
+		{FirstName: "Robert", LastName: "Fox", Email: "robert@example.com", Password: "admin123", Role: "USER", Active: true},
+		{FirstName: "Emily", LastName: "Davis", Email: "emily@example.com", Password: "admin123", Role: "USER", Active: true},
+		{FirstName: "Michael", LastName: "Chen", Email: "michael@example.com", Password: "admin123", Role: "USER", Active: false},
 	}
 
 	for _, u := range users {
@@ -235,7 +243,7 @@ func seedDemoUsers(db *gorm.DB) error {
 			log.Printf("Warning: failed to create user %s: %v", u.Email, err)
 			continue
 		}
-		log.Printf("Created user: %s / password", u.Email)
+		log.Printf("Created user: %s / admin123", u.Email)
 	}
 
 	return nil

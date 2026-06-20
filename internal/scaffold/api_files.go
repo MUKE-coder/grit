@@ -2300,7 +2300,12 @@ func CORS(allowedOrigins []string) gin.HandlerFunc {
 		}
 
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
+		// X-CSRF-Token + Idempotency-Key are injected by the web and admin
+		// axios clients on every unsafe method. Without them in the allowed
+		// list, the browser's preflight strips the headers and the request
+		// either fails the AutoCSRF check or replays without an idempotency
+		// guarantee. Authorization stays for native bearer clients.
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, X-CSRF-Token, Idempotency-Key")
 		c.Header("Access-Control-Allow-Credentials", "true")
 		c.Header("Access-Control-Max-Age", "86400")
 

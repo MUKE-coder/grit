@@ -58,11 +58,11 @@ export default function SeedersPage() {
 Running migrations...
 All tables are up to date — nothing to migrate.
 Seeding database...
-Created admin user: admin@example.com / password
-Created user: jane@example.com / password
-Created user: robert@example.com / password
-Created user: emily@example.com / password
-Created user: michael@example.com / password
+Created admin user: admin@example.com / admin123
+Created user: jane@example.com / admin123
+Created user: robert@example.com / admin123
+Created user: emily@example.com / admin123
+Created user: michael@example.com / admin123
 Database seeded successfully.`}
                 />
               </div>
@@ -97,7 +97,7 @@ Database seeded successfully.`}
     admin := models.User{
         Name:     "Admin",
         Email:    "admin@example.com",
-        Password: "password",
+        Password: "admin123",
         Role:     "admin",
         Active:   true,
     }
@@ -106,7 +106,7 @@ Database seeded successfully.`}
         return fmt.Errorf("creating admin user: %w", err)
     }
 
-    log.Println("Created admin user: admin@example.com / password")
+    log.Println("Created admin user: admin@example.com / admin123")
     return nil
 }`}
                 />
@@ -129,10 +129,10 @@ Database seeded successfully.`}
                   filename="apps/api/internal/database/seed.go"
                   code={`func seedDemoUsers(db *gorm.DB) error {
     users := []models.User{
-        {Name: "Jane Cooper", Email: "jane@example.com", Password: "password", Role: "editor", Active: true},
-        {Name: "Robert Fox", Email: "robert@example.com", Password: "password", Role: "user", Active: true},
-        {Name: "Emily Davis", Email: "emily@example.com", Password: "password", Role: "user", Active: true},
-        {Name: "Michael Chen", Email: "michael@example.com", Password: "password", Role: "user", Active: false},
+        {Name: "Jane Cooper", Email: "jane@example.com", Password: "admin123", Role: "editor", Active: true},
+        {Name: "Robert Fox", Email: "robert@example.com", Password: "admin123", Role: "user", Active: true},
+        {Name: "Emily Davis", Email: "emily@example.com", Password: "admin123", Role: "user", Active: true},
+        {Name: "Michael Chen", Email: "michael@example.com", Password: "admin123", Role: "user", Active: false},
     }
 
     for _, u := range users {
@@ -146,7 +146,7 @@ Database seeded successfully.`}
             log.Printf("Warning: failed to create user %s: %v", u.Email, err)
             continue
         }
-        log.Printf("Created user: %s / password", u.Email)
+        log.Printf("Created user: %s / admin123", u.Email)
     }
 
     return nil

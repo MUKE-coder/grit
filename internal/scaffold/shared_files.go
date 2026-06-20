@@ -20,6 +20,13 @@ func writeSharedFiles(root string, opts Options) error {
 		filepath.Join(sharedRoot, "types", "upload.ts"):    sharedUploadTypes(),
 		filepath.Join(sharedRoot, "schemas", "blog.ts"):    sharedBlogSchema(),
 		filepath.Join(sharedRoot, "types", "blog.ts"):      sharedBlogTypes(),
+
+		// v3.28: brand identity + theme tokens — single source of truth for
+		// logo, brand name, hero copy, social links, and the 3 theme palettes
+		// (atlas/aurora/pulse). Auth pages and dashboards in apps/admin and
+		// apps/web import these so a rebrand is one file, not a grep + edit.
+		filepath.Join(sharedRoot, "brand.config.ts"): sharedBrandConfig(opts),
+		filepath.Join(sharedRoot, "themes.ts"):       sharedThemes(),
 	}
 
 	for path, content := range files {
@@ -32,6 +39,7 @@ func writeSharedFiles(root string, opts Options) error {
 }
 
 func sharedPackageJSON(opts Options) string {
+	_ = opts
 	return `{
   "name": "@repo/shared",
   "version": "0.1.0",
@@ -41,7 +49,9 @@ func sharedPackageJSON(opts Options) string {
   "exports": {
     "./schemas": "./schemas/index.ts",
     "./types": "./types/index.ts",
-    "./constants": "./constants/index.ts"
+    "./constants": "./constants/index.ts",
+    "./brand": "./brand.config.ts",
+    "./themes": "./themes.ts"
   },
   "dependencies": {
     "zod": "^3.22.0"

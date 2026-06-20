@@ -36,9 +36,10 @@ type Options struct {
 	Architecture   Architecture
 	Frontend       Frontend
 	Style          string
-	InPlace        bool // Scaffold into current directory (grit new .)
-	Force          bool // Allow scaffolding into non-empty directory (--force)
-	IncludeDesktop bool // Add apps/desktop (Wails client that shares the monorepo API)
+	Theme          string // Full theme: atlas (default), aurora, pulse — controls auth pages, dashboard tokens, fonts, brand colors
+	InPlace        bool   // Scaffold into current directory (grit new .)
+	Force          bool   // Allow scaffolding into non-empty directory (--force)
+	IncludeDesktop bool   // Add apps/desktop (Wails client that shares the monorepo API)
 
 	// Version is the Grit CLI version that scaffolded this project (e.g. "3.25.2").
 	// Injected by cmd/grit/main.go so scaffolded README + docs reflect the real
@@ -57,7 +58,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.27.0"
+const DefaultVersion = "3.28.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -110,6 +111,28 @@ func (o *Options) ValidateStyle() error {
 		}
 	}
 	return fmt.Errorf("invalid style %q: must be one of %s", o.Style, strings.Join(ValidStyles, ", "))
+}
+
+// ValidThemes lists the full themes shipped by Grit v3.28+.
+// A theme controls auth pages, dashboard tokens, fonts, sidebar treatment,
+// card styling, and the Pulse + Sentinel widget palette — picked once at
+// scaffold time and overridable at runtime via THEME=<name> in .env.
+var ValidThemes = []string{"atlas", "aurora", "pulse"}
+
+// ValidateTheme checks that the Theme field is a supported value.
+// If empty, it defaults to "atlas" — the team/organisation theme,
+// chosen as the default because it works for the widest audience.
+func (o *Options) ValidateTheme() error {
+	if o.Theme == "" {
+		o.Theme = "atlas"
+		return nil
+	}
+	for _, t := range ValidThemes {
+		if o.Theme == t {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid theme %q: must be one of %s", o.Theme, strings.Join(ValidThemes, ", "))
 }
 
 // ShouldIncludeWeb returns true if a web frontend app should be scaffolded (Turborepo web app).

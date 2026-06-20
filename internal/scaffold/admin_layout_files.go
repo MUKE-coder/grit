@@ -326,17 +326,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { resources } from "@/resources";
 import { getIcon, ChevronDown, LayoutDashboard } from "@/lib/icons";
+import type { User } from "@repo/shared/types";
 
 // Theme toggle and user menu have moved to the topbar (Navbar component).
 // The sidebar now contains only navigation.
-
-interface User {
-  first_name: string;
-  last_name: string;
-  email: string;
-  role: string;
-  avatar?: string;
-}
 
 interface SidebarProps {
   user: User;
@@ -513,14 +506,7 @@ import { useLogout } from "@/hooks/use-auth";
 import { useTheme } from "@/components/shared/theme-provider";
 import { getResource } from "@/resources";
 import { Search, ChevronLeft, ChevronRight, Sun, Moon, Bell, Activity, Settings, CreditCard, LogOut } from "@/lib/icons";
-
-interface User {
-  first_name: string;
-  last_name: string;
-  email: string;
-  role: string;
-  avatar?: string;
-}
+import type { User } from "@repo/shared/types";
 
 interface NavbarProps {
   user: User;

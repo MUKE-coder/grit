@@ -189,12 +189,30 @@ SENTINEL_ENABLED=true
 SENTINEL_USERNAME=admin
 SENTINEL_PASSWORD=%s
 SENTINEL_SECRET_KEY=%s
+
+# ─── Theme (v3.28+) ────────────────────────────────────────────────────
+# Picks the visual identity for auth pages and the dashboard. Options:
+#   atlas  — split-screen, team/organisation, Inter (default)
+#   aurora — centered Clerk-style, consumer SaaS, Geist
+#   pulse  — split-screen with carousel, ecommerce/brand, Onest + DM Serif
+# Mirrored into NEXT_PUBLIC_THEME for the web + admin clients in
+# next.config — the apps read it at build time so server components render
+# the right theme without a flash of unstyled content.
+THEME=%s
+
+# Social login buttons (Google + GitHub). Set to false to hide them from
+# auth pages and remove the "or continue with" divider. The OAuth API
+# routes stay registered server-side either way; flipping this only
+# changes what the UI renders. NEXT_PUBLIC_SOCIAL_AUTH_ENABLED mirrors
+# the value to the browser bundle.
+SOCIAL_AUTH_ENABLED=true
 `,
 		opts.ProjectName, opts.ProjectName, // banner + APP_NAME
 		postgresPassword, opts.ProjectName, // POSTGRES_PASSWORD + POSTGRES_DB
 		jwtSecret,
 		opts.ProjectName, opts.ProjectName, opts.ProjectName, // MINIO_BUCKET + MAIL_FROM + TOTP_ISSUER
 		pulsePassword, sentinelPassword, sentinelSecretKey,
+		opts.Theme, // THEME — picked by --theme at scaffold time, defaults to atlas
 	)
 }
 
