@@ -143,18 +143,18 @@ tmp/
 }
 
 func airConfig() string {
-	// Always emit the binary with a .exe suffix and use air's modern
-	// entrypoint key. Windows requires the .exe to actually execute
-	// the binary (otherwise the OS pops a "what app should open this?"
-	// dialog). Linux + macOS don't care about the suffix — to them
-	// it's just part of the filename. One config, every platform.
+	// air v1.64+ deprecated `build.bin` in favour of `build.entrypoint`.
+	// Both name the BUILT binary that air execs after each rebuild —
+	// not the Go source directory. Always use a .exe suffix so Windows
+	// CreateProcess accepts the file (no "open with" dialog); Linux
+	// + macOS treat .exe as just part of the name. One config, every
+	// platform.
 	return `root = "."
 tmp_dir = "tmp"
 
 [build]
-  entrypoint = "./cmd/server"
-  bin = "./tmp/server.exe"
   cmd = "go build -o ./tmp/server.exe ./cmd/server"
+  entrypoint = "./tmp/server.exe"
   delay = 1000
   exclude_dir = ["tmp", "vendor", "node_modules"]
   exclude_regex = ["_test.go"]
