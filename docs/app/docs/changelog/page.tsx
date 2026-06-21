@@ -28,6 +28,39 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.13 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.13
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Root <code>.env</code> is now the single source of truth for THEME + SOCIAL_AUTH_ENABLED.</strong>{' '}
+                  Setting <code>SOCIAL_AUTH_ENABLED=false</code> in the
+                  monorepo&apos;s root <code>.env</code> didn&apos;t hide the
+                  Google / GitHub buttons even after a server restart — Next.js
+                  only auto-loads <code>.env</code> from its own package
+                  directory (<code>apps/admin/</code>, <code>apps/web/</code>),
+                  so <code>process.env.SOCIAL_AUTH_ENABLED</code> inside{' '}
+                  <code>next.config.ts</code> was <code>undefined</code> and
+                  the <code>|| &quot;true&quot;</code> fallback always won.
+                </p>
+                <p>
+                  Both scaffolded <code>next.config.ts</code> files now read
+                  the root <code>.env</code> directly via a tiny inline
+                  parser before the <code>env</code> block is evaluated. Shell
+                  env still wins (only unset keys are filled in), so CI / Docker
+                  overrides are unaffected. After upgrading, restart{' '}
+                  <code>pnpm dev</code> (Next.js reads env at boot, not on
+                  file-watch).
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.12 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
