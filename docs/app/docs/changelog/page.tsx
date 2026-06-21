@@ -28,6 +28,88 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.12 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.12
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>System Health / Security / Performance pages build clean.</strong>{' '}
+                  The scaffolded <code>/system/health</code>,{' '}
+                  <code>/system/security</code>, and <code>/system/performance</code>{' '}
+                  pages import five lucide icons (<code>CheckCircle</code>,{' '}
+                  <code>Server</code>, <code>HardDrive</code>, <code>Clock</code>,{' '}
+                  <code>Gauge</code>) that weren&apos;t re-exported from{' '}
+                  <code>apps/admin/lib/icons.ts</code>. A fresh{' '}
+                  <code>pnpm --filter ./apps/admin build</code> failed with{' '}
+                  <code>Export &lt;Name&gt; doesn&apos;t exist in target module</code>.
+                  Added the five names to both the <code>lucide-react</code>{' '}
+                  import block and the named re-export block. All 24 admin
+                  routes now prerender on a fresh scaffold.
+                </p>
+              </div>
+            </div>
+
+            {/* v3.31.11 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.11
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>air entrypoint points at the built binary, not the source dir.</strong>{' '}
+                  v3.31.10 fixed the <code>.exe</code> extension but the
+                  scaffolded <code>.air.toml</code> still set{' '}
+                  <code>entrypoint = &quot;./cmd/server&quot;</code> — and{' '}
+                  <code>air</code> tries to exec the entrypoint as the binary,
+                  so Windows hit{' '}
+                  <code>CMD will not recognize non .exe file</code>. Per{' '}
+                  air&apos;s docs, <code>entrypoint</code> names the built
+                  binary (the same role <code>build.bin</code> plays). Fixed
+                  to <code>entrypoint = &quot;./tmp/server.exe&quot;</code>.
+                  Verified with a live <code>grit start server</code> in a
+                  fresh scaffold plus a <code>/api/health</code> curl
+                  returning the full database/redis/jobs/email shape.
+                </p>
+              </div>
+            </div>
+
+            {/* v3.31.10 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.10
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Scaffolded <code>.air.toml</code> uses an <code>.exe</code> binary on Windows.</strong>{' '}
+                  v3.31.9 shipped <code>grit start</code> with{' '}
+                  <code>air</code>-backed hot reload, but the generated{' '}
+                  <code>.air.toml</code> used{' '}
+                  <code>bin = &quot;./tmp/server&quot;</code>. Windows refuses
+                  to <code>CreateProcess</code> an extension-less file, so
+                  starting the dev loop popped a{' '}
+                  <em>&quot;Select an app to open &apos;server&apos;&quot;</em>{' '}
+                  dialog instead of running the API. Switched to{' '}
+                  <code>cmd = &quot;go build -o ./tmp/server.exe ./cmd/server&quot;</code>{' '}
+                  in the scaffolded template so Windows can execute the
+                  output directly.
+                </p>
+              </div>
+            </div>
+
             {/* v3.27.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
