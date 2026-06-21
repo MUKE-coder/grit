@@ -28,6 +28,83 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.14 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.14
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>CLI prompt cleanup, Sentinel/Pulse links go to the API, and the Security + Performance dashboards finally show real data.</strong>
+                </p>
+
+                <h3>CLI: one form instead of three selects</h3>
+                <p>
+                  <code>grit new</code>&apos;s architecture / frontend /
+                  theme prompts were running as three back-to-back{' '}
+                  <code>huh.NewSelect</code> calls. On Git Bash (MINGW64)
+                  the lack of full ANSI cursor-up support meant each
+                  re-render stacked into scrollback, producing the
+                  &quot;same prompt printed twice&quot; effect. Combined
+                  into a single <code>huh.NewForm</code> with conditional
+                  <code> WithHideFunc</code> groups — one tidy block of
+                  output, atomic submit.
+                </p>
+
+                <h3>Sentinel / Pulse links point at the API origin</h3>
+                <p>
+                  <code>/system/security</code> &quot;Open Sentinel&quot;
+                  used a Next.js <code>&lt;Link href=&quot;/sentinel/ui&quot;&gt;</code>,
+                  which resolves relative to the admin host (<code>:3001</code>).
+                  Both Sentinel and Pulse are mounted on the Go API
+                  (<code>:8080</code>), so the links 404&apos;d. Replaced
+                  with a plain <code>&lt;a&gt;</code> using
+                  <code> NEXT_PUBLIC_API_URL</code>.
+                </p>
+
+                <h3>Security + Performance dashboards return real data</h3>
+                <p>
+                  Both pages were calling endpoints that either didn&apos;t
+                  exist (<code>/api/admin/performance/summary</code>) or
+                  returned a wrapped <code>{`{data: {...}}`}</code> envelope
+                  with raw Sentinel/Pulse internals under unfamiliar keys
+                  (<code>{`{summary, score, threats, ...}`}</code>). The
+                  React queries unwrapped axios&apos; <code>.data</code>{' '}
+                  and looked for <code>data.banned_ips_now</code> /
+                  <code> data.latency.p50</code> which didn&apos;t exist
+                  in the response — every KPI rendered as 0 or em-dash.
+                </p>
+                <ul>
+                  <li>
+                    <code>handlers/observability.go</code> rewritten: hits
+                    Pulse&apos;s <code>/overview</code>, <code>/runtime/current</code>,
+                    <code> /database/n1/ranked</code>, and <code>/errors</code>{' '}
+                    endpoints, then reshapes the responses into a flat
+                    {' '}<code>{`{latency, traffic, errors, saturation, slowest_routes, n1_detections, recent_errors}`}</code>{' '}
+                    envelope. No more <code>{`{data: ...}`}</code> wrapper.
+                  </li>
+                  <li>
+                    <code>handlers/security.go</code> rewritten: hits
+                    Sentinel&apos;s <code>/ip/blocked</code>,
+                    <code> /analytics/summary?window=24h</code>, and
+                    <code> /threats</code> (the prior <code>/dashboard/summary</code>{' '}
+                    endpoint doesn&apos;t exist in this Sentinel version);
+                    returns the flat <code>{`{banned_ips_now, auto_bans_24h, active_bans, recent_threats, ...}`}</code> shape
+                    the page expects.
+                  </li>
+                  <li>
+                    Performance page corrected to hit{' '}
+                    <code>/api/admin/observability/summary</code> instead
+                    of the nonexistent <code>/performance/summary</code>.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.31.13 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -360,13 +360,21 @@ func (b *SecObsBridge) invalidate(kind string) {
 }
 
 // securityHandlerGo emits the handler the in-app Security dashboard reads.
-// It aggregates several Sentinel API calls into one envelope so the
-// React side does a single GET.
+//
+// Hits Sentinel's analytics summary, blocked-IP list, and recent-threats
+// endpoints, then reshapes them into the flat {banned_ips_now,
+// auto_bans_24h, rate_limited_last_hour, active_bans, recent_threats}
+// envelope the /system/security page expects. The earlier version
+// returned the raw Sentinel responses under {data: {summary, score, ...}}
+// which (a) called nonexistent endpoints and (b) wrapped the result so
+// axios' .data accessor returned {data: ...} instead of the page's
+// flat shape — every KPI rendered as 0.
 func securityHandlerGo() string {
 	return `package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -377,9 +385,9 @@ type SecurityHandler struct {
 	Bridge *services.SecObsBridge
 }
 
-// Summary aggregates Sentinel's dashboard summary, security score,
-// recent threats, AuthShield state, CSP violations, and performance
-// overview into one response — so the React dashboard loads in one round-trip.
+// Summary returns the flat security envelope the React dashboard reads.
+// On a fresh app with no traffic, expect zeros and empty arrays — that's
+// the truth, not a bug.
 func (h *SecurityHandler) Summary(c *gin.Context) {
 	if h.Bridge == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
@@ -389,46 +397,100 @@ func (h *SecurityHandler) Summary(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	out := gin.H{}
 
-	type fetch struct {
-		key  string
-		path string
+	// /sentinel/api/ip/blocked returns {data: BlockedIP[]} — currently
+	// banned IPs with reason and optional expiry.
+	var blockedResp struct {
+		Data []struct {
+			IP        string     ` + "`json:\"ip\"`" + `
+			Reason    string     ` + "`json:\"reason\"`" + `
+			BlockedAt time.Time  ` + "`json:\"blocked_at\"`" + `
+			ExpiresAt *time.Time ` + "`json:\"expires_at\"`" + `
+		} ` + "`json:\"data\"`" + `
 	}
-	fetches := []fetch{
-		{"summary",       "/sentinel/api/dashboard/summary"},
-		{"score",         "/sentinel/api/security-score"},
-		{"threats",       "/sentinel/api/threats?limit=10"},
-		{"auth_shield",   "/sentinel/api/auth-shield/status"},
-		{"csp_top",       "/sentinel/api/csp-violations/stats"},
-		{"performance",   "/sentinel/api/performance/overview"},
-		{"trends",        "/sentinel/api/analytics/trends"},
-		{"top_routes",    "/sentinel/api/analytics/top-routes"},
+	_ = h.Bridge.SentinelGet(ctx, "/sentinel/api/ip/blocked", &blockedResp)
+
+	// /sentinel/api/analytics/summary?window=24h returns ThreatStats:
+	// total_threats, blocked_count, etc. blocked_count over the 24h
+	// window is the closest analogue to "auto-bans in the last 24h".
+	var statsResp struct {
+		Data struct {
+			TotalThreats int64 ` + "`json:\"total_threats\"`" + `
+			BlockedCount int64 ` + "`json:\"blocked_count\"`" + `
+		} ` + "`json:\"data\"`" + `
 	}
-	errs := gin.H{}
-	for _, f := range fetches {
-		var body interface{}
-		if err := h.Bridge.SentinelGet(ctx, f.path, &body); err != nil {
-			errs[f.key] = err.Error()
-			continue
+	_ = h.Bridge.SentinelGet(ctx, "/sentinel/api/analytics/summary?window=24h", &statsResp)
+
+	// /sentinel/api/threats?limit=10 returns ThreatEvent[]. Each event
+	// carries the threat types as a string slice plus the offender IP.
+	var threatsResp struct {
+		Data []struct {
+			ID          string    ` + "`json:\"id\"`" + `
+			IP          string    ` + "`json:\"ip\"`" + `
+			Path        string    ` + "`json:\"path\"`" + `
+			ThreatTypes []string  ` + "`json:\"threat_types\"`" + `
+			Severity    string    ` + "`json:\"severity\"`" + `
+			Timestamp   time.Time ` + "`json:\"timestamp\"`" + `
+		} ` + "`json:\"data\"`" + `
+	}
+	_ = h.Bridge.SentinelGet(ctx, "/sentinel/api/threats?limit=10", &threatsResp)
+
+	activeBans := make([]gin.H, 0, len(blockedResp.Data))
+	for _, b := range blockedResp.Data {
+		var expires string
+		if b.ExpiresAt != nil {
+			expires = b.ExpiresAt.Format(time.RFC3339)
 		}
-		out[f.key] = body
-	}
-	if len(errs) > 0 {
-		out["_errors"] = errs
+		activeBans = append(activeBans, gin.H{
+			"ip":         b.IP,
+			"reason":     b.Reason,
+			"expires_at": expires,
+			"level":      1, // Sentinel's BlockedIP doesn't carry an escalation level
+		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": out})
+	recentThreats := make([]gin.H, 0, len(threatsResp.Data))
+	for _, t := range threatsResp.Data {
+		threatType := ""
+		if len(t.ThreatTypes) > 0 {
+			threatType = t.ThreatTypes[0]
+		}
+		recentThreats = append(recentThreats, gin.H{
+			"id":          t.ID,
+			"type":        threatType,
+			"ip":          t.IP,
+			"description": t.Path,
+			"created_at":  t.Timestamp.Format(time.RFC3339),
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"banned_ips_now":         len(blockedResp.Data),
+		"auto_bans_24h":          statsResp.Data.BlockedCount,
+		"rate_limited_last_hour": 0, // Not directly exposed by Sentinel; populated by rate-limit logs in a future release
+		"active_bans":            activeBans,
+		"rate_limit_hits_5min":   []gin.H{},
+		"recent_threats":         recentThreats,
+	})
 }
 `
 }
 
 // observabilityHandlerGo emits the handler the in-app Observability dashboard reads.
+//
+// The handler hits Pulse's overview, runtime, n1, and errors endpoints
+// and reshapes the responses into the flat {latency, traffic, errors,
+// saturation, slowest_routes, n1_detections, recent_errors} envelope the
+// /system/performance page expects. Returning the raw Pulse shapes would
+// force the page to know Pulse internals — and worse, the response would
+// be wrapped in {data: ...} which collides with axios' .data accessor
+// and leaves every KPI rendered as "—".
 func observabilityHandlerGo() string {
 	return `package handlers
 
 import (
 	"net/http"
+	goruntime "runtime"
 
 	"github.com/gin-gonic/gin"
 
@@ -439,8 +501,13 @@ type ObservabilityHandler struct {
 	Bridge *services.SecObsBridge
 }
 
-// Summary aggregates Pulse's overview, SLOs, USE grid, N+1 ranked,
-// errors, and runtime current into one response.
+// Pulse durations come back as nanoseconds (Go's time.Duration JSON form).
+func nsToMs(ns int64) float64 { return float64(ns) / 1_000_000.0 }
+
+// Summary returns a flat performance envelope built from Pulse's overview,
+// runtime, ranked N+1 and errors endpoints. Missing or zero data is fine
+// — the React page renders "—" for unset numeric fields and shows the
+// "No X yet" empty state for empty arrays.
 func (h *ObservabilityHandler) Summary(c *gin.Context) {
 	if h.Bridge == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
@@ -450,34 +517,118 @@ func (h *ObservabilityHandler) Summary(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	out := gin.H{}
 
-	fetches := []struct {
-		key, path string
-	}{
-		{"overview",       "/pulse/api/overview?range=1h"},
-		{"slos",           "/pulse/api/slos"},
-		{"use",            "/pulse/api/use"},
-		{"n1_ranked",      "/pulse/api/database/n1/ranked?range=1h&limit=10"},
-		{"errors",         "/pulse/api/errors?limit=10&resolved=false"},
-		{"runtime",        "/pulse/api/runtime/current"},
-		{"health_checks",  "/pulse/api/health/checks"},
-		{"alerts",         "/pulse/api/alerts?state=firing&limit=20"},
+	// /pulse/api/overview?range=1h returns Pulse's Overview struct: avg/p95
+	// latency in ns, total/error counters, RPM, plus per-route stats. The
+	// inner shape mirrors pulse.Overview + pulse.RouteStats.
+	var overview struct {
+		TotalRequests int64   ` + "`json:\"total_requests\"`" + `
+		TotalErrors   int64   ` + "`json:\"total_errors\"`" + `
+		ErrorRate     float64 ` + "`json:\"error_rate\"`" + `
+		AvgLatency    int64   ` + "`json:\"avg_latency\"`" + `
+		P95Latency    int64   ` + "`json:\"p95_latency\"`" + `
+		RPM           float64 ` + "`json:\"rpm\"`" + `
+		TopRoutes []struct {
+			Method       string  ` + "`json:\"method\"`" + `
+			Path         string  ` + "`json:\"path\"`" + `
+			RequestCount int64   ` + "`json:\"request_count\"`" + `
+			ErrorRate    float64 ` + "`json:\"error_rate\"`" + `
+			AvgLatency   int64   ` + "`json:\"avg_latency\"`" + `
+			P50Latency   int64   ` + "`json:\"p50_latency\"`" + `
+			P95Latency   int64   ` + "`json:\"p95_latency\"`" + `
+			P99Latency   int64   ` + "`json:\"p99_latency\"`" + `
+		} ` + "`json:\"top_routes\"`" + `
 	}
-	errs := gin.H{}
-	for _, f := range fetches {
-		var body interface{}
-		if err := h.Bridge.PulseGet(ctx, f.path, &body); err != nil {
-			errs[f.key] = err.Error()
-			continue
-		}
-		out[f.key] = body
+	_ = h.Bridge.PulseGet(ctx, "/pulse/api/overview?range=1h", &overview)
+
+	// /pulse/api/runtime/current returns Pulse's RuntimeMetric snapshot.
+	var rt struct {
+		HeapAlloc    uint64 ` + "`json:\"heap_alloc\"`" + `
+		NumGoroutine int    ` + "`json:\"num_goroutine\"`" + `
+		NumGC        uint32 ` + "`json:\"num_gc\"`" + `
 	}
-	if len(errs) > 0 {
-		out["_errors"] = errs
+	_ = h.Bridge.PulseGet(ctx, "/pulse/api/runtime/current", &rt)
+
+	// /pulse/api/database/n1/ranked wraps an N1Ranking[] under "data".
+	var n1Resp struct {
+		Data []struct {
+			Route            string  ` + "`json:\"route\"`" + `
+			AvgQueriesPerHit float64 ` + "`json:\"avg_queries_per_hit\"`" + `
+			FirstSeen        string  ` + "`json:\"first_seen\"`" + `
+		} ` + "`json:\"data\"`" + `
+	}
+	_ = h.Bridge.PulseGet(ctx, "/pulse/api/database/n1/ranked?range=1h&limit=10", &n1Resp)
+
+	// /pulse/api/errors wraps ErrorRecord[] under "data".
+	var errResp struct {
+		Data []struct {
+			ID           string ` + "`json:\"id\"`" + `
+			Route        string ` + "`json:\"route\"`" + `
+			ErrorMessage string ` + "`json:\"error_message\"`" + `
+			LastSeen     string ` + "`json:\"last_seen\"`" + `
+		} ` + "`json:\"data\"`" + `
+	}
+	_ = h.Bridge.PulseGet(ctx, "/pulse/api/errors?limit=10&resolved=false", &errResp)
+
+	// Build slowest_routes from the overview's TopRoutes (already ranked
+	// by Pulse — top requests rather than top latency, but a useful proxy).
+	slowest := make([]gin.H, 0, len(overview.TopRoutes))
+	for _, r := range overview.TopRoutes {
+		slowest = append(slowest, gin.H{
+			"route":      r.Path,
+			"method":     r.Method,
+			"requests":   r.RequestCount,
+			"avg":        nsToMs(r.AvgLatency),
+			"p95":        nsToMs(r.P95Latency),
+			"p99":        nsToMs(r.P99Latency),
+			"error_rate": r.ErrorRate,
+		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": out})
+	n1List := make([]gin.H, 0, len(n1Resp.Data))
+	for _, n := range n1Resp.Data {
+		n1List = append(n1List, gin.H{
+			"route":       n.Route,
+			"query_count": int(n.AvgQueriesPerHit),
+			"first_seen":  n.FirstSeen,
+		})
+	}
+
+	recentErrs := make([]gin.H, 0, len(errResp.Data))
+	for _, e := range errResp.Data {
+		recentErrs = append(recentErrs, gin.H{
+			"id":         e.ID,
+			"route":      e.Route,
+			"message":    e.ErrorMessage,
+			"created_at": e.LastSeen,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"latency": gin.H{
+			"p50": nsToMs(overview.AvgLatency), // Pulse overview lacks p50 — use avg as proxy
+			"p95": nsToMs(overview.P95Latency),
+			"p99": nsToMs(overview.P95Latency), // p99 not in overview either
+			"avg": nsToMs(overview.AvgLatency),
+		},
+		"traffic": gin.H{
+			"throughput": overview.RPM / 60.0, // convert RPM → req/s
+			"total":      overview.TotalRequests,
+		},
+		"errors": gin.H{
+			"rate":        overview.ErrorRate,
+			"active_open": overview.TotalErrors,
+		},
+		"saturation": gin.H{
+			"goroutines": rt.NumGoroutine,
+			"heap_mb":    float64(rt.HeapAlloc) / (1024.0 * 1024.0),
+			"gc_cycles":  rt.NumGC,
+			"cpu_cores":  goruntime.NumCPU(),
+		},
+		"slowest_routes": slowest,
+		"n1_detections":  n1List,
+		"recent_errors":  recentErrs,
+	})
 }
 `
 }

@@ -264,7 +264,6 @@ function HealthCard({ card }: { card: Card }) {
 func adminSecurityPageV2() string {
 	return `"use client";
 
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { SkeletonCards } from "@/components/ui/Skeleton";
@@ -272,6 +271,11 @@ import { apiClient } from "@/lib/api-client";
 import {
   Shield, AlertTriangle, AlertCircle, ExternalLink, Activity as ActivityIcon, Clock,
 } from "@/lib/icons";
+
+// The Sentinel UI is mounted on the Go API, not on this admin host. Use
+// the API base so "Open Sentinel" works whether the admin is on :3001
+// in dev or a different origin in prod.
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 interface SecuritySummary {
   banned_ips_now: number;
@@ -302,15 +306,15 @@ export default function SecurityPage() {
         title="Security"
         subtitle="IP bans, rate-limit pressure, recent threats — powered by Sentinel."
         actions={
-          <Link
-            href="/sentinel/ui"
+          <a
+            href={` + "`${API_URL}/sentinel/ui`" + `}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-border bg-bg-elevated px-3 py-2 text-sm font-medium text-foreground hover:bg-bg-hover"
           >
             <ExternalLink className="h-4 w-4" />
             Open Sentinel
-          </Link>
+          </a>
         }
       />
 
@@ -478,7 +482,6 @@ function Section({ title, icon, children }: { title: string; icon: React.ReactNo
 func adminPerformancePageV2() string {
 	return `"use client";
 
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { SkeletonCards } from "@/components/ui/Skeleton";
@@ -487,6 +490,11 @@ import {
   TrendingUp, AlertCircle, ExternalLink, Activity as ActivityIcon,
   Cpu, Database, Gauge,
 } from "@/lib/icons";
+
+// The Pulse UI is mounted on the Go API, not on this admin host. Use the
+// API base so "Open Pulse" works whether the admin is on :3001 in dev or
+// a different origin in prod.
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 interface PerformanceSummary {
   latency?: { p50: number; p95: number; p99: number; avg: number };
@@ -503,7 +511,7 @@ export default function PerformancePage() {
     queryKey: ["performance", "summary"],
     queryFn: async () => {
       try {
-        const { data } = await apiClient.get<PerformanceSummary>("/api/admin/performance/summary");
+        const { data } = await apiClient.get<PerformanceSummary>("/api/admin/observability/summary");
         return data;
       } catch {
         return {};
@@ -518,15 +526,15 @@ export default function PerformancePage() {
         title="Performance"
         subtitle="Four SRE golden signals + route, query, and error detail — powered by Pulse."
         actions={
-          <Link
-            href="/pulse/ui"
+          <a
+            href={` + "`${API_URL}/pulse/ui`" + `}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-border bg-bg-elevated px-3 py-2 text-sm font-medium text-foreground hover:bg-bg-hover"
           >
             <ExternalLink className="h-4 w-4" />
             Open Pulse
-          </Link>
+          </a>
         }
       />
 
