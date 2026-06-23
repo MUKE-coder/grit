@@ -79,6 +79,16 @@ func Sync() error {
 		fmt.Println("  No models found to sync (User is skipped).")
 	} else {
 		fmt.Printf("\n  ✅ Synced %d model(s) to TypeScript + Zod\n\n", synced)
+		// grit sync covers TS + Zod. The admin resource definitions in
+		// apps/admin/resources/<plural>.ts are written ONCE by
+		// `grit generate` and never re-touched — so a field added to a
+		// model later won't show up in the admin form or table until you
+		// add it manually. Surface this in the CLI output so it doesn't
+		// silently bite.
+		fmt.Println("  ℹ  Heads-up: grit sync does NOT update admin resource files.")
+		fmt.Println("     If you added/removed a field, also edit:")
+		fmt.Println("        apps/admin/resources/<plural>.ts    (columns + form)")
+		fmt.Println("     See /docs/concepts/code-generation#sync-limitations\n")
 	}
 
 	return nil

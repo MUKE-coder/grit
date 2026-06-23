@@ -1063,8 +1063,11 @@ func (g *Generator) buildTSInterfaceFields() string {
 func (g *Generator) writeResourceDefinition(names Names) error {
 	icon := guessLucideIcon(names.Pascal)
 
-	// Build column definitions
-	columns := fmt.Sprintf(`    { key: "id", label: "ID", sortable: true, width: "80px" },`)
+	// Build column definitions. ID is intentionally NOT listed by default —
+	// UUIDs are noisy and rarely something an operator scans by eye.
+	// Users who want it can add { key: "id", label: "ID", width: "80px" }
+	// to the columns array by hand.
+	columns := ""
 	for _, f := range g.Definition.Fields {
 		// belongs_to: show related model's name via dot notation
 		if f.IsBelongsTo() {

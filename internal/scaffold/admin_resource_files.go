@@ -7,6 +7,8 @@ func adminResourceTypes() string {
 	return `// Resource Definition Types — The foundation of Grit Admin Panel
 // Define resources with defineResource() and get full CRUD pages automatically.
 
+import type { ReactNode } from "react";
+
 // ─── Column Definitions ─────────────────────────────────────────────
 
 export type ColumnFormat = "text" | "badge" | "currency" | "date" | "relative" | "boolean" | "image" | "video" | "link" | "email" | "color" | "richtext" | "user";
@@ -26,6 +28,12 @@ export interface ColumnDefinition {
   badge?: BadgeConfig;
   currencyPrefix?: string;
   className?: string;
+  // v3.31.15: optional custom cell renderer. Lets you pack multiple
+  // fields into one column (Name + email stacked, price + currency
+  // badge, status pill + relative date) without dropping out to a
+  // hand-written page. Receives the full row so dotted keys aren't
+  // necessary. When defined, takes precedence over format / badge.
+  cell?: (row: Record<string, unknown>) => ReactNode;
 }
 
 // ─── Filter Definitions ─────────────────────────────────────────────

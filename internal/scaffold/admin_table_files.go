@@ -237,8 +237,15 @@ import { formatDate, formatRelative, formatCurrency } from "@/lib/formatters";
 export function renderCell(
   column: ColumnDefinition,
   value: unknown,
-  _row: Record<string, unknown>
+  row: Record<string, unknown>
 ): React.ReactNode {
+  // v3.31.15: custom cell renderer takes precedence — lets the resource
+  // definition pack multiple fields into one column without needing a
+  // hand-written page.tsx wrapper.
+  if (column.cell) {
+    return column.cell(row);
+  }
+
   if (value === null || value === undefined) {
     return <span className="text-text-muted">—</span>;
   }
@@ -283,7 +290,7 @@ export function renderCell(
       // v3.31.5: packed avatar + name + email cell. Pulls the related
       // fields off the row so a single column shows everything you'd
       // otherwise spread across 3-4 columns.
-      content = <UserCellInline row={_row} />;
+      content = <UserCellInline row={row} />;
       break;
     default:
       content = <span>{String(value)}</span>;

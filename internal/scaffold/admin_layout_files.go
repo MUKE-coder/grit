@@ -287,6 +287,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useMe } from "@/hooks/use-auth";
 import { CollapsibleSidebar } from "@/components/chrome/CollapsibleSidebar";
+import { SessionWatchdog } from "@/components/chrome/SessionWatchdog";
 import { Menu } from "@/lib/icons";
 
 // v3.29: navbar is gone — pages now drop a <PageHeader> at the top of
@@ -303,11 +304,17 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     if (stored === "true") setSidebarCollapsed(true);
   }, []);
 
+  // v3.31.15: redirect on BOTH isError (network/server down) AND
+  // user === null (401 from /api/auth/me). The previous version
+  // only handled isError and returned null on missing user, which
+  // rendered a blank white page when the server was restarted
+  // mid-session.
   useEffect(() => {
-    if (isError) {
-      router.push("/login");
+    if (isLoading) return;
+    if (isError || user === null) {
+      router.replace("/login");
     }
-  }, [isError, router]);
+  }, [isError, user, isLoading, router]);
 
   // Redirect USER role to profile page
   useEffect(() => {
@@ -330,10 +337,21 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) return null;
+  // While the redirect effect fires, render the same spinner so we
+  // never flash a blank white page.
+  if (!user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
+      {/* v3.31.15: warns and refreshes the session before silent expiry. */}
+      <SessionWatchdog />
+
       <CollapsibleSidebar
         user={user}
         collapsed={sidebarCollapsed}

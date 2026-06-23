@@ -6176,10 +6176,27 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 				// XFF entirely (the safe default). Operators behind a known
 				// reverse proxy should populate via SENTINEL_TRUSTED_PROXIES.
 				TrustedProxies:        cfg.SentinelTrustedProxies,
-				// v2.0 body-inspection cap; rejects bodies larger than
-				// MaxBodyBytes outright so attackers can't pad past it.
-				MaxBodyBytes:          64 * 1024,
+				// 1 MB cap covers richtext admin payloads — Tiptap blog
+				// bodies with embedded inline images comfortably exceed
+				// the prior 64 KB ceiling. Bump higher if your content
+				// embeds large base64 images.
+				MaxBodyBytes:          1 * 1024 * 1024,
 				RejectOversizedBody:   true,
+				// Authenticated admin write endpoints handle their own
+				// HTML/richtext payloads via Tiptap. The WAF's XSS detection
+				// otherwise flags every <p>/<strong>/<img> tag in a blog
+				// body as a payload. These routes still pass through auth
+				// + RBAC + binding validation; WAF is just stepped aside
+				// for their bodies.
+				ExcludeRoutes: []string{
+					"/api/blogs",
+					"/api/blogs/:id",
+					"/api/posts",
+					"/api/posts/:id",
+					"/api/articles",
+					"/api/articles/:id",
+					"/api/uploads",
+				},
 			},
 			RateLimit: sentinel.RateLimitConfig{
 				Enabled: !isDev,

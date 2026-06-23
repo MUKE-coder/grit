@@ -18,10 +18,11 @@ package scaffold
 func adminThemedLoginPage() string {
 	return `"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "@/lib/icons";
-import { useLogin } from "@/hooks/use-auth";
+import { useLogin, useMe } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LoginSchema, type LoginInput } from "@repo/shared/schemas";
@@ -35,9 +36,19 @@ const inputErr = inputBase + " border-red-400 focus:border-red-500 focus:ring-re
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const { mutate: login, isPending, error: serverError } = useLogin();
+  const { data: existingUser, isLoading: meLoading } = useMe();
+  const router = useRouter();
   const { register, handleSubmit, formState: { errors } } = useForm<LoginInput>({
     resolver: zodResolver(LoginSchema),
   });
+
+  // v3.31.15: if the session cookie is still valid, don't show the
+  // login form — bounce straight to the dashboard.
+  useEffect(() => {
+    if (!meLoading && existingUser) {
+      router.replace(existingUser.role === "USER" ? "/profile" : "/dashboard");
+    }
+  }, [meLoading, existingUser, router]);
 
   const onSubmit = (data: LoginInput) => login(data);
 

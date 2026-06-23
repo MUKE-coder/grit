@@ -105,6 +105,120 @@ export default function ChangelogPage() {
               </div>
             </div>
 
+            {/* v3.31.15 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.15
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Auth UX overhaul + admin polish from a real
+                  app-building session.</strong> Seven concrete fixes
+                  driven by feedback while building a contact-app on the
+                  prior release.
+                </p>
+
+                <h3>Framework fixes</h3>
+                <ul>
+                  <li>
+                    <strong>Protected admin routes no longer flash a
+                    blank white page</strong> when the session expires
+                    or the API restarts. The admin layout now redirects
+                    to <code>/login</code> on both network errors AND
+                    null user (401), and shows a spinner while the
+                    redirect fires. (<code>internal/scaffold/admin_layout_files.go</code>)
+                  </li>
+                  <li>
+                    <strong>Login page bounces to /dashboard</strong>{' '}
+                    when the session cookie is still valid — no more
+                    seeing the login form while you&apos;re already
+                    signed in.
+                  </li>
+                  <li>
+                    <strong>New SessionWatchdog component</strong>{' '}
+                    surfaces a modal at 14:30 of idle time with a 30s
+                    countdown — &quot;Stay signed in&quot; refreshes
+                    via <code>/api/auth/refresh</code>, &quot;Sign
+                    out&quot; or timeout calls{' '}
+                    <code>useLogout()</code>. Configurable via{' '}
+                    <code>NEXT_PUBLIC_SESSION_IDLE_MS</code> and{' '}
+                    <code>NEXT_PUBLIC_SESSION_COUNTDOWN_MS</code>.
+                  </li>
+                  <li>
+                    <strong>Sentinel WAF no longer blocks richtext
+                    admin POSTs.</strong> The 64 KB body cap is now
+                    1 MB (richtext + embedded inline images need it),
+                    and admin write endpoints with HTML payloads
+                    (<code>/api/blogs</code>, <code>/api/posts</code>,{' '}
+                    <code>/api/articles</code>, <code>/api/uploads</code>)
+                    are listed under{' '}
+                    <code>ExcludeRoutes</code> so the WAF&apos;s XSS
+                    detection stops flagging every{' '}
+                    <code>&lt;p&gt;</code> tag.
+                  </li>
+                  <li>
+                    <strong>Generated resource tables drop the ID
+                    column by default.</strong> UUIDs are noisy and
+                    rarely scanned by eye — operators who need it can
+                    add it back manually.
+                  </li>
+                  <li>
+                    <strong>
+                      ColumnDefinition gains an optional{' '}
+                      <code>cell?: (row) =&gt; ReactNode</code>{' '}
+                      renderer
+                    </strong>{' '}
+                    — pack multiple fields into one column (name +
+                    email stacked, price + currency badge, status pill
+                    + relative date) without dropping out to a
+                    hand-written page.tsx. Takes precedence over{' '}
+                    <code>format</code> and <code>badge</code> when
+                    set.
+                  </li>
+                  <li>
+                    <strong>grit sync prints a heads-up</strong> that
+                    it does NOT update the admin resource definition,
+                    pointing operators at{' '}
+                    <code>apps/admin/resources/&lt;plural&gt;.ts</code>{' '}
+                    when a new model field doesn&apos;t show up in the
+                    admin form.
+                  </li>
+                </ul>
+
+                <h3>Chapter 4 — 4 new lessons</h3>
+                <p>
+                  Chapter 4 now has <strong>11 lessons</strong> (up
+                  from 7) — fully covering the post-generation flow:
+                </p>
+                <ul>
+                  <li>
+                    <strong>grit remove resource</strong> — the
+                    rollback half of the lifecycle.
+                  </li>
+                  <li>
+                    <strong>Customising admin forms</strong> — all 17
+                    field types, helper text, multi-step flows.
+                  </li>
+                  <li>
+                    <strong>Customising admin tables</strong> — formats,
+                    badges, filters, and the new{' '}
+                    <code>cell()</code> render function with three
+                    column-packing recipes.
+                  </li>
+                  <li>
+                    <strong>Using the generated API from the web
+                    app</strong> — list, search, detail, create form
+                    with the auto-generated React Query hook and
+                    shared Zod schemas.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.31.13 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

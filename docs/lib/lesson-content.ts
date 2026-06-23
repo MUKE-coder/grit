@@ -39,6 +39,10 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
   'concepts/generators/relationships': () => import('@/content/lessons/concepts/generators/relationships'),
   'concepts/generators/short-vs-long-form': () => import('@/content/lessons/concepts/generators/short-vs-long-form'),
   'concepts/generators/grit-sync': () => import('@/content/lessons/concepts/generators/grit-sync'),
+  'concepts/generators/remove-resource': () => import('@/content/lessons/concepts/generators/remove-resource'),
+  'concepts/generators/customising-forms': () => import('@/content/lessons/concepts/generators/customising-forms'),
+  'concepts/generators/customising-tables': () => import('@/content/lessons/concepts/generators/customising-tables'),
+  'concepts/generators/using-api-from-web': () => import('@/content/lessons/concepts/generators/using-api-from-web'),
 
   'concepts/frameworks-patterns/gin-basics': () => import('@/content/lessons/concepts/frameworks-patterns/gin-basics'),
   'concepts/frameworks-patterns/gorm-basics': () => import('@/content/lessons/concepts/frameworks-patterns/gorm-basics'),

@@ -245,6 +245,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "chrome", "UserMenu.tsx"):             adminUserMenuComponent(),
 		filepath.Join(adminRoot, "components", "chrome", "NotificationBell.tsx"):     adminNotificationBellComponent(),
 		filepath.Join(adminRoot, "components", "chrome", "CollapsibleSidebar.tsx"):   adminCollapsibleSidebarComponent(opts),
+		filepath.Join(adminRoot, "components", "chrome", "SessionWatchdog.tsx"):      adminSessionWatchdogComponent(),
 
 		// UI primitives (v3.29) — responsive form/table building blocks.
 		filepath.Join(adminRoot, "components", "ui", "ResponsiveSheet.tsx"):  adminResponsiveSheetComponent(),
