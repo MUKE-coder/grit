@@ -1140,18 +1140,36 @@ func (g *Generator) buildTSInterfaceFields() string {
 func (g *Generator) writeResourceDefinition(names Names) error {
 	icon := guessLucideIcon(names.Pascal)
 
+	// v3.31.19: column-pack heuristic. When a resource has both `name`
+	// and `email` (or both `first_name` and `last_name`), pack them
+	// into a single stacked column instead of two narrow ones. The
+	// helper component lives at apps/admin/components/tables/stacked-cell.tsx
+	// and is imported automatically when a pack fires.
+	packs, usesStackedCell := detectColumnPacks(g.Definition.Fields)
+
 	// Build column definitions. ID is intentionally NOT listed by default —
 	// UUIDs are noisy and rarely something an operator scans by eye.
 	// Users who want it can add { key: "id", label: "ID", width: "80px" }
 	// to the columns array by hand.
 	columns := ""
 	for _, f := range g.Definition.Fields {
+		colName := toSnakeCase(f.Name)
+
+		// Is this field part of a pack? Either emit the pack (when this
+		// field is the pack's primary key) or skip silently.
+		if pack, ok := packs[colName]; ok {
+			if pack.primary == colName {
+				columns += "\n      " + pack.line
+			}
+			continue
+		}
+
 		// belongs_to: show related model's name via dot notation
 		if f.IsBelongsTo() {
 			baseName := strings.TrimSuffix(f.Name, "_id")
 			assocSnake := toSnakeCase(baseName)
 			colLabel := strings.Join(splitPascal(toPascalCase(baseName)), " ")
-			columns += fmt.Sprintf("\n    { key: \"%s.name\", label: \"%s\" },", assocSnake, colLabel)
+			columns += fmt.Sprintf("\n      { key: \"%s.name\", label: \"%s\" },", assocSnake, colLabel)
 			continue
 		}
 		// many_to_many: skip from table columns (arrays are noisy)
@@ -1159,7 +1177,6 @@ func (g *Generator) writeResourceDefinition(names Names) error {
 			continue
 		}
 
-		colName := toSnakeCase(f.Name)
 		colLabel := strings.Join(splitPascal(toPascalCase(f.Name)), " ")
 		sortable := f.IsSortable()
 		searchable := f.IsSearchable()
@@ -1179,10 +1196,10 @@ func (g *Generator) writeResourceDefinition(names Names) error {
 			parts = append(parts, fmt.Sprintf(`format: "%s"`, format))
 		}
 
-		columns += "\n    { " + strings.Join(parts, ", ") + " },"
+		columns += "\n      { " + strings.Join(parts, ", ") + " },"
 	}
 	columns += fmt.Sprintf(`
-    { key: "created_at", label: "Created", sortable: true, format: "relative" },`)
+      { key: "created_at", label: "Created", sortable: true, format: "relative" },`)
 
 	// Build form field definitions (skip slug — auto-generated, not editable)
 	formFields := ""
@@ -1242,7 +1259,15 @@ func (g *Generator) writeResourceDefinition(names Names) error {
 		}
 	}
 
-	content := fmt.Sprintf(`import { defineResource } from "@/lib/resource";
+	// v3.31.19: conditionally pull in the StackedCell helper. Only
+	// emitted when the column-pack heuristic actually fires — keeps
+	// resources without a pack from carrying a dead import.
+	stackedCellImport := ""
+	if usesStackedCell {
+		stackedCellImport = "\nimport { StackedCell } from \"@/components/tables/stacked-cell\";"
+	}
+
+	content := fmt.Sprintf(`import { defineResource } from "@/lib/resource";%s
 
 export const %sResource = defineResource({
   name: "%s",
@@ -1280,6 +1305,7 @@ export const %sResource = defineResource({
   },
 });
 `,
+		stackedCellImport,
 		names.Camel,
 		names.Pascal,
 		names.PluralKebab,

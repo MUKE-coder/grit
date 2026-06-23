@@ -291,6 +291,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "tables", "data-table.tsx"):       adminDataTable(),
 		filepath.Join(adminRoot, "components", "tables", "column-header.tsx"):    adminColumnHeader(),
 		filepath.Join(adminRoot, "components", "tables", "cell-renderers.tsx"):   adminCellRenderers(),
+		filepath.Join(adminRoot, "components", "tables", "stacked-cell.tsx"):     adminStackedCell(),
 		filepath.Join(adminRoot, "components", "tables", "table-filters.tsx"):    adminTableFilters(),
 		filepath.Join(adminRoot, "components", "tables", "table-toolbar.tsx"):    adminTableToolbar(),
 		filepath.Join(adminRoot, "components", "tables", "table-pagination.tsx"): adminTablePagination(),

@@ -105,6 +105,82 @@ export default function ChangelogPage() {
               </div>
             </div>
 
+            {/* v3.31.19 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.19
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Column-pack auto-detection.</strong>{' '}
+                  Phase 1.4 of <code>PLAN_FORMS_AND_SHARING.md</code>.
+                </p>
+
+                <p>
+                  Generate a resource with both <code>name</code> and{' '}
+                  <code>email</code> (or both <code>first_name</code>{' '}
+                  and <code>last_name</code>) and the table now ships
+                  with those fields packed into a single stacked
+                  column — name on top, email muted below. No
+                  hand-written <code>cell:</code> callback needed.
+                </p>
+
+                <h3>How it works</h3>
+                <ul>
+                  <li>
+                    New helper:{' '}
+                    <code>apps/admin/components/tables/stacked-cell.tsx</code>.
+                    Exports a <code>StackedCell({`{ top, bottom }`})</code>{' '}
+                    function returning two-line JSX. Called as a
+                    function (not JSX syntax) so resource files stay{' '}
+                    <code>.ts</code>.
+                  </li>
+                  <li>
+                    Generator now runs a pack-detector over the
+                    resource&apos;s field list. When a pattern matches,
+                    the absorbed fields are silently skipped and the
+                    packed line is emitted in their primary&apos;s
+                    slot.
+                  </li>
+                  <li>
+                    Import of <code>StackedCell</code> is conditional —
+                    resources without a pack stay clean.
+                  </li>
+                </ul>
+
+                <h3>Patterns recognised today</h3>
+                <ul>
+                  <li>
+                    <code>name + email</code> → &quot;Contact&quot;
+                    column
+                  </li>
+                  <li>
+                    <code>first_name + last_name</code> →
+                    &quot;Name&quot; column
+                  </li>
+                </ul>
+                <p>
+                  Both are easy to extend in{' '}
+                  <code>internal/generate/column_packs.go</code>. Money
+                  + currency badge, status + relative date, and a few
+                  others are roadmap.
+                </p>
+
+                <h3>Existing resources</h3>
+                <p>
+                  Pre-v3.31.19 resources don&apos;t auto-pack. Either
+                  add the pack by hand (the customising-tables lesson
+                  has the recipe), or wait for{' '}
+                  <code>grit pack table &lt;Resource&gt;</code> in a
+                  future release.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.18 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

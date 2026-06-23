@@ -228,6 +228,53 @@ export function ColumnHeader({ column, sortBy, sortOrder, onSort }: ColumnHeader
 `
 }
 
+// adminStackedCell — helper used by packed-column resource definitions.
+//
+// Returns a small two-line cell (top: primary text, bottom: muted
+// secondary). Called as a plain function from .ts resource files so we
+// don't have to force every generated resource file to .tsx just to
+// embed a tiny stacked layout. React happily renders the JSX a
+// function-component returns whether you call it as JSX or as a
+// function — and because there are no hooks here, the direct-call
+// pattern is safe.
+//
+// Used by the v3.31.19 column-pack heuristic in generate/templates.go
+// whenever a resource has both `name` and `email` (or both `first_name`
+// and `last_name`).
+func adminStackedCell() string {
+	return `import type { ReactNode } from "react";
+
+interface StackedCellProps {
+  top: string;
+  bottom?: string;
+  topClassName?: string;
+  bottomClassName?: string;
+}
+
+// Renders a two-line cell: bold primary text on top, muted secondary
+// below. Designed to be called directly from a resource definition's
+// cell: callback — no JSX needed at the call site, so resource files
+// stay .ts instead of being forced to .tsx.
+export function StackedCell({
+  top,
+  bottom,
+  topClassName,
+  bottomClassName,
+}: StackedCellProps): ReactNode {
+  return (
+    <div className="flex flex-col">
+      <span className={topClassName ?? "font-medium text-foreground"}>{top}</span>
+      {bottom && (
+        <span className={bottomClassName ?? "text-xs text-text-muted"}>
+          {bottom}
+        </span>
+      )}
+    </div>
+  );
+}
+`
+}
+
 // adminCellRenderers returns the cell renderer functions.
 func adminCellRenderers() string {
 	return `import type { ColumnDefinition } from "@/lib/resource";

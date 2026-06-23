@@ -131,7 +131,79 @@ export default function Lesson() {
 }`}
       />
 
-      <h2>Recipe 4 — pack multiple fields into one column</h2>
+      <h2>Auto-packed columns (v3.31.19+)</h2>
+      <p>
+        Starting in v3.31.19, the generator detects two common pack
+        patterns and emits a stacked column automatically. Generate a
+        resource with both <code>name</code> and <code>email</code> and
+        you&apos;ll get a single <strong>Contact</strong> column showing
+        name on top and email below — no manual <code>cell:</code>{' '}
+        callback needed.
+      </p>
+
+      <CodeBlock
+        terminal
+        code={`grit generate resource Customer \\
+  --fields "name:string,email:string:unique,phone:string,company:string"`}
+      />
+
+      <p>The generated <code>resources/customers.ts</code> contains:</p>
+
+      <CodeBlock
+        language="ts"
+        filename="apps/admin/resources/customers.ts (excerpt)"
+        code={`import { defineResource } from "@/lib/resource";
+import { StackedCell } from "@/components/tables/stacked-cell";
+
+columns: [
+  // grit:cols:auto-start
+  // Packed automatically: name + email → single Contact column.
+  { key: "name", label: "Contact", sortable: true, searchable: true,
+    cell: (row) => StackedCell({ top: String(row.name ?? ""), bottom: String(row.email ?? "") }) },
+  { key: "phone", label: "Phone", sortable: true, searchable: true },
+  { key: "company", label: "Company", sortable: true, searchable: true },
+  // grit:cols:auto-end
+],`}
+      />
+
+      <h3>Patterns the generator recognises</h3>
+      <div className="overflow-x-auto my-5">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border/40">
+              <th className="text-left px-3 py-2 font-medium">Fields detected</th>
+              <th className="text-left px-3 py-2 font-medium">Packed column</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/20">
+            <tr>
+              <td className="px-3 py-2 font-mono text-[12px]">name + email</td>
+              <td className="px-3 py-2 text-[12px]">"Contact" — name top, email muted below</td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2 font-mono text-[12px]">first_name + last_name</td>
+              <td className="px-3 py-2 text-[12px]">"Name" — concatenated full name</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <TipBox tone="info">
+        The <code>StackedCell</code> helper is just a function — calling
+        <code> StackedCell({`{ top, bottom }`})</code> returns the
+        rendered JSX. That&apos;s why this works from a <code>.ts</code>{' '}
+        file without forcing <code>.tsx</code>. Use the helper for any
+        custom pack you write by hand too.
+      </TipBox>
+
+      <p>
+        Resources scaffolded before v3.31.19 don&apos;t auto-pack —
+        either add the pack manually following Recipe 4 below, or wait
+        for the <code>grit pack table &lt;Resource&gt;</code> CLI
+        command (roadmap).
+      </p>
+
+      <h2>Recipe 4 — pack multiple fields into one column (manual)</h2>
       <p>
         The big one. Sometimes &quot;Name&quot; really means
         &quot;Name + email stacked&quot;. Sometimes price + currency
