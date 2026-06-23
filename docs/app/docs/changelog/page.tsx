@@ -105,6 +105,84 @@ export default function ChangelogPage() {
               </div>
             </div>
 
+            {/* v3.31.17 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.17
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Form render modes — sheet / modal / page.</strong>{' '}
+                  Phase 1.2 of <code>PLAN_FORMS_AND_SHARING.md</code>.
+                </p>
+
+                <p>
+                  The <code>formView</code> field on{' '}
+                  <code>defineResource</code> now accepts{' '}
+                  <code>"sheet"</code> as an explicit value, and{' '}
+                  <code>"modal"</code> renders as a proper centered
+                  dialog instead of a sheet. Defaults are unchanged —
+                  resources without an explicit <code>formView</code>{' '}
+                  still get the long-form-friendly drawer.
+                </p>
+
+                <h3>The three rendering choices</h3>
+                <ul>
+                  <li>
+                    <strong><code>"sheet"</code></strong> (default) —
+                    right drawer on desktop, bottom sheet on mobile.
+                    Best for long forms and multi-line fields.
+                  </li>
+                  <li>
+                    <strong><code>"modal"</code></strong> — centered
+                    dialog over a backdrop. Best for short focused
+                    forms (1–6 fields).
+                  </li>
+                  <li>
+                    <strong><code>"page"</code></strong> — dedicated
+                    route via <code>?action=create|edit</code>. Best
+                    for very long forms or anything that needs
+                    shareable URLs.
+                  </li>
+                </ul>
+
+                <h3>What shipped</h3>
+                <ul>
+                  <li>
+                    New <code>FormSheet</code> component
+                    (apps/admin/components/forms/form-sheet.tsx) — the
+                    long-form-friendly drawer, formerly the
+                    implementation of FormModal.
+                  </li>
+                  <li>
+                    <code>FormModal</code> rewritten as a proper
+                    centered dialog (max-w-md, backdrop blur, padding).
+                  </li>
+                  <li>
+                    <code>ResourcePage</code> dispatcher picks the
+                    right component based on <code>resource.formView</code>.
+                  </li>
+                  <li>
+                    <code>ResourceDefinition</code> type union expanded
+                    to include <code>"sheet"</code>.
+                  </li>
+                </ul>
+
+                <h3>Migrating</h3>
+                <p>
+                  If you previously set <code>formView: "modal"</code>{' '}
+                  explicitly and want the old sheet behavior, change
+                  it to <code>"sheet"</code>. Resources that left{' '}
+                  <code>formView</code> undefined stay on the sheet —
+                  no migration needed.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.16 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

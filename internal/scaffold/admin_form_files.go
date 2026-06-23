@@ -323,7 +323,14 @@ export function buildDefaults(
 `
 }
 
-// adminFormModal returns the form modal dialog.
+// adminFormModal returns the centered-dialog form modal.
+//
+// v3.31.17: this used to render as a right-side sheet — that behavior
+// lives on under the new <FormSheet> component (formView: "sheet").
+// FormModal is now what its name implies: a centered Dialog. Pick
+// formView: "sheet" (the default) for the long-form-friendly drawer,
+// "modal" for a focused short-form-friendly dialog, or "page" for a
+// dedicated route.
 func adminFormModal() string {
 	return `"use client";
 
@@ -355,9 +362,78 @@ export function FormModal({ resource, item, onClose }: FormModalProps) {
   };
 
   return (
+    // Centered dialog — best for short forms (1-6 fields). Long forms
+    // are better off using formView: "sheet" or "page" instead.
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-bg-secondary shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <h2 className="text-lg font-semibold text-foreground">
+            {isEdit ? "Edit" : "Create"} {resource.label?.singular ?? resource.name}
+          </h2>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1 text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          <FormBuilder
+            form={resource.form}
+            defaultValues={isEdit ? (item as Record<string, unknown>) : undefined}
+            onSubmit={handleSubmit}
+            onCancel={onClose}
+            isSubmitting={isCreating || isUpdating}
+            submitLabel={isEdit ? "Update" : "Create"}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+`
+}
+
+// adminFormSheet returns the right-drawer / bottom-sheet form (the
+// long-form-friendly variant that was the prior default behavior of
+// FormModal). New code reaches this via formView: "sheet" or by leaving
+// formView undefined.
+func adminFormSheet() string {
+	return `"use client";
+
+import type { ResourceDefinition } from "@/lib/resource";
+import { FormBuilder } from "./form-builder";
+import { useCreateResource, useUpdateResource } from "@/hooks/use-resource";
+import { X } from "@/lib/icons";
+
+interface FormSheetProps {
+  resource: ResourceDefinition;
+  item: Record<string, unknown> | null;
+  onClose: () => void;
+}
+
+export function FormSheet({ resource, item, onClose }: FormSheetProps) {
+  const isEdit = item !== null;
+  const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint);
+  const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint);
+
+  const handleSubmit = (data: Record<string, unknown>) => {
+    if (isEdit) {
+      update(
+        { id: String(item.id), body: data },
+        { onSuccess: () => onClose() }
+      );
+    } else {
+      create(data, { onSuccess: () => onClose() });
+    }
+  };
+
+  return (
     // Walkie-Check style: bottom sheet on mobile, right drawer on desktop.
-    // The old centered dialog cropped long forms and didn't match the rest
-    // of the app's sheet-style modals (e.g. the support New Ticket form).
+    // Good for long forms — uses full screen height and accommodates more
+    // fields than a centered modal can without scrolling.
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-stretch md:justify-end">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-h-[90vh] overflow-y-auto rounded-t-2xl border border-border bg-bg-secondary shadow-2xl md:max-h-none md:h-full md:max-w-lg md:rounded-none md:rounded-l-2xl">

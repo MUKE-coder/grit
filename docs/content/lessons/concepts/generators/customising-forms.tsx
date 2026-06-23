@@ -39,6 +39,74 @@ export default function ContactsPage() {
         live. Edit it freely — nothing else regenerates over it.
       </p>
 
+      <h2>Picking how the form opens — <code>formView</code></h2>
+      <p>
+        As of <strong>v3.31.17</strong>, every resource has three ways
+        to present its Create / Edit form. Pick the one that fits the
+        shape of your data:
+      </p>
+
+      <div className="overflow-x-auto my-5">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border/40">
+              <th className="text-left px-3 py-2 font-medium"><code>formView</code></th>
+              <th className="text-left px-3 py-2 font-medium">Renders as</th>
+              <th className="text-left px-3 py-2 font-medium">Best for</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/20">
+            <tr>
+              <td className="px-3 py-2 font-mono text-[12px]">"sheet" (default)</td>
+              <td className="px-3 py-2 text-[12px]">Right drawer on desktop, bottom sheet on mobile</td>
+              <td className="px-3 py-2 text-[12px]">Long forms, lots of fields, multi-line textareas</td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2 font-mono text-[12px]">"modal"</td>
+              <td className="px-3 py-2 text-[12px]">Centered dialog over a backdrop</td>
+              <td className="px-3 py-2 text-[12px]">Short forms (1-6 fields), focused single-task flows</td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2 font-mono text-[12px]">"page"</td>
+              <td className="px-3 py-2 text-[12px]">Dedicated route, full page</td>
+              <td className="px-3 py-2 text-[12px]">Very long forms, anything that needs URL state or shareable links</td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2 font-mono text-[12px]">"modal-steps"</td>
+              <td className="px-3 py-2 text-[12px]">Sheet with step navigation</td>
+              <td className="px-3 py-2 text-[12px]">Wizard inside a sheet</td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2 font-mono text-[12px]">"page-steps"</td>
+              <td className="px-3 py-2 text-[12px]">Full-page wizard</td>
+              <td className="px-3 py-2 text-[12px]">Multi-step flows you want to bookmark mid-way</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <CodeBlock
+        language="ts"
+        filename="apps/admin/resources/contacts.ts (excerpt)"
+        code={`export const contactResource = defineResource({
+  name: "Contact",
+  slug: "contacts",
+  // ...
+  formView: "modal",       // ← centered dialog (was "sheet" by default)
+  table:    { /* ... */ },
+  form:     { /* ... */ },
+});`}
+      />
+
+      <TipBox tone="info">
+        <strong>Migrating from v3.31.16:</strong> the old{' '}
+        <code>"modal"</code> value rendered as a sheet. If you had{' '}
+        <code>formView: "modal"</code> set explicitly and want the
+        original behavior, switch to <code>"sheet"</code>. Resources
+        without <code>formView</code> still default to sheet — nothing
+        breaks on its own.
+      </TipBox>
+
       <h2>Anatomy of a form field</h2>
 
       <CodeBlock

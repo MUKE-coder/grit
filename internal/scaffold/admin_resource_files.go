@@ -140,7 +140,17 @@ export interface ResourceDefinition {
   endpoint: string;
   icon: string;
   label?: { singular: string; plural: string };
-  formView?: "modal" | "page" | "modal-steps" | "page-steps";
+  // How the Create / Edit form is presented:
+  //   "sheet"        — right-drawer on desktop, bottom-sheet on mobile (default)
+  //   "modal"        — centered dialog, best for short forms (1-6 fields)
+  //   "page"         — a dedicated route at /resources/<slug>?action=create|edit
+  //   "modal-steps"  — sheet/drawer with multi-step wizard
+  //   "page-steps"   — dedicated page with multi-step wizard
+  // Leave undefined to inherit the "sheet" default. (Pre-v3.31.17 the
+  // bare "modal" value also rendered as a sheet — now "modal" is a
+  // proper centered dialog. Switch to "sheet" if you preferred the
+  // old behavior.)
+  formView?: "sheet" | "modal" | "page" | "modal-steps" | "page-steps";
   table: TableDefinition;
   form: FormDefinition;
   dashboard?: DashboardDefinition;
@@ -414,6 +424,9 @@ import { TableFilters } from "@/components/tables/table-filters";
 // would otherwise inflate the initial page bundle for every admin resource.
 const FormModal = dynamic(() =>
   import("@/components/forms/form-modal").then((m) => m.FormModal)
+);
+const FormSheet = dynamic(() =>
+  import("@/components/forms/form-sheet").then((m) => m.FormSheet)
 );
 const FormPage = dynamic(() =>
   import("@/components/forms/form-page").then((m) => m.FormPage)
@@ -690,8 +703,15 @@ export function ResourcePage({ resource }: ResourcePageProps) {
             item={editingItem}
             onClose={handleFormClose}
           />
-        ) : (
+        ) : resource.formView === "modal" ? (
           <FormModal
+            resource={resource}
+            item={editingItem}
+            onClose={handleFormClose}
+          />
+        ) : (
+          // Default + explicit "sheet" — right drawer / bottom sheet.
+          <FormSheet
             resource={resource}
             item={editingItem}
             onClose={handleFormClose}
