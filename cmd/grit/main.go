@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.31.21"
+var version = "3.31.22"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -396,7 +396,42 @@ func addCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(addRoleCmd())
+	cmd.AddCommand(addWebAuthCmd())
 
+	return cmd
+}
+
+// addWebAuthCmd — v3.31.22+ Phase 4 of PLAN_FORMS_AND_SHARING.
+// Drops two files into apps/web/ that close the "how do I protect a
+// customer-facing page" gap:
+//   - middleware.ts          — SSR cookie check, redirects to /login
+//   - components/ProtectedWebRoute.tsx — client wrapper using useMe()
+// Idempotent: pre-existing files are skipped with a notice.
+func addWebAuthCmd() *cobra.Command {
+	var force bool
+	cmd := &cobra.Command{
+		Use:   "web-auth",
+		Short: "Add page protection helpers to apps/web/",
+		Long: "Scaffolds apps/web/middleware.ts (SSR cookie redirect) and\n" +
+			"apps/web/components/ProtectedWebRoute.tsx (client guard).\n" +
+			"Existing files are left alone unless --force is passed.\n\n" +
+			"After running, declare which paths are protected in middleware.ts\n" +
+			"by editing the matcher, or wrap a page with <ProtectedWebRoute>.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+
+			root, err := scaffold.FindProjectRoot()
+			if err != nil {
+				return err
+			}
+
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			purple.Println("\n  Adding web-auth helpers to apps/web/")
+
+			return scaffold.AddWebAuth(root, force)
+		},
+	}
+	cmd.Flags().BoolVar(&force, "force", false, "Overwrite middleware.ts / ProtectedWebRoute.tsx if they already exist")
 	return cmd
 }
 

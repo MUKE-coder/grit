@@ -105,6 +105,101 @@ export default function ChangelogPage() {
               </div>
             </div>
 
+            {/* v3.31.22 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.22
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>grit add web-auth</strong> — Phase 4 of
+                  PLAN_FORMS_AND_SHARING.md, the final phase. With this
+                  release, every phase of the forms / sharing
+                  initiative has shipped (v3.31.16 → v3.31.22).
+                </p>
+
+                <p>
+                  The web app already shipped with login / register /
+                  forgot-password pages and a <code>useMe()</code>{' '}
+                  hook. What was missing: a way to mark <em>which</em>{' '}
+                  customer-facing pages require sign-in.{' '}
+                  <code>grit add web-auth</code> closes that gap with
+                  two complementary patterns.
+                </p>
+
+                <h3>Files scaffolded</h3>
+                <ul>
+                  <li>
+                    <strong><code>apps/web/middleware.ts</code></strong>{' '}
+                    — SSR cookie redirect. Runs on every Next.js
+                    request, checks for the{' '}
+                    <code>grit_access</code> HttpOnly cookie, redirects
+                    to <code>/login?next=…</code> when missing on a
+                    protected path. Also bounces already-signed-in
+                    visitors off the login/register pages so they
+                    don&apos;t see a form they don&apos;t need. Edit
+                    the <code>PROTECTED_PATHS</code> and{' '}
+                    <code>AUTH_PATHS</code> arrays to customise.
+                  </li>
+                  <li>
+                    <strong>
+                      <code>apps/web/components/ProtectedWebRoute.tsx</code>
+                    </strong>{' '}
+                    — client-side wrapper. Wraps a page with{' '}
+                    <code>&lt;ProtectedWebRoute&gt;{`{children}`}
+                    &lt;/ProtectedWebRoute&gt;</code> to enforce auth
+                    in cases where middleware can&apos;t help — e.g.
+                    role-gated content (the cookie doesn&apos;t carry
+                    the role; <code>useMe()</code> returns the full
+                    user). Supports an optional{' '}
+                    <code>roles</code> prop.
+                  </li>
+                </ul>
+
+                <h3>The two patterns</h3>
+                <ul>
+                  <li>
+                    <strong>Middleware (SSR)</strong> — fast, no
+                    network round-trip per request, no flash of
+                    unauthorized content. Use for "is the visitor
+                    signed in?" pages: account dashboards, checkout,
+                    member-only content.
+                  </li>
+                  <li>
+                    <strong>ProtectedWebRoute (client)</strong> —
+                    makes a real <code>/api/auth/me</code> probe.
+                    Catches expired-but-present cookies and supports
+                    role checks. Use it when middleware isn&apos;t
+                    enough.
+                  </li>
+                </ul>
+
+                <h3>Behavior</h3>
+                <p>
+                  Both files are idempotent — re-running{' '}
+                  <code>grit add web-auth</code> without{' '}
+                  <code>--force</code> skips existing files. The
+                  scaffold prints a clear notice so operators know
+                  what was created and what was preserved.
+                </p>
+
+                <h3>Phase recap (v3.31.16 → v3.31.22)</h3>
+                <ul>
+                  <li><strong>v3.31.16</strong> — sync auto-adds new model fields to admin resource files</li>
+                  <li><strong>v3.31.17</strong> — formView sheet / modal / page</li>
+                  <li><strong>v3.31.18</strong> — form groups + per-group PATCH save</li>
+                  <li><strong>v3.31.19</strong> — column-pack auto-detection (name + email)</li>
+                  <li><strong>v3.31.20</strong> — public form sharing (token + bcrypt password)</li>
+                  <li><strong>v3.31.21</strong> — grit expose form / grit expose table</li>
+                  <li><strong>v3.31.22</strong> — grit add web-auth (this release)</li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.31.21 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
