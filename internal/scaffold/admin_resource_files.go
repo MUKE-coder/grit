@@ -102,10 +102,31 @@ export interface StepDefinition {
   fields: string[];
 }
 
+// v3.31.18: groups unify the Create wizard and the Update cards view.
+// On Create (sheet/modal/page) they render as a stepped wizard with
+// Next/Back. On Update they render as per-group cards, each with its
+// own Save button that PATCHes only that group's fields — so editing
+// "Address" doesn't rewrite "Pricing".
+//
+// scope picks which contexts the group appears in:
+//   "create"  — wizard step on Create only; hidden on Update
+//   "update"  — card on Update only; hidden on Create
+//   "both"    — both contexts (default)
+//
+// Useful pattern: minimal Create with title + price (scope: "create"),
+// the rest deferred to Update cards (scope: "update").
+export interface GroupDefinition {
+  title: string;
+  description?: string;
+  fields: string[];
+  scope?: "create" | "update" | "both";
+}
+
 export interface FormDefinition {
   fields: FieldDefinition[];
   layout?: "single" | "two-column";
   steps?: StepDefinition[];
+  groups?: GroupDefinition[];
   fieldsPerStep?: number;
   stepVariant?: "horizontal" | "vertical";
 }
@@ -431,6 +452,9 @@ const FormSheet = dynamic(() =>
 const FormPage = dynamic(() =>
   import("@/components/forms/form-page").then((m) => m.FormPage)
 );
+const UpdateGroups = dynamic(() =>
+  import("@/components/forms/update-groups").then((m) => m.UpdateGroups)
+);
 const FormModalSteps = dynamic(() =>
   import("@/components/forms/form-modal-steps").then((m) => m.FormModalSteps)
 );
@@ -454,6 +478,17 @@ export function ResourcePage({ resource }: ResourcePageProps) {
   const isFormPage = resource.formView === "page" || resource.formView === "page-steps";
   const isSteps = resource.formView === "modal-steps" || resource.formView === "page-steps";
   const formAction = searchParams.get("action");
+
+  // v3.31.18: editing + form has groups → render per-group cards with
+  // PATCH-per-group saves. Falls back to the standard FormPage when no
+  // groups are defined.
+  const editId = searchParams.get("edit");
+  const hasUpdateGroups = (resource.form.groups ?? []).some(
+    (g) => !g.scope || g.scope === "update" || g.scope === "both"
+  );
+  if (isFormPage && formAction === "edit" && editId && hasUpdateGroups) {
+    return <UpdateGroups resource={resource} id={editId} />;
+  }
 
   // If formView is "page" or "page-steps" and we have an action param, show the form page
   if (isFormPage && (formAction === "create" || formAction === "edit")) {
@@ -873,6 +908,29 @@ export function useUpdateResource(endpoint: string) {
     onError: (err: unknown) => {
       const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
       toast.error(axiosErr?.response?.data?.error?.message || "Failed to update");
+    },
+  });
+}
+
+// v3.31.18: partial updates for the grouped update view. Each group's
+// Save button calls patch() with only the fields it owns. The Go-side
+// Patch handler whitelists writable columns and silently drops anything
+// else, so it's safe to send only a subset.
+export function usePatchResource(endpoint: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, body }: { id: string; body: Record<string, unknown> }) => {
+      const { data } = await apiClient.patch(` + "`" + `${endpoint}/${id}` + "`" + `, body);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [endpoint] });
+      toast.success("Saved");
+    },
+    onError: (err: unknown) => {
+      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
+      toast.error(axiosErr?.response?.data?.error?.message || "Failed to save");
     },
   });
 }

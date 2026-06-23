@@ -302,6 +302,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "forms", "form-modal.tsx"):        adminFormModal(),
 		filepath.Join(adminRoot, "components", "forms", "form-sheet.tsx"):        adminFormSheet(),
 		filepath.Join(adminRoot, "components", "forms", "form-page.tsx"):         adminFormPage(),
+		filepath.Join(adminRoot, "components", "forms", "update-groups.tsx"):     adminUpdateGroups(),
 		filepath.Join(adminRoot, "components", "forms", "form-stepper.tsx"):      adminFormStepper(),
 		filepath.Join(adminRoot, "components", "forms", "form-modal-steps.tsx"):  adminFormModalSteps(),
 		filepath.Join(adminRoot, "components", "forms", "form-page-steps.tsx"):   adminFormPageSteps(),

@@ -105,6 +105,94 @@ export default function ChangelogPage() {
               </div>
             </div>
 
+            {/* v3.31.18 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.18
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Form groups + per-group PATCH save.</strong>{' '}
+                  Phase 1.3 (partial) of PLAN_FORMS_AND_SHARING.md.
+                </p>
+
+                <p>
+                  Long Update views with 10+ fields used to save the
+                  whole record on every click — risky when two operators
+                  edit different sections at once, slow because the
+                  payload is large, and tedious because every field had
+                  to be re-validated.{' '}
+                  <strong>Define <code>form.groups</code></strong> and
+                  each group renders as its own Card on the Update page,
+                  with its own Save button that PATCHes only that
+                  group&apos;s fields.
+                </p>
+
+                <h3>What landed</h3>
+                <ul>
+                  <li>
+                    <strong>New <code>Patch</code> handler</strong> on
+                    every generated resource. Whitelists writable columns
+                    so the partial endpoint can&apos;t be tricked into
+                    setting <code>id</code> / <code>created_at</code> /
+                    <code>deleted_at</code> / <code>version</code> from
+                    the client.
+                  </li>
+                  <li>
+                    <strong>PATCH /api/&lt;plural&gt;/:id</strong> route
+                    registered alongside PUT for every resource (both
+                    standard and role-restricted route groups).
+                  </li>
+                  <li>
+                    <strong><code>usePatchResource(endpoint)</code></strong>{' '}
+                    hook in the admin&apos;s use-resource module.
+                    Same shape as <code>useUpdateResource</code> but
+                    calls PATCH and toasts &quot;Saved&quot; on
+                    success.
+                  </li>
+                  <li>
+                    <strong><code>GroupDefinition</code></strong> type
+                    on <code>FormDefinition.groups</code>. Each group is{' '}
+                    <code>{`{ title, description?, fields: string[], scope?: "create" | "update" | "both" }`}</code>.
+                  </li>
+                  <li>
+                    <strong><code>&lt;UpdateGroups&gt;</code></strong>{' '}
+                    component renders each <code>scope: "update"</code>{' '}
+                    or <code>"both"</code> group as a separate Card on
+                    the Update page (when{' '}
+                    <code>formView: "page"</code> +{' '}
+                    <code>form.groups</code> are defined).
+                  </li>
+                  <li>
+                    ResourcePage dispatcher: when editing + groups
+                    present, route to <code>UpdateGroups</code>;
+                    otherwise fall back to the single-form FormPage.
+                  </li>
+                </ul>
+
+                <h3>The "create-and-update" pattern</h3>
+                <p>
+                  Use <code>scope: "create"</code> on the minimal
+                  required fields and <code>scope: "update"</code> on
+                  the rest. Operators get a frictionless Create form;
+                  detailed editing happens on the Update page as cards
+                  with partial saves.
+                </p>
+
+                <h3>Deferred to v3.31.19</h3>
+                <p>
+                  Group rendering on the Create flow as a multi-step
+                  wizard. The existing <code>steps</code> field still
+                  works for that. v3.31.19 unifies them so groups drive
+                  both contexts.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.17 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

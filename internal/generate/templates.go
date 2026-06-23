@@ -345,6 +345,11 @@ func (g *Generator) writeGoHandler(names Names) error {
 	updateMap := ""
 	m2mCreateCode := ""
 	m2mUpdateCode := ""
+	// v3.31.18: writable-field whitelist for the new Patch handler.
+	// Built once at generation time so the Patch endpoint can refuse any
+	// JSON key that isn't a model field — preventing operators (or
+	// malicious clients) from setting id, created_at, deleted_at, etc.
+	patchAllowed := ""
 
 	// Collect preloads for relationships
 	var preloads []string
@@ -367,6 +372,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 
 			updateFields += fmt.Sprintf("\t\t%s *string `json:\"%s\"`\n", fkGoName, fkJson)
 			updateMap += fmt.Sprintf("	if req.%s != nil {\n\t\tupdates[\"%s\"] = *req.%s\n\t}\n", fkGoName, fkJson, fkGoName)
+			patchAllowed += fmt.Sprintf("\t\t\"%s\": true,\n", fkJson)
 			continue
 		}
 
@@ -385,6 +391,8 @@ func (g *Generator) writeGoHandler(names Names) error {
 			varName := toSnakeCase(f.Name)
 			m2mCreateCode += fmt.Sprintf("\n\tif len(req.%s) > 0 {\n\t\tvar %s []models.%s\n\t\th.DB.Find(&%s, req.%s)\n\t\th.DB.Model(&item).Association(\"%s\").Replace(%s)\n\t}\n", idsName, varName, relModel, varName, idsName, assocName, varName)
 			m2mUpdateCode += fmt.Sprintf("\n\tif req.%s != nil {\n\t\tvar %s []models.%s\n\t\tif len(*req.%s) > 0 {\n\t\t\th.DB.Find(&%s, *req.%s)\n\t\t}\n\t\th.DB.Model(&item).Association(\"%s\").Replace(%s)\n\t}\n", idsName, varName, relModel, idsName, varName, idsName, assocName, varName)
+			// m2m IDs aren't a plain column — the Patch handler skips
+			// them. (Set them via the full Update endpoint instead.)
 			continue
 		}
 
@@ -399,6 +407,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 
 		createFields += fmt.Sprintf("\t\t%s %s `json:\"%s\"%s`\n", goName, goType, jsonTag, bindingTag)
 		createAssignments += fmt.Sprintf("\t\t%s: req.%s,\n", goName, goName)
+		patchAllowed += fmt.Sprintf("\t\t\"%s\": true,\n", jsonTag)
 
 		// For update, use pointer types to detect "provided" vs "missing"
 		if goType == "bool" {
@@ -499,6 +508,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 		"{{CREATE_ASSIGN}}", createAssignments,
 		"{{UPDATE_FIELDS}}", updateFields,
 		"{{UPDATE_MAP}}", updateMap,
+		"{{PATCH_ALLOWED}}", patchAllowed,
 		"{{PRELOADS}}", preloadChain,
 		"{{M2M_CREATE}}", m2mCreateCode,
 		"{{M2M_UPDATE}}", m2mUpdateCode,
@@ -748,6 +758,73 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 		return
 	}
 {{M2M_UPDATE}}
+{{RELOAD}}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":    item,
+		"message": "{{Pascal}} updated successfully",
+	})
+}
+
+// Patch applies a partial update to a {{lower}}. Used by the admin's
+// grouped update view — each form group's Save button calls PATCH with
+// only the fields it owns, so editing "Address" doesn't rewrite
+// "Pricing". Refuses any key that isn't a writable model column.
+func (h *{{Pascal}}Handler) Patch(c *gin.Context) {
+	id := c.Param("id")
+
+	var item models.{{Pascal}}
+	if err := h.DB.First(&item, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": gin.H{
+				"code":    "NOT_FOUND",
+				"message": "{{Pascal}} not found",
+			},
+		})
+		return
+	}
+
+	var body map[string]interface{}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"error": gin.H{
+				"code":    "VALIDATION_ERROR",
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+
+	// Whitelist: only writable model columns may be patched. id,
+	// created_at, updated_at, deleted_at, version are owned by the
+	// framework and silently dropped here.
+	allowed := map[string]bool{
+{{PATCH_ALLOWED}}	}
+	updates := map[string]interface{}{}
+	for k, v := range body {
+		if allowed[k] {
+			updates[k] = v
+		}
+	}
+	if len(updates) == 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"error": gin.H{
+				"code":    "VALIDATION_ERROR",
+				"message": "No writable fields in request body",
+			},
+		})
+		return
+	}
+
+	if err := h.DB.Model(&item).Updates(updates).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "INTERNAL_ERROR",
+				"message": "Failed to patch {{lower}}",
+			},
+		})
+		return
+	}
 {{RELOAD}}
 
 	c.JSON(http.StatusOK, gin.H{

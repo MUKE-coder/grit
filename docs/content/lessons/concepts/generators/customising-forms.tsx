@@ -283,6 +283,95 @@ export default function ContactsPage() {
 }`}
       />
 
+      <h2>Form groups + per-group PATCH save (v3.31.18+)</h2>
+      <p>
+        Long Update views — a Product with 20+ fields, an Invoice with
+        nested billing/shipping/notes blocks — get tedious when every
+        Save rewrites the whole record. Define{' '}
+        <code>form.groups</code> instead and each group on the Update
+        page renders as its own Card with its own Save button. Each
+        Save calls <code>PATCH /api/&lt;plural&gt;/:id</code> with only
+        that group&apos;s fields.
+      </p>
+
+      <CodeBlock
+        language="ts"
+        filename="apps/admin/resources/products.ts"
+        code={`export const productResource = defineResource({
+  // ...
+  formView: "page",          // groups only render on page-view edits
+  form: {
+    fields: [/* the flat field list — still required */],
+    groups: [
+      {
+        title: "Basics",
+        description: "Name, price, and SKU. Required at create.",
+        fields: ["name", "sku", "price"],
+        scope: "both",        // shown in Create and Update
+      },
+      {
+        title: "Inventory",
+        fields: ["stock_quantity", "reorder_threshold"],
+        scope: "update",      // hidden on Create; cards-only on Update
+      },
+      {
+        title: "Marketing",
+        description: "SEO + listing copy. Edit after launch.",
+        fields: ["meta_title", "meta_description", "tags"],
+        scope: "update",
+      },
+    ],
+  },
+});`}
+      />
+
+      <p>
+        The flow:
+      </p>
+      <ul>
+        <li>
+          <strong>Create</strong> shows only the groups with{' '}
+          <code>scope: "both"</code> or <code>"create"</code>. Operators
+          enter the minimum required and click Create. The record is
+          saved with the standard <code>POST</code>.
+        </li>
+        <li>
+          <strong>Update</strong> (visit{' '}
+          <code>/resources/products?action=edit&edit=&lt;id&gt;</code>)
+          shows each <code>"both"</code> or <code>"update"</code> group
+          as a separate Card. Edit one section, click Save — only that
+          section&apos;s fields PATCH.
+        </li>
+      </ul>
+
+      <TipBox tone="success">
+        <strong>Why per-group PATCH?</strong> Saving "Marketing" while
+        another user is editing "Inventory" doesn&apos;t clobber their
+        in-flight changes. The Go-side <code>Patch</code> handler
+        whitelists writable columns and ignores anything else, so
+        you can&apos;t accidentally PATCH a UUID or timestamp from the
+        client.
+      </TipBox>
+
+      <h3>The "create-and-update" pattern</h3>
+      <p>
+        Pair <code>scope: "create"</code> with everything else as{' '}
+        <code>scope: "update"</code> to ship a frictionless Create flow
+        with detailed editing deferred:
+      </p>
+      <CodeBlock
+        language="ts"
+        code={`groups: [
+  // Create asks for just three things.
+  { title: "Quick start", fields: ["title", "price"], scope: "create" },
+
+  // Everything else lives on the Update page as cards.
+  { title: "Description", fields: ["description", "body"],         scope: "update" },
+  { title: "Media",       fields: ["cover", "gallery"],            scope: "update" },
+  { title: "SEO",         fields: ["meta_title", "meta_description"], scope: "update" },
+]`}
+      />
+
       <h2>Multi-step forms</h2>
       <p>
         Long forms (10+ fields) benefit from being split into steps. The
