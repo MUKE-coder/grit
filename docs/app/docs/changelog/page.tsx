@@ -105,6 +105,109 @@ export default function ChangelogPage() {
               </div>
             </div>
 
+            {/* v3.31.21 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.21
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>grit expose form / grit expose table</strong> — Phase 3 of PLAN_FORMS_AND_SHARING.md.
+                </p>
+
+                <p>
+                  Two new CLI commands that scaffold a Next.js page in{' '}
+                  <code>apps/web/</code> for an existing resource. The
+                  page consumes the auto-generated React Query hook
+                  directly, so you get list/create flows on a
+                  customer-facing site without re-implementing
+                  anything.
+                </p>
+
+                <h3>Commands</h3>
+                <pre className="overflow-x-auto rounded-lg bg-bg-elevated p-3 text-xs"><code>{`grit expose form Contact --to apps/web/app/contact-us/page.tsx
+grit expose table Contact --to apps/web/app/contacts/page.tsx`}</code></pre>
+
+                <ul>
+                  <li>
+                    Each command parses{' '}
+                    <code>apps/api/internal/models/&lt;snake&gt;.go</code>{' '}
+                    to determine the resource's primitive fields.
+                    Relationship pointers (<code>Group *Group</code> or{' '}
+                    <code>Group Group</code>) and slices
+                    (<code>Tags []Tag</code>) are filtered out — only
+                    fields that can render as one <code>&lt;input&gt;</code>{' '}
+                    or one table cell make it through.
+                  </li>
+                  <li>
+                    Both commands refuse to overwrite an existing file
+                    unless you pass <code>--force</code> — protects
+                    hand-customised pages from accidental loss.
+                  </li>
+                  <li>
+                    Generated pages are plain Tailwind (no admin
+                    chrome), suitable for embedding on a marketing
+                    site or a customer dashboard.
+                  </li>
+                </ul>
+
+                <h3>Supporting fixes</h3>
+                <ul>
+                  <li>
+                    <strong>Web hook imports</strong>: the generator
+                    now branches its <code>apiClient</code> import
+                    path by app — <code>@/lib/api-client</code> for
+                    admin, <code>@/lib/api</code> for web. Resolves
+                    a pre-existing "Cannot find module" error in
+                    web-side resource hooks.
+                  </li>
+                  <li>
+                    <strong>Scaffolded <code>apps/web/lib/api.ts</code></strong>{' '}
+                    now re-exports <code>apiClient = api</code> so
+                    generated hooks resolve symmetrically across both
+                    apps.
+                  </li>
+                  <li>
+                    <strong>Web package.json</strong> gains{' '}
+                    <code>@hookform/resolvers</code> as a dep (was
+                    only in admin before).
+                  </li>
+                  <li>
+                    <strong>ParseGoStructs</strong> exported from the{' '}
+                    <code>internal/generate</code> package for reuse
+                    by the new <code>internal/expose</code> package.
+                  </li>
+                </ul>
+
+                <h3>Known limitations</h3>
+                <ul>
+                  <li>
+                    Generated forms don't use the shared Zod schema for
+                    validation — the schema's camelCase field names
+                    don't match the API's snake_case JSON keys. Forms
+                    submit snake-case keys directly; server-side
+                    validation is the source of truth. Add client-side
+                    validation by hand if you need it.
+                  </li>
+                  <li>
+                    Forms have one field per primitive column. Custom
+                    widgets (rich text, image uploaders, relationship
+                    dropdowns) need manual additions after generation.
+                  </li>
+                  <li>
+                    <code>--public-share</code> / <code>--public</code>{' '}
+                    flags (post via the public form-share endpoint
+                    instead of via the auth'd hook) are still on the
+                    roadmap.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.31.20 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

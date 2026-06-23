@@ -989,9 +989,15 @@ func (g *Generator) writeTSTypes(names Names) error {
 }
 
 // writeReactQueryHooks creates React Query hooks for the resource.
+// v3.31.21: pick the right api-client path per app — apps/admin has
+// lib/api-client.ts; apps/web has lib/api.ts that re-exports apiClient.
 func (g *Generator) writeReactQueryHooks(names Names, app string) error {
+	apiImport := `import { apiClient } from "@/lib/api-client";`
+	if app == "web" {
+		apiImport = `import { apiClient } from "@/lib/api";`
+	}
 	content := fmt.Sprintf(`import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
+%s
 
 interface %s {
   id: string;
@@ -1088,6 +1094,7 @@ export function useDelete%s() {
   });
 }
 `,
+		apiImport,
 		names.Pascal,
 		g.buildTSInterfaceFields(),
 		names.PluralPascal, names.Pascal,

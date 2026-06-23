@@ -86,6 +86,7 @@ func webPackageJSON(opts Options) string {
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.49.0",
+    "@hookform/resolvers": "^3.3.0",
     "js-cookie": "^3.0.5",
     "tailwind-merge": "^2.2.0",
     "tailwindcss-animate": "^1.0.7"
@@ -1007,6 +1008,11 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// v3.31.21: alias kept so generated React Query hooks that import
+// { apiClient } from "@/lib/api" resolve symmetrically with apps/admin
+// (which exports the same name from its own api-client.ts).
+export const apiClient = api;
 `
 }
 

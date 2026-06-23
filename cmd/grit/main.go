@@ -19,6 +19,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/MUKE-coder/grit/v3/internal/deploy"
+	"github.com/MUKE-coder/grit/v3/internal/expose"
 	"github.com/MUKE-coder/grit/v3/internal/generate"
 	"github.com/MUKE-coder/grit/v3/internal/maintenance"
 	"github.com/MUKE-coder/grit/v3/internal/project"
@@ -28,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.31.20"
+var version = "3.31.21"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -43,6 +44,7 @@ func main() {
 	rootCmd.AddCommand(generateCmd())
 	rootCmd.AddCommand(removeCmd())
 	rootCmd.AddCommand(addCmd())
+	rootCmd.AddCommand(exposeCmd())
 	rootCmd.AddCommand(startCmd())
 	rootCmd.AddCommand(compileCmd())
 	rootCmd.AddCommand(studioCmd())
@@ -413,6 +415,112 @@ func addRoleCmd() *cobra.Command {
 			return scaffold.AddRole(args[0])
 		},
 	}
+}
+
+// exposeCmd is the v3.31.21+ parent for "scaffold a public-facing
+// Next.js page from an already-generated resource". Subcommands are
+// form (a Create-styled page) and table (a paginated list page).
+func exposeCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "expose",
+		Short: "Scaffold a web page that consumes an existing resource",
+		Long: "Generates a single Next.js page in apps/web/ that uses the resource's shared Zod schema + the\n" +
+			"generated React Query hook. Use to surface a Grit-managed resource on a public marketing page,\n" +
+			"a customer dashboard, or anywhere outside the admin panel — without re-implementing the form/table.",
+	}
+	cmd.AddCommand(exposeFormCmd())
+	cmd.AddCommand(exposeTableCmd())
+	return cmd
+}
+
+func exposeFormCmd() *cobra.Command {
+	var to string
+	var force bool
+	cmd := &cobra.Command{
+		Use:   "form <Resource>",
+		Short: "Scaffold a public form page for a resource",
+		Long: "Emits a Next.js page that renders one input per resource field and submits via\n" +
+			"useCreate<Resource>(). Validation is wired through the resource's shared Zod schema.\n\n" +
+			"Example:\n  grit expose form Contact --to apps/web/app/contact-us/page.tsx",
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+
+			root, err := scaffold.FindProjectRoot()
+			if err != nil {
+				return err
+			}
+
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			purple.Printf("\n  Exposing form for %s → %s\n\n", args[0], to)
+
+			if err := expose.Form(expose.Opts{Resource: args[0], To: to, Root: root, Force: force}); err != nil {
+				return err
+			}
+
+			green := color.New(color.FgHiGreen)
+			green.Printf("  ✓ Wrote %s\n\n", to)
+			fmt.Println("  Next steps:")
+			fmt.Println("    cd apps/web && pnpm dev")
+			fmt.Printf("    open http://localhost:3000/%s\n\n", deriveURLFromPath(to))
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&to, "to", "", "Destination path (e.g. apps/web/app/contact-us/page.tsx) — required")
+	cmd.Flags().BoolVar(&force, "force", false, "Overwrite the destination if it already exists")
+	_ = cmd.MarkFlagRequired("to")
+	return cmd
+}
+
+func exposeTableCmd() *cobra.Command {
+	var to string
+	var force bool
+	cmd := &cobra.Command{
+		Use:   "table <Resource>",
+		Short: "Scaffold a paginated list page for a resource",
+		Long: "Emits a Next.js page that renders a paginated, searchable list of records using\n" +
+			"use<Resources>(). Web-styled (plain Tailwind), not the heavy admin DataTable.\n\n" +
+			"Example:\n  grit expose table Contact --to apps/web/app/contacts/page.tsx",
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+
+			root, err := scaffold.FindProjectRoot()
+			if err != nil {
+				return err
+			}
+
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			purple.Printf("\n  Exposing table for %s → %s\n\n", args[0], to)
+
+			if err := expose.Table(expose.Opts{Resource: args[0], To: to, Root: root, Force: force}); err != nil {
+				return err
+			}
+
+			green := color.New(color.FgHiGreen)
+			green.Printf("  ✓ Wrote %s\n\n", to)
+			fmt.Println("  Next steps:")
+			fmt.Println("    cd apps/web && pnpm dev")
+			fmt.Printf("    open http://localhost:3000/%s\n\n", deriveURLFromPath(to))
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&to, "to", "", "Destination path (e.g. apps/web/app/contacts/page.tsx) — required")
+	cmd.Flags().BoolVar(&force, "force", false, "Overwrite the destination if it already exists")
+	_ = cmd.MarkFlagRequired("to")
+	return cmd
+}
+
+// deriveURLFromPath turns "apps/web/app/contact-us/page.tsx" into
+// "contact-us" so the success message prints a usable URL. Best-effort —
+// doesn't try to handle route groups or catch-all params.
+func deriveURLFromPath(p string) string {
+	p = strings.ReplaceAll(p, "\\", "/")
+	p = strings.TrimSuffix(p, "/page.tsx")
+	if i := strings.Index(p, "apps/web/app/"); i >= 0 {
+		p = p[i+len("apps/web/app/"):]
+	}
+	return strings.TrimPrefix(p, "/")
 }
 
 func generateResourceCmd() *cobra.Command {

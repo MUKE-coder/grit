@@ -130,6 +130,12 @@ type GoField struct {
 }
 
 // parseGoStructs parses all struct declarations from a Go file.
+// ParseGoStructs is the public entry point — needed by the
+// internal/expose package which scaffolds web pages from a Go model.
+func ParseGoStructs(filePath string) ([]GoStruct, error) {
+	return parseGoStructs(filePath)
+}
+
 func parseGoStructs(filePath string) ([]GoStruct, error) {
 	fset := token.NewFileSet()
 	node, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
