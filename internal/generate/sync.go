@@ -35,6 +35,8 @@ func Sync() error {
 	}
 
 	var synced int
+	var adminFieldsAdded int
+	var adminWarnings []string
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".go") {
 			continue
@@ -71,6 +73,20 @@ func Sync() error {
 			}
 			fmt.Printf("  ✓ packages/shared/schemas/%s.ts\n", kebab)
 
+			// v3.31.16: marker-based partial regen of the admin resource
+			// file. Adds any new model fields to the auto-section of
+			// columns + form; leaves customised entries alone.
+			added, warnings, syncErr := SyncAdminResource(root, s)
+			if syncErr != nil {
+				fmt.Printf("  ⚠ admin auto-add for %s: %v\n", s.Name, syncErr)
+			} else if added > 0 {
+				pluralKebab := strings.ReplaceAll(Pluralize(toSnakeCase(s.Name)), "_", "-")
+				fmt.Printf("  ✓ apps/admin/resources/%s.ts  (added %d field%s to columns + form)\n",
+					pluralKebab, added, plural(added))
+				adminFieldsAdded += added
+			}
+			adminWarnings = append(adminWarnings, warnings...)
+
 			synced++
 		}
 	}
@@ -78,20 +94,25 @@ func Sync() error {
 	if synced == 0 {
 		fmt.Println("  No models found to sync (User is skipped).")
 	} else {
-		fmt.Printf("\n  ✅ Synced %d model(s) to TypeScript + Zod\n\n", synced)
-		// grit sync covers TS + Zod. The admin resource definitions in
-		// apps/admin/resources/<plural>.ts are written ONCE by
-		// `grit generate` and never re-touched — so a field added to a
-		// model later won't show up in the admin form or table until you
-		// add it manually. Surface this in the CLI output so it doesn't
-		// silently bite.
-		fmt.Println("  ℹ  Heads-up: grit sync does NOT update admin resource files.")
-		fmt.Println("     If you added/removed a field, also edit:")
-		fmt.Println("        apps/admin/resources/<plural>.ts    (columns + form)")
-		fmt.Println("     See /docs/concepts/code-generation#sync-limitations\n")
+		fmt.Printf("\n  ✅ Synced %d model(s) to TypeScript + Zod\n", synced)
+		if adminFieldsAdded > 0 {
+			fmt.Printf("  ✅ Auto-added %d field%s to admin resource files\n",
+				adminFieldsAdded, plural(adminFieldsAdded))
+		}
+		for _, w := range adminWarnings {
+			fmt.Println(w)
+		}
+		fmt.Println()
 	}
 
 	return nil
+}
+
+func plural(n int) string {
+	if n == 1 {
+		return ""
+	}
+	return "s"
 }
 
 // GoStruct represents a parsed Go struct.

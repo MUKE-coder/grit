@@ -287,29 +287,77 @@ export default function ContactsPage() {
         list keeps working; only the Create flow changes.
       </p>
 
+      <h2>Sync auto-adds new fields (v3.31.16+)</h2>
+      <p>
+        Starting in v3.31.16, <code>grit sync</code> reaches into your
+        admin resource file and appends any model fields that aren&apos;t
+        represented yet. The magic happens between marker comments the
+        generator now emits:
+      </p>
+      <CodeBlock
+        language="ts"
+        filename="apps/admin/resources/contacts.ts"
+        code={`columns: [
+  // grit:cols:auto-start
+  { key: "name", label: "Name", sortable: true, searchable: true },
+  { key: "email", label: "Email", sortable: true, searchable: true },
+  // grit:cols:auto-end
+],
+form: {
+  fields: [
+    // grit:fields:auto-start
+    { key: "name", label: "Name", type: "text", required: true },
+    { key: "email", label: "Email", type: "text", required: true },
+    // grit:fields:auto-end
+  ],
+},`}
+      />
+      <p>
+        Add a <code>salutation</code> field to your Go model, run{' '}
+        <code>grit migrate</code>, then <code>grit sync</code>. The
+        new field appears in both the table columns and the form fields
+        with a sensible default type. Your customised entries — labels,
+        helper text, badges, custom cells — are never touched.
+      </p>
+
+      <TipBox tone="info">
+        <strong>Resources scaffolded before v3.31.16</strong> don&apos;t
+        have the marker comments. <code>grit sync</code> prints a
+        warning for those — either regenerate the resource file (loses
+        customisation) or hand-add the four marker lines once. After
+        that, sync will pick the file up automatically.
+      </TipBox>
+
+      <p>
+        Sync only adds; it never removes. If you delete a field from
+        the Go model, the admin entry stays put — you decide whether
+        to keep it as a derived field, move it elsewhere, or delete it
+        by hand.
+      </p>
+
       <KnowledgeCheck
-        question="You added a new column `salutation` to your Go Contact model and ran `grit migrate` + `grit sync`. The admin form still doesn't show the field. What happened?"
+        question="You added a `salutation` field to Contact in Go (post-v3.31.16) and ran `grit migrate` + `grit sync`. What appears in the admin?"
         choices={[
           {
-            label: 'grit sync should have added it — file a bug',
+            label: 'Nothing — you have to hand-edit resources/contacts.ts',
             feedback:
-              "Not a bug — by design. grit sync regenerates TS types + Zod schemas only. The admin resource definition (resources/contacts.ts) is yours to edit after generation; sync never touches it.",
+              "Pre-v3.31.16 that was true. From v3.31.16, sync walks the marker fence (// grit:cols:auto-end + // grit:fields:auto-end) and appends new fields automatically.",
           },
           {
-            label: 'Edit apps/admin/resources/contacts.ts by hand — add the field to columns and form',
+            label: 'A new column + form input for salutation, with type "text" inferred from the Go string type',
             correct: true,
             feedback:
-              "Right. The admin resource file is regenerated ONCE at generate time and never again. Open it, add { key: 'salutation', label: 'Salutation', type: 'text' } to form.fields and { key: 'salutation', label: 'Salutation' } to table.columns.",
+              "Right. The injection picks a sensible default type from the Go type (string → text, bool → toggle, int → number, time.Time → datetime). Customise the label or helper text afterward — sync won't overwrite your edits.",
           },
           {
-            label: 're-run grit generate resource Contact to overwrite the file',
+            label: 'A regenerated file that overwrites your customisations',
             feedback:
-              "That'd overwrite ALL your customisation, not just add the new field. And generate refuses to overwrite without a flag. Manual edit is the right path.",
+              "No — sync only inserts inside the marker fences and only when the field's `key:` isn't found anywhere in the file. Your customised entries are safe.",
           },
           {
-            label: 'Restart the dev server',
+            label: 'Just the TS type and Zod schema update; nothing in the admin file',
             feedback:
-              "Restart wouldn't help — the field literally doesn't exist in the resource definition. Add it first, then it shows up immediately via hot reload.",
+              "Pre-v3.31.16. Now the admin file is part of the sync target too.",
           },
         ]}
       />

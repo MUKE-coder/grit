@@ -1175,7 +1175,8 @@ export const %sResource = defineResource({
   label: { singular: "%s", plural: "%s" },
   table: {
     columns: [
-%s
+      // grit:cols:auto-start%s
+      // grit:cols:auto-end
     ],
     filters: [%s
     ],
@@ -1184,7 +1185,9 @@ export const %sResource = defineResource({
     pageSize: 20,
   },
   form: {
-    fields: [%s
+    fields: [
+      // grit:fields:auto-start%s
+      // grit:fields:auto-end
     ],
   },
   dashboard: {

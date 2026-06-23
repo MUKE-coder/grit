@@ -105,6 +105,91 @@ export default function ChangelogPage() {
               </div>
             </div>
 
+            {/* v3.31.16 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.16
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>grit sync now auto-adds new model fields to
+                  admin resource files.</strong> Phase 1.1 of the{' '}
+                  <code>PLAN_FORMS_AND_SHARING.md</code> roadmap.
+                </p>
+
+                <p>
+                  Add a column to a Go model, run{' '}
+                  <code>grit migrate</code> + <code>grit sync</code>,
+                  and the field now appears in{' '}
+                  <code>apps/admin/resources/&lt;plural&gt;.ts</code>{' '}
+                  as both a column and a form input — with a sensible
+                  default type inferred from the Go type. Customised
+                  entries (labels, helper text, badges, custom{' '}
+                  <code>cell</code> renderers) are never touched.
+                </p>
+
+                <h3>How it works</h3>
+                <p>
+                  The generator now emits marker comments around the
+                  auto-managed columns + form fields:
+                </p>
+                <pre className="overflow-x-auto rounded-lg bg-bg-elevated p-3 text-xs"><code>{`columns: [
+  // grit:cols:auto-start
+  { key: "name", ... },
+  // grit:cols:auto-end
+],
+form: {
+  fields: [
+    // grit:fields:auto-start
+    { key: "name", ... },
+    // grit:fields:auto-end
+  ],
+},`}</code></pre>
+                <p>
+                  Sync diffs Go model fields against the file. For each
+                  field with a <code>key:</code> not found anywhere in
+                  the file, it inserts a default entry above the{' '}
+                  <code>auto-end</code> marker. Sync is{' '}
+                  <strong>insert-only</strong> — it never modifies or
+                  removes existing entries.
+                </p>
+
+                <h3>Backward compatibility</h3>
+                <p>
+                  Resources scaffolded before v3.31.16 don&apos;t carry
+                  the marker comments. Sync prints a per-resource
+                  warning and skips them. To enable auto-add on an
+                  existing resource, hand-edit the file to wrap its
+                  columns array and form fields array with the four
+                  marker lines once. After that, future syncs pick the
+                  file up.
+                </p>
+
+                <h3>What&apos;s next (Phase 1 continued)</h3>
+                <p>
+                  v3.31.17+ ships the rest of Phase 1 per{' '}
+                  <code>PLAN_FORMS_AND_SHARING.md</code>:
+                </p>
+                <ul>
+                  <li>
+                    Form render mode (<code>sheet | modal | page</code>)
+                  </li>
+                  <li>
+                    Form groups (steps in create, cards in update) +
+                    PATCH endpoint for per-group saves
+                  </li>
+                  <li>
+                    Column-pack default heuristic +{' '}
+                    <code>grit pack table &lt;Resource&gt;</code>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.31.15 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -23,13 +23,28 @@ export default function Lesson() {
 
       <CodeBlock
         language="text"
-        code={`✓ Read 5 models from apps/api/internal/models/
-✓ Wrote packages/shared/src/types/user.ts
-✓ Wrote packages/shared/src/types/product.ts
-✓ Wrote packages/shared/src/types/index.ts
-✓ Wrote packages/shared/src/schemas/user.ts (Zod inferred from struct tags)
-✓ 5 types in sync.`}
+        code={`  Syncing Go types → TypeScript...
+
+  ✓ packages/shared/types/contact.ts
+  ✓ packages/shared/schemas/contact.ts
+  ✓ apps/admin/resources/contacts.ts  (added 1 field to columns + form)
+  ✓ packages/shared/types/group.ts
+  ✓ packages/shared/schemas/group.ts
+
+  ✅ Synced 2 model(s) to TypeScript + Zod
+  ✅ Auto-added 1 field to admin resource files`}
       />
+
+      <TipBox tone="success">
+        <strong>v3.31.16:</strong> sync now also walks{' '}
+        <code>apps/admin/resources/&lt;plural&gt;.ts</code> and
+        auto-appends any new model fields between the{' '}
+        <code>// grit:cols:auto-end</code> and{' '}
+        <code>// grit:fields:auto-end</code> markers. Customised
+        entries are never touched. Resources scaffolded before
+        v3.31.16 don&apos;t have the markers — sync prints a
+        per-resource warning telling you what to add.
+      </TipBox>
 
       <h2>Why it matters</h2>
       <p>
