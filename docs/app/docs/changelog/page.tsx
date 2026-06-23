@@ -105,6 +105,71 @@ export default function ChangelogPage() {
               </div>
             </div>
 
+            {/* v3.31.23 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.23
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Docs + tests follow-up to the
+                  PLAN_FORMS_AND_SHARING.md arc.</strong> Phases 2-4
+                  shipped without dedicated course lessons; this
+                  release closes that gap.
+                </p>
+
+                <h3>Three new course lessons</h3>
+                <p>
+                  Chapter 4 (&quot;Code Generation &amp; Type Sync&quot;)
+                  picks up a new module —{' '}
+                  <strong>Going public</strong> — with three lessons
+                  covering the post-resource lifecycle:
+                </p>
+                <ul>
+                  <li>
+                    <strong>grit expose form / table</strong> — when
+                    to use each, anatomy of the commands, field
+                    filtering, combining with form sharing.
+                  </li>
+                  <li>
+                    <strong>Public form sharing</strong> — the dispatch
+                    pattern, password gating, sharing the link,
+                    disabling and regenerating, what it can&apos;t
+                    do (yet).
+                  </li>
+                  <li>
+                    <strong>Protecting web pages</strong> — middleware
+                    vs ProtectedWebRoute, when each one fits, how
+                    they layer.
+                  </li>
+                </ul>
+
+                <h3>Unit tests for the expose package</h3>
+                <p>
+                  <code>internal/expose</code> now has 10 unit tests
+                  covering the security-critical field filter
+                  (autoFields drops framework columns, pointer + value
+                  associations, slice associations; keeps all 7
+                  primitive types), label generation (acronym
+                  handling), and the pluralisation helpers
+                  (pluralPascal, pluralKebab). Plus path validation
+                  for resolveTarget. All passing.
+                </p>
+
+                <h3>Course chapter 4 now has 13 lessons</h3>
+                <p>
+                  Up from 10 in the previous release. The chapter
+                  covers the full resource lifecycle from initial
+                  generation through customisation, sharing,
+                  exposure, and protection — end to end.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.22 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

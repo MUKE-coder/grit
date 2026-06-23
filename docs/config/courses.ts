@@ -505,6 +505,35 @@ const conceptsCourse: Course = {
             },
           ],
         },
+        {
+          title: 'Going public',
+          lessons: [
+            {
+              slug: 'grit-expose',
+              title: 'grit expose form / table — surfacing resources outside the admin',
+              tagline: 'One command per resource emits a Next.js page wired to the shared schema + React Query hook.',
+              minutes: 11,
+              difficulty: 'medium',
+              status: 'available',
+            },
+            {
+              slug: 'public-form-sharing',
+              title: 'Public form sharing — token-gated submissions',
+              tagline: 'Generate a shareable link for any resource. Optional bcrypt password. No new endpoints.',
+              minutes: 11,
+              difficulty: 'medium',
+              status: 'available',
+            },
+            {
+              slug: 'protecting-web-pages',
+              title: 'Protecting web pages — middleware + ProtectedWebRoute',
+              tagline: 'Two patterns, one command. SSR cookie gate for whole sections, client wrapper for role gates.',
+              minutes: 10,
+              difficulty: 'medium',
+              status: 'available',
+            },
+          ],
+        },
       ],
       assignment: {
         title: 'Generate Order + items',

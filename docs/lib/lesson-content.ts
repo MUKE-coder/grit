@@ -43,6 +43,9 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
   'concepts/generators/customising-forms': () => import('@/content/lessons/concepts/generators/customising-forms'),
   'concepts/generators/customising-tables': () => import('@/content/lessons/concepts/generators/customising-tables'),
   'concepts/generators/using-api-from-web': () => import('@/content/lessons/concepts/generators/using-api-from-web'),
+  'concepts/generators/grit-expose': () => import('@/content/lessons/concepts/generators/grit-expose'),
+  'concepts/generators/public-form-sharing': () => import('@/content/lessons/concepts/generators/public-form-sharing'),
+  'concepts/generators/protecting-web-pages': () => import('@/content/lessons/concepts/generators/protecting-web-pages'),
 
   'concepts/frameworks-patterns/gin-basics': () => import('@/content/lessons/concepts/frameworks-patterns/gin-basics'),
   'concepts/frameworks-patterns/gorm-basics': () => import('@/content/lessons/concepts/frameworks-patterns/gorm-basics'),
