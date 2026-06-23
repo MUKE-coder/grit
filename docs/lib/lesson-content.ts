@@ -35,6 +35,9 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
   'concepts/generators/what-is-a-resource': () => import('@/content/lessons/concepts/generators/what-is-a-resource'),
   'concepts/generators/grit-generate': () => import('@/content/lessons/concepts/generators/grit-generate'),
   'concepts/generators/what-got-generated': () => import('@/content/lessons/concepts/generators/what-got-generated'),
+  'concepts/generators/field-types': () => import('@/content/lessons/concepts/generators/field-types'),
+  'concepts/generators/relationships': () => import('@/content/lessons/concepts/generators/relationships'),
+  'concepts/generators/short-vs-long-form': () => import('@/content/lessons/concepts/generators/short-vs-long-form'),
   'concepts/generators/grit-sync': () => import('@/content/lessons/concepts/generators/grit-sync'),
 
   'concepts/frameworks-patterns/gin-basics': () => import('@/content/lessons/concepts/frameworks-patterns/gin-basics'),

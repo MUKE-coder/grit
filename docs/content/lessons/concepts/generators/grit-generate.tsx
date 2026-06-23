@@ -7,89 +7,273 @@ export default function Lesson() {
   return (
     <>
       <p>
-        Let&apos;s generate a Product resource. By the end of this lesson you
-        will have eight new files on disk, wired into routes, with a working
-        admin page.
+        Time to dissect the command, then run it. By the end of this
+        lesson you understand what every token in{' '}
+        <code>grit generate resource Contact --fields &quot;…&quot;</code>{' '}
+        means, you&apos;ve seen the full list of field types and
+        modifiers, and you have eight new files on disk for a Contact
+        resource with <code>name</code>, <code>email</code>, and{' '}
+        <code>phone</code>.
       </p>
 
-      <h2>The command</h2>
-      <CodeBlock
-        terminal
-        code={`grit generate resource Product \\
-  --field "name:string:required" \\
-  --field "price:decimal:required" \\
-  --field "description:text" \\
-  --field "stockQuantity:int:default=0"`}
-      />
-
-      <p>Run that from the project root. You&apos;ll see:</p>
+      <h2>Anatomy of the command</h2>
+      <p>
+        Every Grit resource you ever generate has the same shape. Once
+        you read this once it stops being magic:
+      </p>
 
       <CodeBlock
         language="text"
-        code={`✓ Wrote apps/api/internal/models/product.go
-✓ Wrote apps/api/internal/services/product.go
-✓ Wrote apps/api/internal/handlers/product.go
+        code={`grit generate resource  Contact   --fields  "name:string,email:string:unique,phone:string:optional"
+└──┬───┘ └──┬───┘ └──┬───┘  └──┬──┘   └──┬───┘  └──────────────────────┬──────────────────────────────┘
+   │        │        │         │         │                              │
+   │        │        │         │         │                              └── Field spec — comma-separated list. Each
+   │        │        │         │         │                                  field is "name:type" plus optional modifiers.
+   │        │        │         │         │
+   │        │        │         │         └── Flag. Tells the CLI you're passing fields inline.
+   │        │        │         │             Alternatives: --from contact.yaml  |  -i (interactive prompts)
+   │        │        │         │
+   │        │        │         └── Resource name. PascalCase, singular. Grit pluralises for the URL ("contacts")
+   │        │        │             and snake_cases for the file ("contact.go"). Don't write "contacts" or "contact_model".
+   │        │        │
+   │        │        └── Subcommand. "resource" is the full vertical slice (model + service + handler + routes +
+   │        │            schema + type + hook + admin page). There's also "grit generate scaffold" / "grit generate ai"
+   │        │            but resource is the workhorse you'll use every day.
+   │        │
+   │        └── Verb. "generate" writes new files. (Compare with "grit sync" — that one reads existing files.)
+   │
+   └── The CLI binary. Installed once via go install; lives on your PATH.`}
+      />
+
+      <p>
+        Each field spec inside the quotes has its own anatomy:
+      </p>
+
+      <CodeBlock
+        language="text"
+        code={`email : string : unique
+└─┬─┘   └──┬─┘   └─┬──┘
+  │        │       │
+  │        │       └── Modifier(s). Zero or more, colon-separated. Valid: required, optional, unique.
+  │        │           (string fields are required by default — add :optional to make them nullable.)
+  │        │
+  │        └── Type. One of: string, text, richtext, int, uint, float, bool, datetime, date,
+  │            slug, belongs_to, many_to_many, string_array.
+  │
+  └── Field name. camelCase or snake_case in input — Grit normalises to PascalCase in Go
+      and snake_case in JSON ("Email" in the struct, "email" in the JSON body).`}
+      />
+
+      <h2>Run it</h2>
+      <p>
+        The simplest possible useful resource: a Contact with a name,
+        email, and phone. Run this from the project root:
+      </p>
+
+      <CodeBlock
+        terminal
+        code={`grit generate resource Contact \\
+  --fields "name:string,email:string:unique,phone:string:optional"`}
+      />
+
+      <p>You&apos;ll see:</p>
+
+      <CodeBlock
+        language="text"
+        code={`✓ Wrote apps/api/internal/models/contact.go
+✓ Wrote apps/api/internal/services/contact.go
+✓ Wrote apps/api/internal/handlers/contact.go
 ✓ Injected routes into apps/api/internal/routes/routes.go
-✓ Wrote packages/shared/src/schemas/product.ts
-✓ Wrote packages/shared/src/types/product.ts
-✓ Wrote apps/web/hooks/use-products.ts
-✓ Wrote apps/admin/app/resources/products/page.tsx
+✓ Wrote packages/shared/src/schemas/contact.ts
+✓ Wrote packages/shared/src/types/contact.ts
+✓ Wrote apps/web/hooks/use-contacts.ts
+✓ Wrote apps/admin/app/resources/contacts/page.tsx
 
 Next steps:
-    grit migrate    # adds the products table
+    grit migrate    # adds the contacts table
     grit start      # restart dev servers to pick up the new code`}
       />
 
-      <h2>Field types</h2>
-      <p>The generator understands a small but solid set:</p>
+      <TipBox tone="warning">
+        The generator <strong>writes Go code, not database schema</strong>.
+        Until you run <code>grit migrate</code>, the model exists in code
+        but the <code>contacts</code> table doesn&apos;t. Hitting{' '}
+        <code>GET /api/contacts</code> before migration returns a 500
+        with <code>relation &quot;contacts&quot; does not exist</code>.
+        Always: <em>generate, then migrate</em>.
+      </TipBox>
+
+      <h2>Field types — the full list</h2>
+      <p>
+        Thirteen types cover almost everything. Pick the one that matches
+        the <em>meaning</em> of the field, not the storage — the
+        generator handles the storage mapping for you.
+      </p>
 
       <div className="overflow-x-auto my-5">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border/40">
-              <th className="text-left px-3 py-2 font-medium">Field type</th>
+              <th className="text-left px-3 py-2 font-medium">Type</th>
               <th className="text-left px-3 py-2 font-medium">Go</th>
               <th className="text-left px-3 py-2 font-medium">TypeScript</th>
               <th className="text-left px-3 py-2 font-medium">Admin input</th>
+              <th className="text-left px-3 py-2 font-medium">Use it for</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/20">
-            <tr><td className="px-3 py-2 font-mono">string</td><td className="font-mono text-[12px]">string</td><td className="font-mono text-[12px]">string</td><td className="text-[12px]">text input</td></tr>
-            <tr><td className="px-3 py-2 font-mono">text</td><td className="font-mono text-[12px]">string</td><td className="font-mono text-[12px]">string</td><td className="text-[12px]">textarea</td></tr>
-            <tr><td className="px-3 py-2 font-mono">int</td><td className="font-mono text-[12px]">int</td><td className="font-mono text-[12px]">number</td><td className="text-[12px]">number input</td></tr>
-            <tr><td className="px-3 py-2 font-mono">decimal</td><td className="font-mono text-[12px]">decimal.Decimal</td><td className="font-mono text-[12px]">string</td><td className="text-[12px]">money input</td></tr>
-            <tr><td className="px-3 py-2 font-mono">bool</td><td className="font-mono text-[12px]">bool</td><td className="font-mono text-[12px]">boolean</td><td className="text-[12px]">switch</td></tr>
-            <tr><td className="px-3 py-2 font-mono">date</td><td className="font-mono text-[12px]">time.Time</td><td className="font-mono text-[12px]">string</td><td className="text-[12px]">date picker</td></tr>
-            <tr><td className="px-3 py-2 font-mono">uuid</td><td className="font-mono text-[12px]">uuid.UUID</td><td className="font-mono text-[12px]">string</td><td className="text-[12px]">FK select</td></tr>
-            <tr><td className="px-3 py-2 font-mono">json</td><td className="font-mono text-[12px]">datatypes.JSON</td><td className="font-mono text-[12px]">unknown</td><td className="text-[12px]">JSON editor</td></tr>
+            <tr><td className="px-3 py-2 font-mono">string</td><td className="font-mono text-[12px]">string</td><td className="font-mono text-[12px]">string</td><td className="text-[12px]">text input</td><td className="text-[12px]">short single-line text (name, email, url, phone)</td></tr>
+            <tr><td className="px-3 py-2 font-mono">text</td><td className="font-mono text-[12px]">string</td><td className="font-mono text-[12px]">string</td><td className="text-[12px]">textarea</td><td className="text-[12px]">multi-line plain text (notes, description)</td></tr>
+            <tr><td className="px-3 py-2 font-mono">richtext</td><td className="font-mono text-[12px]">string</td><td className="font-mono text-[12px]">string</td><td className="text-[12px]">Word-style editor</td><td className="text-[12px]">formatted body content (blog post, article)</td></tr>
+            <tr><td className="px-3 py-2 font-mono">int</td><td className="font-mono text-[12px]">int</td><td className="font-mono text-[12px]">number</td><td className="text-[12px]">number input</td><td className="text-[12px]">whole numbers, can be negative</td></tr>
+            <tr><td className="px-3 py-2 font-mono">uint</td><td className="font-mono text-[12px]">uint</td><td className="font-mono text-[12px]">number</td><td className="text-[12px]">number input (≥ 0)</td><td className="text-[12px]">counts, stock quantities, page views</td></tr>
+            <tr><td className="px-3 py-2 font-mono">float</td><td className="font-mono text-[12px]">float64</td><td className="font-mono text-[12px]">number</td><td className="text-[12px]">number input</td><td className="text-[12px]">money (auto-becomes decimal — see below), ratings, percentages</td></tr>
+            <tr><td className="px-3 py-2 font-mono">bool</td><td className="font-mono text-[12px]">bool</td><td className="font-mono text-[12px]">boolean</td><td className="text-[12px]">toggle</td><td className="text-[12px]">yes/no flags (is_active, featured, published)</td></tr>
+            <tr><td className="px-3 py-2 font-mono">date</td><td className="font-mono text-[12px]">*time.Time</td><td className="font-mono text-[12px]">string | null</td><td className="text-[12px]">date picker</td><td className="text-[12px]">birthdays, deadlines — date-only, no time component</td></tr>
+            <tr><td className="px-3 py-2 font-mono">datetime</td><td className="font-mono text-[12px]">*time.Time</td><td className="font-mono text-[12px]">string | null</td><td className="text-[12px]">datetime picker</td><td className="text-[12px]">timestamps with hours/minutes (scheduled_at, published_at)</td></tr>
+            <tr><td className="px-3 py-2 font-mono">slug</td><td className="font-mono text-[12px]">string</td><td className="font-mono text-[12px]">string</td><td className="text-[12px]">hidden (auto)</td><td className="text-[12px]">URL-friendly identifier, auto-generated from another field</td></tr>
+            <tr><td className="px-3 py-2 font-mono">belongs_to</td><td className="font-mono text-[12px]">string (UUID FK)</td><td className="font-mono text-[12px]">string</td><td className="text-[12px]">relationship dropdown</td><td className="text-[12px]">one-to-many parent (contact → group)</td></tr>
+            <tr><td className="px-3 py-2 font-mono">many_to_many</td><td className="font-mono text-[12px]">[]string</td><td className="font-mono text-[12px]">string[]</td><td className="text-[12px]">multi-select dropdown</td><td className="text-[12px]">many-to-many (post → tags, user → roles)</td></tr>
+            <tr><td className="px-3 py-2 font-mono">string_array</td><td className="font-mono text-[12px]">JSONSlice[string]</td><td className="font-mono text-[12px]">string[]</td><td className="text-[12px]">image uploader</td><td className="text-[12px]">photo gallery, screenshot list, document URLs</td></tr>
           </tbody>
         </table>
       </div>
 
-      <h2>Field modifiers</h2>
+      <p>
+        Two of these — <code>slug</code>, <code>belongs_to</code>,{' '}
+        <code>many_to_many</code>, and <code>string_array</code> — have
+        their own field-spec syntax (a third colon-separated part for
+        the source field or related model). Those are covered in the{' '}
+        <em>Field types deep dive</em> and{' '}
+        <em>Relationships</em> lessons later in this chapter.
+      </p>
+
+      <h2>Modifiers — the full list</h2>
+      <p>Only three. That&apos;s it.</p>
+
       <ul>
-        <li><code>required</code> — NOT NULL + Zod <code>.required()</code></li>
-        <li><code>unique</code> — DB unique index + Zod refine</li>
-        <li><code>default=value</code> — column default + Zod default</li>
-        <li><code>belongs_to=Customer</code> — foreign key + relation</li>
+        <li>
+          <code>required</code> — column is NOT NULL, Zod
+          requires the field on Create. <em>Strings are required by
+          default</em>, so you usually only set this on non-string types
+          you want to enforce.
+        </li>
+        <li>
+          <code>optional</code> — column is nullable, Zod allows missing.
+          Useful to flip a string off its default-required state (e.g.{' '}
+          <code>phone:string:optional</code>).
+        </li>
+        <li>
+          <code>unique</code> — adds a database unique index. Two contacts
+          can&apos;t share an email if you mark it unique.
+        </li>
       </ul>
 
       <TipBox tone="info">
-        You can also run <code>grit generate resource Product</code> without
-        flags. It prompts you for fields one at a time — useful when you&apos;re
-        not sure what to call them yet.
+        Looking for <code>default=value</code>? It exists, but only in the{' '}
+        long-form YAML definition (next lesson). The inline{' '}
+        <code>--fields</code> string is intentionally minimal — three
+        modifiers, no quoted values, no escaping headaches. Reach for
+        YAML once your fields outgrow one line.
       </TipBox>
 
-      <h2>What happened to the database?</h2>
+      <h2>Smart heuristics — names that earn extra storage</h2>
       <p>
-        Nothing yet. The generator writes the Go struct (the GORM model)
-        but doesn&apos;t create the table. Run <code>grit migrate</code> after
-        every generate — it AutoMigrate&apos;s the new model, creating the table
-        + columns + indexes.
+        Grit looks at <em>field names</em>, not just types, when picking
+        column types. Three patterns trigger smart defaults:
+      </p>
+
+      <div className="overflow-x-auto my-5">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border/40">
+              <th className="text-left px-3 py-2 font-medium">Name pattern</th>
+              <th className="text-left px-3 py-2 font-medium">Becomes</th>
+              <th className="text-left px-3 py-2 font-medium">Why</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/20">
+            <tr>
+              <td className="px-3 py-2 font-mono text-[12px]">avatar, logo, banner, photo, thumbnail, image, *_url, …</td>
+              <td className="px-3 py-2 font-mono text-[12px]">VARCHAR(500)</td>
+              <td className="px-3 py-2 text-[12px]">Signed S3 URLs and UTM-tagged links blow past 255.</td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2 font-mono text-[12px]">description, notes, content, body, summary, bio, message, …</td>
+              <td className="px-3 py-2 font-mono text-[12px]">TEXT</td>
+              <td className="px-3 py-2 text-[12px]">Long-form content shouldn&apos;t be VARCHAR — gets truncated and limits search.</td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2 font-mono text-[12px]">price, amount, total, *_cost, *_fee, *_balance (on a float field)</td>
+              <td className="px-3 py-2 font-mono text-[12px]">DECIMAL(12,2)</td>
+              <td className="px-3 py-2 text-[12px]">Float arithmetic on money has rounding bugs (1.99 + 0.01 ≠ 2.00). Fixed precision avoids them.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        So <code>price:float</code> on a Product gets DECIMAL(12,2)
+        automatically — no need to spell that out. Just name the field
+        what you mean.
+      </p>
+
+      <h2>Three ways to call the generator</h2>
+      <p>The same Contact resource, three different forms:</p>
+
+      <h3>1. Inline (short form)</h3>
+      <CodeBlock
+        terminal
+        code={`grit generate resource Contact \\
+  --fields "name:string,email:string:unique,phone:string:optional"`}
+      />
+      <p>
+        Best for: quick resources, 1–5 fields, no defaults. Reads well in
+        a commit message.
+      </p>
+
+      <h3>2. YAML file (long form)</h3>
+      <CodeBlock
+        language="yaml"
+        filename="contact.yaml"
+        code={`name: Contact
+fields:
+  - name: name
+    type: string
+    required: true
+  - name: email
+    type: string
+    required: true
+    unique: true
+  - name: phone
+    type: string
+    required: false
+  - name: status
+    type: string
+    default: active`}
+      />
+      <CodeBlock
+        terminal
+        code={`grit generate resource Contact --from contact.yaml`}
+      />
+      <p>
+        Best for: 5+ fields, fields that need <code>default</code>{' '}
+        values, anything you&apos;ll re-generate or check into the repo.
+      </p>
+
+      <h3>3. Interactive (no flags)</h3>
+      <CodeBlock
+        terminal
+        code={`grit generate resource Contact -i`}
+      />
+      <p>
+        Best for: pairing with someone, exploring what&apos;s available,
+        or when you haven&apos;t named all the fields yet. The CLI walks
+        you through each field one prompt at a time.
       </p>
 
       <KnowledgeCheck
-        question="You generated a Product resource but `GET /api/products` returns 500. What did you forget?"
+        question="You generated a Contact resource but `GET /api/contacts` returns 500. What did you forget?"
         choices={[
           {
             label: 'You forgot to write the handler.',
@@ -100,17 +284,17 @@ Next steps:
             label: 'You forgot to run `grit migrate`.',
             correct: true,
             feedback:
-              "Right — the model + handler exist in code, but the database table does not. `grit migrate` runs AutoMigrate, which creates the products table. After that, GET /api/products returns an empty paginated list.",
+              "Right — the model + handler exist in code, but the database table does not. `grit migrate` runs AutoMigrate, which creates the contacts table. After that, GET /api/contacts returns an empty paginated list.",
           },
           {
             label: 'You forgot to restart the API.',
             feedback:
-              "Possibly true (hot reload should pick it up), but the most common root cause is the missing migration. Try `grit migrate` first.",
+              "Possible (if hot reload isn't on), but the most common root cause for a 500 immediately after generation is the missing migration. Try `grit migrate` first.",
           },
           {
             label: 'You forgot to update apps/web.',
             feedback:
-              "Wrong — the API failing has nothing to do with web changes. The error is server-side.",
+              'Wrong — the API failing has nothing to do with web changes. The error is server-side.',
           },
         ]}
       />
@@ -118,27 +302,28 @@ Next steps:
       <Exercise
         prompt={
           <>
-            <p>Generate the Product resource on your machine:</p>
+            <p>Generate the Contact resource on your machine:</p>
             <CodeBlock
               terminal
-              code={`grit generate resource Product \\
-  --field "name:string:required" \\
-  --field "price:decimal:required" \\
-  --field "stockQuantity:int:default=0"
+              code={`grit generate resource Contact \\
+  --fields "name:string,email:string:unique,phone:string:optional"
 
 grit migrate
 # restart dev servers if they don't hot reload`}
             />
             <p>
-              Then hit <code>GET /api/products</code> and paste the response
-              (the empty paginated list) in <code>notes.md</code>.
+              Then hit <code>GET /api/contacts</code> (with your admin
+              JWT) and paste the response — the empty paginated list —
+              into <code>notes.md</code>.
             </p>
           </>
         }
         hint={
           <>
-            You&apos;ll need an auth token — log in via admin first and grab the
-            JWT from DevTools or the response.
+            You&apos;ll need an auth token: log in via the admin panel
+            first, grab the JWT from DevTools (Application → Cookies →{' '}
+            <code>grit_access</code>), then{' '}
+            <code>curl -H &quot;Authorization: Bearer $TOKEN&quot; http://localhost:8080/api/contacts</code>.
           </>
         }
         solution={
@@ -146,12 +331,16 @@ grit migrate
             <p>You should see:</p>
             <CodeBlock
               language="json"
-              code={`{ "data": [], "meta": { "total": 0, "page": 1, "page_size": 20, "pages": 0 } }`}
+              code={`{
+  "data": [],
+  "meta": { "total": 0, "page": 1, "page_size": 20, "pages": 0 }
+}`}
             />
             <p>
-              Empty list, but the endpoint exists. That&apos;s the generator&apos;s
-              job done — now you can create products via the admin panel
-              and watch the list populate.
+              Empty list, but the endpoint exists. That&apos;s the
+              generator&apos;s job done — open the admin panel, create a
+              contact via the auto-generated form, and watch the list
+              populate.
             </p>
           </>
         }
@@ -159,8 +348,10 @@ grit migrate
 
       <h2>What&apos;s next</h2>
       <p>
-        Eight files showed up. Next lesson is the tour — open every one,
-        understand what each does, see how they connect.
+        Eight files showed up. Next lesson we tour each one — open every
+        generated file for Contact, read its full content, and connect
+        the layers mentally so you know exactly what to edit when the
+        defaults aren&apos;t enough.
       </p>
     </>
   )
