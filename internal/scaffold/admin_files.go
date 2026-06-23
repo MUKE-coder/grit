@@ -265,6 +265,8 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "health", "page.tsx"):       adminSystemHealthPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "security", "page.tsx"):     adminSecurityPageV2(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "performance", "page.tsx"):  adminPerformancePageV2(),
+		// v3.31.20: public form-share management page (Phase 2)
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "form-shares", "page.tsx"): adminFormSharesPage(),
 
 		// Dashboard route group layout
 		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"): adminDashboardLayout(),

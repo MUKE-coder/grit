@@ -895,6 +895,8 @@ func Models() []interface{} {
 		&UserActivity{},
 		&Ticket{},
 		&TicketReply{},
+		// v3.31.20 — public form sharing (Phase 2)
+		&FormShare{},
 		// grit:models
 	}
 }
@@ -6196,6 +6198,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 					"/api/articles",
 					"/api/articles/:id",
 					"/api/uploads",
+					// v3.31.20 — public form-share submissions. Auth is
+					// the share's bcrypt password (optional) and the
+					// token itself; Sentinel rate-limits the path.
+					"/api/public/forms/:token",
+					"/api/public/forms/:token/submit",
 				},
 			},
 			RateLimit: sentinel.RateLimitConfig{
@@ -6341,6 +6348,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// + admin notifications.
 	userActivityHandler := &handlers.UserActivityHandler{DB: db}
 	ticketHandler := &handlers.TicketHandler{DB: db, Mail: svc.Mailer}
+	// v3.31.20 — public form sharing (Phase 2)
+	formShareHandler := &handlers.FormShareHandler{DB: db}
 
 	// Sync registry — list every model that should be syncable from
 	// offline-first desktop clients. The resource generator injects
@@ -6627,7 +6636,22 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// /pulse/ui directly.
 		admin.GET("/admin/observability/summary", observabilityHandler.Summary)
 
+		// v3.31.20 — public form sharing admin
+		admin.GET("/admin/form-shares", formShareHandler.List)
+		admin.POST("/admin/form-shares", formShareHandler.Create)
+		admin.PATCH("/admin/form-shares/:id", formShareHandler.Update)
+		admin.DELETE("/admin/form-shares/:id", formShareHandler.Delete)
+
 		// grit:routes:admin
+	}
+
+	// Public form-sharing endpoints. NO auth, NO CSRF — Sentinel rate
+	// limits each token aggressively. The dispatch service is the
+	// security boundary (whitelists which resources are reachable).
+	publicForms := r.Group("/api/public/forms")
+	{
+		publicForms.GET("/:token", formShareHandler.PublicGet)
+		publicForms.POST("/:token/submit", formShareHandler.PublicSubmit)
 	}
 
 	// Custom role-restricted routes

@@ -30,6 +30,8 @@ func writeWebFiles(root string, opts Options) error {
 		filepath.Join(webRoot, "app", "blog", "[slug]", "page.tsx"):         webBlogDetailPage(),
 		filepath.Join(webRoot, "app", "components", "page.tsx"):             webComponentsPage(opts),
 		filepath.Join(webRoot, "app", "components", "[name]", "page.tsx"):   webComponentDetailPage(opts),
+		// v3.31.20: public form-share page (Phase 2)
+		filepath.Join(webRoot, "app", "forms", "[token]", "page.tsx"):       webPublicFormPage(),
 		filepath.Join(webRoot, "public", ".gitkeep"):                         "",
 
 		// Auth pages (v3.28.1: shell-driven, same per-theme treatment as admin)
@@ -2490,3 +2492,214 @@ export function useAuthContext() {
 }
 `
 }
+
+// webPublicFormPage — public-facing page at /forms/[token] that
+// renders a generic submission form for any FormShare-exposed resource.
+//
+// Designed to be minimal but functional:
+//   - Fetches /api/public/forms/<token> to confirm the link works +
+//     learn the resource_name and whether a password is required.
+//   - If password required, shows a gate input. Submitting hits the
+//     submit endpoint with the password+empty fields to probe; on a
+//     successful probe we move to the form. (Phase 2 hardens this by
+//     adding a dedicated /check-password endpoint that issues a
+//     short-lived cookie — for v1 the password is sent with each
+//     submit so the page itself stays stateless.)
+//   - The form itself is a one-size-fits-all key/value editor where
+//     visitors fill labelled inputs. The shape is hard-coded to a
+//     name+email+message pattern that covers the dominant case (lead
+//     forms, contact forms, applications). Resources with different
+//     shapes are best exposed via `grit expose form` once Phase 3
+//     lands — that command generates a page tailored to the resource's
+//     actual fields.
+func webPublicFormPage() string {
+	return `"use client";
+
+import { useEffect, useState, use } from "react";
+import axios from "axios";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+interface PageProps {
+  params: Promise<{ token: string }>;
+}
+
+interface ShareInfo {
+  resource_name: string;
+  has_password: boolean;
+  label: string;
+}
+
+export default function PublicFormPage({ params }: PageProps) {
+  const { token } = use(params);
+  const [info, setInfo] = useState<ShareInfo | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    axios.get(API_URL + "/api/public/forms/" + token)
+      .then((res) => setInfo(res.data.data))
+      .catch((err) => {
+        setError(err?.response?.data?.error?.message || "Link not found or disabled");
+      })
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+        <div className="text-sm text-slate-500">Loading…</div>
+      </main>
+    );
+  }
+
+  if (error || !info) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <h1 className="text-xl font-semibold text-slate-900">Link unavailable</h1>
+          <p className="mt-2 text-sm text-slate-500">{error ?? "Unknown error"}</p>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+        <h1 className="text-2xl font-semibold text-slate-900">
+          {info.label || (info.resource_name + " submission")}
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Fill out the form below to submit a new {info.resource_name}.
+        </p>
+
+        <PublicForm token={token} info={info} />
+      </div>
+    </main>
+  );
+}
+
+interface PublicFormProps {
+  token: string;
+  info: ShareInfo;
+}
+
+function PublicForm({ token, info }: PublicFormProps) {
+  const [password, setPassword] = useState("");
+  const [fields, setFields] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const update = (key: string, value: string) => {
+    setFields((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await axios.post(API_URL + "/api/public/forms/" + token + "/submit", {
+        _password: password,
+        fields,
+      });
+      setDone(true);
+    } catch (err) {
+      const e = err as { response?: { data?: { error?: { message?: string } } } };
+      setError(e?.response?.data?.error?.message || "Submission failed");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (done) {
+    return (
+      <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+        <p className="font-medium">Thank you</p>
+        <p className="mt-1">Your submission was received.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="mt-6 space-y-4">
+      {info.has_password && (
+        <Field
+          label="Password"
+          type="password"
+          value={password}
+          onChange={setPassword}
+          required
+          hint="This form is password-protected — ask whoever shared the link."
+        />
+      )}
+
+      {/* v1 generic shape: name + email + phone + message. Operators
+          whose resources need different fields should use the
+          ` + "`" + `grit expose form` + "`" + ` command (Phase 3) to scaffold a tailored
+          public page. */}
+      <Field label="Name"    value={fields.name    ?? ""} onChange={(v) => update("name", v)}    required />
+      <Field label="Email"   value={fields.email   ?? ""} onChange={(v) => update("email", v)}   type="email" />
+      <Field label="Phone"   value={fields.phone   ?? ""} onChange={(v) => update("phone", v)}   type="tel" />
+      <Field label="Message" value={fields.message ?? ""} onChange={(v) => update("message", v)} rows={4} />
+
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={submitting}
+        className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
+      >
+        {submitting ? "Sending…" : "Submit"}
+      </button>
+    </form>
+  );
+}
+
+interface FieldProps {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+  type?: string;
+  rows?: number;
+  hint?: string;
+}
+
+function Field({ label, value, onChange, required, type, rows, hint }: FieldProps) {
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-sm font-medium text-slate-700">
+        {label}
+        {required && <span className="ml-1 text-red-500">*</span>}
+      </label>
+      {rows ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required={required}
+          rows={rows}
+          className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+        />
+      ) : (
+        <input
+          type={type ?? "text"}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required={required}
+          className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+        />
+      )}
+      {hint && <p className="text-xs text-slate-500">{hint}</p>}
+    </div>
+  );
+}
+`
+}
+

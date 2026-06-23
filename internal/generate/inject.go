@@ -117,6 +117,38 @@ func (g *Generator) injectAll(names Names) error {
 		}
 	}
 
+	// 5b. v3.31.20 — inject a dispatch case into the form-share submit
+	// service so public submissions can create records of this resource.
+	dispatchFile := filepath.Join(apiRoot, "internal", "services", "form_share_dispatch.go")
+	if fileExists(dispatchFile) {
+		labelExpr := pickLabelExpr(g.Definition.Fields)
+		dispatchCase := fmt.Sprintf(`	case %q:
+		item := &models.%s{}
+		body, _ := json.Marshal(fields)
+		if err := json.Unmarshal(body, item); err != nil {
+			return nil, fmt.Errorf("decoding %s body: %%w", err)
+		}
+		if err := db.Create(item).Error; err != nil {
+			return nil, fmt.Errorf("creating %s: %%w", err)
+		}
+		return &SharedResourceSubmission{ID: item.ID, Label: %s}, nil
+`,
+			names.Pascal,
+			names.Pascal,
+			names.Pascal,
+			names.Pascal,
+			labelExpr,
+		)
+		if err := injectBefore(dispatchFile, "// grit:form-share:dispatch", dispatchCase); err != nil {
+			return fmt.Errorf("injecting form-share dispatch: %w", err)
+		}
+		// Make sure the imports the case needs are present.
+		if err := ensureDispatchImports(dispatchFile, g.Module); err != nil {
+			return fmt.Errorf("updating dispatch imports: %w", err)
+		}
+		fmt.Println("  ✓ Injected form-share dispatch case")
+	}
+
 	// 6. Inject schema export
 	schemaIndex := filepath.Join(sharedRoot, "schemas", "index.ts")
 	if fileExists(schemaIndex) {

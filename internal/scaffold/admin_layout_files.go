@@ -147,6 +147,8 @@ func adminIconMap() string {
   HardDrive,
   Clock,
   Gauge,
+  Copy,
+  Unlock,
   type LucideIcon,
 } from "lucide-react";
 
@@ -275,6 +277,9 @@ export {
   HardDrive,
   Clock,
   Gauge,
+  // v3.31.20 — form-shares admin page
+  Copy,
+  Unlock,
 };
 `
 }

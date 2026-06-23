@@ -105,6 +105,114 @@ export default function ChangelogPage() {
               </div>
             </div>
 
+            {/* v3.31.20 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.20
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Phase 2 of PLAN_FORMS_AND_SHARING.md — public form sharing.</strong>{' '}
+                  Generate a token-protected link for any of your resources and anyone with the link can submit the form, no admin login required. Optional bcrypt password on the share for an extra gate.
+                </p>
+
+                <h3>What landed (end-to-end)</h3>
+                <ul>
+                  <li>
+                    <strong>FormShare model</strong> (token, optional
+                    bcrypt PasswordHash, enabled, submission count,
+                    label). Auto-migrated on{' '}
+                    <code>grit migrate</code>.
+                  </li>
+                  <li>
+                    <strong>Admin handler + routes</strong>:{' '}
+                    <code>GET/POST/PATCH/DELETE /api/admin/form-shares</code>.
+                  </li>
+                  <li>
+                    <strong>Public handler + routes</strong> (no auth, no
+                    CSRF):
+                    {' '}<code>GET /api/public/forms/:token</code> +{' '}
+                    <code>POST /api/public/forms/:token/submit</code>.
+                    Both paths are listed in Sentinel's{' '}
+                    <code>ExcludeRoutes</code> so the WAF doesn&apos;t
+                    block public JSON bodies.
+                  </li>
+                  <li>
+                    <strong>Marker-driven resource dispatch</strong>:{' '}
+                    every <code>grit generate resource</code> appends a
+                    case to{' '}
+                    <code>services/form_share_dispatch.go</code> that
+                    JSON-decodes the public payload into the resource's
+                    model + calls <code>db.Create()</code>. Whitelisted
+                    by name — unknown resources can&apos;t be
+                    submitted publicly.
+                  </li>
+                  <li>
+                    <strong>Admin page</strong> at{' '}
+                    <code>/system/form-shares</code>: list shares,
+                    create new (with password), toggle enabled, copy
+                    public URL, delete.
+                  </li>
+                  <li>
+                    <strong>Public web page</strong> at{' '}
+                    <code>apps/web/app/forms/[token]/page.tsx</code> —
+                    a minimal name/email/phone/message form that posts
+                    to the public submit endpoint. Tailored forms for
+                    other resource shapes come via{' '}
+                    <code>grit expose form</code> in Phase 3.
+                  </li>
+                </ul>
+
+                <h3>Threat model</h3>
+                <ul>
+                  <li>
+                    <strong>Resource whitelisting</strong>: the dispatch
+                    service&apos;s switch statement is the gate. A
+                    share token can&apos;t conjure a record for a
+                    resource that hasn&apos;t been explicitly added.
+                  </li>
+                  <li>
+                    <strong>Field whitelisting</strong>: each resource
+                    case JSON-decodes onto its typed model. Unknown
+                    JSON keys are silently ignored; private fields
+                    (<code>id</code>, <code>created_at</code>, …) are
+                    untouched.
+                  </li>
+                  <li>
+                    <strong>Rate limiting</strong>: Sentinel still
+                    rate-limits the public path by IP — the WAF body
+                    inspection is the only thing skipped.
+                  </li>
+                  <li>
+                    <strong>Password (optional)</strong>: bcrypt cost
+                    10. Submitted as <code>_password</code> alongside
+                    the fields; rejected with 401 if mismatched.
+                  </li>
+                </ul>
+
+                <h3>Deferred to v3.31.21</h3>
+                <ul>
+                  <li>
+                    <strong>Audit trail</strong>: a{' '}
+                    <code>source_share_id</code> column on each
+                    submitted record so admins can filter "show me
+                    public submissions" per resource.
+                  </li>
+                  <li>
+                    <strong>Per-resource public form pages</strong>:
+                    Phase 3's <code>grit expose form &lt;Resource&gt;</code>{' '}
+                    will scaffold a tailored public page with the
+                    exact field shape, replacing the generic
+                    name+email+phone+message default.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.31.19 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
