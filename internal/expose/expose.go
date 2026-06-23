@@ -41,14 +41,36 @@ type Opts struct {
 	// Force overwrites an existing file at To. Required for
 	// idempotent CI runs; humans usually want the safety.
 	Force bool
+
+	// PublicShare (v3.31.24+) flips the form to submit via the public
+	// FormShare endpoint (/api/public/forms/<token>/submit) instead of
+	// the authenticated useCreate<Resource>() hook. The visitor stays
+	// anonymous; the FormShare must exist and be enabled in the
+	// admin.
+	//
+	// Only meaningful for Form() — Table() ignores this field (a
+	// public-list endpoint would need different infra).
+	PublicShare bool
+
+	// Token (v3.31.24+) is the FormShare token to embed in the
+	// generated public form page. When blank, the generated page
+	// reads NEXT_PUBLIC_FORM_TOKEN from the web app's env at runtime
+	// — useful when the token is set per environment (staging /
+	// production) instead of hard-coded at generation time.
+	Token string
 }
 
 // Form scaffolds a Next.js client page that renders a form for the
-// given resource and submits via the auto-generated React Query hook.
+// given resource. Two flavors, picked by opts.PublicShare:
 //
-// The page validates with the shared Zod schema (Create<Resource>Schema
-// from @repo/shared/schemas) and shows per-field errors. On success it
-// shows a "Thank you" state and resets the form.
+//   - default — submits via the authenticated useCreate<Resource>()
+//     hook (visitor must be signed in).
+//   - PublicShare = true — submits via /api/public/forms/<token>/submit;
+//     the visitor stays anonymous, and the page either embeds the
+//     opts.Token literal or reads NEXT_PUBLIC_FORM_TOKEN at runtime.
+//
+// Both flavors emit a single .tsx file at opts.To and refuse to
+// overwrite without opts.Force.
 func Form(opts Opts) error {
 	struct_, err := loadStruct(opts)
 	if err != nil {
@@ -60,7 +82,12 @@ func Form(opts Opts) error {
 		return err
 	}
 
-	content := buildFormPage(opts.Resource, struct_)
+	var content string
+	if opts.PublicShare {
+		content = buildPublicFormPage(opts.Resource, struct_, opts.Token)
+	} else {
+		content = buildFormPage(opts.Resource, struct_)
+	}
 	return writeOnce(target, content, opts.Force)
 }
 

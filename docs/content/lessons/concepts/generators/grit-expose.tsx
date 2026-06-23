@@ -423,16 +423,92 @@ export default function ContactTablePage() {
           on behalf of yourself&quot; flows).
         </li>
         <li>
-          <strong>Anonymous visitors</strong> — generate a share, send
-          them the <code>/forms/[token]</code> link from the share
-          system. Submits go through the public dispatcher; no auth
-          required.
+          <strong>Anonymous visitors</strong> — give them an
+          expose-generated page with <code>--public-share</code> (see
+          below). Submits go through the FormShare dispatcher; no
+          auth required.
         </li>
       </ul>
+
+      <h3><code>--public-share</code>: a public form on YOUR url</h3>
       <p>
-        Two different patterns for two different audiences. Use either
-        or both depending on whether the form needs sign-in.
+        The default share lives at{' '}
+        <code>/forms/[token]</code> on apps/web. That works but the URL
+        looks like an admin artifact. With <code>--public-share</code>{' '}
+        + <code>--token</code> you can scaffold a form at any URL of
+        your choosing that posts to the same public endpoint:
       </p>
+
+      <CodeBlock
+        terminal
+        code={`grit expose form Contact \\
+  --to apps/web/app/contact-us/page.tsx \\
+  --public-share \\
+  --token 9CkLh7gJZQrPeNwMo3F8x_iVjA8U2nXt`}
+      />
+
+      <p>
+        The emitted page:
+      </p>
+      <ul>
+        <li>
+          Has <strong>no</strong> dependency on the auth&apos;d
+          <code> useCreateContact</code> hook — it imports axios
+          directly and posts to <code>/api/public/forms/&lt;token&gt;/submit</code>.
+        </li>
+        <li>
+          On mount, fetches{' '}
+          <code>/api/public/forms/&lt;token&gt;</code> to confirm the
+          link works + learn whether to render a password gate.
+        </li>
+        <li>
+          Shows a clear error UI when the token is missing or the share
+          is disabled — visitors aren&apos;t left staring at a blank
+          form.
+        </li>
+        <li>
+          Hard-codes the token into the source. The operator can
+          override per-environment by editing the constant.
+        </li>
+      </ul>
+
+      <h3>Token from env instead of hard-coded</h3>
+      <p>
+        Drop the <code>--token</code> flag entirely and the emitted
+        page reads <code>NEXT_PUBLIC_FORM_TOKEN</code> from the web
+        app&apos;s <code>.env</code> at module load time. Useful when
+        the token differs per environment (staging vs production):
+      </p>
+
+      <CodeBlock
+        terminal
+        code={`grit expose form Contact \\
+  --to apps/web/app/contact-us/page.tsx \\
+  --public-share
+
+# Then in apps/web/.env.local:
+NEXT_PUBLIC_FORM_TOKEN=9CkLh7gJZ...
+
+# Or in your CI / deploy config:
+# staging:    NEXT_PUBLIC_FORM_TOKEN=staging-share-token
+# production: NEXT_PUBLIC_FORM_TOKEN=prod-share-token`}
+      />
+
+      <p>
+        The CLI prints a heads-up when <code>--token</code> is omitted
+        so you don&apos;t forget to set the env var.
+      </p>
+
+      <TipBox tone="info">
+        <strong>When to use which:</strong>{' '}
+        <code>--public-share</code> with a hard-coded token is great
+        for a single campaign or a public marketing page that always
+        posts to the same share. The env-var path shines for
+        multi-tenant or per-environment configurations. Skip{' '}
+        <code>--public-share</code> entirely when the form should run
+        under the visitor&apos;s own session (e.g. an account-settings
+        flow).
+      </TipBox>
 
       <h2>What&apos;s next</h2>
       <p>

@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.31.23"
+var version = "3.31.24"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -471,12 +471,21 @@ func exposeCmd() *cobra.Command {
 func exposeFormCmd() *cobra.Command {
 	var to string
 	var force bool
+	var publicShare bool
+	var token string
 	cmd := &cobra.Command{
 		Use:   "form <Resource>",
 		Short: "Scaffold a public form page for a resource",
-		Long: "Emits a Next.js page that renders one input per resource field and submits via\n" +
-			"useCreate<Resource>(). Validation is wired through the resource's shared Zod schema.\n\n" +
-			"Example:\n  grit expose form Contact --to apps/web/app/contact-us/page.tsx",
+		Long: "Emits a Next.js page that renders one input per resource field.\n\n" +
+			"By default: submits via the authenticated useCreate<Resource>() hook —\n" +
+			"the visitor must be signed in.\n\n" +
+			"With --public-share: submits via /api/public/forms/<token>/submit — no\n" +
+			"auth required. The token comes from a FormShare you created in the\n" +
+			"admin (System → Public form sharing). Pass it via --token, or leave it\n" +
+			"blank and the generated page reads NEXT_PUBLIC_FORM_TOKEN from .env.\n\n" +
+			"Examples:\n" +
+			"  grit expose form Contact --to apps/web/app/contact-us/page.tsx\n" +
+			"  grit expose form Contact --to apps/web/app/contact-us/page.tsx --public-share --token 9CkLh7gJZ...",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printLogo()
@@ -487,9 +496,20 @@ func exposeFormCmd() *cobra.Command {
 			}
 
 			purple := color.New(color.FgHiMagenta, color.Bold)
-			purple.Printf("\n  Exposing form for %s → %s\n\n", args[0], to)
+			mode := "auth'd"
+			if publicShare {
+				mode = "public-share"
+			}
+			purple.Printf("\n  Exposing form for %s (%s) → %s\n\n", args[0], mode, to)
 
-			if err := expose.Form(expose.Opts{Resource: args[0], To: to, Root: root, Force: force}); err != nil {
+			if err := expose.Form(expose.Opts{
+				Resource:    args[0],
+				To:          to,
+				Root:        root,
+				Force:       force,
+				PublicShare: publicShare,
+				Token:       token,
+			}); err != nil {
 				return err
 			}
 
@@ -497,12 +517,22 @@ func exposeFormCmd() *cobra.Command {
 			green.Printf("  ✓ Wrote %s\n\n", to)
 			fmt.Println("  Next steps:")
 			fmt.Println("    cd apps/web && pnpm dev")
-			fmt.Printf("    open http://localhost:3000/%s\n\n", deriveURLFromPath(to))
+			fmt.Printf("    open http://localhost:3000/%s\n", deriveURLFromPath(to))
+			if publicShare && token == "" {
+				fmt.Println()
+				fmt.Println("  ⚠  --token was not provided. The generated page reads")
+				fmt.Println("     NEXT_PUBLIC_FORM_TOKEN from your web app's .env — set it before")
+				fmt.Println("     the page will work. Create the share in admin → System → Public")
+				fmt.Println("     form sharing if you haven't already.")
+			}
+			fmt.Println()
 			return nil
 		},
 	}
 	cmd.Flags().StringVar(&to, "to", "", "Destination path (e.g. apps/web/app/contact-us/page.tsx) — required")
 	cmd.Flags().BoolVar(&force, "force", false, "Overwrite the destination if it already exists")
+	cmd.Flags().BoolVar(&publicShare, "public-share", false, "Submit via /api/public/forms/<token>/submit instead of the auth'd hook")
+	cmd.Flags().StringVar(&token, "token", "", "FormShare token for the public submission. Optional — falls back to NEXT_PUBLIC_FORM_TOKEN at runtime when blank.")
 	_ = cmd.MarkFlagRequired("to")
 	return cmd
 }

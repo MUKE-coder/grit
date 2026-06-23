@@ -105,6 +105,84 @@ export default function ChangelogPage() {
               </div>
             </div>
 
+            {/* v3.31.24 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.24
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    grit expose form gains <code>--public-share</code> +{' '}
+                    <code>--token</code> flags
+                  </strong>{' '}
+                  — the deferred public-form variant from the v3.31.21
+                  changelog now ships. Scaffold a public-facing form at
+                  any URL of your choosing that posts to a FormShare
+                  endpoint instead of the authenticated hook.
+                </p>
+
+                <h3>Usage</h3>
+                <pre className="overflow-x-auto rounded-lg bg-bg-elevated p-3 text-xs"><code>{`# Hard-code the token into the page
+grit expose form Contact \\
+  --to apps/web/app/contact-us/page.tsx \\
+  --public-share \\
+  --token 9CkLh7gJZQrPeNwMo3F8x_iVjA8U2nXt
+
+# Or omit --token and let the page read NEXT_PUBLIC_FORM_TOKEN at runtime
+grit expose form Contact \\
+  --to apps/web/app/contact-us/page.tsx \\
+  --public-share`}</code></pre>
+
+                <h3>What the generated page does</h3>
+                <ul>
+                  <li>
+                    Posts to{' '}
+                    <code>/api/public/forms/&lt;token&gt;/submit</code> —
+                    no auth required, no useCreate hook imported.
+                  </li>
+                  <li>
+                    Probes <code>/api/public/forms/&lt;token&gt;</code>{' '}
+                    on mount to confirm the share is enabled and to
+                    learn whether to render a password gate.
+                  </li>
+                  <li>
+                    Shows an amber "Form unavailable" card when the
+                    token is missing, disabled, or invalid — instead
+                    of a blank form.
+                  </li>
+                  <li>
+                    Token resolution: literal from <code>--token</code>{' '}
+                    when set; otherwise{' '}
+                    <code>process.env.NEXT_PUBLIC_FORM_TOKEN</code>{' '}
+                    at module load. Pick whichever fits your env model.
+                  </li>
+                </ul>
+
+                <h3>When to use this</h3>
+                <p>
+                  Use <code>--public-share</code> when you want a
+                  branded public form at your own URL
+                  (<code>/contact-us</code>, <code>/apply</code>,{' '}
+                  <code>/leads</code>) instead of the default{' '}
+                  <code>/forms/[token]</code> page. The dispatcher,
+                  rate limits, and password gate behave identically;
+                  only the URL and styling are yours to control.
+                </p>
+
+                <h3>Lesson update</h3>
+                <p>
+                  The grit-expose lesson now has a "<code>--public-share</code>:
+                  a public form on YOUR url" section with both
+                  embed-token and env-token examples.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.23 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
