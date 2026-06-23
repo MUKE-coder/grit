@@ -27,6 +27,7 @@ func writeFormShareFiles(root string, opts Options) error {
 
 	files := map[string]string{
 		filepath.Join(apiRoot, "internal", "models", "form_share.go"):              formShareModelGo(),
+		filepath.Join(apiRoot, "internal", "models", "form_submission.go"):         formSubmissionModelGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "form_share.go"):            formShareHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "form_share_dispatch.go"):   formShareDispatchGo(),
 	}
@@ -92,6 +93,50 @@ func (s *FormShare) BeforeCreate(tx *gorm.DB) error {
 // show a lock icon without exposing the hash itself.
 func (s *FormShare) AfterFind(tx *gorm.DB) error {
 	s.HasPassword = s.PasswordHash != ""
+	return nil
+}
+`
+}
+
+// formSubmissionModelGo emits the FormSubmission audit-log model. One
+// row per successful public submission — records which share, which
+// resource, which record ID, plus IP + User-Agent for forensics.
+//
+// The audit row is best-effort: failure to write it does NOT roll
+// back the user's submission. They get their record either way; the
+// admin just loses one line in the audit trail.
+func formSubmissionModelGo() string {
+	return `package models
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+// FormSubmission is an audit-log row for one successful public form
+// submission. Created by FormShareHandler.PublicSubmit after the
+// dispatcher returns a record ID. Never modified; soft-deletable so
+// admins can prune old rows without losing the share's history.
+type FormSubmission struct {
+	ID           string         ` + "`" + `gorm:"primarykey;size:36" json:"id"` + "`" + `
+	ShareID      string         ` + "`" + `gorm:"size:36;not null;index" json:"share_id"` + "`" + `
+	ResourceName string         ` + "`" + `gorm:"size:64;not null;index" json:"resource_name"` + "`" + `
+	RecordID     string         ` + "`" + `gorm:"size:36;not null;index" json:"record_id"` + "`" + `
+	// IP and UserAgent are best-effort — set from gin.Context at
+	// submission time. Truncated to fit the column; long UAs are
+	// trimmed to 500 chars.
+	IP           string         ` + "`" + `gorm:"size:64" json:"ip"` + "`" + `
+	UserAgent    string         ` + "`" + `gorm:"size:500" json:"user_agent"` + "`" + `
+	CreatedAt    time.Time      ` + "`" + `json:"created_at"` + "`" + `
+	DeletedAt    gorm.DeletedAt ` + "`" + `gorm:"index" json:"-"` + "`" + `
+}
+
+func (s *FormSubmission) BeforeCreate(tx *gorm.DB) error {
+	if s.ID == "" {
+		s.ID = uuid.New().String()
+	}
 	return nil
 }
 `
@@ -371,12 +416,54 @@ func (h *FormShareHandler) PublicSubmit(c *gin.Context) {
 		"updated_at":       time.Now(),
 	})
 
+	// v3.31.25 — write the audit row. Best-effort; failure here means
+	// the visitor still gets their record, the admin just misses one
+	// line in the trail. We truncate UA at 500 chars (column width).
+	ua := c.GetHeader("User-Agent")
+	if len(ua) > 500 {
+		ua = ua[:500]
+	}
+	_ = h.DB.Create(&models.FormSubmission{
+		ShareID:      share.ID,
+		ResourceName: share.ResourceName,
+		RecordID:     out.ID,
+		IP:           c.ClientIP(),
+		UserAgent:    ua,
+	}).Error
+
 	c.JSON(http.StatusCreated, gin.H{
 		"data": gin.H{
 			"id":    out.ID,
 			"label": out.Label,
 		},
 		"message": "Submitted",
+	})
+}
+
+// ListSubmissions returns audit-log rows for one or more shares.
+// Filterable by share_id and resource_name; defaults to the 100 most
+// recent rows. v3.31.25.
+func (h *FormShareHandler) ListSubmissions(c *gin.Context) {
+	var rows []models.FormSubmission
+	q := h.DB.Order("created_at DESC").Limit(100)
+
+	if shareID := c.Query("share_id"); shareID != "" {
+		q = q.Where("share_id = ?", shareID)
+	}
+	if resourceName := c.Query("resource_name"); resourceName != "" {
+		q = q.Where("resource_name = ?", resourceName)
+	}
+
+	if err := q.Find(&rows).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": rows,
+		"meta": gin.H{"total": len(rows), "page": 1, "page_size": len(rows), "pages": 1},
 	})
 }
 

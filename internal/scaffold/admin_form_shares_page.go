@@ -20,7 +20,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { SkeletonCards } from "@/components/ui/Skeleton";
-import { Plus, Copy, Lock, Unlock, Trash2, X, ExternalLink } from "@/lib/icons";
+import { Plus, Copy, Lock, Unlock, Trash2, X, ExternalLink, Activity } from "@/lib/icons";
 import { toast } from "sonner";
 
 interface FormShare {
@@ -31,6 +31,16 @@ interface FormShare {
   enabled: boolean;
   submission_count: number;
   label: string;
+  created_at: string;
+}
+
+interface FormSubmission {
+  id: string;
+  share_id: string;
+  resource_name: string;
+  record_id: string;
+  ip: string;
+  user_agent: string;
   created_at: string;
 }
 
@@ -107,6 +117,7 @@ export default function FormSharesPage() {
 function ShareRow({ share }: { share: FormShare }) {
   const qc = useQueryClient();
   const publicURL = WEB_URL + "/forms/" + share.token;
+  const [submissionsOpen, setSubmissionsOpen] = useState(false);
 
   const { mutate: update } = useMutation({
     mutationFn: async (body: Record<string, unknown>) => {
@@ -135,6 +146,7 @@ function ShareRow({ share }: { share: FormShare }) {
   };
 
   return (
+    <>
     <tr className="hover:bg-bg-hover">
       <td className="px-4 py-3 font-mono text-xs text-foreground">{share.resource_name}</td>
       <td className="px-4 py-3 text-foreground">{share.label || <span className="text-text-muted">—</span>}</td>
@@ -165,6 +177,13 @@ function ShareRow({ share }: { share: FormShare }) {
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-1">
           <button
+            onClick={() => setSubmissionsOpen(true)}
+            className="inline-flex items-center gap-1 rounded-lg border border-border bg-bg-elevated px-2 py-1 text-xs text-text-secondary hover:bg-bg-hover hover:text-foreground"
+            title="View submissions"
+          >
+            <Activity className="h-3 w-3" /> Audit
+          </button>
+          <button
             onClick={copyLink}
             className="inline-flex items-center gap-1 rounded-lg border border-border bg-bg-elevated px-2 py-1 text-xs text-text-secondary hover:bg-bg-hover hover:text-foreground"
             title="Copy public link"
@@ -191,6 +210,86 @@ function ShareRow({ share }: { share: FormShare }) {
           >
             <Trash2 className="h-3 w-3" />
           </button>
+        </div>
+      </td>
+    </tr>
+    {submissionsOpen && <SubmissionsModal share={share} onClose={() => setSubmissionsOpen(false)} />}
+    </>
+  );
+}
+
+// SubmissionsModal — drill-in audit log for one FormShare. Shows the
+// 100 most recent submissions with their record ID, IP, and User-Agent.
+// v3.31.25.
+function SubmissionsModal({ share, onClose }: { share: FormShare; onClose: () => void }) {
+  const { data, isLoading } = useQuery<{ data: FormSubmission[] }>({
+    queryKey: ["form-submissions", share.id],
+    queryFn: async () => {
+      const { data } = await apiClient.get("/api/admin/form-submissions", {
+        params: { share_id: share.id },
+      });
+      return data;
+    },
+  });
+
+  const rows = data?.data ?? [];
+
+  return (
+    <tr>
+      <td colSpan={6}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+          <div className="relative z-10 w-full max-w-3xl rounded-2xl border border-border bg-bg-secondary shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Audit log</h2>
+                <p className="text-xs text-text-secondary">
+                  {share.resource_name} · {share.label || share.token.slice(0, 12) + "…"}
+                </p>
+              </div>
+              <button onClick={onClose} className="rounded-lg p-1 text-text-secondary hover:bg-bg-hover hover:text-foreground">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="max-h-[60vh] overflow-y-auto p-6">
+              {isLoading ? (
+                <p className="text-sm text-text-secondary">Loading…</p>
+              ) : rows.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border bg-bg-elevated p-8 text-center">
+                  <p className="text-foreground font-medium">No submissions yet</p>
+                  <p className="mt-1 text-sm text-text-secondary">Audit rows appear here after the first public submission.</p>
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="px-2 py-2 text-left font-medium text-text-secondary">When</th>
+                      <th className="px-2 py-2 text-left font-medium text-text-secondary">Record ID</th>
+                      <th className="px-2 py-2 text-left font-medium text-text-secondary">IP</th>
+                      <th className="px-2 py-2 text-left font-medium text-text-secondary">User Agent</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {rows.map((row) => (
+                      <tr key={row.id}>
+                        <td className="px-2 py-2 text-xs text-text-secondary whitespace-nowrap">
+                          {new Date(row.created_at).toLocaleString()}
+                        </td>
+                        <td className="px-2 py-2 font-mono text-xs text-foreground">
+                          {row.record_id.slice(0, 8)}…
+                        </td>
+                        <td className="px-2 py-2 font-mono text-xs text-text-secondary">{row.ip || "—"}</td>
+                        <td className="px-2 py-2 text-xs text-text-muted truncate max-w-xs" title={row.user_agent}>
+                          {row.user_agent || "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
         </div>
       </td>
     </tr>

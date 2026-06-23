@@ -897,6 +897,8 @@ func Models() []interface{} {
 		&TicketReply{},
 		// v3.31.20 — public form sharing (Phase 2)
 		&FormShare{},
+		// v3.31.25 — audit log for public submissions
+		&FormSubmission{},
 		// grit:models
 	}
 }
@@ -6641,6 +6643,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		admin.POST("/admin/form-shares", formShareHandler.Create)
 		admin.PATCH("/admin/form-shares/:id", formShareHandler.Update)
 		admin.DELETE("/admin/form-shares/:id", formShareHandler.Delete)
+		// v3.31.25 — audit log of public submissions
+		admin.GET("/admin/form-submissions", formShareHandler.ListSubmissions)
 
 		// grit:routes:admin
 	}

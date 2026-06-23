@@ -105,6 +105,94 @@ export default function ChangelogPage() {
               </div>
             </div>
 
+            {/* v3.31.25 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.25
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Audit trail for public form submissions.</strong>{' '}
+                  The last deferred item from PLAN_FORMS_AND_SHARING.md.
+                  Operators can now see every submission that came in
+                  through each share — with timestamp, IP, and
+                  User-Agent.
+                </p>
+
+                <h3>What landed</h3>
+                <ul>
+                  <li>
+                    <strong>New <code>FormSubmission</code> model</strong>{' '}
+                    — one row per successful public submission. Captures
+                    share_id, resource_name, record_id, IP, User-Agent,
+                    timestamp. Soft-deletable for retention.
+                  </li>
+                  <li>
+                    <strong><code>PublicSubmit</code> writes the audit
+                    row</strong> after a successful dispatch. Best-effort:
+                    failure to write the audit row does NOT roll back
+                    the user&apos;s submission. They still get their
+                    record; the admin just misses one line in the
+                    trail.
+                  </li>
+                  <li>
+                    <strong>New admin endpoint:</strong>{' '}
+                    <code>GET /api/admin/form-submissions?share_id=&amp;resource_name=</code>{' '}
+                    — paginated audit log, filterable by share or
+                    resource.
+                  </li>
+                  <li>
+                    <strong>Admin UI:</strong> the /system/form-shares
+                    page gains an <em>Audit</em> button per share.
+                    Click → modal listing the 100 most recent
+                    submissions for that share with timestamp, record
+                    ID, IP, and a truncated UA tooltip.
+                  </li>
+                </ul>
+
+                <h3>Why a separate table, not a column</h3>
+                <p>
+                  An earlier draft considered adding{' '}
+                  <code>source_share_id</code> as a column on every
+                  scaffolded model. That approach is invasive — every
+                  existing project would need a migration to add the
+                  column to Contact / Application / Lead / etc. The
+                  audit-table approach is purely additive: new project
+                  or existing,{' '}
+                  <code>grit migrate</code> creates the new{' '}
+                  <code>form_submissions</code> table and existing
+                  models stay untouched.
+                </p>
+                <p>
+                  Bonus: the audit table captures richer data than a
+                  column could (IP + User-Agent), which is useful for
+                  spam triage and compliance.
+                </p>
+
+                <h3>Phase recap, complete</h3>
+                <p>
+                  Every numbered item on PLAN_FORMS_AND_SHARING.md
+                  has shipped:
+                </p>
+                <ul>
+                  <li>v3.31.16 — sync auto-add admin fields</li>
+                  <li>v3.31.17 — formView sheet / modal / page</li>
+                  <li>v3.31.18 — form groups + per-group PATCH</li>
+                  <li>v3.31.19 — column-pack auto-detection</li>
+                  <li>v3.31.20 — public form sharing</li>
+                  <li>v3.31.21 — grit expose form / table</li>
+                  <li>v3.31.22 — grit add web-auth</li>
+                  <li>v3.31.23 — course lessons + tests</li>
+                  <li>v3.31.24 — --public-share + --token flags</li>
+                  <li>v3.31.25 — audit trail (this release)</li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.31.24 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
