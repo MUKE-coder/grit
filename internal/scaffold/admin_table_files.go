@@ -321,6 +321,15 @@ export function renderCell(
     case "video":
       content = <VideoCell value={String(value)} />;
       break;
+    case "file":
+      // FileRef object — single uploaded file. The column key points to a
+      // JSON column on the row, so value is the parsed FileRef (or null).
+      content = <FileRefCell value={value as FileRefLike | null} />;
+      break;
+    case "files":
+      // FileRef[] — multi-file gallery. Show a compact stack of thumbnails.
+      content = <FileRefsCell value={(value as FileRefLike[]) ?? []} />;
+      break;
     case "link":
       content = <LinkCell value={String(value)} />;
       break;
@@ -450,6 +459,88 @@ function VideoCell({ value }: { value: string }) {
       <div className="absolute inset-0 flex items-center justify-center bg-black/30">
         <Play className="h-3.5 w-3.5 text-white fill-white" />
       </div>
+    </div>
+  );
+}
+
+// v3.31.30 — FileRef-aware table cells. The Go side stores a FileRef
+// JSON object in the column; the cell renders a thumbnail for images,
+// a generic-by-MIME icon for everything else.
+
+type FileRefLike = {
+  url: string;
+  name: string;
+  mime: string;
+  size?: number;
+  thumbnail_url?: string;
+};
+
+function FileRefCell({ value }: { value: FileRefLike | null }) {
+  if (!value || !value.url) {
+    return <span className="text-text-muted">—</span>;
+  }
+  const isImage = value.mime?.startsWith("image/");
+  if (isImage) {
+    return (
+      <img
+        src={value.thumbnail_url || value.url}
+        alt={value.name}
+        title={value.name}
+        className="h-8 w-8 rounded object-cover border border-border"
+      />
+    );
+  }
+  return (
+    <a
+      href={value.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={value.name}
+      className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline"
+    >
+      <ExternalLink className="h-3.5 w-3.5" />
+      <span className="truncate max-w-[140px]">{value.name}</span>
+    </a>
+  );
+}
+
+function FileRefsCell({ value }: { value: FileRefLike[] }) {
+  if (!value || value.length === 0) {
+    return <span className="text-text-muted">—</span>;
+  }
+  // Stack the first 3 thumbnails, then a "+N" overflow chip.
+  const visible = value.slice(0, 3);
+  const overflow = value.length - visible.length;
+  return (
+    <div className="flex items-center gap-1">
+      {visible.map((f, i) => {
+        const isImage = f.mime?.startsWith("image/");
+        if (isImage) {
+          return (
+            <img
+              key={i}
+              src={f.thumbnail_url || f.url}
+              alt={f.name}
+              title={f.name}
+              className="h-8 w-8 rounded object-cover border border-border"
+            />
+          );
+        }
+        return (
+          <span
+            key={i}
+            title={f.name}
+            className="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-bg-tertiary text-[10px] font-semibold text-text-muted"
+          >
+            FILE
+          </span>
+        );
+      })}
+      {overflow > 0 && (
+        <span className="text-xs font-medium text-text-muted ml-1">
+          +{overflow}
+        </span>
+      )}
     </div>
   );
 }

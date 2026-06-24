@@ -22,6 +22,8 @@ const (
 	FieldBelongsTo   FieldType = "belongs_to"
 	FieldManyToMany  FieldType = "many_to_many"
 	FieldStringArray FieldType = "string_array"
+	FieldFile        FieldType = "file"  // single FileRef
+	FieldFiles       FieldType = "files" // []FileRef
 )
 
 // Field describes a single field in a resource.
@@ -33,6 +35,13 @@ type Field struct {
 	Default      string `yaml:"default"`
 	SlugSource   string `yaml:"slug_source"`
 	RelatedModel string `yaml:"related_model"`
+
+	// FileAccepts is the resolved list of accept-aliases for a file/files
+	// field. Source: the third position of name:file:<accept-list>. May be
+	// a single alias ("image") or a bracketed list ("[pdf,doc,image]").
+	// Values are aliases ("image", "video", "pdf", "all", ...) — see
+	// resolveFileMIMEs() in the scaffolded API for the runtime mapping.
+	FileAccepts []string `yaml:"file_accepts,omitempty"`
 }
 
 // IsSlug returns true if this field is an auto-generated slug.
@@ -60,9 +69,30 @@ func (f Field) IsStringArray() bool {
 	return FieldType(f.Type) == FieldStringArray
 }
 
+// IsFile returns true if this field is a single FileRef.
+func (f Field) IsFile() bool {
+	return FieldType(f.Type) == FieldFile
+}
+
+// IsFiles returns true if this field is a []FileRef.
+func (f Field) IsFiles() bool {
+	return FieldType(f.Type) == FieldFiles
+}
+
+// IsFileField returns true for either file or files.
+func (f Field) IsFileField() bool {
+	return f.IsFile() || f.IsFiles()
+}
+
 // NeedsDatatypesImport returns true if this field requires "gorm.io/datatypes" import.
 func (f Field) NeedsDatatypesImport() bool {
 	return FieldType(f.Type) == FieldStringArray
+}
+
+// NeedsFilesImport returns true if this field requires the models/files
+// package import (for the FileRef type) in the generated Go model.
+func (f Field) NeedsFilesImport() bool {
+	return f.IsFileField()
 }
 
 // GoType returns the Go type for this field.
@@ -87,6 +117,10 @@ func (f Field) GoType() string {
 		return "[]string"
 	case FieldStringArray:
 		return "datatypes.JSONSlice[string]"
+	case FieldFile:
+		return "*files.FileRef"
+	case FieldFiles:
+		return "files.FileRefs"
 	default:
 		return "string"
 	}
@@ -127,6 +161,11 @@ func (f Field) GORMTag() string {
 		// FK matches the referenced model's UUID string PK.
 		parts = append(parts, "size:36", "index")
 	case FieldStringArray:
+		parts = append(parts, "type:json")
+	case FieldFile, FieldFiles:
+		// FileRef / FileRefs implement Value / Scan via the files package,
+		// so GORM stores them as JSON. type:json signals jsonb on Postgres
+		// (otherwise we'd get text and lose efficient querying).
 		parts = append(parts, "type:json")
 	case FieldFloat:
 		// Heuristic: money-shaped fields need fixed-precision storage
@@ -185,6 +224,10 @@ func (f Field) TSType() string {
 		return "string[]"
 	case FieldStringArray:
 		return "string[]"
+	case FieldFile:
+		return "FileRef | null"
+	case FieldFiles:
+		return "FileRef[]"
 	default:
 		return "string"
 	}
@@ -220,11 +263,18 @@ func (f Field) ZodType() string {
 		base = "z.array(z.string().uuid()).optional()"
 	case FieldStringArray:
 		base = "z.array(z.string()).optional()"
+	case FieldFile:
+		base = "FileRefSchema.nullable()"
+		if f.Required {
+			base = "FileRefSchema"
+		}
+	case FieldFiles:
+		base = "z.array(FileRefSchema).default([])"
 	default:
 		base = "z.string()"
 	}
 
-	if !f.Required && FieldType(f.Type) != FieldDatetime && FieldType(f.Type) != FieldDate && FieldType(f.Type) != FieldSlug && FieldType(f.Type) != FieldRichtext && FieldType(f.Type) != FieldBelongsTo && FieldType(f.Type) != FieldManyToMany && FieldType(f.Type) != FieldStringArray {
+	if !f.Required && FieldType(f.Type) != FieldDatetime && FieldType(f.Type) != FieldDate && FieldType(f.Type) != FieldSlug && FieldType(f.Type) != FieldRichtext && FieldType(f.Type) != FieldBelongsTo && FieldType(f.Type) != FieldManyToMany && FieldType(f.Type) != FieldStringArray && FieldType(f.Type) != FieldFile && FieldType(f.Type) != FieldFiles {
 		base += ".optional()"
 	}
 
@@ -245,6 +295,10 @@ func (f Field) ColumnFormat() string {
 		return "relative"
 	case FieldRichtext:
 		return "richtext"
+	case FieldFile:
+		return "file"
+	case FieldFiles:
+		return "files"
 	default:
 		return "text"
 	}
@@ -276,6 +330,10 @@ func (f Field) FormFieldType() string {
 		return "multi-relationship-select"
 	case FieldStringArray:
 		return "images"
+	case FieldFile:
+		return "file"
+	case FieldFiles:
+		return "files"
 	default:
 		return "text"
 	}
@@ -298,7 +356,7 @@ func (f Field) IsSearchable() bool {
 
 // ValidFieldTypes returns all valid field type names.
 func ValidFieldTypes() []string {
-	return []string{"string", "text", "richtext", "int", "uint", "float", "bool", "datetime", "date", "slug", "belongs_to", "many_to_many", "string_array"}
+	return []string{"string", "text", "richtext", "int", "uint", "float", "bool", "datetime", "date", "slug", "belongs_to", "many_to_many", "string_array", "file", "files"}
 }
 
 // FKColumnName returns the foreign key column name for a belongs_to field.

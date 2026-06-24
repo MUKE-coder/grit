@@ -1711,32 +1711,67 @@ export function VideosField({ field, value, onChange, error }: VideosFieldProps)
 func adminFileField() string {
 	return `"use client";
 
+// v3.31.30 — FileField. Single-file variant. Value is a FileRef (the
+// JSON shape returned by POST /api/uploads), not a bare URL string.
+// Storing the full ref means previews can render without re-fetching
+// metadata and the parent record carries enough info for the storage
+// admin page to compute usage totals.
+
 import type { FieldDefinition } from "@/lib/resource";
+import type { FileRef } from "@repo/shared/schemas";
 import { Dropzone, type UploadedFile } from "@/components/ui/dropzone";
+import { acceptsToReactDropzoneFormat, buildUploadEndpoint } from "@/lib/file-accepts";
 
 interface FileFieldProps {
   field: FieldDefinition;
-  value: string;
-  onChange: (value: string) => void;
+  value: FileRef | null;
+  onChange: (value: FileRef | null) => void;
   error?: string;
 }
 
-export function FileField({ field, value, onChange, error }: FileFieldProps) {
-  const existingFiles: UploadedFile[] = value
-    ? [{ url: value, name: "Current file", size: 0, type: "application/octet-stream" }]
-    : [];
+function refToUploaded(ref: FileRef | null): UploadedFile[] {
+  if (!ref) return [];
+  return [{ url: ref.url, name: ref.name, size: ref.size, type: ref.mime, thumbnail_url: ref.thumbnail_url }];
+}
 
+function uploadedToRef(u: UploadedFile): FileRef {
+  return {
+    url: u.url,
+    key: extractKeyFromUrl(u.url),
+    name: u.name,
+    mime: u.type,
+    size: u.size,
+    thumbnail_url: u.thumbnail_url,
+  };
+}
+
+// Best-effort: the upload endpoint returns the key explicitly, but the
+// Dropzone shape drops it. Fall back to the URL pathname for storage
+// admin / orphan cleanup -- not perfect but workable until we widen
+// UploadedFile to carry the full ref. (v3.31.31 cleanup.)
+function extractKeyFromUrl(url: string): string {
+  try {
+    return new URL(url).pathname.replace(/^\//, "");
+  } catch {
+    return url;
+  }
+}
+
+export function FileField({ field, value, onChange, error }: FileFieldProps) {
+  const maxBytes = (field.maxSizeMB ?? 5) * 1024 * 1024;
   return (
     <Dropzone
-      variant="compact"
+      variant="default"
       maxFiles={1}
-      maxSize={field.maxSize ?? 10 * 1024 * 1024}
-      value={existingFiles}
+      maxSize={maxBytes}
+      accept={acceptsToReactDropzoneFormat(field.accepts ?? ["all"])}
+      uploadEndpoint={buildUploadEndpoint(field.accepts, maxBytes)}
+      value={refToUploaded(value)}
       onFilesChange={(files) => {
-        onChange(files[0]?.url || "");
+        onChange(files[0] ? uploadedToRef(files[0]) : null);
       }}
       label={field.label}
-      description={field.description ?? "PDF, CSV, Excel, Word, and more"}
+      description={field.description}
       error={error}
     />
   );
@@ -1748,35 +1783,65 @@ export function FileField({ field, value, onChange, error }: FileFieldProps) {
 func adminFilesField() string {
 	return `"use client";
 
+// v3.31.30 — FilesField. Multi-file variant. Value is FileRef[].
+
 import type { FieldDefinition } from "@/lib/resource";
+import type { FileRef } from "@repo/shared/schemas";
 import { Dropzone, type UploadedFile } from "@/components/ui/dropzone";
+import { acceptsToReactDropzoneFormat, buildUploadEndpoint } from "@/lib/file-accepts";
 
 interface FilesFieldProps {
   field: FieldDefinition;
-  value: string[];
-  onChange: (value: string[]) => void;
+  value: FileRef[];
+  onChange: (value: FileRef[]) => void;
   error?: string;
 }
 
-export function FilesField({ field, value, onChange, error }: FilesFieldProps) {
-  const existingFiles: UploadedFile[] = (value || []).map((url, i) => ({
-    url,
-    name: ` + "`" + `File ${i + 1}` + "`" + `,
-    size: 0,
-    type: "application/octet-stream",
+function refsToUploaded(refs: FileRef[]): UploadedFile[] {
+  return (refs ?? []).map((r) => ({
+    url: r.url,
+    name: r.name,
+    size: r.size,
+    type: r.mime,
+    thumbnail_url: r.thumbnail_url,
   }));
+}
 
+function uploadedToRef(u: UploadedFile): FileRef {
+  return {
+    url: u.url,
+    key: extractKeyFromUrl(u.url),
+    name: u.name,
+    mime: u.type,
+    size: u.size,
+    thumbnail_url: u.thumbnail_url,
+  };
+}
+
+function extractKeyFromUrl(url: string): string {
+  try {
+    return new URL(url).pathname.replace(/^\//, "");
+  } catch {
+    return url;
+  }
+}
+
+export function FilesField({ field, value, onChange, error }: FilesFieldProps) {
+  const maxFiles = field.max ?? 5;
+  const maxBytes = (field.maxSizeMB ?? 5) * 1024 * 1024;
   return (
     <Dropzone
       variant="default"
-      maxFiles={field.max ?? 10}
-      maxSize={field.maxSize ?? 10 * 1024 * 1024}
-      value={existingFiles}
+      maxFiles={maxFiles}
+      maxSize={maxBytes}
+      accept={acceptsToReactDropzoneFormat(field.accepts ?? ["all"])}
+      uploadEndpoint={buildUploadEndpoint(field.accepts, maxBytes)}
+      value={refsToUploaded(value)}
       onFilesChange={(files) => {
-        onChange(files.map((f) => f.url));
+        onChange(files.map(uploadedToRef));
       }}
       label={field.label}
-      description={field.description ?? "Upload up to " + String(field.max ?? 10) + " files"}
+      description={field.description}
       error={error}
     />
   );

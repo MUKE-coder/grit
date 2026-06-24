@@ -141,6 +141,110 @@ func TestParseInlineFields(t *testing.T) {
 			t.Error("expected error for empty field name, got nil")
 		}
 	})
+
+	// v3.31.30 — file/files types
+	t.Run("single file with image alias", func(t *testing.T) {
+		def, err := ParseInlineFields("Product", "image:file:image")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(def.Fields) != 1 {
+			t.Fatalf("expected 1 field, got %d", len(def.Fields))
+		}
+		f := def.Fields[0]
+		if f.Type != "file" {
+			t.Errorf("expected type file, got %q", f.Type)
+		}
+		if len(f.FileAccepts) != 1 || f.FileAccepts[0] != "image" {
+			t.Errorf("expected FileAccepts=[image], got %v", f.FileAccepts)
+		}
+	})
+
+	t.Run("single file with all alias", func(t *testing.T) {
+		def, err := ParseInlineFields("Product", "attachment:file:all")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if def.Fields[0].FileAccepts[0] != "all" {
+			t.Errorf("expected accepts=[all], got %v", def.Fields[0].FileAccepts)
+		}
+	})
+
+	t.Run("file with default accept list (omitted)", func(t *testing.T) {
+		def, err := ParseInlineFields("Product", "doc:file")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if def.Fields[0].FileAccepts[0] != "all" {
+			t.Errorf("default accepts should be [all], got %v", def.Fields[0].FileAccepts)
+		}
+	})
+
+	t.Run("file with bracketed multi-accept list", func(t *testing.T) {
+		def, err := ParseInlineFields("Product", "attachment:file:[pdf,doc,image,video,zip]")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		got := def.Fields[0].FileAccepts
+		want := []string{"pdf", "doc", "image", "video", "zip"}
+		if len(got) != len(want) {
+			t.Fatalf("expected %d accepts, got %d (%v)", len(want), len(got), got)
+		}
+		for i, v := range want {
+			if got[i] != v {
+				t.Errorf("accepts[%d]: want %q, got %q", i, v, got[i])
+			}
+		}
+	})
+
+	t.Run("files (plural) with bracket list", func(t *testing.T) {
+		def, err := ParseInlineFields("Product", "gallery:files:[image,video]")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if def.Fields[0].Type != "files" {
+			t.Errorf("expected files (plural), got %q", def.Fields[0].Type)
+		}
+	})
+
+	t.Run("file mixed with other fields", func(t *testing.T) {
+		def, err := ParseInlineFields("Product", "name:string,image:file:image,price:float")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(def.Fields) != 3 {
+			t.Fatalf("expected 3 fields, got %d", len(def.Fields))
+		}
+	})
+
+	t.Run("file with bracket list does not split fields incorrectly", func(t *testing.T) {
+		// Bracket-awareness check: the inner commas in [pdf,doc] must
+		// not break the top-level field split.
+		def, err := ParseInlineFields("Product", "name:string,attachments:files:[pdf,doc,image],price:float")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(def.Fields) != 3 {
+			t.Fatalf("expected 3 fields (not %d) — bracket-aware split failed", len(def.Fields))
+		}
+		if len(def.Fields[1].FileAccepts) != 3 {
+			t.Errorf("expected 3 accepts, got %d", len(def.Fields[1].FileAccepts))
+		}
+	})
+
+	t.Run("invalid file accept alias", func(t *testing.T) {
+		_, err := ParseInlineFields("Product", "x:file:wat")
+		if err == nil {
+			t.Error("expected error for invalid accept alias")
+		}
+	})
+
+	t.Run("empty bracket list", func(t *testing.T) {
+		_, err := ParseInlineFields("Product", "x:file:[]")
+		if err == nil {
+			t.Error("expected error for empty bracket accept-list")
+		}
+	})
 }
 
 // ── LoadFromYAML ─────────────────────────────────────────────────────────────

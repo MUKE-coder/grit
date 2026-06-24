@@ -21,6 +21,12 @@ func writeSharedFiles(root string, opts Options) error {
 		filepath.Join(sharedRoot, "schemas", "blog.ts"):    sharedBlogSchema(),
 		filepath.Join(sharedRoot, "types", "blog.ts"):      sharedBlogTypes(),
 
+		// v3.31.30: FileRef — canonical shape of a stored file. Used by
+		// resource schemas with :file: / :files: fields and by the
+		// frontend FileField component to validate upload responses.
+		filepath.Join(sharedRoot, "schemas", "file-ref.ts"): sharedFileRefSchema(),
+		filepath.Join(sharedRoot, "types", "file-ref.ts"):   sharedFileRefTypes(),
+
 		// v3.28: brand identity + theme tokens — single source of truth for
 		// logo, brand name, hero copy, social links, and the 3 theme palettes
 		// (atlas/aurora/pulse). Auth pages and dashboards in apps/admin and
@@ -151,6 +157,7 @@ export {
   type CreateBlogInput,
   type UpdateBlogInput,
 } from "./blog";
+export { FileRefSchema, type FileRef } from "./file-ref";
 // grit:schemas
 `
 }
@@ -294,6 +301,7 @@ export {
 
 export type { Upload } from "./upload";
 export type { Blog } from "./blog";
+export type { FileRef } from "./file-ref";
 // grit:types
 `
 }
@@ -424,5 +432,58 @@ func sharedBlogTypes() string {
   created_at: string;
   updated_at: string;
 }
+`
+}
+
+// v3.31.30 — FileRef shared shape.
+//
+// Every resource with a :file: / :files: field stores this exact JSON
+// in its column. The frontend uploads via POST /api/uploads and gets a
+// FileRef back, then submits the parent form with the FileRef
+// embedded — no multipart wrangling at the resource endpoint.
+
+func sharedFileRefSchema() string {
+	return `import { z } from "zod";
+
+// FileRef — canonical shape of a stored file. The API's POST /api/uploads
+// returns this; resource forms embed it in their submit body.
+//
+// Fields width / height / duration / thumbnail_url are populated by the
+// server when the source format makes them cheap to compute (images get
+// dimensions, audio gets duration). They're optional because not every
+// upload has them — a PDF has no width, a CSV has no thumbnail.
+export const FileRefSchema = z.object({
+  url: z.string().url(),
+  key: z.string().min(1),
+  name: z.string().min(1),
+  mime: z.string().min(1),
+  size: z.number().int().nonnegative(),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
+  duration: z.number().int().nonnegative().optional(),
+  thumbnail_url: z.string().url().optional(),
+});
+
+export type FileRef = z.infer<typeof FileRefSchema>;
+`
+}
+
+func sharedFileRefTypes() string {
+	return `// FileRef — re-export of the Zod-inferred type for code that only
+// needs the type, not the schema. The schema lives in
+// schemas/file-ref.ts; importing the type from here avoids pulling in
+// Zod just to get a type definition.
+
+export type FileRef = {
+  url: string;
+  key: string;
+  name: string;
+  mime: string;
+  size: number;
+  width?: number;
+  height?: number;
+  duration?: number;
+  thumbnail_url?: string;
+};
 `
 }

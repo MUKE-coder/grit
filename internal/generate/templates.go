@@ -41,10 +41,13 @@ func (g *Generator) writeGoModel(names Names) error {
 
 	// Check if any field needs datatypes import
 	needsDatatypes := false
+	needsFiles := false
 	for _, f := range fields {
 		if f.NeedsDatatypesImport() {
 			needsDatatypes = true
-			break
+		}
+		if f.NeedsFilesImport() {
+			needsFiles = true
 		}
 	}
 
@@ -59,7 +62,14 @@ func (g *Generator) writeGoModel(names Names) error {
 	if needsDatatypes {
 		extImports = "\"github.com/google/uuid\"\n\t\"gorm.io/datatypes\"\n\t\"gorm.io/gorm\""
 	}
-	imports = fmt.Sprintf("import (\n\t%s\n\n\t%s\n)", stdImports, extImports)
+	if needsFiles {
+		// internal/files is part of the same module, so we group it as
+		// a project import after the external block.
+		filesImport := fmt.Sprintf("\"%s/internal/files\"", g.Module)
+		imports = fmt.Sprintf("import (\n\t%s\n\n\t%s\n\n\t%s\n)", stdImports, extImports, filesImport)
+	} else {
+		imports = fmt.Sprintf("import (\n\t%s\n\n\t%s\n)", stdImports, extImports)
+	}
 
 	structFields := ""
 	for _, f := range fields {
@@ -927,7 +937,23 @@ func (g *Generator) writeZodSchema(names Names) error {
 		updateFields += fmt.Sprintf("  %s: %s,\n", snakeName, updateZod)
 	}
 
-	content := fmt.Sprintf(`import { z } from "zod";
+	// If any field is a file/files, pull FileRefSchema from the
+	// shared package so the generated schema references it directly
+	// instead of inlining the FileRef shape (single source of truth).
+	needsFileRef := false
+	for _, f := range g.Definition.Fields {
+		if f.IsFileField() {
+			needsFileRef = true
+			break
+		}
+	}
+
+	importLines := `import { z } from "zod";`
+	if needsFileRef {
+		importLines = "import { z } from \"zod\";\nimport { FileRefSchema } from \"./file-ref\";"
+	}
+
+	content := fmt.Sprintf(`%s
 
 export const Create%sSchema = z.object({
 %s});
@@ -937,7 +963,7 @@ export const Update%sSchema = z.object({
 
 export type Create%sInput = z.infer<typeof Create%sSchema>;
 export type Update%sInput = z.infer<typeof Update%sSchema>;
-`, names.Pascal, createFields, names.Pascal, updateFields,
+`, importLines, names.Pascal, createFields, names.Pascal, updateFields,
 		names.Pascal, names.Pascal, names.Pascal, names.Pascal)
 
 	path := filepath.Join(g.Root, "packages", "shared", "schemas", names.Kebab+".ts")
@@ -1250,6 +1276,29 @@ func (g *Generator) writeResourceDefinition(names Names) error {
 		}
 		if f.Required {
 			parts = append(parts, `required: true`)
+		}
+		// v3.31.30: emit file/files accepts + size knobs so the runtime
+		// FileField can build the per-field upload URL without round-
+		// tripping to the API for field metadata.
+		if f.IsFileField() && len(f.FileAccepts) > 0 {
+			quoted := make([]string, 0, len(f.FileAccepts))
+			for _, a := range f.FileAccepts {
+				quoted = append(quoted, fmt.Sprintf("%q", a))
+			}
+			parts = append(parts, fmt.Sprintf("accepts: [%s]", strings.Join(quoted, ", ")))
+			// Default size cap: 300MB for video, 5MB everything else.
+			// Resource def can still override by hand.
+			size := 5
+			for _, a := range f.FileAccepts {
+				if a == "video" {
+					size = 300
+					break
+				}
+			}
+			parts = append(parts, fmt.Sprintf("maxSizeMB: %d", size))
+			if f.IsFiles() {
+				parts = append(parts, "max: 5")
+			}
 		}
 
 		formFields += "\n    { " + strings.Join(parts, ", ") + " },"

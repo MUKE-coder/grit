@@ -278,6 +278,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "lib", "resource.ts"):     adminResourceTypes(),
 		filepath.Join(adminRoot, "lib", "icons.ts"):        adminIconMap(),
 		filepath.Join(adminRoot, "lib", "formatters.ts"):   adminFormatters(),
+		filepath.Join(adminRoot, "lib", "file-accepts.ts"): adminFileAcceptsLib(),
 
 		// Shared components
 		filepath.Join(adminRoot, "components", "shared", "providers.tsx"):      adminProviders(),

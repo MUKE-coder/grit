@@ -28,6 +28,126 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.30 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.30
+                </span>
+                <span className="text-sm text-muted-foreground">June 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>File fields — first-class file + files
+                  types in <code>grit generate resource</code>.</strong>{' '}
+                  Replaces the awkward old pattern of treating uploads
+                  as <code>string</code> URLs.
+                </p>
+
+                <h3>New CLI syntax</h3>
+                <p>
+                  Single file:{' '}
+                  <code>grit generate resource Product --fields &quot;image:file:image&quot;</code>{' '}
+                  scaffolds a single-image field that accepts
+                  jpg / png / gif / webp / avif / svg.
+                </p>
+                <p>
+                  Multiple files:{' '}
+                  <code>gallery:files:image</code> for a multi-image
+                  gallery.
+                </p>
+                <p>
+                  Bracketed accept-list for mixed types:{' '}
+                  <code>attachment:file:[pdf,doc,image,video,zip]</code>.
+                  Bare commas don&apos;t work because the top-level
+                  field separator is also <code>,</code>; the parser
+                  is bracket-aware so the inner list stays glued
+                  together.
+                </p>
+                <p>
+                  Accept aliases: <code>image</code>,{' '}
+                  <code>video</code>, <code>audio</code>,{' '}
+                  <code>pdf</code>, <code>doc</code>,{' '}
+                  <code>excel</code>, <code>csv</code>,{' '}
+                  <code>zip</code>, <code>archive</code>,{' '}
+                  <code>all</code>.
+                </p>
+
+                <h3>What gets generated</h3>
+                <ul>
+                  <li>
+                    <strong>Go model:</strong> field typed as{' '}
+                    <code>*files.FileRef</code> (single) or{' '}
+                    <code>files.FileRefs</code> (multi), stored as JSON
+                    via GORM Value/Scan adapters in the new{' '}
+                    <code>internal/files</code> package.
+                  </li>
+                  <li>
+                    <strong>Zod schema:</strong> imports{' '}
+                    <code>FileRefSchema</code> from the shared package
+                    — a single source of truth for the JSON shape.
+                  </li>
+                  <li>
+                    <strong>Admin resource def:</strong> auto-emits{' '}
+                    <code>accepts</code> and <code>maxSizeMB</code> so
+                    the form&apos;s upload endpoint enforces the
+                    per-field validation.
+                  </li>
+                  <li>
+                    <strong>FormBuilder:</strong> dispatches{' '}
+                    <code>file</code> / <code>files</code> types to
+                    the FileRef-aware FileField / FilesField
+                    components.
+                  </li>
+                  <li>
+                    <strong>DataTable:</strong> file columns render as
+                    thumbnails for images, MIME-typed icons for
+                    everything else. Multi-file columns stack the
+                    first three thumbnails with a +N overflow chip.
+                  </li>
+                </ul>
+
+                <h3>API changes</h3>
+                <p>
+                  <code>POST /api/uploads</code> now accepts{' '}
+                  <code>?accepts=&lt;aliases&gt;&amp;max_size=&lt;bytes&gt;</code>{' '}
+                  query params so the server validates against the
+                  per-field accept set (not just a global allowlist).
+                  Response shape changed to return a{' '}
+                  <code>FileRef</code> directly under{' '}
+                  <code>data</code> — drop-in for form state.
+                </p>
+
+                <h3>Defaults</h3>
+                <ul>
+                  <li>Single file max: 5MB (300MB for video).</li>
+                  <li>Multi-file count: 5.</li>
+                  <li>
+                    Dropzone variant: the existing default boxed-dashed
+                    style. v3.31.31 adds 4 more variants (minimal,
+                    card, avatar, inline) + 3 progress variants + dnd-kit
+                    reorder.
+                  </li>
+                </ul>
+
+                <h3>Migration</h3>
+                <p>
+                  Existing scaffolded projects need three things to
+                  pick up file fields:{' '}
+                  <code>apps/api/internal/files/</code> (new package),
+                  the updated <code>handlers/upload.go</code>, and the
+                  refactored{' '}
+                  <code>components/forms/fields/file-field.tsx</code> +{' '}
+                  <code>files-field.tsx</code> + the new{' '}
+                  <code>lib/file-accepts.ts</code>. Re-run{' '}
+                  <code>grit generate resource</code> for any resource
+                  to get the updated templates — the new code lives
+                  once per project, not per resource.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.29 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

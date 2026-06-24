@@ -11,9 +11,12 @@ func writeStorageFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "storage", "storage.go"):  storageServiceGo(),
-		filepath.Join(apiRoot, "internal", "storage", "image.go"):   storageImageGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "upload.go"): uploadHandlerGo(),
+		filepath.Join(apiRoot, "internal", "storage", "storage.go"):     storageServiceGo(),
+		filepath.Join(apiRoot, "internal", "storage", "image.go"):       storageImageGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "upload.go"):     uploadHandlerGo(),
+		filepath.Join(apiRoot, "internal", "files", "file_ref.go"):      filesFileRefGo(),
+		filepath.Join(apiRoot, "internal", "files", "accepts.go"):       filesAcceptsGo(),
+		filepath.Join(apiRoot, "internal", "files", "file_ref_test.go"): filesFileRefTestGo(),
 	}
 
 	for path, content := range files {
@@ -304,6 +307,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/files"
 	"{{MODULE}}/internal/jobs"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/storage"
@@ -337,6 +341,17 @@ type UploadHandler struct {
 }
 
 // Create handles file upload via multipart form.
+//
+// Query params (v3.31.30):
+//   accepts   — comma-separated list of CLI accept aliases
+//               (image, video, pdf, doc, excel, csv, zip, archive, all).
+//               When present, validates the upload's MIME against the
+//               alias set. Absent = fall back to the global allowlist.
+//   max_size  — per-field byte cap. Overrides MaxUploadSize when set
+//               (e.g. video fields raise it to 300MB).
+//
+// Response: a files.FileRef directly under data so the frontend can
+// store it verbatim in form state, no shape massaging needed.
 func (h *UploadHandler) Create(c *gin.Context) {
 	if h.Storage == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
@@ -360,20 +375,50 @@ func (h *UploadHandler) Create(c *gin.Context) {
 	}
 	defer file.Close()
 
-	// Validate file size
-	if header.Size > MaxUploadSize {
+	// Per-field accept list. Comma-separated aliases.
+	var acceptsList []string
+	if a := c.Query("accepts"); a != "" {
+		for _, s := range strings.Split(a, ",") {
+			s = strings.TrimSpace(s)
+			if s != "" {
+				acceptsList = append(acceptsList, s)
+			}
+		}
+	}
+
+	// Per-field max size override. Bytes.
+	maxSize := int64(MaxUploadSize)
+	if m := c.Query("max_size"); m != "" {
+		if parsed, perr := strconv.ParseInt(m, 10, 64); perr == nil && parsed > 0 {
+			maxSize = parsed
+		}
+	} else if len(acceptsList) > 0 {
+		// No explicit max_size, but field type is known — use the
+		// default-for-accepts (5MB for most, 300MB for video).
+		maxSize = files.DefaultMaxSizeBytes(acceptsList)
+	}
+
+	if header.Size > maxSize {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{
 				"code":    "FILE_TOO_LARGE",
-				"message": fmt.Sprintf("File size exceeds maximum of %d MB", MaxUploadSize/(1<<20)),
+				"message": fmt.Sprintf("File size exceeds maximum of %d MB", maxSize/(1<<20)),
 			},
 		})
 		return
 	}
 
-	// Validate MIME type
 	mimeType := header.Header.Get("Content-Type")
-	if !AllowedMimeTypes[mimeType] {
+
+	// If accepts was provided, validate against the per-field allow set.
+	// Otherwise fall back to the global allowlist (backwards-compat).
+	allowed := false
+	if len(acceptsList) > 0 {
+		allowed = files.AllowsMIME(acceptsList, mimeType)
+	} else {
+		allowed = AllowedMimeTypes[mimeType]
+	}
+	if !allowed {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{
 				"code":    "INVALID_FILE_TYPE",
@@ -412,7 +457,6 @@ func (h *UploadHandler) Create(c *gin.Context) {
 	}
 
 	if err := h.DB.Create(&upload).Error; err != nil {
-		// Clean up uploaded file on DB error
 		_ = h.Storage.Delete(c.Request.Context(), key)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
@@ -423,17 +467,29 @@ func (h *UploadHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Enqueue image processing job if it's an image.
-	// IdempotencyKey = upload.ID so a client retry of the same upload
-	// (rare but possible after a network drop) doesn't re-process.
+	// Enqueue image processing job. Width / height are written back to
+	// the upload row by the worker; for now we return what we have and
+	// the frontend can refetch the FileRef later if it needs dimensions.
 	if h.Jobs != nil && storage.IsImageMimeType(mimeType) {
 		_ = h.Jobs.EnqueueProcessImage(c.Request.Context(), upload.ID, key, mimeType, jobs.EnqueueOption{
 			IdempotencyKey: "image:process:" + upload.ID,
 		})
 	}
 
+	// Dimensions / duration aren't extracted synchronously -- the
+	// image-processing worker populates ThumbnailURL asynchronously
+	// and the frontend can re-fetch the record if it needs them later.
+	ref := files.FileRef{
+		URL:          upload.URL,
+		Key:          upload.Path,
+		Name:         upload.OriginalName,
+		MIME:         upload.MimeType,
+		Size:         upload.Size,
+		ThumbnailURL: upload.ThumbnailURL,
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
-		"data":    upload,
+		"data":    ref,
 		"message": "File uploaded successfully",
 	})
 }

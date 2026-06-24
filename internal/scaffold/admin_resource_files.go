@@ -94,6 +94,14 @@ export interface FieldDefinition {
   relatedEndpoint?: string;
   displayField?: string;
   relationshipKey?: string;
+
+  // v3.31.30 — file / files field knobs. Set by the resource generator
+  // from the CLI :file:<accepts> / :files:<accepts> syntax, but can be
+  // overridden by hand in the resource definition.
+  /** Accept-alias list ("image", "all", or e.g. ["pdf","doc"]). */
+  accepts?: string[];
+  /** Per-field max size in megabytes. Defaults: 5MB, 300MB for video. */
+  maxSizeMB?: number;
 }
 
 export interface StepDefinition {
