@@ -28,6 +28,55 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.28 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.28
+                </span>
+                <span className="text-sm text-muted-foreground">June 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Colored toasters.</strong> Success toasts
+                  are now green, errors red, warnings amber, info
+                  blue — instead of the previous neutral grey-on-grey
+                  that made every toast look identical.
+                </p>
+
+                <h3>What changed</h3>
+                <p>
+                  The scaffolded <code>&lt;Toaster&gt;</code> in{' '}
+                  <code>components/shared/providers.tsx</code> now
+                  passes <code>richColors</code>, and{' '}
+                  <code>app/globals.css</code> bridges Grit&apos;s
+                  theme tokens (<code>--success</code>,{' '}
+                  <code>--danger</code>, <code>--warning</code>,{' '}
+                  <code>--info</code>) into sonner&apos;s palette
+                  slots via <code>color-mix()</code>. Each theme
+                  (atlas / aurora / pulse / midnight) already
+                  redefines those four tokens, so toasters
+                  automatically pick up the active brand colors
+                  — no per-theme overrides needed.
+                </p>
+
+                <h3>Migration</h3>
+                <p>
+                  Existing projects: copy the new{' '}
+                  <code>Toaster</code> mount from{' '}
+                  <code>providers.tsx</code> and the{' '}
+                  <code>[data-sonner-toaster]</code> CSS block from{' '}
+                  <code>globals.css</code> (right after the
+                  scrollbar rules). All toast call sites in the
+                  scaffold already use{' '}
+                  <code>toast.success()</code> /{' '}
+                  <code>toast.error()</code> etc., so they pick up
+                  the new colors with zero code changes.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.27 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

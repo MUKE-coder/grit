@@ -710,6 +710,36 @@ body {
   background: var(--bg-hover);
   border-radius: 3px;
 }
+
+/* Sonner toaster — bridge our theme tokens into sonner's richColors slots
+ * so success = Grit --success, error = Grit --danger, etc. Works across
+ * every theme because each [data-theme] already redefines these tokens. */
+[data-sonner-toaster] {
+  --normal-bg: var(--bg-elevated);
+  --normal-text: var(--text-primary);
+  --normal-border: var(--border);
+
+  --success-bg: color-mix(in srgb, var(--success) 14%, var(--bg-elevated));
+  --success-text: var(--success);
+  --success-border: color-mix(in srgb, var(--success) 32%, transparent);
+
+  --error-bg: color-mix(in srgb, var(--danger) 14%, var(--bg-elevated));
+  --error-text: var(--danger);
+  --error-border: color-mix(in srgb, var(--danger) 32%, transparent);
+
+  --warning-bg: color-mix(in srgb, var(--warning) 16%, var(--bg-elevated));
+  --warning-text: var(--warning);
+  --warning-border: color-mix(in srgb, var(--warning) 36%, transparent);
+
+  --info-bg: color-mix(in srgb, var(--info) 14%, var(--bg-elevated));
+  --info-text: var(--info);
+  --info-border: color-mix(in srgb, var(--info) 32%, transparent);
+}
+
+[data-sonner-toast].grit-toast [data-icon] svg {
+  width: 18px;
+  height: 18px;
+}
 ` + adminDarkModeCSSAddon()
 }
 
@@ -793,13 +823,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         {children}
+        {/*
+          richColors gives us sonner's tinted success/error/warning/info
+          surfaces. We override sonner's default palette via CSS vars in
+          globals.css so green = Grit success (#00b894), red = danger
+          (#ff6b6b), etc. — matching the rest of the design system.
+        */}
         <Toaster
+          richColors
           position="bottom-right"
+          theme="dark"
           toastOptions={{
-            style: {
-              background: "var(--bg-elevated)",
-              border: "1px solid var(--border)",
-              color: "var(--text-primary)",
+            classNames: {
+              toast: "grit-toast",
             },
           }}
         />
