@@ -163,14 +163,16 @@ type SharedResourceSubmission struct {
 }
 
 // SubmitSharedForm dispatches a public form submission to the right
-// resource service based on the FormShare's ResourceName. The body
-// is a free-form map (validated by the resource service's own binding
+// resource service based on the FormShare's ResourceName. fields is
+// a free-form map (validated by the resource service's own binding
 // rules), since public submissions don't carry the operator's typed
 // struct context.
 //
-// Adding a new resource? grit generate resource appends a case below
-// at the // grit:form-share:dispatch marker.
-func SubmitSharedForm(db *gorm.DB, resourceName string, body map[string]interface{}) (*SharedResourceSubmission, error) {
+// Adding a new resource? grit generate resource appends a case to
+// the switch below at the auto-dispatch marker. Each case re-marshals
+// fields into the typed model via json.Marshal(fields) — that's why
+// the parameter is named "fields" rather than "body".
+func SubmitSharedForm(db *gorm.DB, resourceName string, fields map[string]interface{}) (*SharedResourceSubmission, error) {
 	switch resourceName {
 	// grit:form-share:dispatch
 	default:

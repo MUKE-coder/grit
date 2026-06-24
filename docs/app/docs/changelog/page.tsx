@@ -105,6 +105,89 @@ export default function ChangelogPage() {
               </div>
             </div>
 
+            {/* v3.31.26 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.26
+                </span>
+                <span className="text-sm text-muted-foreground">June 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fix two bugs in the FormShare dispatcher
+                  template</strong> reported by a learner who created
+                  a fresh project and ran{' '}
+                  <code>grit generate resource Category</code> +{' '}
+                  <code>Product</code>. The API failed to build with{' '}
+                  <code>syntax error: non-declaration statement
+                  outside function body</code>.
+                </p>
+
+                <h3>Bug 1 — marker collision with doc comment</h3>
+                <p>
+                  The scaffolded{' '}
+                  <code>services/form_share_dispatch.go</code> doc
+                  comment literally contained the string{' '}
+                  <code>// grit:form-share:dispatch marker</code>.
+                  When the generator ran{' '}
+                  <code>injectBefore</code> for a new resource, it
+                  found that occurrence first (above the function,
+                  outside any function body) and inserted every case
+                  there. The function&apos;s switch stayed empty,
+                  and the cases sat in package scope where they
+                  produced a syntax error.
+                </p>
+                <p>
+                  Fix: rephrased the doc comment to describe the
+                  marker without containing the marker string.
+                </p>
+
+                <h3>Bug 2 — function param named "body", inject uses "fields"</h3>
+                <p>
+                  The dispatcher&apos;s third parameter was{' '}
+                  <code>body map[string]interface{`{}`}</code>, but
+                  every injected case uses{' '}
+                  <code>json.Marshal(fields)</code>. Even if Bug 1
+                  hadn&apos;t hit first, the cases would have failed
+                  to compile with{' '}
+                  <code>undefined: fields</code>.
+                </p>
+                <p>
+                  Fix: renamed the parameter to <code>fields</code>{' '}
+                  so it matches what the inject template produces.
+                </p>
+
+                <h3>Migration</h3>
+                <p>
+                  Existing projects that ran{' '}
+                  <code>grit generate resource X</code> on or after
+                  v3.31.20 may have a broken{' '}
+                  <code>form_share_dispatch.go</code>. To fix:
+                </p>
+                <ol>
+                  <li>
+                    Open{' '}
+                    <code>apps/api/internal/services/form_share_dispatch.go</code>.
+                  </li>
+                  <li>
+                    Move any <code>case "X":</code> blocks that
+                    landed above the function back inside the{' '}
+                    <code>switch</code> below.
+                  </li>
+                  <li>
+                    Rename the function parameter from <code>body</code>{' '}
+                    to <code>fields</code> if needed.
+                  </li>
+                  <li>
+                    Rephrase the doc comment so it doesn&apos;t
+                    contain the literal marker string.
+                  </li>
+                </ol>
+              </div>
+            </div>
+
             {/* v3.31.25 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
