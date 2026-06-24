@@ -102,6 +102,17 @@ export interface FieldDefinition {
   accepts?: string[];
   /** Per-field max size in megabytes. Defaults: 5MB, 300MB for video. */
   maxSizeMB?: number;
+  // v3.31.31 — visual knobs for the FileField / FilesField.
+  /** Dropzone visual variant. "default" boxed-dashed, "compact" inline,
+   *  "minimal" link, "avatar" circular for profile pics,
+   *  "inline" tag-style. */
+  dropzone?: "default" | "compact" | "minimal" | "avatar" | "inline";
+  /** Progress indicator variant. "bar" (default linear), "circular"
+   *  (donut with % inside), "pulse" (three dots + %, minimal). */
+  progress?: "bar" | "circular" | "pulse";
+  /** Allow up/down arrow reordering of files in the preview list.
+   *  Multi-file (:files:) only. Defaults to true. */
+  reorderable?: boolean;
 }
 
 export interface StepDefinition {

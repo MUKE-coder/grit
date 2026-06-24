@@ -28,6 +28,139 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.31 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.31
+                </span>
+                <span className="text-sm text-muted-foreground">June 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>File fields polish — progress variants,
+                  type-aware previews, reorder.</strong>
+                </p>
+
+                <h3>Bug fix from v3.31.30</h3>
+                <p>
+                  The Dropzone was still reading{' '}
+                  <code>data.original_name</code> and{' '}
+                  <code>data.mime_type</code> from the upload response,
+                  but v3.31.30 changed{' '}
+                  <code>POST /api/uploads</code> to return a FileRef
+                  shape with <code>data.name</code> and{' '}
+                  <code>data.mime</code>. Files uploaded after v3.31.30
+                  appeared with the generic File client-side fallback
+                  name instead of the real filename from the server.
+                  Now reads both shapes (FileRef first, legacy
+                  fallback) so cross-version compatibility holds.
+                </p>
+                <p>
+                  UploadedFile also carries the explicit <code>key</code>{' '}
+                  field now, so the FileField bridge round-trips the
+                  S3 key losslessly instead of recomputing it from
+                  the URL pathname.
+                </p>
+
+                <h3>Three progress variants</h3>
+                <ul>
+                  <li>
+                    <strong>bar</strong> (default) — linear progress
+                    bar with spinner + percentage label.
+                  </li>
+                  <li>
+                    <strong>circular</strong> — donut with the % inside.
+                    SVG, no extra dependency.
+                  </li>
+                  <li>
+                    <strong>pulse</strong> — three pulsing dots + %.
+                    Minimal chrome for compact contexts.
+                  </li>
+                </ul>
+                <p>
+                  Pick a variant per field:
+                </p>
+                <pre><code>{` + "`" + `{ key: "avatar", type: "file", accepts: ["image"], progress: "circular" }` + "`" + `}</code></pre>
+                <p>
+                  The Default dropzone variant routes its uploading
+                  state through the new <code>&lt;UploadProgress&gt;</code>{' '}
+                  component. The other four dropzone variants (compact /
+                  minimal / avatar / inline) keep their bespoke inline
+                  progress UI for now — v3.31.32 standardises them.
+                </p>
+
+                <h3>Type-aware FilePreview</h3>
+                <p>
+                  Single image preview stays as a thumbnail. Video gets
+                  a play badge over a dark thumb. Audio shows a music
+                  icon. PDF / Word / Excel / CSV render format-specific
+                  glyphs with colour-coded tints (PDF red, Word blue,
+                  Excel green). Everything else falls back to the
+                  generic File icon.
+                </p>
+
+                <h3>Reorder by up/down arrows</h3>
+                <p>
+                  Multi-file (<code>:files:</code>) preview rows now
+                  show small up/down arrow buttons when{' '}
+                  <code>reorderable</code> is true (default). Adjacent
+                  swap; first row&apos;s up button is disabled, last
+                  row&apos;s down button is disabled. No new
+                  dependencies — drag-reorder via dnd-kit is a future
+                  polish.
+                </p>
+
+                <h3>Resource def knobs</h3>
+                <p>
+                  Three new optional props on file/files{' '}
+                  <code>FieldDefinition</code>:
+                </p>
+                <ul>
+                  <li>
+                    <code>dropzone</code>: <code>&quot;default&quot;</code>{' '}
+                    | <code>&quot;compact&quot;</code> |{' '}
+                    <code>&quot;minimal&quot;</code> |{' '}
+                    <code>&quot;avatar&quot;</code> |{' '}
+                    <code>&quot;inline&quot;</code>
+                  </li>
+                  <li>
+                    <code>progress</code>:{' '}
+                    <code>&quot;bar&quot;</code> |{' '}
+                    <code>&quot;circular&quot;</code> |{' '}
+                    <code>&quot;pulse&quot;</code>
+                  </li>
+                  <li>
+                    <code>reorderable</code>: <code>boolean</code>{' '}
+                    (default true; multi-file only)
+                  </li>
+                </ul>
+                <p>
+                  These are pure overrides — the CLI doesn&apos;t emit
+                  them automatically; hand-edit the resource def to
+                  customise.
+                </p>
+
+                <h3>Migration</h3>
+                <p>
+                  Existing scaffolded projects need three files
+                  refreshed:{' '}
+                  <code>components/ui/dropzone.tsx</code>,{' '}
+                  <code>components/forms/fields/file-field.tsx</code>,
+                  and{' '}
+                  <code>components/forms/fields/files-field.tsx</code>.
+                  Plus add{' '}
+                  <code>FileSpreadsheet</code> and{' '}
+                  <code>Music</code> to the export block in{' '}
+                  <code>lib/icons.ts</code>. Re-run{' '}
+                  <code>grit generate resource</code> for any resource
+                  to pull the updates — the files live once, not per
+                  resource.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.30 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

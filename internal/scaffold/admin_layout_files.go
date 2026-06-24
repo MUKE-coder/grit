@@ -149,6 +149,8 @@ func adminIconMap() string {
   Gauge,
   Copy,
   Unlock,
+  FileSpreadsheet,
+  Music,
   type LucideIcon,
 } from "lucide-react";
 
@@ -280,6 +282,9 @@ export {
   // v3.31.20 — form-shares admin page
   Copy,
   Unlock,
+  // v3.31.31 — type-aware FilePreview icons (excel, audio).
+  FileSpreadsheet,
+  Music,
 };
 `
 }

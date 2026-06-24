@@ -1731,13 +1731,13 @@ interface FileFieldProps {
 
 function refToUploaded(ref: FileRef | null): UploadedFile[] {
   if (!ref) return [];
-  return [{ url: ref.url, name: ref.name, size: ref.size, type: ref.mime, thumbnail_url: ref.thumbnail_url }];
+  return [{ url: ref.url, key: ref.key, name: ref.name, size: ref.size, type: ref.mime, thumbnail_url: ref.thumbnail_url }];
 }
 
 function uploadedToRef(u: UploadedFile): FileRef {
   return {
     url: u.url,
-    key: extractKeyFromUrl(u.url),
+    key: u.key || extractKeyFromUrl(u.url),
     name: u.name,
     mime: u.type,
     size: u.size,
@@ -1745,10 +1745,10 @@ function uploadedToRef(u: UploadedFile): FileRef {
   };
 }
 
-// Best-effort: the upload endpoint returns the key explicitly, but the
-// Dropzone shape drops it. Fall back to the URL pathname for storage
-// admin / orphan cleanup -- not perfect but workable until we widen
-// UploadedFile to carry the full ref. (v3.31.31 cleanup.)
+// Fallback for the rare case where the Dropzone never round-tripped
+// the file through /api/uploads (e.g. value loaded from server-side
+// state without a key column). Pathname is good enough for the
+// storage admin page to deduplicate but won't survive a CDN rewrite.
 function extractKeyFromUrl(url: string): string {
   try {
     return new URL(url).pathname.replace(/^\//, "");
@@ -1761,7 +1761,8 @@ export function FileField({ field, value, onChange, error }: FileFieldProps) {
   const maxBytes = (field.maxSizeMB ?? 5) * 1024 * 1024;
   return (
     <Dropzone
-      variant="default"
+      variant={field.dropzone ?? "default"}
+      progress={field.progress ?? "bar"}
       maxFiles={1}
       maxSize={maxBytes}
       accept={acceptsToReactDropzoneFormat(field.accepts ?? ["all"])}
@@ -1800,6 +1801,7 @@ interface FilesFieldProps {
 function refsToUploaded(refs: FileRef[]): UploadedFile[] {
   return (refs ?? []).map((r) => ({
     url: r.url,
+    key: r.key,
     name: r.name,
     size: r.size,
     type: r.mime,
@@ -1831,7 +1833,9 @@ export function FilesField({ field, value, onChange, error }: FilesFieldProps) {
   const maxBytes = (field.maxSizeMB ?? 5) * 1024 * 1024;
   return (
     <Dropzone
-      variant="default"
+      variant={field.dropzone ?? "default"}
+      progress={field.progress ?? "bar"}
+      reorderable={field.reorderable ?? true}
       maxFiles={maxFiles}
       maxSize={maxBytes}
       accept={acceptsToReactDropzoneFormat(field.accepts ?? ["all"])}
