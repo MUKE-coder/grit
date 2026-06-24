@@ -28,6 +28,140 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.40 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.40
+                </span>
+                <span className="text-sm text-muted-foreground">June 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Per-user dashboard customisation + dashboard
+                  date filter.</strong> A new Settings → Dashboard page
+                  lets each operator pick which stat cards, charts, and
+                  tables show up on their dashboard, grouped by module.
+                  The dashboard also gets a date-window filter that
+                  scopes every stat and chart to the selected range.
+                </p>
+
+                <h3>Backend</h3>
+                <ul>
+                  <li>
+                    New model <code>DashboardLayout</code> (one row
+                    per user, unique on user_id) with three{' '}
+                    <code>JSONSlice[string]</code> columns for cards /
+                    charts / tables plus a <code>date_preset</code>{' '}
+                    text column for the persisted window.
+                  </li>
+                  <li>
+                    New handler exposing{' '}
+                    <code>GET /api/dashboard-layout</code> (returns
+                    the current user&apos;s saved layout or a
+                    zero-valued struct if none) and{' '}
+                    <code>PUT /api/dashboard-layout</code> (whole-row
+                    replace).
+                  </li>
+                  <li>
+                    Empty layout (id === &quot;&quot;) = &quot;show
+                    all widgets&quot;. Saved layout with{' '}
+                    <code>cards: []</code> = &quot;hide every stat
+                    card&quot;. The frontend distinguishes the two by
+                    checking <code>layout.id</code>.
+                  </li>
+                </ul>
+
+                <h3>Widget catalog</h3>
+                <p>
+                  New <code>lib/dashboard-catalog.ts</code> aggregates
+                  the catalog of pickable widgets from two sources:
+                </p>
+                <ul>
+                  <li>
+                    <strong>System</strong> widgets (Users, Events 24h,
+                    Notifications, Resources count, Activity 7-day
+                    chart, Severity mix, Recent activity, Quick
+                    access) — these are the legacy hard-coded
+                    dashboard tiles, now opt-out-able per user.
+                  </li>
+                  <li>
+                    <strong>Per-resource</strong> widgets — every
+                    entry in a <code>ResourceDefinition.dashboard.widgets</code>{' '}
+                    array contributes one catalog entry, grouped
+                    under the resource&apos;s module name.
+                  </li>
+                </ul>
+                <p>
+                  Widget keys are stable strings (<code>system:users</code>,{' '}
+                  <code>products:total-products</code>, etc.) so the
+                  saved layout doesn&apos;t break when widget order
+                  changes in the definition.
+                </p>
+
+                <h3>Settings page</h3>
+                <p>
+                  At <code>/settings/dashboard</code>: three sections
+                  (Cards / Charts / Tables), each with checkbox lists
+                  grouped by module. Per-section{' '}
+                  <em>Select all</em> /{' '}
+                  <em>Deselect all</em>; per-module{' '}
+                  <em>All</em> / <em>None</em> for fine-grained
+                  configuration. Sidebar nav gets a new{' '}
+                  &quot;Dashboard settings&quot; entry under System
+                  (no admin gate; every user can customise their own
+                  view).
+                </p>
+
+                <h3>Dashboard date filter</h3>
+                <p>
+                  The existing <code>DateFilter</code> component from
+                  v3.31.34 is now on the dashboard too. URL-persisted
+                  via <code>?date=preset</code> /{' '}
+                  <code>?date_from</code> / <code>?date_to</code>;
+                  initial value falls back to the saved{' '}
+                  <code>date_preset</code> so a refresh keeps the
+                  window. Every system widget query keys on the
+                  active <code>dateParams</code> so changing the
+                  filter retriggers a refetch with{' '}
+                  <code>?created_since=7d</code> /{' '}
+                  <code>?created_from=...&amp;created_to=...</code>{' '}
+                  appended.
+                </p>
+
+                <h3>Migration</h3>
+                <p>
+                  New scaffolded projects ship everything wired up. To
+                  add to an existing project, run <code>grit upgrade</code>{' '}
+                  (which writes the new files), then hand-add the
+                  model to <code>models/user.go</code>&apos;s{' '}
+                  <code>Models()</code> list and the routes to{' '}
+                  <code>routes.go</code> — or rerun the upgrade with{' '}
+                  <code>--force</code> if you haven&apos;t customised
+                  those files. The existing hand-coded dashboard
+                  page keeps working with no changes; the new
+                  filtering activates only after you replace
+                  <code>app/(dashboard)/dashboard/page.tsx</code>{' '}
+                  with the v3.31.40 template (it reads{' '}
+                  <code>useDashboardLayout()</code> and{' '}
+                  <code>resolveEnabledKeys()</code>).
+                </p>
+                <p>
+                  Heads-up for early adopters: the v3.31.40 framework
+                  scaffold ships the building blocks (model + handler
+                  + catalog + hook + Settings page + sidebar entry)
+                  but does <em>not</em> auto-rewrite the dashboard
+                  page — that lands in a follow-up release once the
+                  multi-style dashboard variants (default / modern /
+                  minimal / glass) are all refactored to use the new
+                  layout reader. Until then, the example dashboard
+                  refactor in the docs walks you through the changes
+                  by hand.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.39 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

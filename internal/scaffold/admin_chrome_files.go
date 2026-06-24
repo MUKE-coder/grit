@@ -551,6 +551,7 @@ const INTERNAL_NAV = [
 // during an incident — the System hub at /system still aggregates every
 // surface for the broader browse case.
 const SYSTEM_NAV = [
+  { href: "/settings/dashboard", label: "Dashboard settings", iconKey: "Settings",    adminOnly: false },
   { href: "/system/health",       label: "System Health", iconKey: "ActivityIcon", adminOnly: true },
   { href: "/system/performance",  label: "Performance",   iconKey: "TrendingUp",   adminOnly: true },
   { href: "/system/security",     label: "Security",      iconKey: "Shield",       adminOnly: true },

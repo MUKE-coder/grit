@@ -55,6 +55,9 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "models", "user_activity.go"):    userActivityModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "activity.go"):       userActivityServiceGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user_activity.go"): userActivityHandlerGo(),
+		// v3.31.40 — per-user dashboard customisation
+		filepath.Join(apiRoot, "internal", "models", "dashboard_layout.go"):    dashboardLayoutModelGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "dashboard_layout.go"): strings.ReplaceAll(dashboardLayoutHandlerGo(), "{{MODULE}}", opts.Module()),
 		filepath.Join(apiRoot, "internal", "models", "ticket.go"):           ticketModelGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "ticket.go"):         ticketHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "ticket_mail.go"):    ticketMailGo(),
@@ -899,6 +902,8 @@ func Models() []interface{} {
 		&FormShare{},
 		// v3.31.25 — audit log for public submissions
 		&FormSubmission{},
+		// v3.31.40 — per-user dashboard customisation
+		&DashboardLayout{},
 		// grit:models
 	}
 }
@@ -6465,6 +6470,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	ticketHandler := &handlers.TicketHandler{DB: db, Mail: svc.Mailer}
 	// v3.31.20 — public form sharing (Phase 2)
 	formShareHandler := &handlers.FormShareHandler{DB: db}
+	// v3.31.40 — per-user dashboard customisation
+	dashboardLayoutHandler := &handlers.DashboardLayoutHandler{DB: db}
 
 	// Sync registry — list every model that should be syncable from
 	// offline-first desktop clients. The resource generator injects
@@ -6671,6 +6678,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		protected.GET("/notifications", notificationHandler.List)
 		protected.POST("/notifications/:id/read", notificationHandler.MarkRead)
 		protected.POST("/notifications/read-all", notificationHandler.MarkAllRead)
+
+		// v3.31.40 — per-user dashboard layout customisation.
+		protected.GET("/dashboard-layout", dashboardLayoutHandler.Get)
+		protected.PUT("/dashboard-layout", dashboardLayoutHandler.Put)
 
 		// v3.30 — tickets. Any authenticated user can open + reply; the
 		// handler scopes List/Get visibility to the caller unless they're

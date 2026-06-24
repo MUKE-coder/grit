@@ -364,6 +364,10 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "hooks", "use-resource.ts"): adminUseResource(),
 		filepath.Join(adminRoot, "hooks", "use-system.ts"):   adminUseSystem(),
 		filepath.Join(adminRoot, "hooks", "use-profile.ts"):  adminUseProfile(),
+		// v3.31.40 — per-user dashboard customisation
+		filepath.Join(adminRoot, "hooks", "use-dashboard-layout.ts"):                            adminUseDashboardLayoutTS(),
+		filepath.Join(adminRoot, "lib", "dashboard-catalog.ts"):                                  adminDashboardCatalogTS(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "settings", "dashboard", "page.tsx"):     adminDashboardSettingsPageTS(),
 
 		// Dashboard pages — (dashboard) route group (style variant)
 		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):          adminDashboardPageForStyle(opts.Style),
