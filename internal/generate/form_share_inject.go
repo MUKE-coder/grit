@@ -48,10 +48,17 @@ func ensureDispatchImports(path, module string) error {
 
 	jsonImport := `"encoding/json"`
 	modelsImport := fmt.Sprintf(`"%s/internal/models"`, module)
+	// v3.31.43: PublicFields uses reflection + strings.HasSuffix etc.
+	// Older projects scaffolded before v3.31.43 don't have these
+	// imports yet; add them lazily when we inject the first case.
+	reflectImport := `"reflect"`
+	stringsImport := `"strings"`
 
 	needJSON := !strings.Contains(content, jsonImport)
 	needModels := !strings.Contains(content, modelsImport)
-	if !needJSON && !needModels {
+	needReflect := !strings.Contains(content, reflectImport)
+	needStrings := !strings.Contains(content, stringsImport)
+	if !needJSON && !needModels && !needReflect && !needStrings {
 		return nil
 	}
 
@@ -71,6 +78,12 @@ func ensureDispatchImports(path, module string) error {
 	additions := ""
 	if needJSON {
 		additions += "\n\t" + jsonImport
+	}
+	if needReflect {
+		additions += "\n\t" + reflectImport
+	}
+	if needStrings {
+		additions += "\n\t" + stringsImport
 	}
 	if needModels {
 		additions += "\n\n\t" + modelsImport

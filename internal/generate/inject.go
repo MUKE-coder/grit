@@ -156,6 +156,25 @@ func (g *Generator) injectAll(names Names) error {
 		if err := injectBefore(dispatchFile, "// grit:form-share:dispatch", dispatchCase); err != nil {
 			return fmt.Errorf("injecting form-share dispatch: %w", err)
 		}
+		// v3.31.43: inject a matching case into PublicFields so the
+		// public form renders the right inputs. The reflection helper
+		// PublicFields(...) takes a model pointer and walks its struct
+		// tags -- no per-resource field list to maintain here.
+		fieldsCase := fmt.Sprintf(`	case %q:
+		return reflectPublicFields(&models.%s{})
+`,
+			names.Pascal,
+			names.Pascal,
+		)
+		if err := injectBefore(dispatchFile, "// grit:form-share:fields", fieldsCase); err != nil {
+			// Pre-v3.31.43 projects don't have the fields marker yet.
+			// Surface a warning so the operator knows to add it but
+			// don't fail the whole generate -- the dispatch case
+			// landed fine.
+			fmt.Println("  ⚠ form-share:fields marker missing; public form will fall back to no-fields. Add `// grit:form-share:fields` to services/form_share_dispatch.go inside PublicFields().")
+		} else {
+			fmt.Println("  ✓ Injected form-share fields case")
+		}
 		// Make sure the imports the case needs are present.
 		if err := ensureDispatchImports(dispatchFile, g.Module); err != nil {
 			return fmt.Errorf("updating dispatch imports: %w", err)

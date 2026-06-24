@@ -28,6 +28,123 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.43 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.43
+                </span>
+                <span className="text-sm text-muted-foreground">June 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Form-share polish: matching public form + editable shares.</strong>{' '}
+                  Two small but high-impact fixes on top of the
+                  v3.31.41 form-share generator. Both ship through
+                  the framework scaffold and the generator, so new
+                  resources pick them up automatically and existing
+                  projects get the imports added lazily on the
+                  next <code>grit generate</code>.
+                </p>
+
+                <h3>1. Public form renders the resource&apos;s actual fields</h3>
+                <p>
+                  Before this release the public share page at{' '}
+                  <code>/forms/[token]</code> rendered a hardcoded{' '}
+                  Name + Email + Phone + Message contact form for
+                  every resource. Creating a share for a Category
+                  with <code>name</code> + <code>image</code>{' '}
+                  fields still showed the contact form — and the
+                  Name field happened to line up purely by
+                  coincidence. Submitting any other field shape was
+                  effectively impossible.
+                </p>
+                <p>
+                  The dispatcher now exports{' '}
+                  <code>services.PublicFields(resourceName)</code>,
+                  a per-resource switch that reflects the model
+                  struct and returns a typed{' '}
+                  <code>PublicFieldInfo[]</code> with one entry per
+                  user-facing column (framework + auto fields are
+                  skipped). The HTTP type for each field is
+                  inferred from the Go type:{' '}
+                  <code>FileRef → file</code>,{' '}
+                  <code>time.Time → datetime</code>,{' '}
+                  <code>bool → checkbox</code>,{' '}
+                  <code>int/float → number</code>, and{' '}
+                  <code>string</code> with name heuristics for
+                  email / phone / textarea fields.
+                </p>
+                <p>
+                  <code>GET /api/public/forms/:token</code> now
+                  returns a <code>fields[]</code> array alongside{' '}
+                  <code>resource_name</code> and{' '}
+                  <code>has_password</code>. The web page consumes
+                  it and renders one input per field, with proper
+                  shapes for checkbox, number, textarea, and
+                  date/datetime. File fields render an inline
+                  &ldquo;File uploads aren&apos;t supported on
+                  public-share forms&rdquo; explainer instead of an
+                  unusable input — file uploads require the
+                  auth-gated <code>/api/uploads</code> endpoint and
+                  aren&apos;t supported on anonymous shares yet.
+                </p>
+
+                <h3>2. Admin can edit existing shares</h3>
+                <p>
+                  The admin form-shares page already had Audit /
+                  Copy / Open / Delete buttons but no way to change
+                  a share&apos;s label or password protection after
+                  creation. Want to add a password to an existing
+                  link? Delete + recreate, and re-distribute the
+                  new token to every recipient.
+                </p>
+                <p>
+                  A new <strong>Edit</strong> button opens a modal
+                  with three controls:
+                </p>
+                <ul>
+                  <li>
+                    <strong>Label</strong> — free text, optional.
+                  </li>
+                  <li>
+                    <strong>Password mode</strong> — three pills:{' '}
+                    <em>Keep current</em>, <em>Set password</em>,{' '}
+                    <em>Remove password</em>. &ldquo;Remove&rdquo;
+                    is disabled when the share has no password.
+                  </li>
+                  <li>
+                    <strong>New password</strong> — shown only when
+                    mode is &ldquo;Set password&rdquo;.
+                  </li>
+                </ul>
+                <p>
+                  The backend handler at{' '}
+                  <code>PATCH /api/admin/form-shares/:id</code>{' '}
+                  already supported the full payload (it accepts{' '}
+                  <code>password: &quot;-&quot;</code> as the
+                  sentinel for &ldquo;remove&rdquo;); this release
+                  just adds the missing UI to call it.
+                </p>
+
+                <h3>Backward compatibility</h3>
+                <p>
+                  Projects scaffolded before v3.31.43 don&apos;t
+                  have the <code>{`// grit:form-share:fields`}</code>{' '}
+                  marker or the <code>reflect</code> +{' '}
+                  <code>strings</code> imports the new code
+                  depends on. The generator now adds the imports
+                  lazily on the first generated resource and prints
+                  a one-line warning when the marker is missing,
+                  pointing operators at a manual patch. Existing
+                  shares keep working — they just continue to show
+                  the hardcoded form until the project is
+                  re-scaffolded or the dispatcher is patched.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.42 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
