@@ -46,8 +46,20 @@ type FileRef struct {
 }
 
 // Value implements driver.Valuer so GORM stores FileRef as JSON.
+//
+// Why string instead of []byte: lib/pq encodes a []byte driver.Value
+// as bytea (Postgres binary type). Inserting bytea into a json column
+// fails with SQLSTATE 22P02 ("invalid input syntax for type json")
+// because Postgres tries to interpret the binary blob as a JSON
+// document and the framing is wrong. Returning a string sends a
+// plain text value that Postgres parses as JSON cleanly. SQLite and
+// MySQL are tolerant either way; only Postgres is strict here.
 func (f FileRef) Value() (driver.Value, error) {
-	return json.Marshal(f)
+	b, err := json.Marshal(f)
+	if err != nil {
+		return nil, err
+	}
+	return string(b), nil
 }
 
 // Scan implements sql.Scanner so GORM hydrates FileRef from JSON.
@@ -74,13 +86,18 @@ func (f *FileRef) Scan(value interface{}) error {
 type FileRefs []FileRef
 
 // Value implements driver.Valuer for the slice variant.
+// Same string-vs-[]byte reasoning as FileRef.Value above.
 func (fs FileRefs) Value() (driver.Value, error) {
 	if len(fs) == 0 {
 		// Store the empty array, not NULL — keeps the JSON shape
 		// stable on the frontend (it always sees [], never null).
 		return "[]", nil
 	}
-	return json.Marshal(fs)
+	b, err := json.Marshal(fs)
+	if err != nil {
+		return nil, err
+	}
+	return string(b), nil
 }
 
 // Scan implements sql.Scanner for the slice variant.
@@ -272,6 +289,14 @@ func TestFileRefRoundTrip(t *testing.T) {
 		t.Fatalf("Value: %v", err)
 	}
 
+	// Must return string, not []byte. Postgres' lib/pq encodes a
+	// []byte driver.Value as bytea, which Postgres then refuses to
+	// insert into a json column (SQLSTATE 22P02). Returning string
+	// sends text, which Postgres parses as JSON cleanly.
+	if _, ok := v.(string); !ok {
+		t.Fatalf("FileRef.Value() must return string for Postgres json compatibility, got %T", v)
+	}
+
 	var got FileRef
 	if err := got.Scan(v); err != nil {
 		t.Fatalf("Scan: %v", err)
@@ -319,6 +344,19 @@ func TestFileRefsScanJSON(t *testing.T) {
 	}
 	if len(fs) != 1 || fs[0].URL != "u1" {
 		t.Errorf("Scan produced %+v", fs)
+	}
+}
+
+func TestFileRefsValueReturnsString(t *testing.T) {
+	// Same Postgres-bytea-vs-json constraint as FileRef.Value above.
+	// A non-empty slice must return string, not []byte.
+	fs := FileRefs{{URL: "u1", Key: "k1", Name: "n1", MIME: "image/jpeg", Size: 10}}
+	v, err := fs.Value()
+	if err != nil {
+		t.Fatalf("Value: %v", err)
+	}
+	if _, ok := v.(string); !ok {
+		t.Fatalf("FileRefs.Value() must return string for Postgres json compatibility, got %T", v)
 	}
 }
 

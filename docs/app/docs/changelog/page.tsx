@@ -28,6 +28,93 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.36 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.36
+                </span>
+                <span className="text-sm text-muted-foreground">June 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Bug fix: FileRef inserts now succeed on
+                  Postgres.</strong> Single-file (<code>:file:</code>)
+                  and multi-file (<code>:files:</code>) columns failed
+                  to insert on Postgres with{' '}
+                  <code>ERROR: invalid input syntax for type json
+                  (SQLSTATE 22P02)</code>. SQLite and MySQL projects
+                  weren&apos;t affected. This release fixes the framework
+                  scaffold; existing projects get a one-file patch.
+                </p>
+
+                <h3>What was broken</h3>
+                <p>
+                  <code>FileRef.Value()</code> and{' '}
+                  <code>FileRefs.Value()</code> returned the{' '}
+                  <code>[]byte</code> from <code>json.Marshal()</code>{' '}
+                  directly:
+                </p>
+                <pre><code>{`func (f FileRef) Value() (driver.Value, error) {
+  return json.Marshal(f)   // returns []byte
+}`}</code></pre>
+                <p>
+                  Go&apos;s <code>database/sql</code> accepts{' '}
+                  <code>[]byte</code> as a valid driver.Value — and
+                  lib/pq (the standard Postgres driver) encodes{' '}
+                  <code>[]byte</code> as <code>bytea</code>, Postgres&apos;
+                  binary type. Postgres then tries to insert the bytea
+                  blob into a <code>json</code> column, fails to parse
+                  the framing, and rejects with SQLSTATE 22P02.
+                </p>
+
+                <h3>The fix</h3>
+                <p>
+                  Both <code>Value()</code> implementations now convert
+                  the JSON bytes to a Go string before returning:
+                </p>
+                <pre><code>{`func (f FileRef) Value() (driver.Value, error) {
+  b, err := json.Marshal(f)
+  if err != nil {
+    return nil, err
+  }
+  return string(b), nil   // text, not bytea
+}`}</code></pre>
+                <p>
+                  lib/pq sends string values as plain text, which
+                  Postgres parses as JSON cleanly. SQLite and MySQL
+                  are tolerant of both shapes; only Postgres was
+                  strict.
+                </p>
+
+                <h3>Regression guards</h3>
+                <p>
+                  Two new tests in the scaffolded{' '}
+                  <code>file_ref_test.go</code> assert that{' '}
+                  <code>Value()</code> returns a <code>string</code>{' '}
+                  type — so a future contributor can&apos;t silently
+                  revert to <code>[]byte</code> without CI catching it.
+                  The tests fail with a clear message pointing at the
+                  Postgres bytea-vs-json issue.
+                </p>
+
+                <h3>Migration</h3>
+                <p>
+                  Replace <code>apps/api/internal/files/file_ref.go</code>{' '}
+                  with the regenerated copy:
+                </p>
+                <pre><code>{`grit upgrade --files`}</code></pre>
+                <p>
+                  Or hand-patch both Value() methods to wrap the
+                  json.Marshal result in <code>string(b)</code>{' '}
+                  before returning. Postgres-on-prod users running
+                  existing projects should ship this immediately.
+                  SQLite-dev or MySQL projects have no urgency.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.35 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
