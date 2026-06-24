@@ -28,6 +28,68 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.27 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.27
+                </span>
+                <span className="text-sm text-muted-foreground">June 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fix React Rules of Hooks violation when{' '}
+                  <code>formView: &apos;page&apos;</code> resources
+                  switch between list and form views.</strong>{' '}
+                  Reported by a learner who scaffolded a Category
+                  resource with <code>formView: &apos;page&apos;</code>{' '}
+                  and clicked &quot;New Category&quot;.
+                </p>
+
+                <h3>The bug</h3>
+                <p>
+                  <code>ResourcePage</code> declared a few hooks at
+                  the top (<code>useRouter</code>,{' '}
+                  <code>useSearchParams</code>), then performed{' '}
+                  <em>early returns</em> for the form-page case
+                  (<code>action=create</code> or <code>action=edit</code>),
+                  then declared ~20 more hooks below
+                  (<code>useState</code>, <code>useResource</code>,{' '}
+                  <code>useMemo</code>, <code>useCallback</code> x many).
+                  When the URL changed and the component switched
+                  between list mode and form mode, the hook count
+                  changed between renders — React 19 throws &quot;Rendered
+                  fewer hooks than expected.&quot;
+                </p>
+
+                <h3>The fix</h3>
+                <p>
+                  Split <code>ResourcePage</code> into a thin router
+                  shell + a separate <code>ResourceListView</code>{' '}
+                  component. The router only calls{' '}
+                  <code>useSearchParams</code> and the routing
+                  helpers, then either renders one of the form
+                  variants or delegates to <code>ResourceListView</code>.
+                  The list view owns all 20+ list-mode hooks. Each
+                  function now has a stable hook count across
+                  renders, and the form path never mounts the
+                  list-mode hooks (so it doesn&apos;t spawn an
+                  unnecessary <code>useResource</code> fetch either).
+                </p>
+
+                <h3>Migration</h3>
+                <p>
+                  Existing projects using <code>formView: &apos;page&apos;</code>{' '}
+                  or <code>&apos;page-steps&apos;</code> need to update{' '}
+                  <code>apps/admin/components/resource/resource-page.tsx</code>.
+                  Re-run <code>grit generate resource &lt;Name&gt;</code> on
+                  any resource (the file lives once, not per-resource)
+                  or copy the new structure from the scaffold output.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.14 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

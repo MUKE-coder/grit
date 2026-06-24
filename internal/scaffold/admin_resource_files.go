@@ -472,8 +472,14 @@ interface ResourcePageProps {
   resource: ResourceDefinition;
 }
 
+// v3.31.27: ResourcePage is now a thin router. It picks between four
+// possible views (UpdateGroups, FormPageSteps, FormPage, ResourceListView)
+// based on formView + the ?action param. Before this split, the list-mode
+// useState / useResource / useMemo hooks all sat below the form-mode
+// early returns — meaning the hook count varied between renders. React 19
+// strict mode errors out on that mismatch. Splitting into two components
+// keeps each function's hook list stable.
 export function ResourcePage({ resource }: ResourcePageProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const isFormPage = resource.formView === "page" || resource.formView === "page-steps";
   const isSteps = resource.formView === "modal-steps" || resource.formView === "page-steps";
@@ -494,6 +500,14 @@ export function ResourcePage({ resource }: ResourcePageProps) {
   if (isFormPage && (formAction === "create" || formAction === "edit")) {
     return isSteps ? <FormPageSteps resource={resource} /> : <FormPage resource={resource} />;
   }
+
+  return <ResourceListView resource={resource} />;
+}
+
+function ResourceListView({ resource }: ResourcePageProps) {
+  const router = useRouter();
+  const isFormPage = resource.formView === "page" || resource.formView === "page-steps";
+  const isSteps = resource.formView === "modal-steps" || resource.formView === "page-steps";
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(resource.table.pageSize ?? 20);
