@@ -243,7 +243,9 @@ export function FieldRenderer({
           control={control}
           rules={field.required ? { required: ` + "`" + `${field.label} is required` + "`" + ` } : undefined}
           render={({ field: formField }) => (
-            <FileField field={field} value={formField.value ?? ""} onChange={formField.onChange} error={error} />
+            // buildDefaults seeds file types to null. Coerce here as a
+            // belt-and-suspenders in case a stale form passes a string.
+            <FileField field={field} value={(formField.value as never) ?? null} onChange={formField.onChange} error={error} />
           )}
         />
       );
@@ -254,7 +256,9 @@ export function FieldRenderer({
           control={control}
           rules={field.required ? { required: ` + "`" + `${field.label} is required` + "`" + ` } : undefined}
           render={({ field: formField }) => (
-            <FilesField field={field} value={formField.value ?? []} onChange={formField.onChange} error={error} />
+            // Same array guard as buildDefaults: a non-array value
+            // crashes FilesField's refsToUploaded with TypeError on .map.
+            <FilesField field={field} value={Array.isArray(formField.value) ? formField.value : []} onChange={formField.onChange} error={error} />
           )}
         />
       );
@@ -295,6 +299,24 @@ export function FieldRenderer({
   }
 }
 
+// Field types whose value is an array. Defaulting to "" breaks the
+// field component: FilesField/ImagesField/VideosField call .map() on
+// the value and TypeError out, crashing the form sheet into the
+// global error boundary. The fix is to default array-shaped types to
+// [] and single-object types to null.
+const ARRAY_FIELD_TYPES = new Set([
+  "files",
+  "images",
+  "videos",
+  "multi-relationship-select",
+]);
+
+const NULLABLE_OBJECT_FIELD_TYPES = new Set([
+  "file",
+  "image",
+  "video",
+]);
+
 export function buildDefaults(
   fields: FieldDefinition[],
   existing: Record<string, unknown>
@@ -314,6 +336,10 @@ export function buildDefaults(
       defaults[field.key] = field.defaultValue;
     } else if (field.type === "toggle" || field.type === "checkbox") {
       defaults[field.key] = false;
+    } else if (ARRAY_FIELD_TYPES.has(field.type)) {
+      defaults[field.key] = [];
+    } else if (NULLABLE_OBJECT_FIELD_TYPES.has(field.type)) {
+      defaults[field.key] = null;
     } else {
       defaults[field.key] = "";
     }
@@ -1596,13 +1622,16 @@ import { Dropzone, type UploadedFile } from "@/components/ui/dropzone";
 
 interface ImagesFieldProps {
   field: FieldDefinition;
-  value: string[];
+  // Loose typing for the same reason FilesField does: guard against
+  // non-array values arriving from a stale default or API response.
+  value: string[] | unknown;
   onChange: (value: string[]) => void;
   error?: string;
 }
 
 export function ImagesField({ field, value, onChange, error }: ImagesFieldProps) {
-  const existingFiles: UploadedFile[] = (value || []).map((url, i) => ({
+  const urls = Array.isArray(value) ? (value as string[]) : [];
+  const existingFiles: UploadedFile[] = urls.map((url, i) => ({
     url,
     name: ` + "`" + `Image ${i + 1}` + "`" + `,
     size: 0,
@@ -1675,13 +1704,14 @@ import { Dropzone, type UploadedFile } from "@/components/ui/dropzone";
 
 interface VideosFieldProps {
   field: FieldDefinition;
-  value: string[];
+  value: string[] | unknown;
   onChange: (value: string[]) => void;
   error?: string;
 }
 
 export function VideosField({ field, value, onChange, error }: VideosFieldProps) {
-  const existingFiles: UploadedFile[] = (value || []).map((url, i) => ({
+  const urls = Array.isArray(value) ? (value as string[]) : [];
+  const existingFiles: UploadedFile[] = urls.map((url, i) => ({
     url,
     name: ` + "`" + `Video ${i + 1}` + "`" + `,
     size: 0,
@@ -1793,13 +1823,20 @@ import { acceptsToReactDropzoneFormat, buildUploadEndpoint } from "@/lib/file-ac
 
 interface FilesFieldProps {
   field: FieldDefinition;
-  value: FileRef[];
+  // Loosely typed so refsToUploaded can guard against non-array values
+  // arriving from react-hook-form defaults or a stale API response.
+  value: FileRef[] | unknown;
   onChange: (value: FileRef[]) => void;
   error?: string;
 }
 
-function refsToUploaded(refs: FileRef[]): UploadedFile[] {
-  return (refs ?? []).map((r) => ({
+function refsToUploaded(refs: FileRef[] | unknown): UploadedFile[] {
+  // Defensive: when react-hook-form's initial value falls back to ""
+  // (the legacy buildDefaults behaviour pre-fix) or the API returns a
+  // non-array, calling .map() throws. Bail to [] so the dropzone
+  // mounts cleanly and the user can still upload files.
+  if (!Array.isArray(refs)) return [];
+  return refs.map((r) => ({
     url: r.url,
     key: r.key,
     name: r.name,

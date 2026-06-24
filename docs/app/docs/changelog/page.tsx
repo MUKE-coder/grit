@@ -28,6 +28,133 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.37 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.37
+                </span>
+                <span className="text-sm text-muted-foreground">June 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Bug fix: opening a Create form on a resource
+                  with a <code>:files:</code> column no longer crashes
+                  into the global error boundary.</strong> Same release
+                  also tidies up three companion TS errors that were
+                  red-squiggling in IDEs even though SWC stripped them
+                  at runtime.
+                </p>
+
+                <h3>What was broken</h3>
+                <p>
+                  <code>buildDefaults</code> in <code>form-builder.tsx</code>{' '}
+                  seeded every non-toggle field to <code>&quot;&quot;</code>{' '}
+                  (empty string). For <code>files</code> /{' '}
+                  <code>images</code> / <code>videos</code> types,
+                  react-hook-form&apos;s initial state was therefore a
+                  string. The matching field component (<code>FilesField</code>,{' '}
+                  <code>ImagesField</code>, <code>VideosField</code>)
+                  immediately called <code>.map()</code> on that
+                  &quot;array&quot; — strings have no <code>.map</code>{' '}
+                  → TypeError → the parent <code>FormSheet</code> blew
+                  up into Next.js&apos; error boundary. The user saw
+                  &quot;Something went wrong&quot;.
+                </p>
+
+                <h3>The fix</h3>
+                <p>
+                  <code>buildDefaults</code> now branches by field type:
+                  arrays default to <code>[]</code>, nullable objects
+                  (<code>file</code> / <code>image</code> /{' '}
+                  <code>video</code>) default to <code>null</code>,
+                  toggles stay <code>false</code>, everything else
+                  stays <code>&quot;&quot;</code>.
+                </p>
+                <pre><code>{`const ARRAY_FIELD_TYPES = new Set([
+  "files", "images", "videos", "multi-relationship-select",
+]);
+const NULLABLE_OBJECT_FIELD_TYPES = new Set([
+  "file", "image", "video",
+]);
+// ...
+} else if (ARRAY_FIELD_TYPES.has(field.type)) {
+  defaults[field.key] = [];
+} else if (NULLABLE_OBJECT_FIELD_TYPES.has(field.type)) {
+  defaults[field.key] = null;
+}`}</code></pre>
+                <p>
+                  All three field components also got a defensive{' '}
+                  <code>Array.isArray</code> guard so a stale form or
+                  a deserialised-wrong API response can&apos;t crash
+                  the dropzone — the field just renders empty and the
+                  user can still upload.
+                </p>
+
+                <h3>TypeScript clean-up</h3>
+                <ul>
+                  <li>
+                    <code>ColumnFormat</code> union now includes{' '}
+                    <code>&quot;file&quot;</code> and{' '}
+                    <code>&quot;files&quot;</code> — both renderers
+                    were already implemented but the type union was
+                    stale, so resource definitions emitted by the
+                    v3.31.30+ generator flagged a TS2322 on every
+                    file column.
+                  </li>
+                  <li>
+                    Generated <code>packages/shared/types/&lt;model&gt;.ts</code>{' '}
+                    files now import <code>FileRef</code> from{' '}
+                    <code>schemas/file-ref</code> when any field is{' '}
+                    <code>:file:</code> or <code>:files:</code> —
+                    previously the type was referenced without an
+                    import, fine at runtime but red squiggles in the
+                    IDE.
+                  </li>
+                  <li>
+                    <code>ImportModal</code>&apos;s narrowing check
+                    against <code>resource.table.import</code> dropped
+                    the redundant <code>!== false</code> comparison
+                    (TS2367) — a plain truthy check correctly handles
+                    all three values of the union.
+                  </li>
+                </ul>
+
+                <h3>Migration</h3>
+                <p>
+                  Run <code>grit upgrade</code>, or hand-patch:
+                </p>
+                <ul>
+                  <li>
+                    <code>apps/admin/components/forms/form-builder.tsx</code>{' '}
+                    — update <code>buildDefaults</code> + the file /
+                    files renderer fallbacks.
+                  </li>
+                  <li>
+                    <code>apps/admin/components/forms/fields/{`{files,images,videos}`}-field.tsx</code>{' '}
+                    — replace the <code>(value ?? []).map()</code>{' '}
+                    with the <code>Array.isArray</code> guard.
+                  </li>
+                  <li>
+                    <code>apps/admin/lib/resource.ts</code> — add{' '}
+                    <code>&quot;file&quot;</code> and{' '}
+                    <code>&quot;files&quot;</code> to{' '}
+                    <code>ColumnFormat</code>.
+                  </li>
+                  <li>
+                    <code>apps/admin/components/tables/import-modal.tsx</code>{' '}
+                    — simplify the <code>importCfg</code> check.
+                  </li>
+                  <li>
+                    For models with file columns, add{' '}
+                    <code>{`import type { FileRef } from "../schemas/file-ref";`}</code>{' '}
+                    at the top of <code>packages/shared/types/&lt;model&gt;.ts</code>.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.31.36 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

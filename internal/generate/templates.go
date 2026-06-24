@@ -1002,6 +1002,7 @@ func (g *Generator) writeTSTypes(names Names) error {
 	// Collect relationship imports
 	imports := ""
 	fields := ""
+	needsFileRef := false
 	for _, f := range g.Definition.Fields {
 		if f.IsBelongsTo() {
 			relModel := f.RelatedModelName()
@@ -1021,9 +1022,20 @@ func (g *Generator) writeTSTypes(names Names) error {
 			fields += fmt.Sprintf("  %s?: %s[];\n", toSnakeCase(f.Name), relModel)
 			continue
 		}
+		// v3.31.37: file/files fields reference the FileRef type from
+		// schemas/file-ref.ts. Without an explicit import the generated
+		// type fails tsc with "Cannot find name 'FileRef'", which
+		// downstream files (the React Query hook, admin resources)
+		// inherit when they import from this module.
+		if f.IsFileField() {
+			needsFileRef = true
+		}
 		tsName := toSnakeCase(f.Name)
 		tsType := f.TSType()
 		fields += fmt.Sprintf("  %s: %s;\n", tsName, tsType)
+	}
+	if needsFileRef {
+		imports += "import type { FileRef } from \"../schemas/file-ref\";\n"
 	}
 
 	content := ""

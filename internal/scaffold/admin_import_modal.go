@@ -56,8 +56,10 @@ export function ImportModal({ resource, onClose }: ImportModalProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const importCfg = resource.table.import;
-  const allowedFields =
-    importCfg && importCfg !== false ? importCfg.fields : undefined;
+  // importCfg is false | { excel?, fields? } | undefined. After the
+  // truthy check, TS narrows out false and undefined, so the
+  // remaining branch is the object form and .fields is safe to read.
+  const allowedFields = importCfg ? importCfg.fields : undefined;
 
   const handleFile = useCallback(
     async (file: File) => {

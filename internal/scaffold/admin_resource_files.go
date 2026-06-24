@@ -11,7 +11,7 @@ import type { ReactNode } from "react";
 
 // ─── Column Definitions ─────────────────────────────────────────────
 
-export type ColumnFormat = "text" | "badge" | "currency" | "date" | "relative" | "boolean" | "image" | "video" | "link" | "email" | "color" | "richtext" | "user";
+export type ColumnFormat = "text" | "badge" | "currency" | "date" | "relative" | "boolean" | "image" | "video" | "file" | "files" | "link" | "email" | "color" | "richtext" | "user";
 
 export interface BadgeConfig {
   [value: string]: { color: string; label: string };
