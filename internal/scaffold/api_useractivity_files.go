@@ -72,7 +72,10 @@ func userActivityServiceGo() string {
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"sort"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -195,6 +198,101 @@ func LogRegister(db *gorm.DB, c *gin.Context, userID, email string) {
 		ResourceType: "user",
 		ResourceID:   userID,
 	})
+}
+
+// v3.31.39 — CUD helpers. Format convention going forward:
+//
+//	{verb} {entityType} {identifier}[: {detail}]
+//
+// ` + "`identifier`" + ` is the human-readable label (name, title, slug, sku);
+// it must never be blank -- callers should fall back to a snippet of
+// the ID rather than emit "Created Product ". ` + "`detail`" + ` is optional
+// extra context (price for Create, diff for Update) and only renders
+// when non-empty.
+//
+// Example summaries:
+//
+//	Created Product Desktop: KES 340,000
+//	Updated Product Desktop: name "Desktop" → "Desktop Pro"
+//	Updated Category Phones: image changed
+//	Deleted Blog "Welcome to the new site"
+//
+// Severity is fixed at "info" for routine Creates/Updates/Deletes.
+// If a particular delete should pop louder (user accounts, billing
+// rows), call LogActivity directly with Severity: "critical".
+
+func formatCUDSummary(verb, entityType, identifier, detail string) string {
+	if identifier == "" {
+		identifier = "(unnamed)"
+	}
+	summary := verb + " " + entityType + " " + identifier
+	if detail != "" {
+		summary += ": " + detail
+	}
+	return summary
+}
+
+// LogCreate writes a "Created X Y[: detail]" row.
+func LogCreate(db *gorm.DB, c *gin.Context, entityType, identifier, resourceID, detail string) {
+	LogActivity(db, c, ActivityArgs{
+		Action:       strings.ToLower(entityType) + ".create",
+		Severity:     "info",
+		Summary:      formatCUDSummary("Created", entityType, identifier, detail),
+		ResourceType: strings.ToLower(entityType),
+		ResourceID:   resourceID,
+	})
+}
+
+// LogUpdate writes an "Updated X Y[: detail]" row. ` + "`detail`" + ` is the
+// caller-built diff string (e.g. ` + "`name \"old\" → \"new\"`" + `); pass "" if
+// you only want to record that a touch happened.
+func LogUpdate(db *gorm.DB, c *gin.Context, entityType, identifier, resourceID, detail string) {
+	LogActivity(db, c, ActivityArgs{
+		Action:       strings.ToLower(entityType) + ".update",
+		Severity:     "info",
+		Summary:      formatCUDSummary("Updated", entityType, identifier, detail),
+		ResourceType: strings.ToLower(entityType),
+		ResourceID:   resourceID,
+	})
+}
+
+// LogDelete writes a "Deleted X Y" row. No detail -- by the time you
+// log a delete the snippet is the only thing left.
+func LogDelete(db *gorm.DB, c *gin.Context, entityType, identifier, resourceID string) {
+	LogActivity(db, c, ActivityArgs{
+		Action:       strings.ToLower(entityType) + ".delete",
+		Severity:     "info",
+		Summary:      formatCUDSummary("Deleted", entityType, identifier, ""),
+		ResourceType: strings.ToLower(entityType),
+		ResourceID:   resourceID,
+	})
+}
+
+// DiffSummary renders an Updates() map as a human-readable
+// "what changed" string for the UserActivity Summary field:
+//
+//	1 field   → ` + "`image changed`" + `
+//	2-3 fields → ` + "`changed name, image, price`" + `
+//	4+ fields → ` + "`5 fields changed (name, image, price, ...)`" + `
+//
+// Keys are sorted so the output is deterministic across runs (handy
+// for tests + log grep). Empty map returns "".
+func DiffSummary(updates map[string]interface{}) string {
+	if len(updates) == 0 {
+		return ""
+	}
+	keys := make([]string, 0, len(updates))
+	for k := range updates {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	if len(keys) == 1 {
+		return keys[0] + " changed"
+	}
+	if len(keys) <= 3 {
+		return "changed " + strings.Join(keys, ", ")
+	}
+	return fmt.Sprintf("%d fields changed (%s, ...)", len(keys), strings.Join(keys[:3], ", "))
 }
 `
 }

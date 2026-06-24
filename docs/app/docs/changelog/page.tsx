@@ -28,6 +28,129 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.39 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.39
+                </span>
+                <span className="text-sm text-muted-foreground">June 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>CUD activity logging on every generated
+                  resource.</strong> Until this release the Activity
+                  feed only carried sign-ins and sign-outs — every
+                  Create / Update / Delete on a generated resource
+                  went unrecorded. Now each one writes a row with a
+                  human-readable summary using a fixed format
+                  convention.
+                </p>
+
+                <h3>Format convention</h3>
+                <pre><code>{`{verb} {entityType} {identifier}[: {detail}]`}</code></pre>
+                <p>
+                  <code>identifier</code> is the human-readable label
+                  (name, title, slug, sku); it must never be blank —
+                  the helper falls back to <code>(unnamed)</code> if
+                  the caller hands it an empty string. <code>detail</code>
+                  is optional extra context (price for Create, diff
+                  for Update) and only renders when non-empty.
+                </p>
+                <p>Example rows in the feed:</p>
+                <ul>
+                  <li><code>Created Product Desktop: KES 340,000</code></li>
+                  <li><code>Updated Product Desktop: changed name, price</code></li>
+                  <li><code>Updated Category Phones: image changed</code></li>
+                  <li><code>Deleted Blog &quot;Welcome to the new site&quot;</code></li>
+                </ul>
+
+                <h3>Three new helpers in services/activity.go</h3>
+                <ul>
+                  <li>
+                    <code>LogCreate(db, c, entityType, identifier, resourceID, detail)</code>
+                  </li>
+                  <li>
+                    <code>LogUpdate(db, c, entityType, identifier, resourceID, detail)</code>
+                  </li>
+                  <li>
+                    <code>LogDelete(db, c, entityType, identifier, resourceID)</code>
+                  </li>
+                </ul>
+                <p>
+                  Plus <code>DiffSummary(updates)</code> for rendering
+                  a GORM Updates() map as a sorted, deterministic
+                  diff string (1 field → <code>field changed</code>;
+                  2–3 fields → <code>changed a, b, c</code>; 4+ →{' '}
+                  <code>N fields changed (a, b, c, ...)</code>).
+                  Errors are logged, never returned — losing an audit
+                  row should not fail a real request.
+                </p>
+
+                <h3>Generator emits the calls automatically</h3>
+                <p>
+                  Every <code>grit generate resource</code> from
+                  v3.31.39 onward inserts:
+                </p>
+                <ul>
+                  <li>
+                    <code>services.LogCreate(...)</code> after a
+                    successful <code>Create</code>
+                  </li>
+                  <li>
+                    <code>services.LogUpdate(...)</code> after{' '}
+                    <code>Update</code> and <code>Patch</code> (the
+                    grouped Save handler from v3.31.18 is logged the
+                    same way)
+                  </li>
+                  <li>
+                    <code>services.LogDelete(...)</code> after{' '}
+                    <code>Delete</code>
+                  </li>
+                </ul>
+                <p>
+                  Identifier expression is picked at generation time
+                  from the model&apos;s fields, in priority order:{' '}
+                  <code>Name</code>, <code>Title</code>,{' '}
+                  <code>Slug</code>, <code>SKU</code>,{' '}
+                  <code>Subject</code>, <code>Label</code>,{' '}
+                  <code>Email</code>. Falls back to{' '}
+                  <code>item.ID</code> so the log line is never blank.
+                </p>
+
+                <h3>Migration</h3>
+                <p>
+                  Re-run <code>grit generate resource X</code> for
+                  each existing resource (the file rewrite picks up
+                  the new log calls), or hand-patch each handler:
+                </p>
+                <ul>
+                  <li>
+                    Add{' '}
+                    <code>{`"<module>/internal/services"`}</code> to
+                    the imports.
+                  </li>
+                  <li>
+                    Drop{' '}
+                    <code>services.LogCreate/Update/Delete(...)</code>{' '}
+                    calls right after each success path, before the
+                    <code>c.JSON(...)</code>.
+                  </li>
+                  <li>
+                    Use <code>services.DiffSummary(updates)</code> for
+                    the diff string in Update / Patch.
+                  </li>
+                </ul>
+                <p>
+                  Existing auth helpers (<code>LogLogin</code>,{' '}
+                  <code>LogRegister</code>, <code>LogLogout</code>)
+                  are unchanged — they keep their semantic
+                  <code>auth.X</code> action names.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.38 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

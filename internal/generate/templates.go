@@ -527,6 +527,12 @@ func (g *Generator) writeGoHandler(names Names) error {
 		updateCleanup = "\n\tif h.Storage != nil {\n\t\tfiles.CleanupRemoved(c.Request.Context(), h.Storage, &oldItem, &item)\n\t\tfiles.ClaimRefs(c.Request.Context(), h.DB, &item)\n\t}"
 	}
 
+	// v3.31.39: identifier expression for the activity log calls --
+	// picks the first human-readable field on the model (Name, Title,
+	// Slug, ...) and falls back to item.ID so the {verb} {entityType}
+	// {identifier} log line is never blank.
+	identExpr := pickIdentifierExpr(g.Definition.Fields)
+
 	r := strings.NewReplacer(
 		"{{MODULE}}", g.Module,
 		"{{Pascal}}", names.Pascal,
@@ -552,6 +558,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 		"{{CREATE_CLAIM}}", createClaim,
 		"{{UPDATE_SNAPSHOT}}", updateSnapshot,
 		"{{UPDATE_CLEANUP}}", updateCleanup,
+		"{{IDENT_EXPR}}", identExpr,
 	)
 
 	content := r.Replace(`package handlers
@@ -565,6 +572,7 @@ import (
 	"{{MODULE}}/internal/export"{{FILES_IMPORT}}
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
+	"{{MODULE}}/internal/services"
 )
 
 // {{Pascal}}Handler handles {{lower}} endpoints.
@@ -749,6 +757,8 @@ func (h *{{Pascal}}Handler) Create(c *gin.Context) {
 {{M2M_CREATE}}
 {{RELOAD}}{{CREATE_CLAIM}}
 
+	services.LogCreate(h.DB, c, "{{Pascal}}", {{IDENT_EXPR}}, item.ID, "")
+
 	c.JSON(http.StatusCreated, gin.H{
 		"data":    item,
 		"message": "{{Pascal}} created successfully",
@@ -796,6 +806,8 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 	}
 {{M2M_UPDATE}}
 {{RELOAD}}{{UPDATE_CLEANUP}}
+
+	services.LogUpdate(h.DB, c, "{{Pascal}}", {{IDENT_EXPR}}, item.ID, services.DiffSummary(updates))
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":    item,
@@ -864,6 +876,8 @@ func (h *{{Pascal}}Handler) Patch(c *gin.Context) {
 	}
 {{RELOAD}}
 
+	services.LogUpdate(h.DB, c, "{{Pascal}}", {{IDENT_EXPR}}, item.ID, services.DiffSummary(updates))
+
 	c.JSON(http.StatusOK, gin.H{
 		"data":    item,
 		"message": "{{Pascal}} updated successfully",
@@ -895,6 +909,8 @@ func (h *{{Pascal}}Handler) Delete(c *gin.Context) {
 		return
 	}
 
+	services.LogDelete(h.DB, c, "{{Pascal}}", {{IDENT_EXPR}}, item.ID)
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "{{Pascal}} deleted successfully",
 	})
@@ -903,6 +919,29 @@ func (h *{{Pascal}}Handler) Delete(c *gin.Context) {
 
 	path := filepath.Join(g.APIRoot(), "internal", "handlers", names.Snake+".go")
 	return writeFileWithDirs(path, content)
+}
+
+// v3.31.39: pickIdentifierExpr returns the Go expression to use as
+// the human-readable identifier in CUD activity log lines. Picks the
+// first match from Name / Title / Slug / SKU / Subject / Label /
+// Email on the model. Falls back to item.ID when none of those exist
+// so the log line is never blank ({verb} {entityType} {identifier}
+// is the format convention; identifier is never empty).
+func pickIdentifierExpr(fields []Field) string {
+	candidates := []string{"Name", "Title", "Slug", "Sku", "SKU", "Subject", "Label", "Email"}
+	available := map[string]bool{}
+	for _, f := range fields {
+		if f.IsBelongsTo() || f.IsManyToMany() {
+			continue
+		}
+		available[toPascalCase(f.Name)] = true
+	}
+	for _, c := range candidates {
+		if available[c] {
+			return "item." + c
+		}
+	}
+	return "item.ID"
 }
 
 // buildHandlerSearchCols returns the comma-separated quoted column names for
