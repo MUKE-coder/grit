@@ -24,6 +24,10 @@ func writeWebFiles(root string, opts Options) error {
 		filepath.Join(webRoot, "components", "navbar.tsx"):            webNavbar(opts),
 		filepath.Join(webRoot, "components", "footer.tsx"):            webFooter(opts),
 		filepath.Join(webRoot, "components", "providers.tsx"):         webProviders(),
+		// v3.31.42 — AppChrome + UserMenu + web-session marker.
+		filepath.Join(webRoot, "components", "AppChrome.tsx"):         webAppChrome(),
+		filepath.Join(webRoot, "components", "UserMenu.tsx"):          webUserMenu(),
+		filepath.Join(webRoot, "lib", "web-session.ts"):               webSessionLib(),
 		filepath.Join(webRoot, "lib", "api.ts"):                       webAPIClient(),
 		filepath.Join(webRoot, "hooks", "use-blogs.ts"):               webUseBlogsHook(),
 		filepath.Join(webRoot, "app", "blog", "page.tsx"):                   webBlogListPage(),
@@ -547,8 +551,7 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mon
 	return fmt.Sprintf(`import type { Metadata } from "next";
 %s
 import { Providers } from "@/components/providers";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
+import { AppChrome } from "@/components/AppChrome";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -567,9 +570,7 @@ export default function RootLayout({
     <html lang="en" data-theme={dataTheme} suppressHydrationWarning>
       <body className={`+"`%s "+`font-sans antialiased`+"`"+`}>
         <Providers>
-          <Navbar />
-          <main className="min-h-screen">{children}</main>
-          <Footer />
+          <AppChrome>{children}</AppChrome>
         </Providers>
       </body>
     </html>
@@ -745,8 +746,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, Github } from "lucide-react";
+import { UserMenu } from "@/components/UserMenu";
 
-const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+// v3.31.42: NEXT_PUBLIC_ADMIN_URL removed. The Admin link used to
+// live in the navbar; it's been replaced by the UserMenu which
+// shows Login/Sign up CTAs for anonymous visitors and an avatar
+// dropdown for signed-in ones. Staff who need both apps still
+// have the admin URL bookmarked.
 const DOCS_URL = "https://grit-vert.vercel.app/docs";
 
 const navLinks = [
@@ -800,12 +806,10 @@ export function Navbar() {
           >
             <Github className="h-5 w-5" />
           </a>
-          <a
-            href={` + "`" + `${ADMIN_URL}/login` + "`" + `}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
-          >
-            Admin
-          </a>
+          {/* v3.31.42 — UserMenu shows Login/Sign up CTAs when the
+              visitor is signed out, and an avatar dropdown with
+              Account + Sign out once they are. */}
+          <UserMenu />
         </div>
 
         {/* Mobile hamburger */}
@@ -852,12 +856,9 @@ export function Navbar() {
             >
               GitHub
             </a>
-            <a
-              href={` + "`" + `${ADMIN_URL}/login` + "`" + `}
-              className="mt-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white text-center hover:bg-accent-hover transition-colors"
-            >
-              Admin
-            </a>
+            <div className="mt-2 border-t border-border/50 pt-3">
+              <UserMenu />
+            </div>
           </div>
         </div>
       )}
@@ -2347,6 +2348,7 @@ import type {
   ApiResponse,
 } from "@repo/shared/types";
 import { api } from "@/lib/api";
+import { setWebSessionMarker, clearWebSessionMarker } from "@/lib/web-session";
 
 // Token storage policy (Grit 3.26+):
 //   - The API issues HttpOnly cookies (grit_access + grit_refresh) on
@@ -2408,6 +2410,10 @@ export function useLogin() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["me"], data.data.user);
+      // v3.31.42: stamp the web-origin marker so the middleware
+      // doesn't bounce signed-in web users to /login on the next
+      // navigation. See lib/web-session.ts for the rationale.
+      setWebSessionMarker();
       router.push("/");
     },
   });
@@ -2427,6 +2433,8 @@ export function useRegister() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["me"], data.data.user);
+      // v3.31.42: same web-origin marker as useLogin.
+      setWebSessionMarker();
       router.push("/");
     },
   });
@@ -2446,6 +2454,9 @@ export function useLogout() {
     },
     onSettled: () => {
       queryClient.clear();
+      // v3.31.42: clear the marker so middleware no longer sees
+      // a session on the next request.
+      clearWebSessionMarker();
       if (typeof window !== "undefined") {
         window.location.href = "/login";
       }

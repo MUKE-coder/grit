@@ -1100,6 +1100,22 @@ func (g *Generator) writeReactQueryHooks(names Names, app string) error {
 	if app == "web" {
 		apiImport = `import { apiClient } from "@/lib/api";`
 	}
+	// v3.31.42: the hook's inline `interface <Resource>` may reference
+	// FileRef when any field is :file: / :files:. Without an explicit
+	// import the generated hook fails tsc with "Cannot find name
+	// 'FileRef'" -- the same TS2304 the typed shared model used to
+	// surface before v3.31.37 patched writeTSTypes. Patch the hook
+	// generator the same way.
+	needsFileRef := false
+	for _, f := range g.Definition.Fields {
+		if f.IsFileField() {
+			needsFileRef = true
+			break
+		}
+	}
+	if needsFileRef {
+		apiImport += "\nimport type { FileRef } from \"@repo/shared/schemas\";"
+	}
 	content := fmt.Sprintf(`import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 %s
 

@@ -83,12 +83,23 @@ func webMiddlewareTS() string {
 // routes that require sign-in. Anything not listed here remains
 // public, regardless of cookie state.
 //
+// v3.31.42 update: the gate now reads grit_web_session instead of
+// grit_access. grit_access is set by the API on the API origin
+// (e.g. localhost:8080) and is the same cookie the admin app uses
+// after its own login — which meant an admin who's signed in via
+// apps/admin could walk straight into apps/web's protected pages
+// in the same browser. grit_web_session is set by the web app's
+// own login/register flow on the WEB origin, so admin-only
+// sessions don't unlock the web's gates. See lib/web-session.ts
+// for the full rationale.
+//
 // What this DOESN'T do:
-//   - Verify the JWT (would add an API round-trip to every request).
-//     Invalid / expired cookies still get bounced — the API returns
-//     401 on the first authed call and useMe() forwards to /login.
-//   - Touch the cookie itself. Login/refresh/logout are owned by the
-//     API (/api/auth/*). This middleware only reads.
+//   - Verify any JWT (would add an API round-trip to every request).
+//     Forged markers without a valid API session still get bounced —
+//     useMe() returns null after a 401 from /api/auth/me and
+//     ProtectedWebRoute forwards to /login.
+//   - Touch any cookie itself. Login/refresh/logout flows own the
+//     marker; this middleware only reads.
 
 // Add paths here that require an authenticated visitor.
 const PROTECTED_PATHS: string[] = [
@@ -122,7 +133,7 @@ function matchesAny(pathname: string, patterns: string[]): boolean {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const hasSession = request.cookies.has("grit_access");
+  const hasSession = request.cookies.has("grit_web_session");
 
   if (!hasSession && matchesAny(pathname, PROTECTED_PATHS)) {
     const url = request.nextUrl.clone();

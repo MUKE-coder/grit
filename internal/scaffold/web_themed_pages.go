@@ -9,9 +9,10 @@ func webThemedLoginPage() string {
 	return `"use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { setWebSessionMarker } from "@/lib/web-session";
 
 const inputBase =
   "w-full rounded-[var(--auth-radius)] border bg-[var(--auth-card)] px-4 py-3 text-[var(--auth-fg)] placeholder:text-[var(--auth-muted)] focus:outline-none focus:ring-2 transition-colors";
@@ -19,6 +20,7 @@ const inputOk = inputBase + " border-[var(--auth-border)] focus:border-[var(--au
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -34,7 +36,16 @@ export default function LoginPage() {
       // withCredentials on the axios client carries them on subsequent
       // requests automatically.
       await api.post("/api/auth/login", { email, password });
-      router.push("/");
+      // v3.31.42: stamp the web-origin marker so the middleware
+      // recognises this session as a web-app session and lets
+      // protected pages render. The API cookie alone isn't enough
+      // because it's scoped to the API origin -- the web middleware
+      // can't see it.
+      setWebSessionMarker();
+      // Honour ?next= so a bounce off a protected page returns the
+      // user to where they were headed.
+      const next = searchParams?.get("next");
+      router.push(next && next.startsWith("/") ? next : "/");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
       setError(msg || "Invalid email or password");
@@ -114,6 +125,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { setWebSessionMarker } from "@/lib/web-session";
 
 const inputBase =
   "w-full rounded-[var(--auth-radius)] border bg-[var(--auth-card)] px-4 py-3 text-[var(--auth-fg)] placeholder:text-[var(--auth-muted)] focus:outline-none focus:ring-2 transition-colors";
@@ -139,6 +151,8 @@ export default function RegisterPage() {
         email,
         password,
       });
+      // v3.31.42: stamp the web-origin marker. See lib/web-session.ts.
+      setWebSessionMarker();
       router.push("/");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;

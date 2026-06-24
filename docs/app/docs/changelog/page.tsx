@@ -28,6 +28,155 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.42 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.42
+                </span>
+                <span className="text-sm text-muted-foreground">June 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Three web-auth fixes shipped together.</strong>{' '}
+                  All surfaces — admin scaffold, web scaffold,{' '}
+                  <code>grit add web-auth</code>, and the generator —
+                  picked up the changes so existing and new projects
+                  both benefit.
+                </p>
+
+                <h3>1. Auth pages render full-bleed (no navbar / footer)</h3>
+                <p>
+                  Until now the web app&apos;s <code>(auth)/login</code>,{' '}
+                  <code>(auth)/register</code>, <code>(auth)/forgot-password</code>,{' '}
+                  <code>(auth)/callback</code>, and <code>forms/[token]</code>{' '}
+                  pages all rendered inside the root layout, which
+                  pinned the <code>&lt;Navbar /&gt;</code> +{' '}
+                  <code>&lt;Footer /&gt;</code> to the top and bottom.
+                  The auth pages already supply their own{' '}
+                  <code>AuthShell</code> chrome (same template the
+                  admin uses) so the result was visually doubled.
+                </p>
+                <p>
+                  New <code>components/AppChrome.tsx</code> is a tiny
+                  client wrapper that conditionally renders Navbar +
+                  Footer based on the pathname. The root layout drops
+                  to a thin server component again. Auth + public
+                  form-share pages render full-bleed; everything else
+                  is unchanged.
+                </p>
+
+                <h3>2. grit_web_session marker stops admin sessions from unlocking web pages</h3>
+                <p>
+                  <code>grit_access</code> is set by the API on the
+                  API origin (<code>localhost:8080</code>). That same
+                  cookie is also used by <code>apps/admin</code> — so
+                  an operator who signed in via the admin app could
+                  open <code>apps/web/account</code> in the same
+                  browser and walk straight past the web middleware.
+                  The API call from <code>useMe()</code> succeeded
+                  (the cookie is valid), and{' '}
+                  <code>ProtectedWebRoute</code> happily rendered the
+                  page.
+                </p>
+                <p>
+                  New <code>grit_web_session</code> marker cookie is
+                  set by the web app&apos;s own login/register flow
+                  on the WEB origin (<code>localhost:3000</code>) via
+                  client JS — non-HttpOnly, intentionally — and
+                  cleared by logout. Middleware reads{' '}
+                  <code>grit_web_session</code> instead of{' '}
+                  <code>grit_access</code>. Admin-only sessions never
+                  stamp the marker, so the web gates bounce them. The
+                  real session security is unchanged: useMe() still
+                  validates the API JWT; the marker is just a fast
+                  edge check.
+                </p>
+                <p>
+                  Mechanically: <code>lib/web-session.ts</code> with{' '}
+                  <code>setWebSessionMarker</code> /{' '}
+                  <code>clearWebSessionMarker</code> /{' '}
+                  <code>hasWebSessionMarker</code>; called from{' '}
+                  <code>useLogin</code> + <code>useRegister</code>{' '}
+                  (onSuccess), <code>useLogout</code> (onSettled),
+                  and the direct-submit{' '}
+                  <code>(auth)/login</code> + <code>(auth)/register</code>{' '}
+                  pages.
+                </p>
+
+                <h3>3. Navbar UserMenu replaces the Admin button</h3>
+                <p>
+                  The web navbar used to ship with a single{' '}
+                  <em>Admin</em> link that punted everyone to the
+                  admin app&apos;s login. Replaced with{' '}
+                  <code>components/UserMenu.tsx</code>:
+                </p>
+                <ul>
+                  <li>
+                    <strong>Signed out</strong> — <em>Log in</em> +{' '}
+                    <em>Sign up</em> buttons that link to the web
+                    app&apos;s own auth flow.
+                  </li>
+                  <li>
+                    <strong>Signed in</strong> — avatar dropdown with
+                    name + email at top, <em>Account</em> link,{' '}
+                    <em>Sign out</em> button.
+                  </li>
+                  <li>
+                    <strong>Loading</strong> — a placeholder of the
+                    same width as the signed-out CTA pair so the
+                    navbar doesn&apos;t shift on{' '}
+                    <code>useMe()</code> resolve.
+                  </li>
+                </ul>
+
+                <h3>Bonus: web-hook generator now imports FileRef</h3>
+                <p>
+                  Same TS2304 fix shipped in v3.31.37 for{' '}
+                  <code>writeTSTypes</code>, applied to{' '}
+                  <code>writeReactQueryHooks</code>. Generated
+                  <code> apps/web/hooks/use-X.ts</code> files with{' '}
+                  <code>:file:</code> / <code>:files:</code> fields now
+                  emit{' '}
+                  <code>{`import type { FileRef } from "@repo/shared/schemas"`}</code>{' '}
+                  at the top.
+                </p>
+
+                <h3>Migration</h3>
+                <p>
+                  Run <code>grit upgrade</code> or hand-patch:
+                </p>
+                <ul>
+                  <li>
+                    Drop <code>apps/web/components/AppChrome.tsx</code>{' '}
+                    + <code>UserMenu.tsx</code> + <code>lib/web-session.ts</code>{' '}
+                    in.
+                  </li>
+                  <li>
+                    Update <code>app/layout.tsx</code> to render{' '}
+                    <code>&lt;AppChrome&gt;</code> instead of{' '}
+                    <code>&lt;Navbar /&gt; ... &lt;Footer /&gt;</code>.
+                  </li>
+                  <li>
+                    Update <code>middleware.ts</code> to read{' '}
+                    <code>grit_web_session</code>.
+                  </li>
+                  <li>
+                    Add the marker calls to{' '}
+                    <code>hooks/use-auth.ts</code> +{' '}
+                    <code>(auth)/login/page.tsx</code> +{' '}
+                    <code>(auth)/register/page.tsx</code>.
+                  </li>
+                  <li>
+                    Replace the Admin button in{' '}
+                    <code>components/navbar.tsx</code> with{' '}
+                    <code>&lt;UserMenu /&gt;</code>.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.31.41 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
