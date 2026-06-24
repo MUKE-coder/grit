@@ -155,19 +155,19 @@ export default function Lesson() {
         }
       />
 
-      <h2>You&apos;ve finished chapter 4</h2>
-      <p>
-        Generate writes 8 files; sync keeps the types aligned. Together they
-        let you add a resource to a Grit project in under a minute. The
-        chapter assignment — generate an <code>Order</code> + an{' '}
-        <code>OrderItem</code> + sync — is waiting in the sidebar.
-      </p>
-
       <h2>What&apos;s next</h2>
       <p>
-        Chapter 5 — the last chapter. We zoom out from individual resources
-        and talk about the 5 architecture modes and how to pick the right
-        one for your idea.
+        Generate writes eight files plus a handful of marker-fenced
+        injections; sync keeps the types and the admin definitions
+        aligned. Together they let you add a resource to a Grit
+        project in under a minute.
+      </p>
+      <p>
+        Next lesson — <strong>grit remove resource</strong>. The
+        reverse: undo every file write and injection from a generate
+        run in one command. Useful when an experiment doesn&apos;t
+        pan out and you don&apos;t want stale resources cluttering
+        the sidebar and routes file.
       </p>
     </>
   )

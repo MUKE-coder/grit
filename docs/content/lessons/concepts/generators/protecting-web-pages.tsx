@@ -394,12 +394,13 @@ export default function AccountPage() {
       </p>
       <ul>
         <li>Generate full-stack resources (<code>grit generate</code>)</li>
-        <li>Sync types and propagate Go changes to TypeScript (<code>grit sync</code>)</li>
+        <li>Sync types and propagate Go changes to TypeScript (<code>grit sync</code>) — including the v3.31.16 auto-add into admin resource files</li>
         <li>Remove resources cleanly (<code>grit remove</code>)</li>
-        <li>Customise the admin form (render mode, groups + PATCH, field types)</li>
-        <li>Customise the admin table (formats, packed columns, filters)</li>
+        <li>Reach for the right field type — including <code>:file:</code> / <code>:files:</code> with FileRef lifecycle (v3.31.30-33) and the v3.31.35 client-side Excel import/export</li>
+        <li>Customise the admin form (formView, groups + per-group PATCH, field types)</li>
+        <li>Customise the admin table (formats, packed columns, filters, dateFilter, ExportMenu, ImportModal)</li>
         <li>Expose forms and tables to the web app (<code>grit expose</code>)</li>
-        <li>Share resources publicly with a token (FormShare + /forms/[token])</li>
+        <li>Share resources publicly with a token (FormShare + /forms/[token] + the v3.31.25 audit trail)</li>
         <li>Protect customer-facing pages (<code>grit add web-auth</code>)</li>
       </ul>
       <p>

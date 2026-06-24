@@ -7,12 +7,18 @@ export default function Lesson() {
   return (
     <>
       <p>
-        Lesson 2 listed thirteen field types in a table. This lesson is
-        the field-by-field deep dive — the patterns you reach for once a
-        plain <code>string</code> isn&apos;t enough. By the end you can
-        generate an Article with a URL slug, a cover image, a YouTube
-        video, a gallery of photos, and a list of tags — and know
-        exactly why each one was modelled the way it was.
+        Lesson 2 listed fifteen field types in a table. This lesson is
+        the field-by-field deep dive — the patterns you reach for once
+        a plain <code>string</code> isn&apos;t enough. By the end you
+        can generate an Article with a URL slug, a cover image, a
+        YouTube video, a gallery of photos, and a list of tags — and
+        know exactly why each one was modelled the way it was.
+      </p>
+      <p>
+        File uploads (<code>:file:</code> and <code>:files:</code>) get
+        their own lesson next because they touch S3, lifecycle, and
+        Excel I/O — too much weight for a single section here. This
+        lesson covers everything else.
       </p>
 
       <h2><code>slug</code> — URL-friendly auto-IDs</h2>
@@ -84,13 +90,63 @@ export default function Lesson() {
         </li>
       </ul>
 
-      <h2>Images, avatars, banners — string fields with smart sizing</h2>
+      <h2>Images, avatars, banners — three ways to get them</h2>
       <p>
-        Grit doesn&apos;t have an <code>image</code> field type. It has
-        something better: it watches the <em>name</em> of a string field
-        and upgrades the column to <code>VARCHAR(500)</code> automatically
-        if it looks like a URL. So you just use{' '}
-        <code>:string</code> and Grit handles the storage:
+        Single images and image galleries each have a few options
+        depending on how much metadata you want stored. The cleanest
+        modern way is <code>:file:image</code> for one image and{' '}
+        <code>:files:image</code> for a gallery — those get the
+        richest UI and the full lifecycle from the next lesson. The
+        older patterns still work and are worth knowing because most
+        existing Grit projects use them.
+      </p>
+
+      <h3>The three patterns at a glance</h3>
+      <div className="overflow-x-auto my-5">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border/40">
+              <th className="text-left px-3 py-2 font-medium">CLI spec</th>
+              <th className="text-left px-3 py-2 font-medium">Column type</th>
+              <th className="text-left px-3 py-2 font-medium">Admin form</th>
+              <th className="text-left px-3 py-2 font-medium">When to use</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/20">
+            <tr>
+              <td className="px-3 py-2 font-mono text-[12px]">cover:file:image</td>
+              <td className="px-3 py-2 font-mono text-[12px]">JSON FileRef</td>
+              <td className="px-3 py-2 text-[12px]">image dropzone (file variant)</td>
+              <td className="px-3 py-2 text-[12px]">Recommended — full metadata, automatic lifecycle</td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2 font-mono text-[12px]">photos:files:image</td>
+              <td className="px-3 py-2 font-mono text-[12px]">JSON FileRef[]</td>
+              <td className="px-3 py-2 text-[12px]">multi-file gallery, drag-to-reorder</td>
+              <td className="px-3 py-2 text-[12px]">Recommended for galleries — same lifecycle as above</td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2 font-mono text-[12px]">photos:string_array</td>
+              <td className="px-3 py-2 font-mono text-[12px]">JSON string[]</td>
+              <td className="px-3 py-2 text-[12px]">multi-image uploader (URLs only)</td>
+              <td className="px-3 py-2 text-[12px]">Legacy / simpler shape if you don&apos;t need mime+size on the row</td>
+            </tr>
+            <tr>
+              <td className="px-3 py-2 font-mono text-[12px]">cover:string</td>
+              <td className="px-3 py-2 font-mono text-[12px]">VARCHAR(500)</td>
+              <td className="px-3 py-2 text-[12px]">plain text input</td>
+              <td className="px-3 py-2 text-[12px]">Just a URL — paste an external CDN link, no upload UI</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>The URL-shaped name heuristic</h3>
+      <p>
+        Even with the plain-string approach, Grit watches the{' '}
+        <em>name</em> of a string field and bumps the column to{' '}
+        <code>VARCHAR(500)</code> if it looks URL-shaped — signed S3
+        URLs and UTM-tagged tracking links blow past 255 fast.
       </p>
 
       <CodeBlock
@@ -100,8 +156,7 @@ export default function Lesson() {
       />
 
       <p>
-        All four columns become <code>VARCHAR(500)</code> (signed S3 URLs
-        and UTM-tagged image links eat 255 characters fast). The
+        All four columns become <code>VARCHAR(500)</code>. The
         heuristic triggers on:
       </p>
 
@@ -113,32 +168,25 @@ Suffix:       anything_url  (image_url, profile_url, callback_url, …)`}
 
       <h3>How the upload flow works</h3>
       <p>
-        The field stores the <em>URL</em>; the file itself lives on S3
-        (or MinIO / R2 / B2). Grit ships an upload handler at{' '}
-        <code>POST /api/uploads</code> that:
-      </p>
-      <ol>
-        <li>Receives a multipart file from the admin Form.</li>
-        <li>Streams it to your bucket via the storage service.</li>
-        <li>
-          Returns <code>{`{ data: { url: "https://…/file.jpg" } }`}</code>.
-        </li>
-      </ol>
-      <p>
-        The admin <code>FormBuilder</code> spots fields named like
-        images (<code>image</code>, <code>avatar</code>, <code>cover</code>,
-        …) and renders a drag-and-drop uploader that POSTs to{' '}
-        <code>/api/uploads</code> and writes the returned URL back into
-        the form. Zero glue code.
+        Whichever spec you pick, the file itself lives on S3 (or MinIO
+        / R2 / B2) — the DB column just stores the reference. Grit
+        ships an upload handler at <code>POST /api/uploads</code> that
+        receives a multipart file, streams it to your bucket via the
+        storage service, and returns a FileRef (or just{' '}
+        <code>{`{ url }`}</code> for legacy callers). The admin form
+        does the round-trip automatically; you only see the result
+        land in the field.
       </p>
 
       <TipBox tone="info">
-        Want the upload widget but the URL column is named differently
-        (e.g., <code>headshot</code>)? Either rename it to a heuristic
-        match (<code>photo</code>, <code>avatar</code>) or open the
-        generated admin page and change the form field&apos;s{' '}
-        <code>type: &quot;text&quot;</code> to{' '}
-        <code>type: &quot;image&quot;</code> by hand.
+        <strong>The CLI doesn&apos;t have an <code>:image</code> or{' '}
+        <code>:images</code> type.</strong> Those exist on the admin
+        TS side (you can set <code>type: &quot;image&quot;</code> by
+        hand in a form field), but the CLI generator only ships{' '}
+        <code>:file</code> / <code>:files</code> for typed uploads
+        and <code>:string_array</code> for the legacy URL-list
+        uploader. Pick from those three; the next lesson goes deep on
+        the file types.
       </TipBox>
 
       <h2>Videos — same trick, different field name</h2>
@@ -342,21 +390,23 @@ fields:
       <CodeBlock
         language="text"
         code={`# Blog post
-title:string, slug:slug, excerpt:text, cover:string, body:richtext,
+title:string, slug:slug, excerpt:text, cover:file:image, body:richtext,
 published:bool, published_at:datetime, tags:string_array
 
 # Course / lesson
-title:string, slug:slug, description:text, thumbnail:string,
+title:string, slug:slug, description:text, thumbnail:file:image,
 video_url:string, duration_seconds:int, free_preview:bool
 
 # E-commerce product
 sku:string:unique, name:string, slug:slug:sku, description:richtext,
-price:float, stock_quantity:int, photos:string_array, featured:bool
+price:float, stock_quantity:int, hero:file:image, photos:files:image,
+spec_sheet:file:pdf, featured:bool
 
 # Real-estate listing
 title:string, slug:slug, address:string, city:string, state:string,
 price:float, bedrooms:int, bathrooms:float, square_feet:int,
-description:text, photos:string_array, listed_at:datetime
+description:text, photos:files:image, floorplan:file:pdf,
+listed_at:datetime
 
 # Calendar event
 title:string, location:string, starts_at:datetime, ends_at:datetime,
@@ -369,23 +419,23 @@ all_day:bool, notes:text, color:string`}
           {
             label: 'title:string, image:string, body:text, screenshots:string',
             feedback:
-              'Two issues: body:text is plain text (no headings, bold, etc.), and a single string can\'t hold 4–10 screenshots.',
+              "Two issues: body:text is plain text (no headings, bold, etc.), and a single string can't hold 4–10 screenshots.",
+          },
+          {
+            label: 'title:string, hero:file:image, body:richtext, screenshots:files:image',
+            correct: true,
+            feedback:
+              "Spot on. :file:image gives a single-image dropzone with FileRef metadata (name + mime + size + thumbnail); :files:image is the gallery with drag-to-reorder; richtext gets the Tiptap editor. All three benefit from the v3.31.30+ lifecycle helpers (no orphan uploads in S3).",
+          },
+          {
+            label: 'title:string, hero:image, body:richtext, screenshots:images',
+            feedback:
+              "The CLI doesn't have :image or :images types — those exist only on the admin TS side. The CLI generates the equivalents via :file:image and :files:image (or via :string_array for a legacy URL-only gallery).",
           },
           {
             label: 'title:string, hero:string, body:richtext, screenshots:string_array',
-            correct: true,
             feedback:
-              "Spot on. \"hero\" hits the URL heuristic → VARCHAR(500); richtext gets the Tiptap editor; string_array stores the multi-image gallery and the admin form will render a multi-file uploader.",
-          },
-          {
-            label: 'title:string, image:string, body:richtext, screenshots:json',
-            feedback:
-              'Close — but Grit doesn\'t have a json field type. Use string_array for a list of strings, or many_to_many for a relationship.',
-          },
-          {
-            label: 'title:string, image:image, body:richtext, screenshots:images',
-            feedback:
-              'Grit doesn\'t have :image or :images types. Use :string (heuristic name) for one URL and :string_array for a gallery.',
+              "Workable — :string with a URL-shaped name hits the VARCHAR(500) heuristic, and :string_array gives the legacy multi-image uploader. But :file:image + :files:image give richer metadata and automatic lifecycle cleanup, so prefer those on new resources.",
           },
         ]}
       />
@@ -416,8 +466,9 @@ all_day:bool, notes:text, color:string`}
         hint={
           <>
             Six fields, all reachable with what you&apos;ve learnt: one
-            slug from title, one URL-named string, one int (uint if you
-            want non-negative), one richtext, one string_array, one bool.
+            slug from title, one :file:image for the cover, one int
+            (uint if you want non-negative), one richtext, one
+            string_array for the freeform ingredient list, one bool.
           </>
         }
         solution={
@@ -425,18 +476,21 @@ all_day:bool, notes:text, color:string`}
             <CodeBlock
               terminal
               code={`grit generate resource Recipe \\
-  --fields "title:string,slug:slug,cover:string,prep_minutes:int,body:richtext,ingredients:string_array,published:bool"
+  --fields "title:string,slug:slug,cover:file:image,prep_minutes:int,body:richtext,ingredients:string_array,published:bool"
 
 grit migrate`}
             />
             <p>
               After migration, the admin page at{' '}
-              <code>/resources/recipes</code> renders with: a Title input,
-              an auto-hidden slug, a single-image uploader for{' '}
-              <code>cover</code>, a number input, a Tiptap editor, a
-              multi-image uploader for <code>ingredients</code> (which
-              you may want to swap to a chips input — see the tip above),
-              and a toggle.
+              <code>/resources/recipes</code> renders with: a Title
+              input, an auto-hidden slug, a file dropzone restricted
+              to images for <code>cover</code>, a number input, a
+              Tiptap editor, a multi-image uploader for{' '}
+              <code>ingredients</code> (you may want to swap to a
+              chips input in the resource definition — the form field
+              accepts <code>type: &quot;text&quot;</code> with array
+              parsing), and a toggle. The cover image cell on the
+              list page shows a thumbnail.
             </p>
           </>
         }
@@ -444,11 +498,14 @@ grit migrate`}
 
       <h2>What&apos;s next</h2>
       <p>
-        You can now generate single-table resources with rich fields. The
-        next lesson is what makes Grit feel like a framework instead of
-        a script: <strong>relationships</strong>. We&apos;ll build a
-        Contact + Group pair where each contact belongs to a group and
-        every group lists its contacts — using <code>belongs_to</code>{' '}
+        You can now generate single-table resources with rich fields.
+        Next we cover <strong>file fields</strong> in depth —{' '}
+        <code>:file:</code> and <code>:files:</code> are richer than{' '}
+        <code>:image</code> / <code>:images</code> because they carry
+        FileRef metadata (mime + size + thumbnail), trigger automatic
+        lifecycle cleanup on replace, and round-trip through Excel
+        for bulk edits. After that:{' '}
+        <strong>relationships</strong> with <code>belongs_to</code>{' '}
         and <code>many_to_many</code>.
       </p>
     </>

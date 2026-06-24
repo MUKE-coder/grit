@@ -10,7 +10,7 @@ export default function Lesson() {
         Generation is one half of the resource lifecycle. The other half
         is <em>removal</em>. When a feature gets cut, a prototype
         doesn&apos;t pan out, or you realised you spelled{' '}
-        <code>Cunstomer</code> wrong — you need to undo all 8 files plus
+        <code>Cunstomer</code> wrong — you need to undo all eight files plus
         the 10+ injection points cleanly. That&apos;s{' '}
         <code>grit remove resource</code>.
       </p>

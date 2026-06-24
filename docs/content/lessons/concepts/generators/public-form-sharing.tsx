@@ -196,26 +196,52 @@ FormShare row {                 fills out form
         clean submission count too.
       </p>
 
+      <h2>Audit trail (v3.31.25+)</h2>
+      <p>
+        Every successful public submission writes one row to a{' '}
+        <code>form_submissions</code> table — a separate audit log,
+        not a column on the parent record. The row records which
+        share, which resource, which record ID, plus IP and
+        User-Agent for forensics.
+      </p>
+      <CodeBlock
+        language="go"
+        filename="apps/api/internal/models/form_submission.go (excerpt)"
+        code={`type FormSubmission struct {
+  ID           string ` + '`gorm:"primarykey;size:36" json:"id"`' + `
+  ShareID      string ` + '`gorm:"size:36;not null;index" json:"share_id"`' + `
+  ResourceName string ` + '`gorm:"size:64;not null;index" json:"resource_name"`' + `
+  RecordID     string ` + '`gorm:"size:36;not null;index" json:"record_id"`' + `
+  IP           string ` + '`gorm:"size:45" json:"ip"`' + `
+  UserAgent    string ` + '`gorm:"size:255" json:"user_agent"`' + `
+  CreatedAt    time.Time      ` + '`json:"created_at"`' + `
+  DeletedAt    gorm.DeletedAt ` + '`gorm:"index" json:"-"`' + `
+}`}
+      />
+      <p>
+        Writing the audit row is best-effort — if it fails, the
+        user&apos;s submission is not rolled back. They get their
+        record either way; the admin loses one line in the trail.
+        Browse the rows from{' '}
+        <code>/system/form-shares</code> → click a share → see every
+        submission with the originating IP and timestamp.
+      </p>
+
       <h2>What it can&apos;t do (yet)</h2>
       <ul>
         <li>
-          <strong>Audit trail</strong> — there&apos;s no{' '}
-          <code>source_share_id</code> column on submitted records yet,
-          so the admin Contacts list can&apos;t filter to
-          &quot;public only&quot; submissions. On the roadmap.
-        </li>
-        <li>
-          <strong>Tailored public forms</strong> — the default page is
-          a generic name/email/phone/message shape. For resources with
-          different fields, generate a custom page with{' '}
-          <code>grit expose form</code> (covered in the next lesson)
-          and point your share label at it.
+          <strong>Tailored public forms</strong> — the default page
+          at <code>/forms/[token]</code> is a generic
+          name/email/phone/message shape. For resources with
+          different fields, use <code>grit expose form Contact
+          --public-share</code> (covered in the previous lesson) to
+          scaffold a page with the resource&apos;s actual fields.
         </li>
         <li>
           <strong>CAPTCHA / honeypot</strong> — Sentinel rate-limits
           by IP, but there&apos;s no challenge mechanism yet. For
-          high-volume public forms behind a marketing site, layer your
-          own (Cloudflare Turnstile, hCaptcha) on top.
+          high-volume public forms behind a marketing site, layer
+          your own (Cloudflare Turnstile, hCaptcha) on top.
         </li>
       </ul>
 
@@ -319,13 +345,12 @@ FormShare row {                 fills out form
 
       <h2>What&apos;s next</h2>
       <p>
-        Sharing gives you a link. The next lesson covers{' '}
-        <code>grit expose form</code> + <code>grit expose table</code> —
-        commands that scaffold a tailored Next.js page in{' '}
-        <code>apps/web/</code> for any resource, with the exact fields
-        the resource has (not the generic shape). Together with form
-        shares, these are how you surface Grit resources outside the
-        admin panel.
+        Form sharing gives anonymous visitors a controlled lane. The
+        final lesson in this chapter covers the opposite case:{' '}
+        <strong>protecting</strong> the web pages that should require
+        a signed-in user — using{' '}
+        <code>grit add web-auth</code> to scaffold the middleware and
+        the <code>&lt;ProtectedWebRoute&gt;</code> wrapper component.
       </p>
     </>
   )

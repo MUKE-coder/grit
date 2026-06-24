@@ -70,7 +70,7 @@ export default function Lesson() {
 
       <CodeBlock
         language="ts"
-        code={`// 13 ready-made cell renderers
+        code={`// 14 ready-made cell renderers
 { key: "name",         format: "text"     }   // default
 { key: "is_active",    format: "boolean"  }   // green check / grey dash
 { key: "status",       format: "badge",  badge: { active: { color: "success", label: "Active" }, … } }
@@ -79,12 +79,23 @@ export default function Lesson() {
 { key: "created_at",   format: "relative" }   // "5 minutes ago"
 { key: "avatar",       format: "image"    }   // small thumbnail
 { key: "video_url",    format: "video"    }   // play icon link
+{ key: "spec_sheet",   format: "file"     }   // FileRef preview (v3.31.30)
+{ key: "photos",       format: "files"    }   // FileRef[] gallery stack
 { key: "website",      format: "link"     }   // external link with icon
 { key: "email",        format: "email"    }   // mailto: link
 { key: "color",        format: "color"    }   // colored swatch
 { key: "body",         format: "richtext" }   // stripped of HTML for preview
-{ key: "user",         format: "user"     }   // avatar + name combo`}
+{ key: "user",         format: "user"     }   // packed avatar + name + email`}
       />
+
+      <TipBox tone="info">
+        The <code>ColumnFormat</code> TS union currently lists 13 of
+        these — <code>file</code> and <code>files</code> render fine
+        at runtime but you may need <code>as never</code> to satisfy
+        the compiler if you set them by hand. They&apos;re emitted
+        automatically by the generator for <code>:file:</code> and{' '}
+        <code>:files:</code> columns.
+      </TipBox>
 
       <h2>Recipe 1 — hide the noisy timestamp from the default list</h2>
       <p>
@@ -479,6 +490,69 @@ columns: [
           </>
         }
       />
+
+      <h2>Date-window filter (v3.31.34+)</h2>
+      <p>
+        Every list page ships with a toolbar Date filter — Today,
+        Last 7 days, Last 30 days, This month, or a custom range. It
+        rewrites <code>?created_since=</code> / <code>?created_from=</code> /{' '}
+        <code>?created_to=</code> into the list query and feeds the
+        same params to every stat card on the page, so the numbers
+        above the table always match the rows below.
+      </p>
+
+      <CodeBlock
+        language="ts"
+        code={`table: {
+  // Defaults to enabled on created_at.
+  dateFilter: { enabled: true, field: "created_at", label: "Created" },
+  // Hide entirely:
+  // dateFilter: { enabled: false },
+  // Filter on a different timestamp instead — Booking by scheduled_for,
+  // BlogPost by published_at, Order by placed_at:
+  // dateFilter: { field: "scheduled_for", label: "Scheduled" },
+},`}
+      />
+      <p>
+        The selection is URL-persisted via{' '}
+        <code>?date=preset</code> / <code>?date_from</code> /{' '}
+        <code>?date_to</code>, so a refresh or shared link rehydrates
+        the same view. No code changes needed on the API — the{' '}
+        <code>paginate</code> package already parses all four params.
+      </p>
+
+      <h2>Export + Import (v3.31.35+)</h2>
+      <p>
+        The toolbar also ships a split <strong>Export</strong> button
+        (CSV / Excel / JSON) and an <strong>Import</strong> button.
+        Both run client-side via SheetJS — no new API routes, no
+        async cutoff.
+      </p>
+
+      <CodeBlock
+        language="ts"
+        code={`table: {
+  // All three formats on by default; default click triggers Excel.
+  // Hide a format from the menu:
+  export: { csv: true, excel: true, json: false },
+  // Disable export entirely:
+  // export: false,
+
+  // Excel import on by default. Restrict to a subset of form fields:
+  import: { fields: ["title", "price", "stock"] },
+  // Disable import entirely:
+  // import: false,
+},`}
+      />
+      <p>
+        Export loops the paginated endpoint until every row is fetched
+        (using the current filter + sort + date range), then writes
+        the file. Import opens a modal that parses a dropped file,
+        previews per-row validation errors, and POSTs each valid row
+        at concurrency 4. File-field columns (<code>:file:</code> /{' '}
+        <code>:files:</code>) are auto-excluded from imports —
+        spreadsheets can&apos;t carry binary blobs.
+      </p>
 
       <h2>What&apos;s next</h2>
       <p>

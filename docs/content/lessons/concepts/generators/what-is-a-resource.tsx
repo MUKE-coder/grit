@@ -24,23 +24,41 @@ export default function Lesson() {
 
       <CodeBlock
         language="text"
-        code={`Model            GORM struct          apps/api/internal/models/contact.go
-Service          Business logic       apps/api/internal/services/contact.go
-Handler          HTTP layer           apps/api/internal/handlers/contact.go
-Routes           Wiring               apps/api/internal/routes/routes.go (injected)
-Zod schema       Validation           packages/shared/src/schemas/contact.ts
-TypeScript type  Frontend type        packages/shared/src/types/contact.ts
-React Query hook Data fetching        apps/web/hooks/use-contacts.ts
-Admin resource   Filament-style page  apps/admin/app/resources/contacts/page.tsx`}
+        code={`Model            GORM struct          apps/api/internal/models/contact.go        (new)
+Service          Business logic       apps/api/internal/services/contact.go      (new)
+Handler          HTTP layer           apps/api/internal/handlers/contact.go      (new)
+Zod schema       Validation           packages/shared/schemas/contact.ts         (new)
+TypeScript type  Frontend type        packages/shared/types/contact.ts           (new)
+React Query hook Data fetching        apps/web/hooks/use-contacts.ts             (new)
+Admin definition Filament-style def   apps/admin/resources/contacts.ts           (new)
+Admin page       Thin page wrapper    apps/admin/(dashboard)/resources/contacts/page.tsx (new)
+
+Plus ~10 marker-fenced injections into existing files:
+- API routes.go             (route group + handler init + AutoMigrate + Studio list)
+- packages/shared/{schemas,types,constants}/index.ts  (re-exports)
+- apps/admin/resources/index.ts  (registry import + array entry)`}
       />
 
       <p>
-        That&apos;s <strong>eight artefacts</strong> for one concept —
-        too many to write by hand every time you add an entity, and too
-        easy to drift out of sync if you do (a field on the Go struct
-        that&apos;s missing from the TS type; a route the admin page
-        forgot to call). The generator writes all eight in one command
-        and keeps them aligned.
+        That&apos;s <strong>eight brand-new files</strong> plus a
+        handful of injections into existing files — too much to write
+        by hand every time you add an entity, and too easy to drift
+        out of sync if you do (a field on the Go struct that&apos;s
+        missing from the TS type; a route the admin page forgot to
+        call). The generator writes all eight files and applies every
+        injection in one command, all keyed off marker comments so
+        re-runs are idempotent and removal is clean.
+      </p>
+      <p>
+        The split between the admin <em>definition</em> and the admin{' '}
+        <em>page</em> is the one that surprises most people the first
+        time. The definition (<code>resources/contacts.ts</code>) is
+        where you describe columns, form fields, badge colors, and
+        export rules; the page (<code>page.tsx</code>) is a six-line
+        wrapper that hands the definition to a generic{' '}
+        <code>&lt;ResourcePage&gt;</code>. The wrapper exists so you
+        can drop down to a custom layout when you need to (you almost
+        never do).
       </p>
 
       <h2>The mental model: CRUD plus a UI</h2>

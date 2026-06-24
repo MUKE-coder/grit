@@ -86,7 +86,7 @@ description     email
 grit migrate`}
       />
 
-      <p>That writes the same 8 files you saw in Lesson 3 — model, service, handler, routes, schema, type, hook, admin page. Now we add the child.</p>
+      <p>That writes the same eight files you saw in Lesson 3 — model, service, handler, schema, type, hook, admin definition, admin page — plus injections into routes.go and the registry. Now we add the child.</p>
 
       <h3>Step 2 — Generate the child with belongs_to</h3>
       <CodeBlock
@@ -187,42 +187,49 @@ grit migrate`}
       <h3>The admin form gets a dropdown</h3>
       <p>
         Open the regenerated{' '}
-        <code>apps/admin/app/resources/contacts/page.tsx</code> and
-        you&apos;ll see:
+        <code>apps/admin/resources/contacts.ts</code> and you&apos;ll
+        see:
       </p>
       <CodeBlock
-        language="tsx"
-        filename="apps/admin/app/resources/contacts/page.tsx (excerpt)"
-        code={`form: [
-  { name: "name",  type: "text", label: "Name",  required: true },
-  { name: "email", type: "text", label: "Email", required: true },
-  { name: "phone", type: "text", label: "Phone" },
-  {
-    name: "group_id",
-    type: "relationship-select",
-    label: "Group",
-    relation: { model: "groups", labelField: "name" },
-    required: true,
-  },
-],`}
+        language="ts"
+        filename="apps/admin/resources/contacts.ts (excerpt)"
+        code={`form: {
+  fields: [
+    { key: "name",  type: "text", label: "Name",  required: true },
+    { key: "email", type: "text", label: "Email", required: true },
+    { key: "phone", type: "text", label: "Phone" },
+    {
+      key: "group_id",
+      type: "relationship-select",
+      label: "Group",
+      relatedEndpoint: "/api/groups",
+      displayField: "name",
+      relationshipKey: "group_id",
+      required: true,
+    },
+  ],
+},`}
       />
       <p>
         The <code>relationship-select</code> field is a server-backed
-        dropdown — it hits <code>GET /api/groups</code>, lists each
-        group by its <code>name</code> field, and writes the selected
-        group&apos;s UUID into <code>group_id</code>. No glue needed.
+        dropdown — it hits the <code>relatedEndpoint</code>, lists
+        each row by the <code>displayField</code>, and writes the
+        selected row&apos;s UUID into the column named in{' '}
+        <code>relationshipKey</code>. No glue needed.
       </p>
 
       <h3>The list page shows the parent name</h3>
       <CodeBlock
-        language="tsx"
-        filename="apps/admin/app/resources/contacts/page.tsx (excerpt)"
-        code={`columns: [
-  { key: "name",  label: "Name",  sortable: true, format: "text" },
-  { key: "email", label: "Email", sortable: true, format: "text" },
-  { key: "group.name", label: "Group", format: "text" },  // dotted path reads from preload
-  { key: "created_at", label: "Created", format: "relative" },
-],`}
+        language="ts"
+        filename="apps/admin/resources/contacts.ts (excerpt)"
+        code={`table: {
+  columns: [
+    { key: "name",       label: "Name",    sortable: true, searchable: true },
+    { key: "email",      label: "Email",   sortable: true, format: "email" },
+    { key: "group.name", label: "Group" }, // dotted path reads from the preloaded association
+    { key: "created_at", label: "Created", format: "relative" },
+  ],
+},`}
       />
 
       <h3>Showing &quot;has many&quot; on the parent — a manual addition</h3>
@@ -429,7 +436,9 @@ grit migrate`}
         <li>
           The admin Form gets a{' '}
           <code>multi-relationship-select</code> — a multi-select
-          dropdown backed by <code>GET /api/tags</code>.
+          dropdown backed by <code>GET /api/tags</code>. The list
+          page renders attached tags as a stack of colored pills
+          using the badge format.
         </li>
       </ul>
 

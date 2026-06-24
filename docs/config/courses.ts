@@ -438,6 +438,15 @@ const conceptsCourse: Course = {
               status: 'available',
             },
             {
+              slug: 'file-fields-and-excel',
+              title: 'File fields + Excel I/O',
+              tagline:
+                ':file: / :files: syntax, FileRef lifecycle that stops bucket leaks, five dropzone variants, and the v3.31.35 client-side Excel import/export.',
+              minutes: 12,
+              difficulty: 'medium',
+              status: 'available',
+            },
+            {
               slug: 'relationships',
               title: 'Relationships — one-to-one, one-to-many, many-to-many',
               tagline: 'belongs_to + many_to_many cover every cardinality. Three runnable examples.',
@@ -650,15 +659,6 @@ const conceptsCourse: Course = {
               title: 'S3-compatible file storage',
               tagline: 'Upload files, store on R2/MinIO/AWS, serve with signed URLs.',
               minutes: 8,
-              difficulty: 'medium',
-              status: 'available',
-            },
-            {
-              slug: 'file-fields-and-excel',
-              title: 'File fields + Excel I/O',
-              tagline:
-                ':file: / :files: syntax, lifecycle helpers that stop bucket leaks, dropzone variants, and the v3.31.35 client-side Excel import/export.',
-              minutes: 11,
               difficulty: 'medium',
               status: 'available',
             },

@@ -8,11 +8,13 @@ export default function Lesson() {
     <>
       <p>
         Eight files appeared when you ran{' '}
-        <code>grit generate resource Contact …</code>. This lesson walks
-        through each one with the <strong>full source</strong> the
-        generator wrote, so you stop seeing them as a black box and
-        start treating them as your own code. Once you&apos;ve read each
-        layer, you&apos;ll know exactly where to make any future change.
+        <code>grit generate resource Contact …</code> — plus ~10
+        marker-fenced injections into existing files. This lesson
+        walks through each new file with the <strong>full source</strong>{' '}
+        the generator wrote, so you stop seeing them as a black box
+        and start treating them as your own code. Once you&apos;ve
+        read each layer, you&apos;ll know exactly where to make any
+        future change.
       </p>
 
       <h2>1. The Go model — <code>apps/api/internal/models/contact.go</code></h2>
@@ -328,40 +330,118 @@ export function useCreateContact() {
         and you have a live list.
       </p>
 
-      <h2>8. The admin resource page — <code>apps/admin/app/resources/contacts/page.tsx</code></h2>
+      <h2>8. The admin resource definition — <code>apps/admin/resources/contacts.ts</code></h2>
+      <p>
+        Since v3.31.x the generator splits the admin output in two: a
+        declarative <em>definition</em> that describes the resource
+        (columns, form fields, badge colors, export rules, stats cards)
+        and a thin <em>page</em> that hands the definition to a generic{' '}
+        <code>&lt;ResourcePage&gt;</code> component. The split exists so
+        you can mount the same definition in a different layout
+        (custom shell, custom analytics widgets) without forking the
+        whole page.
+      </p>
 
       <CodeBlock
-        language="tsx"
-        filename="apps/admin/app/resources/contacts/page.tsx"
-        code={`"use client";
+        language="ts"
+        filename="apps/admin/resources/contacts.ts"
+        code={`import { defineResource } from "@/lib/resource";
 
-import { defineResource } from "@/lib/admin/define-resource";
-
-export default defineResource({
-  model: "contacts",
-  label: "Contacts",
-  searchable: true,
-  columns: [
-    { key: "name",  label: "Name",  sortable: true, format: "text" },
-    { key: "email", label: "Email", sortable: true, format: "text" },
-    { key: "phone", label: "Phone", format: "text" },
-    { key: "created_at", label: "Created", format: "relative", sortable: true },
-  ],
-  form: [
-    { name: "name",  type: "text",  label: "Name",  required: true },
-    { name: "email", type: "text",  label: "Email", required: true },
-    { name: "phone", type: "text",  label: "Phone" },
-  ],
+export const contactsResource = defineResource({
+  name: "Contact",
+  slug: "contacts",
+  endpoint: "/api/contacts",
+  icon: "User",
+  // formView controls how Create/Edit opens. Defaults to "sheet"
+  // (right drawer). Pick "modal" for short forms, "page" for long
+  // forms, or "modal-steps"/"page-steps" for wizards.
+  // formView: "sheet",
+  table: {
+    columns: [
+      { key: "name",       label: "Name",    sortable: true, searchable: true },
+      { key: "email",      label: "Email",   sortable: true, format: "email" },
+      { key: "phone",      label: "Phone" },
+      { key: "created_at", label: "Created", sortable: true, format: "relative" },
+    ],
+    searchable: true,
+    bulkActions: ["delete", "export"],
+    // v3.31.34 — date-window filter on the toolbar.
+    dateFilter: { enabled: true, field: "created_at", label: "Created" },
+    // v3.31.35 — export menu + import modal. Both default to on.
+    // export: { csv: true, excel: true, json: true },
+    // import: { excel: true },
+  },
+  form: {
+    fields: [
+      { key: "name",  type: "text", label: "Name",  required: true },
+      { key: "email", type: "text", label: "Email", required: true },
+      { key: "phone", type: "text", label: "Phone" },
+    ],
+  },
 });`}
       />
 
+      <h2>9. The admin page — <code>apps/admin/app/(dashboard)/resources/contacts/page.tsx</code></h2>
+      <CodeBlock
+        language="tsx"
+        filename="apps/admin/app/(dashboard)/resources/contacts/page.tsx"
+        code={`"use client";
+
+import { ResourcePage } from "@/components/resource/resource-page";
+import { contactsResource } from "@/resources/contacts";
+
+export default function ContactsPage() {
+  return <ResourcePage resource={contactsResource} />;
+}`}
+      />
+
       <p>
-        That declarative object is everything: the DataTable columns, the
-        Create/Edit form, the search box, the pagination, the delete
-        confirmation, the empty state. No HTML, no form wiring. The
-        Filament-style runtime in <code>@/lib/admin/define-resource</code>{' '}
-        renders it.
+        Six lines. That&apos;s the page. <code>ResourcePage</code> is
+        the generic component that reads the definition and renders
+        everything: the stats cards above the table, the toolbar with
+        search + date filter + export menu + import modal, the
+        DataTable with column sort and bulk-select, the
+        Create/Edit/View modals, and the delete confirmation. No
+        HTML, no form wiring. To customise behaviour, edit the
+        definition in step 8; only drop down to a hand-written page
+        when you need a completely different layout.
       </p>
+
+      <p>
+        Alongside the file writes, the generator slots new entries
+        into anchor-comment-fenced regions of existing files. The
+        sidebar isn&apos;t one of them — it reads from the registry
+        array dynamically, so adding the resource to{' '}
+        <code>resources/index.ts</code> is enough. The injection list
+        in v3.31.x:
+      </p>
+      <ul>
+        <li>
+          <code>apps/api/internal/routes/routes.go</code> — the
+          handler init block, the route group (public + protected +
+          admin splits as needed), and the AutoMigrate / GORM Studio
+          model registrations.
+        </li>
+        <li>
+          <code>packages/shared/schemas/index.ts</code> — re-exports
+          of <code>CreateContactSchema</code> /{' '}
+          <code>UpdateContactSchema</code>.
+        </li>
+        <li>
+          <code>packages/shared/types/index.ts</code> — the{' '}
+          <code>Contact</code> type re-export.
+        </li>
+        <li>
+          <code>packages/shared/constants/index.ts</code> — API route
+          path constants the web hooks reference.
+        </li>
+        <li>
+          <code>apps/admin/resources/index.ts</code> — the import +
+          the entry in the exported <code>resources</code> array.
+          That&apos;s what the sidebar nav, the dashboard widget grid,
+          and the resource search dialog all read from.
+        </li>
+      </ul>
 
       <TipBox tone="success">
         The generator is a <em>starting point</em>, not a final word.
@@ -377,11 +457,12 @@ export default defineResource({
         language="text"
         code={`             Browser              ⇆            Go API
                                                         │
-    apps/admin/.../contacts/page.tsx                    │
-                 │  defineResource → DataTable + Form   │
+    apps/admin/.../contacts/page.tsx (6 lines)          │
+                 │  ResourcePage reads                  │
+                 │  resources/contacts.ts definition    │
                  ▼                                       │
-       useContacts() hook                                │
-       (apps/web/hooks/use-contacts.ts)                  │
+       DataTable + form + toolbar                        │
+       (via ResourcePage → useResource())                │
                  │  axios GET /api/contacts             ─┤
                  │                                       │   ┌──────────────────────────────┐
                  │                                       ├──▶│ routes.go                    │
@@ -481,9 +562,11 @@ export default defineResource({
       <h2>What&apos;s next</h2>
       <p>
         You&apos;ve seen the file tour with three plain string fields.
-        The next lesson goes wide — every field type, slug auto-gen, the
-        image-upload trick hiding inside <code>string_array</code>, and
-        the heuristic names that quietly upgrade your column storage.
+        The next lesson goes wide — slug auto-gen, the image / images
+        / file / files field types, tag inputs via{' '}
+        <code>string_array</code>, date and datetime pickers, and the
+        heuristic names that quietly upgrade your column storage from
+        VARCHAR to TEXT or DECIMAL without you asking.
       </p>
     </>
   )

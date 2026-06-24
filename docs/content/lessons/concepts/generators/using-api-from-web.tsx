@@ -33,7 +33,7 @@ export default function Lesson() {
           <tbody className="divide-y divide-border/20">
             <tr>
               <td className="px-3 py-2 font-mono text-[12px]">apps/web/hooks/use-contacts.ts</td>
-              <td className="px-3 py-2 text-[12px]">React Query hooks — useContacts, useContact, useCreateContact, useUpdateContact, useDeleteContact.</td>
+              <td className="px-3 py-2 text-[12px]">React Query hooks — useContacts (list), useGetContact (one), useCreateContact, useUpdateContact, useDeleteContact.</td>
             </tr>
             <tr>
               <td className="px-3 py-2 font-mono text-[12px]">packages/shared/types/contact.ts</td>
@@ -124,7 +124,7 @@ export default function ContactsPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useContacts({ search, page, page_size: 20 });
+  const { data, isLoading } = useContacts({ search, page, pageSize: 20 });
 
   return (
     <>
@@ -159,11 +159,11 @@ export default function ContactsPage() {
         code={`"use client";
 
 import { use } from "react";
-import { useContact } from "@/hooks/use-contacts";
+import { useGetContact } from "@/hooks/use-contacts";
 
 export default function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { data, isLoading, error } = useContact(id);
+  const { data, isLoading, error } = useGetContact(id);
 
   if (isLoading) return <p>Loading…</p>;
   if (error || !data) return <p>Not found.</p>;
@@ -269,10 +269,10 @@ export default function NewContactPage() {
 const { mutate: updateContact } = useUpdateContact();
 const { mutate: deleteContact } = useDeleteContact();
 
-// Update
-updateContact({ id: "01HX…", input: { name: "New name" } });
+// Update — id is one key in the same flat object as the input fields.
+updateContact({ id: "01HX…", name: "New name" });
 
-// Delete (asks the API to soft-delete — soft delete is the default in Grit)
+// Delete (soft-delete via deleted_at — Grit's default for every model).
 deleteContact("01HX…");`}
       />
 
@@ -290,66 +290,101 @@ deleteContact("01HX…");`}
 
       <CodeBlock
         language="ts"
-        filename="apps/web/hooks/use-contacts.ts (auto-generated)"
+        filename="apps/web/hooks/use-contacts.ts (auto-generated, abridged)"
         code={`import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
-import type { Contact } from "@repo/shared/types";
+import { apiClient } from "@/lib/api";
 
-const KEY = ["contacts"] as const;
+interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  created_at: string;
+  updated_at: string;
+}
 
-type ListParams = { page?: number; page_size?: number; search?: string };
-type ListResponse = { data: Contact[]; meta: { total: number; page: number; page_size: number; pages: number } };
+interface ContactsResponse {
+  data: Contact[];
+  meta: { total: number; page: number; page_size: number; pages: number };
+}
 
-export function useContacts(params?: ListParams) {
-  return useQuery({
-    queryKey: [...KEY, params],
+interface UseContactsParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: string;
+}
+
+export function useContacts({
+  page = 1,
+  pageSize = 20,
+  search = "",
+  sortBy = "created_at",
+  sortOrder = "desc",
+}: UseContactsParams = {}) {
+  return useQuery<ContactsResponse>({
+    queryKey: ["contacts", { page, pageSize, search, sortBy, sortOrder }],
     queryFn: async () => {
-      const { data } = await apiClient.get<ListResponse>("/api/contacts", { params });
+      const params = new URLSearchParams({
+        page: String(page),
+        page_size: String(pageSize),
+        sort_by: sortBy,
+        sort_order: sortOrder,
+      });
+      if (search) params.set("search", search);
+      const { data } = await apiClient.get(\`/api/contacts?\${params}\`);
       return data;
     },
   });
 }
 
-export function useContact(id: string) {
-  return useQuery({
-    queryKey: [...KEY, id],
+export function useGetContact(id: string) {
+  return useQuery<Contact>({
+    queryKey: ["contacts", id],
     queryFn: async () => {
-      const { data } = await apiClient.get<{ data: Contact }>("/api/contacts/" + id);
+      const { data } = await apiClient.get(\`/api/contacts/\${id}\`);
       return data.data;
     },
-    enabled: Boolean(id),
+    enabled: !!id,
   });
 }
 
 export function useCreateContact() {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: Partial<Contact>) => {
-      const { data } = await apiClient.post<{ data: Contact }>("/api/contacts", input);
-      return data.data;
+    mutationFn: async (input: Record<string, unknown>) => {
+      const { data } = await apiClient.post("/api/contacts", input);
+      return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+    },
   });
 }
 
 export function useUpdateContact() {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, input }: { id: string; input: Partial<Contact> }) => {
-      const { data } = await apiClient.put<{ data: Contact }>("/api/contacts/" + id, input);
-      return data.data;
+    mutationFn: async ({ id, ...input }: { id: string } & Record<string, unknown>) => {
+      const { data } = await apiClient.put(\`/api/contacts/\${id}\`, input);
+      return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+    },
   });
 }
 
 export function useDeleteContact() {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await apiClient.delete("/api/contacts/" + id);
+      await apiClient.delete(\`/api/contacts/\${id}\`);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+    },
   });
 }`}
       />
@@ -460,14 +495,17 @@ export function useDeleteContact() {
         }
       />
 
-      <h2>You&apos;ve finished Chapter 4</h2>
+      <h2>What&apos;s next</h2>
       <p>
-        Eight lessons in. You can now generate, sync, customise, and
-        remove resources, model relationships across all three
-        cardinalities, pick between short and long form, and consume
-        the generated API from both the admin and the customer web
-        app. The rest of Grit assumes this fluency — every lesson from
-        here builds on top of <em>resources</em>.
+        You can now generate, sync, customise, and remove resources,
+        model relationships across all three cardinalities, pick
+        between short and long form, and consume the generated API
+        from both the admin and the customer web app. The last three
+        lessons in this chapter cover <em>going public</em> — how to
+        expose a resource&apos;s table or form outside the admin, how
+        to give someone a token-gated public link to one resource
+        without making the whole route open, and how to protect
+        customer web pages with auth.
       </p>
     </>
   )

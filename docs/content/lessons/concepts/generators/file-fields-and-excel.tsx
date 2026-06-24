@@ -7,23 +7,37 @@ export default function Lesson() {
   return (
     <>
       <p>
-        The previous lesson covered the <strong>S3 battery</strong> — the
-        low-level upload handler, signed URLs, and the bucket abstraction.
-        This lesson is about everything Grit layers on top so you almost
-        never write that code by hand. You get <code>:file:</code> /{' '}
-        <code>:files:</code> syntax in <code>grit generate resource</code>,
-        FileRef columns with automatic lifecycle cleanup, drag-and-drop
-        dropzones with five visual variants, and — new in v3.31.35 —
-        client-side Excel + CSV + JSON import and export on every resource
-        page.
+        The previous lesson catalogued the generator&apos;s plain field
+        types — string, int, slug, image, tags, defaults. This lesson is
+        about the two newer ones that pull more weight per token:{' '}
+        <code>:file:</code> and <code>:files:</code>. They&apos;re the
+        only field types that touch S3, the only ones with lifecycle
+        rules, and — as of v3.31.35 — the only ones with a story for
+        bulk edits through Excel.
+      </p>
+      <p>
+        Behind the scenes they wire into the storage battery (covered
+        in chapter 6), but at the generator layer you don&apos;t see
+        any of that. One token in the CLI gives you a typed column,
+        an admin dropzone, a table preview, automatic cleanup on
+        replace, an orphan-cleanup cron, and an import/export round-
+        trip — all without writing a line of upload code.
       </p>
 
-      <h2>Why this layer exists</h2>
+      <h2>Why these are first-class field types</h2>
       <p>
-        The S3 battery gives you <code>POST /api/uploads</code> and a{' '}
-        <code>storage.URL(key)</code> helper. Useful, but every resource
-        that has a file column still needs:
+        Treating files like a regular field (instead of a separate
+        feature) removes a lot of boilerplate. Every resource that has
+        a file column still needs:
       </p>
+      <ul>
+        <li>A model field that stores more than just a key (name, mime, size).</li>
+        <li>A dropzone in the admin form.</li>
+        <li>A preview cell in the table.</li>
+        <li>Logic to delete the old file when the user picks a new one.</li>
+        <li>Logic to delete orphan uploads if the form gets abandoned.</li>
+        <li>A way to round-trip the column through Excel for bulk edits.</li>
+      </ul>
       <ul>
         <li>A model field that stores more than just a key (name, mime, size).</li>
         <li>A dropzone in the admin form.</li>
@@ -41,24 +55,28 @@ export default function Lesson() {
       <p>
         The CLI parses two new field-type tokens. <code>:file:</code>{' '}
         means one uploaded file; <code>:files:</code> means a gallery.
-        Both accept an optional comma-separated accept-list after a
-        slash.
+        Both take an optional accept-list as the third colon part —
+        either a single alias (<code>:file:image</code>) or a bracketed
+        list (<code>:files:[pdf,doc,image]</code>). Valid aliases are{' '}
+        <code>image</code>, <code>video</code>, <code>audio</code>,{' '}
+        <code>pdf</code>, <code>doc</code>, <code>excel</code>,{' '}
+        <code>csv</code>, <code>zip</code>, <code>archive</code>, and{' '}
+        <code>all</code>. Omit the third part and it defaults to{' '}
+        <code>all</code>.
       </p>
       <CodeBlock
-        language="bash"
-        code={`# A Product with a single hero image and a gallery of PDFs.
+        terminal
+        code={`# A Product with a single hero image and a gallery of PDFs+docs.
 grit generate resource Product \\
-  title:string \\
-  hero:file:image \\
-  spec_sheets:files:pdf,doc`}
+  --fields "title:string,hero:file:image,spec_sheets:files:[pdf,doc]"`}
       />
       <p>
-        Three things happen for each token:
+        Three things happen for each file token:
       </p>
       <ul>
         <li>
-          The Go model gets a <code>FileRef</code> (single) or{' '}
-          <code>FileRefs</code> (multi) column stored as JSON.
+          The Go model gets a <code>*files.FileRef</code> (single) or{' '}
+          <code>files.FileRefs</code> (multi) column stored as JSON.
         </li>
         <li>
           The Zod schema and TypeScript type emit the matching shape, so
@@ -66,45 +84,62 @@ grit generate resource Product \\
         </li>
         <li>
           The resource definition&apos;s <code>fields</code> array gets a{' '}
-          <code>{`{ type: "file" | "files", accepts: [...] }`}</code>{' '}
+          <code>{`{ type: "file" | "files", accepts: [...], maxSizeMB: N }`}</code>{' '}
           entry — that&apos;s what the FileField/FilesField components read.
         </li>
       </ul>
+      <p>
+        The CLI sets a default <code>maxSizeMB</code> per field: 300 if
+        the accept list contains <code>video</code>, 5 otherwise. You
+        can override it by hand in the resource definition.
+      </p>
 
       <h2>FileRef — the JSON shape</h2>
       <CodeBlock
         language="go"
         filename="apps/api/internal/files/types.go (generated)"
-        code={`// FileRef is what gets stored on a model's JSON column. The
-// 'url' is built from the storage service so it survives a CDN
-// swap; mime + size let the table cell pick the right preview.
+        code={`// FileRef is the canonical JSON shape stored in a resource's
+// file column. The frontend uploads to /api/uploads and gets
+// back this exact shape, which it then submits to the parent
+// resource's create or update endpoint. Storing the metadata
+// inline avoids an N+1 join against the uploads table on every
+// list page render.
 type FileRef struct {
-  Key       string  ` + '`json:"key"`' + `
-  URL       string  ` + '`json:"url"`' + `
-  Name      string  ` + '`json:"name"`' + `
-  Mime      string  ` + '`json:"mime"`' + `
-  Size      int64   ` + '`json:"size"`' + `
-  Thumbnail *string ` + '`json:"thumbnail_url,omitempty"`' + `
+  URL          string ` + '`json:"url"`' + `
+  Key          string ` + '`json:"key"`' + `
+  Name         string ` + '`json:"name"`' + `
+  MIME         string ` + '`json:"mime"`' + `
+  Size         int64  ` + '`json:"size"`' + `
+  Width        *int   ` + '`json:"width,omitempty"`' + `   // images
+  Height       *int   ` + '`json:"height,omitempty"`' + `  // images
+  Duration     *int   ` + '`json:"duration,omitempty"`' + ` // video/audio (sec)
+  ThumbnailURL string ` + '`json:"thumbnail_url,omitempty"`' + `
 }
 
-// FileRefs is just []FileRef — same shape, stored in a JSON
-// array column.
+// FileRefs is a slice of FileRef with custom Value/Scan so
+// GORM stores it as JSON without a serializer tag.
 type FileRefs []FileRef`}
       />
       <p>
-        Why a struct, not just a key? Two reasons:
+        Why a struct, not just a key? Three reasons:
       </p>
       <ul>
         <li>
-          <strong>Rendering without a join.</strong> The table cell needs
-          mime to decide between an image thumbnail and a generic file
-          icon. Storing it inline avoids hitting the <code>uploads</code>{' '}
-          table on every row.
+          <strong>Rendering without a join.</strong> The table cell
+          needs the MIME to decide between an image thumbnail and a
+          generic file icon. Storing it inline avoids hitting the{' '}
+          <code>uploads</code> table on every row.
         </li>
         <li>
-          <strong>CDN-resilient.</strong> The URL is rebuilt by the
-          backend on read using the current <code>STORAGE_BASE_URL</code>,
-          so swapping CDN domains doesn&apos;t require a data migration.
+          <strong>Layout-shift prevention.</strong> Width and Height
+          let the admin list reserve the right amount of space before
+          the image loads — same trick a CDN-rendered image card uses.
+        </li>
+        <li>
+          <strong>Cheap previews.</strong>{' '}
+          <code>ThumbnailURL</code> is set when the upload pipeline
+          generates a thumbnail (currently for images); table cells
+          prefer it over the full-resolution URL.
         </li>
       </ul>
 
@@ -486,12 +521,16 @@ apps/admin/components/ui/
 
       <h2>What&apos;s next</h2>
       <p>
-        Next lesson — <strong>Mail (Resend)</strong>. Transactional
-        email with editable templates — the most-needed external
-        service after the DB. Coming after Mail: PDF export via{' '}
-        <code>@react-pdf/renderer</code> (v3.31.36), which lets the
-        same Export menu offer styled PDF receipts and reports
-        alongside Excel.
+        Next lesson — <strong>Relationships</strong>. Once you have
+        files attached to a Product, the next thing you reach for is{' '}
+        <code>belongs_to</code> (an OrderItem belongs to an Order) and
+        <code>many_to_many</code> (a Product has many Tags). Same
+        one-token short-form pattern, different cardinality.
+      </p>
+      <p>
+        Coming later in the framework (v3.31.36): PDF export via{' '}
+        <code>@react-pdf/renderer</code>, which lets the same Export
+        menu offer styled PDF receipts and reports alongside Excel.
       </p>
     </>
   )

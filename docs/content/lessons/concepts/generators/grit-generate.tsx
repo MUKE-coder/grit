@@ -58,7 +58,7 @@ export default function Lesson() {
   │        │           (string fields are required by default — add :optional to make them nullable.)
   │        │
   │        └── Type. One of: string, text, richtext, int, uint, float, bool, datetime, date,
-  │            slug, belongs_to, many_to_many, string_array.
+  │            slug, belongs_to, many_to_many, string_array, file, files.
   │
   └── Field name. camelCase or snake_case in input — Grit normalises to PascalCase in Go
       and snake_case in JSON ("Email" in the struct, "email" in the JSON body).`}
@@ -80,18 +80,34 @@ export default function Lesson() {
 
       <CodeBlock
         language="text"
-        code={`✓ Wrote apps/api/internal/models/contact.go
-✓ Wrote apps/api/internal/services/contact.go
-✓ Wrote apps/api/internal/handlers/contact.go
-✓ Injected routes into apps/api/internal/routes/routes.go
-✓ Wrote packages/shared/src/schemas/contact.ts
-✓ Wrote packages/shared/src/types/contact.ts
-✓ Wrote apps/web/hooks/use-contacts.ts
-✓ Wrote apps/admin/app/resources/contacts/page.tsx
+        code={`  Generating resource: Contact
 
-Next steps:
-    grit migrate    # adds the contacts table
-    grit start      # restart dev servers to pick up the new code`}
+  ✓ apps/api/internal/models/contact.go
+  ✓ apps/api/internal/services/contact.go
+  ✓ apps/api/internal/handlers/contact.go
+  ✓ packages/shared/schemas/contact.ts
+  ✓ packages/shared/types/contact.ts
+  ✓ apps/web/hooks/use-contacts.ts
+  ✓ apps/admin/resources/contacts.ts
+  ✓ apps/admin/app/(dashboard)/resources/contacts/page.tsx
+
+  Injecting into existing files...
+  ✓ Injected model into AutoMigrate
+  ✓ Injected model into GORM Studio
+  ✓ Injected handler initialization
+  ✓ Injected protected routes
+  ✓ Injected schema export
+  ✓ Injected type export
+  ✓ Injected API route constants
+  ✓ Injected resource import into registry
+  ✓ Injected resource into registry list
+
+  ✅ Resource Contact generated successfully!
+
+  Next steps:
+    1. cd apps/api && go build ./...
+    2. Restart the API server
+    3. The admin panel will show Contacts in the sidebar`}
       />
 
       <TipBox tone="warning">
@@ -105,9 +121,9 @@ Next steps:
 
       <h2>Field types — the full list</h2>
       <p>
-        Thirteen types cover almost everything. Pick the one that matches
-        the <em>meaning</em> of the field, not the storage — the
-        generator handles the storage mapping for you.
+        Fifteen types cover almost everything. Pick the one that
+        matches the <em>meaning</em> of the field, not the storage —
+        the generator handles the storage mapping for you.
       </p>
 
       <div className="overflow-x-auto my-5">
@@ -134,18 +150,34 @@ Next steps:
             <tr><td className="px-3 py-2 font-mono">slug</td><td className="font-mono text-[12px]">string</td><td className="font-mono text-[12px]">string</td><td className="text-[12px]">hidden (auto)</td><td className="text-[12px]">URL-friendly identifier, auto-generated from another field</td></tr>
             <tr><td className="px-3 py-2 font-mono">belongs_to</td><td className="font-mono text-[12px]">string (UUID FK)</td><td className="font-mono text-[12px]">string</td><td className="text-[12px]">relationship dropdown</td><td className="text-[12px]">one-to-many parent (contact → group)</td></tr>
             <tr><td className="px-3 py-2 font-mono">many_to_many</td><td className="font-mono text-[12px]">[]string</td><td className="font-mono text-[12px]">string[]</td><td className="text-[12px]">multi-select dropdown</td><td className="text-[12px]">many-to-many (post → tags, user → roles)</td></tr>
-            <tr><td className="px-3 py-2 font-mono">string_array</td><td className="font-mono text-[12px]">JSONSlice[string]</td><td className="font-mono text-[12px]">string[]</td><td className="text-[12px]">image uploader</td><td className="text-[12px]">photo gallery, screenshot list, document URLs</td></tr>
+            <tr><td className="px-3 py-2 font-mono">string_array</td><td className="font-mono text-[12px]">JSONSlice[string]</td><td className="font-mono text-[12px]">string[]</td><td className="text-[12px]">multi-image uploader</td><td className="text-[12px]">photo gallery, screenshot list, or freeform tag array</td></tr>
+            <tr><td className="px-3 py-2 font-mono">file</td><td className="font-mono text-[12px]">*FileRef</td><td className="font-mono text-[12px]">FileRef | null</td><td className="text-[12px]">file dropzone</td><td className="text-[12px]">a single uploaded file with name + mime + size metadata</td></tr>
+            <tr><td className="px-3 py-2 font-mono">files</td><td className="font-mono text-[12px]">FileRefs</td><td className="font-mono text-[12px]">FileRef[]</td><td className="text-[12px]">files dropzone</td><td className="text-[12px]">mixed-type file gallery (pdf + doc + zip…)</td></tr>
           </tbody>
         </table>
       </div>
 
       <p>
-        Two of these — <code>slug</code>, <code>belongs_to</code>,{' '}
-        <code>many_to_many</code>, and <code>string_array</code> — have
-        their own field-spec syntax (a third colon-separated part for
-        the source field or related model). Those are covered in the{' '}
-        <em>Field types deep dive</em> and{' '}
+        Several of these — <code>slug</code>, <code>belongs_to</code>,{' '}
+        <code>many_to_many</code>, <code>file</code>, and{' '}
+        <code>files</code> — have their own field-spec syntax (a third
+        colon-separated part for the source field, related model, or
+        accept list). Those are covered in the{' '}
+        <em>Field types deep dive</em>,{' '}
+        <em>File fields + Excel I/O</em>, and{' '}
         <em>Relationships</em> lessons later in this chapter.
+      </p>
+      <p>
+        Quick taste of the file syntax: <code>hero:file:image</code>{' '}
+        means &quot;single file, only images accepted&quot;;{' '}
+        <code>attachments:files:[pdf,doc,image]</code> means
+        &quot;multi-file gallery, only PDFs, Word docs, or images
+        allowed&quot;. Valid accept aliases are:{' '}
+        <code>image</code>, <code>video</code>, <code>audio</code>,{' '}
+        <code>pdf</code>, <code>doc</code>, <code>excel</code>,{' '}
+        <code>csv</code>, <code>zip</code>, <code>archive</code>,{' '}
+        <code>all</code>. The list is both a UI filter and a runtime
+        MIME check on the upload endpoint.
       </p>
 
       <h2>Modifiers — the full list</h2>

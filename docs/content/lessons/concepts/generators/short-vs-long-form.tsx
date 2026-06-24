@@ -58,8 +58,8 @@ fields:
       />
 
       <p>
-        Both produce the same 8 generated files <em>except</em> the YAML
-        version also sets the database defaults
+        Both produce the same eight generated files <em>except</em> the
+        YAML version also sets the database defaults
         (<code>status = &apos;draft&apos;</code>, <code>published = false</code>)
         and is committed into the repo — which means the next teammate
         who pulls can regenerate the resource from scratch by re-running
@@ -78,7 +78,7 @@ fields:
             </tr>
           </thead>
           <tbody className="divide-y divide-border/20">
-            <tr><td className="px-3 py-2 text-[12px]">All 13 field types</td><td className="text-center text-[12px]">✓</td><td className="text-center text-[12px]">✓</td></tr>
+            <tr><td className="px-3 py-2 text-[12px]">All 15 field types</td><td className="text-center text-[12px]">✓</td><td className="text-center text-[12px]">✓</td></tr>
             <tr><td className="px-3 py-2 text-[12px]"><code>required</code> / <code>optional</code> / <code>unique</code></td><td className="text-center text-[12px]">✓</td><td className="text-center text-[12px]">✓</td></tr>
             <tr><td className="px-3 py-2 text-[12px]"><code>default</code> values</td><td className="text-center text-[12px]">✗</td><td className="text-center text-[12px]">✓</td></tr>
             <tr><td className="px-3 py-2 text-[12px]"><code>unique</code> on a <code>belongs_to</code> (one-to-one)</td><td className="text-center text-[12px]">✗</td><td className="text-center text-[12px]">✓</td></tr>
@@ -99,13 +99,41 @@ fields:
       <CodeBlock
         language="yaml"
         code={`- name: <field_name>              # camelCase or snake_case — required
-  type: <field_type>              # one of the 13 types — required
+  type: <field_type>              # one of the 15 types — required
   required: true|false            # default depends on type (string=true, others=false)
   unique: true|false              # adds DB unique index. Works on belongs_to (1-to-1!).
   default: <value>                # DB default. YAML-only.
   slug_source: <field_name>       # for type: slug — which field to slugify from
-  related_model: <ModelName>      # for type: belongs_to or many_to_many — what it points at`}
+  related_model: <ModelName>      # for type: belongs_to or many_to_many — what it points at
+  file_accepts:                   # for type: file or files — list of accept aliases
+    - image                       # valid aliases: image, video, audio, pdf,
+    - pdf                         # doc, excel, csv, zip, archive, all`}
       />
+
+      <p>
+        File-field example in YAML:
+      </p>
+
+      <CodeBlock
+        language="yaml"
+        filename="product.yaml (excerpt)"
+        code={`- name: hero
+  type: file
+  file_accepts:
+    - image
+- name: spec_sheets
+  type: files
+  file_accepts:
+    - pdf
+    - doc`}
+      />
+      <p>
+        Per-field size caps (<code>maxSizeMB</code>) live in the
+        generated admin resource definition, not the YAML — the CLI
+        sets a sensible default per type (5 MB normally, 300 MB for
+        video) and you tweak it by hand in{' '}
+        <code>apps/admin/resources/&lt;plural&gt;.ts</code> if needed.
+      </p>
 
       <p>
         That&apos;s the whole long-form vocabulary. The inline form

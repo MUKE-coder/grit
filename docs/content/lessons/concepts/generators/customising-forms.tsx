@@ -115,7 +115,7 @@ export default function ContactsPage() {
         code={`form: {
   fields: [
     { key: "name",     label: "Full name",  type: "text",     required: true },
-    { key: "email",    label: "Email",      type: "text",     required: true, helperText: "We'll never spam." },
+    { key: "email",    label: "Email",      type: "text",     required: true, description: "We'll never spam." },
     { key: "phone",    label: "Phone",      type: "text",     placeholder: "+1 555 123 4567" },
     { key: "group_id", label: "Group",      type: "relationship-select",
       required: true, relatedEndpoint: "/api/groups", displayField: "name" },
@@ -137,17 +137,29 @@ export default function ContactsPage() {
           <tbody className="divide-y divide-border/20">
             <tr><td className="px-3 py-2 font-mono text-[12px]">key</td><td className="text-[12px]">yes</td><td className="text-[12px]">JSON key sent to the API. Must match the Go struct&apos;s json tag.</td></tr>
             <tr><td className="px-3 py-2 font-mono text-[12px]">label</td><td className="text-[12px]">yes</td><td className="text-[12px]">Human-friendly label shown above the input.</td></tr>
-            <tr><td className="px-3 py-2 font-mono text-[12px]">type</td><td className="text-[12px]">yes</td><td className="text-[12px]">One of the 17 field types listed below.</td></tr>
+            <tr><td className="px-3 py-2 font-mono text-[12px]">type</td><td className="text-[12px]">yes</td><td className="text-[12px]">One of the 18 field types listed below.</td></tr>
             <tr><td className="px-3 py-2 font-mono text-[12px]">required</td><td className="text-[12px]">no</td><td className="text-[12px]">Shows a red star, blocks submit when empty.</td></tr>
             <tr><td className="px-3 py-2 font-mono text-[12px]">placeholder</td><td className="text-[12px]">no</td><td className="text-[12px]">Grey hint text inside the input.</td></tr>
             <tr><td className="px-3 py-2 font-mono text-[12px]">helperText</td><td className="text-[12px]">no</td><td className="text-[12px]">Small note rendered <em>below</em> the input. Use for hints.</td></tr>
             <tr><td className="px-3 py-2 font-mono text-[12px]">defaultValue</td><td className="text-[12px]">no</td><td className="text-[12px]">Pre-fills the field when opening Create (not Edit).</td></tr>
-            <tr><td className="px-3 py-2 font-mono text-[12px]">hidden</td><td className="text-[12px]">no</td><td className="text-[12px]">Sends the field but doesn&apos;t render it (useful with defaultValue).</td></tr>
+            <tr><td className="px-3 py-2 font-mono text-[12px]">colSpan</td><td className="text-[12px]">no</td><td className="text-[12px]">1 or 2 — number of columns the field spans in a two-column layout.</td></tr>
+            <tr><td className="px-3 py-2 font-mono text-[12px]">prefix / suffix</td><td className="text-[12px]">no</td><td className="text-[12px]">Inline addons shown next to text/number inputs (e.g. &quot;$&quot;, &quot;.com&quot;).</td></tr>
           </tbody>
         </table>
       </div>
 
-      <h2>The 17 form field types</h2>
+      <p>
+        Type-specific keys layered on top: <code>options</code>{' '}
+        (select / radio), <code>min</code> / <code>max</code> /{' '}
+        <code>step</code> (number),{' '}
+        <code>rows</code> (textarea),{' '}
+        <code>relatedEndpoint</code> / <code>displayField</code> /{' '}
+        <code>relationshipKey</code> (relationship-select),{' '}
+        <code>accepts</code> / <code>maxSizeMB</code> /{' '}
+        <code>dropzone</code> / <code>progress</code> (file / files).
+      </p>
+
+      <h2>The form field types</h2>
       <p>
         These cover every common admin input. Pick the type and the form
         gets the right widget, the right validation, the right keyboard.
@@ -220,7 +232,7 @@ export default function ContactsPage() {
   type: "text",
   required: true,
   placeholder: "you@example.com",
-  helperText: "We'll only use this for transactional notifications.",
+  description: "We'll only use this for transactional notifications.",
 }`}
       />
 
@@ -236,33 +248,40 @@ export default function ContactsPage() {
   key: "avatar",
   label: "Profile picture",
   type: "image",
-  helperText: "PNG, JPG, or WebP. Up to 5 MB. Recommended: 400×400.",
+  description: "PNG, JPG, or WebP. Up to 5 MB. Recommended: 400×400.",
 }`}
       />
 
-      <h2>Recipe 4 — pre-fill on create with a hidden ownership field</h2>
+      <h2>Recipe 4 — pre-fill on create with a default value</h2>
       <p>
-        Imagine a Note resource where every note belongs to the current
-        admin. You don&apos;t want the admin choosing themselves from a
-        dropdown — pre-fill it instead:
+        Imagine a Note resource where every note starts in{' '}
+        <code>draft</code> status. Pre-fill the dropdown with a
+        sensible default so the operator only changes it if they need
+        to:
       </p>
       <CodeBlock
         language="ts"
         code={`{
-  key: "author_id",
-  label: "Author",
-  type: "text",
-  hidden: true,
-  defaultValue: "current-user-id",  // or read from a context provider in your wrapper
+  key: "status",
+  label: "Status",
+  type: "select",
+  required: true,
+  defaultValue: "draft",
+  options: [
+    { label: "Draft",     value: "draft"     },
+    { label: "Published", value: "published" },
+    { label: "Archived",  value: "archived"  },
+  ],
 }`}
       />
       <TipBox tone="info">
-        For really dynamic defaults (current user, route params,
-        timestamps), drop out of the declarative form and use a custom
-        page that wraps <code>ResourcePage</code> with{' '}
-        <code>{`<ResourcePage initialValues={...} />`}</code> or render
-        the FormBuilder directly. The declarative form is for static
-        defaults.
+        <strong>Need a server-derived default</strong> like
+        &quot;current user&quot; or a route param? The declarative form
+        only supports static defaults. For dynamic ones, set the column
+        on the API side — give the Go model a{' '}
+        <code>BeforeCreate</code> hook that fills{' '}
+        <code>AuthorID</code> from the request context. The frontend
+        never has to know.
       </TipBox>
 
       <h2>Recipe 5 — relationship-select with a search-friendly display</h2>
@@ -532,7 +551,7 @@ form: {
                 <code>+1 555 123 4567</code>.
               </li>
               <li>
-                Add a <code>helperText</code> on email saying{' '}
+                Add a <code>description</code> on email saying{' '}
                 &quot;We&apos;ll send a verification link.&quot;
               </li>
               <li>
@@ -567,7 +586,7 @@ form: {
   fields: [
     { key: "name",  label: "Name",  type: "text", required: true },
     { key: "email", label: "Email", type: "text", required: true,
-      helperText: "We'll send a verification link." },
+      description: "We'll send a verification link." },
     { key: "phone", label: "Phone", type: "text",
       placeholder: "+1 555 123 4567" },
     { key: "group_id", label: "Group", type: "relationship-select",
