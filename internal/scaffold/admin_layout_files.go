@@ -838,16 +838,22 @@ function StatCardItem({ stat }: { stat: StatCard }) {
   const color = colorClasses[stat.color || "default"];
   const Icon = stat.icon ? getIcon(stat.icon) : null;
 
-  // Fetch value from endpoint if provided; otherwise use static value
+  // v3.31.29: queryKey now starts with the base endpoint (no query
+  // string) so resource mutations -- which call
+  // invalidateQueries({ queryKey: [endpoint] }) -- prefix-match this
+  // stat and trigger a refetch. Previously the key started with
+  // "stat", so creates/updates/deletes never invalidated stat cards
+  // and the dashboard numbers went stale until manual reload.
+  const baseEndpoint = stat.endpoint ? stat.endpoint.split("?")[0] : "stat";
+
   const { data, isLoading } = useQuery({
-    queryKey: ["stat", stat.endpoint, stat.field],
+    queryKey: [baseEndpoint, "stat", stat.endpoint, stat.field],
     queryFn: async () => {
       if (!stat.endpoint) return null;
       const res = await apiClient.get(stat.endpoint);
       return res.data;
     },
     enabled: !!stat.endpoint,
-    staleTime: 30_000,
   });
 
   const value =

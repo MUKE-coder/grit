@@ -28,6 +28,65 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.29 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.29
+                </span>
+                <span className="text-sm text-muted-foreground">June 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Stats cards now refetch after create / update /
+                  delete.</strong> Total / This Week / This Month no
+                  longer go stale until manual reload.
+                </p>
+
+                <h3>The bug</h3>
+                <p>
+                  Resource mutations all called{' '}
+                  <code>invalidateQueries(&#123; queryKey: [endpoint] &#125;)</code>{' '}
+                  on success, expecting React Query&apos;s
+                  prefix-matching to invalidate every query under that
+                  resource. But the stat-card query in{' '}
+                  <code>PageHeader</code> was keyed with{' '}
+                  <code>[&quot;stat&quot;, endpoint, field]</code> —
+                  starting with the literal string{' '}
+                  <code>&quot;stat&quot;</code>, not the endpoint. The
+                  invalidation never matched it, and a{' '}
+                  <code>staleTime: 30_000</code> meant the value didn&apos;t
+                  even auto-refetch for 30 seconds.
+                </p>
+                <p>
+                  Stats also use endpoints with query-string suffixes
+                  (e.g.{' '}
+                  <code>/api/products?page_size=1&amp;created_since=7d</code>),
+                  so even if the key had started with the endpoint
+                  string, it wouldn&apos;t have matched the bare
+                  <code> /api/products</code> the mutation invalidates.
+                </p>
+
+                <h3>The fix</h3>
+                <p>
+                  Stat queryKey now starts with the <em>base</em> endpoint
+                  (no query string):{' '}
+                  <code>[endpoint.split(&quot;?&quot;)[0], &quot;stat&quot;, endpoint, field]</code>.
+                  Mutation invalidation prefix-matches it, and the staleTime
+                  is gone so the cards refetch immediately on success.
+                </p>
+
+                <h3>Migration</h3>
+                <p>
+                  Existing projects: copy the new <code>StatCardItem</code>{' '}
+                  hook body from{' '}
+                  <code>components/layout/page-header.tsx</code>.
+                  One-function change.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.28 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
