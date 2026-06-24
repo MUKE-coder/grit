@@ -48,9 +48,24 @@ FormShare row {                 fills out form
 
       <h2>Creating a share</h2>
       <p>
-        Open the admin → sidebar → <strong>System</strong> →{' '}
-        <strong>Public form sharing</strong>. Click <em>New share</em>{' '}
-        and fill in:
+        Two ways to open the management page:
+      </p>
+      <ul>
+        <li>
+          <strong>Sidebar route:</strong> directly visit{' '}
+          <code>/system/form-shares</code>. Some style variants list
+          this under the System group; others don&apos;t — the route
+          itself always works.
+        </li>
+        <li>
+          <strong>System Hub:</strong> visit <code>/system</code> and
+          click the <em>Public form sharing</em> tile (added in
+          v3.31.41 — before that the page existed but wasn&apos;t
+          linked from the Hub grid).
+        </li>
+      </ul>
+      <p>
+        Once you&apos;re in, click <em>New share</em> and fill in:
       </p>
       <ul>
         <li>
@@ -172,6 +187,65 @@ FormShare row {                 fills out form
         submitted as a <code>_password</code> alongside the regular
         fields. The API verifies bcrypt on each submit — there&apos;s
         no session, no cookie, no JWT for public submissions.
+      </p>
+
+      <h2>File fields are skipped on the default public form</h2>
+      <p>
+        The default <code>/forms/[token]</code> page renders text,
+        email, phone, and textarea inputs only. <strong>It does not
+        render <code>:file:</code> / <code>:files:</code> /{' '}
+        <code>:image:</code> / <code>:images:</code> fields.</strong>{' '}
+        If you share a resource that has, say, a category{' '}
+        <code>image:file:image</code> column, the public form
+        silently omits that field — the submission still lands but
+        the image column ends up empty.
+      </p>
+      <p>
+        The mechanical reason: file uploads happen via{' '}
+        <code>POST /api/uploads</code>, which lives in the{' '}
+        <code>protected</code> Gin group with{' '}
+        <code>middleware.Auth</code> in front. An anonymous visitor
+        hitting it gets a 401 before the multipart body is parsed.
+        Removing the auth would expose your bucket to public abuse
+        — anyone could upload anything they liked, then walk away.
+      </p>
+      <p>
+        Three production-shaped ways to do public file uploads:
+      </p>
+      <ul>
+        <li>
+          <strong>Token-scoped presigned URLs.</strong> Add a new
+          public endpoint{' '}
+          <code>POST /api/public/forms/:token/presign</code> that
+          checks the FormShare bcrypt password, validates the file
+          MIME + size, and returns a one-shot presigned PUT URL to
+          your bucket. The visitor uploads directly to S3 with that
+          URL; the form submit then carries the returned object key.
+          Spend the engineering time once and every public share
+          benefits.
+        </li>
+        <li>
+          <strong>External-link field.</strong> Cheapest: change the
+          field type to a plain URL string on the public-facing
+          version of the resource and ask submitters to paste a
+          Google Drive / Dropbox / Imgur link. Works without any
+          backend work, but you depend on a third-party host
+          (links rot, content moderation isn&apos;t yours).
+        </li>
+        <li>
+          <strong>Hand-roll a non-public form behind a magic link.</strong>{' '}
+          Skip <code>grit expose form --public-share</code>{' '}
+          entirely. Generate a one-time auth token, email or SMS it
+          to the recipient, and have them sign in via that token to
+          submit through the normal auth&apos;d form. Heavier but
+          gives you the full file upload story without weakening
+          your bucket policy.
+        </li>
+      </ul>
+      <p>
+        Public file uploads via token-scoped presigned URLs are on
+        the roadmap; until they land, pick one of the workarounds
+        above based on how trusted your submitters are.
       </p>
 
       <h2>Disabling, regenerating, deleting</h2>

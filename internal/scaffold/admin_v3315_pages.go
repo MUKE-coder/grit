@@ -25,7 +25,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import {
   Activity, Bell, Calendar, Database, FileText, Mail,
-  MessageSquare, Shield, TrendingUp, Upload,
+  MessageSquare, Shield, TrendingUp, Upload, Link as LinkIcon,
 } from "@/lib/icons";
 
 interface SystemTile {
@@ -47,6 +47,9 @@ const TILES: SystemTile[] = [
   { href: "/system/activity",      title: "User Activity",    description: "Auth events, writes, operator actions with IP + severity.",                 icon: <Activity className="h-5 w-5" /> },
   { href: "/system/support",       title: "Support",          description: "Incoming tickets, threads, assignments, closures.",                         icon: <MessageSquare className="h-5 w-5" /> },
   { href: "/system/notifications", title: "Notifications",    description: "Recent system + Sentinel + Pulse notifications.",                           icon: <Bell className="h-5 w-5" /> },
+  // v3.31.41 — public form sharing (FormShare table). Page existed
+  // since v3.31.20 but wasn't linked from the Hub.
+  { href: "/system/form-shares",   title: "Public form sharing", description: "Token-gated public submission links. Generate, enable/disable, view submissions.", icon: <LinkIcon className="h-5 w-5" /> },
 ];
 
 export default function SystemHubPage() {

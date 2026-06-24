@@ -510,6 +510,185 @@ NEXT_PUBLIC_FORM_TOKEN=9CkLh7gJZ...
         flow).
       </TipBox>
 
+      <h2>Behind the scenes: how the auth bypass actually works</h2>
+      <p>
+        It can feel uncomfortable that an anonymous visitor can hit
+        the API and create a record. The thing keeping that safe
+        isn&apos;t magic — it&apos;s a deliberate three-layer
+        boundary. Worth understanding before you ship a{' '}
+        <code>--public-share</code> form to production.
+      </p>
+
+      <h3>Layer 1 — the routes are in a separate group</h3>
+      <p>
+        Open <code>apps/api/internal/routes/routes.go</code> and
+        you&apos;ll see three Gin groups at the bottom:
+      </p>
+      <CodeBlock
+        language="go"
+        filename="apps/api/internal/routes/routes.go (excerpt)"
+        code={`protected := r.Group("/api")
+protected.Use(middleware.Auth(db, authService))  // every protected route gets Auth
+{
+  protected.GET("/users/:id", userHandler.GetByID)
+  protected.POST("/uploads",  uploadHandler.Create)
+  // ...all the auth'd CRUD routes
+}
+
+admin := r.Group("/api/admin")
+admin.Use(middleware.Auth(db, authService))      // and RequireRole("ADMIN")
+{
+  admin.POST("/form-shares", formShareHandler.Create)
+  // ...
+}
+
+publicForms := r.Group("/api/public/forms")      // NO middleware.Auth
+{
+  publicForms.GET("/:token",          formShareHandler.PublicGet)
+  publicForms.POST("/:token/submit",  formShareHandler.PublicSubmit)
+}`}
+      />
+      <p>
+        Notice <code>publicForms</code> has{' '}
+        <em>no <code>Use(middleware.Auth(...))</code></em>. It&apos;s
+        a sibling of <code>protected</code>, not a child. Gin
+        middleware is per-group, so requests to{' '}
+        <code>/api/public/forms/*</code> never visit the JWT
+        verifier. That&apos;s why no cookie, header, or session is
+        required.
+      </p>
+
+      <h3>Layer 2 — Sentinel rate-limits the endpoint by IP</h3>
+      <p>
+        With auth out of the picture, what stops someone from
+        firing a million submissions? Sentinel does. The public
+        forms paths are explicitly listed in the WAF{' '}
+        <code>ExcludeRoutes</code> (so the WAF doesn&apos;t flag
+        legitimate text content as XSS), but the rate-limiter still
+        applies — typically 100 requests/min per IP in production,
+        relaxed in dev. A scripted attack hits that ceiling
+        immediately and gets a 429.
+      </p>
+
+      <h3>Layer 3 — the dispatcher is the real security boundary</h3>
+      <p>
+        Even with the rate limit, an anonymous request that reaches{' '}
+        <code>PublicSubmit</code> still gets to choose <em>which
+        resource</em> to create. That&apos;s where the dispatcher
+        in <code>apps/api/internal/services/form_share_dispatch.go</code>{' '}
+        takes over:
+      </p>
+      <CodeBlock
+        language="go"
+        filename="apps/api/internal/services/form_share_dispatch.go"
+        code={`func SubmitSharedForm(db *gorm.DB, resourceName string, fields map[string]interface{}) (*SharedResourceSubmission, error) {
+  switch resourceName {
+  case "Contact":
+    item := &models.Contact{}
+    body, _ := json.Marshal(fields)
+    if err := json.Unmarshal(body, item); err != nil {
+      return nil, fmt.Errorf("decoding Contact body: %w", err)
+    }
+    if err := db.Create(item).Error; err != nil {
+      return nil, fmt.Errorf("creating Contact: %w", err)
+    }
+    return &SharedResourceSubmission{ID: item.ID, Label: item.Name}, nil
+
+  // grit:form-share:dispatch — generator inserts new resources here
+
+  default:
+    return nil, fmt.Errorf("public submission disabled for %q (no dispatch case registered)", resourceName)
+  }
+}`}
+      />
+      <p>
+        Three properties that matter:
+      </p>
+      <ul>
+        <li>
+          <strong>Resource whitelisting.</strong> Only resources with
+          an explicit <code>case</code> can be created. The{' '}
+          <code>default</code> branch refuses everything else with a
+          clear error. A stolen token for &quot;Contact&quot; can&apos;t
+          conjure rows in &quot;User&quot; or any other table that
+          doesn&apos;t have a registered case.
+        </li>
+        <li>
+          <strong>Field whitelisting via the typed struct.</strong>{' '}
+          The body is decoded onto the typed model{' '}
+          (<code>models.Contact</code>) via{' '}
+          <code>json.Unmarshal</code>. Unknown keys in the request
+          body are silently ignored; private columns (id, created_at,
+          deleted_at, version) are owned by GORM and the wire format
+          can&apos;t touch them.
+        </li>
+        <li>
+          <strong>Model lifecycle hooks still fire.</strong> The
+          model&apos;s <code>BeforeCreate</code> hook generates a
+          fresh UUID; bcrypt hashes for password columns still
+          happen. Public submissions are just regular creates with
+          an anonymous caller — no special path that skips
+          validations.
+        </li>
+      </ul>
+
+      <h3>Layer 4 (when present) — bcrypt password on the share itself</h3>
+      <p>
+        If the FormShare row has a non-null password hash, the
+        handler bcrypt-verifies the <code>_password</code> field on
+        every submit before calling the dispatcher. Three layers
+        plus this one is a meaningful barrier against accidental
+        public exposure: even a posted-to-Twitter token is useless
+        without the password.
+      </p>
+
+      <h2>File uploads aren&apos;t supported on public forms — yet</h2>
+      <p>
+        Here&apos;s the gotcha most people hit on their first
+        <code> grit expose form --public-share</code>: file fields
+        silently don&apos;t render. The CLI&apos;s public-share
+        template only emits text-shaped inputs (text, email, tel,
+        textarea, password). If your resource has a{' '}
+        <code>:file:</code> / <code>:files:</code> /{' '}
+        <code>:image:</code> column, the public version skips it.
+        Submissions still succeed but the file column ends up empty.
+      </p>
+      <p>
+        Why: file uploads round-trip through{' '}
+        <code>POST /api/uploads</code> in the{' '}
+        <code>protected</code> group. An anonymous visitor gets a
+        401 before the multipart body is even parsed. Wiring file
+        uploads onto a public form means either:
+      </p>
+      <ul>
+        <li>
+          Adding a new public{' '}
+          <code>/api/public/forms/:token/presign</code> endpoint
+          that returns a one-shot presigned PUT URL to your S3 /
+          MinIO bucket, after verifying the share token + bcrypt
+          password and validating the file MIME + size cap. The
+          visitor uploads directly to the bucket; the form submit
+          carries the returned key.
+        </li>
+        <li>
+          Or asking the submitter for a third-party URL (Google
+          Drive, Dropbox, Imgur) into a plain string column — no
+          backend changes needed, but you depend on the third
+          party.
+        </li>
+        <li>
+          Or skipping <code>--public-share</code> and using a
+          one-time auth token mailed/SMS&apos;d to the recipient.
+          They sign in via the token and submit through the normal
+          auth&apos;d form, which already handles uploads.
+        </li>
+      </ul>
+      <p>
+        Presigned public uploads are on the roadmap; until they
+        land, expect file fields to be missing from any{' '}
+        <code>--public-share</code> page.
+      </p>
+
       <h2>What&apos;s next</h2>
       <p>
         You can now move resources outside the admin. The final piece —

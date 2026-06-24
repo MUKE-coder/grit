@@ -28,6 +28,99 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.41 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.41
+                </span>
+                <span className="text-sm text-muted-foreground">June 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>System Hub tile for Public form sharing +
+                  two course lessons rewritten to match what actually
+                  happens.</strong> No code-behavior changes — this
+                  release closes the gap between the documentation
+                  and the running system.
+                </p>
+
+                <h3>System Hub tile</h3>
+                <p>
+                  The <code>/system/form-shares</code> page has
+                  existed since v3.31.20 but wasn&apos;t reachable
+                  from the <code>/system</code> tile grid — operators
+                  had to know the URL by heart. The course lesson
+                  pointed users at &quot;System → Public form
+                  sharing&quot; which only existed as a sidebar
+                  shortcut, not as a Hub tile. Now both surfaces
+                  carry it. The tile shows up in all four System Hub
+                  variants (default <code>admin_v331_files.go</code>{' '}
+                  + minimal/modern/glass via{' '}
+                  <code>admin_v3315_pages.go</code>).
+                </p>
+
+                <h3>public-form-sharing lesson</h3>
+                <p>
+                  Fixed the navigation reference (System Hub tile vs
+                  direct route) and added a new section on file
+                  upload limitations. The default{' '}
+                  <code>/forms/[token]</code> template renders text
+                  inputs only — <code>:file:</code> /{' '}
+                  <code>:files:</code> / <code>:image:</code>{' '}
+                  columns are silently skipped because{' '}
+                  <code>/api/uploads</code> is auth-gated. The lesson
+                  now walks through three production-shaped
+                  workarounds (presigned URLs, external links,
+                  magic-link auth).
+                </p>
+
+                <h3>grit-expose lesson</h3>
+                <p>
+                  Added a deep &quot;Behind the scenes: how the auth
+                  bypass actually works&quot; section that walks the
+                  four security layers operators should understand
+                  before shipping a <code>--public-share</code> form
+                  to production:
+                </p>
+                <ul>
+                  <li>
+                    The routes live in a separate Gin group
+                    (<code>publicForms := r.Group(&quot;/api/public/forms&quot;)</code>) with no{' '}
+                    <code>middleware.Auth</code>.
+                  </li>
+                  <li>
+                    Sentinel rate-limits each token aggressively by IP.
+                  </li>
+                  <li>
+                    The dispatcher service is the real security
+                    boundary — only resources with an explicit{' '}
+                    <code>case</code> in the switch can be created;
+                    unknown keys in the request body are silently
+                    dropped at the typed-struct decode.
+                  </li>
+                  <li>
+                    The optional bcrypt password on the FormShare row
+                    is the fourth layer.
+                  </li>
+                </ul>
+                <p>
+                  Plus the same file-upload caveat with a copy of the
+                  three workaround paths.
+                </p>
+
+                <h3>Migration</h3>
+                <p>
+                  Run <code>grit upgrade</code> to pull the System
+                  Hub tile into an existing project. The
+                  <code> tile</code> is purely additive — no
+                  behaviour change for anything that was already
+                  working.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.40 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
