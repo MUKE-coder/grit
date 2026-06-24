@@ -488,12 +488,16 @@ func (g *Generator) writeGoHandler(names Names) error {
 	// Check if any field needs "time" import
 	needsTimeImport := false
 	needsHandlerDatatypes := false
+	hasFileFields := false
 	for _, f := range g.Definition.Fields {
 		if f.GoType() == "*time.Time" {
 			needsTimeImport = true
 		}
 		if f.NeedsDatatypesImport() {
 			needsHandlerDatatypes = true
+		}
+		if f.IsFileField() {
+			hasFileFields = true
 		}
 	}
 	timeImport := ""
@@ -503,6 +507,24 @@ func (g *Generator) writeGoHandler(names Names) error {
 	datatypesImport := ""
 	if needsHandlerDatatypes {
 		datatypesImport = "\n\t\"gorm.io/datatypes\""
+	}
+
+	// v3.31.33 -- file lifecycle. When the resource has any file/files
+	// fields, the handler gets a Storage field and the Create + Update
+	// flows pick up cleanup-on-replace + claim-on-save. The
+	// {{HANDLER_*}} replacements degrade to empty strings on resources
+	// without file fields so non-file handlers stay unchanged.
+	filesImport := ""
+	handlerStorageField := ""
+	createClaim := ""
+	updateSnapshot := ""
+	updateCleanup := ""
+	if hasFileFields {
+		filesImport = "\n\t\"" + g.Module + "/internal/files\"\n\t\"" + g.Module + "/internal/storage\""
+		handlerStorageField = "\n\tStorage *storage.Storage // v3.31.33"
+		createClaim = "\n\tif h.Storage != nil {\n\t\tfiles.ClaimRefs(c.Request.Context(), h.DB, &item)\n\t}"
+		updateSnapshot = "\n\toldItem := item // v3.31.33: snapshot for file diff"
+		updateCleanup = "\n\tif h.Storage != nil {\n\t\tfiles.CleanupRemoved(c.Request.Context(), h.Storage, &oldItem, &item)\n\t\tfiles.ClaimRefs(c.Request.Context(), h.DB, &item)\n\t}"
 	}
 
 	r := strings.NewReplacer(
@@ -525,6 +547,11 @@ func (g *Generator) writeGoHandler(names Names) error {
 		"{{RELOAD}}", reloadLine,
 		"{{TIME_IMPORT}}", timeImport,
 		"{{DATATYPES_IMPORT}}", datatypesImport,
+		"{{FILES_IMPORT}}", filesImport,
+		"{{HANDLER_STORAGE_FIELD}}", handlerStorageField,
+		"{{CREATE_CLAIM}}", createClaim,
+		"{{UPDATE_SNAPSHOT}}", updateSnapshot,
+		"{{UPDATE_CLEANUP}}", updateCleanup,
 	)
 
 	content := r.Replace(`package handlers
@@ -535,14 +562,14 @@ import (
 	"github.com/gin-gonic/gin"{{DATATYPES_IMPORT}}
 	"gorm.io/gorm"
 
-	"{{MODULE}}/internal/export"
+	"{{MODULE}}/internal/export"{{FILES_IMPORT}}
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
 )
 
 // {{Pascal}}Handler handles {{lower}} endpoints.
 type {{Pascal}}Handler struct {
-	DB *gorm.DB
+	DB *gorm.DB{{HANDLER_STORAGE_FIELD}}
 }
 
 // List returns a paginated list of {{plural}}.
@@ -720,7 +747,7 @@ func (h *{{Pascal}}Handler) Create(c *gin.Context) {
 		return
 	}
 {{M2M_CREATE}}
-{{RELOAD}}
+{{RELOAD}}{{CREATE_CLAIM}}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"data":    item,
@@ -755,7 +782,7 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 		})
 		return
 	}
-
+{{UPDATE_SNAPSHOT}}
 	updates := map[string]interface{}{}
 {{UPDATE_MAP}}
 	if err := h.DB.Model(&item).Updates(updates).Error; err != nil {
@@ -768,7 +795,7 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 		return
 	}
 {{M2M_UPDATE}}
-{{RELOAD}}
+{{RELOAD}}{{UPDATE_CLEANUP}}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":    item,

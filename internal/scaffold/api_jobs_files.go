@@ -41,9 +41,10 @@ import (
 
 // Task type constants.
 const (
-	TypeEmailSend     = "email:send"
-	TypeImageProcess  = "image:process"
-	TypeTokensCleanup = "tokens:cleanup"
+	TypeEmailSend             = "email:send"
+	TypeImageProcess          = "image:process"
+	TypeTokensCleanup         = "tokens:cleanup"
+	TypeUploadsOrphanCleanup  = "uploads:cleanup_orphans" // v3.31.33
 )
 
 // Default per-task settings used when a caller doesn't override via
@@ -277,6 +278,7 @@ import (
 
 	"{{MODULE}}/internal/cache"
 	"{{MODULE}}/internal/mail"
+	"{{MODULE}}/internal/files"
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/storage"
 )
@@ -336,6 +338,7 @@ func StartWorker(redisURL string, deps WorkerDeps) (func(), error) {
 	mux.HandleFunc(TypeEmailSend, handleEmailSend(deps))
 	mux.HandleFunc(TypeImageProcess, handleImageProcess(deps))
 	mux.HandleFunc(TypeTokensCleanup, handleTokensCleanup(deps))
+	mux.HandleFunc(TypeUploadsOrphanCleanup, handleUploadsOrphanCleanup(deps))
 
 	go func() {
 		if err := srv.Run(mux); err != nil {
@@ -428,6 +431,30 @@ func handleTokensCleanup(deps WorkerDeps) func(ctx context.Context, task *asynq.
 		}
 
 		log.Printf("Token cleanup complete, removed %d records", result.RowsAffected)
+		return nil
+	}
+}
+
+// v3.31.33 -- orphan upload cleanup. Runs daily via the cron
+// scheduler. Deletes Upload rows whose claimed_at IS NULL and
+// created_at < 24h ago. The 24h grace period gives a user who
+// uploaded a file plenty of time to finish the parent form before
+// the cleanup considers their upload abandoned.
+//
+// minAge intentionally lives in code (not env) -- the value is
+// load-bearing for correctness, not configuration. Bumping it
+// would require thought about claim timing edge cases.
+func handleUploadsOrphanCleanup(deps WorkerDeps) func(ctx context.Context, task *asynq.Task) error {
+	return func(ctx context.Context, task *asynq.Task) error {
+		if deps.DB == nil {
+			return fmt.Errorf("database not configured")
+		}
+		log.Println("Running orphan upload cleanup...")
+		deleted, err := files.RunOrphanCleanup(ctx, deps.DB, deps.Storage, 24*time.Hour)
+		if err != nil {
+			return fmt.Errorf("orphan cleanup: %w", err)
+		}
+		log.Printf("Orphan upload cleanup complete, removed %d uploads", deleted)
 		return nil
 	}
 }

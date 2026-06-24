@@ -11,12 +11,14 @@ func writeStorageFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "storage", "storage.go"):     storageServiceGo(),
-		filepath.Join(apiRoot, "internal", "storage", "image.go"):       storageImageGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "upload.go"):     uploadHandlerGo(),
-		filepath.Join(apiRoot, "internal", "files", "file_ref.go"):      filesFileRefGo(),
-		filepath.Join(apiRoot, "internal", "files", "accepts.go"):       filesAcceptsGo(),
-		filepath.Join(apiRoot, "internal", "files", "file_ref_test.go"): filesFileRefTestGo(),
+		filepath.Join(apiRoot, "internal", "storage", "storage.go"):       storageServiceGo(),
+		filepath.Join(apiRoot, "internal", "storage", "image.go"):         storageImageGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "upload.go"):       uploadHandlerGo(),
+		filepath.Join(apiRoot, "internal", "files", "file_ref.go"):        filesFileRefGo(),
+		filepath.Join(apiRoot, "internal", "files", "accepts.go"):         filesAcceptsGo(),
+		filepath.Join(apiRoot, "internal", "files", "file_ref_test.go"):   filesFileRefTestGo(),
+		filepath.Join(apiRoot, "internal", "files", "lifecycle.go"):       filesLifecycleGo(),
+		filepath.Join(apiRoot, "internal", "files", "lifecycle_test.go"):  filesLifecycleTestGo(),
 	}
 
 	for path, content := range files {

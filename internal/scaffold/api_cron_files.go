@@ -74,6 +74,21 @@ func New(redisURL string) (*Scheduler, error) {
 		Type:     "tokens:cleanup",
 	})
 
+	// v3.31.33 -- orphan upload cleanup. Runs daily at 03:15 (low
+	// traffic window). Sweeps Upload rows whose claimed_at IS NULL
+	// and that are older than 24h, deleting both the S3 object and
+	// the DB row. Uses a one-line files.RunOrphanCleanup helper so
+	// the cron handler stays thin.
+	_, err = scheduler.Register("15 3 * * *", asynq.NewTask("uploads:cleanup_orphans", nil))
+	if err != nil {
+		return nil, fmt.Errorf("registering orphan upload cleanup: %w", err)
+	}
+	RegisteredTasks = append(RegisteredTasks, Task{
+		Name:     "Cleanup orphan uploads",
+		Schedule: "15 3 * * *",
+		Type:     "uploads:cleanup_orphans",
+	})
+
 	// grit:cron-tasks
 
 	return &Scheduler{scheduler: scheduler}, nil

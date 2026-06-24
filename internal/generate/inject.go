@@ -45,9 +45,23 @@ func (g *Generator) injectAll(names Names) error {
 
 	// 3. Inject handler init
 	if fileExists(routesFile) {
+		// v3.31.33 -- if the resource has file fields, wire Storage so
+		// the Create/Update flows can do immediate S3 cleanup on
+		// replace and mark uploads as claimed.
+		hasFileFields := false
+		for _, f := range g.Definition.Fields {
+			if f.IsFileField() {
+				hasFileFields = true
+				break
+			}
+		}
+		extraField := ""
+		if hasFileFields {
+			extraField = "\n\t\tStorage: svc.Storage,"
+		}
 		handlerInit := fmt.Sprintf(`	%sHandler := &handlers.%sHandler{
-		DB: db,
-	}`, names.Camel, names.Pascal)
+		DB: db,%s
+	}`, names.Camel, names.Pascal, extraField)
 		if err := injectBefore(routesFile, "// grit:handlers", handlerInit); err != nil {
 			return fmt.Errorf("injecting handler: %w", err)
 		}

@@ -28,6 +28,135 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.33 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.33
+                </span>
+                <span className="text-sm text-muted-foreground">June 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>File lifecycle — immediate S3 delete on
+                  replacement + daily orphan cleanup cron.</strong>{' '}
+                  Closes the loop on the file-fields work from
+                  v3.31.30-32: bucket no longer accumulates dead
+                  objects when files get swapped or forms get
+                  abandoned.
+                </p>
+
+                <h3>internal/files lifecycle helpers</h3>
+                <ul>
+                  <li>
+                    <code>DiffSingle(old, new)</code> — returns the
+                    key removed when a single-file column is replaced
+                    or cleared.
+                  </li>
+                  <li>
+                    <code>DiffMulti(old, new)</code> — returns keys
+                    present in old but missing from new (gallery
+                    pruning).
+                  </li>
+                  <li>
+                    <code>CleanupRemoved(ctx, st, old, new)</code> —
+                    reflection-based: walks both struct values,
+                    finds <code>*FileRef</code> + <code>FileRefs</code>{' '}
+                    fields, computes the diff, deletes the removed S3
+                    objects. One line in the handler regardless of
+                    how many file columns the resource has.
+                  </li>
+                  <li>
+                    <code>ClaimRefs(ctx, db, record)</code> — walks
+                    the same FileRef columns and stamps{' '}
+                    <code>claimed_at = now()</code> on the underlying
+                    Upload rows so the orphan cleanup cron knows the
+                    upload is in use.
+                  </li>
+                  <li>
+                    <code>RunOrphanCleanup(ctx, db, st, minAge)</code>{' '}
+                    — finds Upload rows with{' '}
+                    <code>claimed_at IS NULL</code> older than{' '}
+                    <code>minAge</code> (24h), deletes them from S3
+                    and the DB. Best-effort S3 delete: if it fails
+                    we still drop the DB row so the same orphan
+                    isn&apos;t retried forever.
+                  </li>
+                </ul>
+
+                <h3>Upload.ClaimedAt column</h3>
+                <p>
+                  New nullable timestamp on the Upload model.
+                  Auto-migration adds it; existing rows start as NULL
+                  and get claimed the next time their parent record
+                  is updated. The 24h grace period before orphan
+                  cleanup means a fresh deploy won&apos;t purge
+                  historical uploads — the cron only catches uploads
+                  truly created in the past 24h that never got
+                  claimed.
+                </p>
+
+                <h3>Daily cron job</h3>
+                <p>
+                  New <code>uploads:cleanup_orphans</code> asynq task
+                  runs at 03:15 daily (low-traffic window). Registered
+                  in <code>internal/cron/cron.go</code> and handled by{' '}
+                  <code>handleUploadsOrphanCleanup</code> in{' '}
+                  <code>internal/jobs/jobs.go</code>.
+                </p>
+
+                <h3>Generated handler injection</h3>
+                <p>
+                  Resources with{' '}
+                  <code>:file:</code> / <code>:files:</code> fields
+                  now get:
+                </p>
+                <ul>
+                  <li>
+                    <code>Storage *storage.Storage</code> field on
+                    the Handler struct, wired in routes via{' '}
+                    <code>Storage: svc.Storage</code>.
+                  </li>
+                  <li>
+                    Create handler: <code>files.ClaimRefs</code> call
+                    after successful save.
+                  </li>
+                  <li>
+                    Update handler: snapshots the old record,
+                    diff-deletes removed S3 objects, then claims the
+                    new refs.
+                  </li>
+                </ul>
+                <p>
+                  Resources without file fields stay exactly as before
+                  — no Storage field, no extra imports, no dead code.
+                  The injection is conditional on the generator
+                  detecting at least one file/files field.
+                </p>
+
+                <h3>Migration</h3>
+                <p>
+                  Existing projects: the Upload model needs the
+                  <code> ClaimedAt</code> column. GORM auto-migration
+                  in <code>cmd/server/main.go</code> handles it on
+                  next boot. Re-run{' '}
+                  <code>grit generate resource &lt;Name&gt;</code> on
+                  any resource with file fields to pick up the
+                  cleanup-aware handler template.
+                </p>
+
+                <h3>Coming next</h3>
+                <p>
+                  v3.31.34 begins the data ops arc — server-side
+                  Excel export via excelize, bulk Excel import with
+                  template generation + row-by-row validation,
+                  React-PDF rendering, per-page date filter, and
+                  per-resource opt-out for export / import.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.32 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

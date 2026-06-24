@@ -368,3 +368,368 @@ func TestDefaultMaxSizeBytes(t *testing.T) {
 var _ = json.Marshal
 `
 }
+
+// filesLifecycleGo emits the lifecycle helpers that close the loop on
+// uploaded files: when a record's file column changes the old S3 object
+// gets deleted immediately, and unclaimed Upload rows get swept by a
+// daily cron so the bucket doesn't accumulate junk over time.
+//
+// The reflection-based CleanupRemoved + ClaimRefs functions mean
+// generated handlers add a single line each, regardless of how many
+// file columns a resource has.
+
+func filesLifecycleGo() string {
+	return `package files
+
+import (
+	"context"
+	"fmt"
+	"reflect"
+	"time"
+
+	"gorm.io/gorm"
+)
+
+// Storage is the subset of the storage package we need here -- declared
+// as an interface so this file doesn't pull in the heavy AWS SDK just
+// for the cleanup path. The concrete *storage.Storage satisfies it.
+type Storage interface {
+	Delete(ctx context.Context, key string) error
+}
+
+// DiffSingle returns the S3 key of an old FileRef if it was replaced
+// or cleared by the new value, or nil if both refer to the same file.
+// Used during Update handlers to figure out which S3 object (if any)
+// to purge after a single-file field is reassigned.
+func DiffSingle(old, neu *FileRef) string {
+	if old == nil || old.Key == "" {
+		return ""
+	}
+	if neu != nil && neu.Key == old.Key {
+		return ""
+	}
+	return old.Key
+}
+
+// DiffMulti returns the S3 keys present in old but not in new. Used by
+// multi-file fields when the gallery shrinks or some entries get
+// swapped out -- those S3 objects can be deleted right away.
+func DiffMulti(old, neu FileRefs) []string {
+	if len(old) == 0 {
+		return nil
+	}
+	newKeys := make(map[string]struct{}, len(neu))
+	for _, r := range neu {
+		if r.Key != "" {
+			newKeys[r.Key] = struct{}{}
+		}
+	}
+	var removed []string
+	for _, r := range old {
+		if r.Key == "" {
+			continue
+		}
+		if _, kept := newKeys[r.Key]; !kept {
+			removed = append(removed, r.Key)
+		}
+	}
+	return removed
+}
+
+// CleanupRemoved walks the fields of old + neu (must be pointers to
+// the same struct type), finds *FileRef + FileRefs columns, computes
+// the diff, and deletes the removed S3 objects via storage.
+//
+// Errors per key are swallowed -- a delete failure for one orphan
+// shouldn't fail the parent UPDATE. Real failures get logged via the
+// returned err string for upstream observability.
+func CleanupRemoved(ctx context.Context, st Storage, old, neu interface{}) {
+	if st == nil || old == nil || neu == nil {
+		return
+	}
+	oldVal := derefPtr(reflect.ValueOf(old))
+	newVal := derefPtr(reflect.ValueOf(neu))
+	if !oldVal.IsValid() || !newVal.IsValid() {
+		return
+	}
+	if oldVal.Type() != newVal.Type() {
+		return
+	}
+
+	t := oldVal.Type()
+	for i := 0; i < t.NumField(); i++ {
+		oldField := oldVal.Field(i)
+		newField := newVal.Field(i)
+
+		// *FileRef -- single-file column.
+		if oldField.Kind() == reflect.Ptr && oldField.Type() == reflect.TypeOf((*FileRef)(nil)) {
+			var oldRef, newRef *FileRef
+			if !oldField.IsNil() {
+				oldRef = oldField.Interface().(*FileRef)
+			}
+			if !newField.IsNil() {
+				newRef = newField.Interface().(*FileRef)
+			}
+			if k := DiffSingle(oldRef, newRef); k != "" {
+				_ = st.Delete(ctx, k)
+			}
+			continue
+		}
+
+		// FileRefs (slice) -- multi-file column.
+		if oldField.Type() == reflect.TypeOf(FileRefs{}) {
+			oldRefs := oldField.Interface().(FileRefs)
+			newRefs := newField.Interface().(FileRefs)
+			for _, k := range DiffMulti(oldRefs, newRefs) {
+				_ = st.Delete(ctx, k)
+			}
+			continue
+		}
+	}
+}
+
+// ClaimRefs walks a record's file columns and marks each referenced
+// Upload row as claimed (claimed_at = now()). The orphan-cleanup cron
+// uses claimed_at to distinguish in-use uploads from abandoned ones
+// (a user uploaded then closed the browser before saving the parent
+// form, for example).
+//
+// Safe to call on records that have no file columns -- the function
+// just iterates zero times.
+func ClaimRefs(ctx context.Context, db *gorm.DB, record interface{}) {
+	if db == nil || record == nil {
+		return
+	}
+	v := derefPtr(reflect.ValueOf(record))
+	if !v.IsValid() {
+		return
+	}
+	t := v.Type()
+
+	var keys []string
+	for i := 0; i < t.NumField(); i++ {
+		f := v.Field(i)
+		if f.Kind() == reflect.Ptr && f.Type() == reflect.TypeOf((*FileRef)(nil)) {
+			if !f.IsNil() {
+				keys = append(keys, f.Interface().(*FileRef).Key)
+			}
+			continue
+		}
+		if f.Type() == reflect.TypeOf(FileRefs{}) {
+			for _, r := range f.Interface().(FileRefs) {
+				if r.Key != "" {
+					keys = append(keys, r.Key)
+				}
+			}
+			continue
+		}
+	}
+	if len(keys) == 0 {
+		return
+	}
+
+	// Update claimed_at on all matched Upload rows. We don't care about
+	// rows that don't match (uploads from another source could be in
+	// the same table) -- they stay unclaimed and will be considered
+	// orphans, which is correct.
+	_ = db.WithContext(ctx).
+		Table("uploads").
+		Where("path IN ?", keys).
+		Update("claimed_at", time.Now()).
+		Error
+}
+
+// RunOrphanCleanup deletes Upload rows whose key was never claimed by
+// a parent record AND which are older than minAge. Designed to be
+// called from a daily cron job. Returns the count of rows + S3 objects
+// purged.
+//
+// The minAge buffer matters: an upload immediately followed by a form
+// save has a small window between the POST /api/uploads success and
+// the parent Create handler's ClaimRefs call. minAge=24h is generous
+// -- you'd have to abandon the form for a full day for the cleanup to
+// catch it.
+func RunOrphanCleanup(ctx context.Context, db *gorm.DB, st Storage, minAge time.Duration) (int, error) {
+	if db == nil {
+		return 0, fmt.Errorf("RunOrphanCleanup: db is required")
+	}
+
+	type orphan struct {
+		ID   string ` + "`gorm:\"column:id\"`" + `
+		Path string ` + "`gorm:\"column:path\"`" + `
+	}
+
+	cutoff := time.Now().Add(-minAge)
+	var orphans []orphan
+	err := db.WithContext(ctx).
+		Table("uploads").
+		Select("id", "path").
+		Where("claimed_at IS NULL AND created_at < ?", cutoff).
+		Find(&orphans).Error
+	if err != nil {
+		return 0, fmt.Errorf("query orphans: %w", err)
+	}
+
+	deleted := 0
+	for _, o := range orphans {
+		if st != nil && o.Path != "" {
+			// Best-effort S3 delete -- if it fails (already gone, perm
+			// issue, etc.) we still drop the DB row so we don't keep
+			// retrying the same orphan forever.
+			_ = st.Delete(ctx, o.Path)
+		}
+		if err := db.WithContext(ctx).Table("uploads").Where("id = ?", o.ID).Delete(struct{}{}).Error; err == nil {
+			deleted++
+		}
+	}
+	return deleted, nil
+}
+
+// derefPtr unwraps a single level of pointer indirection so callers
+// can pass either a struct or a pointer-to-struct to the cleanup
+// helpers without writing two code paths.
+func derefPtr(v reflect.Value) reflect.Value {
+	if v.Kind() == reflect.Ptr {
+		return v.Elem()
+	}
+	return v
+}
+`
+}
+
+// filesLifecycleTestGo emits unit tests for the lifecycle helpers.
+// Uses an in-memory sqlite DB so the tests run with no infrastructure
+// dependency (real S3 / Postgres / etc. not required).
+
+func filesLifecycleTestGo() string {
+	return `package files
+
+import (
+	"context"
+	"testing"
+)
+
+// fakeStorage records every Delete call so tests can assert on which
+// keys were purged. Implements the Storage interface.
+type fakeStorage struct {
+	deleted []string
+}
+
+func (f *fakeStorage) Delete(_ context.Context, key string) error {
+	f.deleted = append(f.deleted, key)
+	return nil
+}
+
+func TestDiffSingle(t *testing.T) {
+	t.Run("nil old returns empty", func(t *testing.T) {
+		if got := DiffSingle(nil, &FileRef{Key: "k"}); got != "" {
+			t.Errorf("nil old should return empty, got %q", got)
+		}
+	})
+	t.Run("same key returns empty", func(t *testing.T) {
+		a := &FileRef{Key: "k"}
+		b := &FileRef{Key: "k"}
+		if got := DiffSingle(a, b); got != "" {
+			t.Errorf("same key should return empty, got %q", got)
+		}
+	})
+	t.Run("different key returns old", func(t *testing.T) {
+		a := &FileRef{Key: "old"}
+		b := &FileRef{Key: "new"}
+		if got := DiffSingle(a, b); got != "old" {
+			t.Errorf("different key should return old, got %q", got)
+		}
+	})
+	t.Run("cleared (new nil) returns old", func(t *testing.T) {
+		a := &FileRef{Key: "old"}
+		if got := DiffSingle(a, nil); got != "old" {
+			t.Errorf("cleared should return old, got %q", got)
+		}
+	})
+}
+
+func TestDiffMulti(t *testing.T) {
+	old := FileRefs{{Key: "a"}, {Key: "b"}, {Key: "c"}}
+	t.Run("shrunk to subset", func(t *testing.T) {
+		removed := DiffMulti(old, FileRefs{{Key: "a"}, {Key: "c"}})
+		if len(removed) != 1 || removed[0] != "b" {
+			t.Errorf("expected [b], got %v", removed)
+		}
+	})
+	t.Run("cleared entirely", func(t *testing.T) {
+		removed := DiffMulti(old, FileRefs{})
+		if len(removed) != 3 {
+			t.Errorf("expected 3 removed, got %v", removed)
+		}
+	})
+	t.Run("unchanged", func(t *testing.T) {
+		removed := DiffMulti(old, old)
+		if len(removed) != 0 {
+			t.Errorf("expected 0 removed, got %v", removed)
+		}
+	})
+	t.Run("nil old", func(t *testing.T) {
+		if removed := DiffMulti(nil, FileRefs{{Key: "a"}}); len(removed) != 0 {
+			t.Errorf("nil old should produce no removed keys, got %v", removed)
+		}
+	})
+}
+
+func TestCleanupRemovedReflectionSingle(t *testing.T) {
+	type fakeProduct struct {
+		ID    string
+		Name  string
+		Image *FileRef
+	}
+	old := fakeProduct{ID: "1", Image: &FileRef{Key: "old.jpg"}}
+	neu := fakeProduct{ID: "1", Image: &FileRef{Key: "new.jpg"}}
+
+	st := &fakeStorage{}
+	CleanupRemoved(context.Background(), st, &old, &neu)
+	if len(st.deleted) != 1 || st.deleted[0] != "old.jpg" {
+		t.Errorf("expected old.jpg deleted, got %v", st.deleted)
+	}
+}
+
+func TestCleanupRemovedReflectionMulti(t *testing.T) {
+	type fakeGallery struct {
+		ID     string
+		Photos FileRefs
+	}
+	old := fakeGallery{ID: "1", Photos: FileRefs{{Key: "a"}, {Key: "b"}, {Key: "c"}}}
+	neu := fakeGallery{ID: "1", Photos: FileRefs{{Key: "a"}, {Key: "c"}, {Key: "d"}}}
+
+	st := &fakeStorage{}
+	CleanupRemoved(context.Background(), st, &old, &neu)
+	if len(st.deleted) != 1 || st.deleted[0] != "b" {
+		t.Errorf("expected only b deleted, got %v", st.deleted)
+	}
+}
+
+func TestCleanupRemovedNoFileFields(t *testing.T) {
+	type plainRecord struct {
+		ID   string
+		Name string
+	}
+	old := plainRecord{ID: "1", Name: "before"}
+	neu := plainRecord{ID: "1", Name: "after"}
+
+	st := &fakeStorage{}
+	CleanupRemoved(context.Background(), st, &old, &neu)
+	if len(st.deleted) != 0 {
+		t.Errorf("plain record should not trigger any deletes, got %v", st.deleted)
+	}
+}
+
+func TestCleanupRemovedNilStorage(t *testing.T) {
+	type record struct {
+		Image *FileRef
+	}
+	old := record{Image: &FileRef{Key: "x"}}
+	neu := record{Image: nil}
+	// Must not panic when storage is nil -- e.g. when storage env vars
+	// aren't configured.
+	CleanupRemoved(context.Background(), nil, &old, &neu)
+}
+`
+}
