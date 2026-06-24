@@ -1339,6 +1339,17 @@ func (g *Generator) writeResourceDefinition(names Names) error {
 				parts = append(parts, "max: 5")
 			}
 		}
+		// v3.31.38: numberKind hints the comma-formatting NumberField
+		// at the Go-side domain. int allows negatives but no decimals,
+		// uint disallows both, float allows both.
+		switch FieldType(f.Type) {
+		case FieldInt:
+			parts = append(parts, `numberKind: "int"`)
+		case FieldUint:
+			parts = append(parts, `numberKind: "uint"`)
+		case FieldFloat:
+			parts = append(parts, `numberKind: "float"`)
+		}
 
 		formFields += "\n    { " + strings.Join(parts, ", ") + " },"
 	}

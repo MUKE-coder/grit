@@ -28,6 +28,98 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.38 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.38
+                </span>
+                <span className="text-sm text-muted-foreground">June 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Auto comma-formatting on number inputs.</strong>{' '}
+                  Typing <code>3000</code> in a price field now reads{' '}
+                  <code>3,000</code> on screen the moment the fourth
+                  digit lands. Helps catch zero-count mistakes (the
+                  &quot;is that 30k or 300k?&quot; problem) without
+                  changing the wire shape — the form still submits a
+                  plain JS number, and the API still receives an int
+                  or float as before.
+                </p>
+
+                <h3>How it works</h3>
+                <p>
+                  <code>NumberField</code> switched from{' '}
+                  <code>type=&quot;number&quot;</code> to{' '}
+                  <code>type=&quot;text&quot;</code> with{' '}
+                  <code>inputMode=&quot;decimal&quot;</code> (or{' '}
+                  <code>&quot;numeric&quot;</code> for int/uint columns).
+                  The visible value is the comma-formatted string; the
+                  field also keeps a parsed JS number in form state.
+                  Mobile keyboards still pop up correctly thanks to{' '}
+                  <code>inputMode</code>; the comma can render literally
+                  because text inputs don&apos;t strip non-digits.
+                </p>
+                <p>
+                  Cursor position is preserved across the reformat by
+                  counting non-comma characters before the caret and
+                  restoring after the same count in the new value, so
+                  editing in the middle of a number doesn&apos;t fling
+                  the caret to the end.
+                </p>
+
+                <h3>numberKind hint</h3>
+                <p>
+                  New <code>FieldDefinition</code> knob:
+                </p>
+                <pre><code>{`numberKind?: "int" | "uint" | "float"`}</code></pre>
+                <p>
+                  Tells the input which characters to accept:
+                </p>
+                <ul>
+                  <li><code>int</code> — negatives yes, decimals no</li>
+                  <li><code>uint</code> — neither negatives nor decimals</li>
+                  <li><code>float</code> — both (legacy permissive default when unset)</li>
+                </ul>
+                <p>
+                  The generator now emits the right{' '}
+                  <code>numberKind</code> for every number field based on
+                  the Go column type. <code>grit sync</code> also adds
+                  it when injecting newly-added Go fields into existing
+                  admin resource files. Hand-written resources that
+                  don&apos;t set <code>numberKind</code> stay
+                  permissive — no breaking change to your existing
+                  forms.
+                </p>
+
+                <h3>Edge cases handled</h3>
+                <ul>
+                  <li><strong>Paste &quot;$1,234.56&quot;</strong> — strips the dollar, keeps the value</li>
+                  <li><strong>Mid-typing &quot;3000.&quot;</strong> — preserves the trailing dot so the user can finish the decimal</li>
+                  <li><strong>Backspace through a comma</strong> — the comma re-inserts after the digit is removed; caret tracks digit count, not column position</li>
+                  <li><strong>Leading zeros</strong> — &quot;0123&quot; collapses to &quot;123&quot;; &quot;0&quot; stays &quot;0&quot; so &quot;0.5&quot; is reachable</li>
+                  <li><strong>External value sync</strong> — opening Edit on an existing record formats the loaded number; subsequent typing skips the sync to avoid stomping mid-edit state</li>
+                </ul>
+
+                <h3>Migration</h3>
+                <p>
+                  Replace <code>apps/admin/components/forms/fields/number-field.tsx</code>{' '}
+                  with the rewritten file and add the optional{' '}
+                  <code>numberKind</code> knob to{' '}
+                  <code>apps/admin/lib/resource.ts</code> on{' '}
+                  <code>FieldDefinition</code>. Existing resource files
+                  keep working — <code>numberKind</code> defaults to{' '}
+                  <code>float</code> when unset, which gives the legacy
+                  permissive behaviour. Run{' '}
+                  <code>grit sync</code> on any project to backfill
+                  <code>numberKind</code> for new fields the generator
+                  finds; existing fields aren&apos;t touched.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.37 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

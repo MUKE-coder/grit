@@ -142,6 +142,13 @@ export interface FieldDefinition {
   /** Allow up/down arrow reordering of files in the preview list.
    *  Multi-file (:files:) only. Defaults to true. */
   reorderable?: boolean;
+
+  // v3.31.38 — number-input behaviour. Only applies when type === "number".
+  /** Domain of the underlying Go column. Controls comma formatting:
+   *  "int" allows negatives, no decimals; "uint" disallows negatives
+   *  + decimals; "float" allows both. The generator sets this from
+   *  the Go field type. Unset = "float" (legacy permissive). */
+  numberKind?: "int" | "uint" | "float";
 }
 
 export interface StepDefinition {

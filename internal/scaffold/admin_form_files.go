@@ -1333,7 +1333,21 @@ export function TextareaField({ field, value, onChange, error }: TextareaFieldPr
 
 // adminNumberField returns the number input field component.
 func adminNumberField() string {
-	return `import type { FieldDefinition } from "@/lib/resource";
+	return `"use client";
+
+// v3.31.38 — NumberField with thousand-separator formatting. As the
+// user types "3000" the input visually shows "3,000". The form's
+// stored value is still a JS number (or "" for empty); the comma is
+// purely a display affordance. Cursor position is preserved across
+// reformat so editing in the middle of a number feels natural.
+//
+// Why type="text" instead of type="number": browsers reject every
+// non-digit char (including ",") on number inputs, so the comma
+// would never reach the DOM. We use type="text" + inputMode so the
+// numeric keyboard still pops up on mobile.
+
+import { useEffect, useRef, useState } from "react";
+import type { FieldDefinition } from "@/lib/resource";
 
 interface NumberFieldProps {
   field: FieldDefinition;
@@ -1342,7 +1356,115 @@ interface NumberFieldProps {
   error?: string;
 }
 
+interface FormatOpts {
+  allowDecimal: boolean;
+  allowNegative: boolean;
+}
+
+// formatNumberDisplay strips invalid characters from ` + "`raw`" + ` (anything
+// that's not a digit, optional leading minus, optional single decimal
+// point) and inserts thousand-separators into the integer part. The
+// decimal portion is kept verbatim so a mid-typed "3000." doesn't
+// lose the dot on the way to "3,000.".
+function formatNumberDisplay(raw: string, opts: FormatOpts): string {
+  if (raw === "" || raw == null) return "";
+  let s = String(raw).replace(opts.allowDecimal ? /[^0-9.\-]/g : /[^0-9\-]/g, "");
+  const negative = opts.allowNegative && s.startsWith("-");
+  s = s.replace(/-/g, "");
+  if (opts.allowDecimal) {
+    const parts = s.split(".");
+    if (parts.length > 2) {
+      s = parts[0] + "." + parts.slice(1).join("");
+    }
+  } else {
+    s = s.replace(/\./g, "");
+  }
+  if (s === "") return negative ? "-" : "";
+  let intPart: string;
+  let decPart: string | undefined;
+  if (s.includes(".")) {
+    const [a, b] = s.split(".");
+    intPart = a;
+    decPart = b;
+  } else {
+    intPart = s;
+  }
+  // Strip multiple leading zeros so "0123" → "123". Keep a single "0"
+  // so the user can type "0", "0.", or "0.5" without it vanishing.
+  if (intPart.length > 1) {
+    intPart = intPart.replace(/^0+/, "") || "0";
+  }
+  const intFormatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  let out = (negative ? "-" : "") + intFormatted;
+  if (decPart !== undefined) out += "." + decPart;
+  return out;
+}
+
+// parseFormattedNumber strips commas and parses to a JS number. Returns
+// "" for the "no value yet" states (empty, lone minus, lone dot) so
+// react-hook-form's required validation can still distinguish empty
+// from zero.
+function parseFormattedNumber(formatted: string): number | "" {
+  if (formatted === "" || formatted === "-" || formatted === "." || formatted === "-.") {
+    return "";
+  }
+  const cleaned = formatted.replace(/,/g, "");
+  const n = Number(cleaned);
+  return Number.isNaN(n) ? "" : n;
+}
+
 export function NumberField({ field, value, onChange, error }: NumberFieldProps) {
+  const kind = field.numberKind ?? "float";
+  const allowDecimal = kind === "float";
+  const allowNegative = kind !== "uint";
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [display, setDisplay] = useState(() =>
+    formatNumberDisplay(String(value ?? ""), { allowDecimal, allowNegative })
+  );
+
+  // Sync display when external value changes (form reset, edit-mode
+  // hydration). Skip when the parsed display already matches -- avoids
+  // stomping on mid-edit state like "3000." that parses to 3000.
+  useEffect(() => {
+    const parsed = parseFormattedNumber(display);
+    if (parsed === value) return;
+    setDisplay(
+      value === "" || value == null
+        ? ""
+        : formatNumberDisplay(String(value), { allowDecimal, allowNegative })
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    const raw = input.value;
+    const cursorBefore = input.selectionStart ?? raw.length;
+    // Count non-comma characters BEFORE the cursor in the user-typed
+    // value, so we can place the cursor after the same number of
+    // non-comma characters in the reformatted output. That keeps the
+    // caret in the same logical position even as commas shift.
+    let nonCommasBeforeCursor = 0;
+    for (let i = 0; i < cursorBefore; i++) {
+      if (raw[i] !== ",") nonCommasBeforeCursor++;
+    }
+    const formatted = formatNumberDisplay(raw, { allowDecimal, allowNegative });
+    setDisplay(formatted);
+    onChange(parseFormattedNumber(formatted));
+    // Restore cursor after React paints the new value.
+    requestAnimationFrame(() => {
+      if (!inputRef.current) return;
+      let pos = 0;
+      let counted = 0;
+      while (pos < formatted.length && counted < nonCommasBeforeCursor) {
+        if (formatted[pos] !== ",") counted++;
+        pos++;
+      }
+      inputRef.current.setSelectionRange(pos, pos);
+    });
+  };
+
   return (
     <div className="space-y-1.5">
       <label className="block text-sm font-medium text-foreground">
@@ -1357,13 +1479,13 @@ export function NumberField({ field, value, onChange, error }: NumberFieldProps)
           </span>
         )}
         <input
-          type="number"
-          value={value}
-          onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))}
+          ref={inputRef}
+          type="text"
+          inputMode={allowDecimal ? "decimal" : "numeric"}
+          autoComplete="off"
+          value={display}
+          onChange={handleChange}
           placeholder={field.placeholder}
-          min={field.min}
-          max={field.max}
-          step={field.step}
           className={` + "`" + `w-full ${field.prefix ? "rounded-r-lg" : field.suffix ? "rounded-l-lg" : "rounded-lg"} border border-border bg-bg-tertiary px-4 py-2.5 text-sm text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${error ? "border-danger" : ""}` + "`" + `}
         />
         {field.suffix && (

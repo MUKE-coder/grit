@@ -149,6 +149,16 @@ func buildAutoFormFieldLine(f GoField, key string) string {
 		fmt.Sprintf(`label: "%s"`, label),
 		fmt.Sprintf(`type: "%s"`, formType),
 	}
+	// v3.31.38: numberKind hints the comma-formatting NumberField at
+	// the Go-side domain. Only set when the Go type is numeric.
+	switch f.GoType {
+	case "int", "int32", "int64":
+		parts = append(parts, `numberKind: "int"`)
+	case "uint", "uint32", "uint64":
+		parts = append(parts, `numberKind: "uint"`)
+	case "float32", "float64":
+		parts = append(parts, `numberKind: "float"`)
+	}
 	return "{ " + strings.Join(parts, ", ") + " },"
 }
 
