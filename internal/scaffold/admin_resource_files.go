@@ -76,6 +76,26 @@ export interface TableDefinition {
     field?: string;
     label?: string;
   };
+  // v3.31.35 — client-side export formats offered in the toolbar's
+  // download menu. Defaults to all three on. Set the whole field to
+  // false to hide the menu entirely; flip individual flags to hide a
+  // single format. allPages (default true) means the menu fetches
+  // every page from the API before building the file -- otherwise
+  // only the rows currently on screen get exported.
+  export?: false | {
+    csv?: boolean;
+    json?: boolean;
+    excel?: boolean;
+    allPages?: boolean;
+  };
+  // v3.31.35 — Excel import button + modal flow. Defaults to enabled.
+  // Set to false to hide. fields restricts which form fields are
+  // accepted in the upload (useful for excluding computed columns or
+  // user-supplied IDs); defaults to every form field.
+  import?: false | {
+    excel?: boolean;
+    fields?: string[];
+  };
 }
 
 // ─── Form Field Definitions ─────────────────────────────────────────
@@ -538,6 +558,11 @@ const ViewModal = dynamic(() =>
 const ConfirmModal = dynamic(() =>
   import("@/components/ui/confirm-modal").then((m) => m.ConfirmModal)
 );
+// v3.31.35 — Excel import modal, lazy-loaded so the xlsx parser
+// only joins the bundle when the user actually clicks "Import".
+const ImportModal = dynamic(() =>
+  import("@/components/tables/import-modal").then((m) => m.ImportModal)
+);
 
 interface ResourcePageProps {
   resource: ResourceDefinition;
@@ -615,6 +640,31 @@ function ResourceListView({ resource }: ResourcePageProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+
+  // v3.31.35 — Excel import modal state. Opened from the toolbar's
+  // "Import" button when the resource hasn't opted out.
+  const [importOpen, setImportOpen] = useState(false);
+
+  // v3.31.35 — search params the ExportMenu uses for its all-pages
+  // fetch loop. We mirror the same shape useResource builds so the
+  // server applies the same filter/sort to the export as the table.
+  const apiSearchParams = useMemo(() => {
+    const sp = new URLSearchParams();
+    if (search) sp.set("search", search);
+    if (sortBy) {
+      sp.set("sort_by", sortBy);
+      sp.set("sort_order", sortOrder);
+    }
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v) sp.set(k, v);
+    });
+    Object.entries(dateParams).forEach(([k, v]) => {
+      if (v) sp.set(k, v);
+    });
+    const df = resource.table.dateFilter?.field;
+    if (df && df !== "created_at") sp.set("date_field", df);
+    return sp;
+  }, [search, sortBy, sortOrder, filters, dateParams, resource.table.dateFilter?.field]);
 
   // Data fetching
   const { data, isLoading } = useResource(resource.endpoint, {
@@ -814,6 +864,8 @@ function ResourceListView({ resource }: ResourcePageProps) {
           data={data?.data}
           dateRange={dateRange}
           onDateRangeChange={setDateRange}
+          apiSearchParams={apiSearchParams}
+          onImport={resource.table.import !== false ? () => setImportOpen(true) : undefined}
         />
 
         {resource.table.filters && resource.table.filters.length > 0 && (
@@ -904,6 +956,13 @@ function ResourceListView({ resource }: ResourcePageProps) {
         variant="danger"
         loading={isBulkDeleting}
       />
+
+      {importOpen && (
+        <ImportModal
+          resource={resource}
+          onClose={() => setImportOpen(false)}
+        />
+      )}
     </div>
   );
 }

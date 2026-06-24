@@ -28,6 +28,120 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.35 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.35
+                </span>
+                <span className="text-sm text-muted-foreground">June 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Excel import + export, fully client-side via
+                  SheetJS.</strong> Continues the data ops arc. Every
+                  resource list page now ships with a three-format
+                  download menu (CSV / Excel / JSON) and a drag-and-drop
+                  Excel import that previews, validates, and submits
+                  rows without a single new API route.
+                </p>
+
+                <h3>Why client-side</h3>
+                <p>
+                  The original v3.31.35 plan put export and import on
+                  the server: <code>excelize</code> for writing,{' '}
+                  <code>asynq</code> + Resend for the
+                  &gt;5000-row async cutoff, a new{' '}
+                  <code>/import</code> endpoint with template +
+                  validation. Doing it in the browser via SheetJS{' '}
+                  (<code>xlsx ^0.18.5</code>) collapses all of that —
+                  no new routes, no async wiring, no &quot;your file
+                  is ready&quot; email loop, and tenant row data
+                  never leaves the user&apos;s session just to build
+                  a file.
+                </p>
+                <p>
+                  Trade-off: very large datasets (~50k+ rows) are
+                  gated by the browser&apos;s memory ceiling, not
+                  server RAM. The export menu still streams every
+                  page from the API before building the file, so the
+                  output represents the whole filtered dataset —
+                  not just what&apos;s on screen.
+                </p>
+
+                <h3>New lib/excel-utils.ts</h3>
+                <ul>
+                  <li><code>exportToFile(rows, columns, name, format)</code> — writes CSV / XLSX / JSON, auto-sizing columns up to 60 chars.</li>
+                  <li><code>fetchAllPages(endpoint, params, onProgress)</code> — loops the resource API at <code>page_size=200</code> until every row is in hand.</li>
+                  <li><code>downloadImportTemplate(resource, allowedFields?)</code> — blank workbook keyed by form field keys with a placeholder example row.</li>
+                  <li><code>parseImportFile(file, resource, allowedFields?)</code> — coerces each cell to the right JS type via the field definition, returns per-row errors.</li>
+                  <li><code>submitImport(endpoint, rows, onProgress)</code> — POSTs each valid row at concurrency 4 with live progress.</li>
+                </ul>
+
+                <h3>ExportMenu</h3>
+                <p>
+                  Split button in the toolbar: clicking the main
+                  half exports in the default format (Excel when
+                  enabled, else CSV); the chevron opens a menu with
+                  the other formats. Uses the active search, sort,
+                  filters, and date range so an export honours the
+                  view the user is looking at.
+                </p>
+
+                <h3>ImportModal</h3>
+                <p>
+                  Three stages — file pick → validation preview →
+                  submit with progress bar. The preview surfaces
+                  per-row errors with field+reason, flags unknown
+                  header columns, and disables Import when nothing
+                  is valid. On submit, React Query invalidates the
+                  resource list so the table reflects the new rows.
+                </p>
+                <p>
+                  Header matching is loose: spaces, underscores,
+                  hyphens, and case are normalised before lookup, so
+                  the same template works whether a user&apos;s spreadsheet
+                  has <code>first_name</code>, <code>First Name</code>,
+                  or <code>firstname</code>.
+                </p>
+
+                <h3>Per-resource opt-out</h3>
+                <pre><code>{`table: {
+  // Hide a format from the export menu (default: all on).
+  export: { csv: true, excel: true, json: false },
+  // Or disable export entirely.
+  // export: false,
+
+  // Restrict importable fields to a subset.
+  import: { fields: ['title', 'price', 'stock'] },
+  // Or disable import entirely.
+  // import: false,
+}`}</code></pre>
+
+                <h3>Migration</h3>
+                <p>
+                  Three new files in your scaffolded admin app:{' '}
+                  <code>apps/admin/lib/excel-utils.ts</code>,{' '}
+                  <code>apps/admin/components/tables/export-menu.tsx</code>,{' '}
+                  <code>apps/admin/components/tables/import-modal.tsx</code>.
+                  Three refreshed files:{' '}
+                  <code>apps/admin/lib/resource.ts</code>,{' '}
+                  <code>apps/admin/components/tables/table-toolbar.tsx</code>,{' '}
+                  <code>apps/admin/components/resource/resource-page.tsx</code>.
+                  Run <code>grit upgrade</code> to pull them in. The{' '}
+                  <code>xlsx</code> dependency was already declared
+                  in <code>package.json</code> from v3.31.34, so no
+                  install step is needed.
+                </p>
+
+                <h3>Coming next</h3>
+                <p>
+                  v3.31.36: PDF export via @react-pdf/renderer.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.34 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
@@ -80,9 +194,9 @@ export default function ChangelogPage() {
                 </p>
 
                 <h3>Resource def</h3>
-                <pre><code>{` + "`" + `table: {
+                <pre><code>{`table: {
   dateFilter: { enabled: true, field: 'created_at', label: 'Created' }
-}` + "`" + `}</code></pre>
+}`}</code></pre>
                 <p>
                   Enabled by default. Set <code>enabled: false</code>{' '}
                   to hide. Override <code>field</code> for resources
@@ -407,7 +521,7 @@ export default function ChangelogPage() {
                 <p>
                   Pick a variant per field:
                 </p>
-                <pre><code>{` + "`" + `{ key: "avatar", type: "file", accepts: ["image"], progress: "circular" }` + "`" + `}</code></pre>
+                <pre><code>{`{ key: "avatar", type: "file", accepts: ["image"], progress: "circular" }`}</code></pre>
                 <p>
                   The Default dropzone variant routes its uploading
                   state through the new <code>&lt;UploadProgress&gt;</code>{' '}

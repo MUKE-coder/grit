@@ -55,6 +55,7 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
   'concepts/batteries/batteries-overview': () => import('@/content/lessons/concepts/batteries/batteries-overview'),
   'concepts/batteries/redis-cache': () => import('@/content/lessons/concepts/batteries/redis-cache'),
   'concepts/batteries/s3-storage': () => import('@/content/lessons/concepts/batteries/s3-storage'),
+  'concepts/batteries/file-fields-and-excel': () => import('@/content/lessons/concepts/batteries/file-fields-and-excel'),
   'concepts/batteries/mail-resend': () => import('@/content/lessons/concepts/batteries/mail-resend'),
   'concepts/batteries/async-jobs': () => import('@/content/lessons/concepts/batteries/async-jobs'),
   'concepts/batteries/ai-integration': () => import('@/content/lessons/concepts/batteries/ai-integration'),

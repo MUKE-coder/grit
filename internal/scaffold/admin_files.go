@@ -279,6 +279,9 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "lib", "icons.ts"):        adminIconMap(),
 		filepath.Join(adminRoot, "lib", "formatters.ts"):   adminFormatters(),
 		filepath.Join(adminRoot, "lib", "file-accepts.ts"): adminFileAcceptsLib(),
+		// v3.31.35 — SheetJS-backed Excel/CSV/JSON helpers used by the
+		// export menu and import modal on every resource list page.
+		filepath.Join(adminRoot, "lib", "excel-utils.ts"):  adminExcelUtils(),
 
 		// Shared components
 		filepath.Join(adminRoot, "components", "shared", "providers.tsx"):      adminProviders(),
@@ -298,6 +301,11 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "tables", "table-filters.tsx"):    adminTableFilters(),
 		filepath.Join(adminRoot, "components", "tables", "table-toolbar.tsx"):    adminTableToolbar(),
 		filepath.Join(adminRoot, "components", "tables", "date-filter.tsx"):      adminDateFilter(),
+		// v3.31.35 — export menu (CSV/Excel/JSON dropdown with
+		// all-pages fetch) + import modal (drop file -> preview ->
+		// batched POST). Both client-side via SheetJS.
+		filepath.Join(adminRoot, "components", "tables", "export-menu.tsx"):      adminExportMenu(),
+		filepath.Join(adminRoot, "components", "tables", "import-modal.tsx"):     adminImportModal(),
 		filepath.Join(adminRoot, "components", "tables", "table-pagination.tsx"): adminTablePagination(),
 		filepath.Join(adminRoot, "components", "tables", "table-skeleton.tsx"):   adminTableSkeleton(),
 		filepath.Join(adminRoot, "components", "tables", "table-empty-state.tsx"): adminTableEmptyState(),

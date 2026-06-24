@@ -740,8 +740,10 @@ func adminTableToolbar() string {
 
 import { useState } from "react";
 import type { ResourceDefinition, ColumnDefinition } from "@/lib/resource";
-import { Search, Plus, Trash2, Download, Columns3 } from "@/lib/icons";
+import { Search, Plus, Trash2, Download, Upload, Columns3 } from "@/lib/icons";
 import { DateFilter, type DateRange } from "./date-filter";
+import { ExportMenu } from "./export-menu";
+import { exportToFile } from "@/lib/excel-utils";
 
 interface TableToolbarProps {
   resource: ResourceDefinition;
@@ -759,6 +761,13 @@ interface TableToolbarProps {
   // and stats queries.
   dateRange?: DateRange;
   onDateRangeChange?: (next: DateRange) => void;
+  // v3.31.35 — same URLSearchParams the list query uses, so the
+  // ExportMenu's all-pages loop applies the same filters/sort the
+  // user is looking at.
+  apiSearchParams?: URLSearchParams;
+  // v3.31.35 — opens the Excel import modal. Hidden when the
+  // resource opts out via table.import = false.
+  onImport?: () => void;
 }
 
 export function TableToolbar({
@@ -774,6 +783,8 @@ export function TableToolbar({
   data,
   dateRange,
   onDateRangeChange,
+  apiSearchParams,
+  onImport,
 }: TableToolbarProps) {
   const [columnsOpen, setColumnsOpen] = useState(false);
 
@@ -781,25 +792,16 @@ export function TableToolbar({
   const dateFilterCfg = resource.table.dateFilter;
   const showDateFilter = dateFilterCfg?.enabled !== false && onDateRangeChange;
 
-  const handleExport = (format: "csv" | "json") => {
+  // v3.31.35 — bulk Export still operates on the rows the user has
+  // selected, which by definition fit on the current page. Uses the
+  // visible columns so it matches the toolbar Export's behaviour.
+  const handleBulkExport = () => {
     if (!data || data.length === 0) return;
-
-    if (format === "json") {
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      downloadBlob(blob, ` + "`" + `${resource.slug}.json` + "`" + `);
-    } else {
-      const headers = allColumns.map((c) => c.label).join(",");
-      const rows = data.map((row) =>
-        allColumns.map((c) => {
-          const val = row[c.key];
-          return typeof val === "string" && val.includes(",") ? ` + "`" + `"${val}"` + "`" + ` : String(val ?? "");
-        }).join(",")
-      );
-      const csv = [headers, ...rows].join("\n");
-      const blob = new Blob([csv], { type: "text/csv" });
-      downloadBlob(blob, ` + "`" + `${resource.slug}.csv` + "`" + `);
-    }
+    const visible = allColumns.filter((c) => !hiddenColumns.includes(c.key));
+    exportToFile(data, visible, resource.slug, "csv");
   };
+
+  const visibleColumns = allColumns.filter((c) => !hiddenColumns.includes(c.key));
 
   return (
     <div className="flex flex-wrap items-center gap-3 border-b border-border p-4">
@@ -845,11 +847,11 @@ export function TableToolbar({
           )}
           {resource.table.bulkActions?.includes("export") && (
             <button
-              onClick={() => handleExport("csv")}
+              onClick={handleBulkExport}
               className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-hover transition-colors"
             >
               <Download className="h-3.5 w-3.5" />
-              Export
+              Export selection
             </button>
           )}
         </div>
@@ -888,15 +890,28 @@ export function TableToolbar({
         )}
       </div>
 
-      {/* Export */}
-      {resource.table.actions?.includes("export") && (
+      {/* v3.31.35 — Excel import button. Hidden when the resource
+          opts out via table.import = false. */}
+      {onImport && resource.table.import !== false && (
         <button
-          onClick={() => handleExport("csv")}
+          onClick={onImport}
           className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-hover transition-colors"
+          title="Import from Excel"
         >
-          <Download className="h-3.5 w-3.5" />
-          Export
+          <Upload className="h-3.5 w-3.5" />
+          Import
         </button>
+      )}
+
+      {/* v3.31.35 — Export menu (CSV / Excel / JSON). Replaces the
+          v3.31.34 one-shot CSV button. Hidden when table.export = false. */}
+      {apiSearchParams && (
+        <ExportMenu
+          resource={resource}
+          columns={visibleColumns}
+          currentPageData={data}
+          apiSearchParams={apiSearchParams}
+        />
       )}
 
       {/* Create button */}
@@ -911,15 +926,6 @@ export function TableToolbar({
       )}
     </div>
   );
-}
-
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 `
 }

@@ -653,6 +653,15 @@ const conceptsCourse: Course = {
               difficulty: 'medium',
               status: 'available',
             },
+            {
+              slug: 'file-fields-and-excel',
+              title: 'File fields + Excel I/O',
+              tagline:
+                ':file: / :files: syntax, lifecycle helpers that stop bucket leaks, dropzone variants, and the v3.31.35 client-side Excel import/export.',
+              minutes: 11,
+              difficulty: 'medium',
+              status: 'available',
+            },
           ],
         },
         {
