@@ -2632,6 +2632,15 @@ type Params struct {
 	SortOrder string
 	Cursor    string // opaque base64 from a previous Result.Meta.NextCursor
 	Filters   map[string]any
+
+	// v3.31.34 — date filter. DateField is the column (default
+	// "created_at"); DateFrom/DateTo are inclusive bounds. When both
+	// are zero values, no date filter is applied. Set via the
+	// ?created_from=/?created_to= query params (or the legacy
+	// ?created_since=Nd shortcut used by the stat cards).
+	DateField string
+	DateFrom  time.Time
+	DateTo    time.Time
 }
 
 // With returns a copy of Params with an additional filter applied.
@@ -2699,6 +2708,14 @@ type Result[T any] struct {
 
 // Bind reads page / page_size / search / sort_by / sort_order from the Gin
 // context, clamps them, and returns a normalized Params.
+//
+// v3.31.34 — also parses the date-filter query params:
+//   ?created_from=2026-01-01&created_to=2026-12-31
+//   ?created_since=7d   (legacy shortcut: last 7 days)
+//   ?date_field=published_at   (override the default "created_at" column)
+//
+// Both _from and _to are inclusive. Dates without time components are
+// snapped to the start (00:00) for _from and end (23:59:59) for _to.
 func Bind(c *gin.Context) Params {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", strconv.Itoa(DefaultPage)))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", strconv.Itoa(DefaultPageSize)))
@@ -2710,6 +2727,12 @@ func Bind(c *gin.Context) Params {
 		pageSize = DefaultPageSize
 	}
 
+	dateField := c.Query("date_field")
+	if dateField == "" {
+		dateField = "created_at"
+	}
+	dateFrom, dateTo := parseDateRange(c)
+
 	return Params{
 		Page:      page,
 		PageSize:  pageSize,
@@ -2717,7 +2740,81 @@ func Bind(c *gin.Context) Params {
 		SortBy:    c.Query("sort_by"),
 		SortOrder: c.Query("sort_order"),
 		Cursor:    c.Query("cursor"),
+		DateField: dateField,
+		DateFrom:  dateFrom,
+		DateTo:    dateTo,
 	}
+}
+
+// parseDateRange reads the three supported date-window query params and
+// returns the resolved (from, to) bounds. Zero values mean "no bound".
+//
+// Precedence: explicit created_from/created_to wins over created_since.
+// This lets a UI date picker override a stat card's "last 7 days" link
+// without surprising clobber.
+func parseDateRange(c *gin.Context) (time.Time, time.Time) {
+	var from, to time.Time
+	if since := c.Query("created_since"); since != "" {
+		if d, ok := parseRelativeDuration(since); ok {
+			from = time.Now().Add(-d)
+		}
+	}
+	if s := c.Query("created_from"); s != "" {
+		if t, err := parseDateInput(s, false); err == nil {
+			from = t
+		}
+	}
+	if s := c.Query("created_to"); s != "" {
+		if t, err := parseDateInput(s, true); err == nil {
+			to = t
+		}
+	}
+	return from, to
+}
+
+// parseRelativeDuration parses "7d", "30d", "12h", "1w" into a
+// time.Duration. Used by the stat-card shortcut ?created_since=7d so
+// hand-written URLs stay short. Returns ok=false on unrecognised input
+// (caller falls back to no bound rather than failing the request).
+func parseRelativeDuration(s string) (time.Duration, bool) {
+	if len(s) < 2 {
+		return 0, false
+	}
+	unit := s[len(s)-1]
+	nStr := s[:len(s)-1]
+	n, err := strconv.Atoi(nStr)
+	if err != nil || n < 0 {
+		return 0, false
+	}
+	switch unit {
+	case 'h':
+		return time.Duration(n) * time.Hour, true
+	case 'd':
+		return time.Duration(n) * 24 * time.Hour, true
+	case 'w':
+		return time.Duration(n) * 7 * 24 * time.Hour, true
+	case 'm':
+		// month = 30 days. Good enough for stats; calendar-accurate
+		// month math isn't worth the dep.
+		return time.Duration(n) * 30 * 24 * time.Hour, true
+	}
+	return 0, false
+}
+
+// parseDateInput parses an ISO date or datetime string. If endOfDay is
+// true and the input is a bare date, it snaps to 23:59:59.999 so the
+// _to bound is inclusive of the whole day the user picked.
+func parseDateInput(s string, endOfDay bool) (time.Time, error) {
+	if t, err := time.Parse(time.RFC3339, s); err == nil {
+		return t, nil
+	}
+	if t, err := time.Parse("2006-01-02", s); err == nil {
+		if endOfDay {
+			return t.Add(24*time.Hour - time.Nanosecond), nil
+		}
+		return t, nil
+	}
+	return time.Time{}, fmt.Errorf("invalid date %q", s)
 }
 
 // List runs the query with search / sort / filters / pagination applied and
@@ -2751,6 +2848,17 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 	// Apply equality filters (e.g. ?status=active&building_id=...).
 	for col, val := range p.Filters {
 		query = query.Where(col+" = ?", val)
+	}
+
+	// v3.31.34 — date-window filter. DateField defaults to "created_at"
+	// in Bind() so we only need to apply when at least one bound is set.
+	// Quoted with backticks so reserved-word column names (e.g. "order"
+	// has none, but defensive) don't blow up on Postgres.
+	if !p.DateFrom.IsZero() {
+		query = query.Where(p.DateField+" >= ?", p.DateFrom)
+	}
+	if !p.DateTo.IsZero() {
+		query = query.Where(p.DateField+" <= ?", p.DateTo)
 	}
 
 	// Apply search across configured columns.

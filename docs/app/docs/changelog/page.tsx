@@ -28,6 +28,114 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.34 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.34
+                </span>
+                <span className="text-sm text-muted-foreground">June 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Date filter end-to-end + stats now actually
+                  reflect the filtered window.</strong> Begins the
+                  data ops arc and fixes a latent bug where{' '}
+                  &quot;This Week&quot; / &quot;This Month&quot; stat
+                  cards were showing the total count instead of the
+                  windowed count.
+                </p>
+
+                <h3>The latent stats bug</h3>
+                <p>
+                  Auto-default stat cards have been emitting endpoints
+                  like{' '}
+                  <code>/api/products?page_size=1&amp;created_since=7d</code>{' '}
+                  for a while, but the API ignored{' '}
+                  <code>created_since</code> — so the &quot;This
+                  Week&quot; card returned the same total as the
+                  &quot;Total&quot; card. v3.31.34 makes the backend
+                  honour the param.
+                </p>
+
+                <h3>Server-side (paginate package)</h3>
+                <p>
+                  <code>Bind(c)</code> now parses four query params:
+                </p>
+                <ul>
+                  <li><code>?created_from=2026-01-01</code> — inclusive lower bound</li>
+                  <li><code>?created_to=2026-12-31</code> — inclusive upper (snapped to 23:59:59.999)</li>
+                  <li><code>?created_since=7d</code> — relative shortcut (h / d / w / m units)</li>
+                  <li><code>?date_field=published_at</code> — override the default <code>created_at</code> target column</li>
+                </ul>
+                <p>
+                  Explicit <code>created_from</code> /{' '}
+                  <code>created_to</code> win over{' '}
+                  <code>created_since</code> so a stat-card link
+                  doesn&apos;t clobber a user&apos;s picked range.
+                  Applied as a single WHERE clause in{' '}
+                  <code>List[T]</code>; both offset and cursor
+                  pagination paths inherit.
+                </p>
+
+                <h3>Resource def</h3>
+                <pre><code>{` + "`" + `table: {
+  dateFilter: { enabled: true, field: 'created_at', label: 'Created' }
+}` + "`" + `}</code></pre>
+                <p>
+                  Enabled by default. Set <code>enabled: false</code>{' '}
+                  to hide. Override <code>field</code> for resources
+                  where the meaningful date isn&apos;t{' '}
+                  <code>created_at</code> (e.g. a <code>Booking</code>{' '}
+                  resource filtering by <code>scheduled_for</code>).
+                </p>
+
+                <h3>DateFilter component</h3>
+                <p>
+                  New <code>&lt;DateFilter&gt;</code> in{' '}
+                  <code>components/tables/date-filter.tsx</code>:
+                </p>
+                <ul>
+                  <li>Four presets — Today, Last 7 days, Last 30 days, This month</li>
+                  <li>Custom range with two date inputs + Apply button</li>
+                  <li>Active state shows the current selection as a toolbar pill; X clears</li>
+                  <li>Close-on-outside-click popover</li>
+                  <li>URL-persisted via <code>?date=preset</code> + <code>?date_from</code> / <code>?date_to</code> so refresh + shared links rehydrate</li>
+                </ul>
+
+                <h3>Stats reflect the filter</h3>
+                <p>
+                  When the user picks a date range,{' '}
+                  <code>ResourceListView</code> appends the resolved
+                  query params to every stat card&apos;s endpoint. The
+                  card labels stay fixed (&quot;Total&quot;, &quot;This
+                  Week&quot;, etc.) but their numbers now match the
+                  table below. No more &quot;Total: 10,000; list shows
+                  142&quot; mismatch.
+                </p>
+
+                <h3>Migration</h3>
+                <p>
+                  Four files refreshed:{' '}
+                  <code>apps/api/internal/paginate/paginate.go</code>,{' '}
+                  <code>apps/admin/components/tables/table-toolbar.tsx</code>,{' '}
+                  <code>apps/admin/components/resource/resource-page.tsx</code>,{' '}
+                  <code>apps/admin/hooks/use-resource.ts</code>,
+                  plus the new{' '}
+                  <code>apps/admin/components/tables/date-filter.tsx</code>.
+                </p>
+
+                <h3>Coming next</h3>
+                <p>
+                  v3.31.35: Excel import + async cutoff for export
+                  (&gt;5000 rows = asynq job + Resend email) +
+                  per-resource opt-out. v3.31.36: PDF export via{' '}
+                  @react-pdf/renderer.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.33 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

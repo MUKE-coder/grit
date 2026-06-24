@@ -297,6 +297,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "tables", "stacked-cell.tsx"):     adminStackedCell(),
 		filepath.Join(adminRoot, "components", "tables", "table-filters.tsx"):    adminTableFilters(),
 		filepath.Join(adminRoot, "components", "tables", "table-toolbar.tsx"):    adminTableToolbar(),
+		filepath.Join(adminRoot, "components", "tables", "date-filter.tsx"):      adminDateFilter(),
 		filepath.Join(adminRoot, "components", "tables", "table-pagination.tsx"): adminTablePagination(),
 		filepath.Join(adminRoot, "components", "tables", "table-skeleton.tsx"):   adminTableSkeleton(),
 		filepath.Join(adminRoot, "components", "tables", "table-empty-state.tsx"): adminTableEmptyState(),

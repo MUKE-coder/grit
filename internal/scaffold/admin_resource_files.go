@@ -67,6 +67,15 @@ export interface TableDefinition {
   bulkActions?: BulkAction[];
   defaultSort?: { key: string; direction: "asc" | "desc" };
   pageSize?: number;
+  // v3.31.34 — date-window filter on this resource's list page.
+  // Defaults to enabled with field="created_at", label="Created".
+  // Set enabled:false to hide; override field to filter on a domain
+  // column (e.g. "scheduled_for" for a Booking resource).
+  dateFilter?: {
+    enabled?: boolean;
+    field?: string;
+    label?: string;
+  };
 }
 
 // ─── Form Field Definitions ─────────────────────────────────────────
@@ -450,7 +459,7 @@ func adminResourcePage() string {
 	return `"use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname, type ReadonlyURLSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { ResourceDefinition } from "@/lib/resource";
 import { useResource, useDeleteResource, useBulkDeleteResource } from "@/hooks/use-resource";
@@ -459,6 +468,49 @@ import { DataTable } from "@/components/tables/data-table";
 import { TableToolbar } from "@/components/tables/table-toolbar";
 import { TablePagination } from "@/components/tables/table-pagination";
 import { TableFilters } from "@/components/tables/table-filters";
+import { dateRangeToQueryParams, type DateRange } from "@/components/tables/date-filter";
+
+// v3.31.34 -- read date filter state from URL search params so a
+// refresh or shared link rehydrates the same view.
+function readDateRangeFromURL(sp: ReadonlyURLSearchParams | null): DateRange {
+  if (!sp) return {};
+  const preset = sp.get("date") as DateRange["preset"] | null;
+  if (preset === "custom") {
+    return {
+      preset: "custom",
+      from: sp.get("date_from") ?? undefined,
+      to: sp.get("date_to") ?? undefined,
+    };
+  }
+  if (preset === "today" || preset === "7d" || preset === "30d" || preset === "month") {
+    return { preset };
+  }
+  return {};
+}
+
+// writeDateRangeToURL pushes the new range into the address bar
+// without a full navigation -- replace, not push, so the browser back
+// button isn't polluted with one entry per filter tweak.
+function writeDateRangeToURL(
+  router: ReturnType<typeof useRouter>,
+  pathname: string,
+  current: ReadonlyURLSearchParams | null,
+  range: DateRange,
+) {
+  const params = new URLSearchParams(current?.toString() ?? "");
+  params.delete("date");
+  params.delete("date_from");
+  params.delete("date_to");
+  if (range.preset) {
+    params.set("date", range.preset);
+    if (range.preset === "custom") {
+      if (range.from) params.set("date_from", range.from);
+      if (range.to) params.set("date_to", range.to);
+    }
+  }
+  const qs = params.toString();
+  router.replace(qs ? pathname + "?" + qs : pathname, { scroll: false });
+}
 
 // Lazy-load modal/form components — they are only shown conditionally and
 // would otherwise inflate the initial page bundle for every admin resource.
@@ -525,6 +577,8 @@ export function ResourcePage({ resource }: ResourcePageProps) {
 
 function ResourceListView({ resource }: ResourcePageProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isFormPage = resource.formView === "page" || resource.formView === "page-steps";
   const isSteps = resource.formView === "modal-steps" || resource.formView === "page-steps";
 
@@ -538,6 +592,17 @@ function ResourceListView({ resource }: ResourcePageProps) {
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
+
+  // v3.31.34 — date-window filter state, URL-persisted via the
+  // ?date=preset and ?date_from/date_to search params so a refresh or
+  // shared link rehydrates the same view.
+  const [dateRange, setDateRangeState] = useState<DateRange>(() => readDateRangeFromURL(searchParams));
+  const dateParams = useMemo(() => dateRangeToQueryParams(dateRange), [dateRange]);
+  const setDateRange = useCallback((next: DateRange) => {
+    setDateRangeState(next);
+    writeDateRangeToURL(router, pathname, searchParams, next);
+    setPage(1);
+  }, [router, pathname, searchParams]);
 
   // Form modal state
   const [formOpen, setFormOpen] = useState(false);
@@ -559,6 +624,8 @@ function ResourceListView({ resource }: ResourcePageProps) {
     sortBy,
     sortOrder,
     filters,
+    dateParams,
+    dateField: resource.table.dateFilter?.field,
   });
 
   const { mutate: deleteItem, isPending: isDeleting } = useDeleteResource(resource.endpoint);
@@ -673,6 +740,23 @@ function ResourceListView({ resource }: ResourcePageProps) {
 
   const statsCards: StatCard[] | undefined = useMemo(() => {
     if (!statsEnabled) return undefined;
+
+    // v3.31.34 — when the user picks a date range in the toolbar,
+    // append it to every stat card's endpoint so stats track the
+    // active filter (otherwise the "Total" card would say 10,000
+    // while the table below shows 142 in-range matches -- misleading).
+    // Returns a copy of cards with dateParams baked into each
+    // endpoint URL.
+    const applyDateParams = (cards: StatCard[]): StatCard[] => {
+      if (Object.keys(dateParams).length === 0) return cards;
+      return cards.map((card) => {
+        if (!card.endpoint) return card;
+        const sep = card.endpoint.includes("?") ? "&" : "?";
+        const qs = new URLSearchParams(dateParams).toString();
+        return { ...card, endpoint: card.endpoint + sep + qs };
+      });
+    };
+
     // Explicit cards override auto-defaults
     if (
       typeof statsConfig === "object" &&
@@ -680,17 +764,18 @@ function ResourceListView({ resource }: ResourcePageProps) {
       Array.isArray(statsConfig.cards) &&
       statsConfig.cards.length > 0
     ) {
-      return statsConfig.cards;
+      return applyDateParams(statsConfig.cards);
     }
     // Auto-defaults: 4 cards based on the resource endpoint
     const ep = resource.endpoint;
-    return [
+    const defaults: StatCard[] = [
       { label: "Total", endpoint: ` + "`" + `${ep}?page_size=1` + "`" + `, field: "meta.total", icon: resource.icon || "Package" },
       { label: "This Week", endpoint: ` + "`" + `${ep}?page_size=1&created_since=7d` + "`" + `, field: "meta.total", icon: "TrendingUp", color: "success" },
       { label: "This Month", endpoint: ` + "`" + `${ep}?page_size=1&created_since=30d` + "`" + `, field: "meta.total", icon: "Calendar", color: "info" },
       { label: "Updated Recently", endpoint: ` + "`" + `${ep}?page_size=1&updated_since=7d` + "`" + `, field: "meta.total", icon: "RefreshCw" },
     ];
-  }, [statsEnabled, statsConfig, resource.endpoint, resource.icon]);
+    return applyDateParams(defaults);
+  }, [statsEnabled, statsConfig, resource.endpoint, resource.icon, dateParams]);
 
   const headerActions = actions.includes("create") ? (
     <button
@@ -727,6 +812,8 @@ function ResourceListView({ resource }: ResourcePageProps) {
             )
           }
           data={data?.data}
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
         />
 
         {resource.table.filters && resource.table.filters.length > 0 && (
@@ -849,6 +936,11 @@ interface ResourceQueryParams {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   filters?: Record<string, string>;
+  // v3.31.34 — date-window filter. dateParams comes from
+  // dateRangeToQueryParams(); dateField overrides the server's
+  // default "created_at" target column when set.
+  dateParams?: Record<string, string>;
+  dateField?: string;
 }
 
 interface PaginatedResponse<T = Record<string, unknown>> {
@@ -865,10 +957,12 @@ export function useResource<T = Record<string, unknown>>(
   endpoint: string,
   params: ResourceQueryParams = {}
 ) {
-  const { page = 1, pageSize = 20, search, sortBy, sortOrder, filters } = params;
+  const { page = 1, pageSize = 20, search, sortBy, sortOrder, filters, dateParams, dateField } = params;
 
   return useQuery<PaginatedResponse<T>>({
-    queryKey: [endpoint, { page, pageSize, search, sortBy, sortOrder, filters }],
+    // v3.31.34: dateParams + dateField included in key so a date
+    // filter change invalidates the cache and the list refetches.
+    queryKey: [endpoint, { page, pageSize, search, sortBy, sortOrder, filters, dateParams, dateField }],
     queryFn: async () => {
       const searchParams = new URLSearchParams({
         page: String(page),
@@ -884,6 +978,14 @@ export function useResource<T = Record<string, unknown>>(
         Object.entries(filters).forEach(([key, value]) => {
           if (value) searchParams.set(key, value);
         });
+      }
+      if (dateParams) {
+        Object.entries(dateParams).forEach(([key, value]) => {
+          if (value) searchParams.set(key, value);
+        });
+      }
+      if (dateField && dateField !== "created_at") {
+        searchParams.set("date_field", dateField);
       }
 
       const { data } = await apiClient.get(` + "`" + `${endpoint}?${searchParams}` + "`" + `);

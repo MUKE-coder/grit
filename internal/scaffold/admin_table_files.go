@@ -741,6 +741,7 @@ func adminTableToolbar() string {
 import { useState } from "react";
 import type { ResourceDefinition, ColumnDefinition } from "@/lib/resource";
 import { Search, Plus, Trash2, Download, Columns3 } from "@/lib/icons";
+import { DateFilter, type DateRange } from "./date-filter";
 
 interface TableToolbarProps {
   resource: ResourceDefinition;
@@ -753,6 +754,11 @@ interface TableToolbarProps {
   hiddenColumns: string[];
   onToggleColumn: (key: string) => void;
   data?: Record<string, unknown>[];
+  // v3.31.34 — date filter state lifted from the parent page so
+  // it can persist to URL search params and feed both the list
+  // and stats queries.
+  dateRange?: DateRange;
+  onDateRangeChange?: (next: DateRange) => void;
 }
 
 export function TableToolbar({
@@ -766,8 +772,14 @@ export function TableToolbar({
   hiddenColumns,
   onToggleColumn,
   data,
+  dateRange,
+  onDateRangeChange,
 }: TableToolbarProps) {
   const [columnsOpen, setColumnsOpen] = useState(false);
+
+  // Date filter is on by default; opt-out via { enabled: false }.
+  const dateFilterCfg = resource.table.dateFilter;
+  const showDateFilter = dateFilterCfg?.enabled !== false && onDateRangeChange;
 
   const handleExport = (format: "csv" | "json") => {
     if (!data || data.length === 0) return;
@@ -803,6 +815,15 @@ export function TableToolbar({
             className="w-48 bg-transparent text-sm text-foreground placeholder:text-text-muted focus:outline-none"
           />
         </div>
+      )}
+
+      {/* v3.31.34 — date-window filter */}
+      {showDateFilter && (
+        <DateFilter
+          value={dateRange ?? {}}
+          onChange={onDateRangeChange!}
+          label={dateFilterCfg?.label ?? "Created"}
+        />
       )}
 
       <div className="flex-1" />
