@@ -348,6 +348,7 @@ function CompactVariant({
   isDragActive,
   uploading,
   uploadProgress,
+  progress,
   files,
   removeFile,
   maxSize,
@@ -363,22 +364,10 @@ function CompactVariant({
         } ${uploading ? "opacity-60 cursor-not-allowed" : ""}` + "`" + `}
       >
         <input {...getInputProps()} />
-        {uploading ? (
-          <Loader2 className="h-5 w-5 animate-spin text-accent shrink-0" />
-        ) : (
-          <Upload className="h-5 w-5 text-text-muted shrink-0" />
-        )}
+        {!uploading && <Upload className="h-5 w-5 text-text-muted shrink-0" />}
         <div className="flex-1 min-w-0">
           {uploading ? (
-            <div className="flex items-center gap-2">
-              <div className="flex-1 h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-accent rounded-full transition-all"
-                  style={{ width: ` + "`" + `${uploadProgress}%` + "`" + ` }}
-                />
-              </div>
-              <span className="text-xs text-text-muted">{uploadProgress}%</span>
-            </div>
+            <UploadProgress variant={progress} percent={uploadProgress} />
           ) : (
             <p className="text-sm text-text-secondary">
               {isDragActive ? "Drop here..." : ` + "`" + `Drop files or click to browse (max ${formatSize(maxSize)})` + "`" + `}

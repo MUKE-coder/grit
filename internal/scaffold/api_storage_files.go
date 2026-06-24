@@ -494,6 +494,54 @@ func (h *UploadHandler) Create(c *gin.Context) {
 	})
 }
 
+// Stats returns aggregate storage usage across the uploads table.
+// Surfaces total count, total bytes, and a per-kind breakdown
+// (image / video / audio / document / other) so the storage admin
+// page can show usage at a glance. v3.31.32.
+func (h *UploadHandler) Stats(c *gin.Context) {
+	type kindRow struct {
+		Kind  string ` + "`gorm:\"column:kind\" json:\"kind\"`" + `
+		Count int64  ` + "`gorm:\"column:count\" json:\"count\"`" + `
+		Size  int64  ` + "`gorm:\"column:size\" json:\"size\"`" + `
+	}
+
+	var total int64
+	if err := h.DB.Model(&models.Upload{}).Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to compute stats"},
+		})
+		return
+	}
+
+	var totalSize int64
+	h.DB.Model(&models.Upload{}).Select("COALESCE(SUM(size), 0)").Scan(&totalSize)
+
+	// Bucket by MIME kind. SUBSTR + CASE in raw SQL keeps this a single
+	// scan regardless of DB engine (works on Postgres + SQLite).
+	rows := []kindRow{}
+	bucketExpr := ` + "`" + `CASE
+		WHEN mime_type LIKE 'image/%' THEN 'image'
+		WHEN mime_type LIKE 'video/%' THEN 'video'
+		WHEN mime_type LIKE 'audio/%' THEN 'audio'
+		WHEN mime_type = 'application/pdf' THEN 'pdf'
+		WHEN mime_type LIKE '%spreadsheet%' OR mime_type LIKE '%excel%' OR mime_type = 'text/csv' THEN 'spreadsheet'
+		WHEN mime_type LIKE '%wordprocessing%' OR mime_type = 'application/msword' THEN 'document'
+		ELSE 'other'
+	END` + "`" + `
+	h.DB.Model(&models.Upload{}).
+		Select(bucketExpr+" AS kind, COUNT(*) AS count, COALESCE(SUM(size), 0) AS size").
+		Group("kind").
+		Scan(&rows)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"total_count": total,
+			"total_size":  totalSize,
+			"by_kind":     rows,
+		},
+	})
+}
+
 // List returns a paginated list of uploads.
 func (h *UploadHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))

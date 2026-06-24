@@ -6534,6 +6534,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		protected.POST("/uploads/presign", uploadHandler.Presign)
 		protected.POST("/uploads/complete", uploadHandler.CompleteUpload)
 		protected.GET("/uploads", uploadHandler.List)
+		protected.GET("/uploads/stats", uploadHandler.Stats)
 		protected.GET("/uploads/:id", uploadHandler.GetByID)
 		protected.DELETE("/uploads/:id", uploadHandler.Delete)
 

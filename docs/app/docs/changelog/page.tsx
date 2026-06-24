@@ -28,6 +28,94 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.32 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.32
+                </span>
+                <span className="text-sm text-muted-foreground">June 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Storage admin page surfaces FileRef
+                  totals.</strong> The original Files page was a flat
+                  uploads grid — useful for browsing but offered no
+                  sense of how much storage you were actually using,
+                  or what was eating it.
+                </p>
+
+                <h3>New API endpoint</h3>
+                <p>
+                  <code>GET /api/uploads/stats</code> returns:
+                </p>
+                <ul>
+                  <li>
+                    <code>total_count</code> — how many uploads
+                  </li>
+                  <li>
+                    <code>total_size</code> — sum of bytes
+                  </li>
+                  <li>
+                    <code>by_kind</code> — count + size grouped by
+                    MIME bucket (image / video / audio / pdf /
+                    document / spreadsheet / other). Single SQL
+                    GROUP BY with portable CASE expression — works on
+                    Postgres and SQLite without engine-specific JSON
+                    functions.
+                  </li>
+                </ul>
+
+                <h3>Storage stats panel</h3>
+                <p>
+                  The Files admin page now shows three big numbers up
+                  top (Total files / Total storage / Avg file size),
+                  then a per-kind breakdown with proportional progress
+                  bars sorted by largest consumer. Image-heavy
+                  projects can see at a glance whether to migrate to a
+                  CDN; CSV-heavy projects can spot a runaway export
+                  pipeline.
+                </p>
+
+                <h3>Dropzone variant standardisation</h3>
+                <p>
+                  Default + Compact variants now route their uploading
+                  state through the unified{' '}
+                  <code>&lt;UploadProgress&gt;</code> component so the
+                  per-field <code>progress</code> prop (bar / circular
+                  / pulse) actually takes effect on both. Minimal,
+                  Avatar, and Inline variants are space-constrained
+                  by design and keep their bespoke single-spinner
+                  treatment.
+                </p>
+
+                <h3>Migration</h3>
+                <p>
+                  Three files refreshed:{' '}
+                  <code>apps/api/internal/handlers/upload.go</code>{' '}
+                  (Stats handler),{' '}
+                  <code>apps/api/internal/routes.go</code> (new route),{' '}
+                  <code>apps/admin/app/(dashboard)/system/files/page.tsx</code>{' '}
+                  (stats panel) and{' '}
+                  <code>apps/admin/hooks/use-system.ts</code>{' '}
+                  (useUploadStats hook). Re-run{' '}
+                  <code>grit generate resource</code> for any resource
+                  to pull the updates.
+                </p>
+
+                <h3>Coming next</h3>
+                <p>
+                  v3.31.33 ships the file lifecycle work: immediate
+                  S3 delete when a record swaps its file, plus a
+                  daily orphan-cleanup cron that purges Upload rows
+                  whose key is referenced nowhere. v3.31.34 begins
+                  the data ops arc — date filter, Excel
+                  import/export, PDF render via @react-pdf/renderer.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.31 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
