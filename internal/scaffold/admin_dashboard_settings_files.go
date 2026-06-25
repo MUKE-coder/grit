@@ -154,6 +154,13 @@ export function groupByModule(widgets: CatalogWidget[]): Map<string, CatalogWidg
 // JSON. The 'id' field is the signal we use to distinguish "user
 // has never customised" (id === "") from "user customised and chose
 // to hide everything of this kind" (id !== "", arrays empty).
+// v3.31.46 -- layout options for the per-resource "By resource"
+// band. "split" keeps the v3.31.44 default (Total ~33% on the left,
+// Latest ~67% on the right). "tabs" puts each widget in its own
+// full-width tab inside a tabbed container so the Latest table
+// gets the full row width when it's the focus.
+export type ResourceLayoutMode = "split" | "tabs";
+
 export interface SavedLayout {
   id: string;
   user_id: string;
@@ -168,6 +175,11 @@ export interface SavedLayout {
   // "tables", "by-resource". Empty array = use the built-in default.
   // Unknown keys are silently dropped at render time.
   section_order: string[];
+  // v3.31.46 -- per-resource layout mode for the "By resource" band.
+  // Keys are resource slugs; missing entries default to "split". Only
+  // non-default choices need to be persisted, so most resources stay
+  // absent from this map.
+  resource_layouts: Record<string, ResourceLayoutMode>;
   date_preset: string;
 }
 
@@ -193,6 +205,19 @@ export function resolveSectionOrder(layout: SavedLayout | undefined | null): Das
   if (saved.length === 0) return [...DEFAULT_SECTION_ORDER];
   const missing = DEFAULT_SECTION_ORDER.filter((k) => !saved.includes(k));
   return [...saved, ...missing];
+}
+
+// v3.31.46 -- resolveResourceLayout returns the layout mode for one
+// resource slug. Falls back to "split" when the map is empty or the
+// slug isn't present. Defensive: an unknown stored value (shouldn't
+// happen since the API validates) falls back too.
+export function resolveResourceLayout(
+  layout: SavedLayout | undefined | null,
+  slug: string,
+): ResourceLayoutMode {
+  const v = layout?.resource_layouts?.[slug];
+  if (v === "split" || v === "tabs") return v;
+  return "split";
 }
 
 // resolveEnabledKeys returns a Set of widget keys enabled for the
@@ -268,6 +293,9 @@ export function useSaveDashboardLayout() {
       // omitted the API treats them as empty.
       resources?: string[];
       section_order?: string[];
+      // v3.31.46 -- per-resource layout map. Keys are slugs; values
+      // are "split" (default, can be omitted) or "tabs".
+      resource_layouts?: Record<string, "split" | "tabs">;
       date_preset: string;
     }) => {
       const { data } = await apiClient.put<{ data: SavedLayout }>(
@@ -313,7 +341,9 @@ import {
   DEFAULT_SECTION_ORDER,
   type CatalogWidget,
   type DashboardSection,
+  type ResourceLayoutMode,
 } from "@/lib/dashboard-catalog";
+import type { ResourceDefinition } from "@/lib/resource";
 import {
   useDashboardLayout,
   useSaveDashboardLayout,
@@ -341,6 +371,9 @@ export default function DashboardSettingsPage() {
   const [tables, setTables] = useState<Set<string>>(new Set());
   const [resourceWidgets, setResourceWidgets] = useState<Set<string>>(new Set());
   const [sectionOrder, setSectionOrder] = useState<DashboardSection[]>([...DEFAULT_SECTION_ORDER]);
+  // v3.31.46 -- per-resource layout mode. Only non-default ("tabs")
+  // entries are persisted; missing slugs fall back to "split".
+  const [resourceLayouts, setResourceLayouts] = useState<Record<string, ResourceLayoutMode>>({});
   const [datePreset, setDatePreset] = useState<string>("");
 
   useEffect(() => {
@@ -350,6 +383,7 @@ export default function DashboardSettingsPage() {
     setTables(resolveEnabledKeys(layout, "table", catalog));
     setResourceWidgets(resolveEnabledKeys(layout, "resource", catalog));
     setSectionOrder(resolveSectionOrder(layout));
+    setResourceLayouts(layout?.resource_layouts ?? {});
     setDatePreset(layout?.date_preset ?? "");
   }, [layout, isLoading, catalog]);
 
@@ -374,6 +408,16 @@ export default function DashboardSettingsPage() {
   };
   const resetOrder = () => setSectionOrder([...DEFAULT_SECTION_ORDER]);
 
+  // v3.31.46 -- drop "split" entries before save. Split is the
+  // default; storing it explicitly just bloats the row.
+  const compactedLayouts = (): Record<string, ResourceLayoutMode> => {
+    const out: Record<string, ResourceLayoutMode> = {};
+    for (const [k, v] of Object.entries(resourceLayouts)) {
+      if (v === "tabs") out[k] = v;
+    }
+    return out;
+  };
+
   const handleSave = () => {
     save.mutate({
       cards: Array.from(cards),
@@ -381,6 +425,7 @@ export default function DashboardSettingsPage() {
       tables: Array.from(tables),
       resources: Array.from(resourceWidgets),
       section_order: sectionOrder,
+      resource_layouts: compactedLayouts(),
       date_preset: datePreset,
     });
   };
@@ -447,6 +492,12 @@ export default function DashboardSettingsPage() {
             widgets={resourceList}
             enabled={resourceWidgets}
             onChange={setResourceWidgets}
+          />
+          <ResourceLayoutPanel
+            resources={resources}
+            enabled={resourceWidgets}
+            layouts={resourceLayouts}
+            onChange={setResourceLayouts}
           />
         </div>
       )}
@@ -518,6 +569,102 @@ function SectionOrderPanel({ order, onMove, onReset }: SectionOrderPanelProps) {
           );
         })}
       </ol>
+    </section>
+  );
+}
+
+// v3.31.46 -- per-resource layout picker. Lists each resource that
+// has at least one By-Resource widget enabled and lets the user
+// choose Split (Total + Latest side-by-side, the v3.31.44 default)
+// or Tabs (each widget full-width in its own tab). Resources with
+// neither widget enabled are filtered out -- the choice would be
+// invisible on the dashboard anyway.
+interface ResourceLayoutPanelProps {
+  resources: ResourceDefinition[];
+  enabled: Set<string>;
+  layouts: Record<string, ResourceLayoutMode>;
+  onChange: (next: Record<string, ResourceLayoutMode>) => void;
+}
+
+function ResourceLayoutPanel({ resources, enabled, layouts, onChange }: ResourceLayoutPanelProps) {
+  const visible = resources.filter(
+    (r) =>
+      r.dashboard?.enabled !== false &&
+      (enabled.has(r.slug + ":total") || enabled.has(r.slug + ":latest")),
+  );
+
+  const setLayout = (slug: string, mode: ResourceLayoutMode) => {
+    onChange({ ...layouts, [slug]: mode });
+  };
+
+  if (visible.length === 0) {
+    return (
+      <section className="rounded-xl border border-border bg-bg-elevated">
+        <header className="border-b border-border px-5 py-4">
+          <h2 className="text-sm font-semibold text-foreground">Resource layout</h2>
+          <p className="text-xs text-text-muted">
+            Enable at least one By Resource widget above to choose how each resource lays out on the dashboard.
+          </p>
+        </header>
+        <p className="px-5 py-10 text-center text-sm text-text-muted">
+          No resources have widgets enabled yet.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-xl border border-border bg-bg-elevated">
+      <header className="border-b border-border px-5 py-4">
+        <h2 className="text-sm font-semibold text-foreground">Resource layout</h2>
+        <p className="text-xs text-text-muted">
+          Split puts the Total stat and Latest table side-by-side (33/67). Tabs puts each in its own full-width tab.
+        </p>
+      </header>
+      <ul className="divide-y divide-border">
+        {visible.map((r) => {
+          const mode: ResourceLayoutMode = layouts[r.slug] === "tabs" ? "tabs" : "split";
+          const Icon = getIcon(r.icon);
+          const label = r.label?.plural ?? r.name;
+          return (
+            <li key={r.slug} className="flex items-center gap-3 px-5 py-3">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 text-accent">
+                <Icon className="h-3.5 w-3.5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground">{label}</p>
+                <p className="truncate text-xs text-text-muted">{r.slug}</p>
+              </div>
+              <div className="flex items-center gap-1 rounded-md border border-border bg-bg-tertiary p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setLayout(r.slug, "split")}
+                  className={
+                    "rounded px-2.5 py-1 text-xs font-medium transition-colors " +
+                    (mode === "split"
+                      ? "bg-accent text-white"
+                      : "text-text-secondary hover:text-foreground")
+                  }
+                >
+                  Split
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLayout(r.slug, "tabs")}
+                  className={
+                    "rounded px-2.5 py-1 text-xs font-medium transition-colors " +
+                    (mode === "tabs"
+                      ? "bg-accent text-white"
+                      : "text-text-secondary hover:text-foreground")
+                  }
+                >
+                  Tabs
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }

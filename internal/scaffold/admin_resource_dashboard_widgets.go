@@ -182,8 +182,9 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { dateRangeToQueryParams, type DateRange } from "@/components/tables/date-filter";
+import { renderCell } from "@/components/tables/cell-renderers";
 import { FolderOpen } from "@/lib/icons";
-import type { ResourceDefinition } from "@/lib/resource";
+import type { ResourceDefinition, ColumnDefinition } from "@/lib/resource";
 
 interface ResourceStatsResponse {
   data: {
@@ -200,47 +201,46 @@ interface Props {
   limit?: number;
 }
 
-// pickPreviewColumns -- the latest table is meant to be a glance, not
-// a full data table. We pick at most 3 columns: prefer "name" or
-// "title" + "email"/"status"/"price" if present, otherwise fall back
-// to the first non-id text columns from the resource's table config.
-function pickPreviewColumns(resource: ResourceDefinition): { key: string; label: string }[] {
-  const all = (resource.table?.columns ?? []) as { key: string; label: string }[];
+// v3.31.46 -- pickPreviewColumns now returns full ColumnDefinition
+// objects so the table can use the same renderCell pipeline as the
+// resource list page. That brings proper FileRef thumbnails, badge
+// pills, date formatting, and currency rendering -- instead of the
+// previous "stringify and truncate" fallback that turned image refs
+// into a JSON blob.
+//
+// Heuristic: prefer recognisable columns (name/title + email/status/
+// price), then fall back to the first non-id columns. Always include
+// any image / file columns so users see thumbnails on the dashboard
+// without having to customise.
+function pickPreviewColumns(resource: ResourceDefinition): ColumnDefinition[] {
+  const all = (resource.table?.columns ?? []) as ColumnDefinition[];
   if (all.length === 0) return [];
+
+  // Image / file columns always make the cut -- thumbnails carry a
+  // lot of signal in a small cell.
+  const imageCols = all.filter(
+    (c) => c.format === "image" || c.format === "file" || c.format === "files",
+  );
+
   const priorityKeys = ["name", "title", "subject", "email", "status", "price"];
-  const picked: { key: string; label: string }[] = [];
+  const picked: ColumnDefinition[] = [...imageCols];
   for (const key of priorityKeys) {
     const hit = all.find((c) => c.key === key);
     if (hit && !picked.find((p) => p.key === hit.key)) {
       picked.push(hit);
     }
-    if (picked.length >= 3) break;
+    if (picked.length >= 4) break;
   }
-  if (picked.length < 3) {
+  if (picked.length < 4) {
     for (const c of all) {
       if (c.key === "id" || c.key.endsWith("_id")) continue;
+      if (c.hidden) continue;
       if (picked.find((p) => p.key === c.key)) continue;
       picked.push(c);
-      if (picked.length >= 3) break;
+      if (picked.length >= 4) break;
     }
   }
-  return picked.slice(0, 3);
-}
-
-// Truncate long values so a single rich-text or JSON column doesn't
-// blow the row height. The list is meant to be skimmable.
-function previewValue(v: unknown): string {
-  if (v === null || v === undefined) return "—";
-  if (typeof v === "object") {
-    try {
-      const s = JSON.stringify(v);
-      return s.length > 60 ? s.slice(0, 60) + "…" : s;
-    } catch {
-      return String(v);
-    }
-  }
-  const s = String(v);
-  return s.length > 60 ? s.slice(0, 60) + "…" : s;
+  return picked.slice(0, 4);
 }
 
 function timeAgo(iso: string): string {
@@ -300,36 +300,47 @@ export function ResourceLatestTable({ resource, dateRange, limit = 5 }: Props) {
           <p className="text-sm text-text-muted">No {label.toLowerCase()} in this range yet.</p>
         </div>
       ) : (
-        <ul className="divide-y divide-border">
-          {rows.slice(0, limit).map((row, idx) => {
-            const id = String(row.id ?? idx);
-            const createdAt = String(row.created_at ?? "");
-            return (
-              <li key={id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-                <div className="min-w-0 flex-1 space-y-0.5">
-                  {cols.length > 0 ? (
-                    <p className="truncate text-foreground">
-                      {cols.map((c, i) => (
-                        <span key={c.key}>
-                          {i > 0 && <span className="text-text-muted"> · </span>}
-                          <span className="text-text-muted">{c.label}: </span>
-                          <span className="text-foreground">{previewValue(row[c.key])}</span>
-                        </span>
-                      ))}
-                    </p>
-                  ) : (
-                    <p className="truncate text-foreground font-mono text-xs">{id}</p>
-                  )}
-                </div>
-                {createdAt && (
-                  <span className="shrink-0 text-xs text-text-muted">
-                    {timeAgo(createdAt)}
-                  </span>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+        // v3.31.46 -- proper table layout. Reuses the same renderCell
+        // dispatch the resource list page uses, so format hints
+        // ("image", "badge", "currency", "date", "relative") get the
+        // same treatment here as in the main resource view.
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left">
+                {cols.map((c) => (
+                  <th
+                    key={c.key}
+                    className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-text-muted"
+                  >
+                    {c.label}
+                  </th>
+                ))}
+                <th className="px-4 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+                  Created
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {rows.slice(0, limit).map((row, idx) => {
+                const id = String(row.id ?? idx);
+                const createdAt = String(row.created_at ?? "");
+                return (
+                  <tr key={id} className="transition-colors hover:bg-bg-hover">
+                    {cols.map((c) => (
+                      <td key={c.key} className="px-4 py-2.5 text-foreground">
+                        {renderCell(c, row[c.key], row)}
+                      </td>
+                    ))}
+                    <td className="px-4 py-2.5 text-right text-xs text-text-muted whitespace-nowrap">
+                      {createdAt ? timeAgo(createdAt) : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
@@ -343,6 +354,7 @@ export function ResourceLatestTable({ resource, dateRange, limit = 5 }: Props) {
 func adminResourceWidgetsRowTSX() string {
 	return `"use client";
 
+import { useState } from "react";
 import { ResourceStatCard } from "@/components/dashboard/ResourceStatCard";
 import { ResourceLatestTable } from "@/components/dashboard/ResourceLatestTable";
 import type { DateRange } from "@/components/tables/date-filter";
@@ -356,6 +368,9 @@ interface Props {
   // When only one is shown it stretches to fill the row.
   showStat?: boolean;
   showLatest?: boolean;
+  // v3.31.46 -- layout mode. "split" = side-by-side (default);
+  // "tabs" = each widget full-width inside its own tab.
+  layout?: "split" | "tabs";
 }
 
 export function ResourceWidgetsRow({
@@ -363,8 +378,17 @@ export function ResourceWidgetsRow({
   dateRange,
   showStat = true,
   showLatest = true,
+  layout = "split",
 }: Props) {
   if (!showStat && !showLatest) return null;
+
+  // Tabs mode only makes sense when both halves are enabled --
+  // otherwise there's nothing to switch between, so fall through to
+  // the single-pane render below.
+  if (layout === "tabs" && showStat && showLatest) {
+    return <ResourceTabs resource={resource} dateRange={dateRange} />;
+  }
+
   if (showStat && !showLatest) {
     return (
       <div className="grid grid-cols-1">
@@ -388,6 +412,72 @@ export function ResourceWidgetsRow({
         <ResourceLatestTable resource={resource} dateRange={dateRange} />
       </div>
     </div>
+  );
+}
+
+// v3.31.46 -- ResourceTabs renders the same Total + Latest widgets
+// inside a tabbed container. Each tab body is full-width so the
+// Latest table can use the entire dashboard row width.
+function ResourceTabs({
+  resource,
+  dateRange,
+}: {
+  resource: ResourceDefinition;
+  dateRange: DateRange;
+}) {
+  // Default to "latest" because that's the tab the user is most
+  // likely opening tabs mode for in the first place -- the stat card
+  // doesn't need full width.
+  const [active, setActive] = useState<"total" | "latest">("latest");
+  const label = resource.label?.plural ?? resource.slug;
+
+  return (
+    <div className="rounded-xl border border-border bg-bg-elevated">
+      <div className="flex items-center gap-1 border-b border-border px-2 py-2">
+        <TabButton
+          active={active === "total"}
+          onClick={() => setActive("total")}
+          label={"Total " + label}
+        />
+        <TabButton
+          active={active === "latest"}
+          onClick={() => setActive("latest")}
+          label={"Latest " + label}
+        />
+      </div>
+      <div className="p-3">
+        {active === "total" ? (
+          <ResourceStatCard resource={resource} dateRange={dateRange} />
+        ) : (
+          <ResourceLatestTable resource={resource} dateRange={dateRange} limit={10} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        "rounded-md px-3 py-1.5 text-sm font-medium transition-colors " +
+        (active
+          ? "bg-accent/15 text-accent"
+          : "text-text-secondary hover:bg-bg-hover hover:text-foreground")
+      }
+    >
+      {label}
+    </button>
   );
 }
 `

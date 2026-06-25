@@ -28,6 +28,119 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.46 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.46
+                </span>
+                <span className="text-sm text-muted-foreground">June 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Polished By-Resource Latest tables + per-resource layout toggle.</strong>{' '}
+                  The v3.31.44 Latest list rendered a single
+                  &ldquo;Name: X · Status: Y&rdquo; line per row,
+                  which turned any FileRef column into a JSON blob
+                  visible to the user. v3.31.46 swaps that for the
+                  same column-driven table layout the resource list
+                  page uses, with proper FileRef thumbnails, badges,
+                  date formatting, and currency rendering.
+                </p>
+
+                <h3>The Latest table now uses renderCell</h3>
+                <p>
+                  Every cell in the dashboard&apos;s Latest table
+                  now goes through the same{' '}
+                  <code>renderCell</code> dispatch the resource list
+                  pages already use. That means columns with{' '}
+                  <code>format: &quot;image&quot;</code> render
+                  thumbnails, columns with{' '}
+                  <code>format: &quot;badge&quot;</code> render the
+                  configured pill, dates and currency get their
+                  normal formatting. The column picker still uses
+                  the v3.31.44 heuristics (prefer{' '}
+                  <code>name</code>/<code>title</code>/<code>email</code>/
+                  <code>status</code>/<code>price</code>) but now
+                  always reserves a slot for any image / FileRef
+                  column so visual rows always have a thumbnail when
+                  the model defines one.
+                </p>
+
+                <h3>Per-resource layout toggle: Split vs Tabs</h3>
+                <p>
+                  The v3.31.44 layout was hardcoded:{' '}
+                  <strong>Split</strong> (Total card ~33% on the
+                  left, Latest table ~67% on the right). That ratio
+                  breaks down for resources with many columns or
+                  long string values -- the Latest table never has
+                  room to breathe. v3.31.46 adds a per-resource
+                  layout mode:
+                </p>
+                <ul>
+                  <li>
+                    <strong>Split</strong> (default) -- the v3.31.44
+                    side-by-side layout.
+                  </li>
+                  <li>
+                    <strong>Tabs</strong> -- both widgets render
+                    full-width inside a tabbed container. Two tabs
+                    (<em>Total &lt;Resource&gt;</em> / <em>Latest
+                    &lt;Resource&gt;</em>) with the Latest tab
+                    opened by default since that&apos;s the widget
+                    that benefits most from the extra width.
+                  </li>
+                </ul>
+                <p>
+                  Picked per resource in Dashboard Settings under
+                  the new <em>Resource layout</em> panel (below the
+                  By Resource checkboxes). Only resources with at
+                  least one widget enabled show up in the picker --
+                  the choice is moot otherwise.
+                </p>
+
+                <h3>Data model</h3>
+                <p>
+                  <code>models.DashboardLayout</code> gains one new
+                  JSON column:
+                </p>
+                <ul>
+                  <li>
+                    <code>resource_layouts</code> -- a string-keyed
+                    object (<code>{`{ "products": "tabs", "orders": "split" }`}</code>).
+                    Only non-default (<code>tabs</code>) entries are
+                    persisted; missing slugs fall back to{' '}
+                    <code>split</code> at render time. The PUT
+                    handler validates incoming values and silently
+                    drops anything that isn&apos;t{' '}
+                    <code>split</code> or <code>tabs</code>.
+                  </li>
+                </ul>
+                <p>
+                  GORM AutoMigrate adds the column on next boot. No
+                  manual migration; existing saved layouts continue
+                  to work (an empty map means &ldquo;every resource
+                  uses split&rdquo; -- the v3.31.44 behaviour).
+                </p>
+
+                <h3>Coming in v3.31.47</h3>
+                <p>
+                  Next release will tackle the &ldquo;build a custom
+                  chart&rdquo; ask -- give operators a way to pick a
+                  resource + group-by field + aggregation +
+                  visualization (bar/line/pie/donut) without writing
+                  SQL. The design landed on the &ldquo;Preset
+                  Charts&rdquo; pattern (count over time,{' '}
+                  <em>group by field</em>, sum/avg over time, top-N)
+                  -- those four cover the bulk of admin-dashboard
+                  needs without introducing a query plane, and slot
+                  straight into the same Dashboard Settings page as
+                  the v3.31.45 toggles.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.45 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

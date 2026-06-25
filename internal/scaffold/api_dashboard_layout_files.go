@@ -45,6 +45,13 @@ type DashboardLayout struct {
 	// order; default ["cards","charts","tables","by-resource"].
 	Resources    datatypes.JSONSlice[string] ` + "`gorm:\"type:json\" json:\"resources\"`" + `
 	SectionOrder datatypes.JSONSlice[string] ` + "`gorm:\"type:json\" json:\"section_order\"`" + `
+	// v3.31.46 -- per-resource layout mode for the By Resource band.
+	// Keys are resource slugs; values are "split" (Total left,
+	// Latest right, the v3.31.44 default) or "tabs" (each widget
+	// full-width in its own tab). Missing slugs fall back to
+	// "split" at render time, so only non-default choices need to
+	// be persisted.
+	ResourceLayouts datatypes.JSON ` + "`gorm:\"type:json\" json:\"resource_layouts\"`" + `
 	DatePreset string                      ` + "`gorm:\"size:16\" json:\"date_preset\"`" + `
 	CreatedAt  time.Time                   ` + "`json:\"created_at\"`" + `
 	UpdatedAt  time.Time                   ` + "`json:\"updated_at\"`" + `
@@ -64,6 +71,7 @@ func dashboardLayoutHandlerGo() string {
 	return `package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -101,12 +109,13 @@ func (h *DashboardLayoutHandler) Get(c *gin.Context) {
 		// Empty layout = show every widget by default.
 		c.JSON(http.StatusOK, gin.H{
 			"data": models.DashboardLayout{
-				UserID:       userID.(string),
-				Cards:        datatypes.JSONSlice[string]{},
-				Charts:       datatypes.JSONSlice[string]{},
-				Tables:       datatypes.JSONSlice[string]{},
-				Resources:    datatypes.JSONSlice[string]{},
-				SectionOrder: datatypes.JSONSlice[string]{},
+				UserID:          userID.(string),
+				Cards:           datatypes.JSONSlice[string]{},
+				Charts:          datatypes.JSONSlice[string]{},
+				Tables:          datatypes.JSONSlice[string]{},
+				Resources:       datatypes.JSONSlice[string]{},
+				SectionOrder:    datatypes.JSONSlice[string]{},
+				ResourceLayouts: datatypes.JSON([]byte("{}")),
 			},
 		})
 		return
@@ -135,12 +144,13 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 	}
 
 	var req struct {
-		Cards        []string ` + "`json:\"cards\"`" + `
-		Charts       []string ` + "`json:\"charts\"`" + `
-		Tables       []string ` + "`json:\"tables\"`" + `
-		Resources    []string ` + "`json:\"resources\"`" + `
-		SectionOrder []string ` + "`json:\"section_order\"`" + `
-		DatePreset   string   ` + "`json:\"date_preset\"`" + `
+		Cards           []string          ` + "`json:\"cards\"`" + `
+		Charts          []string          ` + "`json:\"charts\"`" + `
+		Tables          []string          ` + "`json:\"tables\"`" + `
+		Resources       []string          ` + "`json:\"resources\"`" + `
+		SectionOrder    []string          ` + "`json:\"section_order\"`" + `
+		ResourceLayouts map[string]string ` + "`json:\"resource_layouts\"`" + `
+		DatePreset      string            ` + "`json:\"date_preset\"`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -166,6 +176,18 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 	if req.SectionOrder == nil {
 		req.SectionOrder = []string{}
 	}
+	// v3.31.46 -- normalise the layout map and reject unknown values
+	// rather than silently storing garbage. Only "split" and "tabs"
+	// are recognised; missing entries fall back to "split" at render
+	// time, so the map only needs to carry non-default choices.
+	if req.ResourceLayouts == nil {
+		req.ResourceLayouts = map[string]string{}
+	}
+	for k, v := range req.ResourceLayouts {
+		if v != "split" && v != "tabs" {
+			delete(req.ResourceLayouts, k)
+		}
+	}
 
 	var layout models.DashboardLayout
 	err := h.DB.Where("user_id = ?", userID).First(&layout).Error
@@ -183,6 +205,14 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 	layout.Tables = datatypes.NewJSONSlice(req.Tables)
 	layout.Resources = datatypes.NewJSONSlice(req.Resources)
 	layout.SectionOrder = datatypes.NewJSONSlice(req.SectionOrder)
+	if b, err := json.Marshal(req.ResourceLayouts); err == nil {
+		layout.ResourceLayouts = datatypes.JSON(b)
+	} else {
+		// Map should always marshal cleanly; on the off chance it
+		// fails we fall back to an empty object so the column is
+		// never invalid JSON.
+		layout.ResourceLayouts = datatypes.JSON([]byte("{}"))
+	}
 	layout.DatePreset = req.DatePreset
 
 	if err := h.DB.Save(&layout).Error; err != nil {
