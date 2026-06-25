@@ -28,6 +28,171 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.47 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.47
+                </span>
+                <span className="text-sm text-muted-foreground">June 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The Preset Chart builder.</strong> Operators
+                  can now build custom charts straight from Dashboard
+                  Settings -- pick a resource, pick a preset, pick a
+                  visualization. The charts render in the Charts
+                  section alongside the system Activity + Severity
+                  widgets. No SQL involved.
+                </p>
+
+                <h3>Four presets</h3>
+                <p>
+                  The presets cover the bulk of admin-dashboard needs
+                  without introducing a query plane:
+                </p>
+                <ul>
+                  <li>
+                    <strong>Count over time</strong> -- daily count
+                    of new records (no field needed)
+                  </li>
+                  <li>
+                    <strong>Group by field</strong> -- top-N counts
+                    grouped by a categorical column (e.g. orders by
+                    status, products by category)
+                  </li>
+                  <li>
+                    <strong>Sum over time</strong> -- daily sum of a
+                    numeric column (e.g. revenue per day)
+                  </li>
+                  <li>
+                    <strong>Avg over time</strong> -- daily average
+                    of a numeric column (e.g. average order value)
+                  </li>
+                </ul>
+
+                <h3>Five visualizations</h3>
+                <p>
+                  Each chart renders as <code>bar</code>,{' '}
+                  <code>line</code>, <code>area</code>,{' '}
+                  <code>pie</code>, or <code>donut</code> -- using
+                  Recharts. The builder dims out incompatible
+                  combinations (pie for a time-series, line for
+                  group_by) so users see why a choice doesn&apos;t
+                  make sense rather than picking a broken combo
+                  and getting a flat chart.
+                </p>
+
+                <h3>How it works under the hood</h3>
+                <p>
+                  Same dispatch pattern as the v3.31.44 resource
+                  stats. A new service file{' '}
+                  <code>chart_dispatch.go</code> ships with a
+                  switch over resource name + a reflective helper
+                  that runs the right SQL for each preset:
+                </p>
+                <ul>
+                  <li>
+                    <code>count_over_time</code>: pulls timestamps
+                    + buckets in-memory (portable across SQLite + Postgres)
+                  </li>
+                  <li>
+                    <code>group_by</code>: SQL{' '}
+                    <code>GROUP BY field ORDER BY COUNT(*) DESC LIMIT N</code>
+                  </li>
+                  <li>
+                    <code>sum_over_time</code> /{' '}
+                    <code>avg_over_time</code>: pulls (created_at, field)
+                    pairs + aggregates in-memory
+                  </li>
+                </ul>
+                <p>
+                  Field whitelisting is the security boundary: the
+                  helper reflects on the model to build two sets
+                  (string/bool columns valid for group_by, numeric
+                  columns valid for sum/avg) and rejects any field
+                  not in the right set. The same dispatch marker
+                  used by v3.31.44 (<code>{`// grit:resource-stats:dispatch`}</code>)
+                  is reused, so one generator injection covers both
+                  the sparkline + the chart presets for a new
+                  resource.
+                </p>
+
+                <h3>New endpoint</h3>
+                <p>
+                  <code>GET /api/admin/dashboard/chart/:resource?preset=group_by&amp;field=status&amp;limit=10</code>
+                  {' '}returns{' '}
+                  <code>{`{ data: { preset, rows: [{x, y}], meta } }`}</code>.
+                  The frontend ChartCard renders the right Recharts
+                  component based on the saved viz; the{' '}
+                  <code>{`{x, y}`}</code> shape works for all four
+                  presets without a discriminator.
+                </p>
+
+                <h3>Data model</h3>
+                <p>
+                  <code>models.DashboardLayout</code> gains one new
+                  JSON column:
+                </p>
+                <ul>
+                  <li>
+                    <code>custom_charts</code> -- array of user-defined
+                    chart configs. The PUT handler validates each entry
+                    on write (drops malformed rows individually rather
+                    than rejecting the whole save).
+                  </li>
+                </ul>
+                <p>
+                  GORM AutoMigrate adds the column on next boot. No
+                  manual migration; existing saved layouts continue to
+                  work (empty array = no custom charts).
+                </p>
+
+                <h3>Frontend pieces</h3>
+                <p>
+                  Three new files in the admin scaffold:
+                </p>
+                <ul>
+                  <li>
+                    <code>components/dashboard/CustomChartCard.tsx</code>
+                    {' '}-- renders one chart with Recharts. Loading +
+                    error states inline so a broken chart never
+                    blanks the section.
+                  </li>
+                  <li>
+                    <code>components/dashboard/ChartBuilderForm.tsx</code>
+                    {' '}-- the inline builder. Resource picker, preset
+                    picker (with tiles), field picker (filtered by
+                    preset), viz picker (with grey-out for
+                    incompatible). Used in the new{' '}
+                    <strong>Custom charts</strong> section on
+                    Dashboard Settings.
+                  </li>
+                  <li>
+                    Settings page <em>Custom charts</em> panel --
+                    lists saved charts with Edit + Delete; click{' '}
+                    <em>Add chart</em> to open the inline builder.
+                  </li>
+                </ul>
+
+                <h3>Research note</h3>
+                <p>
+                  The design is the &ldquo;Preset Charts&rdquo;
+                  pattern from the research pass (Metabase, Grafana,
+                  Looker Studio, Superset, Power BI). It&apos;s the
+                  table-first pattern with curated presets rather
+                  than the dimension/metric drag-drop pattern --
+                  fits Grit&apos;s convention-over-configuration
+                  audience and slots straight into the v3.31.45
+                  settings page. The dimension/metric builder
+                  (Design B from the research) stays available as
+                  a future v3.32 upgrade if users start asking for
+                  one more axis of freedom.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.46 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -52,6 +52,12 @@ type DashboardLayout struct {
 	// "split" at render time, so only non-default choices need to
 	// be persisted.
 	ResourceLayouts datatypes.JSON ` + "`gorm:\"type:json\" json:\"resource_layouts\"`" + `
+	// v3.31.47 -- Preset Chart builder. Array of user-defined chart
+	// configurations rendered in the Charts section. Each entry has
+	// resource slug + preset + field + viz + title. The handler
+	// validates each entry on write so a single malformed chart
+	// doesn't block the rest of the save.
+	CustomCharts datatypes.JSON ` + "`gorm:\"type:json\" json:\"custom_charts\"`" + `
 	DatePreset string                      ` + "`gorm:\"size:16\" json:\"date_preset\"`" + `
 	CreatedAt  time.Time                   ` + "`json:\"created_at\"`" + `
 	UpdatedAt  time.Time                   ` + "`json:\"updated_at\"`" + `
@@ -116,6 +122,7 @@ func (h *DashboardLayoutHandler) Get(c *gin.Context) {
 				Resources:       datatypes.JSONSlice[string]{},
 				SectionOrder:    datatypes.JSONSlice[string]{},
 				ResourceLayouts: datatypes.JSON([]byte("{}")),
+				CustomCharts:    datatypes.JSON([]byte("[]")),
 			},
 		})
 		return
@@ -143,6 +150,18 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 		return
 	}
 
+	// v3.31.47 -- inline struct for one custom chart entry.
+	type customChartReq struct {
+		ID       string ` + "`json:\"id\"`" + `
+		Title    string ` + "`json:\"title\"`" + `
+		Resource string ` + "`json:\"resource\"`" + `
+		Preset   string ` + "`json:\"preset\"`" + `
+		Field    string ` + "`json:\"field\"`" + `
+		Viz      string ` + "`json:\"viz\"`" + `
+		Limit    int    ` + "`json:\"limit\"`" + `
+		Grain    string ` + "`json:\"grain\"`" + `
+	}
+
 	var req struct {
 		Cards           []string          ` + "`json:\"cards\"`" + `
 		Charts          []string          ` + "`json:\"charts\"`" + `
@@ -150,6 +169,7 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 		Resources       []string          ` + "`json:\"resources\"`" + `
 		SectionOrder    []string          ` + "`json:\"section_order\"`" + `
 		ResourceLayouts map[string]string ` + "`json:\"resource_layouts\"`" + `
+		CustomCharts    []customChartReq  ` + "`json:\"custom_charts\"`" + `
 		DatePreset      string            ` + "`json:\"date_preset\"`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -189,6 +209,44 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 		}
 	}
 
+	// v3.31.47 -- validate each custom chart entry. Drop malformed
+	// rows rather than rejecting the whole save: an operator with
+	// 12 valid charts and 1 garbage entry should still be able to
+	// save the 12.
+	validPresets := map[string]bool{
+		"count_over_time": true,
+		"group_by":        true,
+		"sum_over_time":   true,
+		"avg_over_time":   true,
+	}
+	validVizes := map[string]bool{
+		"bar":   true,
+		"line":  true,
+		"area":  true,
+		"pie":   true,
+		"donut": true,
+	}
+	cleanCharts := make([]customChartReq, 0, len(req.CustomCharts))
+	for _, ch := range req.CustomCharts {
+		if ch.ID == "" || ch.Resource == "" {
+			continue
+		}
+		if !validPresets[ch.Preset] || !validVizes[ch.Viz] {
+			continue
+		}
+		if ch.Preset != "count_over_time" && ch.Field == "" {
+			continue
+		}
+		if ch.Limit <= 0 || ch.Limit > 100 {
+			ch.Limit = 10
+		}
+		if ch.Grain == "" {
+			ch.Grain = "day"
+		}
+		cleanCharts = append(cleanCharts, ch)
+	}
+	req.CustomCharts = cleanCharts
+
 	var layout models.DashboardLayout
 	err := h.DB.Where("user_id = ?", userID).First(&layout).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -212,6 +270,11 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 		// fails we fall back to an empty object so the column is
 		// never invalid JSON.
 		layout.ResourceLayouts = datatypes.JSON([]byte("{}"))
+	}
+	if b, err := json.Marshal(req.CustomCharts); err == nil {
+		layout.CustomCharts = datatypes.JSON(b)
+	} else {
+		layout.CustomCharts = datatypes.JSON([]byte("[]"))
 	}
 	layout.DatePreset = req.DatePreset
 

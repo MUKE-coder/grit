@@ -6474,6 +6474,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	dashboardLayoutHandler := &handlers.DashboardLayoutHandler{DB: db}
 	// v3.31.44 — per-resource dashboard stats (Total + sparkline + Latest N)
 	resourceStatsHandler := &handlers.ResourceStatsHandler{DB: db}
+	// v3.31.47 — Preset Chart builder
+	chartHandler := &handlers.ChartHandler{DB: db}
 
 	// Sync registry — list every model that should be syncable from
 	// offline-first desktop clients. The resource generator injects
@@ -6777,6 +6779,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// sparkline + Latest N. Dispatched server-side; only resources
 		// registered in services/resource_stats_dispatch.go are reachable.
 		admin.GET("/admin/dashboard/resource-stats/:resource", resourceStatsHandler.Get)
+
+		// v3.31.47 — Preset Chart builder. Same dispatch boundary;
+		// only resources registered in chart_dispatch.go reachable.
+		admin.GET("/admin/dashboard/chart/:resource", chartHandler.Get)
 
 		// grit:routes:admin
 	}

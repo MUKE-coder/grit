@@ -409,6 +409,12 @@ func writeAdminFiles(root string, opts Options) error {
 	if err := writeAdminResourceDashboardWidgets(root, opts); err != nil {
 		return fmt.Errorf("writing resource dashboard widgets: %w", err)
 	}
+	// v3.31.47 — Preset Chart builder client pieces (CustomChartCard
+	// + ChartBuilderForm). Settings panel + dashboard wiring is in
+	// the existing files updated above.
+	if err := writeAdminCustomChartFiles(root, opts); err != nil {
+		return fmt.Errorf("writing custom chart files: %w", err)
+	}
 
 	return nil
 }

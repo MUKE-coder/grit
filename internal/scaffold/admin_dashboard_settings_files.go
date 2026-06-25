@@ -161,6 +161,46 @@ export function groupByModule(widgets: CatalogWidget[]): Map<string, CatalogWidg
 // gets the full row width when it's the focus.
 export type ResourceLayoutMode = "split" | "tabs";
 
+// v3.31.47 -- the Preset Chart builder.
+export type ChartPreset =
+  | "count_over_time"
+  | "group_by"
+  | "sum_over_time"
+  | "avg_over_time";
+
+export type ChartViz = "bar" | "line" | "area" | "pie" | "donut";
+
+export interface CustomChart {
+  id: string;
+  title: string;
+  resource: string;
+  preset: ChartPreset;
+  field?: string;
+  viz: ChartViz;
+  limit?: number;
+  grain?: "day" | "week" | "month";
+}
+
+export const CHART_PRESET_LABELS: Record<ChartPreset, { title: string; hint: string }> = {
+  count_over_time: { title: "Count over time", hint: "Daily count of new records, last 30 days" },
+  group_by: { title: "Group by field", hint: "Top-N counts grouped by a categorical column" },
+  sum_over_time: { title: "Sum over time", hint: "Daily sum of a numeric column, last 30 days" },
+  avg_over_time: { title: "Avg over time", hint: "Daily average of a numeric column, last 30 days" },
+};
+
+export const CHART_VIZ_LABELS: Record<ChartViz, string> = {
+  bar: "Bar",
+  line: "Line",
+  area: "Area",
+  pie: "Pie",
+  donut: "Donut",
+};
+
+export function vizesForPreset(preset: ChartPreset): ChartViz[] {
+  if (preset === "group_by") return ["bar", "pie", "donut"];
+  return ["line", "area", "bar"];
+}
+
 export interface SavedLayout {
   id: string;
   user_id: string;
@@ -180,6 +220,9 @@ export interface SavedLayout {
   // non-default choices need to be persisted, so most resources stay
   // absent from this map.
   resource_layouts: Record<string, ResourceLayoutMode>;
+  // v3.31.47 -- user-defined chart configurations rendered in the
+  // Charts section. The API validates each entry on write.
+  custom_charts: CustomChart[];
   date_preset: string;
 }
 
@@ -296,6 +339,8 @@ export function useSaveDashboardLayout() {
       // v3.31.46 -- per-resource layout map. Keys are slugs; values
       // are "split" (default, can be omitted) or "tabs".
       resource_layouts?: Record<string, "split" | "tabs">;
+      // v3.31.47 -- user-defined chart configs.
+      custom_charts?: import("@/lib/dashboard-catalog").CustomChart[];
       date_preset: string;
     }) => {
       const { data } = await apiClient.put<{ data: SavedLayout }>(
@@ -330,7 +375,7 @@ func adminDashboardSettingsPageTS() string {
 // what's pre-selected in settings.
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, ChevronUp, ChevronDown } from "@/lib/icons";
+import { Loader2, ChevronUp, ChevronDown, Plus, Pencil, Trash2 } from "@/lib/icons";
 import { resources } from "@/resources";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import {
@@ -339,9 +384,11 @@ import {
   resolveEnabledKeys,
   resolveSectionOrder,
   DEFAULT_SECTION_ORDER,
+  CHART_PRESET_LABELS,
   type CatalogWidget,
   type DashboardSection,
   type ResourceLayoutMode,
+  type CustomChart,
 } from "@/lib/dashboard-catalog";
 import type { ResourceDefinition } from "@/lib/resource";
 import {
@@ -349,6 +396,7 @@ import {
   useSaveDashboardLayout,
 } from "@/hooks/use-dashboard-layout";
 import { getIcon } from "@/lib/icons";
+import { ChartBuilderForm } from "@/components/dashboard/ChartBuilderForm";
 
 // v3.31.45 -- friendly labels for the four sections shown in the
 // reorder list. The keys stay machine-friendly ("by-resource") and
@@ -374,6 +422,8 @@ export default function DashboardSettingsPage() {
   // v3.31.46 -- per-resource layout mode. Only non-default ("tabs")
   // entries are persisted; missing slugs fall back to "split".
   const [resourceLayouts, setResourceLayouts] = useState<Record<string, ResourceLayoutMode>>({});
+  // v3.31.47 -- user-defined chart configs.
+  const [customCharts, setCustomCharts] = useState<CustomChart[]>([]);
   const [datePreset, setDatePreset] = useState<string>("");
 
   useEffect(() => {
@@ -384,6 +434,7 @@ export default function DashboardSettingsPage() {
     setResourceWidgets(resolveEnabledKeys(layout, "resource", catalog));
     setSectionOrder(resolveSectionOrder(layout));
     setResourceLayouts(layout?.resource_layouts ?? {});
+    setCustomCharts(layout?.custom_charts ?? []);
     setDatePreset(layout?.date_preset ?? "");
   }, [layout, isLoading, catalog]);
 
@@ -426,6 +477,7 @@ export default function DashboardSettingsPage() {
       resources: Array.from(resourceWidgets),
       section_order: sectionOrder,
       resource_layouts: compactedLayouts(),
+      custom_charts: customCharts,
       date_preset: datePreset,
     });
   };
@@ -498,6 +550,11 @@ export default function DashboardSettingsPage() {
             enabled={resourceWidgets}
             layouts={resourceLayouts}
             onChange={setResourceLayouts}
+          />
+          <CustomChartsPanel
+            resources={resources}
+            charts={customCharts}
+            onChange={setCustomCharts}
           />
         </div>
       )}
@@ -665,6 +722,114 @@ function ResourceLayoutPanel({ resources, enabled, layouts, onChange }: Resource
           );
         })}
       </ul>
+    </section>
+  );
+}
+
+// v3.31.47 -- the Custom Charts panel. Lists saved charts, lets the
+// user add new ones via the inline builder form, edit existing ones,
+// or delete them.
+interface CustomChartsPanelProps {
+  resources: ResourceDefinition[];
+  charts: CustomChart[];
+  onChange: (next: CustomChart[]) => void;
+}
+
+function CustomChartsPanel({ resources, charts, onChange }: CustomChartsPanelProps) {
+  const [editing, setEditing] = useState<string | "new" | null>(null);
+
+  const upsert = (chart: CustomChart) => {
+    const exists = charts.find((c) => c.id === chart.id);
+    if (exists) {
+      onChange(charts.map((c) => (c.id === chart.id ? chart : c)));
+    } else {
+      onChange([...charts, chart]);
+    }
+    setEditing(null);
+  };
+
+  const remove = (id: string) => {
+    onChange(charts.filter((c) => c.id !== id));
+  };
+
+  if (editing !== null) {
+    const initial = editing === "new" ? undefined : charts.find((c) => c.id === editing);
+    return (
+      <ChartBuilderForm
+        resources={resources}
+        initial={initial}
+        onSubmit={upsert}
+        onCancel={() => setEditing(null)}
+      />
+    );
+  }
+
+  return (
+    <section className="rounded-xl border border-border bg-bg-elevated">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">Custom charts</h2>
+          <p className="text-xs text-text-muted">
+            Build bar / line / pie charts from your data. Renders in the Charts section of the dashboard.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setEditing("new")}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent/20"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add chart
+        </button>
+      </header>
+      {charts.length === 0 ? (
+        <p className="px-5 py-10 text-center text-sm text-text-muted">
+          No custom charts yet. Click <em>Add chart</em> to build your first one.
+        </p>
+      ) : (
+        <ul className="divide-y divide-border">
+          {charts.map((chart) => {
+            const resource = resources.find((r) => r.slug === chart.resource);
+            const presetMeta = CHART_PRESET_LABELS[chart.preset];
+            return (
+              <li key={chart.id} className="flex items-center gap-3 px-5 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">{chart.title}</p>
+                  <p className="truncate text-xs text-text-muted">
+                    {presetMeta.title}
+                    <span className="mx-1.5">·</span>
+                    {(resource?.label?.plural ?? chart.resource)}
+                    {chart.field && (
+                      <>
+                        <span className="mx-1.5">·</span>
+                        {chart.field}
+                      </>
+                    )}
+                    <span className="mx-1.5">·</span>
+                    {chart.viz}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditing(chart.id)}
+                  className="rounded-md border border-border bg-bg-tertiary p-1.5 text-text-secondary hover:bg-bg-hover"
+                  aria-label="Edit chart"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(chart.id)}
+                  className="rounded-md border border-border bg-bg-tertiary p-1.5 text-danger hover:bg-danger/10"
+                  aria-label="Delete chart"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }
