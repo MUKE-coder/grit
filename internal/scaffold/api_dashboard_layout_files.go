@@ -37,6 +37,14 @@ type DashboardLayout struct {
 	Cards      datatypes.JSONSlice[string] ` + "`gorm:\"type:json\" json:\"cards\"`" + `
 	Charts     datatypes.JSONSlice[string] ` + "`gorm:\"type:json\" json:\"charts\"`" + `
 	Tables     datatypes.JSONSlice[string] ` + "`gorm:\"type:json\" json:\"tables\"`" + `
+	// v3.31.45 -- Resources holds enabled keys for the "By resource"
+	// band. Convention: "<slug>:total" and "<slug>:latest" per
+	// resource. Same semantics as Cards/Charts/Tables: empty list +
+	// non-empty ID means "user hid everything"; missing row means
+	// "show defaults". SectionOrder holds the section keys in render
+	// order; default ["cards","charts","tables","by-resource"].
+	Resources    datatypes.JSONSlice[string] ` + "`gorm:\"type:json\" json:\"resources\"`" + `
+	SectionOrder datatypes.JSONSlice[string] ` + "`gorm:\"type:json\" json:\"section_order\"`" + `
 	DatePreset string                      ` + "`gorm:\"size:16\" json:\"date_preset\"`" + `
 	CreatedAt  time.Time                   ` + "`json:\"created_at\"`" + `
 	UpdatedAt  time.Time                   ` + "`json:\"updated_at\"`" + `
@@ -93,10 +101,12 @@ func (h *DashboardLayoutHandler) Get(c *gin.Context) {
 		// Empty layout = show every widget by default.
 		c.JSON(http.StatusOK, gin.H{
 			"data": models.DashboardLayout{
-				UserID: userID.(string),
-				Cards:  datatypes.JSONSlice[string]{},
-				Charts: datatypes.JSONSlice[string]{},
-				Tables: datatypes.JSONSlice[string]{},
+				UserID:       userID.(string),
+				Cards:        datatypes.JSONSlice[string]{},
+				Charts:       datatypes.JSONSlice[string]{},
+				Tables:       datatypes.JSONSlice[string]{},
+				Resources:    datatypes.JSONSlice[string]{},
+				SectionOrder: datatypes.JSONSlice[string]{},
 			},
 		})
 		return
@@ -125,10 +135,12 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 	}
 
 	var req struct {
-		Cards      []string ` + "`json:\"cards\"`" + `
-		Charts     []string ` + "`json:\"charts\"`" + `
-		Tables     []string ` + "`json:\"tables\"`" + `
-		DatePreset string   ` + "`json:\"date_preset\"`" + `
+		Cards        []string ` + "`json:\"cards\"`" + `
+		Charts       []string ` + "`json:\"charts\"`" + `
+		Tables       []string ` + "`json:\"tables\"`" + `
+		Resources    []string ` + "`json:\"resources\"`" + `
+		SectionOrder []string ` + "`json:\"section_order\"`" + `
+		DatePreset   string   ` + "`json:\"date_preset\"`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -148,6 +160,12 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 	if req.Tables == nil {
 		req.Tables = []string{}
 	}
+	if req.Resources == nil {
+		req.Resources = []string{}
+	}
+	if req.SectionOrder == nil {
+		req.SectionOrder = []string{}
+	}
 
 	var layout models.DashboardLayout
 	err := h.DB.Where("user_id = ?", userID).First(&layout).Error
@@ -163,6 +181,8 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 	layout.Cards = datatypes.NewJSONSlice(req.Cards)
 	layout.Charts = datatypes.NewJSONSlice(req.Charts)
 	layout.Tables = datatypes.NewJSONSlice(req.Tables)
+	layout.Resources = datatypes.NewJSONSlice(req.Resources)
+	layout.SectionOrder = datatypes.NewJSONSlice(req.SectionOrder)
 	layout.DatePreset = req.DatePreset
 
 	if err := h.DB.Save(&layout).Error; err != nil {

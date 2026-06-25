@@ -351,9 +351,34 @@ import type { ResourceDefinition } from "@/lib/resource";
 interface Props {
   resource: ResourceDefinition;
   dateRange: DateRange;
+  // v3.31.45 -- show / hide each half independently. Both default
+  // to true so existing call sites keep working without changes.
+  // When only one is shown it stretches to fill the row.
+  showStat?: boolean;
+  showLatest?: boolean;
 }
 
-export function ResourceWidgetsRow({ resource, dateRange }: Props) {
+export function ResourceWidgetsRow({
+  resource,
+  dateRange,
+  showStat = true,
+  showLatest = true,
+}: Props) {
+  if (!showStat && !showLatest) return null;
+  if (showStat && !showLatest) {
+    return (
+      <div className="grid grid-cols-1">
+        <ResourceStatCard resource={resource} dateRange={dateRange} />
+      </div>
+    );
+  }
+  if (!showStat && showLatest) {
+    return (
+      <div className="grid grid-cols-1">
+        <ResourceLatestTable resource={resource} dateRange={dateRange} />
+      </div>
+    );
+  }
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <div className="lg:col-span-1">

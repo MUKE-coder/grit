@@ -28,6 +28,109 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.45 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.45
+                </span>
+                <span className="text-sm text-muted-foreground">June 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Per-resource dashboard customisation + section reordering.</strong>{' '}
+                  The v3.31.44 &ldquo;By Resource&rdquo; band was
+                  uncustomisable — it always rendered the Total +
+                  Latest pair for every resource. Dashboard Settings
+                  now exposes both halves per resource, and the four
+                  top-level dashboard sections (Cards, Charts,
+                  Tables, By Resource) can be reordered.
+                </p>
+
+                <h3>Per-resource toggles in Dashboard Settings</h3>
+                <p>
+                  A new <em>By Resource</em> section appears at the
+                  bottom of <code>/settings/dashboard</code>, grouped
+                  by resource. Each resource exposes two checkboxes:
+                </p>
+                <ul>
+                  <li>
+                    <strong>Total <em>&lt;Resource&gt;</em></strong>{' '}
+                    — the stat card with the 30-day sparkline.
+                  </li>
+                  <li>
+                    <strong>Latest <em>&lt;Resource&gt;</em></strong>{' '}
+                    — the newest-N records table.
+                  </li>
+                </ul>
+                <p>
+                  Toggling either one off hides just that widget; the
+                  row stretches the visible half to fill the
+                  available width. Resources with both halves
+                  unchecked don&apos;t render at all. The
+                  resource-level <code>{`dashboard: { enabled: false }`}</code>{' '}
+                  opt-out still exists for resources that should
+                  never appear on the dashboard, even as catalog
+                  entries.
+                </p>
+
+                <h3>Section reorder</h3>
+                <p>
+                  A new <strong>Section order</strong> panel sits at
+                  the top of Dashboard Settings, showing the four
+                  sections as a numbered list with up/down chevrons.
+                  The saved order persists on the existing{' '}
+                  <code>DashboardLayout</code> row (new{' '}
+                  <code>section_order</code> column). The dashboard
+                  page renders the sections in that order using CSS{' '}
+                  <code>order</code> on a flex container — no JSX
+                  restructure was needed.
+                </p>
+
+                <h3>Data model — two new JSON columns</h3>
+                <p>
+                  <code>models.DashboardLayout</code> gains two
+                  fields, both JSON arrays:
+                </p>
+                <ul>
+                  <li>
+                    <code>resources</code> — enabled keys for the
+                    By Resource band, formatted as{' '}
+                    <code>{`"<slug>:total"`}</code> /{' '}
+                    <code>{`"<slug>:latest"`}</code>. Same
+                    presence-vs-absence semantics as the existing{' '}
+                    <code>cards</code> / <code>charts</code> /{' '}
+                    <code>tables</code> arrays: an empty list on a
+                    saved row means &ldquo;hide everything&rdquo;;
+                    a missing row means &ldquo;show defaults.&rdquo;
+                  </li>
+                  <li>
+                    <code>section_order</code> — section keys in
+                    render order. Default empty (= built-in order).
+                    Unknown keys are silently dropped at render
+                    time; missing default keys get appended to the
+                    end so a saved layout from before a new section
+                    was added still renders the new section.
+                  </li>
+                </ul>
+
+                <h3>Backward compatibility</h3>
+                <p>
+                  Pre-v3.31.45 projects don&apos;t have the new
+                  columns. GORM AutoMigrate adds them on next boot.
+                  Existing saved layouts continue to work — both new
+                  arrays default to empty, which means &ldquo;use
+                  built-in defaults&rdquo; (all resource widgets
+                  shown, default section order). Frontend{' '}
+                  <code>SavedLayout</code> gains the two fields as
+                  required (TypeScript-side); the wire shape allows
+                  them to be omitted on the PUT body, treated as
+                  empty.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.44 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

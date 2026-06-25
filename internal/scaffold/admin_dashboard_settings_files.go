@@ -29,7 +29,12 @@ func adminDashboardCatalogTS() string {
 
 import type { ResourceDefinition } from "@/lib/resource";
 
-export type WidgetKind = "card" | "chart" | "table";
+// v3.31.45 adds the "resource" kind for the per-resource preset
+// widgets shipped in v3.31.44 (Total stat + Latest table per
+// resource). They live in their own section on the dashboard rather
+// than mixing into Cards / Tables, so they get their own kind in the
+// catalog + their own saved-layout array.
+export type WidgetKind = "card" | "chart" | "table" | "resource";
 
 export interface CatalogWidget {
   /** Stable identifier the saved layout stores. Convention:
@@ -81,7 +86,10 @@ function kindOfWidget(type: string): WidgetKind {
 
 // buildDashboardCatalog returns the full list of available widgets
 // for the settings page: system widgets first, then one entry per
-// widget declared on every registered resource.
+// widget declared on every registered resource (legacy custom widgets
+// from v3.31.40), then -- v3.31.45 -- two entries per resource for
+// the v3.31.44 preset Total + Latest pair (kind="resource") so the
+// settings page can toggle them independently.
 export function buildDashboardCatalog(resources: ResourceDefinition[]): CatalogWidget[] {
   const out: CatalogWidget[] = [...SYSTEM_WIDGETS];
   for (const r of resources) {
@@ -97,6 +105,30 @@ export function buildDashboardCatalog(resources: ResourceDefinition[]): CatalogW
         description: w.endpoint,
       });
     }
+  }
+  // v3.31.45 -- per-resource preset widgets (Total + Latest, shipped
+  // in v3.31.44). One pair per registered resource unless it opted
+  // out via dashboard.enabled === false. Keys are stable per resource
+  // slug so the saved layout survives label changes.
+  for (const r of resources) {
+    if (r.dashboard?.enabled === false) continue;
+    const moduleName = r.label?.plural ?? r.name;
+    out.push({
+      key: r.slug + ":total",
+      kind: "resource",
+      module: moduleName,
+      moduleIcon: r.icon,
+      label: "Total " + moduleName,
+      description: "Count + 30-day sparkline",
+    });
+    out.push({
+      key: r.slug + ":latest",
+      kind: "resource",
+      module: moduleName,
+      moduleIcon: r.icon,
+      label: "Latest " + moduleName,
+      description: "Newest 5 records",
+    });
   }
   return out;
 }
@@ -128,7 +160,39 @@ export interface SavedLayout {
   cards: string[];
   charts: string[];
   tables: string[];
+  // v3.31.45 -- enabled keys for the "By resource" band (e.g.
+  // ["products:total", "orders:latest"]). Same empty-list semantics
+  // as the other arrays.
+  resources: string[];
+  // v3.31.45 -- section render order. Known keys: "cards", "charts",
+  // "tables", "by-resource". Empty array = use the built-in default.
+  // Unknown keys are silently dropped at render time.
+  section_order: string[];
   date_preset: string;
+}
+
+// v3.31.45 -- the four section keys the dashboard knows about, in
+// their built-in default order. The settings page renders the
+// reorder list against this; the dashboard render iterates it.
+export const DEFAULT_SECTION_ORDER = [
+  "cards",
+  "charts",
+  "tables",
+  "by-resource",
+] as const;
+export type DashboardSection = (typeof DEFAULT_SECTION_ORDER)[number];
+
+// resolveSectionOrder returns the effective section order: the saved
+// list if non-empty (with unknown keys dropped + missing defaults
+// appended), otherwise the built-in default. Appending missing
+// defaults means that a saved layout from before a new section was
+// added still renders the new section -- never disappears silently.
+export function resolveSectionOrder(layout: SavedLayout | undefined | null): DashboardSection[] {
+  const known = new Set<string>(DEFAULT_SECTION_ORDER);
+  const saved = (layout?.section_order ?? []).filter((k) => known.has(k)) as DashboardSection[];
+  if (saved.length === 0) return [...DEFAULT_SECTION_ORDER];
+  const missing = DEFAULT_SECTION_ORDER.filter((k) => !saved.includes(k));
+  return [...saved, ...missing];
 }
 
 // resolveEnabledKeys returns a Set of widget keys enabled for the
@@ -151,7 +215,13 @@ export function resolveEnabledKeys(
     return new Set(catalog.filter((w) => w.kind === kind).map((w) => w.key));
   }
   const saved =
-    kind === "card" ? layout.cards : kind === "chart" ? layout.charts : layout.tables;
+    kind === "card"
+      ? layout.cards
+      : kind === "chart"
+        ? layout.charts
+        : kind === "table"
+          ? layout.tables
+          : layout.resources;
   return new Set(saved ?? []);
 }
 `
@@ -194,6 +264,10 @@ export function useSaveDashboardLayout() {
       cards: string[];
       charts: string[];
       tables: string[];
+      // v3.31.45 -- two new arrays. Both optional on the wire; if
+      // omitted the API treats them as empty.
+      resources?: string[];
+      section_order?: string[];
       date_preset: string;
     }) => {
       const { data } = await apiClient.put<{ data: SavedLayout }>(
@@ -228,20 +302,33 @@ func adminDashboardSettingsPageTS() string {
 // what's pre-selected in settings.
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2 } from "@/lib/icons";
+import { Loader2, ChevronUp, ChevronDown } from "@/lib/icons";
 import { resources } from "@/resources";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import {
   buildDashboardCatalog,
   groupByModule,
   resolveEnabledKeys,
+  resolveSectionOrder,
+  DEFAULT_SECTION_ORDER,
   type CatalogWidget,
+  type DashboardSection,
 } from "@/lib/dashboard-catalog";
 import {
   useDashboardLayout,
   useSaveDashboardLayout,
 } from "@/hooks/use-dashboard-layout";
 import { getIcon } from "@/lib/icons";
+
+// v3.31.45 -- friendly labels for the four sections shown in the
+// reorder list. The keys stay machine-friendly ("by-resource") and
+// only the rendering uses these.
+const SECTION_LABELS: Record<DashboardSection, { title: string; description: string }> = {
+  cards: { title: "Stat cards", description: "System counts + per-resource contributed cards" },
+  charts: { title: "Charts", description: "Trend graphs and breakdown pies" },
+  tables: { title: "Tables", description: "Recent activity + Quick access" },
+  "by-resource": { title: "By Resource", description: "Per-resource Total + Latest pairs" },
+};
 
 export default function DashboardSettingsPage() {
   const { data: layout, isLoading } = useDashboardLayout();
@@ -252,6 +339,8 @@ export default function DashboardSettingsPage() {
   const [cards, setCards] = useState<Set<string>>(new Set());
   const [charts, setCharts] = useState<Set<string>>(new Set());
   const [tables, setTables] = useState<Set<string>>(new Set());
+  const [resourceWidgets, setResourceWidgets] = useState<Set<string>>(new Set());
+  const [sectionOrder, setSectionOrder] = useState<DashboardSection[]>([...DEFAULT_SECTION_ORDER]);
   const [datePreset, setDatePreset] = useState<string>("");
 
   useEffect(() => {
@@ -259,18 +348,39 @@ export default function DashboardSettingsPage() {
     setCards(resolveEnabledKeys(layout, "card", catalog));
     setCharts(resolveEnabledKeys(layout, "chart", catalog));
     setTables(resolveEnabledKeys(layout, "table", catalog));
+    setResourceWidgets(resolveEnabledKeys(layout, "resource", catalog));
+    setSectionOrder(resolveSectionOrder(layout));
     setDatePreset(layout?.date_preset ?? "");
   }, [layout, isLoading, catalog]);
 
   const cardsList = catalog.filter((w) => w.kind === "card");
   const chartsList = catalog.filter((w) => w.kind === "chart");
   const tablesList = catalog.filter((w) => w.kind === "table");
+  const resourceList = catalog.filter((w) => w.kind === "resource");
+
+  // Move a section one slot up/down in the order. The buttons are
+  // disabled at the ends so we don't need bounds-check at call sites,
+  // but keep a defensive guard for safety.
+  const moveSection = (key: DashboardSection, dir: -1 | 1) => {
+    setSectionOrder((prev) => {
+      const idx = prev.indexOf(key);
+      if (idx < 0) return prev;
+      const next = [...prev];
+      const target = idx + dir;
+      if (target < 0 || target >= next.length) return prev;
+      [next[idx], next[target]] = [next[target], next[idx]];
+      return next;
+    });
+  };
+  const resetOrder = () => setSectionOrder([...DEFAULT_SECTION_ORDER]);
 
   const handleSave = () => {
     save.mutate({
       cards: Array.from(cards),
       charts: Array.from(charts),
       tables: Array.from(tables),
+      resources: Array.from(resourceWidgets),
+      section_order: sectionOrder,
       date_preset: datePreset,
     });
   };
@@ -279,7 +389,7 @@ export default function DashboardSettingsPage() {
     <div>
       <PageHeader
         title="Dashboard settings"
-        subtitle="Choose which stat cards, charts, and tables show up on your dashboard."
+        subtitle="Choose which widgets show up, and reorder the dashboard sections."
       />
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-bg-elevated px-5 py-4">
@@ -305,6 +415,11 @@ export default function DashboardSettingsPage() {
         </div>
       ) : (
         <div className="space-y-6">
+          <SectionOrderPanel
+            order={sectionOrder}
+            onMove={moveSection}
+            onReset={resetOrder}
+          />
           <Section
             title="Stat cards"
             description="Compact tiles shown at the top of the dashboard. Pick the metrics you watch most."
@@ -326,9 +441,84 @@ export default function DashboardSettingsPage() {
             enabled={tables}
             onChange={setTables}
           />
+          <Section
+            title="By Resource"
+            description="Auto-generated Total + Latest pair per resource (v3.31.44). Toggle either widget independently."
+            widgets={resourceList}
+            enabled={resourceWidgets}
+            onChange={setResourceWidgets}
+          />
         </div>
       )}
     </div>
+  );
+}
+
+// v3.31.45 -- the section reorder panel. Renders one row per section
+// with up/down arrows. Visually mirrors the lesson catalog reorder UI
+// from the docs site so the convention stays consistent.
+interface SectionOrderPanelProps {
+  order: DashboardSection[];
+  onMove: (key: DashboardSection, dir: -1 | 1) => void;
+  onReset: () => void;
+}
+
+function SectionOrderPanel({ order, onMove, onReset }: SectionOrderPanelProps) {
+  const isDefault = order.every((k, i) => k === DEFAULT_SECTION_ORDER[i]);
+  return (
+    <section className="rounded-xl border border-border bg-bg-elevated">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">Section order</h2>
+          <p className="text-xs text-text-muted">
+            Drag-free ordering: tap the arrows to move a section up or down. Top renders first on the dashboard.
+          </p>
+        </div>
+        <button
+          onClick={onReset}
+          disabled={isDefault}
+          className="rounded-md border border-border px-2.5 py-1 text-xs text-text-secondary hover:bg-bg-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Reset to default
+        </button>
+      </header>
+      <ol className="divide-y divide-border">
+        {order.map((key, i) => {
+          const meta = SECTION_LABELS[key];
+          return (
+            <li key={key} className="flex items-center gap-3 px-5 py-3">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 text-accent text-xs font-mono">
+                {i + 1}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground">{meta.title}</p>
+                <p className="truncate text-xs text-text-muted">{meta.description}</p>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => onMove(key, -1)}
+                  disabled={i === 0}
+                  className="rounded-md border border-border bg-bg-tertiary p-1.5 text-text-secondary hover:bg-bg-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  aria-label={"Move " + meta.title + " up"}
+                >
+                  <ChevronUp className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onMove(key, 1)}
+                  disabled={i === order.length - 1}
+                  className="rounded-md border border-border bg-bg-tertiary p-1.5 text-text-secondary hover:bg-bg-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  aria-label={"Move " + meta.title + " down"}
+                >
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }
 
