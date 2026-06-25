@@ -24,12 +24,14 @@ func writeWebFiles(root string, opts Options) error {
 		filepath.Join(webRoot, "components", "navbar.tsx"):            webNavbar(opts),
 		filepath.Join(webRoot, "components", "footer.tsx"):            webFooter(opts),
 		filepath.Join(webRoot, "components", "providers.tsx"):         webProviders(),
-		// v3.31.42 — AppChrome + UserMenu + web-session marker.
-		filepath.Join(webRoot, "components", "AppChrome.tsx"):         webAppChrome(),
-		filepath.Join(webRoot, "components", "UserMenu.tsx"):          webUserMenu(),
-		filepath.Join(webRoot, "lib", "web-session.ts"):               webSessionLib(),
-		filepath.Join(webRoot, "lib", "api.ts"):                       webAPIClient(),
-		filepath.Join(webRoot, "hooks", "use-blogs.ts"):               webUseBlogsHook(),
+		// v3.31.48 -- AppChrome ships in the base scaffold (handles
+		// /forms/<token> chromeless rendering for public form-share).
+		// UserMenu, web-session marker, auth pages, useAuth, auth
+		// shells, and the auth-aware navbar are opt-in via
+		// `grit add web-auth` -- see webAuthFiles() in web_auth.go.
+		filepath.Join(webRoot, "components", "AppChrome.tsx"):               webAppChrome(),
+		filepath.Join(webRoot, "lib", "api.ts"):                             webAPIClient(),
+		filepath.Join(webRoot, "hooks", "use-blogs.ts"):                     webUseBlogsHook(),
 		filepath.Join(webRoot, "app", "blog", "page.tsx"):                   webBlogListPage(),
 		filepath.Join(webRoot, "app", "blog", "[slug]", "page.tsx"):         webBlogDetailPage(),
 		filepath.Join(webRoot, "app", "components", "page.tsx"):             webComponentsPage(opts),
@@ -37,22 +39,6 @@ func writeWebFiles(root string, opts Options) error {
 		// v3.31.20: public form-share page (Phase 2)
 		filepath.Join(webRoot, "app", "forms", "[token]", "page.tsx"):       webPublicFormPage(),
 		filepath.Join(webRoot, "public", ".gitkeep"):                         "",
-
-		// Auth pages (v3.28.1: shell-driven, same per-theme treatment as admin)
-		filepath.Join(webRoot, "app", "(auth)", "login", "page.tsx"):           webThemedLoginPage(),
-		filepath.Join(webRoot, "app", "(auth)", "register", "page.tsx"):        webThemedRegisterPage(),
-		filepath.Join(webRoot, "app", "(auth)", "forgot-password", "page.tsx"): webThemedForgotPasswordPage(),
-		filepath.Join(webRoot, "app", "(auth)", "callback", "page.tsx"):        webAuthCallback(),
-		filepath.Join(webRoot, "hooks", "use-auth.ts"):                         webUseAuth(),
-		filepath.Join(webRoot, "lib", "auth-provider.tsx"):                     webAuthProvider(),
-
-		// Theme-aware auth shells (v3.28.1) — same components as admin, copied
-		// in so web's bundle can render without reaching across packages.
-		filepath.Join(webRoot, "components", "auth", "AuthShell.tsx"):         adminAuthShellDispatcher(),
-		filepath.Join(webRoot, "components", "auth", "AtlasAuthShell.tsx"):    adminAtlasAuthShell(),
-		filepath.Join(webRoot, "components", "auth", "AuroraAuthShell.tsx"):   adminAuroraAuthShell(),
-		filepath.Join(webRoot, "components", "auth", "PulseAuthShell.tsx"):    adminPulseAuthShell(),
-		filepath.Join(webRoot, "components", "auth", "SocialAuthButtons.tsx"): adminAuthSocialButtons(),
 	}
 
 	for path, content := range files {
@@ -740,19 +726,17 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 func webNavbar(opts Options) string {
+	// v3.31.48 -- this is the BASE scaffold navbar, with no auth UI.
+	// Web ships without auth by default; operators add it via
+	// ` + "`grit add web-auth`" + `, which overwrites this file with the
+	// auth-aware version below (webNavbarWithAuth).
 	return `"use client";
 
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, Github } from "lucide-react";
-import { UserMenu } from "@/components/UserMenu";
 
-// v3.31.42: NEXT_PUBLIC_ADMIN_URL removed. The Admin link used to
-// live in the navbar; it's been replaced by the UserMenu which
-// shows Login/Sign up CTAs for anonymous visitors and an avatar
-// dropdown for signed-in ones. Staff who need both apps still
-// have the admin URL bookmarked.
 const DOCS_URL = "https://grit-vert.vercel.app/docs";
 
 const navLinks = [
@@ -806,10 +790,6 @@ export function Navbar() {
           >
             <Github className="h-5 w-5" />
           </a>
-          {/* v3.31.42 — UserMenu shows Login/Sign up CTAs when the
-              visitor is signed out, and an avatar dropdown with
-              Account + Sign out once they are. */}
-          <UserMenu />
         </div>
 
         {/* Mobile hamburger */}
@@ -823,6 +803,124 @@ export function Navbar() {
       </div>
 
       {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-lg">
+          <div className="mx-auto max-w-5xl px-6 py-4 flex flex-col gap-3">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className={` + "`" + `text-sm py-2 transition-colors ${
+                  pathname === link.href
+                    ? "text-foreground font-medium"
+                    : "text-text-secondary hover:text-foreground"
+                }` + "`" + `}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <a
+              href={DOCS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
+            >
+              Docs
+            </a>
+            <a
+              href="https://github.com/MUKE-coder/grit"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
+            >
+              GitHub
+            </a>
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+}
+`
+}
+
+// v3.31.48 -- webNavbarWithAuth is the auth-aware navbar written by
+// `grit add web-auth`. It imports UserMenu (Login/Sign up CTAs when
+// signed out, avatar dropdown when signed in) and replaces the
+// base scaffold's plain navbar.
+func webNavbarWithAuth(opts Options) string {
+	return `"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Menu, X, Github } from "lucide-react";
+import { UserMenu } from "@/components/UserMenu";
+
+const DOCS_URL = "https://grit-vert.vercel.app/docs";
+
+const navLinks = [
+  { href: "/", label: "Home" },
+  { href: "/blog", label: "Blog" },
+];
+
+export function Navbar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+
+  return (
+    <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
+      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
+        <Link href="/" className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 border border-accent/20">
+            <span className="text-accent font-mono font-bold text-sm">G</span>
+          </div>
+          <span className="text-lg font-bold tracking-tight">` + opts.ProjectName + `</span>
+        </Link>
+
+        <div className="hidden md:flex items-center gap-6">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={` + "`" + `text-sm transition-colors ${
+                pathname === link.href
+                  ? "text-foreground font-medium"
+                  : "text-text-secondary hover:text-foreground"
+              }` + "`" + `}
+            >
+              {link.label}
+            </Link>
+          ))}
+          <a
+            href={DOCS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-text-secondary hover:text-foreground transition-colors"
+          >
+            Docs
+          </a>
+          <a
+            href="https://github.com/MUKE-coder/grit"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-text-secondary hover:text-foreground transition-colors"
+          >
+            <Github className="h-5 w-5" />
+          </a>
+          <UserMenu />
+        </div>
+
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="md:hidden p-2 text-text-secondary hover:text-foreground transition-colors"
+          aria-label="Toggle menu"
+        >
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </div>
+
       {mobileOpen && (
         <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-lg">
           <div className="mx-auto max-w-5xl px-6 py-4 flex flex-col gap-3">

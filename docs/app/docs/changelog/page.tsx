@@ -28,6 +28,106 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.48 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.48
+                </span>
+                <span className="text-sm text-muted-foreground">June 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Two bug fixes from real user feedback on
+                  v3.31.47.</strong> Both happened on fresh{' '}
+                  <code>grit new</code> scaffolds: a broken Go file
+                  from a marker collision, and web auth shipping by
+                  default when it should be opt-in.
+                </p>
+
+                <h3>1. injectBefore now matches marker as a standalone line</h3>
+                <p>
+                  The generator&apos;s <code>injectBefore</code>{' '}
+                  did a raw <code>strings.Index</code> on the
+                  marker. Markers like{' '}
+                  <code>// grit:form-share:fields</code> sometimes
+                  appear inside the docstring of the function they
+                  precede (&ldquo;...at the marker comment...&rdquo;).
+                  The substring match landed there <em>first</em>{' '}
+                  and the case got injected into the comment, not
+                  the function body -- producing a syntax error.
+                </p>
+                <p>
+                  The matcher now walks line-by-line and requires
+                  the trimmed line content to equal the marker
+                  exactly. Docstrings that mention the marker by
+                  name are safe again, and the form-share
+                  scaffolded comments stay readable.
+                </p>
+
+                <h3>2. Web auth is now opt-in via grit add web-auth</h3>
+                <p>
+                  The base web scaffold has been quietly shipping
+                  the full auth surface since v3.28.1: login /
+                  register / forgot-password / callback pages, the
+                  five themed AuthShells, the useAuth hook,
+                  AuthProvider, UserMenu, the web-session marker,
+                  and Login / Sign up buttons in the navbar. That
+                  was always intended to be{' '}
+                  <strong>opt-in</strong> via{' '}
+                  <code>grit add web-auth</code> -- the base
+                  scaffold should be a clean marketing site with no
+                  auth UI.
+                </p>
+                <p>
+                  v3.31.48 moves all of those files into{' '}
+                  <code>grit add web-auth</code>:
+                </p>
+                <ul>
+                  <li>
+                    Base scaffold: navbar shows Home / Blog / Docs
+                    / GitHub only, no Login / Sign up. AppChrome
+                    keeps <code>/forms/&lt;token&gt;</code> as the
+                    only chromeless prefix (for public form-share).
+                  </li>
+                  <li>
+                    <code>grit add web-auth</code> now writes
+                    everything: hooks/use-auth.ts,
+                    lib/auth-provider.tsx, lib/web-session.ts, the
+                    four (auth) pages, the five themed shells,
+                    UserMenu, middleware.ts, ProtectedWebRoute.tsx
+                    -- and REPLACES the navbar + AppChrome with
+                    their auth-aware variants (which add the
+                    (auth) chromeless prefixes and the UserMenu in
+                    the navbar). Replacement requires{' '}
+                    <code>--force</code> for safety.
+                  </li>
+                </ul>
+
+                <h3>Migrating existing projects</h3>
+                <p>
+                  Projects scaffolded with v3.31.x before this
+                  release already have the auth files. They keep
+                  working unchanged -- no removal happens
+                  automatically. Future <code>grit new</code> calls
+                  produce the clean base scaffold; if you need auth
+                  on a fresh project, run{' '}
+                  <code>grit add web-auth</code> right after{' '}
+                  <code>grit new</code>.
+                </p>
+
+                <h3>Both bugs were reported same day</h3>
+                <p>
+                  The user spun up a fresh ecom-app, hit the
+                  form-share dispatch syntax error on
+                  <code>grit dev</code>, then noticed the web
+                  shipping auth they didn&apos;t want. Both shipped
+                  fixed in v3.31.48 within a few hours.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.47 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

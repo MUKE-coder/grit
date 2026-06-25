@@ -22,21 +22,27 @@ import (
 // AddWebAuth runs the web-auth scaffold against an existing Grit
 // project. The web app at apps/web/ is expected to exist; the
 // command is a no-op otherwise (with a clear error).
+//
+// v3.31.48 -- the command now writes the FULL auth surface, not just
+// the two helper files. Web ships without auth UI by default; this
+// command adds: AuthShell components + login/register/forgot/callback
+// pages + useAuth + AuthProvider + UserMenu + web-session marker +
+// the middleware + ProtectedWebRoute. It also OVERWRITES the navbar
+// and AppChrome with their auth-aware variants. The overwrite is
+// gated by --force for safety; without --force, those two files are
+// skipped with a notice (the operator can then merge by hand).
 func AddWebAuth(root string, force bool) error {
 	webRoot := filepath.Join(root, "apps", "web")
 	if _, err := os.Stat(webRoot); err != nil {
 		return fmt.Errorf("apps/web not found at %s — this command needs a project with a web frontend", webRoot)
 	}
 
-	files := []struct {
-		path    string
-		content string
-	}{
-		{filepath.Join(webRoot, "middleware.ts"), webMiddlewareTS()},
-		{filepath.Join(webRoot, "components", "ProtectedWebRoute.tsx"), webProtectedRouteTSX()},
-	}
+	// Project name is used by the auth-aware navbar's logo. We derive
+	// it from the root directory; the alternative is parsing grit.json,
+	// but the dir name is what `grit new` uses anyway.
+	opts := Options{ProjectName: filepath.Base(root)}
 
-	for _, f := range files {
+	for _, f := range webAuthFiles(webRoot, opts) {
 		rel, _ := filepath.Rel(root, f.path)
 
 		if _, err := os.Stat(f.path); err == nil && !force {
@@ -54,12 +60,67 @@ func AddWebAuth(root string, force bool) error {
 	}
 
 	fmt.Println()
-	fmt.Println("  Next steps:")
+	fmt.Println("  Web-auth is wired in. Next steps:")
 	fmt.Println("    1. Open apps/web/middleware.ts and add protected paths to the matcher.")
 	fmt.Println("    2. Or wrap a page client-side with <ProtectedWebRoute>.")
-	fmt.Println("    3. See /docs/concepts/protecting-web-pages for both patterns.")
+	fmt.Println("    3. The navbar now shows Login / Sign up buttons + a UserMenu.")
+	fmt.Println("    4. See /docs/concepts/protecting-web-pages for both patterns.")
 	fmt.Println()
 	return nil
+}
+
+// webAuthFiles returns the full set of files `grit add web-auth`
+// scaffolds. Two kinds:
+//
+//   - new files (UserMenu, web-session, useAuth, AuthProvider, the
+//     four (auth) pages, the five themed shells, middleware,
+//     ProtectedWebRoute) — written unless they already exist
+//   - REPLACEMENTS for the base scaffold's plain navbar +
+//     AppChrome with their auth-aware variants — needs --force to
+//     overwrite, since the operator may have customised them
+//
+// Keeping the list in one function lets the install + an eventual
+// uninstall command see the same set.
+type webAuthFile struct {
+	path    string
+	content string
+}
+
+func webAuthFiles(webRoot string, opts Options) []webAuthFile {
+	return []webAuthFile{
+		// Hooks + lib
+		{filepath.Join(webRoot, "hooks", "use-auth.ts"), webUseAuth()},
+		{filepath.Join(webRoot, "lib", "auth-provider.tsx"), webAuthProvider()},
+		{filepath.Join(webRoot, "lib", "web-session.ts"), webSessionLib()},
+
+		// Auth pages -- (auth) route group
+		{filepath.Join(webRoot, "app", "(auth)", "login", "page.tsx"), webThemedLoginPage()},
+		{filepath.Join(webRoot, "app", "(auth)", "register", "page.tsx"), webThemedRegisterPage()},
+		{filepath.Join(webRoot, "app", "(auth)", "forgot-password", "page.tsx"), webThemedForgotPasswordPage()},
+		{filepath.Join(webRoot, "app", "(auth)", "callback", "page.tsx"), webAuthCallback()},
+
+		// Theme-aware shells (copied from admin so the web bundle is
+		// self-contained -- no cross-package import).
+		{filepath.Join(webRoot, "components", "auth", "AuthShell.tsx"), adminAuthShellDispatcher()},
+		{filepath.Join(webRoot, "components", "auth", "AtlasAuthShell.tsx"), adminAtlasAuthShell()},
+		{filepath.Join(webRoot, "components", "auth", "AuroraAuthShell.tsx"), adminAuroraAuthShell()},
+		{filepath.Join(webRoot, "components", "auth", "PulseAuthShell.tsx"), adminPulseAuthShell()},
+		{filepath.Join(webRoot, "components", "auth", "SocialAuthButtons.tsx"), adminAuthSocialButtons()},
+
+		// UserMenu drives the navbar's Login/Sign up + avatar dropdown.
+		{filepath.Join(webRoot, "components", "UserMenu.tsx"), webUserMenu()},
+
+		// Page protection helpers (the original v3.31.22 contents).
+		{filepath.Join(webRoot, "middleware.ts"), webMiddlewareTS()},
+		{filepath.Join(webRoot, "components", "ProtectedWebRoute.tsx"), webProtectedRouteTSX()},
+
+		// REPLACEMENTS -- the base scaffold ships plain versions of
+		// these; the auth-aware versions add UserMenu (navbar) and
+		// the (auth) chromeless prefixes (AppChrome). --force is
+		// required to overwrite an existing file.
+		{filepath.Join(webRoot, "components", "navbar.tsx"), webNavbarWithAuth(opts)},
+		{filepath.Join(webRoot, "components", "AppChrome.tsx"), webAppChromeWithAuth()},
+	}
 }
 
 // webMiddlewareTS — runs on every Next.js request. Cheap: checks for

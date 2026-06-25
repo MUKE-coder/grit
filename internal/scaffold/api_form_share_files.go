@@ -204,7 +204,7 @@ type PublicFieldInfo struct {
 // render. v3.31.43: replaces the previous hardcoded shape with the
 // actual resource fields. The switch mirrors SubmitSharedForm so the
 // generator only has to emit one extra case per new resource at the
-// grit:form-share:fields marker.
+// marker comment inside the switch.
 func PublicFields(resourceName string) []PublicFieldInfo {
 	switch resourceName {
 	// grit:form-share:fields

@@ -301,21 +301,37 @@ func injectBefore(filePath, marker, code string) error {
 	}
 
 	content := string(data)
-	idx := strings.Index(content, marker)
-	if idx == -1 {
+
+	// v3.31.48 -- find the marker as a standalone line (whitespace
+	// only before, whitespace or end of line after). Prior versions
+	// used a raw substring match which could mis-fire when the
+	// marker string appeared inside a docstring, e.g.
+	// "// the // grit:form-share:fields marker." matched before the
+	// actual marker line and injection landed in the comment.
+	lineStart := -1
+	cursor := 0
+	for cursor < len(content) {
+		lineEnd := strings.IndexByte(content[cursor:], '\n')
+		var line string
+		if lineEnd == -1 {
+			line = content[cursor:]
+		} else {
+			line = content[cursor : cursor+lineEnd]
+		}
+		if strings.TrimSpace(line) == marker {
+			lineStart = cursor
+			break
+		}
+		if lineEnd == -1 {
+			break
+		}
+		cursor += lineEnd + 1
+	}
+	if lineStart < 0 {
 		return fmt.Errorf("marker %q not found in %s", marker, filePath)
 	}
 
-	// Find the start of the line containing the marker
-	lineStart := idx
-	for lineStart > 0 && content[lineStart-1] != '\n' {
-		lineStart--
-	}
-
-	// Get the indentation of the marker line (for reference, not used for injected code)
-	_ = content[lineStart:idx]
-
-	// Insert the code before the marker line
+	// Insert the code before the marker line.
 	newContent := content[:lineStart] + code + "\n" + content[lineStart:]
 
 	return os.WriteFile(filePath, []byte(newContent), 0644)

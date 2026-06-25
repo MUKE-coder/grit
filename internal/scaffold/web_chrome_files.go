@@ -14,14 +14,50 @@ package scaffold
 //     web sessions when both apps run on the same browser.
 
 func webAppChrome() string {
+	// v3.31.48 -- the BASE scaffold's AppChrome. Only `/forms/<token>`
+	// is chromeless (public form share); the auth paths don't exist
+	// in the base scaffold and only get added when `grit add web-auth`
+	// runs, which also overwrites this file with webAppChromeWithAuth.
 	return `"use client";
 
-// v3.31.42 -- AppChrome conditionally renders Navbar + Footer based on
-// the current pathname. The auth pages and the public form-share page
-// each have their own standalone layout (AuthShell / form layout) and
-// should not double up on chrome. Rendering this inside the root
-// layout keeps it server-friendly: the root layout stays a server
-// component, only this small wrapper is client.
+import { usePathname } from "next/navigation";
+import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
+
+// Pathname prefixes that opt out of Navbar + Footer.
+// - /forms/<token> is the public form-share page. It needs to look
+//   like a stand-alone form, not part of the marketing site.
+const CHROMELESS_PREFIXES = [
+  "/forms/",
+];
+
+export function AppChrome({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname() ?? "";
+  const chromeless = CHROMELESS_PREFIXES.some((p) =>
+    pathname === p || pathname.startsWith(p)
+  );
+
+  if (chromeless) {
+    return <main className="min-h-screen">{children}</main>;
+  }
+
+  return (
+    <>
+      <Navbar />
+      <main className="min-h-screen">{children}</main>
+      <Footer />
+    </>
+  );
+}
+`
+}
+
+// v3.31.48 -- webAppChromeWithAuth is written by `grit add web-auth`.
+// Adds the (auth) route group prefixes to CHROMELESS_PREFIXES so the
+// Login/Register/Forgot-Password pages don't double up on chrome
+// (AuthShell already provides their full-bleed layout).
+func webAppChromeWithAuth() string {
+	return `"use client";
 
 import { usePathname } from "next/navigation";
 import { Navbar } from "@/components/navbar";
