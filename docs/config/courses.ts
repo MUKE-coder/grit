@@ -534,6 +534,14 @@ const conceptsCourse: Course = {
               status: 'available',
             },
             {
+              slug: 'form-share-schema',
+              title: 'Form-share schema + editable shares — v3.31.43',
+              tagline: "Public form now renders the resource's actual fields; admin can edit label + password after creation.",
+              minutes: 8,
+              difficulty: 'medium',
+              status: 'available',
+            },
+            {
               slug: 'protecting-web-pages',
               title: 'Protecting web pages — middleware + ProtectedWebRoute',
               tagline: 'Two patterns, one command. SSR cookie gate for whole sections, client wrapper for role gates.',
@@ -1237,6 +1245,7 @@ const webNextCourse: Course = {
           lessons: [
             { slug: 'signup', title: 'Signup + login forms', tagline: 'Server actions + Zod.', minutes: 8, difficulty: 'medium', status: 'available' },
             { slug: 'dashboard-widgets', title: 'Dashboard widgets', tagline: 'Stats, charts, activity feed.', minutes: 9, difficulty: 'medium', status: 'available' },
+            { slug: 'per-resource-widgets', title: 'Per-resource dashboard widgets — v3.31.44', tagline: 'Auto-generated Total + 30-day sparkline + Latest N per resource, scoped by DateFilter.', minutes: 9, difficulty: 'medium', status: 'available' },
           ],
         },
       ],

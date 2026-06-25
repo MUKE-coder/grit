@@ -46,6 +46,7 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
   'concepts/generators/using-api-from-web': () => import('@/content/lessons/concepts/generators/using-api-from-web'),
   'concepts/generators/grit-expose': () => import('@/content/lessons/concepts/generators/grit-expose'),
   'concepts/generators/public-form-sharing': () => import('@/content/lessons/concepts/generators/public-form-sharing'),
+  'concepts/generators/form-share-schema': () => import('@/content/lessons/concepts/generators/form-share-schema'),
   'concepts/generators/protecting-web-pages': () => import('@/content/lessons/concepts/generators/protecting-web-pages'),
 
   'concepts/frameworks-patterns/gin-basics': () => import('@/content/lessons/concepts/frameworks-patterns/gin-basics'),
@@ -120,6 +121,7 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
 
   'web-nextjs/dashboard/signup': () => import('@/content/lessons/web-nextjs/dashboard/signup'),
   'web-nextjs/dashboard/dashboard-widgets': () => import('@/content/lessons/web-nextjs/dashboard/dashboard-widgets'),
+  'web-nextjs/dashboard/per-resource-widgets': () => import('@/content/lessons/web-nextjs/dashboard/per-resource-widgets'),
 
   'web-nextjs/admin-panel/define-resource': () => import('@/content/lessons/web-nextjs/admin-panel/define-resource'),
   'web-nextjs/admin-panel/datatable': () => import('@/content/lessons/web-nextjs/admin-panel/datatable'),
