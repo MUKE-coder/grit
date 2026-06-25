@@ -6472,6 +6472,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	formShareHandler := &handlers.FormShareHandler{DB: db}
 	// v3.31.40 — per-user dashboard customisation
 	dashboardLayoutHandler := &handlers.DashboardLayoutHandler{DB: db}
+	// v3.31.44 — per-resource dashboard stats (Total + sparkline + Latest N)
+	resourceStatsHandler := &handlers.ResourceStatsHandler{DB: db}
 
 	// Sync registry — list every model that should be syncable from
 	// offline-first desktop clients. The resource generator injects
@@ -6770,6 +6772,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		admin.DELETE("/admin/form-shares/:id", formShareHandler.Delete)
 		// v3.31.25 — audit log of public submissions
 		admin.GET("/admin/form-submissions", formShareHandler.ListSubmissions)
+
+		// v3.31.44 — per-resource dashboard stats: Total + 30-day
+		// sparkline + Latest N. Dispatched server-side; only resources
+		// registered in services/resource_stats_dispatch.go are reachable.
+		admin.GET("/admin/dashboard/resource-stats/:resource", resourceStatsHandler.Get)
 
 		// grit:routes:admin
 	}

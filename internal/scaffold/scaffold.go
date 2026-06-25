@@ -360,6 +360,9 @@ func Run(opts Options) error {
 	if err := writeFormShareFiles(root, opts); err != nil {
 		return fmt.Errorf("writing form-share files: %w", err)
 	}
+	if err := writeResourceStatsFiles(root, opts); err != nil {
+		return fmt.Errorf("writing resource-stats files: %w", err)
+	}
 
 	// Write blog example files
 	spinner.Printf("  → Adding blog example...\n")
@@ -538,6 +541,9 @@ func RunSingle(opts Options) error {
 	}
 	if err := writeFormShareFiles(root, opts); err != nil {
 		return fmt.Errorf("writing form-share files: %w", err)
+	}
+	if err := writeResourceStatsFiles(root, opts); err != nil {
+		return fmt.Errorf("writing resource-stats files: %w", err)
 	}
 
 	// Write blog example

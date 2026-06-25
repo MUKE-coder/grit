@@ -182,6 +182,31 @@ func (g *Generator) injectAll(names Names) error {
 		fmt.Println("  ✓ Injected form-share dispatch case")
 	}
 
+	// 5c. v3.31.44 — inject a dispatch case into the resource-stats
+	// service so the per-resource dashboard widgets (Total + sparkline
+	// + Latest N) can compute stats for this resource. The case key is
+	// the plural snake name -- matches the slug the dashboard uses for
+	// the URL.
+	statsFile := filepath.Join(apiRoot, "internal", "services", "resource_stats_dispatch.go")
+	if fileExists(statsFile) {
+		statsCase := fmt.Sprintf(`	case %q:
+		return reflectiveResourceStats(db, resourceName, &models.%s{}, filter)
+`,
+			names.Plural,
+			names.Pascal,
+		)
+		if err := injectBefore(statsFile, "// grit:resource-stats:dispatch", statsCase); err != nil {
+			// Pre-v3.31.44 projects don't have the marker yet.
+			// Surface a warning so the operator knows to add it but
+			// don't fail the whole generate -- the dashboard widget
+			// will just render an error state for this resource until
+			// the marker is added (or the project is re-scaffolded).
+			fmt.Println("  ⚠ resource-stats:dispatch marker missing; dashboard widget for " + names.Plural + " will be unavailable. Add `// grit:resource-stats:dispatch` to services/resource_stats_dispatch.go inside ComputeResourceStats().")
+		} else {
+			fmt.Println("  ✓ Injected resource-stats dispatch case")
+		}
+	}
+
 	// 6. Inject schema export
 	schemaIndex := filepath.Join(sharedRoot, "schemas", "index.ts")
 	if fileExists(schemaIndex) {

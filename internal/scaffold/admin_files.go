@@ -403,6 +403,13 @@ func writeAdminFiles(root string, opts Options) error {
 		}
 	}
 
+	// v3.31.44 — per-resource dashboard widgets (Total + sparkline,
+	// Latest N). Lives in its own scaffold file so the widget files
+	// can be added in one place without growing the main map further.
+	if err := writeAdminResourceDashboardWidgets(root, opts); err != nil {
+		return fmt.Errorf("writing resource dashboard widgets: %w", err)
+	}
+
 	return nil
 }
 

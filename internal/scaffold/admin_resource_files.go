@@ -205,7 +205,16 @@ export interface WidgetDefinition {
 }
 
 export interface DashboardDefinition {
-  widgets: WidgetDefinition[];
+  // v3.31.44 -- set to false to hide the per-resource preset widgets
+  // (Total + sparkline + Latest N) from the main dashboard. The
+  // widgets are opt-in disabled, not opt-in enabled: every newly
+  // generated resource gets them by default.
+  enabled?: boolean;
+  // Reserved for the custom widget builder (v3.31.40 dashboard
+  // layout work). Existing resources may already declare widgets[];
+  // the preset Total + Latest N widgets render even when this is
+  // empty.
+  widgets?: WidgetDefinition[];
 }
 
 // ─── Resource Definition ────────────────────────────────────────────

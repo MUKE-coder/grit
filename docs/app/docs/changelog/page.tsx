@@ -28,6 +28,99 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.44 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.44
+                </span>
+                <span className="text-sm text-muted-foreground">June 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Per-resource dashboard widgets, scoped by DateFilter.</strong>{' '}
+                  Every newly generated resource now ships with two
+                  preset widgets on the main dashboard: a{' '}
+                  <strong>Total stat card with a 30-day sparkline</strong>{' '}
+                  on the left and a <strong>Latest 5 records</strong>{' '}
+                  preview on the right. Both honor the existing
+                  dashboard <code>DateFilter</code> so the count
+                  obeys whichever range the operator has selected.
+                </p>
+
+                <h3>How it works</h3>
+                <p>
+                  Three pieces ship together:
+                </p>
+                <ul>
+                  <li>
+                    <strong>Service</strong>:{' '}
+                    <code>services.ComputeResourceStats</code> in{' '}
+                    <code>apps/api/internal/services/resource_stats_dispatch.go</code>{' '}
+                    — a generator-driven switch over resource name,
+                    each case calls a single reflective helper that
+                    counts rows in the active range, builds a
+                    30-day sparkline, and lists the newest N (JSON
+                    round-tripped so <code>json:&quot;-&quot;</code>{' '}
+                    columns like <code>PasswordHash</code> never leak).
+                  </li>
+                  <li>
+                    <strong>Endpoint</strong>:{' '}
+                    <code>GET /api/admin/dashboard/resource-stats/:resource</code>{' '}
+                    — accepts the same{' '}
+                    <code>created_since</code> /{' '}
+                    <code>created_from</code> /{' '}
+                    <code>created_to</code> params the resource list
+                    pages already use, so the wire shape matches.
+                  </li>
+                  <li>
+                    <strong>Widgets</strong>:{' '}
+                    <code>ResourceStatCard</code>,{' '}
+                    <code>ResourceLatestTable</code>, and a thin{' '}
+                    <code>ResourceWidgetsRow</code> wrapper. The
+                    dashboard page maps over registered resources
+                    and renders one row per resource below the
+                    existing Quick Access section.
+                  </li>
+                </ul>
+
+                <h3>Sparkline window is always 30 days</h3>
+                <p>
+                  The sparkline ignores the active date filter on
+                  purpose — under the &ldquo;Today&rdquo; preset
+                  it would collapse to a single bar, which carries
+                  no information. The total + latest list still
+                  obey the filter; only the trend chart is fixed.
+                </p>
+
+                <h3>Opt-out per resource</h3>
+                <p>
+                  Resources can hide their widgets by setting{' '}
+                  <code>dashboard: {`{ enabled: false }`}</code>{' '}
+                  in the resource definition. The flag is opt-out
+                  by design: a new resource is more often than not
+                  worth showing on the dashboard.
+                </p>
+
+                <h3>Backward compatibility</h3>
+                <p>
+                  The generator injects a switch case into{' '}
+                  <code>resource_stats_dispatch.go</code> on each{' '}
+                  <code>grit generate</code> run, at the marker{' '}
+                  <code>{`// grit:resource-stats:dispatch`}</code>.
+                  Projects scaffolded before v3.31.44 don&apos;t
+                  have the file or the marker — the generator
+                  detects this and prints a one-line warning
+                  instead of failing. Patch existing projects by
+                  copying the scaffold file from the framework
+                  repo, then re-running{' '}
+                  <code>grit generate</code> to populate the cases
+                  (or hand-edit them).
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.43 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

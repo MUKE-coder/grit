@@ -14,7 +14,7 @@ func adminCaptivatingDashboard() string {
 	return `"use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AreaChart, Area, BarChart, Bar, CartesianGrid, ResponsiveContainer,
@@ -24,6 +24,8 @@ import { useMe } from "@/hooks/use-auth";
 import { resources } from "@/resources";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { SkeletonCards } from "@/components/ui/Skeleton";
+import { DateFilter, type DateRange } from "@/components/tables/date-filter";
+import { ResourceWidgetsRow } from "@/components/dashboard/ResourceWidgetsRow";
 import { apiClient } from "@/lib/api-client";
 import {
   Activity as ActivityIcon, ArrowUpRight,
@@ -48,6 +50,11 @@ interface NotificationsResponse { unread: number }
 
 export default function DashboardPage() {
   const { data: user } = useMe();
+  // v3.31.44 -- shared DateFilter scopes the per-resource widgets
+  // (Total + Latest N). Held in state here so the filter survives
+  // hot-reload but doesn't bleed into the URL (would conflict with
+  // the resource list pages' own URL-bound filter).
+  const [dateRange, setDateRange] = useState<DateRange>({});
   const greeting = (() => {
     const h = new Date().getHours();
     if (h < 12) return "Good morning";
@@ -147,6 +154,17 @@ export default function DashboardPage() {
         title={greeting + ", " + (user?.first_name || "Admin")}
         subtitle="Here's a snapshot of what's happening across your app right now."
       />
+
+      {/* v3.31.44 -- range filter scopes the per-resource widgets
+          below. Sits on its own row so the existing "Resources"
+          stat tile (count of registered modules) reads correctly
+          against the dashboard's overall mode. */}
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-xs font-medium uppercase tracking-wide text-text-muted">
+          Showing resource activity for
+        </p>
+        <DateFilter value={dateRange} onChange={setDateRange} label="Range" />
+      </div>
 
       {/* Stat tiles */}
       {statsLoading ? (
@@ -332,6 +350,32 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* v3.31.44 -- per-resource widgets. One row per registered
+          resource: Total + 30-day sparkline on the left, Latest N
+          records on the right. Resources opting out (` + "`" + `dashboard: { enabled: false }` + "`" + `)
+          are skipped here. Each row's queries are keyed on the
+          shared DateFilter range so changing the filter refetches
+          every widget in lockstep. */}
+      {resources.filter((r) => r.dashboard?.enabled !== false).length > 0 && (
+        <div className="mt-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
+              By resource
+            </h2>
+            <p className="text-[11px] text-text-muted">
+              Scoped to the range above &middot; sparkline always last 30 days
+            </p>
+          </div>
+          <div className="space-y-4">
+            {resources
+              .filter((r) => r.dashboard?.enabled !== false)
+              .map((r) => (
+                <ResourceWidgetsRow key={r.slug} resource={r} dateRange={dateRange} />
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
