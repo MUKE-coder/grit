@@ -28,6 +28,127 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.49 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.49
+                </span>
+                <span className="text-sm text-muted-foreground">June 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Three small ergonomic wins from real
+                  operator feedback.</strong> All three landed
+                  together in v3.31.49.
+                </p>
+
+                <h3>1. Activity log shows the operator&apos;s real IP, not &quot;::1&quot;</h3>
+                <p>
+                  Local-dev activity rows showed{' '}
+                  <code>::1</code> in the IP column because
+                  gin&apos;s <code>ClientIP()</code> correctly
+                  reports the IPv6 loopback for same-machine
+                  traffic. Operators expect to see their actual
+                  public IP.
+                </p>
+                <p>
+                  The admin / web axios clients now fetch the
+                  operator&apos;s public IP once per session
+                  (cached in <code>sessionStorage</code>; sourced
+                  from <code>api.ipify.org</code>) and attach it
+                  as <code>X-Public-IP-Hint</code> on every API
+                  call. The new{' '}
+                  <code>services.ResolveClientIP</code> helper
+                  honours the hint <em>only</em> when the TCP peer
+                  is loopback, so production traffic from real
+                  proxies (which sets <code>X-Forwarded-For</code>{' '}
+                  for gin to consume) keeps using the trusted path
+                  and can&apos;t be spoofed by a client header.
+                </p>
+                <p>
+                  When the lookup fails (offline / ad-blocker), the
+                  feed falls back to the prior behaviour and
+                  renders <code>localhost (::1)</code> with the
+                  raw value tucked next to it so the origin stays
+                  inspectable.
+                </p>
+
+                <h3>2. Web navbar gets an Admin CTA back</h3>
+                <p>
+                  v3.31.42 replaced the navbar&apos;s Admin link
+                  with the v3.31.42 UserMenu (Login / Sign up +
+                  avatar dropdown). Operators landing on the
+                  marketing site lost the one-click bounce to the
+                  admin app and had to type the URL by hand.
+                </p>
+                <p>
+                  v3.31.49 puts an Admin button back in the
+                  navbar, both in the base scaffold (no-auth, post
+                  v3.31.48) and in the auth-aware variant. Points
+                  at <code>NEXT_PUBLIC_ADMIN_URL</code> (defaults
+                  to <code>http://localhost:3001</code> for dev;
+                  set to your prod admin origin before shipping).
+                </p>
+
+                <h3>3. Landing page surfaces all the dev URLs</h3>
+                <p>
+                  The <code>grit new</code> welcome banner prints
+                  every URL the scaffold ships with: API, API
+                  Docs, GORM Studio, Sentinel, Pulse, Admin,
+                  MinIO, Mailhog. Once the terminal scrolls past,
+                  operators have to dig back through history to
+                  find the right one.
+                </p>
+                <p>
+                  A new <code>{`<DevLinks />`}</code> component
+                  renders all of them as a clickable grid at the
+                  bottom of the web landing page, grouped by
+                  function (App / API / Data / Ops) and colour-
+                  coded. The whole section is wrapped in a{' '}
+                  <code>NODE_ENV !== &quot;production&quot;</code>{' '}
+                  check at module level so production marketing
+                  pages never leak the internal port map -- the
+                  section disappears from the prod bundle
+                  entirely, not just hidden behind a class.
+                </p>
+
+                <h3>Files changed</h3>
+                <ul>
+                  <li>
+                    Backend: new{' '}
+                    <code>services/clientip.go</code>{' '}
+                    (ResolveClientIP); inline mirror in{' '}
+                    <code>middleware/activity.go</code> (HTTP
+                    audit logger); CORS
+                    Access-Control-Allow-Headers extended to
+                    allow the hint.
+                  </li>
+                  <li>
+                    Admin: <code>lib/api-client.ts</code> fetches
+                    + caches the public IP, attaches the hint;
+                    activity page&apos;s{' '}
+                    <code>prettyIP</code> helper renders
+                    &quot;localhost&quot; for loopback so
+                    fall-back rows still read cleanly.
+                  </li>
+                  <li>
+                    Web: <code>components/navbar.tsx</code> +{' '}
+                    auth variant gain the Admin button;{' '}
+                    <code>components/dev-links.tsx</code> new
+                    file; <code>app/page.tsx</code> renders{' '}
+                    <code>{`<DevLinks />`}</code> at the bottom.
+                  </li>
+                  <li>
+                    Env: <code>NEXT_PUBLIC_ADMIN_URL</code>{' '}
+                    documented in <code>.env</code> with the
+                    default + a prod-deployment note.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.31.48 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

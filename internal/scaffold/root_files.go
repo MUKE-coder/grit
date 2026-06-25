@@ -116,6 +116,12 @@ REDIS_URL=redis://localhost:6380
 # Public API URL — baked into Next.js bundles at build time
 API_URL=http://localhost:8080
 
+# v3.31.49 — admin panel URL surfaced in the web app's navbar +
+# landing-page dev links. Defaults to the dev port (3001); set to
+# your production admin origin (e.g. https://admin.example.com)
+# before shipping.
+NEXT_PUBLIC_ADMIN_URL=http://localhost:3001
+
 # Storage — Which provider to use: minio, s3, r2, b2
 STORAGE_DRIVER=minio
 

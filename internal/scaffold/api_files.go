@@ -54,6 +54,11 @@ func writeAPIFiles(root string, opts Options) error {
 		// v3.30 — semantic UserActivity log + ticket system
 		filepath.Join(apiRoot, "internal", "models", "user_activity.go"):    userActivityModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "activity.go"):       userActivityServiceGo(),
+		// v3.31.49 — ResolveClientIP honours the X-Public-IP-Hint
+		// header sent by the admin/web clients when the TCP peer is
+		// loopback, so dev activity logs show the operator's actual
+		// public IP instead of "::1".
+		filepath.Join(apiRoot, "internal", "services", "clientip.go"):       clientIPHelperGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user_activity.go"): userActivityHandlerGo(),
 		// v3.31.40 — per-user dashboard customisation
 		filepath.Join(apiRoot, "internal", "models", "dashboard_layout.go"):    dashboardLayoutModelGo(),
@@ -2376,7 +2381,7 @@ func CORS(allowedOrigins []string) gin.HandlerFunc {
 		// list, the browser's preflight strips the headers and the request
 		// either fails the AutoCSRF check or replays without an idempotency
 		// guarantee. Authorization stays for native bearer clients.
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, X-CSRF-Token, Idempotency-Key")
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, X-CSRF-Token, Idempotency-Key, X-Public-IP-Hint")
 		c.Header("Access-Control-Allow-Credentials", "true")
 		c.Header("Access-Control-Max-Age", "86400")
 
@@ -4975,6 +4980,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -5039,7 +5045,7 @@ func ActivityLogger(db *gorm.DB) gin.HandlerFunc {
 			Path:          c.FullPath(),
 			Status:        c.Writer.Status(),
 			PayloadDigest: digestBody(bodyBytes),
-			IPAddress:     c.ClientIP(),
+			IPAddress:     resolveClientIP(c),
 			UserAgent:     c.Request.UserAgent(),
 			DurationMS:    time.Since(started).Milliseconds(),
 			CreatedAt:     time.Now(), // explicit — Canonical hashes this field
@@ -5054,6 +5060,24 @@ func ActivityLogger(db *gorm.DB) gin.HandlerFunc {
 			auditDropped.Add(1)
 		}
 	}
+}
+
+// v3.31.49 -- mirror of services.ResolveClientIP. Inlined here
+// (rather than imported) because middleware is a leaf dep that the
+// services package itself relies on through the request chain;
+// duplicating ten lines avoids the cycle and keeps the audit path
+// allocation-free.
+func resolveClientIP(c *gin.Context) string {
+	ip := c.ClientIP()
+	if ip == "::1" || ip == "127.0.0.1" || ip == "0.0.0.0" {
+		if hint := strings.TrimSpace(c.GetHeader("X-Public-IP-Hint")); hint != "" {
+			if len(hint) > 64 {
+				hint = hint[:64]
+			}
+			return hint
+		}
+	}
+	return ip
 }
 
 // auditChan is the bounded backlog for the single audit writer. 4096

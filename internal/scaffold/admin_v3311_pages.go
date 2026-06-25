@@ -304,7 +304,14 @@ export default function DashboardPage() {
                   <p className="truncate text-foreground">{row.summary}</p>
                   <p className="text-xs text-text-muted">
                     <code className="font-mono">{row.action}</code>
-                    {row.ip_address && <span> · {row.ip_address}</span>}
+                    {row.ip_address && (
+                      <span title={row.ip_address}>
+                        {" · "}
+                        {row.ip_address === "::1" || row.ip_address === "127.0.0.1"
+                          ? "localhost"
+                          : row.ip_address}
+                      </span>
+                    )}
                   </p>
                 </div>
                 <span className="shrink-0 text-xs text-text-muted">
@@ -1055,7 +1062,7 @@ export default function ActivityPage() {
                           <p className="truncate text-sm font-medium text-foreground">{row.summary}</p>
                           <p className="truncate text-xs text-text-muted">
                             <code className="font-mono">{row.action}</code>
-                            {row.ip_address && <span> · {row.ip_address}</span>}
+                            {row.ip_address && <span> · {prettyIP(row.ip_address)}</span>}
                           </p>
                         </div>
                         <button
@@ -1089,7 +1096,7 @@ export default function ActivityPage() {
             <KV label="Severity" value={detail.severity.toUpperCase()} />
             <KV label="Resource" value={detail.resource_type ? detail.resource_type + " · " + detail.resource_id : "—"} />
             <KV label="User" value={detail.user_id || "system"} />
-            <KV label="IP" value={detail.ip_address || "—"} />
+            <KV label="IP" value={prettyIP(detail.ip_address)} />
             <KV label="User agent" value={<span className="text-xs text-text-muted">{detail.user_agent || "—"}</span>} />
             {detail.metadata && (
               <div>
@@ -1102,6 +1109,23 @@ export default function ActivityPage() {
       </ResponsiveSheet>
     </div>
   );
+}
+
+// v3.31.49 -- IPv6 loopback (::1) and IPv4 loopback (127.0.0.1) are
+// the actual IP for local-dev requests; gin.Context.ClientIP() does
+// the right thing. But "::1" reads as cryptic to operators -- and
+// every dev sees it on every event. Show "localhost" with the raw
+// value tucked next to it so the origin is obvious and inspectable.
+function prettyIP(ip: string | null | undefined): React.ReactNode {
+  if (!ip) return "—";
+  if (ip === "::1" || ip === "127.0.0.1" || ip === "0.0.0.0") {
+    return (
+      <span title={ip}>
+        localhost <span className="text-xs text-text-muted">({ip})</span>
+      </span>
+    );
+  }
+  return ip;
 }
 
 function SummaryCard({ label, value, icon, tone }: { label: string; value: number; icon: React.ReactNode; tone: "default" | "warning" | "danger" | "info" }) {

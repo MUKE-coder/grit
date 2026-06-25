@@ -1007,6 +1007,46 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
+// v3.31.49 -- public-IP hint. When the operator runs the admin on
+// localhost (the default), the API sees the TCP peer as ::1 and
+// logs that in the activity feed. The browser fetches its public IP
+// once (cached in sessionStorage for the tab's lifetime) and
+// attaches it as X-Public-IP-Hint. The API uses it only when the
+// observed peer is loopback -- production traffic from real proxies
+// keeps using the trusted X-Forwarded-For path and never honours
+// this hint, so it can't be used to spoof audit records.
+let publicIPCache: string | null = null;
+async function getPublicIPHint(): Promise<string | null> {
+  if (publicIPCache) return publicIPCache;
+  if (typeof window === "undefined") return null;
+  const cached = window.sessionStorage.getItem("grit_public_ip");
+  if (cached) {
+    publicIPCache = cached;
+    return cached;
+  }
+  try {
+    const res = await fetch("https://api.ipify.org?format=json", {
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { ip?: string };
+    if (data.ip) {
+      publicIPCache = data.ip;
+      window.sessionStorage.setItem("grit_public_ip", data.ip);
+      return data.ip;
+    }
+  } catch {
+    // Offline / blocked by an ad-blocker -- fall through; the API
+    // will log "::1" as it does today.
+  }
+  return null;
+}
+// Kick off the lookup eagerly so the cache is warm by the time the
+// first request fires. Fire-and-forget; failures are silent.
+if (typeof window !== "undefined") {
+  void getPublicIPHint();
+}
+
 apiClient.interceptors.request.use((config) => {
   // Echo grit_csrf into X-CSRF-Token. The cookie is intentionally not
   // HttpOnly so JS can read it; the API checks both sides match
@@ -1016,6 +1056,11 @@ apiClient.interceptors.request.use((config) => {
     if (m && config.headers) {
       config.headers["X-CSRF-Token"] = decodeURIComponent(m[1]);
     }
+  }
+
+  // v3.31.49 -- attach the cached public-IP hint when we have one.
+  if (publicIPCache && config.headers) {
+    config.headers["X-Public-IP-Hint"] = publicIPCache;
   }
 
   // Auto-attach Idempotency-Key on unsafe methods. The 401-refresh

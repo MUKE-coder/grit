@@ -23,6 +23,10 @@ func writeWebFiles(root string, opts Options) error {
 		filepath.Join(webRoot, "lib", "utils.ts"):                     webUtils(),
 		filepath.Join(webRoot, "components", "navbar.tsx"):            webNavbar(opts),
 		filepath.Join(webRoot, "components", "footer.tsx"):            webFooter(opts),
+		// v3.31.49 — DevLinks renders every URL the `grit new` welcome
+		// banner prints (API, GORM Studio, Sentinel, Admin, MinIO,
+		// Mailhog, ...) on the landing page, dev-only.
+		filepath.Join(webRoot, "components", "dev-links.tsx"):         webDevLinks(),
 		filepath.Join(webRoot, "components", "providers.tsx"):         webProviders(),
 		// v3.31.48 -- AppChrome ships in the base scaffold (handles
 		// /forms/<token> chromeless rendering for public form-share).
@@ -570,6 +574,7 @@ func webLandingPage(opts Options) string {
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { usePublicBlogs } from "@/hooks/use-blogs";
+import { DevLinks } from "@/components/dev-links";
 
 const DOCS_URL = "https://grit-vert.vercel.app/docs";
 
@@ -709,6 +714,12 @@ export default function HomePage() {
           )}
         </div>
       </section>
+
+      {/* v3.31.49 -- DevLinks renders in development only. Surfaces
+          every URL the ` + "`grit new`" + ` welcome banner prints (API, GORM
+          Studio, Sentinel, Pulse, Admin, MinIO, Mailhog, ...) so
+          the operator doesn't have to keep the terminal around. */}
+      <DevLinks />
     </div>
   );
 }
@@ -730,14 +741,18 @@ func webNavbar(opts Options) string {
 	// Web ships without auth by default; operators add it via
 	// ` + "`grit add web-auth`" + `, which overwrites this file with the
 	// auth-aware version below (webNavbarWithAuth).
+	//
+	// v3.31.49 -- the Admin CTA is always rendered (auth or no auth)
+	// so operators can bounce to /admin from the marketing site.
 	return `"use client";
 
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Github } from "lucide-react";
+import { Menu, X, Github, Shield } from "lucide-react";
 
 const DOCS_URL = "https://grit-vert.vercel.app/docs";
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -790,6 +805,18 @@ export function Navbar() {
           >
             <Github className="h-5 w-5" />
           </a>
+          {/* v3.31.49 -- Admin CTA. Operators land on the marketing
+              site and shouldn't have to type the admin URL by hand;
+              the admin app itself gates everything behind auth. */}
+          <a
+            href={ADMIN_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-bg-tertiary px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
+          >
+            <Shield className="h-3.5 w-3.5" />
+            Admin
+          </a>
         </div>
 
         {/* Mobile hamburger */}
@@ -836,6 +863,15 @@ export function Navbar() {
             >
               GitHub
             </a>
+            <a
+              href={ADMIN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-bg-tertiary px-3 py-2 text-sm font-medium text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
+            >
+              <Shield className="h-3.5 w-3.5" />
+              Admin
+            </a>
           </div>
         </div>
       )}
@@ -855,10 +891,11 @@ func webNavbarWithAuth(opts Options) string {
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Github } from "lucide-react";
+import { Menu, X, Github, Shield } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 
 const DOCS_URL = "https://grit-vert.vercel.app/docs";
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -909,6 +946,16 @@ export function Navbar() {
           >
             <Github className="h-5 w-5" />
           </a>
+          {/* v3.31.49 -- Admin CTA (always visible, even with auth). */}
+          <a
+            href={ADMIN_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-bg-tertiary px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
+          >
+            <Shield className="h-3.5 w-3.5" />
+            Admin
+          </a>
           <UserMenu />
         </div>
 
@@ -953,6 +1000,15 @@ export function Navbar() {
               className="text-sm py-2 text-text-secondary hover:text-foreground transition-colors"
             >
               GitHub
+            </a>
+            <a
+              href={ADMIN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-bg-tertiary px-3 py-2 text-sm font-medium text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
+            >
+              <Shield className="h-3.5 w-3.5" />
+              Admin
             </a>
             <div className="mt-2 border-t border-border/50 pt-3">
               <UserMenu />
@@ -1007,6 +1063,114 @@ export function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+`
+}
+
+// v3.31.49 -- webDevLinks emits the DevLinks component that renders
+// every URL printed by the `grit new` welcome banner (API, GORM
+// Studio, Sentinel, Pulse, Admin, MinIO, Mailhog, ...) on the
+// landing page. Wrapped in a NODE_ENV !== "production" check so
+// production deploys never expose the internal port map.
+func webDevLinks() string {
+	return `"use client";
+
+// v3.31.49 -- DevLinks renders a grid of the local URLs printed by
+// ` + "`grit new`" + ` (API, GORM Studio, Sentinel, Admin, MinIO, Mailhog, ...)
+// directly on the marketing site, so operators don't have to keep the
+// terminal output around to find them.
+//
+// Only renders in development (NODE_ENV !== "production") so production
+// marketing pages never leak the internal port map. The check happens
+// at module level so the section disappears entirely from the prod
+// bundle -- not just hidden behind a class.
+
+import {
+  Server,
+  Database,
+  Shield,
+  Activity,
+  HardDrive,
+  Mail,
+  LayoutDashboard,
+  FileText,
+  ExternalLink,
+} from "lucide-react";
+
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+interface DevLink {
+  title: string;
+  description: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  group: "app" | "api" | "data" | "ops";
+}
+
+const LINKS: DevLink[] = [
+  { title: "Admin panel",   description: "Resource CRUD, system hub, dashboard customisation",  href: ADMIN_URL,             icon: LayoutDashboard, group: "app"  },
+  { title: "API root",      description: "Health check + every JSON endpoint",                   href: API_URL,               icon: Server,          group: "api"  },
+  { title: "API docs",      description: "OpenAPI / Swagger UI",                                 href: API_URL + "/docs",     icon: FileText,        group: "api"  },
+  { title: "GORM Studio",   description: "Visual database browser (your tables, no SQL)",        href: API_URL + "/studio",   icon: Database,        group: "data" },
+  { title: "Sentinel",      description: "Security + rate-limit dashboard",                      href: API_URL + "/sentinel/ui", icon: Shield,       group: "ops"  },
+  { title: "Pulse",         description: "Observability: traces, slow queries, SLO timelines",   href: API_URL + "/pulse/ui",    icon: Activity,     group: "ops"  },
+  { title: "MinIO console", description: "Object storage browser (buckets, uploads)",            href: "http://localhost:9003",  icon: HardDrive,    group: "data" },
+  { title: "Mailhog",       description: "Email catcher (dev only; intercepts every outbound)",  href: "http://localhost:8025",  icon: Mail,         group: "ops"  },
+];
+
+const groupAccent: Record<DevLink["group"], string> = {
+  app:  "text-accent bg-accent/10",
+  api:  "text-info bg-info/10",
+  data: "text-success bg-success/10",
+  ops:  "text-warning bg-warning/10",
+};
+
+export function DevLinks() {
+  if (process.env.NODE_ENV === "production") return null;
+  return (
+    <section className="py-16 border-t border-border/50">
+      <div className="mx-auto max-w-5xl px-6">
+        <div className="mb-8">
+          <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+            Local development
+          </p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-foreground">
+            Developer links
+          </h2>
+          <p className="mt-1 text-sm text-text-secondary">
+            All the dashboards and consoles your project ships with — wired to your local ports. Hidden in production.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {LINKS.map((l) => {
+            const Icon = l.icon;
+            return (
+              <a
+                key={l.href}
+                href={l.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group rounded-xl border border-border bg-bg-elevated p-4 transition-colors hover:bg-bg-hover"
+              >
+                <div className="flex items-start justify-between">
+                  <span className={"inline-flex h-9 w-9 items-center justify-center rounded-lg " + groupAccent[l.group]}>
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <ExternalLink className="h-3.5 w-3.5 text-text-muted opacity-0 transition-opacity group-hover:opacity-100" />
+                </div>
+                <p className="mt-3 text-sm font-semibold text-foreground group-hover:text-accent">{l.title}</p>
+                <p className="mt-0.5 text-xs text-text-muted">{l.description}</p>
+                <p className="mt-2 truncate text-[11px] font-mono text-text-muted">
+                  {l.href.replace(/^https?:\/\//, "")}
+                </p>
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
 `
