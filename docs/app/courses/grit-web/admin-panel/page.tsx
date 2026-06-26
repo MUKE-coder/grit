@@ -389,26 +389,33 @@ export default function AdminPanelCourse() {
 
           <CodeBlock filename="Multi-Step Form Configuration">
 {`formView: "page-steps",
-steps: [
-  {
-    title: "Basic Info",
-    fields: [
-      { name: "name", label: "Name", type: "text" },
-      { name: "email", label: "Email", type: "text" },
-    ]
-  },
-  {
-    title: "Details",
-    fields: [
-      { name: "bio", label: "Bio", type: "richtext" },
-      { name: "avatar", label: "Avatar", type: "file" },
-    ]
-  },
-  {
-    title: "Review",
-    fields: [] // Read-only summary
-  }
-]`}
+form: {
+  // Every field is defined once in form.fields[] -- type, label,
+  // validation rules, defaults. The steps just slice the keys
+  // into pages.
+  fields: [
+    { key: "name",   label: "Name",   type: "text",     required: true },
+    { key: "email",  label: "Email",  type: "text",     required: true },
+    { key: "bio",    label: "Bio",    type: "richtext" },
+    { key: "avatar", label: "Avatar", type: "file" },
+  ],
+  steps: [
+    {
+      title: "Basic Info",
+      // String keys only -- references entries in form.fields[].
+      // Putting inline objects here triggers TS2322.
+      fields: ["name", "email"],
+    },
+    {
+      title: "Details",
+      fields: ["bio", "avatar"],
+    },
+    {
+      title: "Review",
+      fields: [], // Read-only summary
+    },
+  ],
+}`}
           </CodeBlock>
 
           <p className="text-muted-foreground leading-relaxed mb-4">

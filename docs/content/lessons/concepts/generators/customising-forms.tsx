@@ -393,44 +393,67 @@ export default function ContactsPage() {
 
       <h2>Multi-step forms</h2>
       <p>
-        Long forms (10+ fields) benefit from being split into steps. The
-        admin form supports a <code>steps</code> array as an alternative
-        to a single <code>fields</code> array:
+        Long forms (10+ fields) benefit from being split into steps.
+        Pair the existing <code>form.fields[]</code> array with a{' '}
+        <code>form.steps[]</code> array: every field stays defined
+        once in <code>fields[]</code>, and each step lists the field{' '}
+        <strong>keys</strong> it owns. Single source of truth per
+        field (type, label, validation, default), with the steps
+        just slicing them into pages.
       </p>
       <CodeBlock
         language="ts"
+        filename="apps/admin/resources/contacts.ts"
         code={`form: {
+  // Every field is defined exactly once -- type, label,
+  // validation rules, defaults, etc.
+  fields: [
+    { key: "name",       label: "Name",       type: "text",   required: true },
+    { key: "email",      label: "Email",      type: "text",   required: true },
+    { key: "street",     label: "Street",     type: "text" },
+    { key: "city",       label: "City",       type: "text" },
+    { key: "country",    label: "Country",    type: "select", options: COUNTRIES },
+    { key: "newsletter", label: "Newsletter", type: "toggle", defaultValue: true },
+  ],
+  // Each step references field KEYS from fields[] above --
+  // strings only, not inline definitions. The renderer looks
+  // each one up in fields[] to get its type + validation.
   steps: [
     {
       title: "Basics",
       description: "The essentials.",
-      fields: [
-        { key: "name",  label: "Name",  type: "text", required: true },
-        { key: "email", label: "Email", type: "text", required: true },
-      ],
+      fields: ["name", "email"],
     },
     {
       title: "Address",
-      fields: [
-        { key: "street",  label: "Street",   type: "text" },
-        { key: "city",    label: "City",     type: "text" },
-        { key: "country", label: "Country",  type: "select", options: COUNTRIES },
-      ],
+      fields: ["street", "city", "country"],
     },
     {
       title: "Preferences",
-      fields: [
-        { key: "newsletter", label: "Subscribe to newsletter", type: "toggle", defaultValue: true },
-      ],
+      fields: ["newsletter"],
     },
   ],
 }`}
       />
       <p>
-        Each step renders with a progress bar at the top. The generator
-        currently emits a single <code>fields</code> array — you opt
-        into multi-step by editing the resource file by hand.
+        Each step renders with a progress bar at the top. The
+        generator currently emits a single <code>fields</code>{' '}
+        array — you opt into multi-step by adding the{' '}
+        <code>steps[]</code> array by hand and pairing it with
+        <code> formView: &quot;modal-steps&quot;</code> (or{' '}
+        <code>&quot;page-steps&quot;</code>) on the resource.
       </p>
+
+      <TipBox tone="warning">
+        <strong>Common gotcha:</strong> putting full field objects
+        inside <code>steps[].fields[]</code> — e.g.{' '}
+        <code>{`fields: [{ key: "name", type: "text", ... }]`}</code>{' '}
+        — produces a{' '}
+        <code>Type ... is not assignable to type &apos;string&apos;</code>{' '}
+        TypeScript error. The fix is to define the field once in{' '}
+        the outer <code>form.fields[]</code> array and reference it
+        by key (<code>{`fields: ["name"]`}</code>) here.
+      </TipBox>
 
       <h2>When the form isn&apos;t enough</h2>
       <p>
