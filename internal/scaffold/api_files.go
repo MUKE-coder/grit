@@ -6796,6 +6796,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		admin.POST("/admin/form-shares", formShareHandler.Create)
 		admin.PATCH("/admin/form-shares/:id", formShareHandler.Update)
 		admin.DELETE("/admin/form-shares/:id", formShareHandler.Delete)
+		// v3.31.50 — dropdown source + field preview for the New
+		// Share / Edit Share modal. Both read-only.
+		admin.GET("/admin/form-shares/resources", formShareHandler.Resources)
+		admin.GET("/admin/form-shares/resources/:resource/fields", formShareHandler.FieldsPreview)
 		// v3.31.25 — audit log of public submissions
 		admin.GET("/admin/form-submissions", formShareHandler.ListSubmissions)
 

@@ -175,6 +175,17 @@ func (g *Generator) injectAll(names Names) error {
 		} else {
 			fmt.Println("  ✓ Injected form-share fields case")
 		}
+
+		// v3.31.50: register the resource in the dropdown the admin's
+		// New Share modal pulls from. Pre-v3.31.50 projects don't have
+		// the marker yet -- warn instead of failing.
+		registeredEntry := fmt.Sprintf("		%q,\n", names.Pascal)
+		if err := injectBefore(dispatchFile, "// grit:form-share:registered", registeredEntry); err != nil {
+			fmt.Println("  ⚠ form-share:registered marker missing; resource won't appear in the New Share dropdown. Add `// grit:form-share:registered` to RegisteredResources() in services/form_share_dispatch.go.")
+		} else {
+			fmt.Println("  ✓ Registered resource for New Share dropdown")
+		}
+
 		// Make sure the imports the case needs are present.
 		if err := ensureDispatchImports(dispatchFile, g.Module); err != nil {
 			return fmt.Errorf("updating dispatch imports: %w", err)

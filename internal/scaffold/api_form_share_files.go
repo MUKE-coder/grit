@@ -50,6 +50,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -77,6 +78,17 @@ type FormShare struct {
 	SubmissionCount int            ` + "`" + `gorm:"not null;default:0" json:"submission_count"` + "`" + `
 	CreatedByUserID string         ` + "`" + `gorm:"size:36;index" json:"created_by_user_id"` + "`" + `
 	Label           string         ` + "`" + `gorm:"size:200" json:"label"` + "`" + ` // optional operator-facing label
+
+	// v3.31.50 — operator-customisable surface for the public form.
+	// CustomTitle / CustomDescription replace the default heading +
+	// subtitle when set; HiddenFields is a list of field keys
+	// (matching the json tag on the model) to omit from the
+	// rendered form -- useful for optional columns the operator
+	// doesn't want anonymous visitors filling in.
+	CustomTitle       string                      ` + "`" + `gorm:"size:200" json:"custom_title"` + "`" + `
+	CustomDescription string                      ` + "`" + `gorm:"size:500" json:"custom_description"` + "`" + `
+	HiddenFields      datatypes.JSONSlice[string] ` + "`" + `gorm:"type:json" json:"hidden_fields"` + "`" + `
+
 	CreatedAt       time.Time      ` + "`" + `json:"created_at"` + "`" + `
 	UpdatedAt       time.Time      ` + "`" + `json:"updated_at"` + "`" + `
 	DeletedAt       gorm.DeletedAt ` + "`" + `gorm:"index" json:"-"` + "`" + `
@@ -198,6 +210,18 @@ type PublicFieldInfo struct {
 	Type string ` + "`json:\"type\"`" + `
 	// Required mirrors the binding:"required" tag.
 	Required bool ` + "`json:\"required\"`" + `
+}
+
+// RegisteredResources returns every resource name that
+// PublicFields knows how to render. v3.31.50 adds this so the
+// admin New-Share modal can show a dropdown instead of a free-text
+// input (typing "Catgeory" instead of "Category" was producing a
+// silently-broken share). The generator injects one entry per
+// ` + "`grit generate resource`" + ` at the marker below.
+func RegisteredResources() []string {
+	return []string{
+		// grit:form-share:registered
+	}
 }
 
 // PublicFields returns the field schema for the public form to
@@ -334,6 +358,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/models"
@@ -345,6 +370,36 @@ type FormShareHandler struct {
 }
 
 // ── Admin endpoints ────────────────────────────────────────────────────
+
+// Resources returns the list of resource names the form-share
+// dispatcher knows how to render -- the dropdown the admin's New
+// Share modal uses (v3.31.50).
+func (h *FormShareHandler) Resources(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"data": services.RegisteredResources(),
+	})
+}
+
+// FieldsPreview returns the same field schema PublicGet returns,
+// keyed by resource name rather than by share token. Used by the
+// admin's New Share modal to render a preview before the share
+// even exists. v3.31.50.
+func (h *FormShareHandler) FieldsPreview(c *gin.Context) {
+	resourceName := c.Param("resource")
+	fields := services.PublicFields(resourceName)
+	if fields == nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": gin.H{"code": "NOT_FOUND", "message": "Resource not registered"},
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"resource_name": resourceName,
+			"fields":        fields,
+		},
+	})
+}
 
 // List paginates form shares for the admin dashboard.
 func (h *FormShareHandler) List(c *gin.Context) {
@@ -370,9 +425,12 @@ func (h *FormShareHandler) List(c *gin.Context) {
 // automatically.
 func (h *FormShareHandler) Create(c *gin.Context) {
 	var req struct {
-		ResourceName string ` + "`" + `json:"resource_name" binding:"required"` + "`" + `
-		Label        string ` + "`" + `json:"label"` + "`" + `
-		Password     string ` + "`" + `json:"password"` + "`" + `
+		ResourceName      string   ` + "`" + `json:"resource_name" binding:"required"` + "`" + `
+		Label             string   ` + "`" + `json:"label"` + "`" + `
+		Password          string   ` + "`" + `json:"password"` + "`" + `
+		CustomTitle       string   ` + "`" + `json:"custom_title"` + "`" + `
+		CustomDescription string   ` + "`" + `json:"custom_description"` + "`" + `
+		HiddenFields      []string ` + "`" + `json:"hidden_fields"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -389,11 +447,17 @@ func (h *FormShareHandler) Create(c *gin.Context) {
 		return
 	}
 
+	if req.HiddenFields == nil {
+		req.HiddenFields = []string{}
+	}
 	share := models.FormShare{
-		ResourceName: req.ResourceName,
-		Token:        token,
-		Label:        req.Label,
-		Enabled:      true,
+		ResourceName:      req.ResourceName,
+		Token:             token,
+		Label:             req.Label,
+		Enabled:           true,
+		CustomTitle:       req.CustomTitle,
+		CustomDescription: req.CustomDescription,
+		HiddenFields:      datatypes.NewJSONSlice(req.HiddenFields),
 	}
 	if userID, ok := c.Get("user_id"); ok {
 		if s, ok := userID.(string); ok {
@@ -434,9 +498,12 @@ func (h *FormShareHandler) Update(c *gin.Context) {
 	}
 
 	var req struct {
-		Label    *string ` + "`" + `json:"label"` + "`" + `
-		Enabled  *bool   ` + "`" + `json:"enabled"` + "`" + `
-		Password *string ` + "`" + `json:"password"` + "`" + `
+		Label             *string   ` + "`" + `json:"label"` + "`" + `
+		Enabled           *bool     ` + "`" + `json:"enabled"` + "`" + `
+		Password          *string   ` + "`" + `json:"password"` + "`" + `
+		CustomTitle       *string   ` + "`" + `json:"custom_title"` + "`" + `
+		CustomDescription *string   ` + "`" + `json:"custom_description"` + "`" + `
+		HiddenFields      *[]string ` + "`" + `json:"hidden_fields"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -463,6 +530,16 @@ func (h *FormShareHandler) Update(c *gin.Context) {
 			}
 			share.PasswordHash = string(hash)
 		}
+	}
+	// v3.31.50 — operator-customisable surface.
+	if req.CustomTitle != nil {
+		share.CustomTitle = *req.CustomTitle
+	}
+	if req.CustomDescription != nil {
+		share.CustomDescription = *req.CustomDescription
+	}
+	if req.HiddenFields != nil {
+		share.HiddenFields = datatypes.NewJSONSlice(*req.HiddenFields)
 	}
 	if err := h.DB.Save(&share).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -507,12 +584,29 @@ func (h *FormShareHandler) PublicGet(c *gin.Context) {
 		})
 		return
 	}
+	// v3.31.50 — filter hidden fields out of the schema before
+	// returning it. The operator picked these in the New Share
+	// modal; they should never show up to anonymous visitors.
+	all := services.PublicFields(share.ResourceName)
+	hidden := map[string]bool{}
+	for _, k := range share.HiddenFields {
+		hidden[k] = true
+	}
+	visible := make([]services.PublicFieldInfo, 0, len(all))
+	for _, f := range all {
+		if !hidden[f.Key] {
+			visible = append(visible, f)
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"resource_name": share.ResourceName,
-			"has_password":  share.PasswordHash != "",
-			"label":         share.Label,
-			"fields":        services.PublicFields(share.ResourceName),
+			"resource_name":      share.ResourceName,
+			"has_password":       share.PasswordHash != "",
+			"label":              share.Label,
+			"custom_title":       share.CustomTitle,
+			"custom_description": share.CustomDescription,
+			"fields":             visible,
 		},
 	})
 }

@@ -28,6 +28,128 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.50 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.50
+                </span>
+                <span className="text-sm text-muted-foreground">June 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Form-sharing polish.</strong> Four fixes
+                  from one fresh-project test session, all on the{' '}
+                  <code>/system/form-shares</code> surface.
+                </p>
+
+                <h3>1. Resource is now a dropdown, not a text input</h3>
+                <p>
+                  Typing <code>Catgeory</code> instead of{' '}
+                  <code>Category</code> in the New Share modal
+                  silently created a broken share -- the dispatcher
+                  fell through to <code>default</code>, the public
+                  form showed an empty state, and the operator
+                  didn&apos;t find out until a customer hit it. The
+                  modal now lists every registered resource in a{' '}
+                  <code>&lt;select&gt;</code>, sourced from a new{' '}
+                  <code>GET /api/admin/form-shares/resources</code>{' '}
+                  endpoint.
+                </p>
+
+                <h3>2. Form preview with per-field hide toggles</h3>
+                <p>
+                  Once a resource is picked, the modal renders a
+                  preview of the public form: every field with its
+                  type, required/optional badge, and a{' '}
+                  <em>Hide</em> checkbox for each optional one.
+                  Required fields can&apos;t be hidden (the submit
+                  would 422). The selected hidden keys persist with
+                  the share and the public-form endpoint filters
+                  them out server-side -- so anonymous visitors
+                  never see a column the operator marked private.
+                </p>
+
+                <h3>3. Custom title + description on the public form</h3>
+                <p>
+                  The public form&apos;s heading used to be{' '}
+                  <code>{`<resource> submission`}</code> + a
+                  hardcoded <em>&ldquo;Fill out the form below to
+                  submit a new <code>{`<resource>`}</code>.&rdquo;</em>{' '}
+                  Both can now be customised per share in the New
+                  Share modal. Title falls back through three
+                  sources -- custom_title → label → resource name
+                  -- so old shares keep working with the same
+                  heading they had before.
+                </p>
+
+                <h3>4. The public form actually renders the right fields now</h3>
+                <p>
+                  <strong>This was the big one.</strong> v3.31.43
+                  fixed{' '}
+                  <code>services/form_share_dispatch.go</code> to
+                  return the resource&apos;s real field schema
+                  (via reflection) -- but the matching change to{' '}
+                  <code>webPublicFormPage()</code> in the framework
+                  scaffold never landed. Every project scaffolded
+                  with v3.31.43 through v3.31.49 was shipping a
+                  hardcoded name / email / phone / message contact
+                  form, regardless of what the resource actually
+                  looked like.
+                </p>
+                <p>
+                  The scaffold&apos;s public form page is now the
+                  fields-aware version: reads the new{' '}
+                  <code>fields[]</code>{' '}, <code>custom_title</code>,
+                  <code> custom_description</code> from the API
+                  and renders one input per field with the right
+                  HTML shape (text / email / tel / textarea /
+                  number / checkbox / date / datetime / file).
+                </p>
+                <p>
+                  For projects already scaffolded with the stale
+                  page, the upgrade is a one-file copy:{' '}
+                  <code>apps/web/app/forms/[token]/page.tsx</code>{' '}
+                  from a fresh scaffold replaces the broken one.
+                </p>
+
+                <h3>Plus: Edit modal now scaffolds in fresh projects</h3>
+                <p>
+                  v3.31.43 added an Edit button to the form-shares
+                  table -- but only as a hand-applied patch to the
+                  ecom test project, never in the scaffold. v3.31.50
+                  ships it properly: a <em>Pencil</em> button on
+                  each row opens an Edit modal with the same
+                  preview + hide toggles + title / description /
+                  password controls.
+                </p>
+
+                <h3>Data model</h3>
+                <p>
+                  <code>models.FormShare</code> gains three columns:
+                </p>
+                <ul>
+                  <li>
+                    <code>custom_title</code> /{' '}
+                    <code>custom_description</code> -- short strings
+                  </li>
+                  <li>
+                    <code>hidden_fields</code> -- JSON array of
+                    field keys to omit
+                  </li>
+                </ul>
+                <p>
+                  GORM AutoMigrate adds them on next boot. The new{' '}
+                  <code>{`// grit:form-share:registered`}</code>{' '}
+                  marker in <code>RegisteredResources()</code>{' '}
+                  gets injected by the generator on each{' '}
+                  <code>grit generate resource</code>; pre-v3.31.50
+                  projects warn instead of failing.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.49 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
