@@ -391,25 +391,136 @@ export function useDeleteContact() {
 
       <h2>Wait — what about auth?</h2>
       <p>
-        The customer-facing web app might run public pages too. The
-        generated routes default to <code>middleware.Auth(...)</code>{' '}
-        — they require a logged-in user. Two ways to expose a resource
-        publicly:
+        Everything above breaks on day one of a real customer site.
+        The generator wires every CRUD route into the{' '}
+        <code>protected</code> group --{' '}
+        <code>middleware.Auth(...)</code> is mounted on it, so the
+        web app gets a <code>401 Unauthorized</code> the moment the
+        operator logs out. For pages that <em>should</em> be
+        public (a product list, a blog feed, anything an anonymous
+        visitor reads), you have to move those endpoints out of{' '}
+        <code>protected</code>.
+      </p>
+      <p>
+        Open <code>apps/api/internal/routes/routes.go</code>. The
+        scaffold has three route groups:
       </p>
       <ul>
         <li>
-          <strong>Public read, gated write.</strong> Edit{' '}
-          <code>apps/api/internal/routes/routes.go</code> and move the{' '}
-          <code>GET</code> routes out of the auth-protected group while
-          keeping POST/PUT/DELETE inside it.
+          <code>r.Group(&quot;/api&quot;)</code> with no middleware
+          -- <strong>public</strong>. Use this for read-only
+          endpoints anonymous visitors should reach.
         </li>
         <li>
-          <strong>Different resource entirely.</strong> Generate a
-          public version that filters server-side (e.g. only{' '}
-          <code>is_public = true</code>) and keep the auth&apos;d
-          version for staff.
+          <code>protected := r.Group(&quot;/api&quot;)</code> with{' '}
+          <code>middleware.Auth(...)</code> -- <strong>logged-in
+          customer</strong>. Use for &ldquo;my orders&rdquo;,
+          &ldquo;my profile&rdquo;, etc.
+        </li>
+        <li>
+          <code>admin := r.Group(&quot;/api&quot;)</code> with{' '}
+          <code>middleware.Auth(...)</code> +{' '}
+          <code>middleware.RequireRole(&quot;ADMIN&quot;)</code> --{' '}
+          <strong>staff only</strong>. Use for write operations
+          customers shouldn&apos;t do.
         </li>
       </ul>
+      <p>
+        For a typical catalog (Categories + Products), the split is
+        almost always:
+      </p>
+      <ul>
+        <li>
+          <strong>Public</strong>:{' '}
+          <code>GET /categories</code>,{' '}
+          <code>GET /categories/:id</code>,{' '}
+          <code>GET /products</code>,{' '}
+          <code>GET /products/:id</code> -- anyone can browse.
+        </li>
+        <li>
+          <strong>Admin</strong>:{' '}
+          <code>POST/PUT/PATCH/DELETE /categories</code>,{' '}
+          <code>POST/PUT/PATCH/DELETE /products</code> -- staff
+          only.
+        </li>
+      </ul>
+      <p>
+        The mechanical edit looks like this:
+      </p>
+
+      <CodeBlock
+        language="go"
+        filename="apps/api/internal/routes/routes.go (before)"
+        code={`protected := r.Group("/api")
+protected.Use(middleware.Auth(db, authService))
+{
+    // Generated routes: every CRUD operation behind auth.
+    protected.GET("/products", productHandler.List)
+    protected.GET("/products/:id", productHandler.GetByID)
+    protected.POST("/products", productHandler.Create)
+    protected.PUT("/products/:id", productHandler.Update)
+    protected.PATCH("/products/:id", productHandler.Patch)
+    // grit:routes:protected
+}`}
+      />
+
+      <CodeBlock
+        language="go"
+        filename="apps/api/internal/routes/routes.go (after)"
+        code={`// PUBLIC: anyone can browse the catalog. No auth, no CSRF.
+public := r.Group("/api")
+{
+    public.GET("/products", productHandler.List)
+    public.GET("/products/:id", productHandler.GetByID)
+}
+
+protected := r.Group("/api")
+protected.Use(middleware.Auth(db, authService))
+{
+    // Stays behind auth: who you are matters for these.
+    protected.GET("/orders", orderHandler.List)
+    protected.POST("/orders", orderHandler.Create)
+    // grit:routes:protected
+}
+
+// Already exists in the scaffold. Move writes here so customers
+// can't bypass admin checks by hitting POST /api/products directly.
+admin := r.Group("/api")
+admin.Use(middleware.Auth(db, authService))
+admin.Use(middleware.RequireRole("ADMIN"))
+{
+    admin.POST("/products", productHandler.Create)
+    admin.PUT("/products/:id", productHandler.Update)
+    admin.PATCH("/products/:id", productHandler.Patch)
+    admin.DELETE("/products/:id", productHandler.Delete)
+    // grit:routes:admin
+}`}
+      />
+
+      <TipBox tone="warning">
+        Don&apos;t leave a duplicate route registered in two groups
+        -- Gin will panic at startup with{' '}
+        <code>handlers are already registered for path</code>. Each
+        method+path lives in <em>exactly one</em> group. Cut from
+        the old group, paste into the new one.
+      </TipBox>
+
+      <p>
+        Once the writes live in the <code>admin</code> group, the
+        admin app keeps working (its axios client sends the{' '}
+        <code>grit_access</code> cookie, the ADMIN role check
+        passes), but a malicious anonymous{' '}
+        <code>POST /api/products</code> gets a 401 instead of
+        silently creating a row.
+      </p>
+      <p>
+        For the customer web app, the next lesson{' '}
+        (<em>Public Catalog Cheatsheet — Category &amp; Product</em>)
+        walks through every endpoint a typical catalog needs --
+        list, detail, by-category, related products -- with the
+        exact handler / service / route / React-Query-hook code
+        for each one.
+      </p>
 
       <KnowledgeCheck
         question="You added a `salutation` field to Contact in Go, ran `grit migrate` + `grit sync`. The web form using CreateContactSchema doesn't ask for it. What happened?"

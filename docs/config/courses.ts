@@ -512,6 +512,14 @@ const conceptsCourse: Course = {
               difficulty: 'medium',
               status: 'available',
             },
+            {
+              slug: 'public-catalog-endpoints',
+              title: 'Public catalog cheatsheet — Category + Product',
+              tagline: 'Move catalog reads out of the protected group; cheatsheet for list, detail, by-category, related products.',
+              minutes: 13,
+              difficulty: 'medium',
+              status: 'available',
+            },
           ],
         },
         {

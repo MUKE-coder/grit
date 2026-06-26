@@ -44,6 +44,7 @@ const moduleMap: Record<string, () => Promise<{ default: LessonComponent }>> = {
   'concepts/generators/customising-forms': () => import('@/content/lessons/concepts/generators/customising-forms'),
   'concepts/generators/customising-tables': () => import('@/content/lessons/concepts/generators/customising-tables'),
   'concepts/generators/using-api-from-web': () => import('@/content/lessons/concepts/generators/using-api-from-web'),
+  'concepts/generators/public-catalog-endpoints': () => import('@/content/lessons/concepts/generators/public-catalog-endpoints'),
   'concepts/generators/grit-expose': () => import('@/content/lessons/concepts/generators/grit-expose'),
   'concepts/generators/public-form-sharing': () => import('@/content/lessons/concepts/generators/public-form-sharing'),
   'concepts/generators/form-share-schema': () => import('@/content/lessons/concepts/generators/form-share-schema'),
