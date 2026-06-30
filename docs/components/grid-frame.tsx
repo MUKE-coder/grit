@@ -13,9 +13,12 @@
 // the rails hug the section edges at every screen size. Sits at -z-10: above the
 // wrapper background, behind all content.
 //
-// `width` must match the page's content container so the rails hug it (default
-// matches Tailwind's max-w-6xl = 72rem).
-export function GridFrame({ width = '72rem' }: { width?: string }) {
+// `width` is the rail column width. It is intentionally a touch WIDER than the
+// content container (content is max-w-6xl = 72rem; rails sit at 80rem) so the
+// rails frame the content with ~4rem of breathing room on each side instead of
+// running flush against the cards. The gap shows the column's grid texture; the
+// striped gutters sit beyond the rails.
+export function GridFrame({ width = '80rem' }: { width?: string }) {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
       {/* Soft primary glow at the top — the only colour moment. */}

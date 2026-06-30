@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Globe, Monitor, Smartphone, Clock, ArrowRight, BookOpen, Zap, Server, Dumbbell, ShoppingCart, FileText, Shield, Activity, Database, Code2, Rocket, Bot, Receipt, TestTube2, HardDrive, MessageSquare, CreditCard, Newspaper, GitBranch, Wrench, Palette, Wifi, ShieldCheck, Flag, Cable, Layers, FileSpreadsheet, GraduationCap, Trophy, ListChecks, Construction, Sparkles } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import { GridFrame } from "@/components/grid-frame"
+import { Reveal } from "@/components/reveal"
 import type { Metadata } from "next"
 import { COURSES, flatLessons, courseTotalMinutes } from "@/config/courses"
 
@@ -168,7 +169,7 @@ export default function CoursesPage() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 rounded-xl border-[3px] border-double border-foreground/20 overflow-hidden mb-4">
+            <Reveal className="grid md:grid-cols-2 lg:grid-cols-3 rounded-xl border-[3px] border-double border-foreground/20 overflow-hidden mb-4">
               {COURSES.map((course) => {
                 const lessons = flatLessons(course).length
                 const hours = Math.round(courseTotalMinutes(course) / 60)
@@ -220,7 +221,7 @@ export default function CoursesPage() {
                   </Link>
                 )
               })}
-            </div>
+            </Reveal>
 
             <p className="text-center text-xs text-muted-foreground/70 mt-6">
               <Sparkles className="inline h-3 w-3 mr-1 text-primary" />

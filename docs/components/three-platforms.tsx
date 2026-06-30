@@ -20,6 +20,7 @@ import {
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { BrowserFrame, DesktopFrame, MobileFrame } from '@/components/ui/device-frames'
+import { Reveal } from '@/components/reveal'
 
 // Mini product mockup that lives inside each frame — the "Acme Dashboard"
 // app. Renders three flavours of the same view depending on the device.
@@ -246,12 +247,12 @@ export function ThreePlatforms() {
             { icon: Globe,      label: 'Web',     stack: 'Next.js · Vite · TanStack', flag: '--single / --triple' },
             { icon: Monitor,    label: 'Desktop', stack: 'Wails · Frameless · GORM',  flag: '--desktop' },
             { icon: Smartphone, label: 'Mobile',  stack: 'Expo · React Native',       flag: '--mobile' },
-          ].map((p) => {
+          ].map((p, i) => {
             const Icon = p.icon
             return (
+              <Reveal key={p.label} delay={i * 0.1}>
               <div
-                key={p.label}
-                className="rounded-xl border-2 border-border/50 bg-card/60 backdrop-blur p-4 text-center hover:border-primary/40 transition-colors"
+                className="h-full rounded-xl border-2 border-border/50 bg-card/60 backdrop-blur p-4 text-center hover:border-primary/40 transition-colors"
               >
                 <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-2">
                   <Icon className="h-5 w-5" />
@@ -260,6 +261,7 @@ export function ThreePlatforms() {
                 <p className="text-[11px] text-muted-foreground mt-0.5">{p.stack}</p>
                 <code className="text-[9px] font-mono text-primary/80 bg-primary/5 px-1.5 py-0.5 rounded mt-1.5 inline-block">{p.flag}</code>
               </div>
+              </Reveal>
             )
           })}
         </div>

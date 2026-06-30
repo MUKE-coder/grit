@@ -9,6 +9,7 @@
 import { Sparkles, Wand2, Rocket, ArrowRight, Check } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Reveal } from '@/components/reveal'
 
 const STEPS = [
   {
@@ -84,12 +85,12 @@ export function WhatIsGrit() {
           />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {STEPS.map((s) => {
+            {STEPS.map((s, i) => {
               const Icon = s.icon
               return (
+                <Reveal key={s.n} delay={i * 0.12}>
                 <div
-                  key={s.n}
-                  className="group relative rounded-2xl border-2 border-border/50 bg-card/80 backdrop-blur p-6 hover:border-primary/40 hover:-translate-y-0.5 transition-all"
+                  className="group relative h-full rounded-2xl border-2 border-border/50 bg-card/80 backdrop-blur p-6 hover:border-primary/40 hover:-translate-y-0.5 transition-all"
                 >
                   {/* Number ribbon */}
                   <div className="flex items-center justify-between mb-4">
@@ -112,13 +113,14 @@ export function WhatIsGrit() {
                     <span className="text-foreground/90 truncate">{s.code}</span>
                   </div>
                 </div>
+                </Reveal>
               )
             })}
           </div>
         </div>
 
         {/* Highlights row */}
-        <div className="mt-14 rounded-2xl border-2 border-border/50 bg-card/60 p-6 md:p-8">
+        <Reveal className="mt-14 rounded-2xl border-2 border-border/50 bg-card/60 p-6 md:p-8">
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 items-center">
             <div>
               <p className="text-xs font-mono font-medium text-primary uppercase tracking-wider mb-3">
@@ -139,7 +141,7 @@ export function WhatIsGrit() {
               </Link>
             </Button>
           </div>
-        </div>
+        </Reveal>
 
       </div>
     </section>
