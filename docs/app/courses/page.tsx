@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Globe, Monitor, Smartphone, Clock, ArrowRight, BookOpen, Zap, Server, Dumbbell, ShoppingCart, FileText, Shield, Activity, Database, Code2, Rocket, Bot, Receipt, TestTube2, HardDrive, MessageSquare, CreditCard, Newspaper, GitBranch, Wrench, Palette, Wifi, ShieldCheck, Flag, Cable, Layers, FileSpreadsheet, GraduationCap, Trophy, ListChecks, Construction, Sparkles } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
+import { GridFrame } from "@/components/grid-frame"
 import type { Metadata } from "next"
 import { COURSES, flatLessons, courseTotalMinutes } from "@/config/courses"
 
@@ -116,15 +117,21 @@ export default function CoursesPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
+      <GridFrame />
 
       <main>
         {/* Hero */}
         <section className="relative overflow-hidden border-b border-border/30">
-          <div className="absolute inset-0 -z-20 bg-grit-grid mask-fade-center" />
-          <div className="absolute inset-0 -z-30 bg-gradient-to-b from-primary/[0.06] to-transparent" />
+          <div
+            className="absolute inset-0 -z-10"
+            style={{
+              background:
+                'radial-gradient(ellipse 70% 70% at 50% -10%, hsl(var(--primary) / 0.12), transparent 60%)',
+            }}
+          />
           <span className="crosshair absolute top-16 left-[16%] text-foreground/20 hidden md:block" style={{ width: 14, height: 14 }} />
           <span className="crosshair absolute top-28 right-[18%] text-primary/30 hidden md:block" style={{ width: 14, height: 14 }} />
-          <div className="container max-w-screen-xl relative py-24 px-6">
+          <div className="max-w-6xl mx-auto relative py-24 px-6">
             <div className="max-w-3xl mx-auto text-center">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
                 <BookOpen className="h-3.5 w-3.5" />
@@ -145,7 +152,7 @@ export default function CoursesPage() {
 
         {/* Learning Paths — kit-based multi-chapter courses */}
         <section className="py-16 border-b border-border/30">
-          <div className="container max-w-screen-xl px-6">
+          <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-10">
               <div className="inline-flex items-center gap-2 rounded-full bg-violet-500/10 border border-violet-500/20 px-3 py-1 text-xs font-mono font-medium text-violet-400 mb-4">
                 <GraduationCap className="h-3.5 w-3.5" />
@@ -224,7 +231,7 @@ export default function CoursesPage() {
 
         {/* Focused Tutorials (legacy categories) */}
         <section className="py-16">
-          <div className="container max-w-screen-xl px-6">
+          <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-10">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-4">
                 <Zap className="h-3.5 w-3.5" />

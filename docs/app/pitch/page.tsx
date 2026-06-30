@@ -4,6 +4,7 @@ import { ArrowRight, Check, X, Terminal, Sparkles, Bot, ShieldCheck, Layers } fr
 import { SiteHeader } from '@/components/site-header'
 import { CodeBlock } from '@/components/code-block'
 import { FadeIn, GSAPSection, GlowOrb } from '@/components/motion-primitives'
+import { GridFrame } from '@/components/grid-frame'
 import { GRIT_VERSION } from '@/config/site'
 
 export const metadata: Metadata = {
@@ -35,12 +36,18 @@ export default function PitchPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
+      <GridFrame />
 
       {/* ═══ HERO ═══ */}
       <section className="relative overflow-hidden border-b border-border/40">
-        {/* grid + fade */}
-        <div className="absolute inset-0 -z-20 bg-grit-grid mask-fade-center" />
-        <div className="absolute inset-0 -z-30 bg-gradient-to-b from-primary/[0.06] via-background to-background" />
+        {/* soft glow only — grid + rails come from the shared GridFrame */}
+        <div
+          className="absolute inset-0 -z-10"
+          style={{
+            background:
+              'radial-gradient(ellipse 60% 60% at 50% -10%, hsl(var(--primary) / 0.14), transparent 60%)',
+          }}
+        />
         <GlowOrb className="-top-32 left-1/3 h-[420px] w-[420px] bg-primary/[0.10]" duration={20} />
 
         {/* crosshair accents */}

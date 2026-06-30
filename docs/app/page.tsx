@@ -13,6 +13,7 @@ import { HubAndSpoke } from '@/components/hub-and-spoke'
 import { ThreePlatforms } from '@/components/three-platforms'
 import { WhatIsGrit } from '@/components/what-is-grit'
 import { GRIT_VERSION } from '@/config/site'
+import { GridFrame } from '@/components/grid-frame'
 
 export const metadata: Metadata = {
   title: 'Grit — Go + React Full-Stack Framework',
@@ -65,39 +66,32 @@ export default function HomePage() {
       <SoftwareApplicationSchema />
       <FAQPageSchema />
       <SiteHeader />
+      <GridFrame />
 
-      {/* ═══ HERO — saturated block, glass pills, ASCII grid corners, GitHub editor ═══ */}
-      <section className="relative overflow-hidden isolate">
-        {/* Layer 1 — saturated gradient backdrop */}
-        <div
-          className="absolute inset-0 -z-30"
-          style={{
-            background:
-              'radial-gradient(ellipse 80% 60% at 50% 0%, #0284c7 0%, #0369a1 35%, #082f49 100%)',
-          }}
-        />
-        {/* Layer 2 — fine grid that dissolves toward the edges (Firecrawl/Livewire feel) */}
-        <div className="absolute inset-0 -z-20 bg-grit-grid-on-color mask-fade-center" />
-        {/* Layer 3 — radial vignette so the grid fades at edges */}
+      {/* ═══ HERO — consistent dark base, blueprint grid (via GridFrame), glass pills, GitHub editor ═══ */}
+      <section className="relative overflow-hidden">
+        {/* Soft primary glow — the hero's only colour moment; the dark/light base
+            and the grid + rails come from the shared GridFrame so the hero reads
+            consistently with the rest of the page in both themes. */}
         <div
           className="absolute inset-0 -z-10"
           style={{
             background:
-              'radial-gradient(ellipse 70% 50% at 50% 30%, transparent 0%, rgba(8,47,73,0.55) 80%)',
+              'radial-gradient(ellipse 60% 55% at 50% -8%, hsl(var(--primary) / 0.18), transparent 60%)',
           }}
         />
 
         {/* ASCII-cube corner decorations */}
-        <AsciiCube className="absolute -top-8 -left-8 w-[280px] h-[280px] hidden md:block opacity-[0.18] text-white" />
-        <AsciiCube className="absolute -top-12 -right-8 w-[320px] h-[320px] hidden md:block opacity-[0.18] text-white" flip />
-        <AsciiCube className="absolute -bottom-16 -left-16 w-[260px] h-[260px] hidden lg:block opacity-[0.15] text-white" />
-        <AsciiCube className="absolute -bottom-8 -right-12 w-[280px] h-[280px] hidden lg:block opacity-[0.15] text-white" flip />
+        <AsciiCube className="absolute -top-8 -left-8 w-[280px] h-[280px] hidden md:block opacity-[0.18] text-foreground" />
+        <AsciiCube className="absolute -top-12 -right-8 w-[320px] h-[320px] hidden md:block opacity-[0.18] text-foreground" flip />
+        <AsciiCube className="absolute -bottom-16 -left-16 w-[260px] h-[260px] hidden lg:block opacity-[0.15] text-foreground" />
+        <AsciiCube className="absolute -bottom-8 -right-12 w-[280px] h-[280px] hidden lg:block opacity-[0.15] text-foreground" flip />
 
         {/* Firecrawl-style crosshair accents pinned to the grid */}
-        <span className="crosshair absolute top-28 left-[11%] text-white/35 hidden md:block" style={{ width: 16, height: 16 }} />
-        <span className="crosshair absolute top-44 right-[13%] text-sky-200/45 hidden md:block" style={{ width: 16, height: 16 }} />
-        <span className="crosshair absolute bottom-36 left-[18%] text-white/25 hidden lg:block" style={{ width: 14, height: 14 }} />
-        <span className="crosshair absolute bottom-24 right-[22%] text-white/30 hidden lg:block" style={{ width: 14, height: 14 }} />
+        <span className="crosshair absolute top-28 left-[11%] text-foreground/30 hidden md:block" style={{ width: 16, height: 16 }} />
+        <span className="crosshair absolute top-44 right-[13%] text-primary/40 hidden md:block" style={{ width: 16, height: 16 }} />
+        <span className="crosshair absolute bottom-36 left-[18%] text-foreground/25 hidden lg:block" style={{ width: 14, height: 14 }} />
+        <span className="crosshair absolute bottom-24 right-[22%] text-foreground/30 hidden lg:block" style={{ width: 14, height: 14 }} />
 
         {/* Floating glow orbs */}
         <GlowOrb className="-top-32 left-1/4 h-[400px] w-[400px] bg-sky-400/30" duration={18} />
@@ -109,7 +103,7 @@ export default function HomePage() {
           <FadeIn delay={0.05}>
             <div className="flex items-center justify-center gap-2 sm:gap-3 mb-12">
               {/* Backend pill */}
-              <div className="pill-pulse flex items-center gap-1.5 rounded-full border border-white/25 bg-white/[0.08] backdrop-blur-xl px-2 py-1.5 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)]">
+              <div className="pill-pulse flex items-center gap-1.5 rounded-full border border-border bg-card/70 backdrop-blur-xl px-2 py-1.5 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.25)]">
                 {[
                   { src: '/images/icons/go.svg', alt: 'Go' },
                   { src: '/images/icons/postgressql.png', alt: 'Postgres' },
@@ -128,13 +122,13 @@ export default function HomePage() {
               </div>
 
               {/* Dotted connector with arrowhead */}
-              <svg className="h-3 w-12 hidden sm:block" viewBox="0 0 48 12" fill="none">
-                <line x1="0" y1="6" x2="40" y2="6" stroke="white" strokeOpacity="0.55" strokeWidth="1.5" strokeDasharray="3 3" className="dash-animate" />
-                <path d="M40 2 L46 6 L40 10" stroke="white" strokeOpacity="0.8" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              <svg className="h-3 w-12 hidden sm:block text-muted-foreground" viewBox="0 0 48 12" fill="none">
+                <line x1="0" y1="6" x2="40" y2="6" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1.5" strokeDasharray="3 3" className="dash-animate" />
+                <path d="M40 2 L46 6 L40 10" stroke="currentColor" strokeOpacity="0.9" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
 
               {/* Frontend pill */}
-              <div className="pill-pulse flex items-center gap-1.5 rounded-full border border-white/25 bg-white/[0.08] backdrop-blur-xl px-2 py-1.5 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)]">
+              <div className="pill-pulse flex items-center gap-1.5 rounded-full border border-border bg-card/70 backdrop-blur-xl px-2 py-1.5 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.25)]">
                 {[
                   { node: <ReactLogo className="h-5 w-5" />, alt: 'React' },
                   { img: '/images/icons/Next.js.svg', alt: 'Next.js' },
@@ -158,17 +152,16 @@ export default function HomePage() {
           </FadeIn>
 
           <FadeIn delay={0.12}>
-            <h1 className="text-4xl md:text-6xl lg:text-[5.5rem] font-bold tracking-tight text-white text-center mb-6 leading-[1.05]"
-                style={{ textShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+            <h1 className="text-4xl md:text-6xl lg:text-[5.5rem] font-bold tracking-tight text-foreground text-center mb-6 leading-[1.05]">
               Build full-stack apps<br />
-              <span className="bg-gradient-to-b from-white via-white to-sky-100 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary via-sky-500 to-primary bg-clip-text text-transparent">
                 with the backend you trust
               </span>
             </h1>
           </FadeIn>
 
           <FadeIn delay={0.18}>
-            <p className="text-base md:text-lg text-white/85 max-w-2xl mx-auto text-center mb-10 leading-relaxed">
+            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto text-center mb-10 leading-relaxed">
               Scaffold a Go API + React frontend + admin panel in one command.
               Auth, OAuth, file storage, jobs, AI, observability, OWASP-2025 hardened
               — meticulously optimized for production. No boilerplate required.
@@ -181,7 +174,7 @@ export default function HomePage() {
               <MagneticButton>
                 <Link
                   href="/docs/getting-started/quick-start"
-                  className="group relative inline-flex items-center justify-center gap-2 h-12 px-7 rounded-full bg-white text-sky-700 font-semibold text-sm shadow-[0_8px_24px_-4px_rgba(0,0,0,0.3),0_2px_4px_rgba(0,0,0,0.1),inset_0_-2px_0_rgba(2,132,199,0.15)] hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.35),0_2px_4px_rgba(0,0,0,0.1),inset_0_-2px_0_rgba(2,132,199,0.2)] transition-all"
+                  className="group relative inline-flex items-center justify-center gap-2 h-12 px-7 rounded-full bg-primary text-primary-foreground font-semibold text-sm glow-primary-sm hover:bg-primary/90 transition-all"
                 >
                   Get started
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -190,7 +183,7 @@ export default function HomePage() {
               <MagneticButton>
                 <Link
                   href="/docs"
-                  className="inline-flex items-center justify-center h-12 px-7 rounded-full border border-white/25 bg-white/[0.08] backdrop-blur-xl text-white font-medium text-sm hover:bg-white/[0.14] hover:border-white/35 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all"
+                  className="inline-flex items-center justify-center h-12 px-7 rounded-full border border-border bg-card/60 backdrop-blur-xl text-foreground font-medium text-sm hover:bg-accent/40 transition-all"
                 >
                   Read docs
                 </Link>
@@ -204,7 +197,7 @@ export default function HomePage() {
               release binary for your OS / arch. */}
           <FadeIn delay={0.28}>
             <div className="max-w-2xl mx-auto mb-10 mt-2 space-y-2.5">
-              <div className="rounded-xl border border-white/15 bg-white/[0.05] backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)]">
+              <div className="rounded-xl border border-border bg-card/40 backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.25)]">
                 <CodeBlock
                   terminal
                   filename="Install or update — macOS / Linux"
@@ -212,7 +205,7 @@ export default function HomePage() {
                   className="!border-0 !rounded-xl !bg-transparent dark:!bg-transparent !m-0"
                 />
               </div>
-              <div className="rounded-xl border border-white/15 bg-white/[0.05] backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)]">
+              <div className="rounded-xl border border-border bg-card/40 backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.25)]">
                 <CodeBlock
                   terminal
                   filename="Install or update — Windows (PowerShell)"
@@ -220,16 +213,16 @@ export default function HomePage() {
                   className="!border-0 !rounded-xl !bg-transparent dark:!bg-transparent !m-0"
                 />
               </div>
-              <p className="text-center text-xs text-white/50 pt-1">
-                Detects an existing install and runs <code className="text-white/70">grit update</code>; otherwise pulls the right binary for your OS/arch.
-                Prefer Go? <code className="text-white/70">go install github.com/MUKE-coder/grit/v3/cmd/grit@latest</code>
+              <p className="text-center text-xs text-muted-foreground pt-1">
+                Detects an existing install and runs <code className="text-foreground/80">grit update</code>; otherwise pulls the right binary for your OS/arch.
+                Prefer Go? <code className="text-foreground/80">go install github.com/MUKE-coder/grit/v3/cmd/grit@latest</code>
               </p>
             </div>
           </FadeIn>
 
           {/* SIDE-BY-SIDE GITHUB EDITOR — bold border, layered shadow, file tabs row at top */}
           <FadeIn delay={0.32}>
-            <div className="relative rounded-2xl overflow-hidden bg-[#ffffff] dark:bg-[#0d1117] border-2 border-white/30 shadow-[0_24px_64px_-16px_rgba(2,6,23,0.6),0_8px_24px_-8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)]">
+            <div className="relative rounded-2xl overflow-hidden bg-[#ffffff] dark:bg-[#0d1117] border border-border shadow-[0_24px_64px_-16px_rgba(2,6,23,0.5)]">
               {/* Editor chrome — file tab strip */}
               <div className="flex items-center gap-0 bg-[#f6f8fa] dark:bg-[#161b22] border-b border-[#d0d7de] dark:border-white/[0.08]">
                 {/* Window dots */}
