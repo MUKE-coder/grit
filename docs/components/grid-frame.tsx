@@ -1,33 +1,24 @@
-// Blueprint frame (Livewire-style). A full-page backdrop that gives marketing
-// pages their signature graph-paper framing:
-//   • two vertical rails that frame the centred content column and run the full
-//     height of the page (top of the header to the footer);
-//   • a full-bleed grid texture behind every section;
-//   • a soft primary gradient glow at the top for depth;
-//   • crosshair "+" markers sitting on the rails.
-// Mounted once per page (landing, pitch, courses, …). It is `absolute inset-0`
-// inside the page's `relative isolate` wrapper, so it spans the whole document
-// AND — crucially — centres its rails in the EXACT same context as flow content
-// (wrapper width = viewport minus scrollbar). A `fixed` layer instead centres on
-// the full viewport, leaving the rails ~scrollbar/2 off the section edges on big
-// screens. Absolute keeps them perfectly aligned at every screen size.
-// It sits at -z-10: above the wrapper's background, behind all content.
+// Blueprint frame (Tailwind-Plus / portfolio style). A full-page backdrop that
+// frames a centred content column and treats the space around it as part of the
+// grid — so every page reads as one symmetric system:
+//   • a centred content column (max-w) carrying a faint grid texture;
+//   • two rails on the column edges (the borders between column and gutters);
+//   • diagonal-striped GUTTERS outside the rails so big screens are framed, not
+//     empty;
+//   • crosshair "+" markers on the rails that gently pulse;
+//   • a slow light that drifts down each rail — subtle, not exaggerated.
+//
+// It is `absolute inset-0` inside the page's `relative isolate` wrapper, so it
+// spans the whole document AND centres in the SAME context as flow content —
+// the rails hug the section edges at every screen size. Sits at -z-10: above the
+// wrapper background, behind all content.
 //
 // `width` must match the page's content container so the rails hug it (default
-// matches Tailwind's max-w-6xl).
-export function GridFrame({ width = 'max-w-6xl' }: { width?: string }) {
+// matches Tailwind's max-w-6xl = 72rem).
+export function GridFrame({ width = '72rem' }: { width?: string }) {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-      {/* Full-bleed grid texture */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            'linear-gradient(to right, hsl(var(--foreground) / 0.07) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--foreground) / 0.07) 1px, transparent 1px)',
-          backgroundSize: '56px 56px',
-        }}
-      />
-      {/* Soft primary glow at the top — the only "colour" moment, keeps the base consistent */}
+      {/* Soft primary glow at the top — the only colour moment. */}
       <div
         className="absolute inset-x-0 top-0 h-[640px]"
         style={{
@@ -35,17 +26,31 @@ export function GridFrame({ width = 'max-w-6xl' }: { width?: string }) {
             'radial-gradient(ellipse 60% 100% at 50% -10%, hsl(var(--primary) / 0.12), transparent 65%)',
         }}
       />
-      {/* Two structural rails framing the content column. On a fixed layer so
-          they run unbroken from the header to the footer. Drawn in the FOREGROUND
-          colour (the `border` token is nearly invisible on the dark base) so the
-          rails actually read in both themes. */}
-      <div className={`relative mx-auto h-full w-full ${width}`}>
-        <div className="absolute inset-y-0 left-0 w-px bg-foreground/20" />
-        <div className="absolute inset-y-0 right-0 w-px bg-foreground/20" />
-        <span className="crosshair absolute left-0 top-[68px] -translate-x-1/2 text-foreground/40" style={{ width: 16, height: 16 }} />
-        <span className="crosshair absolute right-0 top-[68px] translate-x-1/2 text-foreground/40" style={{ width: 16, height: 16 }} />
-        <span className="crosshair absolute left-0 bottom-24 -translate-x-1/2 text-foreground/30" style={{ width: 14, height: 14 }} />
-        <span className="crosshair absolute right-0 bottom-24 translate-x-1/2 text-foreground/30" style={{ width: 14, height: 14 }} />
+
+      {/* gutter │ content column │ gutter — center column = min(100%, width). */}
+      <div
+        className="absolute inset-0 grid"
+        style={{ gridTemplateColumns: `1fr min(100%, ${width}) 1fr` }}
+      >
+        {/* Left gutter (striped) — its right border is the left rail. */}
+        <div className="bg-grit-stripes border-r border-foreground/20" />
+
+        {/* Content column */}
+        <div className="relative">
+          {/* Faint grid texture inside the column only. */}
+          <div className="absolute inset-0 bg-grit-grid-sm opacity-90" />
+          {/* Slow light drifting down each rail. */}
+          <div className="rail-scan absolute left-0 h-28 w-px bg-gradient-to-b from-transparent via-primary/60 to-transparent" />
+          <div className="rail-scan absolute right-0 h-28 w-px bg-gradient-to-b from-transparent via-primary/60 to-transparent" style={{ animationDelay: '4s' }} />
+          {/* Crosshair markers on the rails (gentle pulse). */}
+          <span className="crosshair animate-pulse-glow absolute left-0 top-[68px] -translate-x-1/2 text-foreground/45" style={{ width: 16, height: 16 }} />
+          <span className="crosshair animate-pulse-glow absolute right-0 top-[68px] translate-x-1/2 text-foreground/45" style={{ width: 16, height: 16 }} />
+          <span className="crosshair animate-pulse-glow absolute left-0 bottom-24 -translate-x-1/2 text-foreground/30" style={{ width: 14, height: 14 }} />
+          <span className="crosshair animate-pulse-glow absolute right-0 bottom-24 translate-x-1/2 text-foreground/30" style={{ width: 14, height: 14 }} />
+        </div>
+
+        {/* Right gutter (striped) — its left border is the right rail. */}
+        <div className="bg-grit-stripes border-l border-foreground/20" />
       </div>
     </div>
   )

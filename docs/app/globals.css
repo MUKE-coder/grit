@@ -435,6 +435,29 @@
 @keyframes rise-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 .animate-rise { animation: rise-in .7s cubic-bezier(.2,.7,.2,1) both; }
 
+/* Diagonal hatch for the framed gutters (Tailwind-Plus / portfolio style) —
+   fills the space outside the content rails so big screens read as an
+   intentional, symmetric grid instead of empty margin. */
+.bg-grit-stripes {
+  background-image: repeating-linear-gradient(
+    45deg,
+    hsl(var(--foreground) / 0.035) 0,
+    hsl(var(--foreground) / 0.035) 1px,
+    transparent 1px,
+    transparent 9px
+  );
+}
+
+/* Subtle light that drifts down the frame rails — the only "border animation",
+   slow and faint so it reads as polish, not motion noise. */
+@keyframes rail-scan {
+  0%   { top: -10%; opacity: 0; }
+  12%  { opacity: 0.55; }
+  88%  { opacity: 0.55; }
+  100% { top: 100%; opacity: 0; }
+}
+.rail-scan { animation: rail-scan 8s linear infinite; }
+
 /* Shimmer sweep for "live"/beta pills and CTA accents. */
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 .animate-shimmer {
@@ -443,7 +466,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-spin-slow, .animate-rise, .animate-shimmer, .pill-pulse, .dash-animate { animation: none !important; }
+  .animate-spin-slow, .animate-rise, .animate-shimmer, .pill-pulse, .dash-animate,
+  .rail-scan, .animate-pulse-glow { animation: none !important; }
   .card-grit { transition: none; }
   .card-grit:hover { transform: none; }
 }
