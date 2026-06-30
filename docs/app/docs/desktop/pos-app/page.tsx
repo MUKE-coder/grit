@@ -10,7 +10,7 @@ export const metadata = getDocMetadata("/docs/desktop/pos-app");
 
 export default function DesktopPosAppPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

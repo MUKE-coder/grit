@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/tutorials/ecommerce')
 
 export default function TutorialEcommercePage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

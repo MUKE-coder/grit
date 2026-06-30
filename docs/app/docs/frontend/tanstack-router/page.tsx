@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/frontend/tanstack-router')
 
 export default function TanStackRouterPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 
@@ -124,7 +124,7 @@ import { Footer } from '@/components/footer'
 
 export const Route = createRootRoute({
   component: () => (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background isolate flex flex-col">
       <Navbar />
       <main className="flex-1">
         <Outlet />

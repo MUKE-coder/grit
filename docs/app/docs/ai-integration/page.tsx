@@ -8,7 +8,7 @@ export const metadata: Metadata = getDocMetadata('/docs/ai-integration')
 
 export default function AIIntegrationPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
       <main className="lg:pl-64">

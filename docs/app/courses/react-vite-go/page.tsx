@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function ReactViteGoCourse() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <GridFrame />
 
@@ -296,7 +296,7 @@ export const Route = createRootRoute({
 
 function RootLayout() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <Navbar />
       <Outlet />
     </div>

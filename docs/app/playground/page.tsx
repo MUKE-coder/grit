@@ -240,7 +240,7 @@ interface CompileResponse {
 
 export default function PlaygroundPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+    <Suspense fallback={<div className="min-h-screen bg-background isolate" />}>
       <PlaygroundInner />
     </Suspense>
   )
@@ -346,7 +346,7 @@ function PlaygroundInner() {
   }, [runCode])
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background isolate flex flex-col">
       {/* subtle shared grid backdrop (shows through gaps / behind the toolbar) */}
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-grit-grid-sm opacity-40 mask-fade-b" />
       <SiteHeader />

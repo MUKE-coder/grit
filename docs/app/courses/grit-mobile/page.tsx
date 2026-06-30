@@ -61,7 +61,7 @@ export default function GritMobileCourses() {
   const totalChallenges = courses.reduce((sum, c) => sum + c.challenges, 0)
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <GridFrame />
 

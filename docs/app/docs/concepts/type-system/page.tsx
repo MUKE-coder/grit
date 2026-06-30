@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/concepts/type-system')
 
 export default function TypeSystemPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

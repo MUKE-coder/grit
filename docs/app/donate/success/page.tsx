@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function DonateSuccessPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
 
       <section className="relative overflow-hidden">

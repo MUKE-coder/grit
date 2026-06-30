@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/getting-started/create-without-doc
 
 export default function CreateWithoutDockerPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

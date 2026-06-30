@@ -483,7 +483,7 @@ apiClient.interceptors.response.use(
 
 export default function NextjsForGritPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/concepts/architecture-modes/single
 
 export default function SingleArchitecturePage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

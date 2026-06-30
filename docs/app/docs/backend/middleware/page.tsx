@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/backend/middleware')
 
 export default function MiddlewarePage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
       <main className="lg:pl-64">

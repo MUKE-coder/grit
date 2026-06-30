@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/learnings/stateless-service-load-t
 
 export default function StatelessServiceLoadTestPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
       <main className="lg:pl-64">

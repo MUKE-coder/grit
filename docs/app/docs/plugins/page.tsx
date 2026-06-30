@@ -199,7 +199,7 @@ r.GET("/api/users/export", export.ExportHandler(svc, queryFn))`,
 
 export default function PluginsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

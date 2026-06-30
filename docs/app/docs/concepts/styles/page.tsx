@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/concepts/styles')
 
 export default function StyleVariantsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

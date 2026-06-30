@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/backend/pulse')
 
 export default function PulsePage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

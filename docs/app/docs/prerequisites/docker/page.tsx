@@ -144,7 +144,7 @@ const portMappingExample = `ports:
 
 export default function DockerForGritPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

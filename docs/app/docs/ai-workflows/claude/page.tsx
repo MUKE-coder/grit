@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/ai-workflows/claude')
 
 export default function UsingGritWithClaudePage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

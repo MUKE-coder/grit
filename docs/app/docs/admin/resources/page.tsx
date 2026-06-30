@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/admin/resources')
 
 export default function ResourceDefinitionsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

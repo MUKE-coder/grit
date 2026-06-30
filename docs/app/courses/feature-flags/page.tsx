@@ -20,7 +20,7 @@ const learn = [
 
 export default function FeatureFlagsCourse() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <GridFrame />
 

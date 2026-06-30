@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/batteries/storage')
 
 export default function StoragePage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

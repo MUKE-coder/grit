@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/admin/overview')
 
 export default function AdminOverviewPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

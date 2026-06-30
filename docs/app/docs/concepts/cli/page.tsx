@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/concepts/cli')
 
 export default function CLICommandsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

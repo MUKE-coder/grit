@@ -8,7 +8,7 @@ export const metadata = getDocMetadata("/docs/desktop/building");
 
 export default function DesktopBuildingPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

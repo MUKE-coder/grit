@@ -9,7 +9,7 @@ export const metadata = getDocMetadata('/docs/infrastructure/docker-cheatsheet')
 
 export default function DockerCheatSheetPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

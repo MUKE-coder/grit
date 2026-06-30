@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/backend/models')
 
 export default function ModelsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
       <main className="lg:pl-64">

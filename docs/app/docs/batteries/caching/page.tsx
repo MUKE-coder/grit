@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/batteries/caching')
 
 export default function CachingPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/backend/api-docs')
 
 export default function APIDocsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

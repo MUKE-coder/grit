@@ -9,7 +9,7 @@ export const metadata = getDocMetadata('/docs/changelog')
 
 export default function ChangelogPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

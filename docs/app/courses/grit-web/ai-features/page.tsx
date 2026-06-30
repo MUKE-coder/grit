@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function AIFeaturesCourse() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <GridFrame />
 

@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/batteries/email')
 
 export default function EmailPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

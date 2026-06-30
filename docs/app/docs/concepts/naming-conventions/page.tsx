@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/concepts/naming-conventions')
 
 export default function NamingConventionsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

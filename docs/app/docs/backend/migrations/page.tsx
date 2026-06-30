@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/backend/migrations')
 
 export default function MigrationsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

@@ -47,7 +47,7 @@ function Note({ children }: { children: React.ReactNode }) {
 
 export default function DesktopLLMReferencePage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/infrastructure/dokploy')
 
 export default function DokployPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

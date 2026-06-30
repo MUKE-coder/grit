@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/tutorials/blog')
 
 export default function TutorialBlogPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

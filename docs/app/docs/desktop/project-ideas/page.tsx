@@ -229,7 +229,7 @@ const categoryColors: Record<string, string> = {
 
 export default function DesktopProjectIdeasPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

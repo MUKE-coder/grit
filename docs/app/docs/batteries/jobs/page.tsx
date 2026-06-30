@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/batteries/jobs')
 
 export default function JobsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

@@ -26,7 +26,7 @@ export default async function CourseLayout({ params, children }: Props) {
   if (!course) notFound()
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background isolate flex flex-col">
       {/* Shared grid backdrop — consistent texture across every in-course page */}
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-grit-grid-sm opacity-70 mask-fade-b" />
       <SiteHeader />

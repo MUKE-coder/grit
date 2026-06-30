@@ -37,7 +37,7 @@ const tocItems = [
 
 export default function GoForGritPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

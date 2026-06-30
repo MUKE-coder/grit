@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/concepts/architecture-modes/multi-
 
 export default function MultiClientArchitecturePage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

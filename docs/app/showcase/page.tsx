@@ -125,7 +125,7 @@ const rest = projects.filter((p) => !p.featured);
 
 export default function ShowcasePage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <GridFrame />
 

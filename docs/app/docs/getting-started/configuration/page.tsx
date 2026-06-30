@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/getting-started/configuration')
 
 export default function ConfigurationPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

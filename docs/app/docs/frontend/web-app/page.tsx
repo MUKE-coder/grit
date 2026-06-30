@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/frontend/web-app')
 
 export default function WebAppPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 
@@ -282,11 +282,11 @@ export default function DashboardLayout({
   }, [isError, router]);
 
   if (isLoading) {
-    return <div className="min-h-screen bg-background" />;
+    return <div className="min-h-screen bg-background isolate" />;
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background isolate flex">
       {/* Sidebar navigation */}
       <aside className="hidden lg:flex w-64 flex-col border-r border-border">
         {/* Logo, nav links, user section */}

@@ -9,7 +9,7 @@ export const metadata = getDocMetadata("/docs/desktop/resource-generation");
 
 export default function DesktopResourceGenerationPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 

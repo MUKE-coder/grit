@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/design/theme')
 
 export default function ThemePage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background isolate">
       <SiteHeader />
       <DocsSidebar />
 
