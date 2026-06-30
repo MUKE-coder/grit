@@ -168,7 +168,7 @@ export default function CoursesPage() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 rounded-2xl border border-border/50 overflow-hidden mb-4">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 rounded-xl border-[3px] border-double border-foreground/20 overflow-hidden mb-4">
               {COURSES.map((course) => {
                 const lessons = flatLessons(course).length
                 const hours = Math.round(courseTotalMinutes(course) / 60)
@@ -177,7 +177,7 @@ export default function CoursesPage() {
                   <Link
                     key={course.slug}
                     href={`/courses/${course.slug}`}
-                    className={`group relative overflow-hidden border-b border-r border-border/50 bg-card/20 p-6 hover:bg-card/50 transition-colors flex flex-col`}
+                    className={`group relative overflow-hidden border-b-[3px] border-r-[3px] border-double border-foreground/20 bg-card/20 p-6 hover:bg-card/50 transition-colors flex flex-col`}
                   >
                     <div className={`absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gradient-to-br ${course.accent} blur-2xl opacity-50 pointer-events-none`} />
                     <div className="relative flex items-start gap-3 mb-3">
@@ -245,12 +245,12 @@ export default function CoursesPage() {
                 ~30 minutes, build something concrete.
               </p>
             </div>
-            <div className="grid md:grid-cols-3 rounded-2xl border border-border/50 overflow-hidden">
+            <div className="grid md:grid-cols-3 rounded-xl border-[3px] border-double border-foreground/20 overflow-hidden">
               {categories.map((cat) => (
                 <Link
                   key={cat.title}
                   href={cat.href}
-                  className="group relative flex flex-col border-b border-r border-border/50 bg-card/20 p-7 hover:bg-card/50 transition-colors"
+                  className="group relative flex flex-col border-b-[3px] border-r-[3px] border-double border-foreground/20 bg-card/20 p-7 hover:bg-card/50 transition-colors"
                 >
                   {/* Icon + meta */}
                   <div className="flex items-center gap-3 mb-4">
@@ -305,12 +305,12 @@ export default function CoursesPage() {
                 <p className="text-muted-foreground">Deep dives, practical builds, and specialized topics</p>
               </div>
 
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 rounded-2xl border border-border/50 overflow-hidden">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 rounded-xl border-[3px] border-double border-foreground/20 overflow-hidden">
                 {standaloneCourses.map((course) => (
                   <Link
                     key={course.href}
                     href={course.href}
-                    className="group flex items-start gap-3 p-5 border-b border-r border-border/50 bg-card/20 hover:bg-card/50 transition-colors"
+                    className="group flex items-start gap-3 p-5 border-b-[3px] border-r-[3px] border-double border-foreground/20 bg-card/20 hover:bg-card/50 transition-colors"
                   >
                     <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/10 text-primary shrink-0 group-hover:bg-primary/20 transition-colors">
                       <course.icon className="h-4 w-4" />

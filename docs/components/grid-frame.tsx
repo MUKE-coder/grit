@@ -31,18 +31,17 @@ export function GridFrame({ width = 'max-w-6xl' }: { width?: string }) {
             'radial-gradient(ellipse 60% 100% at 50% -10%, hsl(var(--primary) / 0.12), transparent 65%)',
         }}
       />
-      {/* Four structural vertical rails (Livewire-style): two outer rails frame
-          the content column, two inner rails divide it into thirds. Outer are
-          stronger; inner are faint so they read as guides behind content. */}
-      <div className={`relative mx-auto h-full w-full ${width} flex justify-between`}>
-        <div className="h-full w-px bg-border/70" />
-        <div className="h-full w-px bg-border/30" />
-        <div className="h-full w-px bg-border/30" />
-        <div className="h-full w-px bg-border/70" />
-        <span className="crosshair absolute left-0 top-[68px] -translate-x-1/2 text-foreground/35" style={{ width: 16, height: 16 }} />
-        <span className="crosshair absolute right-0 top-[68px] translate-x-1/2 text-foreground/35" style={{ width: 16, height: 16 }} />
-        <span className="crosshair absolute left-0 bottom-24 -translate-x-1/2 text-foreground/25" style={{ width: 14, height: 14 }} />
-        <span className="crosshair absolute right-0 bottom-24 translate-x-1/2 text-foreground/25" style={{ width: 14, height: 14 }} />
+      {/* Two structural rails framing the content column. On a fixed layer so
+          they run unbroken from the header to the footer. Drawn in the FOREGROUND
+          colour (the `border` token is nearly invisible on the dark base) so the
+          rails actually read in both themes. */}
+      <div className={`relative mx-auto h-full w-full ${width}`}>
+        <div className="absolute inset-y-0 left-0 w-px bg-foreground/15" />
+        <div className="absolute inset-y-0 right-0 w-px bg-foreground/15" />
+        <span className="crosshair absolute left-0 top-[68px] -translate-x-1/2 text-foreground/40" style={{ width: 16, height: 16 }} />
+        <span className="crosshair absolute right-0 top-[68px] translate-x-1/2 text-foreground/40" style={{ width: 16, height: 16 }} />
+        <span className="crosshair absolute left-0 bottom-24 -translate-x-1/2 text-foreground/30" style={{ width: 14, height: 14 }} />
+        <span className="crosshair absolute right-0 bottom-24 translate-x-1/2 text-foreground/30" style={{ width: 14, height: 14 }} />
       </div>
     </div>
   )

@@ -329,6 +329,12 @@ export function DocsSidebar() {
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10 bg-grit-grid-sm opacity-70 mask-fade-b"
       />
+      {/* Structural column rails (lg+): sidebar │ main, and main │ TOC when the
+          right rail is shown. Drawn in foreground so they're visible on the dark base. */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 hidden lg:block">
+        <div className="absolute inset-y-0 left-64 w-px bg-foreground/14" />
+        <div className="absolute inset-y-0 right-[15.5rem] w-px bg-foreground/10 hidden min-[1340px]:block" />
+      </div>
       <aside ref={sidebarRef} className="fixed top-16 z-30 hidden h-[calc(100vh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-border/40 bg-sidebar-background py-8 lg:block">
         <nav className="px-2">
           {navItems.map((item) => (

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
+import { GridFrame } from "@/components/grid-frame";
 import { ShowcaseGrid, type ShowcaseProject } from "@/components/showcase-grid";
 
 export const metadata: Metadata = {
@@ -126,6 +127,7 @@ export default function ShowcasePage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
+      <GridFrame />
 
       {/* Hero */}
       <section className="relative overflow-hidden">
@@ -135,7 +137,7 @@ export default function ShowcasePage() {
         <div className="absolute inset-0 -z-20 bg-grit-grid mask-fade-center" />
         <span className="crosshair absolute top-20 left-[15%] text-foreground/20 hidden md:block" style={{ width: 14, height: 14 }} />
         <span className="crosshair absolute top-32 right-[17%] text-primary/30 hidden md:block" style={{ width: 14, height: 14 }} />
-        <div className="container max-w-screen-xl py-20 md:py-32 px-6">
+        <div className="max-w-6xl mx-auto py-20 md:py-32 px-6">
           <div className="max-w-3xl mx-auto text-center">
             <div className="flex items-center justify-center gap-2 rounded-full border border-border/60 bg-accent/40 px-4 py-1.5 mb-6 mx-auto w-fit">
               <Sparkles className="h-3.5 w-3.5 text-primary" />
@@ -184,7 +186,7 @@ export default function ShowcasePage() {
 
       {/* Featured project */}
       {featured.map((project) => (
-        <section key={project.name} className="container max-w-screen-xl px-6 pb-16">
+        <section key={project.name} className="max-w-6xl mx-auto px-6 pb-16">
           <div className="rounded-2xl border border-border/60 bg-card/50 overflow-hidden">
             {/* Screenshot */}
             <div className="relative aspect-[16/8] bg-accent/30 border-b border-border/40 overflow-hidden group">
@@ -357,7 +359,7 @@ export default function ShowcasePage() {
 
       {/* Community projects grid */}
       {rest.length > 0 && (
-        <section className="container max-w-screen-xl px-6 pb-16">
+        <section className="max-w-6xl mx-auto px-6 pb-16">
           <h2 className="text-2xl font-bold text-foreground mb-8">
             Community Projects
           </h2>
@@ -366,7 +368,7 @@ export default function ShowcasePage() {
       )}
 
       {/* CTA */}
-      <section className="container max-w-screen-xl px-6 pb-24">
+      <section className="max-w-6xl mx-auto px-6 pb-24">
         <div className="rounded-2xl border border-border/60 bg-accent/20 p-8 md:p-12 text-center">
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">
             <span className="gradient-text">Built something with Grit?</span>

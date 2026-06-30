@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
+import { GridFrame } from "@/components/grid-frame";
 
 export const metadata: Metadata = {
   title: "Hire Grit Developers | Grit",
@@ -25,6 +26,7 @@ export default function HirePage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
+      <GridFrame />
 
       {/* Hero */}
       <section className="relative overflow-hidden">
@@ -34,7 +36,7 @@ export default function HirePage() {
         <div className="absolute inset-0 -z-20 bg-grit-grid mask-fade-center" />
         <span className="crosshair absolute top-20 left-[15%] text-foreground/20 hidden md:block" style={{ width: 14, height: 14 }} />
         <span className="crosshair absolute top-32 right-[17%] text-primary/30 hidden md:block" style={{ width: 14, height: 14 }} />
-        <div className="container max-w-screen-xl py-24 md:py-36 px-6">
+        <div className="max-w-6xl mx-auto py-24 md:py-36 px-6">
           <div className="max-w-3xl mx-auto text-center">
             <div className="flex items-center justify-center gap-2 rounded-full border border-border/60 bg-accent/40 px-4 py-1.5 mb-6 mx-auto w-fit">
               <Users className="h-3.5 w-3.5 text-primary" />
@@ -71,7 +73,7 @@ export default function HirePage() {
 
       {/* What We Build */}
       <section className="border-t border-border/30">
-        <div className="container max-w-screen-xl py-20 md:py-28 px-6">
+        <div className="max-w-6xl mx-auto py-20 md:py-28 px-6">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
               What We Build
@@ -133,7 +135,7 @@ export default function HirePage() {
 
       {/* Why Hire Us */}
       <section className="border-t border-border/30 bg-accent/20">
-        <div className="container max-w-screen-xl py-20 md:py-28 px-6">
+        <div className="max-w-6xl mx-auto py-20 md:py-28 px-6">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
               Why Hire the Grit Team
@@ -169,7 +171,7 @@ export default function HirePage() {
 
       {/* Tech Stack */}
       <section className="border-t border-border/30">
-        <div className="container max-w-screen-xl py-20 md:py-28 px-6">
+        <div className="max-w-6xl mx-auto py-20 md:py-28 px-6">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
               The Stack
@@ -211,7 +213,7 @@ export default function HirePage() {
 
       {/* CTA */}
       <section className="border-t border-border/30">
-        <div className="container max-w-screen-xl py-20 md:py-28 px-6">
+        <div className="max-w-6xl mx-auto py-20 md:py-28 px-6">
           <div className="relative rounded-2xl border border-primary/20 bg-primary/[0.04] overflow-hidden">
             <div className="absolute inset-0 -z-10">
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[300px] w-[300px] rounded-full bg-primary/[0.08] blur-[100px]" />
@@ -259,7 +261,7 @@ export default function HirePage() {
 
       {/* Footer */}
       <footer className="border-t border-border/30 py-8 px-6">
-        <div className="container max-w-screen-xl flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground/50">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground/50">
           <span>Grit Framework &mdash; Go + React. Built with Grit.</span>
           <div className="flex items-center gap-4">
             <Link href="/docs" className="hover:text-foreground transition-colors">
