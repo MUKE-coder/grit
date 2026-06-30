@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
+import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
 import type { Metadata } from 'next'
 
@@ -11,8 +12,9 @@ export const metadata: Metadata = {
 
 export default function MobileFitnessAppCourse() {
   return (
-    <div className="min-h-screen bg-[#0b1120]">
+    <div className="min-h-screen bg-background">
       <SiteHeader />
+      <GridFrame />
 
       <main className="max-w-3xl mx-auto px-6 py-12">
         {/* Breadcrumb */}

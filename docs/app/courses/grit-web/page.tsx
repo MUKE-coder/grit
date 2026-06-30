@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, BookOpen, Clock, Trophy, BookMarked, Terminal, Wand2, ShieldCheck, LayoutDashboard, HardDrive, Mail, Sparkles, Rocket } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
+import { GridFrame } from '@/components/grid-frame'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -96,8 +97,9 @@ export default function GritWebCourses() {
   const totalChallenges = courses.reduce((sum, c) => sum + c.challenges, 0)
 
   return (
-    <div className="min-h-screen bg-[#0b1120]">
+    <div className="min-h-screen bg-background">
       <SiteHeader />
+      <GridFrame />
 
       <main className="max-w-3xl mx-auto px-6 py-12">
         {/* Breadcrumb */}
