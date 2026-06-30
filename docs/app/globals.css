@@ -228,11 +228,11 @@
 
 /* Prose styling for docs content */
 .prose-grit h2 {
-  @apply text-2xl font-bold tracking-tight mb-4 mt-12 text-foreground scroll-mt-24;
+  @apply font-display text-[1.7rem] font-bold tracking-tight mb-5 mt-14 text-foreground scroll-mt-24;
 }
 
 .prose-grit h3 {
-  @apply text-xl font-semibold tracking-tight mb-3 mt-8 text-foreground scroll-mt-24;
+  @apply font-display text-xl font-semibold tracking-tight mb-3 mt-9 text-foreground scroll-mt-24;
 }
 
 .prose-grit p {

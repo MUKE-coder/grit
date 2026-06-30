@@ -31,11 +31,18 @@ export function GridFrame({ width = 'max-w-6xl' }: { width?: string }) {
             'radial-gradient(ellipse 60% 100% at 50% -10%, hsl(var(--primary) / 0.12), transparent 65%)',
         }}
       />
-      {/* Centred vertical rails + corner crosshairs */}
-      <div className={`relative mx-auto h-full w-full ${width}`}>
-        <div className="h-full border-x border-border/70" />
-        <span className="crosshair absolute left-0 top-[68px] -translate-x-1/2 text-foreground/30" style={{ width: 15, height: 15 }} />
-        <span className="crosshair absolute right-0 top-[68px] translate-x-1/2 text-foreground/30" style={{ width: 15, height: 15 }} />
+      {/* Four structural vertical rails (Livewire-style): two outer rails frame
+          the content column, two inner rails divide it into thirds. Outer are
+          stronger; inner are faint so they read as guides behind content. */}
+      <div className={`relative mx-auto h-full w-full ${width} flex justify-between`}>
+        <div className="h-full w-px bg-border/70" />
+        <div className="h-full w-px bg-border/30" />
+        <div className="h-full w-px bg-border/30" />
+        <div className="h-full w-px bg-border/70" />
+        <span className="crosshair absolute left-0 top-[68px] -translate-x-1/2 text-foreground/35" style={{ width: 16, height: 16 }} />
+        <span className="crosshair absolute right-0 top-[68px] translate-x-1/2 text-foreground/35" style={{ width: 16, height: 16 }} />
+        <span className="crosshair absolute left-0 bottom-24 -translate-x-1/2 text-foreground/25" style={{ width: 14, height: 14 }} />
+        <span className="crosshair absolute right-0 bottom-24 translate-x-1/2 text-foreground/25" style={{ width: 14, height: 14 }} />
       </div>
     </div>
   )

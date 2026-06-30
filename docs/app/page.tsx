@@ -152,7 +152,7 @@ export default function HomePage() {
           </FadeIn>
 
           <FadeIn delay={0.12}>
-            <h1 className="text-4xl md:text-6xl lg:text-[5.5rem] font-bold tracking-tight text-foreground text-center mb-6 leading-[1.05]">
+            <h1 className="font-display text-4xl md:text-6xl lg:text-[5.5rem] font-bold tracking-tight text-foreground text-center mb-6 leading-[1.05]">
               Build full-stack apps<br />
               <span className="bg-gradient-to-r from-primary via-sky-500 to-primary bg-clip-text text-transparent">
                 with the backend you trust

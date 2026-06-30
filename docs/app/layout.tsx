@@ -1,7 +1,7 @@
 import React from "react"
 import type { Metadata } from 'next'
 import Script from 'next/script'
-import { DM_Sans, JetBrains_Mono } from 'next/font/google'
+import { Geist, Ubuntu, JetBrains_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { OrganizationSchema } from '@/components/structured-data'
 import { NexoraChat } from '@/components/nexora-chat'
@@ -9,10 +9,17 @@ import { siteConfig } from '@/config/site'
 
 import './globals.css'
 
-const dmSans = DM_Sans({
+// Geist — primary UI/body typeface (variable weight). Ubuntu — display accent
+// used for big headings via the `font-display` utility. JetBrains Mono — code.
+const geist = Geist({
   subsets: ['latin'],
-  variable: '--font-dm-sans',
-  weight: ['400', '500', '600', '700'],
+  variable: '--font-geist',
+})
+
+const ubuntu = Ubuntu({
+  subsets: ['latin'],
+  variable: '--font-ubuntu',
+  weight: ['400', '500', '700'],
 })
 
 const jetbrainsMono = JetBrains_Mono({
@@ -78,7 +85,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${dmSans.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+      <body className={`${geist.variable} ${ubuntu.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <OrganizationSchema />
           {children}

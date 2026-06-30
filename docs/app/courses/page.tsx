@@ -138,7 +138,7 @@ export default function CoursesPage() {
                 DIY Self-Paced Courses
               </div>
 
-              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-5 leading-[1.1] text-foreground">
+              <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight mb-5 leading-[1.1] text-foreground">
                 Learn Grit
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
@@ -151,14 +151,14 @@ export default function CoursesPage() {
         </section>
 
         {/* Learning Paths — kit-based multi-chapter courses */}
-        <section className="py-16 border-b border-border/30">
+        <section className="py-20 md:py-24 border-b border-border/30">
           <div className="max-w-6xl mx-auto px-6">
-            <div className="text-center mb-10">
+            <div className="text-center mb-14">
               <div className="inline-flex items-center gap-2 rounded-full bg-violet-500/10 border border-violet-500/20 px-3 py-1 text-xs font-mono font-medium text-violet-400 mb-4">
                 <GraduationCap className="h-3.5 w-3.5" />
                 Learning Paths
               </div>
-              <h2 className="text-3xl font-bold text-foreground tracking-tight mb-3">
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground tracking-tight mb-4">
                 Pick your kit, follow a path
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
@@ -168,7 +168,7 @@ export default function CoursesPage() {
               </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-4">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 rounded-2xl border border-border/50 overflow-hidden mb-4">
               {COURSES.map((course) => {
                 const lessons = flatLessons(course).length
                 const hours = Math.round(courseTotalMinutes(course) / 60)
@@ -177,7 +177,7 @@ export default function CoursesPage() {
                   <Link
                     key={course.slug}
                     href={`/courses/${course.slug}`}
-                    className={`card-grit group relative overflow-hidden rounded-2xl border border-border/40 bg-card/30 p-5 hover:border-primary/40 hover:bg-card/60 flex flex-col`}
+                    className={`group relative overflow-hidden border-b border-r border-border/50 bg-card/20 p-6 hover:bg-card/50 transition-colors flex flex-col`}
                   >
                     <div className={`absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gradient-to-br ${course.accent} blur-2xl opacity-50 pointer-events-none`} />
                     <div className="relative flex items-start gap-3 mb-3">
@@ -230,14 +230,14 @@ export default function CoursesPage() {
         </section>
 
         {/* Focused Tutorials (legacy categories) */}
-        <section className="py-16">
+        <section className="py-20 md:py-24">
           <div className="max-w-6xl mx-auto px-6">
-            <div className="text-center mb-10">
+            <div className="text-center mb-14">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-4">
                 <Zap className="h-3.5 w-3.5" />
                 Focused Tutorials
               </div>
-              <h2 className="text-3xl font-bold text-foreground tracking-tight mb-3">
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground tracking-tight mb-4">
                 Bite-sized walk-throughs
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
@@ -245,12 +245,12 @@ export default function CoursesPage() {
                 ~30 minutes, build something concrete.
               </p>
             </div>
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid md:grid-cols-3 rounded-2xl border border-border/50 overflow-hidden">
               {categories.map((cat) => (
                 <Link
                   key={cat.title}
                   href={cat.href}
-                  className="card-grit group relative flex flex-col rounded-xl border border-border/40 bg-card/50 p-6 hover:border-primary/40 hover:bg-card/70"
+                  className="group relative flex flex-col border-b border-r border-border/50 bg-card/20 p-7 hover:bg-card/50 transition-colors"
                 >
                   {/* Icon + meta */}
                   <div className="flex items-center gap-3 mb-4">
@@ -299,18 +299,18 @@ export default function CoursesPage() {
             </div>
 
             {/* Standalone Courses */}
-            <div className="mt-20">
-              <div className="text-center mb-10">
-                <h2 className="text-2xl font-bold text-foreground mb-2">Standalone Courses</h2>
+            <div className="mt-24">
+              <div className="text-center mb-14">
+                <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-3">Standalone Courses</h2>
                 <p className="text-muted-foreground">Deep dives, practical builds, and specialized topics</p>
               </div>
 
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 rounded-2xl border border-border/50 overflow-hidden">
                 {standaloneCourses.map((course) => (
                   <Link
                     key={course.href}
                     href={course.href}
-                    className="card-grit group flex items-start gap-3 p-4 rounded-lg border border-border/40 bg-card/30 hover:border-primary/40 hover:bg-card/50"
+                    className="group flex items-start gap-3 p-5 border-b border-r border-border/50 bg-card/20 hover:bg-card/50 transition-colors"
                   >
                     <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/10 text-primary shrink-0 group-hover:bg-primary/20 transition-colors">
                       <course.icon className="h-4 w-4" />

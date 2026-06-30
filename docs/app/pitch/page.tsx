@@ -59,7 +59,7 @@ export default function PitchPage() {
             <span className="tag-mono text-primary mb-6 block">The Pitch</span>
           </FadeIn>
           <FadeIn delay={0.08}>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground leading-[1.05] mb-7">
+            <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tight text-foreground leading-[1.05] mb-7">
               What if your backend
               <br />
               shipped with the frontend
