@@ -560,7 +560,13 @@ func rootPostCSSConfig() string {
 }
 
 func rootPackageJSON(opts Options) string {
-	scripts := fmt.Sprintf(`    "dev": "turbo dev",
+	// dev runs the frontend dev servers via pnpm's own parallel runner rather
+	// than `turbo dev`. turbo ships a platform-specific native binary that can
+	// fail to load on Windows (exit 0xC0000135 / STATUS_DLL_NOT_FOUND when the
+	// VC++ runtime is missing), which would otherwise block `grit start` on a
+	// fresh machine. pnpm needs no native binary, so `dev` always works; turbo
+	// is kept for build/lint/test where its caching pays off.
+	scripts := fmt.Sprintf(`    "dev": "pnpm --parallel --filter \"./apps/*\" --if-present run dev",
     "build": "turbo build",
     "lint": "turbo lint",
     "type-check": "turbo type-check",
