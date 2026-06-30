@@ -62,7 +62,7 @@ function AsciiCube({ className, flip = false }: { className?: string; flip?: boo
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background isolate">
+    <div className="relative min-h-screen bg-background isolate">
       <SoftwareApplicationSchema />
       <FAQPageSchema />
       <SiteHeader />

@@ -97,7 +97,7 @@ export default function GritWebCourses() {
   const totalChallenges = courses.reduce((sum, c) => sum + c.challenges, 0)
 
   return (
-    <div className="min-h-screen bg-background isolate">
+    <div className="relative min-h-screen bg-background isolate">
       <SiteHeader />
       <GridFrame />
 

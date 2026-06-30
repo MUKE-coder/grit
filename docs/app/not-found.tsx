@@ -23,7 +23,7 @@ const links = [
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-background isolate">
+    <div className="relative min-h-screen bg-background isolate">
       <SiteHeader />
       <GridFrame />
 

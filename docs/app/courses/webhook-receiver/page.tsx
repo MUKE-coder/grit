@@ -20,7 +20,7 @@ const learn = [
 
 export default function WebhookReceiverCourse() {
   return (
-    <div className="min-h-screen bg-background isolate">
+    <div className="relative min-h-screen bg-background isolate">
       <SiteHeader />
       <GridFrame />
 

@@ -1,19 +1,23 @@
-// Blueprint frame (Livewire-style). A single fixed, full-viewport backdrop that
-// gives marketing pages their signature graph-paper framing:
-//   • two vertical rails that frame the centred content column and — because the
-//     layer is `fixed` — run unbroken from the top of the header to the footer;
+// Blueprint frame (Livewire-style). A full-page backdrop that gives marketing
+// pages their signature graph-paper framing:
+//   • two vertical rails that frame the centred content column and run the full
+//     height of the page (top of the header to the footer);
 //   • a full-bleed grid texture behind every section;
 //   • a soft primary gradient glow at the top for depth;
 //   • crosshair "+" markers sitting on the rails.
-// Mounted once per marketing page (landing, pitch, courses). It sits at -z-10:
-// above the page's solid background, behind all content. Sections with their own
-// translucent tints let the rails read through, creating the "wrapped cells" look.
+// Mounted once per page (landing, pitch, courses, …). It is `absolute inset-0`
+// inside the page's `relative isolate` wrapper, so it spans the whole document
+// AND — crucially — centres its rails in the EXACT same context as flow content
+// (wrapper width = viewport minus scrollbar). A `fixed` layer instead centres on
+// the full viewport, leaving the rails ~scrollbar/2 off the section edges on big
+// screens. Absolute keeps them perfectly aligned at every screen size.
+// It sits at -z-10: above the wrapper's background, behind all content.
 //
 // `width` must match the page's content container so the rails hug it (default
 // matches Tailwind's max-w-6xl).
 export function GridFrame({ width = 'max-w-6xl' }: { width?: string }) {
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
       {/* Full-bleed grid texture */}
       <div
         className="absolute inset-0"
