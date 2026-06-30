@@ -12,6 +12,7 @@ import { GoLogo, ReactLogo, VueLogo, SvelteLogo, NextLogo, TanStackLogo, TypeScr
 import { HubAndSpoke } from '@/components/hub-and-spoke'
 import { ThreePlatforms } from '@/components/three-platforms'
 import { WhatIsGrit } from '@/components/what-is-grit'
+import { GRIT_VERSION } from '@/config/site'
 
 export const metadata: Metadata = {
   title: 'Grit — Go + React Full-Stack Framework',
@@ -75,15 +76,8 @@ export default function HomePage() {
               'radial-gradient(ellipse 80% 60% at 50% 0%, #0284c7 0%, #0369a1 35%, #082f49 100%)',
           }}
         />
-        {/* Layer 2 — fine grid */}
-        <div
-          className="absolute inset-0 -z-20 opacity-[0.10]"
-          style={{
-            backgroundImage:
-              'linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)',
-            backgroundSize: '48px 48px',
-          }}
-        />
+        {/* Layer 2 — fine grid that dissolves toward the edges (Firecrawl/Livewire feel) */}
+        <div className="absolute inset-0 -z-20 bg-grit-grid-on-color mask-fade-center" />
         {/* Layer 3 — radial vignette so the grid fades at edges */}
         <div
           className="absolute inset-0 -z-10"
@@ -98,6 +92,12 @@ export default function HomePage() {
         <AsciiCube className="absolute -top-12 -right-8 w-[320px] h-[320px] hidden md:block opacity-[0.18] text-white" flip />
         <AsciiCube className="absolute -bottom-16 -left-16 w-[260px] h-[260px] hidden lg:block opacity-[0.15] text-white" />
         <AsciiCube className="absolute -bottom-8 -right-12 w-[280px] h-[280px] hidden lg:block opacity-[0.15] text-white" flip />
+
+        {/* Firecrawl-style crosshair accents pinned to the grid */}
+        <span className="crosshair absolute top-28 left-[11%] text-white/35 hidden md:block" style={{ width: 16, height: 16 }} />
+        <span className="crosshair absolute top-44 right-[13%] text-sky-200/45 hidden md:block" style={{ width: 16, height: 16 }} />
+        <span className="crosshair absolute bottom-36 left-[18%] text-white/25 hidden lg:block" style={{ width: 14, height: 14 }} />
+        <span className="crosshair absolute bottom-24 right-[22%] text-white/30 hidden lg:block" style={{ width: 14, height: 14 }} />
 
         {/* Floating glow orbs */}
         <GlowOrb className="-top-32 left-1/4 h-[400px] w-[400px] bg-sky-400/30" duration={18} />
@@ -346,7 +346,7 @@ export function useProducts() {
             {[
               { number: '5', label: 'ARCHITECTURE MODES' },
               { number: '100+', label: 'UI COMPONENTS' },
-              { number: 'v3.23', label: 'LATEST RELEASE' },
+              { number: `v${GRIT_VERSION}`, label: 'LATEST RELEASE' },
             ].map((stat) => (
               <div key={stat.label} className="text-center md:text-left">
                 <div className="text-4xl md:text-5xl font-bold text-foreground mb-1 tracking-tight">{stat.number}</div>
@@ -412,7 +412,7 @@ export function useProducts() {
                   <div className="mt-4 flex items-center justify-between px-2">
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                      <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">v3.23 · production-ready</span>
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">{`v${GRIT_VERSION} · production-ready`}</span>
                     </div>
                     <span className="text-[10px] font-mono text-muted-foreground/50">GRIT-FW-A1</span>
                   </div>
@@ -947,7 +947,7 @@ export function useProducts() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
             {/* Large card — Auth */}
-            <div className="lg:col-span-2 rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+            <div className="lg:col-span-2 rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
               <div className="flex items-center gap-3 mb-4">
                 <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center icon-animated">
                   <Shield className="h-5 w-5 text-primary" />
@@ -965,7 +965,7 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
             </div>
 
             {/* Small card — Admin */}
-            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
               <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-4 icon-animated">
                 <Layers className="h-5 w-5 text-emerald-400" />
               </div>
@@ -982,7 +982,7 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
             </div>
 
             {/* Small card — AI */}
-            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
               <div className="h-10 w-10 rounded-lg bg-violet-500/10 flex items-center justify-center mb-4 icon-animated">
                 <Bot className="h-5 w-5 text-violet-400" />
               </div>
@@ -996,7 +996,7 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
             </div>
 
             {/* Small card — Storage */}
-            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
               <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center mb-4 icon-animated">
                 <Database className="h-5 w-5 text-amber-400" />
               </div>
@@ -1007,7 +1007,7 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
             </div>
 
             {/* Large card — Code Gen */}
-            <div className="lg:col-span-2 rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+            <div className="lg:col-span-2 rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
               <div className="flex items-center gap-3 mb-4">
                 <div className="h-10 w-10 rounded-lg bg-cyan-500/10 flex items-center justify-center icon-animated">
                   <Terminal className="h-5 w-5 text-cyan-400" />
@@ -1050,7 +1050,7 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
               { name: 'API Only', icon: <Database className="h-5 w-5" />, desc: 'Go backend only', flag: '--api', color: 'text-amber-400 bg-amber-400/10' },
               { name: 'Mobile', icon: <Smartphone className="h-5 w-5" />, desc: 'API + Expo', flag: '--mobile', color: 'text-rose-400 bg-rose-400/10' },
             ].map((arch) => (
-              <div key={arch.name} className="rounded-xl border border-border/40 bg-card/50 card-gradient p-5 text-center hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+              <div key={arch.name} className="rounded-xl border border-border/40 bg-card/50 card-gradient p-5 text-center card-grit hover:border-primary/40">
                 <div className={`h-12 w-12 rounded-xl ${arch.color} flex items-center justify-center mx-auto mb-3 icon-animated`}>
                   {arch.icon}
                 </div>
@@ -1137,7 +1137,7 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
               { title: 'Background Jobs', desc: 'Redis-backed job queue via asynq. Image processing, email sending.', color: 'text-orange-400', bg: 'bg-orange-400/10', icon: <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg> },
               { title: 'Redis Cache', desc: 'Cache middleware for any route. Set/Get/Delete. Configurable TTL.', color: 'text-red-400', bg: 'bg-red-400/10', icon: <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg> },
             ].map((feature) => (
-              <div key={feature.title} className="rounded-xl border border-border/40 bg-background card-gradient grid-pattern p-5 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+              <div key={feature.title} className="rounded-xl border border-border/40 bg-background card-gradient grid-pattern p-5 card-grit hover:border-primary/40">
                 <div className={`h-10 w-10 rounded-lg ${feature.bg} ${feature.color} flex items-center justify-center mb-4 icon-animated`}>
                   {feature.icon}
                 </div>
@@ -1153,7 +1153,7 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
       <section className="py-24 px-6 border-t border-border/40">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">New in v3.23</p>
+            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">Security &amp; Reliability</p>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">OWASP 2025 hardened</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Reliability, auditability, and security — usually a year of integration work — wired into every scaffolded project.
@@ -1162,7 +1162,7 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Offline-first */}
-            <div className="lg:col-span-2 rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300">
+            <div className="lg:col-span-2 rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
               <div className="flex items-center gap-3 mb-4">
                 <div className="h-10 w-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
                   <svg className="h-5 w-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><line x1="12" y1="20" x2="12.01" y2="20" /></svg>
@@ -1183,7 +1183,7 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
             </div>
 
             {/* Audit + chain */}
-            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300">
+            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
               <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-4">
                 <svg className="h-5 w-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /><ellipse cx="12" cy="5" rx="9" ry="3" /></svg>
               </div>
@@ -1196,7 +1196,7 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
             </div>
 
             {/* SSRF defence */}
-            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300">
+            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
               <div className="h-10 w-10 rounded-lg bg-rose-500/10 flex items-center justify-center mb-4">
                 <Shield className="h-5 w-5 text-rose-400" />
               </div>
@@ -1209,7 +1209,7 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
             </div>
 
             {/* Feature flags */}
-            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300">
+            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
               <div className="h-10 w-10 rounded-lg bg-violet-500/10 flex items-center justify-center mb-4">
                 <svg className="h-5 w-5 text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></svg>
               </div>
@@ -1222,7 +1222,7 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
             </div>
 
             {/* Realtime + idempotency — wider card */}
-            <div className="lg:col-span-2 rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 hover:border-primary/30 transition-all duration-300">
+            <div className="lg:col-span-2 rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
               <div className="flex items-center gap-3 mb-4">
                 <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
                   <svg className="h-5 w-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
@@ -1465,7 +1465,7 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
               { name: 'Sentinel', desc: 'WAF + rate limiting + brute-force protection with real-time threat dashboard.', url: 'https://github.com/MUKE-coder/sentinel', tag: 'Security' },
               { name: 'gin-docs', desc: 'Zero-annotation API documentation generator for Gin. Auto-generates OpenAPI spec with Scalar UI.', url: 'https://github.com/MUKE-coder/gin-docs', tag: 'Library' },
             ].map((project) => (
-              <Link key={project.name} href={project.url} target={project.url.startsWith('http') ? '_blank' : undefined} className="group rounded-xl border border-border/40 bg-card/50 card-gradient p-6 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 block">
+              <Link key={project.name} href={project.url} target={project.url.startsWith('http') ? '_blank' : undefined} className="group rounded-xl border border-border/40 bg-card/50 card-gradient p-6 card-grit hover:border-primary/40 block">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{project.name}</h3>
                   <span className="text-[10px] font-mono text-muted-foreground/60 bg-accent/30 px-2 py-0.5 rounded">{project.tag}</span>
@@ -1624,7 +1624,7 @@ grit new my-app`} />
               <Link href="/docs" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Docs</Link>
               <Link href="https://github.com/MUKE-coder/grit" target="_blank" className="text-xs text-muted-foreground hover:text-foreground transition-colors">GitHub</Link>
               <Link href="/showcase" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Showcase</Link>
-              <span className="text-xs text-muted-foreground/60">Built with Grit v3.23</span>
+              <span className="text-xs text-muted-foreground/60">{`Built with Grit v${GRIT_VERSION}`}</span>
             </div>
           </div>
 

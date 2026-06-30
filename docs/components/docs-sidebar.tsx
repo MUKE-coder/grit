@@ -296,8 +296,8 @@ function NavSection({ item }: { item: NavItem }) {
             className={cn(
               'block px-3 py-1 text-sm transition-colors border-l-2',
               pathname === subItem.href
-                ? 'text-primary font-medium border-primary'
-                : 'text-muted-foreground hover:text-foreground border-transparent hover:border-muted-foreground/30'
+                ? 'text-primary font-medium border-primary bg-primary/[0.06] rounded-r-md'
+                : 'text-muted-foreground hover:text-foreground border-transparent hover:border-muted-foreground/30 hover:bg-accent/20 rounded-r-md'
             )}
           >
             {subItem.title}
@@ -320,13 +320,23 @@ export function DocsSidebar() {
   }, [pathname])
 
   return (
-    <aside ref={sidebarRef} className="fixed top-16 z-30 hidden h-[calc(100vh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-border/40 bg-sidebar-background py-8 lg:block">
-      <nav className="px-2">
-        {navItems.map((item) => (
-          <NavSection key={item.title} item={item} />
-        ))}
-      </nav>
-    </aside>
+    <>
+      {/* Shared docs backdrop — a subtle grid that fades downward. Rendered
+          here because <DocsSidebar /> is present on every /docs page, so this
+          single layer gives the whole documentation a consistent, polished
+          texture without touching individual page files. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 bg-grit-grid-sm opacity-70 mask-fade-b"
+      />
+      <aside ref={sidebarRef} className="fixed top-16 z-30 hidden h-[calc(100vh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-border/40 bg-sidebar-background py-8 lg:block">
+        <nav className="px-2">
+          {navItems.map((item) => (
+            <NavSection key={item.title} item={item} />
+          ))}
+        </nav>
+      </aside>
+    </>
   )
 }
 
@@ -422,6 +432,8 @@ export function MobileNav() {
           <div className="px-4 mb-4 space-y-1">
             {[
               { label: 'Docs', href: '/docs' },
+              { label: 'Courses', href: '/courses' },
+              { label: 'Pitch', href: '/pitch' },
               { label: 'Showcase', href: '/showcase' },
               { label: 'GritCMS', href: 'https://gritcms.com' },
               { label: 'Hire Us', href: '/hire' },

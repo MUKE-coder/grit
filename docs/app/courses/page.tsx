@@ -114,14 +114,17 @@ const standaloneCourses = [
 
 export default function CoursesPage() {
   return (
-    <div className="min-h-screen bg-[#0b1120]">
+    <div className="min-h-screen bg-background">
       <SiteHeader />
 
       <main>
         {/* Hero */}
         <section className="relative overflow-hidden border-b border-border/30">
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.04] to-transparent" />
-          <div className="container max-w-screen-xl relative py-20 px-6">
+          <div className="absolute inset-0 -z-20 bg-grit-grid mask-fade-center" />
+          <div className="absolute inset-0 -z-30 bg-gradient-to-b from-primary/[0.06] to-transparent" />
+          <span className="crosshair absolute top-16 left-[16%] text-foreground/20 hidden md:block" style={{ width: 14, height: 14 }} />
+          <span className="crosshair absolute top-28 right-[18%] text-primary/30 hidden md:block" style={{ width: 14, height: 14 }} />
+          <div className="container max-w-screen-xl relative py-24 px-6">
             <div className="max-w-3xl mx-auto text-center">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
                 <BookOpen className="h-3.5 w-3.5" />
@@ -167,7 +170,7 @@ export default function CoursesPage() {
                   <Link
                     key={course.slug}
                     href={`/courses/${course.slug}`}
-                    className={`group relative overflow-hidden rounded-2xl border border-border/40 bg-card/30 p-5 hover:border-primary/40 hover:bg-card/60 transition-all flex flex-col`}
+                    className={`card-grit group relative overflow-hidden rounded-2xl border border-border/40 bg-card/30 p-5 hover:border-primary/40 hover:bg-card/60 flex flex-col`}
                   >
                     <div className={`absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gradient-to-br ${course.accent} blur-2xl opacity-50 pointer-events-none`} />
                     <div className="relative flex items-start gap-3 mb-3">
@@ -240,7 +243,7 @@ export default function CoursesPage() {
                 <Link
                   key={cat.title}
                   href={cat.href}
-                  className="group relative flex flex-col rounded-xl border border-border/40 bg-card/50 p-6 hover:border-primary/30 hover:bg-card/70 transition-all"
+                  className="card-grit group relative flex flex-col rounded-xl border border-border/40 bg-card/50 p-6 hover:border-primary/40 hover:bg-card/70"
                 >
                   {/* Icon + meta */}
                   <div className="flex items-center gap-3 mb-4">
@@ -300,7 +303,7 @@ export default function CoursesPage() {
                   <Link
                     key={course.href}
                     href={course.href}
-                    className="group flex items-start gap-3 p-4 rounded-lg border border-border/40 bg-card/30 hover:border-primary/30 hover:bg-card/50 transition-all"
+                    className="card-grit group flex items-start gap-3 p-4 rounded-lg border border-border/40 bg-card/30 hover:border-primary/40 hover:bg-card/50"
                   >
                     <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/10 text-primary shrink-0 group-hover:bg-primary/20 transition-colors">
                       <course.icon className="h-4 w-4" />

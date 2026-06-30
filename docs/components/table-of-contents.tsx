@@ -41,7 +41,7 @@ export function TableOfContents({ items }: TableOfContentsProps) {
   }, [items, handleObserver])
 
   return (
-    <nav className="hidden xl:block fixed right-6 top-20 w-56 max-h-[calc(100vh-6rem)] overflow-y-auto">
+    <nav data-manual-toc className="hidden xl:block fixed right-6 top-20 w-56 max-h-[calc(100vh-6rem)] overflow-y-auto">
       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">
         On This Page
       </p>

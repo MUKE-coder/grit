@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Github, Youtube, Heart, Sun, Moon } from 'lucide-react'
+import { Youtube, Heart, Sun, Moon } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { SearchDialog } from '@/components/search-dialog'
 import { MobileNav } from '@/components/docs-sidebar'
+import { GitHubStars } from '@/components/github-stars'
 import { cn } from '@/lib/utils'
 import { GRIT_VERSION } from '@/config/site'
 
@@ -54,6 +55,7 @@ export function SiteHeader() {
             { label: 'Tech Kits', href: '/docs/tech-kits' },
             { label: 'AI Integration', href: '/docs/ai-integration', highlight: true },
             { label: 'Courses', href: '/courses' },
+            { label: 'Pitch', href: '/pitch' },
             { label: 'Changelog', href: '/docs/changelog' },
             { label: 'Showcase', href: '/showcase' },
           ].map((item) => {
@@ -96,12 +98,7 @@ export function SiteHeader() {
             </Button>
           )}
 
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50" asChild>
-            <Link href="https://github.com/MUKE-coder/grit" target="_blank" rel="noreferrer">
-              <Github className="h-4 w-4" />
-              <span className="sr-only">GitHub</span>
-            </Link>
-          </Button>
+          <GitHubStars className="mr-0.5" />
 
           <Button variant="ghost" size="icon" className="hidden sm:inline-flex h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent/50" asChild>
             <Link href="https://www.youtube.com/@GritFramework" target="_blank" rel="noreferrer">

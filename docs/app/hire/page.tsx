@@ -31,6 +31,9 @@ export default function HirePage() {
         <div className="absolute inset-0 -z-10">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-primary/[0.06] blur-[120px]" />
         </div>
+        <div className="absolute inset-0 -z-20 bg-grit-grid mask-fade-center" />
+        <span className="crosshair absolute top-20 left-[15%] text-foreground/20 hidden md:block" style={{ width: 14, height: 14 }} />
+        <span className="crosshair absolute top-32 right-[17%] text-primary/30 hidden md:block" style={{ width: 14, height: 14 }} />
         <div className="container max-w-screen-xl py-24 md:py-36 px-6">
           <div className="max-w-3xl mx-auto text-center">
             <div className="flex items-center justify-center gap-2 rounded-full border border-border/60 bg-accent/40 px-4 py-1.5 mb-6 mx-auto w-fit">
@@ -113,7 +116,7 @@ export default function HirePage() {
             ].map((item) => (
               <div
                 key={item.title}
-                className="group rounded-xl border border-border/40 bg-card/50 p-6 hover:border-primary/20 hover:bg-card/80 transition-all duration-200"
+                className="card-grit group rounded-xl border border-border/40 bg-card/50 p-6 hover:border-primary/40 hover:bg-card/80"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/15 text-primary mb-4">
                   {item.icon}

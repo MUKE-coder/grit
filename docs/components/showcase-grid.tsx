@@ -46,7 +46,7 @@ function GridCard({
     <button
       type="button"
       onClick={onClick}
-      className="group rounded-xl border border-border/60 bg-card/50 overflow-hidden transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 text-left w-full cursor-pointer"
+      className="card-grit group rounded-xl border border-border/60 bg-card/50 overflow-hidden hover:border-primary/40 text-left w-full cursor-pointer"
     >
       <div className="aspect-[16/10] bg-accent/30 overflow-hidden">
         <img

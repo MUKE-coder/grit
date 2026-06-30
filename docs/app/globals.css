@@ -228,11 +228,11 @@
 
 /* Prose styling for docs content */
 .prose-grit h2 {
-  @apply text-2xl font-semibold tracking-tight mb-4 mt-10 text-foreground scroll-mt-20;
+  @apply text-2xl font-bold tracking-tight mb-4 mt-12 text-foreground scroll-mt-24;
 }
 
 .prose-grit h3 {
-  @apply text-xl font-semibold tracking-tight mb-3 mt-8 text-foreground scroll-mt-20;
+  @apply text-xl font-semibold tracking-tight mb-3 mt-8 text-foreground scroll-mt-24;
 }
 
 .prose-grit p {
@@ -337,3 +337,107 @@
 }
 
 /* (conic-border removed — replaced with static borders + soft primary halo) */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   GRIT DESIGN LANGUAGE v2 — shared backgrounds, fade masks, glows, cards.
+   Theme-aware via CSS vars so the same class works in light + dark.
+   Inspiration: Livewire (fine grid lines, bold headings, crisp code) +
+   Firecrawl (generous spacing, dotted grids, crosshair markers, fades).
+   All decorative; none affect layout flow. Respect prefers-reduced-motion.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@layer utilities {
+  /* ── Backgrounds ─────────────────────────────────────────────────── */
+  /* Fine grid lines (Livewire). Use on an absolute inset-0 overlay layer. */
+  .bg-grit-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--foreground) / 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--foreground) / 0.05) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+  .bg-grit-grid-sm {
+    background-image:
+      linear-gradient(to right, hsl(var(--foreground) / 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--foreground) / 0.045) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  /* Brighter grid for saturated hero blocks (reads on a colored backdrop). */
+  .bg-grit-grid-on-color {
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px);
+    background-size: 52px 52px;
+  }
+  /* Dotted grid (Firecrawl). */
+  .bg-grit-dots {
+    background-image: radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.10) 1px, transparent 0);
+    background-size: 28px 28px;
+  }
+
+  /* ── Fade masks — dissolve a pattern at the edges (no hard cut) ───── */
+  .mask-fade-center {
+    -webkit-mask-image: radial-gradient(ellipse 65% 55% at 50% 38%, #000 0%, transparent 80%);
+            mask-image: radial-gradient(ellipse 65% 55% at 50% 38%, #000 0%, transparent 80%);
+  }
+  .mask-fade-y {
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+            mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+  }
+  .mask-fade-b {
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 92%);
+            mask-image: linear-gradient(to bottom, #000 0%, transparent 92%);
+  }
+  .mask-fade-t {
+    -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 92%);
+            mask-image: linear-gradient(to top, #000 0%, transparent 92%);
+  }
+
+  /* ── Glows — brand-blue, theme-aware ─────────────────────────────── */
+  .glow-primary    { box-shadow: 0 0 60px -12px hsl(var(--primary) / 0.45); }
+  .glow-primary-sm { box-shadow: 0 0 30px -8px hsl(var(--primary) / 0.35); }
+}
+
+/* ── Crosshair "+" accent marker (Firecrawl). Colour via text-* utils. ─ */
+.crosshair { position: relative; display: inline-block; width: 14px; height: 14px; }
+.crosshair::before,
+.crosshair::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  background: currentColor;
+}
+.crosshair::before { width: 1px; height: 100%; }
+.crosshair::after  { height: 1px; width: 100%; }
+
+/* ── Card micro-interaction — subtle lift + primary ring on hover ──── */
+.card-grit {
+  transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s ease,
+              border-color .25s ease, background-color .25s ease;
+  will-change: transform;
+}
+.card-grit:hover {
+  transform: translateY(-3px);
+  border-color: hsl(var(--primary) / 0.40);
+  box-shadow: 0 16px 40px -16px hsl(var(--primary) / 0.25), 0 4px 12px -6px rgba(0,0,0,.3);
+}
+
+/* ── Small motion helpers ─────────────────────────────────────────── */
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.animate-spin-slow { animation: spin-slow 8s linear infinite; }
+
+@keyframes rise-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.animate-rise { animation: rise-in .7s cubic-bezier(.2,.7,.2,1) both; }
+
+/* Shimmer sweep for "live"/beta pills and CTA accents. */
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 2.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin-slow, .animate-rise, .animate-shimmer, .pill-pulse, .dash-animate { animation: none !important; }
+  .card-grit { transition: none; }
+  .card-grit:hover { transform: none; }
+}
