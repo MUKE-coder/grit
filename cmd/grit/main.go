@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.31.51"
+var version = "3.31.52"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -889,8 +889,16 @@ Flags:
 				target = "github.com/MUKE-coder/grit/v3/cmd/grit@v" + latest
 			}
 
-			spinner.Printf("  → Running: go install %s\n", target)
+			// Force the install to land where grit ACTUALLY lives (e.g.
+			// ~/.grit/bin from the install script), not the Go default GOBIN
+			// (~/go/bin). Without this, `go install` writes the new binary to
+			// GOBIN while we've just renamed the real one aside — leaving the
+			// user's `grit` path empty. (Fixes the self-update bug where
+			// `grit update` reported success but left no grit on PATH.)
+			installDir := filepath.Dir(binPath)
+			spinner.Printf("  → Running: go install %s  (GOBIN=%s)\n", target, installDir)
 			c := exec.Command("go", "install", target)
+			c.Env = append(os.Environ(), "GOBIN="+installDir)
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
 			if err := c.Run(); err != nil {

@@ -28,6 +28,37 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.52 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.52
+                </span>
+                <span className="text-sm text-muted-foreground">July 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Self-update fix.</strong> <code>grit update</code> could report
+                  success but leave no <code>grit</code> on your PATH.
+                </p>
+
+                <h3>go install now targets grit&apos;s real location</h3>
+                <p>
+                  When grit was installed via the install script (into <code>~/.grit/bin</code>),
+                  the update&apos;s <code>go install</code> step wrote the new binary to the Go
+                  default <code>GOBIN</code> (<code>~/go/bin</code>) instead — while the running
+                  binary had already been renamed aside. The result: <em>&ldquo;Updated to
+                  vX&rdquo;</em> followed by <code>grit: No such file or directory</code>. The
+                  updater now sets <code>GOBIN</code> to the directory grit actually lives in, so
+                  the refreshed binary lands exactly where your PATH expects it. If you hit this on
+                  an older version, recover with{' '}
+                  <code>curl -fsSL https://gritframework.dev/install.sh | sh</code> (or the
+                  PowerShell one-liner), then update as normal.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.51 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
