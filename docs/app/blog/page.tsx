@@ -20,6 +20,7 @@ export default function BlogPage() {
     readingTime: p.readingTime,
     category: p.category,
     accent: p.accent,
+    thumbnail: p.thumbnail,
   }))
 
   return (

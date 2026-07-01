@@ -15,6 +15,7 @@ export interface BlogCard {
   readingTime: string
   category: string
   accent: string
+  thumbnail?: string
 }
 
 export function BlogList({ posts }: { posts: BlogCard[] }) {
@@ -55,25 +56,35 @@ export function BlogList({ posts }: { posts: BlogCard[] }) {
             href={`/blog/${post.slug}`}
             className="card-grit group flex flex-col rounded-xl border border-border/50 bg-card/30 overflow-hidden"
           >
-            {/* Placeholder thumbnail — swap for /public/blog/<slug>.png when generated */}
-            <div className={`relative aspect-[16/9] bg-gradient-to-br ${post.accent} p-5 flex flex-col justify-between overflow-hidden`}>
-              <div
-                aria-hidden
-                className="absolute inset-0 opacity-30"
-                style={{
-                  backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.6) 1px, transparent 0)',
-                  backgroundSize: '22px 22px',
-                }}
+            {post.thumbnail ? (
+              // Real generated thumbnail (already includes the logo + headline).
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={post.thumbnail}
+                alt={post.title}
+                className="aspect-[16/9] w-full object-cover"
               />
-              <div className="relative flex items-center gap-2 text-white">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/grit_logo.png" alt="" className="h-5 w-5 rounded" />
-                <span className="text-xs font-semibold tracking-tight">Grit Framework</span>
+            ) : (
+              // Branded gradient placeholder until the image is dropped in public/blog.
+              <div className={`relative aspect-[16/9] bg-gradient-to-br ${post.accent} p-5 flex flex-col justify-between overflow-hidden`}>
+                <div
+                  aria-hidden
+                  className="absolute inset-0 opacity-30"
+                  style={{
+                    backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.6) 1px, transparent 0)',
+                    backgroundSize: '22px 22px',
+                  }}
+                />
+                <div className="relative flex items-center gap-2 text-white">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/grit_logo.png" alt="" className="h-5 w-5 rounded" />
+                  <span className="text-xs font-semibold tracking-tight">Grit Framework</span>
+                </div>
+                <h2 className="relative font-display text-lg md:text-xl font-bold text-white leading-snug drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
+                  {post.title}
+                </h2>
               </div>
-              <h2 className="relative font-display text-lg md:text-xl font-bold text-white leading-snug drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">
-                {post.title}
-              </h2>
-            </div>
+            )}
 
             <div className="p-5 flex flex-col flex-1">
               <div className="text-[11px] font-mono uppercase tracking-wider text-primary mb-2">

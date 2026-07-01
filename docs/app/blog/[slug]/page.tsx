@@ -64,6 +64,17 @@ export default async function BlogPostPage({
           <div className="mt-5 text-sm text-muted-foreground/70">By {post.author}</div>
         </header>
 
+        {post.thumbnail && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={post.thumbnail}
+              alt={post.title}
+              className="w-full aspect-[16/9] object-cover rounded-xl border border-border/50 mb-10"
+            />
+          </>
+        )}
+
         <hr className="border-border/40 mb-10" />
 
         {/* Body */}

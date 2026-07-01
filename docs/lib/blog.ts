@@ -18,7 +18,19 @@ export interface BlogPost {
   tags: string[]
   category: string
   accent: string // tailwind gradient classes for the placeholder thumbnail
+  thumbnail?: string // /blog/<slug>.<ext> when a real image exists in public/blog
   content: string
+}
+
+// Look for a generated thumbnail at public/blog/<slug>.(png|jpg|jpeg|webp).
+// Drop the image in and it's used automatically; otherwise the card renders a
+// branded gradient placeholder.
+function findThumbnail(slug: string): string | undefined {
+  for (const ext of ['png', 'jpg', 'jpeg', 'webp']) {
+    const rel = `blog/${slug}.${ext}`
+    if (fs.existsSync(path.join(process.cwd(), 'public', rel))) return `/${rel}`
+  }
+  return undefined
 }
 
 const ACCENTS = [
@@ -65,8 +77,10 @@ export function getAllPosts(): BlogPost[] {
     const raw = fs.readFileSync(path.join(BLOG_DIR, file), 'utf8')
     const { data, content } = matter(raw)
     const tags = (data.tags as string[]) || []
+    const slug = file.replace(/^\d{4}-\d{2}-\d{2}-/, '').replace(/\.md$/, '')
     return {
-      slug: file.replace(/^\d{4}-\d{2}-\d{2}-/, '').replace(/\.md$/, ''),
+      slug,
+      thumbnail: findThumbnail(slug),
       title: (data.title as string) || file,
       subtitle: (data.subtitle as string) || '',
       date: toISO(data.date),
