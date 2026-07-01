@@ -43,7 +43,17 @@ export default function BlogPage() {
           </p>
         </div>
 
-        <BlogList posts={cards} />
+        {cards.length > 0 ? (
+          <BlogList posts={cards} />
+        ) : (
+          <div className="rounded-2xl border border-border/50 bg-card/30 p-12 text-center">
+            <p className="font-display text-xl font-bold text-foreground mb-2">First edition, coming soon</p>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              The Daily Grit is warming up — short, practical build guides land here most
+              mornings. Follow the newsletter on LinkedIn to catch edition one.
+            </p>
+          </div>
+        )}
       </main>
     </div>
   )
