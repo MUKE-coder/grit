@@ -2,10 +2,9 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
+import { BlogContent } from '@/components/blog-content'
 import { getAllPosts, getPost, formatDate } from '@/lib/blog'
 
 export function generateStaticParams() {
@@ -78,9 +77,7 @@ export default async function BlogPostPage({
         <hr className="border-border/40 mb-10" />
 
         {/* Body */}
-        <article className="prose-grit">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
-        </article>
+        <BlogContent content={post.content} />
 
         {/* Footer CTA */}
         <div className="mt-14 rounded-2xl border border-border/50 bg-card/40 p-6 md:p-8 text-center">

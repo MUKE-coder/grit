@@ -262,11 +262,11 @@
 }
 
 .prose-grit pre {
-  @apply mb-4 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0d1117] p-4 overflow-x-auto text-[13px] leading-6;
+  @apply mb-4;
 }
 
 .prose-grit pre code {
-  @apply bg-transparent px-0 py-0 text-foreground/90;
+  @apply bg-transparent px-0 py-0 text-foreground/80;
 }
 
 .prose-grit a {
