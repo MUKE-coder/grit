@@ -439,6 +439,7 @@ export function MobileNav() {
             {[
               { label: 'Docs', href: '/docs' },
               { label: 'Courses', href: '/courses' },
+              { label: 'Blog', href: '/blog' },
               { label: 'Pitch', href: '/pitch' },
               { label: 'Showcase', href: '/showcase' },
               { label: 'GritCMS', href: 'https://gritcms.com' },

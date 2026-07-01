@@ -55,6 +55,7 @@ export function SiteHeader() {
             { label: 'Tech Kits', href: '/docs/tech-kits' },
             { label: 'AI Integration', href: '/docs/ai-integration', highlight: true },
             { label: 'Courses', href: '/courses' },
+            { label: 'Blog', href: '/blog' },
             { label: 'Pitch', href: '/pitch' },
             { label: 'Changelog', href: '/docs/changelog' },
             { label: 'Showcase', href: '/showcase' },

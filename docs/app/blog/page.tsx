@@ -1,0 +1,50 @@
+import type { Metadata } from 'next'
+import { SiteHeader } from '@/components/site-header'
+import { GridFrame } from '@/components/grid-frame'
+import { BlogList, type BlogCard } from '@/components/blog-list'
+import { getAllPosts, formatDate } from '@/lib/blog'
+
+export const metadata: Metadata = {
+  title: 'Blog — The Daily Grit',
+  description:
+    'Short, practical reads on building full-stack apps with Grit — getting started, CRUD in one command, framework comparisons, and production tips.',
+  alternates: { canonical: 'https://gritframework.dev/blog' },
+}
+
+export default function BlogPage() {
+  const cards: BlogCard[] = getAllPosts().map((p) => ({
+    slug: p.slug,
+    title: p.title,
+    subtitle: p.subtitle,
+    dateLabel: formatDate(p.date),
+    readingTime: p.readingTime,
+    category: p.category,
+    accent: p.accent,
+  }))
+
+  return (
+    <div className="relative min-h-screen bg-background isolate">
+      <SiteHeader />
+      <GridFrame />
+
+      <main className="max-w-6xl mx-auto px-6 py-16 md:py-20">
+        {/* Hero */}
+        <div className="mb-14 md:mb-16">
+          <span className="tag-mono text-primary mb-4 block">The Daily Grit · Blog</span>
+          <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tight text-foreground leading-[1.05]">
+            What we ship.
+            <br />
+            What you build.
+          </h1>
+          <p className="mt-5 text-lg text-muted-foreground max-w-2xl leading-relaxed">
+            Short, practical reads on building full-stack apps with Grit — a new one most
+            mornings. Getting started, CRUD in one command, framework comparisons, and
+            production tips.
+          </p>
+        </div>
+
+        <BlogList posts={cards} />
+      </main>
+    </div>
+  )
+}
