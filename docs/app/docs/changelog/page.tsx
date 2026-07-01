@@ -28,6 +28,35 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.51 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.51
+                </span>
+                <span className="text-sm text-muted-foreground">July 1, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Windows dev fix.</strong> <code>grit start</code> no longer fails
+                  to boot the frontend on machines where Turborepo&apos;s native binary can&apos;t load.
+                </p>
+
+                <h3>Dev no longer depends on the turbo binary</h3>
+                <p>
+                  On some Windows setups <code>turbo dev</code> exits with <code>0xC0000135</code>{' '}
+                  (STATUS_DLL_NOT_FOUND) because turbo ships a platform-specific native binary that
+                  needs the Visual C++ runtime — which blocked <code>grit start</code> on a fresh
+                  machine. The scaffolded root <code>dev</code> script now uses pnpm&apos;s own
+                  parallel runner (<code>pnpm --parallel --filter &quot;./apps/*&quot; --if-present run dev</code>),
+                  which needs no native binary, so the web and admin dev servers always come up.
+                  Turbo is kept for <code>build</code> / <code>lint</code> / <code>test</code> where
+                  its caching helps.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.50 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
