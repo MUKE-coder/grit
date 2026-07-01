@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { BlogContent } from '@/components/blog-content'
+import { AuthorCard } from '@/components/author-card'
 import { getAllPosts, getPost, formatDate } from '@/lib/blog'
 
 export function generateStaticParams() {
@@ -79,8 +80,13 @@ export default async function BlogPostPage({
         {/* Body */}
         <BlogContent content={post.content} />
 
+        {/* Publisher card */}
+        <div className="mt-14">
+          <AuthorCard />
+        </div>
+
         {/* Footer CTA */}
-        <div className="mt-14 rounded-2xl border border-border/50 bg-card/40 p-6 md:p-8 text-center">
+        <div className="mt-6 rounded-2xl border border-border/50 bg-card/40 p-6 md:p-8 text-center">
           <p className="text-lg font-semibold text-foreground mb-2">Build it with Grit</p>
           <p className="text-sm text-muted-foreground mb-5">
             Go + React, batteries included. Scaffold a production-ready app in one command.

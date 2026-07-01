@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { COURSES } from '@/config/courses'
+import { getAllPosts } from '@/lib/blog'
 
 const baseUrl = 'https://gritframework.dev'
 
@@ -11,6 +12,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/hire', priority: 0.7, changeFrequency: 'monthly' as const },
     { path: '/showcase', priority: 0.8, changeFrequency: 'monthly' as const },
     { path: '/donate', priority: 0.7, changeFrequency: 'monthly' as const },
+    { path: '/pitch', priority: 0.8, changeFrequency: 'monthly' as const },
+    { path: '/blog', priority: 0.8, changeFrequency: 'daily' as const },
 
     // Getting Started
     { path: '/docs', priority: 0.9, changeFrequency: 'weekly' as const },
@@ -180,6 +183,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
         })
       }
     }
+  }
+
+  // Blog — one entry per published post.
+  for (const post of getAllPosts()) {
+    routes.push({ path: `/blog/${post.slug}`, priority: 0.7, changeFrequency: 'weekly' as const })
   }
 
   return routes.map((route) => ({

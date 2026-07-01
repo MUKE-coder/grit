@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { BlogList, type BlogCard } from '@/components/blog-list'
+import { AuthorCard } from '@/components/author-card'
 import { getAllPosts, formatDate } from '@/lib/blog'
 
 export const metadata: Metadata = {
@@ -55,6 +56,10 @@ export default function BlogPage() {
             </p>
           </div>
         )}
+
+        <div className="mt-16">
+          <AuthorCard />
+        </div>
       </main>
     </div>
   )
