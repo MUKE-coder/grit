@@ -21,7 +21,30 @@ scroll its similar products** — and you'll write almost none of the plumbing.
 
 Let's build.
 
-## 1. Start with a mobile project
+## 1. Install or update Grit
+
+Mobile code generation landed in Grit **v3.31.56**, so grab the latest release
+before you scaffold.
+
+```bash
+# Install (macOS / Linux)
+curl -fsSL https://gritframework.dev/install.sh | sh
+
+# Install (Windows PowerShell)
+iwr -useb https://gritframework.dev/install.ps1 | iex
+
+# Already have Grit? Update in place:
+grit update
+```
+
+Prefer Go? `go install github.com/MUKE-coder/grit/v3/cmd/grit@latest`. Confirm you're
+on v3.31.56 or newer:
+
+```bash
+grit version
+```
+
+## 2. Start with a mobile project
 
 If you're starting fresh:
 
@@ -34,7 +57,7 @@ cd my-store
 that already has auth (login/register), a themed light/dark UI, and a tab layout
 wired to the API.
 
-## 2. Generate the models
+## 3. Generate the models
 
 A product **belongs to** a category, so we create the parent first.
 
@@ -78,7 +101,7 @@ The list hook uses `useInfiniteQuery` — pagination for free — and takes **eq
 filters**. That second argument is the whole reason the store works, and it leans on
 one nice generator detail.
 
-## 3. Get it running
+## 4. Get it running
 
 Before we touch a single screen, let's get the whole thing live. From the project
 root:
@@ -101,7 +124,7 @@ pnpm start              # press a for Android, i for iOS, or scan the QR in Expo
 Log in with **admin@example.com / admin123**. You now have a running mobile app
 talking to a running API — time to turn it into a store.
 
-## 4. The one thing that turns a list into a store
+## 5. The one thing that turns a list into a store
 
 Because `Product` **belongs to** `Category`, the generated Go handler makes products
 filterable by their foreign key:
@@ -120,7 +143,7 @@ useProducts("", { category_id: id })
 That's the spine of the entire shopping flow. Everything below is UI on top of the
 generated hooks.
 
-## 5. The Shop tab — a grid of categories
+## 6. The Shop tab — a grid of categories
 
 Create `apps/expo/app/(tabs)/shop.tsx`:
 
@@ -198,7 +221,7 @@ Then add it to the tab bar in `apps/expo/app/(tabs)/_layout.tsx`:
 `ScreenHeader` (shipped by the scaffold) gives you a safe-area title bar — and a back
 button on any screen that passes `showBack`.
 
-## 6. A category's products
+## 7. A category's products
 
 Create `apps/expo/app/shop/category/[id].tsx`. This is where the `category_id` filter
 earns its keep:
@@ -265,7 +288,7 @@ export default function CategoryProductsScreen() {
 Infinite scroll, pull-free pagination, and a category-scoped list — all from
 `useProducts("", { category_id: id })`.
 
-## 7. Product detail + similar products
+## 8. Product detail + similar products
 
 Create `apps/expo/app/shop/product/[id].tsx`. "Similar" is just the same filter again
 — other products in this product's category, minus itself:
@@ -359,9 +382,9 @@ export default function ProductScreen() {
 Because `Product` preloads its `Category` on the API, `product.category?.name`
 renders the category chip with zero extra requests.
 
-## 8. Add a few products and shop
+## 9. Add a few products and shop
 
-The API and app are already running from step 3. Now add a couple of categories and
+The API and app are already running from step 4. Now add a couple of categories and
 products (through the API, or the admin panel if you scaffolded a `--triple` project),
 each product pointing at a category. Then open the **Shop** tab and tap through:
 category → products → product → similar.
