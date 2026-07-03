@@ -28,6 +28,45 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.53 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.53
+                </span>
+                <span className="text-sm text-muted-foreground">July 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Mobile (Expo) scaffold fixes.</strong> A fresh <code>--mobile</code>
+                  app now starts cleanly with correct dependency versions and real app icons.
+                </p>
+
+                <h3>App icons &amp; splash now ship with the scaffold</h3>
+                <p>
+                  <code>app.json</code> referenced <code>./assets/icon.png</code> and
+                  <code>./assets/splash.png</code>, but those files were never generated — so
+                  Metro failed with <em>&ldquo;Unable to resolve asset&rdquo;</em>. The Grit logo
+                  is now embedded in the CLI and written to <code>icon.png</code>,
+                  <code>splash.png</code>, <code>adaptive-icon.png</code>, and
+                  <code>favicon.png</code> on scaffold (with matching Android adaptive-icon and
+                  web favicon entries in <code>app.json</code>). The same brand logo is also
+                  dropped into the web, admin, and single-app <code>public/</code> folders.
+                </p>
+
+                <h3>Expo dependency versions aligned to SDK 54</h3>
+                <p>
+                  The Expo app pinned <code>expo</code> 54 but shipped SDK-53 versions of a few
+                  packages, triggering compatibility warnings. Bumped
+                  <code>expo-image</code> (~3.0.11), <code>expo-haptics</code> (~15.0.8),
+                  <code>expo-web-browser</code> (~15.0.11), <code>react-native</code> (0.81.5),
+                  and <code>typescript</code> (~5.9.2). On an existing project you can also run
+                  <code>npx expo install --fix</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.52 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

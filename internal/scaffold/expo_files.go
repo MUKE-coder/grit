@@ -36,6 +36,13 @@ func writeExpoFiles(root string, opts Options) error {
 		}
 	}
 
+	// Icons/splash/favicon referenced by app.json — ship the Grit logo for each
+	// so Metro doesn't fail with "Unable to resolve asset ./assets/icon.png".
+	if err := writeBrandLogo(filepath.Join(expoRoot, "assets"),
+		"icon.png", "splash.png", "adaptive-icon.png", "favicon.png"); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -58,11 +65,11 @@ func expoPackageJSON(opts Options) string {
     "expo-status-bar": "~3.0.0",
     "expo-secure-store": "~15.0.0",
     "expo-splash-screen": "~31.0.0",
-    "expo-image": "~2.3.0",
-    "expo-haptics": "~14.1.0",
-    "expo-web-browser": "~14.0.0",
+    "expo-image": "~3.0.11",
+    "expo-haptics": "~15.0.8",
+    "expo-web-browser": "~15.0.11",
     "react": "19.1.0",
-    "react-native": "0.81.0",
+    "react-native": "0.81.5",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "@react-navigation/bottom-tabs": "^7.0.0",
@@ -79,7 +86,7 @@ func expoPackageJSON(opts Options) string {
     "@babel/core": "^7.24.0",
     "@types/react": "~19.1.0",
     "tailwindcss": "^3.4.0",
-    "typescript": "~5.6.0"
+    "typescript": "~5.9.2"
   },
   "private": true
 }
@@ -108,9 +115,13 @@ func expoAppJSON(opts Options) string {
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0a0a0f"
       },
       "package": "com.%s.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",

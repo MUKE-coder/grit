@@ -416,6 +416,10 @@ func writeAdminFiles(root string, opts Options) error {
 		return fmt.Errorf("writing custom chart files: %w", err)
 	}
 
+	if err := writeBrandLogo(filepath.Join(adminRoot, "public"), "grit_logo.png"); err != nil {
+		return err
+	}
+
 	return nil
 }
 

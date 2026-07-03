@@ -51,6 +51,10 @@ func writeWebFiles(root string, opts Options) error {
 		}
 	}
 
+	if err := writeBrandLogo(filepath.Join(webRoot, "public"), "grit_logo.png"); err != nil {
+		return err
+	}
+
 	return nil
 }
 

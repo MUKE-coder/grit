@@ -109,6 +109,10 @@ func writeSingleFrontendFiles(root string, opts Options) error {
 		}
 	}
 
+	if err := writeBrandLogo(filepath.Join(feRoot, "public"), "grit_logo.png"); err != nil {
+		return err
+	}
+
 	return nil
 }
 
