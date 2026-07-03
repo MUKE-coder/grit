@@ -79,7 +79,7 @@ func (g *Generator) writeGoModel(names Names) error {
 			baseName := strings.TrimSuffix(f.Name, "_id") // strip _id if user included it
 			fkGoName := toPascalCase(baseName) + "ID"     // e.g., CategoryID
 			fkJson := toSnakeCase(baseName) + "_id"       // e.g., category_id
-			assocName := toPascalCase(baseName)            // e.g., Category
+			assocName := toPascalCase(baseName)           // e.g., Category
 			// FK column
 			structFields += fmt.Sprintf("\t%s string `gorm:\"size:36;index\" json:\"%s\" binding:\"required\"`\n", fkGoName, fkJson)
 			// Association struct
@@ -533,7 +533,20 @@ func (g *Generator) writeGoHandler(names Names) error {
 	// {identifier} log line is never blank.
 	identExpr := pickIdentifierExpr(g.Definition.Fields)
 
+	// belongs_to resources are filterable by their foreign key, so
+	// GET /<plural>?<fk>=<id> returns only the children of that parent
+	// (e.g. /products?category_id=... for a category's products). .With
+	// ignores empty values, so each filter is inert when its param is absent.
+	fkFilters := ""
+	for _, f := range g.Definition.Fields {
+		if f.IsBelongsTo() {
+			fk := f.FKColumnName()
+			fkFilters += fmt.Sprintf(".With(%q, c.Query(%q))", fk, fk)
+		}
+	}
+
 	r := strings.NewReplacer(
+		"{{FK_FILTERS}}", fkFilters,
 		"{{MODULE}}", g.Module,
 		"{{Pascal}}", names.Pascal,
 		"{{lower}}", names.Lower,
@@ -586,7 +599,7 @@ func (h *{{Pascal}}Handler) List(c *gin.Context) {
 
 	res, err := paginate.List[models.{{Pascal}}](
 		query,
-		paginate.Bind(c),
+		paginate.Bind(c){{FK_FILTERS}},
 		paginate.Config{
 			Searchable: []string{{{SEARCH_COLS}}},
 			Sortable:   map[string]bool{{{SORT_COLS}}},

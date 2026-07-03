@@ -28,6 +28,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.56 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.56
+                </span>
+                <span className="text-sm text-muted-foreground">July 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Mobile code generation.</strong> <code>grit generate resource</code>{' '}
+                  now scaffolds the mobile app too, not just the backend, web hooks, and admin.
+                </p>
+
+                <h3>Generated Expo screens &amp; hooks</h3>
+                <p>
+                  When a project has an <code>apps/expo</code> app, generating a resource also
+                  writes a typed React Query hook (infinite-scroll list, single item, and
+                  create/update/delete mutations), a <strong>paginated list screen</strong>, and a{' '}
+                  <strong>detail screen</strong> — all field-aware (images become thumbnails, a{' '}
+                  <code>belongs_to</code> renders its related record, dates/bools/files format
+                  sensibly). A shared safe-area <code>ScreenHeader</code> with a back button ships
+                  with the scaffold.
+                </p>
+
+                <h3>Relationship filtering</h3>
+                <p>
+                  Every <code>belongs_to</code> resource is now filterable by its foreign key —{' '}
+                  <code>GET /products?category_id=…</code> returns just that parent&apos;s children,
+                  and the generated hook takes the same filter. This is what powers a real
+                  category → products browse flow on mobile.
+                </p>
+
+                <h3>Mobile app polish</h3>
+                <p>
+                  The scaffolded Expo app gained a full <strong>light/dark theme</strong> (default
+                  light, with a working Settings toggle), the <strong>Grit logo</strong> on auth,
+                  a floating glass tab bar lifted above the Android system nav, safe-area page
+                  headers, wired-up <strong>Explore destinations</strong> (Users with pagination,
+                  Notifications, Storage, Analytics, Content, Integrations), and{' '}
+                  <strong>profile avatar upload + change password</strong>. Also fixed: the
+                  physical-device API URL (derived from Expo&apos;s host), a splash-screen hang,
+                  the auth token shape, and post-login navigation. Adds{' '}
+                  <code>expo-image-picker</code>, <code>expo-linear-gradient</code>,{' '}
+                  <code>expo-blur</code>, and <code>react-native-css-interop</code> — run{' '}
+                  <code>pnpm i</code> then <code>npx expo start -c</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.55 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -7,7 +7,7 @@ date: 2026-07-03
 readingTime: "9 min"
 author: "Muke JohnBaptist"
 tags: [grit, mobile, expo, react-native, code-generation, ecommerce, tutorial]
-canonical: "https://gritframework.dev/blog/build-a-mobile-store-with-grit"
+canonical: "https://gritframework.dev/blog/build-mobile-app-with-grit"
 ---
 
 A while back we built a full-stack **web** store with Grit — describe your data, and

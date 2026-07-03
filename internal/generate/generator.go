@@ -39,15 +39,15 @@ func (g *Generator) UseTanStack() bool {
 
 // Names holds all the naming variants for a resource.
 type Names struct {
-	Pascal      string // Post
-	Camel       string // post
-	Snake       string // post
-	Kebab       string // post
-	Lower       string // post
-	Plural      string // posts
+	Pascal       string // Post
+	Camel        string // post
+	Snake        string // post
+	Kebab        string // post
+	Lower        string // post
+	Plural       string // posts
 	PluralPascal string // Posts
-	PluralSnake string // posts
-	PluralKebab string // posts
+	PluralSnake  string // posts
+	PluralKebab  string // posts
 }
 
 // NewGenerator creates a generator after detecting the project root and module path.
@@ -164,6 +164,17 @@ func (g *Generator) Run() error {
 			return fmt.Errorf("writing resource page: %w", err)
 		}
 		fmt.Printf("  ✓ apps/admin/src/routes/_dashboard/resources/%s.tsx\n", names.PluralKebab)
+	}
+
+	// Mobile (Expo) screens + hooks — file-based routing means creating the
+	// files under apps/expo/app/<plural>/ registers /<plural> and /<plural>/:id.
+	if g.hasMobileApp() {
+		if err := g.writeMobileFiles(names); err != nil {
+			return fmt.Errorf("writing mobile files: %w", err)
+		}
+		fmt.Printf("  ✓ apps/expo/hooks/use-%s.ts\n", names.PluralKebab)
+		fmt.Printf("  ✓ apps/expo/app/%s/index.tsx\n", names.PluralKebab)
+		fmt.Printf("  ✓ apps/expo/app/%s/[id].tsx\n", names.PluralKebab)
 	}
 
 	fmt.Println()

@@ -19,6 +19,7 @@ func writeExpoFiles(root string, opts Options) error {
 		filepath.Join(expoRoot, "nativewind-env.d.ts"):                     expoNativewindEnv(),
 		filepath.Join(expoRoot, "app", "_layout.tsx"):                      expoRootLayout(),
 		filepath.Join(expoRoot, "components", "ui", "pressable-scale.tsx"): expoPressableScale(),
+		filepath.Join(expoRoot, "components", "ui", "screen-header.tsx"):   expoScreenHeader(),
 		filepath.Join(expoRoot, "app", "(auth)", "_layout.tsx"):            expoAuthLayout(),
 		filepath.Join(expoRoot, "app", "(auth)", "login.tsx"):              expoLoginScreen(),
 		filepath.Join(expoRoot, "app", "(auth)", "register.tsx"):           expoRegisterScreen(),
@@ -27,8 +28,17 @@ func writeExpoFiles(root string, opts Options) error {
 		filepath.Join(expoRoot, "app", "(tabs)", "explore.tsx"):            expoExploreScreen(),
 		filepath.Join(expoRoot, "app", "(tabs)", "profile.tsx"):            expoProfileScreen(),
 		filepath.Join(expoRoot, "app", "(tabs)", "settings.tsx"):           expoSettingsScreen(),
+		filepath.Join(expoRoot, "app", "explore", "users.tsx"):             expoExploreUsers(),
+		filepath.Join(expoRoot, "app", "explore", "notifications.tsx"):     expoExploreNotifications(),
+		filepath.Join(expoRoot, "app", "explore", "storage.tsx"):           expoExploreStorage(),
+		filepath.Join(expoRoot, "app", "explore", "analytics.tsx"):         expoExploreAnalytics(),
+		filepath.Join(expoRoot, "app", "explore", "content.tsx"):           expoExploreContent(),
+		filepath.Join(expoRoot, "app", "explore", "integrations.tsx"):      expoExploreIntegrations(),
+		filepath.Join(expoRoot, "app", "change-password.tsx"):              expoChangePasswordScreen(),
+		filepath.Join(expoRoot, "lib", "upload.ts"):                        expoUploadHelper(),
 		filepath.Join(expoRoot, "lib", "api.ts"):                           expoAPIClient(),
 		filepath.Join(expoRoot, "lib", "auth.tsx"):                         expoAuthProvider(),
+		filepath.Join(expoRoot, "lib", "theme.tsx"):                        expoThemeProvider(),
 		filepath.Join(expoRoot, "lib", "query-client.ts"):                  expoQueryClient(),
 	}
 
@@ -72,6 +82,7 @@ func expoPackageJSON(opts Options) string {
     "expo-web-browser": "~15.0.11",
     "expo-linear-gradient": "~15.0.7",
     "expo-blur": "~15.0.7",
+    "expo-image-picker": "~17.0.8",
     "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-safe-area-context": "~5.6.0",
@@ -79,6 +90,7 @@ func expoPackageJSON(opts Options) string {
     "@react-navigation/bottom-tabs": "^7.0.0",
     "@expo/vector-icons": "^15.0.0",
     "nativewind": "^4.2.0",
+    "react-native-css-interop": "^0.2.1",
     "@tanstack/react-query": "^5.0.0",
     "react-native-reanimated": "~4.1.0",
     "react-native-worklets": "0.5.1",
@@ -131,7 +143,13 @@ func expoAppJSON(opts Options) string {
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow this app to access your photos to set a profile picture."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -160,6 +178,10 @@ func expoTailwindConfig() string {
 module.exports = {
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}", "./lib/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
+  // Class-based dark mode: the ThemeProvider drives it via NativeWind's
+  // setColorScheme() so we control light/dark explicitly (default light),
+  // instead of blindly following the OS setting.
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
@@ -230,17 +252,35 @@ func expoNativewindEnv() string {
 func expoRootLayout() string {
 	return `import "../global.css";
 import { useEffect } from "react";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { ThemeProvider, useTheme } from "@/lib/theme";
 import { queryClient } from "@/lib/query-client";
 
 SplashScreen.preventAutoHideAsync();
 
 function RootNav() {
   const { isAuthenticated, isLoading } = useAuth();
+  const { palette } = useTheme();
+  const router = useRouter();
+  const segments = useSegments();
+
+  // Declare BOTH groups and redirect imperatively. Conditionally rendering
+  // one <Stack.Screen> sets the initial group but does NOT navigate when
+  // auth flips after login — so a successful sign-in would leave you sitting
+  // on the login screen. This effect moves you the moment auth changes.
+  useEffect(() => {
+    if (isLoading) return;
+    const inAuthGroup = segments[0] === "(auth)";
+    if (isAuthenticated && inAuthGroup) {
+      router.replace("/(tabs)");
+    } else if (!isAuthenticated && !inAuthGroup) {
+      router.replace("/(auth)/login");
+    }
+  }, [isAuthenticated, isLoading, segments]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -252,13 +292,10 @@ function RootNav() {
 
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style={palette.statusBar} />
       <Stack screenOptions={{ headerShown: false }}>
-        {isAuthenticated ? (
-          <Stack.Screen name="(tabs)" />
-        ) : (
-          <Stack.Screen name="(auth)" />
-        )}
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
       </Stack>
     </>
   );
@@ -267,9 +304,11 @@ function RootNav() {
 export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <RootNav />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <RootNav />
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
@@ -331,15 +370,67 @@ export const PressableScale = forwardRef<typeof AnimatedPressable, PressableScal
 `
 }
 
+// expoScreenHeader is the shared safe-area page header with an optional back
+// button. Kept in sync with internal/generate mobileScreenHeaderContent so
+// `grit generate resource` screens and hand-written pages look identical.
+func expoScreenHeader() string {
+	return `import { View, Text, Pressable } from "react-native";
+import type { ReactNode } from "react";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "@/lib/theme";
+
+interface ScreenHeaderProps {
+  title: string;
+  subtitle?: string;
+  showBack?: boolean;
+  right?: ReactNode;
+}
+
+// Safe-area-aware page header. Non-tab screens pass showBack to get a back
+// button; tab screens can use it without one for a consistent large title.
+export function ScreenHeader({ title, subtitle, showBack = false, right }: ScreenHeaderProps) {
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { palette } = useTheme();
+  return (
+    <View style={{ paddingTop: insets.top + 8 }} className="px-6 pb-3 bg-[#F4F4F6] dark:bg-[#0a0a0f]">
+      <View className="flex-row items-center">
+        {showBack ? (
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={10}
+            className="mr-3 w-9 h-9 rounded-full items-center justify-center bg-white dark:bg-[#1a1a24] border border-[#E5E7EB] dark:border-[#2a2a3a]"
+          >
+            <Ionicons name="chevron-back" size={20} color={palette.inputIcon} />
+          </Pressable>
+        ) : null}
+        <View className="flex-1">
+          <Text className="text-[26px] font-bold text-[#0F1018] dark:text-white tracking-tight">{title}</Text>
+          {subtitle ? (
+            <Text className="text-[14px] text-[#6B7280] dark:text-[#9090a8] mt-0.5">{subtitle}</Text>
+          ) : null}
+        </View>
+        {right ? <View className="ml-3">{right}</View> : null}
+      </View>
+    </View>
+  );
+}
+`
+}
+
 func expoAuthLayout() string {
 	return `import { Stack } from "expo-router";
+import { useTheme } from "@/lib/theme";
 
 export default function AuthLayout() {
+  const { scheme } = useTheme();
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: "#0a0a0f" },
+        contentStyle: { backgroundColor: scheme === "dark" ? "#0a0a0f" : "#F4F4F6" },
       }}
     />
   );
@@ -370,6 +461,8 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/lib/auth";
 import { PressableScale } from "@/components/ui/pressable-scale";
+import { Image } from "expo-image";
+import { useTheme } from "@/lib/theme";
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -384,6 +477,7 @@ export default function LoginScreen() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const { palette } = useTheme();
 
   const {
     control,
@@ -421,11 +515,11 @@ export default function LoginScreen() {
     }
   };
 
-  const emailBorder = errors.email ? "border-[#ff6b6b]" : "border-[#2a2a3a]";
-  const passwordBorder = errors.password ? "border-[#ff6b6b]" : "border-[#2a2a3a]";
+  const emailBorder = errors.email ? "border-[#ff6b6b]" : "border-[#E5E7EB] dark:border-[#2a2a3a]";
+  const passwordBorder = errors.password ? "border-[#ff6b6b]" : "border-[#E5E7EB] dark:border-[#2a2a3a]";
 
   return (
-    <View className="flex-1 bg-[#0a0a0f]">
+    <View className="flex-1 bg-[#F4F4F6] dark:bg-[#0a0a0f]">
       <FaintGrid />
       <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
         <KeyboardAvoidingView
@@ -441,7 +535,7 @@ export default function LoginScreen() {
           >
             <Animated.View
               entering={FadeInUp.duration(500)}
-              className="rounded-[28px] bg-[#111118] border border-[#1f1f2b] overflow-hidden"
+              className="rounded-[28px] bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#1f1f2b] overflow-hidden"
               style={{
                 shadowColor: "#6c5ce7",
                 shadowOffset: { width: 0, height: 18 },
@@ -452,33 +546,31 @@ export default function LoginScreen() {
             >
               {/* Header — purple wash watermark */}
               <LinearGradient
-                colors={["#1c1830", "#15121f", "#111118"]}
+                colors={palette.headerGradient}
                 start={{ x: 0.5, y: 0 }}
                 end={{ x: 0.5, y: 1 }}
                 style={{ paddingTop: 36, paddingBottom: 16 }}
               >
                 <View className="items-center">
                   <View
-                    className="w-[68px] h-[68px] rounded-[22px] overflow-hidden items-center justify-center mb-5"
+                    className="mb-5"
                     style={{
-                      shadowColor: "#6c5ce7",
+                      shadowColor: palette.logoShadow,
                       shadowOffset: { width: 0, height: 14 },
-                      shadowOpacity: 0.5,
+                      shadowOpacity: 0.35,
                       shadowRadius: 22,
                     }}
                   >
-                    <LinearGradient
-                      colors={["#7c6cf7", "#6c5ce7"]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+                    <Image
+                      source={require("../../assets/icon.png")}
+                      style={{ width: 76, height: 76, borderRadius: 20 }}
+                      contentFit="contain"
                     />
-                    <Ionicons name="flash" size={30} color="#FFFFFF" />
                   </View>
-                  <Text className="text-[28px] font-bold text-white tracking-tight">
+                  <Text className="text-[28px] font-bold text-[#0F1018] dark:text-white tracking-tight">
                     Welcome back
                   </Text>
-                  <Text className="text-[#9090a8] text-[14px] mt-1.5 px-6 text-center leading-5">
+                  <Text className="text-[#6B7280] dark:text-[#9090a8] text-[14px] mt-1.5 px-6 text-center leading-5">
                     Sign in to your account to continue.
                   </Text>
                 </View>
@@ -498,7 +590,7 @@ export default function LoginScreen() {
 
                 {/* Email */}
                 <View className="mb-4">
-                  <Text className="text-[12.5px] font-semibold text-[#9090a8] mb-2 tracking-tight">
+                  <Text className="text-[12.5px] font-semibold text-[#6B7280] dark:text-[#9090a8] mb-2 tracking-tight">
                     Email Address
                   </Text>
                   <Controller
@@ -506,12 +598,12 @@ export default function LoginScreen() {
                     name="email"
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View
-                        className={"bg-[#0a0a0f] border rounded-2xl flex-row items-center px-4 " + emailBorder}
+                        className={"bg-[#F4F4F6] dark:bg-[#0a0a0f] border rounded-2xl flex-row items-center px-4 " + emailBorder}
                         style={{ height: 52 }}
                       >
                         <Ionicons name="mail-outline" size={17} color="#606078" />
                         <TextInput
-                          className="flex-1 ml-2.5 text-white text-[15px]"
+                          className="flex-1 ml-2.5 text-[#0F1018] dark:text-white text-[15px]"
                           placeholder="you@example.com"
                           placeholderTextColor="#606078"
                           value={value}
@@ -534,7 +626,7 @@ export default function LoginScreen() {
 
                 {/* Password */}
                 <View className="mb-6">
-                  <Text className="text-[12.5px] font-semibold text-[#9090a8] mb-2 tracking-tight">
+                  <Text className="text-[12.5px] font-semibold text-[#6B7280] dark:text-[#9090a8] mb-2 tracking-tight">
                     Password
                   </Text>
                   <Controller
@@ -542,12 +634,12 @@ export default function LoginScreen() {
                     name="password"
                     render={({ field: { onChange, onBlur, value } }) => (
                       <View
-                        className={"bg-[#0a0a0f] border rounded-2xl flex-row items-center px-4 " + passwordBorder}
+                        className={"bg-[#F4F4F6] dark:bg-[#0a0a0f] border rounded-2xl flex-row items-center px-4 " + passwordBorder}
                         style={{ height: 52 }}
                       >
                         <Ionicons name="lock-closed-outline" size={17} color="#606078" />
                         <TextInput
-                          className="flex-1 ml-2.5 text-white text-[15px]"
+                          className="flex-1 ml-2.5 text-[#0F1018] dark:text-white text-[15px]"
                           placeholder="••••••••"
                           placeholderTextColor="#606078"
                           value={value}
@@ -616,16 +708,16 @@ export default function LoginScreen() {
 
                 {/* Divider */}
                 <View className="flex-row items-center my-6">
-                  <View className="flex-1 h-px bg-[#2a2a3a]" />
-                  <Text className="text-[#606078] mx-4 text-[12px]">or</Text>
-                  <View className="flex-1 h-px bg-[#2a2a3a]" />
+                  <View className="flex-1 h-px bg-[#E5E7EB] dark:bg-[#2a2a3a]" />
+                  <Text className="text-[#9CA3AF] dark:text-[#606078] mx-4 text-[12px]">or</Text>
+                  <View className="flex-1 h-px bg-[#E5E7EB] dark:bg-[#2a2a3a]" />
                 </View>
 
                 {/* Google */}
                 <PressableScale
                   onPress={handleGoogleLogin}
                   disabled={loading || googleLoading}
-                  className="rounded-full border border-[#2a2a3a] bg-[#0a0a0f] flex-row items-center justify-center"
+                  className="rounded-full border border-[#E5E7EB] dark:border-[#2a2a3a] bg-[#F4F4F6] dark:bg-[#0a0a0f] flex-row items-center justify-center"
                   style={{ height: 52 }}
                 >
                   {googleLoading ? (
@@ -633,7 +725,7 @@ export default function LoginScreen() {
                   ) : (
                     <>
                       <Ionicons name="logo-google" size={19} color="#e8e8f0" />
-                      <Text className="text-white font-semibold text-[15px] ml-3">
+                      <Text className="text-[#0F1018] dark:text-white font-semibold text-[15px] ml-3">
                         Continue with Google
                       </Text>
                     </>
@@ -641,7 +733,7 @@ export default function LoginScreen() {
                 </PressableScale>
 
                 <View className="flex-row justify-center mt-6">
-                  <Text className="text-[#9090a8] text-[13.5px]">Don't have an account? </Text>
+                  <Text className="text-[#6B7280] dark:text-[#9090a8] text-[13.5px]">Don't have an account? </Text>
                   <Link href="/(auth)/register">
                     <Text className="text-[#6c5ce7] font-semibold text-[13.5px]">Sign up</Text>
                   </Link>
@@ -658,19 +750,20 @@ export default function LoginScreen() {
 // Subtle architectural grid behind the auth flow — ties login and
 // register into one visual story.
 function FaintGrid() {
+  const { palette } = useTheme();
   return (
     <View
-      style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, opacity: 0.06 }}
+      style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, opacity: palette.gridOpacity }}
       pointerEvents="none"
     >
       <View style={{ flexDirection: "row", justifyContent: "space-between", position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}>
         {Array.from({ length: 10 }).map((_, i) => (
-          <View key={"gv-" + i} style={{ width: 1, backgroundColor: "#e8e8f0" }} />
+          <View key={"gv-" + i} style={{ width: 1, backgroundColor: palette.gridLine }} />
         ))}
       </View>
       <View style={{ flexDirection: "column", justifyContent: "space-between", position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}>
         {Array.from({ length: 18 }).map((_, i) => (
-          <View key={"gh-" + i} style={{ height: 1, backgroundColor: "#e8e8f0" }} />
+          <View key={"gh-" + i} style={{ height: 1, backgroundColor: palette.gridLine }} />
         ))}
       </View>
     </View>
@@ -702,6 +795,8 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/lib/auth";
 import { PressableScale } from "@/components/ui/pressable-scale";
+import { Image } from "expo-image";
+import { useTheme } from "@/lib/theme";
 
 const registerSchema = z.object({
   firstName: z.string().min(1, "Required"),
@@ -721,6 +816,7 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const { palette } = useTheme();
 
   const {
     control,
@@ -752,13 +848,13 @@ export default function RegisterScreen() {
     }
   };
 
-  const inputBase = "bg-[#0a0a0f] border rounded-2xl flex-row items-center px-4";
-  const border = (hasError?: boolean) => (hasError ? "border-[#ff6b6b]" : "border-[#2a2a3a]");
-  const label = "text-[12.5px] font-semibold text-[#9090a8] mb-2 tracking-tight";
+  const inputBase = "bg-[#F4F4F6] dark:bg-[#0a0a0f] border rounded-2xl flex-row items-center px-4";
+  const border = (hasError?: boolean) => (hasError ? "border-[#ff6b6b]" : "border-[#E5E7EB] dark:border-[#2a2a3a]");
+  const label = "text-[12.5px] font-semibold text-[#6B7280] dark:text-[#9090a8] mb-2 tracking-tight";
   const errorText = "text-[#ff6b6b] text-[11.5px] mt-1.5 ml-1";
 
   return (
-    <View className="flex-1 bg-[#0a0a0f]">
+    <View className="flex-1 bg-[#F4F4F6] dark:bg-[#0a0a0f]">
       <FaintGrid />
       <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
         <KeyboardAvoidingView
@@ -774,7 +870,7 @@ export default function RegisterScreen() {
           >
             <Animated.View
               entering={FadeInUp.duration(500)}
-              className="rounded-[28px] bg-[#111118] border border-[#1f1f2b] overflow-hidden"
+              className="rounded-[28px] bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#1f1f2b] overflow-hidden"
               style={{
                 shadowColor: "#6c5ce7",
                 shadowOffset: { width: 0, height: 18 },
@@ -784,33 +880,31 @@ export default function RegisterScreen() {
               }}
             >
               <LinearGradient
-                colors={["#1c1830", "#15121f", "#111118"]}
+                colors={palette.headerGradient}
                 start={{ x: 0.5, y: 0 }}
                 end={{ x: 0.5, y: 1 }}
                 style={{ paddingTop: 36, paddingBottom: 16 }}
               >
                 <View className="items-center">
                   <View
-                    className="w-[68px] h-[68px] rounded-[22px] overflow-hidden items-center justify-center mb-5"
+                    className="mb-5"
                     style={{
-                      shadowColor: "#6c5ce7",
+                      shadowColor: palette.logoShadow,
                       shadowOffset: { width: 0, height: 14 },
-                      shadowOpacity: 0.5,
+                      shadowOpacity: 0.35,
                       shadowRadius: 22,
                     }}
                   >
-                    <LinearGradient
-                      colors={["#7c6cf7", "#6c5ce7"]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+                    <Image
+                      source={require("../../assets/icon.png")}
+                      style={{ width: 76, height: 76, borderRadius: 20 }}
+                      contentFit="contain"
                     />
-                    <Ionicons name="flash" size={30} color="#FFFFFF" />
                   </View>
-                  <Text className="text-[28px] font-bold text-white tracking-tight">
+                  <Text className="text-[28px] font-bold text-[#0F1018] dark:text-white tracking-tight">
                     Create account
                   </Text>
-                  <Text className="text-[#9090a8] text-[14px] mt-1.5 px-6 text-center leading-5">
+                  <Text className="text-[#6B7280] dark:text-[#9090a8] text-[14px] mt-1.5 px-6 text-center leading-5">
                     Get started with Grit in seconds.
                   </Text>
                 </View>
@@ -836,7 +930,7 @@ export default function RegisterScreen() {
                       render={({ field: { onChange, onBlur, value } }) => (
                         <View className={inputBase + " " + border(!!errors.firstName)} style={{ height: 52 }}>
                           <TextInput
-                            className="flex-1 text-white text-[15px]"
+                            className="flex-1 text-[#0F1018] dark:text-white text-[15px]"
                             placeholder="John"
                             placeholderTextColor="#606078"
                             value={value}
@@ -859,7 +953,7 @@ export default function RegisterScreen() {
                       render={({ field: { onChange, onBlur, value } }) => (
                         <View className={inputBase + " " + border(!!errors.lastName)} style={{ height: 52 }}>
                           <TextInput
-                            className="flex-1 text-white text-[15px]"
+                            className="flex-1 text-[#0F1018] dark:text-white text-[15px]"
                             placeholder="Doe"
                             placeholderTextColor="#606078"
                             value={value}
@@ -885,7 +979,7 @@ export default function RegisterScreen() {
                       <View className={inputBase + " " + border(!!errors.email)} style={{ height: 52 }}>
                         <Ionicons name="mail-outline" size={17} color="#606078" />
                         <TextInput
-                          className="flex-1 ml-2.5 text-white text-[15px]"
+                          className="flex-1 ml-2.5 text-[#0F1018] dark:text-white text-[15px]"
                           placeholder="you@example.com"
                           placeholderTextColor="#606078"
                           value={value}
@@ -911,7 +1005,7 @@ export default function RegisterScreen() {
                       <View className={inputBase + " " + border(!!errors.password)} style={{ height: 52 }}>
                         <Ionicons name="lock-closed-outline" size={17} color="#606078" />
                         <TextInput
-                          className="flex-1 ml-2.5 text-white text-[15px]"
+                          className="flex-1 ml-2.5 text-[#0F1018] dark:text-white text-[15px]"
                           placeholder="Min. 8 characters"
                           placeholderTextColor="#606078"
                           value={value}
@@ -950,7 +1044,7 @@ export default function RegisterScreen() {
                       <View className={inputBase + " " + border(!!errors.confirmPassword)} style={{ height: 52 }}>
                         <Ionicons name="lock-closed-outline" size={17} color="#606078" />
                         <TextInput
-                          className="flex-1 ml-2.5 text-white text-[15px]"
+                          className="flex-1 ml-2.5 text-[#0F1018] dark:text-white text-[15px]"
                           placeholder="Repeat password"
                           placeholderTextColor="#606078"
                           value={value}
@@ -1001,7 +1095,7 @@ export default function RegisterScreen() {
                 </PressableScale>
 
                 <View className="flex-row justify-center mt-6">
-                  <Text className="text-[#9090a8] text-[13.5px]">Already have an account? </Text>
+                  <Text className="text-[#6B7280] dark:text-[#9090a8] text-[13.5px]">Already have an account? </Text>
                   <Link href="/(auth)/login">
                     <Text className="text-[#6c5ce7] font-semibold text-[13.5px]">Sign in</Text>
                   </Link>
@@ -1016,19 +1110,20 @@ export default function RegisterScreen() {
 }
 
 function FaintGrid() {
+  const { palette } = useTheme();
   return (
     <View
-      style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, opacity: 0.06 }}
+      style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, opacity: palette.gridOpacity }}
       pointerEvents="none"
     >
       <View style={{ flexDirection: "row", justifyContent: "space-between", position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}>
         {Array.from({ length: 10 }).map((_, i) => (
-          <View key={"gv-" + i} style={{ width: 1, backgroundColor: "#e8e8f0" }} />
+          <View key={"gv-" + i} style={{ width: 1, backgroundColor: palette.gridLine }} />
         ))}
       </View>
       <View style={{ flexDirection: "column", justifyContent: "space-between", position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}>
         {Array.from({ length: 18 }).map((_, i) => (
-          <View key={"gh-" + i} style={{ height: 1, backgroundColor: "#e8e8f0" }} />
+          <View key={"gh-" + i} style={{ height: 1, backgroundColor: palette.gridLine }} />
         ))}
       </View>
     </View>
@@ -1042,12 +1137,20 @@ func expoTabsLayout() string {
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { Platform, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import { useTheme } from "@/lib/theme";
 
 // Floating glass tab bar. iOS gets a native frosted-blur background;
-// Android falls back to a solid elevated surface since BlurView on the
-// Grit-dark palette reads cleaner as a flat panel there.
+// Android falls back to a solid surface. Colours follow the active theme.
 export default function TabsLayout() {
+  const { palette, scheme } = useTheme();
+  const insets = useSafeAreaInsets();
+  // Lift the floating bar above the OS gesture/nav area so it isn't clipped
+  // by the Android system navigation at the very bottom of the screen.
+  const barBottom = Math.max(insets.bottom, 10) + 6;
+  const blurBg =
+    scheme === "dark" ? "rgba(17,17,24,0.6)" : "rgba(255,255,255,0.7)";
   return (
     <Tabs
       screenListeners={{
@@ -1058,7 +1161,7 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: "#7c6cf7",
-        tabBarInactiveTintColor: "#606078",
+        tabBarInactiveTintColor: palette.tabInactive,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: "600",
@@ -1070,11 +1173,11 @@ export default function TabsLayout() {
           Platform.OS === "ios"
             ? () => (
                 <BlurView
-                  tint="dark"
+                  tint={palette.blurTint}
                   intensity={40}
                   style={[
                     StyleSheet.absoluteFill,
-                    { backgroundColor: "rgba(17,17,24,0.6)", borderRadius: 24, overflow: "hidden" },
+                    { backgroundColor: blurBg, borderRadius: 24, overflow: "hidden" },
                   ]}
                 />
               )
@@ -1082,7 +1185,7 @@ export default function TabsLayout() {
                 <View
                   style={[
                     StyleSheet.absoluteFill,
-                    { backgroundColor: "#15151d", borderRadius: 24 },
+                    { backgroundColor: palette.tabBar, borderRadius: 24 },
                   ]}
                 />
               ),
@@ -1090,18 +1193,18 @@ export default function TabsLayout() {
           position: "absolute",
           left: 16,
           right: 16,
-          bottom: 16,
+          bottom: barBottom,
           height: 64,
           paddingBottom: 8,
           borderRadius: 24,
           borderTopWidth: 0,
           borderWidth: 1,
-          borderColor: "#22222e",
+          borderColor: palette.tabBarBorder,
           backgroundColor: "transparent",
           elevation: 12,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.35,
+          shadowOpacity: scheme === "dark" ? 0.35 : 0.12,
           shadowRadius: 16,
         },
       }}
@@ -1183,27 +1286,27 @@ function StatCard({
   icon: string;
 }) {
   return (
-    <View className="bg-[#22222e] border border-[#2a2a3a] rounded-2xl p-4 flex-1 min-w-[140px]">
+    <View className="bg-white dark:bg-[#22222e] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-2xl p-4 flex-1 min-w-[140px]">
       <View className="flex-row items-center justify-between mb-2">
         <Ionicons name={icon as any} size={18} color={color} />
       </View>
-      <Text className="text-2xl font-bold text-white">{value}</Text>
-      <Text className="text-xs text-[#9090a8] mt-1">{title}</Text>
+      <Text className="text-2xl font-bold text-[#0F1018] dark:text-white">{value}</Text>
+      <Text className="text-xs text-[#6B7280] dark:text-[#9090a8] mt-1">{title}</Text>
     </View>
   );
 }
 
 function RecentItemRow({ item }: { item: RecentItem }) {
   return (
-    <View className="flex-row items-center bg-[#22222e] border border-[#2a2a3a] rounded-xl px-4 py-3 mb-2">
+    <View className="flex-row items-center bg-white dark:bg-[#22222e] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-xl px-4 py-3 mb-2">
       <View className="w-10 h-10 rounded-full bg-[#6c5ce7]/20 items-center justify-center mr-3">
         <Ionicons name={item.icon as any} size={18} color="#6c5ce7" />
       </View>
       <View className="flex-1">
-        <Text className="text-sm font-medium text-white">{item.title}</Text>
-        <Text className="text-xs text-[#9090a8] mt-0.5">{item.subtitle}</Text>
+        <Text className="text-sm font-medium text-[#0F1018] dark:text-white">{item.title}</Text>
+        <Text className="text-xs text-[#6B7280] dark:text-[#9090a8] mt-0.5">{item.subtitle}</Text>
       </View>
-      <Text className="text-xs text-[#606078]">{item.time}</Text>
+      <Text className="text-xs text-[#9CA3AF] dark:text-[#606078]">{item.time}</Text>
     </View>
   );
 }
@@ -1247,16 +1350,16 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-[#0a0a0f]"
-      contentContainerClassName="p-6 pb-28"
+      className="flex-1 bg-[#F4F4F6] dark:bg-[#0a0a0f]"
+      contentContainerClassName="px-6 pt-16 pb-28"
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6c5ce7" />
       }
     >
-      <Text className="text-2xl font-bold text-white mb-1">
+      <Text className="text-2xl font-bold text-[#0F1018] dark:text-white mb-1">
         Welcome back, {firstName}
       </Text>
-      <Text className="text-base text-[#9090a8] mb-6">
+      <Text className="text-base text-[#6B7280] dark:text-[#9090a8] mb-6">
         Here's what's happening today.
       </Text>
 
@@ -1270,15 +1373,15 @@ export default function HomeScreen() {
         <StatCard title="Items" value={stats?.total_items || 0} color="#fdcb6e" icon="cube-outline" />
       </View>
 
-      <Text className="text-lg font-semibold text-white mb-3">Recent Activity</Text>
+      <Text className="text-lg font-semibold text-[#0F1018] dark:text-white mb-3">Recent Activity</Text>
 
       {recentItems?.map((item) => (
         <RecentItemRow key={item.id} item={item} />
       ))}
 
-      <View className="bg-[#111118] border border-[#2a2a3a] rounded-2xl p-6 mt-4">
-        <Text className="text-lg font-semibold text-white mb-3">Quick Start</Text>
-        <Text className="text-sm text-[#9090a8] leading-6">
+      <View className="bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-2xl p-6 mt-4">
+        <Text className="text-lg font-semibold text-[#0F1018] dark:text-white mb-3">Quick Start</Text>
+        <Text className="text-sm text-[#6B7280] dark:text-[#9090a8] leading-6">
           Your Grit mobile app is connected to the API. Edit this screen in{"\n"}
           apps/expo/app/(tabs)/index.tsx
         </Text>
@@ -1299,6 +1402,7 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 interface ExploreCategory {
@@ -1307,23 +1411,25 @@ interface ExploreCategory {
   description: string;
   icon: string;
   color: string;
-  count: number;
+  route: string;
 }
 
 const categories: ExploreCategory[] = [
-  { id: "1", title: "Users", description: "Manage user accounts", icon: "people-outline", color: "#6c5ce7", count: 0 },
-  { id: "2", title: "Content", description: "Posts, pages, and media", icon: "document-text-outline", color: "#00b894", count: 0 },
-  { id: "3", title: "Analytics", description: "Usage and performance", icon: "bar-chart-outline", color: "#74b9ff", count: 0 },
-  { id: "4", title: "Notifications", description: "Alerts and messages", icon: "notifications-outline", color: "#fdcb6e", count: 0 },
-  { id: "5", title: "Storage", description: "Files and uploads", icon: "cloud-outline", color: "#ff6b6b", count: 0 },
-  { id: "6", title: "Integrations", description: "Connected services", icon: "extension-puzzle-outline", color: "#a29bfe", count: 0 },
+  { id: "1", title: "Users", description: "Manage user accounts", icon: "people-outline", color: "#6c5ce7", route: "/explore/users" },
+  { id: "2", title: "Content", description: "Posts, pages, and media", icon: "document-text-outline", color: "#00b894", route: "/explore/content" },
+  { id: "3", title: "Analytics", description: "Usage and performance", icon: "bar-chart-outline", color: "#74b9ff", route: "/explore/analytics" },
+  { id: "4", title: "Notifications", description: "Alerts and messages", icon: "notifications-outline", color: "#fdcb6e", route: "/explore/notifications" },
+  { id: "5", title: "Storage", description: "Files and uploads", icon: "cloud-outline", color: "#ff6b6b", route: "/explore/storage" },
+  { id: "6", title: "Integrations", description: "Connected services", icon: "extension-puzzle-outline", color: "#a29bfe", route: "/explore/integrations" },
 ];
 
 function CategoryCard({ item }: { item: ExploreCategory }) {
+  const router = useRouter();
   return (
     <TouchableOpacity
-      className="bg-[#22222e] border border-[#2a2a3a] rounded-2xl p-5 mb-3"
+      className="bg-white dark:bg-[#22222e] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-2xl p-5 mb-3"
       activeOpacity={0.7}
+      onPress={() => router.push(item.route as any)}
     >
       <View className="flex-row items-center">
         <View
@@ -1333,8 +1439,8 @@ function CategoryCard({ item }: { item: ExploreCategory }) {
           <Ionicons name={item.icon as any} size={22} color={item.color} />
         </View>
         <View className="flex-1">
-          <Text className="text-base font-semibold text-white">{item.title}</Text>
-          <Text className="text-xs text-[#9090a8] mt-0.5">{item.description}</Text>
+          <Text className="text-base font-semibold text-[#0F1018] dark:text-white">{item.title}</Text>
+          <Text className="text-xs text-[#6B7280] dark:text-[#9090a8] mt-0.5">{item.description}</Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color="#606078" />
       </View>
@@ -1360,21 +1466,21 @@ export default function ExploreScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-[#0a0a0f]"
-      contentContainerClassName="p-6 pb-28"
+      className="flex-1 bg-[#F4F4F6] dark:bg-[#0a0a0f]"
+      contentContainerClassName="px-6 pt-16 pb-28"
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6c5ce7" />
       }
     >
-      <Text className="text-2xl font-bold text-white mb-1">Explore</Text>
-      <Text className="text-base text-[#9090a8] mb-6">
+      <Text className="text-2xl font-bold text-[#0F1018] dark:text-white mb-1">Explore</Text>
+      <Text className="text-base text-[#6B7280] dark:text-[#9090a8] mb-6">
         Browse and discover features.
       </Text>
 
-      <View className="flex-row items-center bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 mb-6">
+      <View className="flex-row items-center bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-xl px-4 mb-6">
         <Ionicons name="search-outline" size={18} color="#606078" />
         <TextInput
-          className="flex-1 text-white text-base py-3 ml-3"
+          className="flex-1 text-[#0F1018] dark:text-white text-base py-3 ml-3"
           placeholder="Search features..."
           placeholderTextColor="#606078"
           value={search}
@@ -1395,7 +1501,7 @@ export default function ExploreScreen() {
       {filtered.length === 0 ? (
         <View className="items-center py-12">
           <Ionicons name="search-outline" size={48} color="#606078" />
-          <Text className="text-[#606078] text-base mt-4">No results found</Text>
+          <Text className="text-[#9CA3AF] dark:text-[#606078] text-base mt-4">No results found</Text>
         </View>
       ) : null}
     </ScrollView>
@@ -1413,12 +1519,16 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from "react-native";
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { pickAndUploadImage } from "@/lib/upload";
 import { Ionicons } from "@expo/vector-icons";
 
 const profileSchema = z.object({
@@ -1441,17 +1551,34 @@ function ProfileRow({
   return (
     <View className="flex-row items-center px-5 py-4">
       <Ionicons name={icon as any} size={20} color="#9090a8" />
-      <Text className="text-sm text-[#9090a8] ml-3 flex-1">{label}</Text>
-      <Text className="text-sm text-white">{value}</Text>
+      <Text className="text-sm text-[#6B7280] dark:text-[#9090a8] ml-3 flex-1">{label}</Text>
+      <Text className="text-sm text-[#0F1018] dark:text-white">{value}</Text>
     </View>
   );
 }
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
+  const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [error, setError] = useState("");
+
+  const onChangeAvatar = async () => {
+    try {
+      setUploadingAvatar(true);
+      const url = await pickAndUploadImage();
+      if (url) {
+        await api.put("/profile", { avatar: url });
+        await refreshUser();
+      }
+    } catch (err: any) {
+      Alert.alert("Upload failed", err.message || "Could not update your photo");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const displayName =
     (user?.first_name || "") + " " + (user?.last_name || "") || user?.name || "User";
@@ -1476,11 +1603,12 @@ export default function ProfileScreen() {
     setError("");
     setSaving(true);
     try {
-      await api.put("/auth/me", {
+      await api.put("/profile", {
         first_name: data.firstName,
         last_name: data.lastName,
         email: data.email,
       });
+      await refreshUser();
       setEditing(false);
     } catch (err: any) {
       setError(err.message || "Update failed");
@@ -1497,8 +1625,8 @@ export default function ProfileScreen() {
 
   if (editing) {
     return (
-      <ScrollView className="flex-1 bg-[#0a0a0f]" contentContainerClassName="p-6 pb-28">
-        <Text className="text-2xl font-bold text-white mb-6">Edit Profile</Text>
+      <ScrollView className="flex-1 bg-[#F4F4F6] dark:bg-[#0a0a0f]" contentContainerClassName="px-6 pt-16 pb-28">
+        <Text className="text-2xl font-bold text-[#0F1018] dark:text-white mb-6">Edit Profile</Text>
 
         {error ? (
           <View className="bg-[#ff6b6b]/10 border border-[#ff6b6b]/30 rounded-xl p-4 mb-6">
@@ -1507,13 +1635,13 @@ export default function ProfileScreen() {
         ) : null}
 
         <View className="mb-4">
-          <Text className="text-sm text-[#9090a8] mb-2">First name</Text>
+          <Text className="text-sm text-[#6B7280] dark:text-[#9090a8] mb-2">First name</Text>
           <Controller
             control={control}
             name="firstName"
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
+                className="bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-xl px-4 py-3.5 text-[#0F1018] dark:text-white text-base"
                 placeholder="First name"
                 placeholderTextColor="#606078"
                 value={value}
@@ -1528,13 +1656,13 @@ export default function ProfileScreen() {
         </View>
 
         <View className="mb-4">
-          <Text className="text-sm text-[#9090a8] mb-2">Last name</Text>
+          <Text className="text-sm text-[#6B7280] dark:text-[#9090a8] mb-2">Last name</Text>
           <Controller
             control={control}
             name="lastName"
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
+                className="bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-xl px-4 py-3.5 text-[#0F1018] dark:text-white text-base"
                 placeholder="Last name"
                 placeholderTextColor="#606078"
                 value={value}
@@ -1549,13 +1677,13 @@ export default function ProfileScreen() {
         </View>
 
         <View className="mb-6">
-          <Text className="text-sm text-[#9090a8] mb-2">Email</Text>
+          <Text className="text-sm text-[#6B7280] dark:text-[#9090a8] mb-2">Email</Text>
           <Controller
             control={control}
             name="email"
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
+                className="bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-xl px-4 py-3.5 text-[#0F1018] dark:text-white text-base"
                 placeholder="Email"
                 placeholderTextColor="#606078"
                 value={value}
@@ -1585,24 +1713,37 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          className="rounded-xl py-4 items-center border border-[#2a2a3a]"
+          className="rounded-xl py-4 items-center border border-[#E5E7EB] dark:border-[#2a2a3a]"
           onPress={onCancel}
           activeOpacity={0.8}
         >
-          <Text className="text-[#9090a8] font-semibold text-base">Cancel</Text>
+          <Text className="text-[#6B7280] dark:text-[#9090a8] font-semibold text-base">Cancel</Text>
         </TouchableOpacity>
       </ScrollView>
     );
   }
 
   return (
-    <ScrollView className="flex-1 bg-[#0a0a0f]" contentContainerClassName="p-6 pb-28">
+    <ScrollView className="flex-1 bg-[#F4F4F6] dark:bg-[#0a0a0f]" contentContainerClassName="px-6 pt-16 pb-28">
       <View className="items-center mb-8 mt-4">
-        <View className="w-20 h-20 rounded-full bg-[#6c5ce7] items-center justify-center mb-4">
-          <Text className="text-3xl font-bold text-white">{initials}</Text>
-        </View>
-        <Text className="text-xl font-bold text-white">{displayName.trim()}</Text>
-        <Text className="text-sm text-[#9090a8] mt-1">{user?.email}</Text>
+        <TouchableOpacity onPress={onChangeAvatar} activeOpacity={0.85} className="mb-4">
+          <View className="w-24 h-24 rounded-full bg-[#6c5ce7] items-center justify-center overflow-hidden">
+            {user?.avatar ? (
+              <Image source={{ uri: user.avatar }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
+            ) : (
+              <Text className="text-3xl font-bold text-white">{initials}</Text>
+            )}
+          </View>
+          <View className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#6c5ce7] border-2 border-[#F4F4F6] dark:border-[#0a0a0f] items-center justify-center">
+            {uploadingAvatar ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Ionicons name="camera" size={15} color="#fff" />
+            )}
+          </View>
+        </TouchableOpacity>
+        <Text className="text-xl font-bold text-[#0F1018] dark:text-white">{displayName.trim()}</Text>
+        <Text className="text-sm text-[#6B7280] dark:text-[#9090a8] mt-1">{user?.email}</Text>
         <View className="bg-[#6c5ce7]/20 px-3 py-1 rounded-full mt-2">
           <Text className="text-[#6c5ce7] text-xs font-medium capitalize">
             {user?.role || "user"}
@@ -1610,11 +1751,11 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <View className="bg-[#111118] border border-[#2a2a3a] rounded-2xl overflow-hidden mb-6">
+      <View className="bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-2xl overflow-hidden mb-6">
         <ProfileRow icon="person-outline" label="Full Name" value={displayName.trim()} />
-        <View className="h-px bg-[#2a2a3a]" />
+        <View className="h-px bg-[#E5E7EB] dark:bg-[#2a2a3a]" />
         <ProfileRow icon="mail-outline" label="Email" value={user?.email || "—"} />
-        <View className="h-px bg-[#2a2a3a]" />
+        <View className="h-px bg-[#E5E7EB] dark:bg-[#2a2a3a]" />
         <ProfileRow icon="shield-outline" label="Role" value={user?.role || "user"} />
       </View>
 
@@ -1624,6 +1765,15 @@ export default function ProfileScreen() {
         activeOpacity={0.8}
       >
         <Text className="text-white font-semibold text-base">Edit Profile</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        className="bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-2xl py-4 items-center mb-3 flex-row justify-center"
+        onPress={() => router.push("/change-password")}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="lock-closed-outline" size={18} color="#6c5ce7" />
+        <Text className="text-[#0F1018] dark:text-white font-semibold text-base ml-2">Change Password</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -1652,6 +1802,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/lib/auth";
+import { useTheme } from "@/lib/theme";
 
 interface SettingItem {
   id: string;
@@ -1669,13 +1820,14 @@ interface SettingSection {
 
 export default function SettingsScreen() {
   const { logout } = useAuth();
-  const [darkMode, setDarkMode] = useState(true);
+  const { scheme, setMode } = useTheme();
   const [notifications, setNotifications] = useState(true);
   const [language, setLanguage] = useState("English");
 
   const handleToggle = (id: string, value: boolean) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (id === "dark_mode") setDarkMode(value);
+    // Persisted theme switch — flips the whole app between light and dark.
+    if (id === "dark_mode") setMode(value ? "dark" : "light");
     if (id === "notifications") setNotifications(value);
   };
 
@@ -1757,7 +1909,7 @@ export default function SettingsScreen() {
 
     return (
       <TouchableOpacity
-        className="flex-row items-center bg-[#111118] px-5 py-4"
+        className="flex-row items-center bg-white dark:bg-[#111118] px-5 py-4"
         activeOpacity={item.type === "info" ? 1 : 0.7}
         onPress={item.type !== "info" && item.type !== "toggle" ? onPress : undefined}
         disabled={item.type === "info" || item.type === "toggle"}
@@ -1768,29 +1920,29 @@ export default function SettingsScreen() {
           color={item.danger ? "#ff6b6b" : "#9090a8"}
         />
         <Text
-          className={` + "`" + `text-sm ml-3 flex-1 ${item.danger ? "text-[#ff6b6b] font-semibold" : "text-white"}` + "`" + `}
+          className={` + "`" + `text-sm ml-3 flex-1 ${item.danger ? "text-[#ff6b6b] font-semibold" : "text-[#0F1018] dark:text-white"}` + "`" + `}
         >
           {item.title}
         </Text>
 
         {item.type === "toggle" ? (
           <Switch
-            value={item.id === "dark_mode" ? darkMode : notifications}
+            value={item.id === "dark_mode" ? scheme === "dark" : notifications}
             onValueChange={(val) => handleToggle(item.id, val)}
-            trackColor={{ false: "#2a2a3a", true: "#6c5ce7" }}
-            thumbColor="#e8e8f0"
+            trackColor={{ false: scheme === "dark" ? "#2a2a3a" : "#D1D5DB", true: "#6c5ce7" }}
+            thumbColor="#ffffff"
           />
         ) : null}
 
         {item.type === "select" ? (
           <View className="flex-row items-center">
-            <Text className="text-sm text-[#9090a8] mr-2">{item.value}</Text>
+            <Text className="text-sm text-[#6B7280] dark:text-[#9090a8] mr-2">{item.value}</Text>
             <Ionicons name="chevron-forward" size={16} color="#606078" />
           </View>
         ) : null}
 
         {item.type === "info" ? (
-          <Text className="text-sm text-[#606078]">{item.value}</Text>
+          <Text className="text-sm text-[#9CA3AF] dark:text-[#606078]">{item.value}</Text>
         ) : null}
 
         {item.type === "action" && !item.danger ? (
@@ -1803,26 +1955,26 @@ export default function SettingsScreen() {
   const renderSectionHeader = ({ section }: { section: SettingSection }) => {
     if (!section.title) return <View className="h-6" />;
     return (
-      <View className="px-5 pt-6 pb-2 bg-[#0a0a0f]">
-        <Text className="text-xs font-semibold text-[#606078] uppercase tracking-wider">
+      <View className="px-5 pt-6 pb-2 bg-[#F4F4F6] dark:bg-[#0a0a0f]">
+        <Text className="text-xs font-semibold text-[#9CA3AF] dark:text-[#606078] uppercase tracking-wider">
           {section.title}
         </Text>
       </View>
     );
   };
 
-  const renderSeparator = () => <View className="h-px bg-[#2a2a3a] ml-14" />;
+  const renderSeparator = () => <View className="h-px bg-[#E5E7EB] dark:bg-[#2a2a3a] ml-14" />;
 
   return (
     <SectionList
-      className="flex-1 bg-[#0a0a0f]"
+      className="flex-1 bg-[#F4F4F6] dark:bg-[#0a0a0f]"
       sections={sections}
       keyExtractor={(item) => item.id}
       renderItem={renderItem}
       renderSectionHeader={renderSectionHeader}
       ItemSeparatorComponent={renderSeparator}
       stickySectionHeadersEnabled={false}
-      contentContainerClassName="pb-28"
+      contentContainerClassName="pt-14 pb-28"
     />
   );
 }
@@ -1831,13 +1983,53 @@ export default function SettingsScreen() {
 
 func expoAPIClient() string {
 	return `import * as SecureStore from "expo-secure-store";
+import Constants from "expo-constants";
 import { Platform } from "react-native";
 
-const API_URL = Platform.select({
-  android: "http://10.0.2.2:8080/api",
-  ios: "http://localhost:8080/api",
-  default: "http://localhost:8080/api",
-});
+// Resolve the API base URL so it works on a simulator AND a physical
+// device without hand-editing IPs:
+//   1. EXPO_PUBLIC_API_URL wins if set (e.g. a deployed backend).
+//   2. Otherwise derive the dev machine's LAN IP from the host the phone
+//      already used to reach Metro (Constants ... hostUri). A real device
+//      can't reach "localhost"/"10.0.2.2" — those point at the device
+//      itself — but it CAN reach whatever IP Metro is served on.
+//   3. Fall back to the platform loopback for web / edge cases.
+const API_PORT = 8080;
+
+function resolveApiUrl(): string {
+  const explicit = process.env.EXPO_PUBLIC_API_URL;
+  if (explicit) return explicit.replace(/\/$/, "") + "/api";
+
+  const hostUri =
+    Constants.expoConfig?.hostUri ||
+    (Constants.expoGoConfig as any)?.debuggerHost ||
+    (Constants.manifest2 as any)?.extra?.expoGo?.debuggerHost;
+  const host = hostUri ? String(hostUri).split(":")[0] : undefined;
+  if (host && host !== "localhost" && host !== "127.0.0.1") {
+    return "http://" + host + ":" + API_PORT + "/api";
+  }
+
+  return Platform.select({
+    android: "http://10.0.2.2:" + API_PORT + "/api",
+    default: "http://localhost:" + API_PORT + "/api",
+  }) as string;
+}
+
+const API_URL = resolveApiUrl();
+
+// Fail fast instead of letting fetch hang for minutes when the API is
+// unreachable — that hang is what leaves the splash screen stuck.
+const REQUEST_TIMEOUT_MS = 15000;
+
+async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 export { API_URL };
 
@@ -1863,11 +2055,23 @@ class ApiClient {
     return SecureStore.getItemAsync("access_token");
   }
 
+  // Public: lets the auth provider skip the /auth/me boot request entirely
+  // when there's no session — no token means no network call, so a fresh
+  // install dismisses the splash instantly instead of waiting on a fetch.
+  async hasToken(): Promise<boolean> {
+    return !!(await SecureStore.getItemAsync("access_token"));
+  }
+
   private async getRefreshToken(): Promise<string | null> {
     return SecureStore.getItemAsync("refresh_token");
   }
 
-  async setTokens(accessToken: string, refreshToken: string) {
+  async setTokens(accessToken?: string, refreshToken?: string) {
+    // Guard against a shape mismatch: SecureStore throws an opaque
+    // "Values must be strings" error on undefined, so surface a clear one.
+    if (!accessToken || !refreshToken) {
+      throw new Error("Auth response did not include tokens");
+    }
     await SecureStore.setItemAsync("access_token", accessToken);
     await SecureStore.setItemAsync("refresh_token", refreshToken);
   }
@@ -1895,7 +2099,7 @@ class ApiClient {
       headers["Idempotency-Key"] = randomKey();
     }
 
-    let res = await fetch(` + "`" + `${API_URL}${endpoint}` + "`" + `, {
+    let res = await fetchWithTimeout(` + "`" + `${API_URL}${endpoint}` + "`" + `, {
       method,
       headers,
       body: options.body ? JSON.stringify(options.body) : undefined,
@@ -1912,7 +2116,7 @@ class ApiClient {
     if (res.status === 401 && !isAuthEndpoint) {
       const refreshToken = await this.getRefreshToken();
       if (refreshToken) {
-        const refreshRes = await fetch(` + "`" + `${API_URL}/auth/refresh` + "`" + `, {
+        const refreshRes = await fetchWithTimeout(` + "`" + `${API_URL}/auth/refresh` + "`" + `, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ refresh_token: refreshToken }),
@@ -1920,10 +2124,10 @@ class ApiClient {
 
         if (refreshRes.ok) {
           const data = await refreshRes.json();
-          await this.setTokens(data.data.access_token, data.data.refresh_token);
+          await this.setTokens(data.data.tokens.access_token, data.data.tokens.refresh_token);
 
           headers["Authorization"] = ` + "`" + `Bearer ${data.data.access_token}` + "`" + `;
-          res = await fetch(` + "`" + `${API_URL}${endpoint}` + "`" + `, {
+          res = await fetchWithTimeout(` + "`" + `${API_URL}${endpoint}` + "`" + `, {
             method: options.method || "GET",
             headers,
             body: options.body ? JSON.stringify(options.body) : undefined,
@@ -1985,6 +2189,7 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
   register: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -1995,6 +2200,7 @@ const AuthContext = createContext<AuthContextType>({
   loginWithGoogle: async () => {},
   register: async () => {},
   logout: async () => {},
+  refreshUser: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -2007,6 +2213,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUser = async () => {
     try {
+      // No stored session → don't touch the network. This is what keeps a
+      // fresh install from sitting on the splash screen while a doomed
+      // /auth/me request waits out its timeout.
+      if (!(await api.hasToken())) {
+        setUser(null);
+        return;
+      }
       const res = await api.get("/auth/me");
       setUser(res.data);
     } catch {
@@ -2018,7 +2231,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await api.post("/auth/login", { email, password });
-    await api.setTokens(res.data.access_token, res.data.refresh_token);
+    await api.setTokens(res.data.tokens.access_token, res.data.tokens.refresh_token);
     setUser(res.data.user);
   }, []);
 
@@ -2047,7 +2260,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(async (firstName: string, lastName: string, email: string, password: string) => {
     const res = await api.post("/auth/register", { first_name: firstName, last_name: lastName, email, password });
-    await api.setTokens(res.data.access_token, res.data.refresh_token);
+    await api.setTokens(res.data.tokens.access_token, res.data.tokens.refresh_token);
     setUser(res.data.user);
   }, []);
 
@@ -2061,14 +2274,135 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
+  // Re-fetch the current user (e.g. after a profile/avatar update).
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await api.get("/auth/me");
+      setUser(res.data);
+    } catch {
+      // Keep the current user on a transient failure.
+    }
+  }, []);
+
   return (
-    <AuthContext value={{ user, isAuthenticated: !!user, isLoading, login, loginWithGoogle, register, logout }}>
+    <AuthContext value={{ user, isAuthenticated: !!user, isLoading, login, loginWithGoogle, register, logout, refreshUser }}>
       {children}
     </AuthContext>
   );
 }
 
 export const useAuth = () => useContext(AuthContext);
+`
+}
+
+func expoThemeProvider() string {
+	return `import { createContext, useContext, useEffect, useState } from "react";
+import { useColorScheme, colorScheme as nwColorScheme } from "nativewind";
+import * as SecureStore from "expo-secure-store";
+
+export type ThemeMode = "light" | "dark" | "system";
+
+const STORAGE_KEY = "theme_mode";
+
+// Default to light before the first paint — even on a device whose OS is
+// in dark mode — so the app opens light unless the user saved otherwise.
+// The provider then reads the persisted choice and overrides if needed.
+nwColorScheme.set("light");
+
+// JS-side colours for the things className/dark: variants can't reach:
+// gradients, the faint auth grid, blur tint, status bar, tab bar chrome.
+export interface Palette {
+  scheme: "light" | "dark";
+  statusBar: "light" | "dark";
+  headerGradient: [string, string, string];
+  logoShadow: string;
+  gridLine: string;
+  gridOpacity: number;
+  inputIcon: string;
+  placeholder: string;
+  tabBar: string;
+  tabBarBorder: string;
+  tabInactive: string;
+  blurTint: "light" | "dark";
+  refresh: string;
+}
+
+const LIGHT: Palette = {
+  scheme: "light",
+  statusBar: "dark",
+  headerGradient: ["#EFEBFF", "#F6F4FF", "#FFFFFF"],
+  logoShadow: "#6c5ce7",
+  gridLine: "#0f1018",
+  gridOpacity: 0.04,
+  inputIcon: "#9CA3AF",
+  placeholder: "#9CA3AF",
+  tabBar: "#FFFFFF",
+  tabBarBorder: "#E5E7EB",
+  tabInactive: "#9CA3AF",
+  blurTint: "light",
+  refresh: "#6c5ce7",
+};
+
+const DARK: Palette = {
+  scheme: "dark",
+  statusBar: "light",
+  headerGradient: ["#1c1830", "#15121f", "#111118"],
+  logoShadow: "#6c5ce7",
+  gridLine: "#e8e8f0",
+  gridOpacity: 0.06,
+  inputIcon: "#606078",
+  placeholder: "#606078",
+  tabBar: "#15151d",
+  tabBarBorder: "#22222e",
+  tabInactive: "#606078",
+  blurTint: "dark",
+  refresh: "#6c5ce7",
+};
+
+interface ThemeContextType {
+  mode: ThemeMode;
+  scheme: "light" | "dark";
+  palette: Palette;
+  setMode: (mode: ThemeMode) => void;
+}
+
+const ThemeContext = createContext<ThemeContextType>({
+  mode: "light",
+  scheme: "light",
+  palette: LIGHT,
+  setMode: () => {},
+});
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const { colorScheme, setColorScheme } = useColorScheme();
+  const [mode, setModeState] = useState<ThemeMode>("light");
+
+  useEffect(() => {
+    // Default is light; only override once we've read the saved choice.
+    SecureStore.getItemAsync(STORAGE_KEY).then((saved) => {
+      const next = (saved as ThemeMode) || "light";
+      setModeState(next);
+      setColorScheme(next);
+    });
+  }, []);
+
+  const setMode = (next: ThemeMode) => {
+    setModeState(next);
+    setColorScheme(next);
+    SecureStore.setItemAsync(STORAGE_KEY, next).catch(() => {});
+  };
+
+  const scheme: "light" | "dark" = colorScheme === "dark" ? "dark" : "light";
+  const palette = scheme === "dark" ? DARK : LIGHT;
+
+  return (
+    <ThemeContext value={{ mode, scheme, palette, setMode }}>
+      {children}
+    </ThemeContext>
+  );
+}
+
+export const useTheme = () => useContext(ThemeContext);
 `
 }
 
