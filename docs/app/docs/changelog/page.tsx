@@ -28,6 +28,42 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.55 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.55
+                </span>
+                <span className="text-sm text-muted-foreground">July 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Redesigned mobile auth &amp; navigation.</strong> The scaffolded
+                  <code>--mobile</code> app now ships a premium, production-grade UI out of the box
+                  instead of the plain starter screens.
+                </p>
+
+                <h3>Polished login &amp; register</h3>
+                <p>
+                  Both auth screens are rebuilt as a single elevated card on a faint architectural
+                  grid: a gradient brand header, icon-prefixed inputs, a show/hide password toggle,
+                  inline validation, a gradient primary CTA, and Google sign-in. Every action fires
+                  haptic feedback and the card animates in with a spring <code>FadeInUp</code>.
+                </p>
+
+                <h3>Floating glass tab bar</h3>
+                <p>
+                  The bottom navigation is now a floating, rounded bar with a native frosted-blur
+                  background on iOS (solid elevated surface on Android) and a selection haptic on
+                  every tab switch. A new <code>PressableScale</code> primitive gives buttons the
+                  tactile spring-press micro-interaction. New dependencies:
+                  <code>expo-linear-gradient</code> and <code>expo-blur</code> — run
+                  <code>pnpm i</code> then <code>npx expo start -c</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.54 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

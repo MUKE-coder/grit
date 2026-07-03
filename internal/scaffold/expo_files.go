@@ -9,26 +9,27 @@ func writeExpoFiles(root string, opts Options) error {
 	expoRoot := filepath.Join(root, "apps", "expo")
 
 	files := map[string]string{
-		filepath.Join(expoRoot, "package.json"):                     expoPackageJSON(opts),
-		filepath.Join(expoRoot, "app.json"):                         expoAppJSON(opts),
-		filepath.Join(expoRoot, "tsconfig.json"):                    expoTSConfig(),
-		filepath.Join(expoRoot, "tailwind.config.js"):               expoTailwindConfig(),
-		filepath.Join(expoRoot, "metro.config.js"):                  expoMetroConfig(),
-		filepath.Join(expoRoot, "babel.config.js"):                  expoBabelConfig(),
-		filepath.Join(expoRoot, "global.css"):                       expoGlobalCSS(),
-		filepath.Join(expoRoot, "nativewind-env.d.ts"):              expoNativewindEnv(),
-		filepath.Join(expoRoot, "app", "_layout.tsx"):               expoRootLayout(),
-		filepath.Join(expoRoot, "app", "(auth)", "_layout.tsx"):     expoAuthLayout(),
-		filepath.Join(expoRoot, "app", "(auth)", "login.tsx"):       expoLoginScreen(),
-		filepath.Join(expoRoot, "app", "(auth)", "register.tsx"):    expoRegisterScreen(),
-		filepath.Join(expoRoot, "app", "(tabs)", "_layout.tsx"):     expoTabsLayout(),
-		filepath.Join(expoRoot, "app", "(tabs)", "index.tsx"):       expoHomeScreen(),
-		filepath.Join(expoRoot, "app", "(tabs)", "explore.tsx"):     expoExploreScreen(),
-		filepath.Join(expoRoot, "app", "(tabs)", "profile.tsx"):     expoProfileScreen(),
-		filepath.Join(expoRoot, "app", "(tabs)", "settings.tsx"):    expoSettingsScreen(),
-		filepath.Join(expoRoot, "lib", "api.ts"):                    expoAPIClient(),
-		filepath.Join(expoRoot, "lib", "auth.tsx"):                  expoAuthProvider(),
-		filepath.Join(expoRoot, "lib", "query-client.ts"):           expoQueryClient(),
+		filepath.Join(expoRoot, "package.json"):                            expoPackageJSON(opts),
+		filepath.Join(expoRoot, "app.json"):                                expoAppJSON(opts),
+		filepath.Join(expoRoot, "tsconfig.json"):                           expoTSConfig(),
+		filepath.Join(expoRoot, "tailwind.config.js"):                      expoTailwindConfig(),
+		filepath.Join(expoRoot, "metro.config.js"):                         expoMetroConfig(),
+		filepath.Join(expoRoot, "babel.config.js"):                         expoBabelConfig(),
+		filepath.Join(expoRoot, "global.css"):                              expoGlobalCSS(),
+		filepath.Join(expoRoot, "nativewind-env.d.ts"):                     expoNativewindEnv(),
+		filepath.Join(expoRoot, "app", "_layout.tsx"):                      expoRootLayout(),
+		filepath.Join(expoRoot, "components", "ui", "pressable-scale.tsx"): expoPressableScale(),
+		filepath.Join(expoRoot, "app", "(auth)", "_layout.tsx"):            expoAuthLayout(),
+		filepath.Join(expoRoot, "app", "(auth)", "login.tsx"):              expoLoginScreen(),
+		filepath.Join(expoRoot, "app", "(auth)", "register.tsx"):           expoRegisterScreen(),
+		filepath.Join(expoRoot, "app", "(tabs)", "_layout.tsx"):            expoTabsLayout(),
+		filepath.Join(expoRoot, "app", "(tabs)", "index.tsx"):              expoHomeScreen(),
+		filepath.Join(expoRoot, "app", "(tabs)", "explore.tsx"):            expoExploreScreen(),
+		filepath.Join(expoRoot, "app", "(tabs)", "profile.tsx"):            expoProfileScreen(),
+		filepath.Join(expoRoot, "app", "(tabs)", "settings.tsx"):           expoSettingsScreen(),
+		filepath.Join(expoRoot, "lib", "api.ts"):                           expoAPIClient(),
+		filepath.Join(expoRoot, "lib", "auth.tsx"):                         expoAuthProvider(),
+		filepath.Join(expoRoot, "lib", "query-client.ts"):                  expoQueryClient(),
 	}
 
 	for path, content := range files {
@@ -69,6 +70,8 @@ func expoPackageJSON(opts Options) string {
     "expo-image": "~3.0.11",
     "expo-haptics": "~15.0.8",
     "expo-web-browser": "~15.0.11",
+    "expo-linear-gradient": "~15.0.7",
+    "expo-blur": "~15.0.7",
     "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-safe-area-context": "~5.6.0",
@@ -273,6 +276,61 @@ export default function RootLayout() {
 `
 }
 
+func expoPressableScale() string {
+	return `import { forwardRef } from "react";
+import { Pressable, type PressableProps, type ViewStyle } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+interface PressableScaleProps extends PressableProps {
+  /** Scale at full press. Defaults to 0.965 — subtle, iOS-app feel. */
+  pressScale?: number;
+  /** Tailwind class string (NativeWind). */
+  className?: string;
+}
+
+/**
+ * Press-state primitive with the spring-scale micro-interaction every
+ * native app uses: scales down to ~96.5% on press-in, releases with a
+ * critically-damped spring. Drop-in replacement for TouchableOpacity.
+ */
+export const PressableScale = forwardRef<typeof AnimatedPressable, PressableScaleProps>(
+  function PressableScale(
+    { pressScale = 0.965, style, onPressIn, onPressOut, children, ...rest },
+    ref
+  ) {
+    const scale = useSharedValue(1);
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
+
+    return (
+      <AnimatedPressable
+        ref={ref as never}
+        onPressIn={(e) => {
+          scale.value = withSpring(pressScale, { damping: 18, stiffness: 320, mass: 0.6 });
+          onPressIn?.(e);
+        }}
+        onPressOut={(e) => {
+          scale.value = withSpring(1, { damping: 16, stiffness: 260, mass: 0.6 });
+          onPressOut?.(e);
+        }}
+        style={[animatedStyle, style as ViewStyle]}
+        {...rest}
+      >
+        {children as never}
+      </AnimatedPressable>
+    );
+  }
+);
+`
+}
+
 func expoAuthLayout() string {
 	return `import { Stack } from "expo-router";
 
@@ -295,21 +353,26 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  Pressable,
 } from "react-native";
 import { Link } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import * as WebBrowser from "expo-web-browser";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { FadeInUp } from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
 import { useAuth } from "@/lib/auth";
+import { PressableScale } from "@/components/ui/pressable-scale";
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email"),
+  email: z.string().email("Enter a valid email"),
   password: z.string().min(6, "Minimum 6 characters"),
 });
 
@@ -320,6 +383,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     control,
@@ -334,8 +398,11 @@ export default function LoginScreen() {
     setError("");
     setLoading(true);
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       await login(data.email, data.password);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (err: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       setError(err.message || "Login failed");
     } finally {
       setLoading(false);
@@ -354,114 +421,259 @@ export default function LoginScreen() {
     }
   };
 
+  const emailBorder = errors.email ? "border-[#ff6b6b]" : "border-[#2a2a3a]";
+  const passwordBorder = errors.password ? "border-[#ff6b6b]" : "border-[#2a2a3a]";
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-[#0a0a0f]"
+    <View className="flex-1 bg-[#0a0a0f]">
+      <FaintGrid />
+      <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
+          className="flex-1"
+        >
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 18 }}
+            keyboardShouldPersistTaps="handled"
+            automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+            showsVerticalScrollIndicator={false}
+          >
+            <Animated.View
+              entering={FadeInUp.duration(500)}
+              className="rounded-[28px] bg-[#111118] border border-[#1f1f2b] overflow-hidden"
+              style={{
+                shadowColor: "#6c5ce7",
+                shadowOffset: { width: 0, height: 18 },
+                shadowOpacity: 0.18,
+                shadowRadius: 32,
+                elevation: 8,
+              }}
+            >
+              {/* Header — purple wash watermark */}
+              <LinearGradient
+                colors={["#1c1830", "#15121f", "#111118"]}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={{ paddingTop: 36, paddingBottom: 16 }}
+              >
+                <View className="items-center">
+                  <View
+                    className="w-[68px] h-[68px] rounded-[22px] overflow-hidden items-center justify-center mb-5"
+                    style={{
+                      shadowColor: "#6c5ce7",
+                      shadowOffset: { width: 0, height: 14 },
+                      shadowOpacity: 0.5,
+                      shadowRadius: 22,
+                    }}
+                  >
+                    <LinearGradient
+                      colors={["#7c6cf7", "#6c5ce7"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+                    />
+                    <Ionicons name="flash" size={30} color="#FFFFFF" />
+                  </View>
+                  <Text className="text-[28px] font-bold text-white tracking-tight">
+                    Welcome back
+                  </Text>
+                  <Text className="text-[#9090a8] text-[14px] mt-1.5 px-6 text-center leading-5">
+                    Sign in to your account to continue.
+                  </Text>
+                </View>
+              </LinearGradient>
+
+              {/* Form body */}
+              <View className="px-7 pt-7 pb-7">
+                {error ? (
+                  <Animated.View
+                    entering={FadeInUp.duration(280)}
+                    className="bg-[#ff6b6b]/10 border border-[#ff6b6b]/25 rounded-2xl px-4 py-3 mb-4 flex-row items-center"
+                  >
+                    <Ionicons name="alert-circle" size={18} color="#ff6b6b" />
+                    <Text className="text-[#ff6b6b] text-[13px] ml-2 flex-1">{error}</Text>
+                  </Animated.View>
+                ) : null}
+
+                {/* Email */}
+                <View className="mb-4">
+                  <Text className="text-[12.5px] font-semibold text-[#9090a8] mb-2 tracking-tight">
+                    Email Address
+                  </Text>
+                  <Controller
+                    control={control}
+                    name="email"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <View
+                        className={"bg-[#0a0a0f] border rounded-2xl flex-row items-center px-4 " + emailBorder}
+                        style={{ height: 52 }}
+                      >
+                        <Ionicons name="mail-outline" size={17} color="#606078" />
+                        <TextInput
+                          className="flex-1 ml-2.5 text-white text-[15px]"
+                          placeholder="you@example.com"
+                          placeholderTextColor="#606078"
+                          value={value}
+                          onChangeText={onChange}
+                          onBlur={onBlur}
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                          autoComplete="email"
+                          autoCorrect={false}
+                        />
+                      </View>
+                    )}
+                  />
+                  {errors.email ? (
+                    <Text className="text-[#ff6b6b] text-[11.5px] mt-1.5 ml-1">
+                      {errors.email.message}
+                    </Text>
+                  ) : null}
+                </View>
+
+                {/* Password */}
+                <View className="mb-6">
+                  <Text className="text-[12.5px] font-semibold text-[#9090a8] mb-2 tracking-tight">
+                    Password
+                  </Text>
+                  <Controller
+                    control={control}
+                    name="password"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <View
+                        className={"bg-[#0a0a0f] border rounded-2xl flex-row items-center px-4 " + passwordBorder}
+                        style={{ height: 52 }}
+                      >
+                        <Ionicons name="lock-closed-outline" size={17} color="#606078" />
+                        <TextInput
+                          className="flex-1 ml-2.5 text-white text-[15px]"
+                          placeholder="••••••••"
+                          placeholderTextColor="#606078"
+                          value={value}
+                          onChangeText={onChange}
+                          onBlur={onBlur}
+                          secureTextEntry={!showPassword}
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                        />
+                        <Pressable
+                          onPress={() => {
+                            Haptics.selectionAsync().catch(() => {});
+                            setShowPassword((s) => !s);
+                          }}
+                          hitSlop={10}
+                          className="ml-2 p-1"
+                        >
+                          <Ionicons
+                            name={showPassword ? "eye-off-outline" : "eye-outline"}
+                            size={19}
+                            color={showPassword ? "#6c5ce7" : "#606078"}
+                          />
+                        </Pressable>
+                      </View>
+                    )}
+                  />
+                  {errors.password ? (
+                    <Text className="text-[#ff6b6b] text-[11.5px] mt-1.5 ml-1">
+                      {errors.password.message}
+                    </Text>
+                  ) : null}
+                </View>
+
+                {/* Primary CTA */}
+                <PressableScale
+                  onPress={handleSubmit(onSubmit)}
+                  disabled={loading || googleLoading}
+                  pressScale={0.97}
+                  className="overflow-hidden rounded-full"
+                  style={{
+                    shadowColor: "#6c5ce7",
+                    shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: 0.4,
+                    shadowRadius: 18,
+                    opacity: loading ? 0.85 : 1,
+                  }}
+                >
+                  <LinearGradient
+                    colors={["#7c6cf7", "#6c5ce7"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{ height: 54, flexDirection: "row", alignItems: "center", justifyContent: "center" }}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <>
+                        <Text className="text-white text-[15.5px] font-semibold tracking-tight">
+                          Sign in
+                        </Text>
+                        <Ionicons name="arrow-forward" size={17} color="#FFFFFF" style={{ marginLeft: 8 }} />
+                      </>
+                    )}
+                  </LinearGradient>
+                </PressableScale>
+
+                {/* Divider */}
+                <View className="flex-row items-center my-6">
+                  <View className="flex-1 h-px bg-[#2a2a3a]" />
+                  <Text className="text-[#606078] mx-4 text-[12px]">or</Text>
+                  <View className="flex-1 h-px bg-[#2a2a3a]" />
+                </View>
+
+                {/* Google */}
+                <PressableScale
+                  onPress={handleGoogleLogin}
+                  disabled={loading || googleLoading}
+                  className="rounded-full border border-[#2a2a3a] bg-[#0a0a0f] flex-row items-center justify-center"
+                  style={{ height: 52 }}
+                >
+                  {googleLoading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <>
+                      <Ionicons name="logo-google" size={19} color="#e8e8f0" />
+                      <Text className="text-white font-semibold text-[15px] ml-3">
+                        Continue with Google
+                      </Text>
+                    </>
+                  )}
+                </PressableScale>
+
+                <View className="flex-row justify-center mt-6">
+                  <Text className="text-[#9090a8] text-[13.5px]">Don't have an account? </Text>
+                  <Link href="/(auth)/register">
+                    <Text className="text-[#6c5ce7] font-semibold text-[13.5px]">Sign up</Text>
+                  </Link>
+                </View>
+              </View>
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+// Subtle architectural grid behind the auth flow — ties login and
+// register into one visual story.
+function FaintGrid() {
+  return (
+    <View
+      style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, opacity: 0.06 }}
+      pointerEvents="none"
     >
-      <View className="flex-1 justify-center px-8">
-        <Text className="text-4xl font-bold text-white mb-2">Welcome back</Text>
-        <Text className="text-base text-[#9090a8] mb-10">
-          Sign in to your account
-        </Text>
-
-        {error ? (
-          <View className="bg-[#ff6b6b]/10 border border-[#ff6b6b]/30 rounded-xl p-4 mb-6">
-            <Text className="text-[#ff6b6b] text-sm">{error}</Text>
-          </View>
-        ) : null}
-
-        <View className="mb-4">
-          <Text className="text-sm text-[#9090a8] mb-2">Email</Text>
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
-                placeholder="you@example.com"
-                placeholderTextColor="#606078"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-              />
-            )}
-          />
-          {errors.email ? (
-            <Text className="text-[#ff6b6b] text-xs mt-1">{errors.email.message}</Text>
-          ) : null}
-        </View>
-
-        <View className="mb-6">
-          <Text className="text-sm text-[#9090a8] mb-2">Password</Text>
-          <Controller
-            control={control}
-            name="password"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
-                placeholder="••••••••"
-                placeholderTextColor="#606078"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                secureTextEntry
-              />
-            )}
-          />
-          {errors.password ? (
-            <Text className="text-[#ff6b6b] text-xs mt-1">{errors.password.message}</Text>
-          ) : null}
-        </View>
-
-        <TouchableOpacity
-          className={` + "`" + `rounded-xl py-4 items-center ${loading ? "bg-[#6c5ce7]/50" : "bg-[#6c5ce7]"}` + "`" + `}
-          onPress={handleSubmit(onSubmit)}
-          disabled={loading || googleLoading}
-          activeOpacity={0.8}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text className="text-white font-semibold text-base">Sign in</Text>
-          )}
-        </TouchableOpacity>
-
-        <View className="flex-row items-center my-6">
-          <View className="flex-1 h-px bg-[#2a2a3a]" />
-          <Text className="text-[#606078] mx-4 text-sm">or</Text>
-          <View className="flex-1 h-px bg-[#2a2a3a]" />
-        </View>
-
-        <TouchableOpacity
-          className={` + "`" + `rounded-xl py-4 items-center flex-row justify-center border border-[#2a2a3a] ${googleLoading ? "bg-[#22222e]/50" : "bg-[#22222e]"}` + "`" + `}
-          onPress={handleGoogleLogin}
-          disabled={loading || googleLoading}
-          activeOpacity={0.8}
-        >
-          {googleLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <Ionicons name="logo-google" size={20} color="#e8e8f0" />
-              <Text className="text-white font-semibold text-base ml-3">
-                Sign in with Google
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
-
-        <View className="flex-row justify-center mt-6">
-          <Text className="text-[#9090a8]">Don't have an account? </Text>
-          <Link href="/(auth)/register">
-            <Text className="text-[#6c5ce7] font-semibold">Sign up</Text>
-          </Link>
-        </View>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}>
+        {Array.from({ length: 10 }).map((_, i) => (
+          <View key={"gv-" + i} style={{ width: 1, backgroundColor: "#e8e8f0" }} />
+        ))}
       </View>
-    </KeyboardAvoidingView>
+      <View style={{ flexDirection: "column", justifyContent: "space-between", position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}>
+        {Array.from({ length: 18 }).map((_, i) => (
+          <View key={"gh-" + i} style={{ height: 1, backgroundColor: "#e8e8f0" }} />
+        ))}
+      </View>
+    </View>
   );
 }
 `
@@ -473,22 +685,28 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Pressable,
 } from "react-native";
 import { Link } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { FadeInUp } from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
 import { useAuth } from "@/lib/auth";
+import { PressableScale } from "@/components/ui/pressable-scale";
 
 const registerSchema = z.object({
   firstName: z.string().min(1, "Required"),
   lastName: z.string().min(1, "Required"),
-  email: z.string().email("Invalid email"),
+  email: z.string().email("Enter a valid email"),
   password: z.string().min(8, "Minimum 8 characters"),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -502,6 +720,7 @@ export default function RegisterScreen() {
   const { register: registerUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     control,
@@ -522,169 +741,297 @@ export default function RegisterScreen() {
     setError("");
     setLoading(true);
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       await registerUser(data.firstName, data.lastName, data.email, data.password);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (err: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       setError(err.message || "Registration failed");
     } finally {
       setLoading(false);
     }
   };
 
+  const inputBase = "bg-[#0a0a0f] border rounded-2xl flex-row items-center px-4";
+  const border = (hasError?: boolean) => (hasError ? "border-[#ff6b6b]" : "border-[#2a2a3a]");
+  const label = "text-[12.5px] font-semibold text-[#9090a8] mb-2 tracking-tight";
+  const errorText = "text-[#ff6b6b] text-[11.5px] mt-1.5 ml-1";
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-[#0a0a0f]"
-    >
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
-        className="px-8"
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text className="text-4xl font-bold text-white mb-2">Create account</Text>
-        <Text className="text-base text-[#9090a8] mb-10">
-          Get started with Grit
-        </Text>
-
-        {error ? (
-          <View className="bg-[#ff6b6b]/10 border border-[#ff6b6b]/30 rounded-xl p-4 mb-6">
-            <Text className="text-[#ff6b6b] text-sm">{error}</Text>
-          </View>
-        ) : null}
-
-        <View className="flex-row gap-3 mb-4">
-          <View className="flex-1">
-            <Text className="text-sm text-[#9090a8] mb-2">First name</Text>
-            <Controller
-              control={control}
-              name="firstName"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
-                  placeholder="John"
-                  placeholderTextColor="#606078"
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  autoComplete="given-name"
-                />
-              )}
-            />
-            {errors.firstName ? (
-              <Text className="text-[#ff6b6b] text-xs mt-1">{errors.firstName.message}</Text>
-            ) : null}
-          </View>
-          <View className="flex-1">
-            <Text className="text-sm text-[#9090a8] mb-2">Last name</Text>
-            <Controller
-              control={control}
-              name="lastName"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
-                  placeholder="Doe"
-                  placeholderTextColor="#606078"
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  autoComplete="family-name"
-                />
-              )}
-            />
-            {errors.lastName ? (
-              <Text className="text-[#ff6b6b] text-xs mt-1">{errors.lastName.message}</Text>
-            ) : null}
-          </View>
-        </View>
-
-        <View className="mb-4">
-          <Text className="text-sm text-[#9090a8] mb-2">Email</Text>
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
-                placeholder="you@example.com"
-                placeholderTextColor="#606078"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-              />
-            )}
-          />
-          {errors.email ? (
-            <Text className="text-[#ff6b6b] text-xs mt-1">{errors.email.message}</Text>
-          ) : null}
-        </View>
-
-        <View className="mb-4">
-          <Text className="text-sm text-[#9090a8] mb-2">Password</Text>
-          <Controller
-            control={control}
-            name="password"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
-                placeholder="Min. 8 characters"
-                placeholderTextColor="#606078"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                secureTextEntry
-              />
-            )}
-          />
-          {errors.password ? (
-            <Text className="text-[#ff6b6b] text-xs mt-1">{errors.password.message}</Text>
-          ) : null}
-        </View>
-
-        <View className="mb-6">
-          <Text className="text-sm text-[#9090a8] mb-2">Confirm password</Text>
-          <Controller
-            control={control}
-            name="confirmPassword"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                className="bg-[#111118] border border-[#2a2a3a] rounded-xl px-4 py-3.5 text-white text-base"
-                placeholder="Repeat password"
-                placeholderTextColor="#606078"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                secureTextEntry
-              />
-            )}
-          />
-          {errors.confirmPassword ? (
-            <Text className="text-[#ff6b6b] text-xs mt-1">{errors.confirmPassword.message}</Text>
-          ) : null}
-        </View>
-
-        <TouchableOpacity
-          className={` + "`" + `rounded-xl py-4 items-center ${loading ? "bg-[#6c5ce7]/50" : "bg-[#6c5ce7]"}` + "`" + `}
-          onPress={handleSubmit(onSubmit)}
-          disabled={loading}
-          activeOpacity={0.8}
+    <View className="flex-1 bg-[#0a0a0f]">
+      <FaintGrid />
+      <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
+          className="flex-1"
         >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text className="text-white font-semibold text-base">Create account</Text>
-          )}
-        </TouchableOpacity>
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 18 }}
+            keyboardShouldPersistTaps="handled"
+            automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+            showsVerticalScrollIndicator={false}
+          >
+            <Animated.View
+              entering={FadeInUp.duration(500)}
+              className="rounded-[28px] bg-[#111118] border border-[#1f1f2b] overflow-hidden"
+              style={{
+                shadowColor: "#6c5ce7",
+                shadowOffset: { width: 0, height: 18 },
+                shadowOpacity: 0.18,
+                shadowRadius: 32,
+                elevation: 8,
+              }}
+            >
+              <LinearGradient
+                colors={["#1c1830", "#15121f", "#111118"]}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={{ paddingTop: 36, paddingBottom: 16 }}
+              >
+                <View className="items-center">
+                  <View
+                    className="w-[68px] h-[68px] rounded-[22px] overflow-hidden items-center justify-center mb-5"
+                    style={{
+                      shadowColor: "#6c5ce7",
+                      shadowOffset: { width: 0, height: 14 },
+                      shadowOpacity: 0.5,
+                      shadowRadius: 22,
+                    }}
+                  >
+                    <LinearGradient
+                      colors={["#7c6cf7", "#6c5ce7"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+                    />
+                    <Ionicons name="flash" size={30} color="#FFFFFF" />
+                  </View>
+                  <Text className="text-[28px] font-bold text-white tracking-tight">
+                    Create account
+                  </Text>
+                  <Text className="text-[#9090a8] text-[14px] mt-1.5 px-6 text-center leading-5">
+                    Get started with Grit in seconds.
+                  </Text>
+                </View>
+              </LinearGradient>
 
-        <View className="flex-row justify-center mt-6 mb-8">
-          <Text className="text-[#9090a8]">Already have an account? </Text>
-          <Link href="/(auth)/login">
-            <Text className="text-[#6c5ce7] font-semibold">Sign in</Text>
-          </Link>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+              <View className="px-7 pt-7 pb-7">
+                {error ? (
+                  <Animated.View
+                    entering={FadeInUp.duration(280)}
+                    className="bg-[#ff6b6b]/10 border border-[#ff6b6b]/25 rounded-2xl px-4 py-3 mb-4 flex-row items-center"
+                  >
+                    <Ionicons name="alert-circle" size={18} color="#ff6b6b" />
+                    <Text className="text-[#ff6b6b] text-[13px] ml-2 flex-1">{error}</Text>
+                  </Animated.View>
+                ) : null}
+
+                <View className="flex-row gap-3 mb-4">
+                  <View className="flex-1">
+                    <Text className={label}>First name</Text>
+                    <Controller
+                      control={control}
+                      name="firstName"
+                      render={({ field: { onChange, onBlur, value } }) => (
+                        <View className={inputBase + " " + border(!!errors.firstName)} style={{ height: 52 }}>
+                          <TextInput
+                            className="flex-1 text-white text-[15px]"
+                            placeholder="John"
+                            placeholderTextColor="#606078"
+                            value={value}
+                            onChangeText={onChange}
+                            onBlur={onBlur}
+                            autoComplete="given-name"
+                          />
+                        </View>
+                      )}
+                    />
+                    {errors.firstName ? (
+                      <Text className={errorText}>{errors.firstName.message}</Text>
+                    ) : null}
+                  </View>
+                  <View className="flex-1">
+                    <Text className={label}>Last name</Text>
+                    <Controller
+                      control={control}
+                      name="lastName"
+                      render={({ field: { onChange, onBlur, value } }) => (
+                        <View className={inputBase + " " + border(!!errors.lastName)} style={{ height: 52 }}>
+                          <TextInput
+                            className="flex-1 text-white text-[15px]"
+                            placeholder="Doe"
+                            placeholderTextColor="#606078"
+                            value={value}
+                            onChangeText={onChange}
+                            onBlur={onBlur}
+                            autoComplete="family-name"
+                          />
+                        </View>
+                      )}
+                    />
+                    {errors.lastName ? (
+                      <Text className={errorText}>{errors.lastName.message}</Text>
+                    ) : null}
+                  </View>
+                </View>
+
+                <View className="mb-4">
+                  <Text className={label}>Email Address</Text>
+                  <Controller
+                    control={control}
+                    name="email"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <View className={inputBase + " " + border(!!errors.email)} style={{ height: 52 }}>
+                        <Ionicons name="mail-outline" size={17} color="#606078" />
+                        <TextInput
+                          className="flex-1 ml-2.5 text-white text-[15px]"
+                          placeholder="you@example.com"
+                          placeholderTextColor="#606078"
+                          value={value}
+                          onChangeText={onChange}
+                          onBlur={onBlur}
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                          autoComplete="email"
+                          autoCorrect={false}
+                        />
+                      </View>
+                    )}
+                  />
+                  {errors.email ? <Text className={errorText}>{errors.email.message}</Text> : null}
+                </View>
+
+                <View className="mb-4">
+                  <Text className={label}>Password</Text>
+                  <Controller
+                    control={control}
+                    name="password"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <View className={inputBase + " " + border(!!errors.password)} style={{ height: 52 }}>
+                        <Ionicons name="lock-closed-outline" size={17} color="#606078" />
+                        <TextInput
+                          className="flex-1 ml-2.5 text-white text-[15px]"
+                          placeholder="Min. 8 characters"
+                          placeholderTextColor="#606078"
+                          value={value}
+                          onChangeText={onChange}
+                          onBlur={onBlur}
+                          secureTextEntry={!showPassword}
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                        />
+                        <Pressable
+                          onPress={() => {
+                            Haptics.selectionAsync().catch(() => {});
+                            setShowPassword((s) => !s);
+                          }}
+                          hitSlop={10}
+                          className="ml-2 p-1"
+                        >
+                          <Ionicons
+                            name={showPassword ? "eye-off-outline" : "eye-outline"}
+                            size={19}
+                            color={showPassword ? "#6c5ce7" : "#606078"}
+                          />
+                        </Pressable>
+                      </View>
+                    )}
+                  />
+                  {errors.password ? <Text className={errorText}>{errors.password.message}</Text> : null}
+                </View>
+
+                <View className="mb-6">
+                  <Text className={label}>Confirm password</Text>
+                  <Controller
+                    control={control}
+                    name="confirmPassword"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <View className={inputBase + " " + border(!!errors.confirmPassword)} style={{ height: 52 }}>
+                        <Ionicons name="lock-closed-outline" size={17} color="#606078" />
+                        <TextInput
+                          className="flex-1 ml-2.5 text-white text-[15px]"
+                          placeholder="Repeat password"
+                          placeholderTextColor="#606078"
+                          value={value}
+                          onChangeText={onChange}
+                          onBlur={onBlur}
+                          secureTextEntry={!showPassword}
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                        />
+                      </View>
+                    )}
+                  />
+                  {errors.confirmPassword ? (
+                    <Text className={errorText}>{errors.confirmPassword.message}</Text>
+                  ) : null}
+                </View>
+
+                <PressableScale
+                  onPress={handleSubmit(onSubmit)}
+                  disabled={loading}
+                  pressScale={0.97}
+                  className="overflow-hidden rounded-full"
+                  style={{
+                    shadowColor: "#6c5ce7",
+                    shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: 0.4,
+                    shadowRadius: 18,
+                    opacity: loading ? 0.85 : 1,
+                  }}
+                >
+                  <LinearGradient
+                    colors={["#7c6cf7", "#6c5ce7"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{ height: 54, flexDirection: "row", alignItems: "center", justifyContent: "center" }}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <>
+                        <Text className="text-white text-[15.5px] font-semibold tracking-tight">
+                          Create account
+                        </Text>
+                        <Ionicons name="arrow-forward" size={17} color="#FFFFFF" style={{ marginLeft: 8 }} />
+                      </>
+                    )}
+                  </LinearGradient>
+                </PressableScale>
+
+                <View className="flex-row justify-center mt-6">
+                  <Text className="text-[#9090a8] text-[13.5px]">Already have an account? </Text>
+                  <Link href="/(auth)/login">
+                    <Text className="text-[#6c5ce7] font-semibold text-[13.5px]">Sign in</Text>
+                  </Link>
+                </View>
+              </View>
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+function FaintGrid() {
+  return (
+    <View
+      style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, opacity: 0.06 }}
+      pointerEvents="none"
+    >
+      <View style={{ flexDirection: "row", justifyContent: "space-between", position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}>
+        {Array.from({ length: 10 }).map((_, i) => (
+          <View key={"gv-" + i} style={{ width: 1, backgroundColor: "#e8e8f0" }} />
+        ))}
+      </View>
+      <View style={{ flexDirection: "column", justifyContent: "space-between", position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}>
+        {Array.from({ length: 18 }).map((_, i) => (
+          <View key={"gh-" + i} style={{ height: 1, backgroundColor: "#e8e8f0" }} />
+        ))}
+      </View>
+    </View>
   );
 }
 `
@@ -693,24 +1040,69 @@ export default function RegisterScreen() {
 func expoTabsLayout() string {
 	return `import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import { Platform, StyleSheet, View } from "react-native";
+import * as Haptics from "expo-haptics";
 
+// Floating glass tab bar. iOS gets a native frosted-blur background;
+// Android falls back to a solid elevated surface since BlurView on the
+// Grit-dark palette reads cleaner as a flat panel there.
 export default function TabsLayout() {
   return (
     <Tabs
-      screenOptions={{
-        headerStyle: { backgroundColor: "#111118" },
-        headerTintColor: "#e8e8f0",
-        tabBarStyle: {
-          backgroundColor: "#0a0a0f",
-          borderTopColor: "#2a2a3a",
-          height: 60,
-          paddingBottom: 8,
+      screenListeners={{
+        tabPress: () => {
+          Haptics.selectionAsync().catch(() => {});
         },
-        tabBarActiveTintColor: "#6c5ce7",
+      }}
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: "#7c6cf7",
         tabBarInactiveTintColor: "#606078",
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: "500",
+          fontWeight: "600",
+        },
+        tabBarItemStyle: {
+          paddingTop: 6,
+        },
+        tabBarBackground:
+          Platform.OS === "ios"
+            ? () => (
+                <BlurView
+                  tint="dark"
+                  intensity={40}
+                  style={[
+                    StyleSheet.absoluteFill,
+                    { backgroundColor: "rgba(17,17,24,0.6)", borderRadius: 24, overflow: "hidden" },
+                  ]}
+                />
+              )
+            : () => (
+                <View
+                  style={[
+                    StyleSheet.absoluteFill,
+                    { backgroundColor: "#15151d", borderRadius: 24 },
+                  ]}
+                />
+              ),
+        tabBarStyle: {
+          position: "absolute",
+          left: 16,
+          right: 16,
+          bottom: 16,
+          height: 64,
+          paddingBottom: 8,
+          borderRadius: 24,
+          borderTopWidth: 0,
+          borderWidth: 1,
+          borderColor: "#22222e",
+          backgroundColor: "transparent",
+          elevation: 12,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.35,
+          shadowRadius: 16,
         },
       }}
     >
@@ -856,7 +1248,7 @@ export default function HomeScreen() {
   return (
     <ScrollView
       className="flex-1 bg-[#0a0a0f]"
-      contentContainerClassName="p-6"
+      contentContainerClassName="p-6 pb-28"
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6c5ce7" />
       }
@@ -969,7 +1361,7 @@ export default function ExploreScreen() {
   return (
     <ScrollView
       className="flex-1 bg-[#0a0a0f]"
-      contentContainerClassName="p-6"
+      contentContainerClassName="p-6 pb-28"
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6c5ce7" />
       }
@@ -1105,7 +1497,7 @@ export default function ProfileScreen() {
 
   if (editing) {
     return (
-      <ScrollView className="flex-1 bg-[#0a0a0f]" contentContainerClassName="p-6">
+      <ScrollView className="flex-1 bg-[#0a0a0f]" contentContainerClassName="p-6 pb-28">
         <Text className="text-2xl font-bold text-white mb-6">Edit Profile</Text>
 
         {error ? (
@@ -1204,7 +1596,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-[#0a0a0f]" contentContainerClassName="p-6">
+    <ScrollView className="flex-1 bg-[#0a0a0f]" contentContainerClassName="p-6 pb-28">
       <View className="items-center mb-8 mt-4">
         <View className="w-20 h-20 rounded-full bg-[#6c5ce7] items-center justify-center mb-4">
           <Text className="text-3xl font-bold text-white">{initials}</Text>
@@ -1430,7 +1822,7 @@ export default function SettingsScreen() {
       renderSectionHeader={renderSectionHeader}
       ItemSeparatorComponent={renderSeparator}
       stickySectionHeadersEnabled={false}
-      contentContainerClassName="pb-12"
+      contentContainerClassName="pb-28"
     />
   );
 }
