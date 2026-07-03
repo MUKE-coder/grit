@@ -7,6 +7,7 @@ import { GridFrame } from '@/components/grid-frame'
 import { BlogContent } from '@/components/blog-content'
 import { AuthorCard } from '@/components/author-card'
 import { getAllPosts, getPost, formatDate } from '@/lib/blog'
+import { siteConfig } from '@/config/site'
 
 export function generateStaticParams() {
   return getAllPosts().map((p) => ({ slug: p.slug }))
@@ -20,11 +21,27 @@ export async function generateMetadata({
   const { slug } = await params
   const post = getPost(slug)
   if (!post) return { title: 'Not found' }
+  // Use the post's own thumbnail as the share image (absolute URL is required
+  // for OG/Twitter), falling back to the site-wide default when a post has none.
+  const ogImage = post.thumbnail ? `${siteConfig.url}${post.thumbnail}` : siteConfig.ogImage
+  const url = `${siteConfig.url}/blog/${post.slug}`
   return {
     title: `${post.title} — The Daily Grit`,
     description: post.subtitle,
-    alternates: { canonical: `https://gritframework.dev/blog/${post.slug}` },
-    openGraph: { title: post.title, description: post.subtitle, type: 'article' },
+    alternates: { canonical: url },
+    openGraph: {
+      title: post.title,
+      description: post.subtitle,
+      type: 'article',
+      url,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: post.title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.subtitle,
+      images: [ogImage],
+    },
   }
 }
 
