@@ -14,6 +14,7 @@ func writeExpoFiles(root string, opts Options) error {
 		filepath.Join(expoRoot, "tsconfig.json"):                    expoTSConfig(),
 		filepath.Join(expoRoot, "tailwind.config.js"):               expoTailwindConfig(),
 		filepath.Join(expoRoot, "metro.config.js"):                  expoMetroConfig(),
+		filepath.Join(expoRoot, "babel.config.js"):                  expoBabelConfig(),
 		filepath.Join(expoRoot, "global.css"):                       expoGlobalCSS(),
 		filepath.Join(expoRoot, "nativewind-env.d.ts"):              expoNativewindEnv(),
 		filepath.Join(expoRoot, "app", "_layout.tsx"):               expoRootLayout(),
@@ -77,6 +78,7 @@ func expoPackageJSON(opts Options) string {
     "nativewind": "^4.2.0",
     "@tanstack/react-query": "^5.0.0",
     "react-native-reanimated": "~4.1.0",
+    "react-native-worklets": "0.5.1",
     "react-native-gesture-handler": "~2.28.0",
     "react-hook-form": "^7.54.0",
     "@hookform/resolvers": "^3.9.0",
@@ -121,6 +123,7 @@ func expoAppJSON(opts Options) string {
       "package": "com.%s.app"
     },
     "web": {
+      "bundler": "metro",
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
@@ -177,6 +180,24 @@ module.exports = {
     },
   },
   plugins: [],
+};
+`
+}
+
+// expoBabelConfig is REQUIRED for NativeWind: without the jsxImportSource +
+// nativewind/babel preset, every `className` is silently ignored and the app
+// renders unstyled. The worklets plugin is required by react-native-reanimated
+// v4 (its absence makes the app hang / crash on animated components).
+func expoBabelConfig() string {
+	return `module.exports = function (api) {
+  api.cache(true);
+  return {
+    presets: [
+      ["babel-preset-expo", { jsxImportSource: "nativewind" }],
+      "nativewind/babel",
+    ],
+    plugins: ["react-native-worklets/plugin"],
+  };
 };
 `
 }

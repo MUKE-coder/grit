@@ -28,6 +28,38 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.54 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.54
+                </span>
+                <span className="text-sm text-muted-foreground">July 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Mobile styling fix (NativeWind).</strong> A scaffolded
+                  <code>--mobile</code> app rendered completely unstyled — raw text on a black
+                  screen — and hung on startup.
+                </p>
+
+                <h3>The Expo app was missing its Babel config</h3>
+                <p>
+                  NativeWind requires a <code>babel.config.js</code> with the
+                  <code>jsxImportSource: &quot;nativewind&quot;</code> option and the
+                  <code>nativewind/babel</code> preset — without it every <code>className</code> is
+                  silently ignored. The scaffold never generated that file. It now ships one, plus
+                  the <code>react-native-worklets</code> dependency and its Babel plugin (required
+                  by Reanimated&nbsp;4, whose absence caused the startup hang), and
+                  <code>web.bundler: &quot;metro&quot;</code> in <code>app.json</code>. On an
+                  existing project, add <code>apps/expo/babel.config.js</code>, install
+                  <code>react-native-worklets</code>, then restart Metro with a clear cache:
+                  <code>npx expo start -c</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.53 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
