@@ -10,6 +10,7 @@ package scaffold
 func expoUploadHelper() string {
 	return `import * as ImagePicker from "expo-image-picker";
 import * as SecureStore from "expo-secure-store";
+import * as FileSystem from "expo-file-system/legacy";
 import { API_URL } from "./api";
 
 // Pick an image and upload it to POST /uploads (multipart). Returns the
@@ -27,22 +28,42 @@ export async function pickAndUploadImage(): Promise<string | null> {
   if (result.canceled || !result.assets?.length) return null;
 
   const asset = result.assets[0];
-  const form = new FormData();
-  form.append("file", {
-    uri: asset.uri,
-    name: asset.fileName || "upload.jpg",
-    type: asset.mimeType || "image/jpeg",
-  } as any);
+
+  // Derive a MIME type from the file extension when the picker omits it, so
+  // the multipart part is tagged with a type the server's allowlist accepts.
+  const name = asset.fileName || asset.uri.split("/").pop() || "photo.jpg";
+  const ext = (name.split(".").pop() || "jpg").toLowerCase();
+  const extToMime: Record<string, string> = {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    gif: "image/gif",
+    webp: "image/webp",
+    heic: "image/heic",
+  };
+  const mimeType = asset.mimeType || extToMime[ext] || "image/jpeg";
 
   const token = await SecureStore.getItemAsync("access_token");
-  const res = await fetch(API_URL + "/uploads", {
-    method: "POST",
+
+  // Upload the local file natively as multipart/form-data. This is far more
+  // reliable than fetch + FormData on React Native (RN 0.81 / Expo SDK 54),
+  // where the file part can be dropped entirely — the server then reports
+  // "No file provided". expo-file-system streams the file itself.
+  const res = await FileSystem.uploadAsync(API_URL + "/uploads", asset.uri, {
+    httpMethod: "POST",
+    uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+    fieldName: "file",
+    mimeType,
     headers: token ? { Authorization: "Bearer " + token } : {},
-    body: form,
   });
-  if (!res.ok) throw new Error("Upload failed");
-  const json = await res.json();
-  return json.data?.url ?? null;
+
+  const json = res.body ? JSON.parse(res.body) : null;
+  if (res.status < 200 || res.status >= 300) {
+    // Surface the server's reason (e.g. "File type not allowed") instead of a
+    // generic failure, so upload problems are diagnosable from the UI.
+    throw new Error(json?.error?.message || "Upload failed (" + res.status + ")");
+  }
+  return json?.data?.url ?? null;
 }
 `
 }

@@ -28,6 +28,37 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.58 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.58
+                </span>
+                <span className="text-sm text-muted-foreground">July 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fix: mobile file uploads (&quot;No file provided&quot;).</strong> Avatar /
+                  image uploads from the Expo app failed with a <code>400</code> even though a file
+                  was selected.
+                </p>
+                <p>
+                  Two causes, both fixed. On the client, React Native&apos;s{' '}
+                  <code>fetch</code> + <code>FormData</code> (RN&nbsp;0.81 / Expo SDK&nbsp;54) can
+                  drop the file part entirely; the upload helper now uses{' '}
+                  <code>expo-file-system</code>&apos;s native <code>uploadAsync</code>, which streams
+                  the file reliably. On the server, the audit-log middleware read the entire request
+                  body to digest it — wasteful for a binary upload and enough to leave{' '}
+                  <code>ParseMultipartForm</code> with nothing to parse; it now skips{' '}
+                  <code>multipart/form-data</code> bodies. Upload errors also surface the server&apos;s
+                  actual reason now instead of a generic failure. Adds{' '}
+                  <code>expo-file-system</code> — run <code>pnpm i</code>, restart the API, and{' '}
+                  <code>npx expo start -c</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.57 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

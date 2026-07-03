@@ -83,6 +83,7 @@ func expoPackageJSON(opts Options) string {
     "expo-linear-gradient": "~15.0.7",
     "expo-blur": "~15.0.7",
     "expo-image-picker": "~17.0.8",
+    "expo-file-system": "~19.0.15",
     "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-safe-area-context": "~5.6.0",
