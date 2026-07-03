@@ -28,6 +28,35 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.57 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.57
+                </span>
+                <span className="text-sm text-muted-foreground">July 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fix: mobile mutations blocked by CSRF (403).</strong> Native clients
+                  could read data but every write — file uploads, generated-resource
+                  create/update/delete, profile updates — failed with a{' '}
+                  <code>403 CSRF_INVALID</code>.
+                </p>
+                <p>
+                  React Native&apos;s <code>fetch</code> (and Android&apos;s OkHttp) transparently
+                  store and resend the <code>grit_access</code> cookie the API sets at login. The
+                  <code>AutoCSRF</code> guard saw that stray cookie and treated a{' '}
+                  <strong>bearer</strong>-authenticated request as cookie-authenticated, demanding a
+                  CSRF token the app never sends. The guard now skips CSRF whenever an{' '}
+                  <code>Authorization: Bearer</code> header is present — an explicitly-authenticated
+                  request can&apos;t be forged cross-site, so it&apos;s CSRF-immune regardless of a
+                  tag-along cookie. On an existing project, restart the API after pulling the fix.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.56 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

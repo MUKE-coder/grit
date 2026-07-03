@@ -567,6 +567,17 @@ func AutoCSRF() gin.HandlerFunc {
 			return
 		}
 
+		// Bearer-authenticated request → CSRF-immune. A request that carries
+		// an "Authorization: Bearer" header authenticates explicitly, not via
+		// ambient cookies, so it can't be forged cross-site. We check this
+		// BEFORE the cookie check because native clients (React Native fetch,
+		// OkHttp) transparently store and resend the grit_access cookie set at
+		// login — that stray cookie must not trip CSRF on a bearer mutation.
+		if authz := c.GetHeader("Authorization"); strings.HasPrefix(authz, "Bearer ") {
+			c.Next()
+			return
+		}
+
 		// State-changing method. If the client did NOT authenticate via
 		// cookie, this is a bearer flow (or anonymous) — neither needs CSRF.
 		accessVal, _ := c.Cookie(accessCookie)
