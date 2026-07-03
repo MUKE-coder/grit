@@ -30,15 +30,18 @@ read (≈700–1000 words), one concrete takeaway, one copy-pasteable command.
 
 ## Week 1 schedule
 
-| # | Date | Article | Angle |
-|---|------|---------|-------|
-| 1 | 2026-07-01 | [Meet Grit](2026-07-01-meet-grit.md) | Awareness |
-| 2 | 2026-07-02 | [Your first Grit app in 5 minutes](2026-07-02-first-app-in-5-minutes.md) | Getting started |
-| 3 | 2026-07-03 | [Full-stack CRUD in one command](2026-07-03-full-stack-crud-in-one-command.md) | CRUD |
-| 4 | 2026-07-04 | [Grit vs. Next.js](2026-07-04-grit-vs-nextjs.md) | Comparison |
-| 5 | 2026-07-05 | [Grit vs. Laravel](2026-07-05-grit-vs-laravel.md) | Comparison |
-| 6 | 2026-07-06 | [Auth that just works](2026-07-06-auth-that-just-works.md) | Batteries |
-| 7 | 2026-07-07 | [Idea to production with grit deploy](2026-07-07-idea-to-production.md) | Deploy |
+| # | Date | Article | Angle | Status |
+|---|------|---------|-------|--------|
+| 1 | 2026-07-01 | [Why I built Grit](2026-07-01-why-i-built-grit.md) | Awareness | ✅ published |
+| 2 | 2026-07-02 | [Build your first Grit app](2026-07-02-build-your-first-grit-app.md) — a Category → Product store | Getting started · CRUD · files · relationships | draft |
+| — | — | *Render the store on the web app* (teased at the end of #2) | Frontend | planned |
+| — | — | [Grit vs. Next.js](2026-07-04-grit-vs-nextjs.md) | Comparison | draft |
+| — | — | [Grit vs. Laravel](2026-07-05-grit-vs-laravel.md) | Comparison | draft |
+| — | — | [Auth that just works](2026-07-06-auth-that-just-works.md) | Batteries | draft |
+| — | — | [Idea to production with grit deploy](2026-07-07-idea-to-production.md) | Deploy | draft |
+
+> Editions 2 & 3 were merged into a single hands-on build (#2). The remaining drafts
+> keep their files; renumber their `edition:` frontmatter when each is published.
 
 ---
 
