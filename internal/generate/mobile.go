@@ -819,7 +819,33 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
 			payload.WriteString("        " + fk + ": " + fkCamel + ",\n")
 			fieldsJSX.WriteString("      <RelationSelect label=\"" + label + "\" value={" + fkCamel + "} onChange={" + fkSetter + "} options={" + optsVar + "} />\n")
 
-		case f.IsFileField():
+		case f.IsFiles():
+			// Multiple images: multi-select from the gallery, a grid of removable
+			// thumbnails, and an array of FileRefs in the payload.
+			hasFile = true
+			urlsVar := camel + "Urls"
+			urlsSetter := "set" + pascal + "Urls"
+			prevsVar := camel + "Previews"
+			prevsSetter := "set" + pascal + "Previews"
+			stateLines.WriteString("  const [" + urlsVar + ", " + urlsSetter + "] = useState<string[]>((i." + n + " ?? []).map((x: any) => x?.url).filter(Boolean));\n")
+			stateLines.WriteString("  const [" + prevsVar + ", " + prevsSetter + "] = useState<string[]>((i." + n + " ?? []).map((x: any) => resolveImageUrl(x?.url)).filter(Boolean));\n")
+			payload.WriteString("        " + n + ": " + urlsVar + ".map((u) => ({ url: u })),\n")
+			fieldsJSX.WriteString("      <Text className={labelClass}>" + label + "</Text>\n")
+			fieldsJSX.WriteString("      <View className=\"flex-row flex-wrap mb-4\">\n")
+			fieldsJSX.WriteString("        {" + prevsVar + ".map((uri, idx) => (\n")
+			fieldsJSX.WriteString("          <View key={idx} className=\"mr-2 mb-2\">\n")
+			fieldsJSX.WriteString("            <Image source={{ uri }} style={{ width: 88, height: 88, borderRadius: 14 }} contentFit=\"cover\" />\n")
+			fieldsJSX.WriteString("            <Pressable onPress={() => { " + prevsSetter + "((p) => p.filter((_, i) => i !== idx)); " + urlsSetter + "((p) => p.filter((_, i) => i !== idx)); }} className=\"absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-black/70 items-center justify-center\">\n")
+			fieldsJSX.WriteString("              <Ionicons name=\"close\" size={14} color=\"#fff\" />\n")
+			fieldsJSX.WriteString("            </Pressable>\n")
+			fieldsJSX.WriteString("          </View>\n")
+			fieldsJSX.WriteString("        ))}\n")
+			fieldsJSX.WriteString("        <Pressable onPress={() => openPicker(true, (u) => " + prevsSetter + "((p) => [...p, ...u]), (urls) => " + urlsSetter + "((p) => [...p, ...urls]))} className=\"w-[88px] h-[88px] rounded-2xl border border-dashed border-[#E5E7EB] dark:border-[#2a2a3a] items-center justify-center bg-white dark:bg-[#111118]\">\n")
+			fieldsJSX.WriteString("          {uploading ? <ActivityIndicator color=\"#6c5ce7\" /> : <Ionicons name=\"add\" size={26} color=\"#9CA3AF\" />}\n")
+			fieldsJSX.WriteString("        </Pressable>\n")
+			fieldsJSX.WriteString("      </View>\n")
+
+		case f.IsFile():
 			hasFile = true
 			urlVar := camel + "Url"
 			urlSetter := "set" + pascal + "Url"
@@ -831,7 +857,7 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
 			stateLines.WriteString("  const [" + previewVar + ", " + previewSetter + "] = useState<string | null>(null);\n")
 			payload.WriteString("        " + n + ": " + urlVar + " ? { url: " + urlVar + " } : undefined,\n")
 			fieldsJSX.WriteString("      <Text className={labelClass}>" + label + "</Text>\n")
-			fieldsJSX.WriteString("      <Pressable onPress={() => openPicker(" + urlSetter + ", " + previewSetter + ")} className=\"mb-4 h-40 rounded-2xl border border-dashed border-[#E5E7EB] dark:border-[#2a2a3a] items-center justify-center overflow-hidden bg-white dark:bg-[#111118]\">\n")
+			fieldsJSX.WriteString("      <Pressable onPress={() => openPicker(false, (u) => " + previewSetter + "(u[0]), (urls) => " + urlSetter + "(urls[0]))} className=\"mb-4 h-40 rounded-2xl border border-dashed border-[#E5E7EB] dark:border-[#2a2a3a] items-center justify-center overflow-hidden bg-white dark:bg-[#111118]\">\n")
 			fieldsJSX.WriteString("        {" + previewVar + " ? (\n")
 			fieldsJSX.WriteString("          <>\n")
 			fieldsJSX.WriteString("            <Image source={{ uri: " + previewVar + " }} style={{ width: \"100%\", height: \"100%\" }} contentFit=\"cover\" />\n")
@@ -890,15 +916,21 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
 	if hasFile {
 		fileImports = "import { useRef } from \"react\";\nimport { Image } from \"expo-image\";\nimport { uploadLocalFile } from \"@/lib/upload\";\nimport { resolveImageUrl } from \"@/lib/images\";\nimport { ImagePickerSheet } from \"@/components/ui/image-picker-sheet\";\n"
 		pickHandler = `
-  // A single picker sheet serves every image field: openPicker points it at the
-  // tapped field's setters, we show the picked LOCAL image instantly, upload it
-  // in the background, then store the returned URL for the payload.
+  // One picker sheet serves every image field. openPicker aims it at the tapped
+  // field (single or multi), we show the picked LOCAL images instantly, upload
+  // them in the background, then hand back the stored URLs for the payload.
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerMultiple, setPickerMultiple] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const pickerTarget = useRef<{ setUrl: (u: string) => void; setPreview: (u: string) => void } | null>(null);
+  const pickerTarget = useRef<{ onPreview: (uris: string[]) => void; onUploaded: (urls: string[]) => void } | null>(null);
 
-  const openPicker = (setUrl: (u: string) => void, setPreview: (u: string) => void) => {
-    pickerTarget.current = { setUrl, setPreview };
+  const openPicker = (
+    multiple: boolean,
+    onPreview: (uris: string[]) => void,
+    onUploaded: (urls: string[]) => void,
+  ) => {
+    pickerTarget.current = { onPreview, onUploaded };
+    setPickerMultiple(multiple);
     setPickerOpen(true);
   };
 
@@ -906,11 +938,14 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
     setPickerOpen(false);
     const target = pickerTarget.current;
     if (!uris.length || !target) return;
-    target.setPreview(uris[0]);
+    target.onPreview(uris);
     setUploading(true);
     try {
-      const url = await uploadLocalFile(uris[0]);
-      target.setUrl(url);
+      const urls: string[] = [];
+      for (const uri of uris) {
+        urls.push(await uploadLocalFile(uri));
+      }
+      target.onUploaded(urls);
     } catch (e: any) {
       Alert.alert("Upload failed", e.message || "Please try again");
     } finally {
@@ -918,7 +953,7 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
     }
   };
 `
-		pickSheet = "      <ImagePickerSheet visible={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={onImagesSelected} />\n"
+		pickSheet = "      <ImagePickerSheet visible={pickerOpen} multiple={pickerMultiple} onClose={() => setPickerOpen(false)} onSelect={onImagesSelected} />\n"
 	}
 
 	tmpl := `import { useState } from "react";

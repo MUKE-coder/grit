@@ -28,6 +28,29 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.75 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.75
+                </span>
+                <span className="text-sm text-muted-foreground">July 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Multi-image fields on mobile.</strong> A{' '}
+                  <code>files</code> field (<code>name:files:image</code>) now
+                  renders a proper multi-picker: select several photos from the
+                  gallery at once, see them as a grid of removable thumbnails,
+                  each uploaded in the background, and the payload carries an
+                  array of file references. Single <code>file</code> fields stay
+                  single-select. The picker sheet already supported multi-select;
+                  generated forms now use it for array fields.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.74 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
