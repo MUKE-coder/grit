@@ -287,6 +287,22 @@ func (g *Generator) injectAll(names Names) error {
 	return nil
 }
 
+// alreadyInjected reports whether code is already present in content,
+// ignoring differences in whitespace/indentation (so a gofmt'd or
+// hand-reindented file still matches). This is what makes re-running
+// `grit generate resource` on an existing resource idempotent: the second
+// run finds each of its injections already in place and skips them, instead
+// of appending duplicates that break the build (duplicate switch cases,
+// routes, exports, …).
+func alreadyInjected(content, code string) bool {
+	norm := func(s string) string { return strings.Join(strings.Fields(s), " ") }
+	needle := norm(code)
+	if needle == "" {
+		return false
+	}
+	return strings.Contains(norm(content), needle)
+}
+
 // injectInline inserts code directly before a marker on the same line.
 func injectInline(filePath, marker, code string) error {
 	data, err := os.ReadFile(filePath)
@@ -295,6 +311,9 @@ func injectInline(filePath, marker, code string) error {
 	}
 
 	content := string(data)
+	if alreadyInjected(content, code) {
+		return nil
+	}
 	idx := strings.Index(content, marker)
 	if idx == -1 {
 		return fmt.Errorf("marker %q not found in %s", marker, filePath)
@@ -312,6 +331,9 @@ func injectBefore(filePath, marker, code string) error {
 	}
 
 	content := string(data)
+	if alreadyInjected(content, code) {
+		return nil
+	}
 
 	// v3.31.48 -- find the marker as a standalone line (whitespace
 	// only before, whitespace or end of line after). Prior versions

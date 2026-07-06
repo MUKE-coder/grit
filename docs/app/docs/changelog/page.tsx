@@ -28,6 +28,32 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.60 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.60
+                </span>
+                <span className="text-sm text-muted-foreground">July 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>generate resource is now idempotent.</strong> Re-running{' '}
+                  <code>grit generate resource &lt;Name&gt;</code> for a resource that already
+                  exists used to append duplicate injections — duplicate switch cases, routes and
+                  exports — which broke the API build. Now every injection is skipped when it&apos;s
+                  already present.
+                </p>
+                <p>
+                  The two low-level inject helpers gained a whitespace-insensitive
+                  &quot;already there?&quot; guard, so a second run finds each of its injections in
+                  place and does nothing (files are also just overwritten). Safe to re-run to pick
+                  up regenerated files, or after editing a resource&apos;s fields.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.59 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
