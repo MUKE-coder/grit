@@ -28,6 +28,36 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.70 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.70
+                </span>
+                <span className="text-sm text-muted-foreground">July 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>A proper image picker for mobile forms.</strong> Tapping
+                  an image field used to jump straight into Android&apos;s system
+                  crop screen — whose only button was CROP, with no clear
+                  &quot;use this photo&quot; and no permission prompt of our own.
+                </p>
+                <p>
+                  Now it opens a clean, themed <strong>picker sheet</strong>:
+                  choose <em>Library</em> or <em>Camera</em> (with a friendly
+                  permission prompt and an &quot;Open Settings&quot; fallback if
+                  access is off), then <strong>preview</strong> the selection and
+                  decide — <strong>Use photo</strong>, <strong>Crop</strong>{' '}
+                  (the native editor, only when you ask for it), or choose a
+                  different one. The dropzone shows a spinner while the upload
+                  runs. The generated resource form uses it for every image
+                  field; regenerating any resource upgrades an existing app.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.69 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

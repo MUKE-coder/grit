@@ -38,6 +38,12 @@ func (g *Generator) writeMobileFiles(names Names) error {
 	if err := g.ensureMobileExportHelper(); err != nil {
 		return err
 	}
+	if err := g.ensureMobileUploadHelper(); err != nil {
+		return err
+	}
+	if err := g.ensureMobileImagePickerSheet(); err != nil {
+		return err
+	}
 	if err := g.ensureMobileImportHelper(); err != nil {
 		return err
 	}
@@ -799,13 +805,15 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
 			stateLines.WriteString("  const [" + urlVar + ", " + urlSetter + "] = useState<string | null>(i." + n + "?.url ?? null);\n")
 			payload.WriteString("        " + n + ": " + urlVar + " ? { url: " + urlVar + " } : undefined,\n")
 			fieldsJSX.WriteString("      <Text className={labelClass}>" + label + "</Text>\n")
-			fieldsJSX.WriteString("      <Pressable onPress={() => onPickImage(" + urlSetter + ")} className=\"mb-4 h-40 rounded-2xl border border-dashed border-[#E5E7EB] dark:border-[#2a2a3a] items-center justify-center overflow-hidden bg-white dark:bg-[#111118]\">\n")
-			fieldsJSX.WriteString("        {" + urlVar + " ? (\n")
+			fieldsJSX.WriteString("      <Pressable onPress={() => openPicker(" + urlSetter + ")} className=\"mb-4 h-40 rounded-2xl border border-dashed border-[#E5E7EB] dark:border-[#2a2a3a] items-center justify-center overflow-hidden bg-white dark:bg-[#111118]\">\n")
+			fieldsJSX.WriteString("        {uploading ? (\n")
+			fieldsJSX.WriteString("          <ActivityIndicator color=\"#6c5ce7\" />\n")
+			fieldsJSX.WriteString("        ) : " + urlVar + " ? (\n")
 			fieldsJSX.WriteString("          <Image source={{ uri: " + urlVar + " }} style={{ width: \"100%\", height: \"100%\" }} contentFit=\"cover\" />\n")
 			fieldsJSX.WriteString("        ) : (\n")
 			fieldsJSX.WriteString("          <View className=\"items-center\">\n")
-			fieldsJSX.WriteString("            <Ionicons name=\"cloud-upload-outline\" size={28} color=\"#9CA3AF\" />\n")
-			fieldsJSX.WriteString("            <Text className=\"text-[#6B7280] dark:text-[#9090a8] mt-2 text-[13px]\">Tap to upload</Text>\n")
+			fieldsJSX.WriteString("            <Ionicons name=\"image-outline\" size={28} color=\"#9CA3AF\" />\n")
+			fieldsJSX.WriteString("            <Text className=\"text-[#6B7280] dark:text-[#9090a8] mt-2 text-[13px]\">Tap to add a photo</Text>\n")
 			fieldsJSX.WriteString("          </View>\n")
 			fieldsJSX.WriteString("        )}\n")
 			fieldsJSX.WriteString("      </Pressable>\n")
@@ -847,18 +855,37 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
 
 	fileImports := ""
 	pickHandler := ""
+	pickSheet := ""
 	if hasFile {
-		fileImports = "import { Image } from \"expo-image\";\nimport { pickAndUploadImage } from \"@/lib/upload\";\n"
+		fileImports = "import { useRef } from \"react\";\nimport { Image } from \"expo-image\";\nimport { uploadLocalFile } from \"@/lib/upload\";\nimport { ImagePickerSheet } from \"@/components/ui/image-picker-sheet\";\n"
 		pickHandler = `
-  const onPickImage = async (setter: (u: string) => void) => {
+  // A single picker sheet serves every image field: openPicker points it at the
+  // tapped field's setter, then the chosen local image is uploaded and stored.
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const pickerTarget = useRef<((u: string) => void) | null>(null);
+
+  const openPicker = (setter: (u: string) => void) => {
+    pickerTarget.current = setter;
+    setPickerOpen(true);
+  };
+
+  const onImagesSelected = async (uris: string[]) => {
+    setPickerOpen(false);
+    const setter = pickerTarget.current;
+    if (!uris.length || !setter) return;
+    setUploading(true);
     try {
-      const url = await pickAndUploadImage();
-      if (url) setter(url);
+      const url = await uploadLocalFile(uris[0]);
+      setter(url);
     } catch (e: any) {
       Alert.alert("Upload failed", e.message || "Please try again");
+    } finally {
+      setUploading(false);
     }
   };
 `
+		pickSheet = "      <ImagePickerSheet visible={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={onImagesSelected} />\n"
 	}
 
 	tmpl := `import { useState } from "react";
@@ -916,11 +943,12 @@ __FIELDS__
           <Text className="text-white font-semibold text-[15px]">{submitLabel || "Save"}</Text>
         )}
       </Pressable>
-    </View>
+__PICK_SHEET__    </View>
   );
 }
 `
 	content := g.applyMobileTokens(tmpl, names)
+	content = strings.ReplaceAll(content, "__PICK_SHEET__", pickSheet)
 	content = strings.ReplaceAll(content, "__FILE_IMPORTS__", fileImports)
 	content = strings.ReplaceAll(content, "__EXTRA_IMPORTS__", extraImports.String())
 	content = strings.ReplaceAll(content, "__STATE__", strings.TrimRight(stateLines.String(), "\n"))
@@ -1092,6 +1120,21 @@ export async function exportResourceCsv(plural: string, query = ""): Promise<str
 func (g *Generator) ensureMobileImportHelper() error {
 	path := filepath.Join(g.mobileRoot(), "lib", "import.ts")
 	return writeFileWithDirs(path, scaffold.ExpoImportHelper())
+}
+
+// ensureMobileUploadHelper / ensureMobileImagePickerSheet keep the image-upload
+// stack current: the generated form imports uploadLocalFile from lib/upload.ts
+// and the ImagePickerSheet component, so both must exist at the versions the
+// form expects. Overwritten on every generate (framework plumbing) so older
+// projects gain the fetch+FormData upload and the permission-aware picker.
+func (g *Generator) ensureMobileUploadHelper() error {
+	path := filepath.Join(g.mobileRoot(), "lib", "upload.ts")
+	return writeFileWithDirs(path, scaffold.ExpoUploadHelper())
+}
+
+func (g *Generator) ensureMobileImagePickerSheet() error {
+	path := filepath.Join(g.mobileRoot(), "components", "ui", "image-picker-sheet.tsx")
+	return writeFileWithDirs(path, scaffold.ExpoImagePickerSheet())
 }
 
 func (g *Generator) ensureMobileImportStore() error {

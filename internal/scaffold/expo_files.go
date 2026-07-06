@@ -40,12 +40,13 @@ func writeExpoFiles(root string, opts Options) error {
 		filepath.Join(expoRoot, "app", "blogs", "new.tsx"):                        expoBlogCreateScreen(),
 		filepath.Join(expoRoot, "app", "users", "new.tsx"):                        expoUserCreateScreen(),
 		filepath.Join(expoRoot, "hooks", "use-blogs.ts"):                          expoBlogHook(),
-		filepath.Join(expoRoot, "lib", "upload.ts"):                               expoUploadHelper(),
+		filepath.Join(expoRoot, "lib", "upload.ts"):                               ExpoUploadHelper(),
 		filepath.Join(expoRoot, "lib", "export.ts"):                               expoExportHelper(),
 		filepath.Join(expoRoot, "lib", "import.ts"):                               ExpoImportHelper(),
 		filepath.Join(expoRoot, "lib", "import-progress.ts"):                      ExpoImportProgressStore(),
 		filepath.Join(expoRoot, "components", "ui", "import-sheet.tsx"):           ExpoImportSheet(),
 		filepath.Join(expoRoot, "components", "ui", "import-progress-banner.tsx"): ExpoImportBanner(),
+		filepath.Join(expoRoot, "components", "ui", "image-picker-sheet.tsx"):     ExpoImagePickerSheet(),
 		filepath.Join(expoRoot, "lib", "api.ts"):                                  expoAPIClient(),
 		filepath.Join(expoRoot, "lib", "auth.tsx"):                                expoAuthProvider(),
 		filepath.Join(expoRoot, "lib", "theme.tsx"):                               expoThemeProvider(),
@@ -160,7 +161,8 @@ func expoAppJSON(opts Options) string {
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow this app to access your photos to set a profile picture."
+          "photosPermission": "Allow this app to access your photos to upload images.",
+          "cameraPermission": "Allow this app to use your camera to take photos to upload."
         }
       ]
     ],
