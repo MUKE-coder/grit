@@ -28,6 +28,41 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.71 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-danger/15 px-3 py-1 text-sm font-semibold text-danger">
+                  v3.31.71 · critical fix
+                </span>
+                <span className="text-sm text-muted-foreground">July 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fix: request bodies larger than 4 KB were silently
+                  truncated.</strong> Pulse&apos;s error-tracking middleware
+                  captures a request-body snippet for error context, but it
+                  restored <em>only</em> that snippet to the request — discarding
+                  everything past <code>MaxBodySize</code> (default 4096 bytes).
+                  Every request that sends a <code>Content-Length</code> (mobile
+                  apps, native/CLI clients, <code>curl</code>) reached handlers
+                  with a body cut to 4 KB, so <strong>file uploads and any large
+                  JSON POST failed</strong> with confusing &quot;no file&quot; /
+                  parse errors. Browsers were unaffected because <code>fetch</code>
+                  sends multipart <em>chunked</em> (no Content-Length), which
+                  skipped the capture — which is why the web dropzone always
+                  worked while mobile never did.
+                </p>
+                <p>
+                  The scaffold now mounts Pulse with{' '}
+                  <code>WithRequestBodyCaptureDisabled()</code>, so the full body
+                  always reaches your handlers. This affects every generated API;
+                  regenerate or add that option to your Pulse mount. Mobile image
+                  uploads (avatar, resource forms, imports) now work end-to-end.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.70 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

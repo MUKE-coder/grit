@@ -6523,6 +6523,14 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			pulse.WithCredentials(cfg.PulseUsername, cfg.PulsePassword),
 			pulse.WithExcludePaths("/studio/*", "/sentinel/*", "/docs/*", "/pulse/*"),
 			pulse.WithPrometheus(),
+			// CRITICAL: Pulse's error middleware captures a request-body snippet
+			// (MaxBodySize, default 4096) for error context, but restores ONLY
+			// that snippet to the request — it discards everything past 4096
+			// bytes. That truncates EVERY request carrying a Content-Length
+			// (mobile / native / curl clients; browsers dodge it by sending
+			// chunked), silently breaking file uploads and any large JSON POST.
+			// Disable body capture so the full body always reaches the handler.
+			pulse.WithRequestBodyCaptureDisabled(),
 		}
 		if cfg.IsDevelopment() {
 			pulseOpts = append(pulseOpts, pulse.WithDevMode())
