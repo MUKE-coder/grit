@@ -69,8 +69,10 @@ export async function pickAndUploadImage(): Promise<string | null> {
 }
 
 func expoExploreUsers() string {
-	return `import { View, Text, FlatList, ActivityIndicator, RefreshControl } from "react-native";
+	return `import { View, Text, FlatList, Pressable, ActivityIndicator, RefreshControl } from "react-native";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { api } from "@/lib/api";
 
@@ -90,6 +92,7 @@ const ROLE_TINT: Record<string, string> = {
 };
 
 export default function UsersScreen() {
+  const router = useRouter();
   // GET /users is an admin route — the seeded admin account can browse it.
   const query = useInfiniteQuery({
     queryKey: ["explore-users"],
@@ -125,7 +128,16 @@ export default function UsersScreen() {
 
   return (
     <View className="flex-1 bg-[#F4F4F6] dark:bg-[#0a0a0f]">
-      <ScreenHeader title="Users" subtitle="All user accounts" showBack />
+      <ScreenHeader
+        title="Users"
+        subtitle="All user accounts"
+        showBack
+        right={
+          <Pressable onPress={() => router.push("/users/new")} hitSlop={8}>
+            <Ionicons name="add-circle" size={28} color="#6c5ce7" />
+          </Pressable>
+        }
+      />
       <FlatList
         data={users}
         keyExtractor={(item) => item.id}

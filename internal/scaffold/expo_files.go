@@ -35,6 +35,10 @@ func writeExpoFiles(root string, opts Options) error {
 		filepath.Join(expoRoot, "app", "explore", "content.tsx"):           expoExploreContent(),
 		filepath.Join(expoRoot, "app", "explore", "integrations.tsx"):      expoExploreIntegrations(),
 		filepath.Join(expoRoot, "app", "change-password.tsx"):              expoChangePasswordScreen(),
+		filepath.Join(expoRoot, "app", "blogs", "index.tsx"):               expoBlogListScreen(),
+		filepath.Join(expoRoot, "app", "blogs", "new.tsx"):                 expoBlogCreateScreen(),
+		filepath.Join(expoRoot, "app", "users", "new.tsx"):                 expoUserCreateScreen(),
+		filepath.Join(expoRoot, "hooks", "use-blogs.ts"):                   expoBlogHook(),
 		filepath.Join(expoRoot, "lib", "upload.ts"):                        expoUploadHelper(),
 		filepath.Join(expoRoot, "lib", "api.ts"):                           expoAPIClient(),
 		filepath.Join(expoRoot, "lib", "auth.tsx"):                         expoAuthProvider(),
@@ -1410,11 +1414,12 @@ interface LinkItem {
 // Generated resources. ` + "`" + `grit generate resource` + "`" + ` injects an entry below the
 // marker for every resource, so each one's list screen is reachable here.
 const resources: LinkItem[] = [
+  { title: "Users", description: "Manage user accounts", icon: "people-outline", color: "#6c5ce7", route: "/explore/users" },
+  { title: "Blogs", description: "Posts and articles", icon: "newspaper-outline", color: "#00b894", route: "/blogs" },
   // grit:mobile-resources
 ];
 
 const tools: LinkItem[] = [
-  { title: "Users", description: "Manage user accounts", icon: "people-outline", color: "#6c5ce7", route: "/explore/users" },
   { title: "Content", description: "Posts, pages, and media", icon: "document-text-outline", color: "#00b894", route: "/explore/content" },
   { title: "Analytics", description: "Usage and performance", icon: "bar-chart-outline", color: "#74b9ff", route: "/explore/analytics" },
   { title: "Notifications", description: "Alerts and messages", icon: "notifications-outline", color: "#fdcb6e", route: "/explore/notifications" },

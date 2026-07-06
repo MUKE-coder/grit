@@ -28,6 +28,33 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.61 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.61
+                </span>
+                <span className="text-sm text-muted-foreground">July 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Mobile: built-in Blog &amp; User resources.</strong> The scaffolded Expo
+                  app now surfaces the framework&apos;s built-in Blog feature and lets you add
+                  users — no admin panel required.
+                </p>
+                <p>
+                  The More tab&apos;s <strong>Resources</strong> section now leads with{' '}
+                  <strong>Users</strong> and <strong>Blogs</strong> (alongside your generated
+                  resources). Blogs get a paginated, searchable list plus a create screen (title,
+                  excerpt, content, cover image upload, publish toggle) backed by{' '}
+                  <code>/admin/blogs</code> — the posts <code>grit seed</code> already creates now
+                  have a home. The Users list gained a <code>+</code> to create a user (name,
+                  email, password, role, active) via <code>/admin/users</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.60 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
