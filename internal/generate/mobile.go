@@ -403,6 +403,65 @@ func (g *Generator) writeMobileListScreen(names Names) error {
 		row.WriteString("      </View>\n")
 	}
 
+	// belongs_to filters: a filter sheet with a relationship picker per FK. The
+	// API already supports ?<fk>=<id>, and the list hook takes those filters.
+	var filterImports, filterQueries, filterJSX strings.Builder
+	seenFImport := map[string]bool{}
+	hasFilters := false
+	for _, f := range g.Definition.Fields {
+		if !f.IsBelongsTo() {
+			continue
+		}
+		hasFilters = true
+		relNames := MakeNames(f.RelatedModelName())
+		hook := "use" + relNames.PluralPascal
+		imp := "@/hooks/use-" + relNames.PluralKebab
+		if !seenFImport[imp] {
+			filterImports.WriteString("import { " + hook + " } from \"" + imp + "\";\n")
+			seenFImport[imp] = true
+		}
+		fk := f.FKColumnName()
+		optsVar := "f" + toPascalCase(fk) + "Opts"
+		qVar := "f" + toPascalCase(fk) + "Query"
+		filterQueries.WriteString("  const " + qVar + " = " + hook + "();\n")
+		filterQueries.WriteString("  const " + optsVar + " = " + qVar + ".data?.pages.flatMap((p: any) => p.data) ?? [];\n")
+		unsel := "\"px-4 py-2 mr-2 rounded-full bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a]\""
+		sel := "\"px-4 py-2 mr-2 rounded-full bg-[#6c5ce7]\""
+		filterJSX.WriteString("        <Text className=\"text-[13px] font-semibold text-[#6B7280] dark:text-[#9090a8] mb-2\">" + f.RelatedModelName() + "</Text>\n")
+		filterJSX.WriteString("        <ScrollView horizontal showsHorizontalScrollIndicator={false} className=\"mb-4\">\n")
+		filterJSX.WriteString("          <Pressable onPress={() => setFilters((f) => { const n = { ...f }; delete n." + fk + "; return n; })} className={!filters." + fk + " ? " + sel + " : " + unsel + "}>\n")
+		filterJSX.WriteString("            <Text className={!filters." + fk + " ? \"text-white font-medium\" : \"text-[#0F1018] dark:text-white\"}>All</Text>\n")
+		filterJSX.WriteString("          </Pressable>\n")
+		filterJSX.WriteString("          {" + optsVar + ".map((opt: any) => (\n")
+		filterJSX.WriteString("            <Pressable key={opt.id} onPress={() => setFilters((f) => ({ ...f, " + fk + ": opt.id }))} className={filters." + fk + " === opt.id ? " + sel + " : " + unsel + "}>\n")
+		filterJSX.WriteString("              <Text className={filters." + fk + " === opt.id ? \"text-white font-medium\" : \"text-[#0F1018] dark:text-white\"}>{opt.name || opt.title || opt.id}</Text>\n")
+		filterJSX.WriteString("            </Pressable>\n")
+		filterJSX.WriteString("          ))}\n")
+		filterJSX.WriteString("        </ScrollView>\n")
+	}
+
+	filtersArg := "{}"
+	filterState, filterIcon, filterSheet := "", "", ""
+	if hasFilters {
+		filtersArg = "filters"
+		filterState = "  const [filters, setFilters] = useState<Record<string, string>>({});\n  const [filterOpen, setFilterOpen] = useState(false);\n"
+		filterIcon = "            <Pressable onPress={() => setFilterOpen(true)} hitSlop={8} className=\"mr-4\">\n" +
+			"              <View>\n" +
+			"                <Ionicons name=\"funnel-outline\" size={21} color=\"#6c5ce7\" />\n" +
+			"                {Object.keys(filters).length > 0 ? <View className=\"absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#ff6b6b]\" /> : null}\n" +
+			"              </View>\n" +
+			"            </Pressable>\n"
+		filterSheet = "      <FormSheet visible={filterOpen} onClose={() => setFilterOpen(false)} title=\"Filters\">\n" +
+			filterJSX.String() +
+			"        <Pressable onPress={() => setFilters({})} className=\"border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-full py-3 items-center mb-3\">\n" +
+			"          <Text className=\"text-[#6B7280] dark:text-[#9090a8] font-semibold\">Clear all</Text>\n" +
+			"        </Pressable>\n" +
+			"        <Pressable onPress={() => setFilterOpen(false)} className=\"bg-[#6c5ce7] rounded-full py-4 items-center\">\n" +
+			"          <Text className=\"text-white font-semibold text-[15px]\">Done</Text>\n" +
+			"        </Pressable>\n" +
+			"      </FormSheet>\n"
+	}
+
 	tmpl := `import { useState } from "react";
 import { View, Text, TextInput, ScrollView, FlatList, Pressable, ActivityIndicator, RefreshControl, Alert } from "react-native";
 import { useRouter } from "expo-router";
@@ -413,7 +472,7 @@ import { useTheme } from "@/lib/theme";
 import { use__PLURAL_PASCAL__, useCreate__PASCAL__, type __PASCAL__ } from "@/hooks/use-__KEBAB__";
 import { __PASCAL__Form } from "@/components/resource-forms/__KEBAB__-form";
 import { exportResourceCsv } from "@/lib/export";
-
+__FILTER_IMPORTS__
 const TABLE_WIDTH = __TABLE_WIDTH__;
 
 export default function __PLURAL_PASCAL__Screen() {
@@ -423,8 +482,8 @@ export default function __PLURAL_PASCAL__Screen() {
   const [sortBy, setSortBy] = useState("created_at");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [sheetOpen, setSheetOpen] = useState(false);
-  const create = useCreate__PASCAL__();
-  const query = use__PLURAL_PASCAL__(search, {}, sortBy, sortOrder);
+__FILTER_STATE__  const create = useCreate__PASCAL__();
+__FILTER_QUERIES__  const query = use__PLURAL_PASCAL__(search, __FILTERS_ARG__, sortBy, sortOrder);
   const items = query.data?.pages.flatMap((p) => p.data) ?? [];
 
   const onSort = (key: string) => {
@@ -461,7 +520,7 @@ __COLUMNS_ROW__    </Pressable>
         showBack
         right={
           <View className="flex-row items-center">
-            <Pressable onPress={onExport} hitSlop={8} className="mr-4">
+__FILTER_ICON__            <Pressable onPress={onExport} hitSlop={8} className="mr-4">
               <Ionicons name="download-outline" size={23} color="#6c5ce7" />
             </Pressable>
             <Pressable onPress={() => setSheetOpen(true)} hitSlop={8}>
@@ -529,7 +588,7 @@ __COLUMNS_HEADER__          </View>
           }}
         />
       </FormSheet>
-    </View>
+__FILTER_SHEET__    </View>
   );
 }
 `
@@ -537,6 +596,12 @@ __COLUMNS_HEADER__          </View>
 	content = strings.ReplaceAll(content, "__TABLE_WIDTH__", strconv.Itoa(total))
 	content = strings.ReplaceAll(content, "__COLUMNS_HEADER__", header.String())
 	content = strings.ReplaceAll(content, "__COLUMNS_ROW__", row.String())
+	content = strings.ReplaceAll(content, "__FILTER_IMPORTS__", strings.TrimRight(filterImports.String(), "\n"))
+	content = strings.ReplaceAll(content, "__FILTER_STATE__", filterState)
+	content = strings.ReplaceAll(content, "__FILTER_QUERIES__", filterQueries.String())
+	content = strings.ReplaceAll(content, "__FILTERS_ARG__", filtersArg)
+	content = strings.ReplaceAll(content, "__FILTER_ICON__", filterIcon)
+	content = strings.ReplaceAll(content, "__FILTER_SHEET__", filterSheet)
 
 	path := filepath.Join(g.mobileRoot(), "app", names.PluralKebab, "index.tsx")
 	return writeFileWithDirs(path, content)

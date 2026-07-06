@@ -28,6 +28,32 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.66 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.66
+                </span>
+                <span className="text-sm text-muted-foreground">July 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Mobile: relationship filters.</strong> Resource lists with a{' '}
+                  <code>belongs_to</code> field gain a funnel action that opens a filter sheet.
+                </p>
+                <p>
+                  The sheet shows a picker per relationship (loaded from the related resource);
+                  pick a value to scope the table (<code>?&lt;fk&gt;=&lt;id&gt;</code>, which the
+                  API already supports), with an <strong>All</strong> chip and a{' '}
+                  <strong>Clear all</strong>. The funnel shows a dot while filters are active, and
+                  export respects them. Resources without a relationship simply don&apos;t show the
+                  funnel. Re-run <code>grit generate resource</code> to pick it up. CSV import is
+                  the last piece.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.65 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
