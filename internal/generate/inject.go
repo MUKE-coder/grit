@@ -107,10 +107,14 @@ func (g *Generator) injectAll(names Names) error {
 			// Default: CRUD in protected, DELETE in admin
 			protectedRoutes := fmt.Sprintf(`		protected.GET("/%s", %sHandler.List)
 		protected.GET("/%s/export", %sHandler.Export)
+		protected.POST("/%s/import", %sHandler.Import)
+		protected.GET("/%s/import/template", %sHandler.Template)
 		protected.GET("/%s/:id", %sHandler.GetByID)
 		protected.POST("/%s", %sHandler.Create)
 		protected.PUT("/%s/:id", %sHandler.Update)
 		protected.PATCH("/%s/:id", %sHandler.Patch)`,
+				names.Plural, names.Camel,
+				names.Plural, names.Camel,
 				names.Plural, names.Camel,
 				names.Plural, names.Camel,
 				names.Plural, names.Camel,

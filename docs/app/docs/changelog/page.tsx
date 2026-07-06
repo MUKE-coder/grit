@@ -28,6 +28,45 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.67 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.67
+                </span>
+                <span className="text-sm text-muted-foreground">July 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>CSV import — bulk-create records from a spreadsheet.</strong>{' '}
+                  <code>grit generate resource</code> now generates a bulk import endpoint (all
+                  architectures) plus a full mobile import flow.
+                </p>
+
+                <h3>Backend (every architecture)</h3>
+                <p>
+                  Each resource gets <code>POST /&lt;plural&gt;/import</code> (upload a CSV → typed
+                  bulk-create) and <code>GET /&lt;plural&gt;/import/template</code> (a ready-to-fill
+                  header CSV). Everything is optional except model-required fields:{' '}
+                  <code>file</code> columns are skipped; a <code>belongs_to</code> is given by{' '}
+                  <strong>name</strong> (a <code>category</code> column, not <code>category_id</code>)
+                  and the related record is looked up and <strong>created if missing</strong>; rows
+                  that hit a unique constraint are <strong>skipped</strong> (safe to re-import) and
+                  other failures are reported per-row.
+                </p>
+
+                <h3>Mobile</h3>
+                <p>
+                  The resource list gains an import action that opens a sheet: <strong>download the
+                  template</strong>, pick a CSV, <strong>preview</strong> the parsed rows, import
+                  with a <strong>progress bar</strong>, then a summary of created / skipped /
+                  failed with per-row errors. Adds <code>expo-document-picker</code> — run{' '}
+                  <code>pnpm i</code>. Background (async) import is the final step.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.66 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

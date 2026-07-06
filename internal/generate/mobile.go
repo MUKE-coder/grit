@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // This file adds Expo (mobile) code generation to `grit generate resource`.
@@ -34,6 +36,12 @@ func (g *Generator) writeMobileFiles(names Names) error {
 		return err
 	}
 	if err := g.ensureMobileExportHelper(); err != nil {
+		return err
+	}
+	if err := g.ensureMobileImportHelper(); err != nil {
+		return err
+	}
+	if err := g.ensureMobileImportSheet(); err != nil {
 		return err
 	}
 	if err := g.writeMobileHook(names); err != nil {
@@ -472,6 +480,7 @@ import { useTheme } from "@/lib/theme";
 import { use__PLURAL_PASCAL__, useCreate__PASCAL__, type __PASCAL__ } from "@/hooks/use-__KEBAB__";
 import { __PASCAL__Form } from "@/components/resource-forms/__KEBAB__-form";
 import { exportResourceCsv } from "@/lib/export";
+import { ImportSheet } from "@/components/ui/import-sheet";
 __FILTER_IMPORTS__
 const TABLE_WIDTH = __TABLE_WIDTH__;
 
@@ -482,6 +491,7 @@ export default function __PLURAL_PASCAL__Screen() {
   const [sortBy, setSortBy] = useState("created_at");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 __FILTER_STATE__  const create = useCreate__PASCAL__();
 __FILTER_QUERIES__  const query = use__PLURAL_PASCAL__(search, __FILTERS_ARG__, sortBy, sortOrder);
   const items = query.data?.pages.flatMap((p) => p.data) ?? [];
@@ -522,6 +532,9 @@ __COLUMNS_ROW__    </Pressable>
           <View className="flex-row items-center">
 __FILTER_ICON__            <Pressable onPress={onExport} hitSlop={8} className="mr-4">
               <Ionicons name="download-outline" size={23} color="#6c5ce7" />
+            </Pressable>
+            <Pressable onPress={() => setImportOpen(true)} hitSlop={8} className="mr-4">
+              <Ionicons name="cloud-upload-outline" size={23} color="#6c5ce7" />
             </Pressable>
             <Pressable onPress={() => setSheetOpen(true)} hitSlop={8}>
               <Ionicons name="add-circle" size={28} color="#6c5ce7" />
@@ -588,7 +601,9 @@ __COLUMNS_HEADER__          </View>
           }}
         />
       </FormSheet>
-__FILTER_SHEET__    </View>
+__FILTER_SHEET__
+      <ImportSheet plural="__PLURAL__" visible={importOpen} onClose={() => setImportOpen(false)} onImported={() => query.refetch()} />
+    </View>
   );
 }
 `
@@ -1056,6 +1071,26 @@ export async function exportResourceCsv(plural: string, query = ""): Promise<str
   return res.uri;
 }
 `
+}
+
+// ensureMobileImportHelper / ensureMobileImportSheet write the CSV import
+// helper (lib/import.ts) and the pick→preview→progress→summary sheet if
+// missing. They reuse the base scaffold's source so there's one copy to
+// maintain. Written once; never overwrite a customised copy.
+func (g *Generator) ensureMobileImportHelper() error {
+	path := filepath.Join(g.mobileRoot(), "lib", "import.ts")
+	if fileExists(path) {
+		return nil
+	}
+	return writeFileWithDirs(path, scaffold.ExpoImportHelper())
+}
+
+func (g *Generator) ensureMobileImportSheet() error {
+	path := filepath.Join(g.mobileRoot(), "components", "ui", "import-sheet.tsx")
+	if fileExists(path) {
+		return nil
+	}
+	return writeFileWithDirs(path, scaffold.ExpoImportSheet())
 }
 
 // ensureMobileFormSheet writes the shared FormSheet bottom-sheet component if

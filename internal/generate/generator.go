@@ -101,6 +101,11 @@ func (g *Generator) Run() error {
 	}
 	fmt.Printf("  ✓ %sinternal/handlers/%s.go\n", apiPrefix, names.Snake)
 
+	if err := g.writeGoImportHandler(names); err != nil {
+		return fmt.Errorf("writing Go import handler: %w", err)
+	}
+	fmt.Printf("  ✓ %sinternal/handlers/%s_import.go\n", apiPrefix, names.Snake)
+
 	// Shared types (monorepo only)
 	sharedDir := filepath.Join(g.Root, "packages", "shared")
 	if dirExists(sharedDir) {
