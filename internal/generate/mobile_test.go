@@ -47,6 +47,8 @@ func TestMobile_GeneratesFilesAndRoutes(t *testing.T) {
 		"app/products/index.tsx",
 		"app/products/[id].tsx",
 		"app/products/new.tsx",
+		"app/products/edit/[id].tsx",
+		"components/resource-forms/products-form.tsx",
 		"components/ui/screen-header.tsx",
 	} {
 		if _, err := os.Stat(filepath.Join(expo, rel)); err != nil {

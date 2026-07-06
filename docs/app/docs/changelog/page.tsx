@@ -28,6 +28,36 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.62 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.62
+                </span>
+                <span className="text-sm text-muted-foreground">July 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Mobile: full CRUD on generated resources.</strong> Generated resources
+                  now support <strong>edit, update and delete</strong>, not just create + read.
+                </p>
+                <p>
+                  <code>grit generate resource</code> now emits a shared{' '}
+                  <code>&lt;Name&gt;Form</code> component (in{' '}
+                  <code>components/resource-forms/</code>) that both the create and edit screens
+                  render — the create page and a new{' '}
+                  <code>app/&lt;plural&gt;/edit/[id].tsx</code> screen pre-fill from the record and
+                  drive <code>useCreate</code> / <code>useUpdate</code>. The detail screen gains{' '}
+                  <strong>Edit</strong> and <strong>Delete</strong> (with a confirm) actions. The
+                  shared form is container-agnostic, ready to drop into a bottom sheet next. Because
+                  generation is now idempotent, re-run{' '}
+                  <code>grit generate resource &lt;Name&gt; --fields …</code> to add CRUD to an
+                  existing resource.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.61 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
