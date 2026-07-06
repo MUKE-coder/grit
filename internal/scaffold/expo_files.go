@@ -41,6 +41,7 @@ func writeExpoFiles(root string, opts Options) error {
 		filepath.Join(expoRoot, "app", "users", "new.tsx"):                        expoUserCreateScreen(),
 		filepath.Join(expoRoot, "hooks", "use-blogs.ts"):                          expoBlogHook(),
 		filepath.Join(expoRoot, "lib", "upload.ts"):                               ExpoUploadHelper(),
+		filepath.Join(expoRoot, "lib", "images.ts"):                               ExpoImageResolver(),
 		filepath.Join(expoRoot, "lib", "export.ts"):                               expoExportHelper(),
 		filepath.Join(expoRoot, "lib", "import.ts"):                               ExpoImportHelper(),
 		filepath.Join(expoRoot, "lib", "import-progress.ts"):                      ExpoImportProgressStore(),

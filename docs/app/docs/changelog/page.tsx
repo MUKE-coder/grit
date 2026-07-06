@@ -28,6 +28,36 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.72 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.72
+                </span>
+                <span className="text-sm text-muted-foreground">July 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Image previews everywhere on mobile.</strong> Generated
+                  resources now show pictures throughout: an instant local preview
+                  in the create/edit form the moment you pick a photo (with an
+                  upload spinner overlay), a thumbnail column in the list table,
+                  and the hero image on the detail screen.
+                </p>
+                <p>
+                  New <code>lib/images.ts</code> → <code>resolveImageUrl()</code>{' '}
+                  fixes the classic dev gotcha: MinIO hands back{' '}
+                  <code>http://localhost:9002/...</code> URLs that a device or
+                  emulator can&apos;t reach (localhost = the device itself). It
+                  rewrites the host to the same dev host the app already uses for
+                  the API, so stored images actually load — while real S3/R2
+                  public URLs pass through untouched. Every generated list, detail
+                  and form image runs through it; regenerating a resource adds it.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.71 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

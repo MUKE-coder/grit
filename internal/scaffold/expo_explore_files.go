@@ -488,6 +488,43 @@ function SummaryRow({ label, value, color }: { label: string; value: number; col
 `
 }
 
+// ExpoImageResolver is lib/images.ts — resolveImageUrl(). Dev storage (MinIO)
+// hands back URLs like http://localhost:9002/... which only resolve on the
+// machine running the server; a device/emulator can't reach "localhost". This
+// rewrites the host to the same dev host the app already uses for the API so
+// stored images actually load in lists, detail screens and previews. In
+// production (real S3/R2 public URLs) it's a no-op. Used everywhere an <Image>
+// renders a stored file URL.
+func ExpoImageResolver() string {
+	return `import Constants from "expo-constants";
+
+// The dev host the app already uses to reach Metro / the API. A device or
+// emulator can't reach "localhost"/"127.0.0.1" — those point at the device
+// itself — so we reuse this host to rewrite storage URLs below.
+function devHost(): string | undefined {
+  const hostUri =
+    Constants.expoConfig?.hostUri ||
+    (Constants.expoGoConfig as any)?.debuggerHost ||
+    (Constants.manifest2 as any)?.extra?.expoGo?.debuggerHost;
+  const host = hostUri ? String(hostUri).split(":")[0] : undefined;
+  return host && host !== "localhost" && host !== "127.0.0.1" ? host : undefined;
+}
+
+// resolveImageUrl makes a stored file URL loadable on a real device/emulator.
+// Dev storage returns http://localhost:<port>/... which only resolves on the
+// server machine; we rewrite the host to the dev host the app talks to for the
+// API, keeping the storage port. Production public URLs pass through unchanged.
+export function resolveImageUrl(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  const host = devHost();
+  if (host) {
+    return url.replace(/^(https?:\/\/)(localhost|127\.0\.0\.1)/i, ` + "`" + `$1${host}` + "`" + `);
+  }
+  return url;
+}
+`
+}
+
 func ExpoUploadHelper() string {
 	return `import * as ImagePicker from "expo-image-picker";
 import * as SecureStore from "expo-secure-store";

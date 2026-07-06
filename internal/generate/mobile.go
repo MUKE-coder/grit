@@ -44,6 +44,9 @@ func (g *Generator) writeMobileFiles(names Names) error {
 	if err := g.ensureMobileImagePickerSheet(); err != nil {
 		return err
 	}
+	if err := g.ensureMobileImageResolver(); err != nil {
+		return err
+	}
 	if err := g.ensureMobileImportHelper(); err != nil {
 		return err
 	}
@@ -402,6 +405,23 @@ func (g *Generator) writeMobileListScreen(names Names) error {
 
 	var header, row strings.Builder
 	total := 0
+
+	// Leading image thumbnail column, so list rows show the record's picture.
+	imageExpr := g.mobileImageExpr("item")
+	imgImport := ""
+	if imageExpr != "" {
+		imgImport = "import { Image } from \"expo-image\";\nimport { resolveImageUrl } from \"@/lib/images\";\n"
+		total += 64
+		header.WriteString("            <View style={{ width: 64 }} className=\"px-3 py-3\" />\n")
+		row.WriteString("      <View style={{ width: 64 }} className=\"px-2 py-2 items-center justify-center\">\n")
+		row.WriteString("        {" + imageExpr + " ? (\n")
+		row.WriteString("          <Image source={{ uri: resolveImageUrl(" + imageExpr + ") }} style={{ width: 44, height: 44, borderRadius: 10 }} contentFit=\"cover\" />\n")
+		row.WriteString("        ) : (\n")
+		row.WriteString("          <View className=\"w-11 h-11 rounded-[10px] bg-[#6c5ce7]/12 items-center justify-center\"><Ionicons name=\"image-outline\" size={18} color=\"#6c5ce7\" /></View>\n")
+		row.WriteString("        )}\n")
+		row.WriteString("      </View>\n")
+	}
+
 	for _, c := range cols {
 		total += c.width
 		w := strconv.Itoa(c.width)
@@ -496,7 +516,7 @@ import { use__PLURAL_PASCAL__, useCreate__PASCAL__, type __PASCAL__ } from "@/ho
 import { __PASCAL__Form } from "@/components/resource-forms/__KEBAB__-form";
 import { exportResourceCsv } from "@/lib/export";
 import { ImportSheet } from "@/components/ui/import-sheet";
-__FILTER_IMPORTS__
+__IMG_IMPORT____FILTER_IMPORTS__
 const TABLE_WIDTH = __TABLE_WIDTH__;
 
 export default function __PLURAL_PASCAL__Screen() {
@@ -623,6 +643,7 @@ __FILTER_SHEET__
 }
 `
 	content := g.applyMobileTokens(tmpl, names)
+	content = strings.ReplaceAll(content, "__IMG_IMPORT__", imgImport)
 	content = strings.ReplaceAll(content, "__TABLE_WIDTH__", strconv.Itoa(total))
 	content = strings.ReplaceAll(content, "__COLUMNS_HEADER__", header.String())
 	content = strings.ReplaceAll(content, "__COLUMNS_ROW__", row.String())
@@ -644,9 +665,9 @@ func (g *Generator) writeMobileDetailScreen(names Names) error {
 	heroImage := ""
 	imageImport := ""
 	if imageExpr != "" {
-		imageImport = "import { Image } from \"expo-image\";\n"
+		imageImport = "import { Image } from \"expo-image\";\nimport { resolveImageUrl } from \"@/lib/images\";\n"
 		heroImage = "{" + imageExpr + " ? (\n" +
-			`            <Image source={{ uri: ` + imageExpr + ` }} style={{ width: "100%", height: 200, borderRadius: 20, marginBottom: 16 }} contentFit="cover" />` +
+			`            <Image source={{ uri: resolveImageUrl(` + imageExpr + `) }} style={{ width: "100%", height: 200, borderRadius: 20, marginBottom: 16 }} contentFit="cover" />` +
 			"\n          ) : null}"
 	}
 
@@ -802,14 +823,24 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
 			hasFile = true
 			urlVar := camel + "Url"
 			urlSetter := "set" + pascal + "Url"
+			previewVar := camel + "Preview"
+			previewSetter := "set" + pascal + "Preview"
 			stateLines.WriteString("  const [" + urlVar + ", " + urlSetter + "] = useState<string | null>(i." + n + "?.url ?? null);\n")
+			// previewVar shows the just-picked LOCAL image instantly; urlVar holds
+			// the uploaded URL for the payload (and the stored image in edit mode).
+			stateLines.WriteString("  const [" + previewVar + ", " + previewSetter + "] = useState<string | null>(null);\n")
 			payload.WriteString("        " + n + ": " + urlVar + " ? { url: " + urlVar + " } : undefined,\n")
 			fieldsJSX.WriteString("      <Text className={labelClass}>" + label + "</Text>\n")
-			fieldsJSX.WriteString("      <Pressable onPress={() => openPicker(" + urlSetter + ")} className=\"mb-4 h-40 rounded-2xl border border-dashed border-[#E5E7EB] dark:border-[#2a2a3a] items-center justify-center overflow-hidden bg-white dark:bg-[#111118]\">\n")
-			fieldsJSX.WriteString("        {uploading ? (\n")
-			fieldsJSX.WriteString("          <ActivityIndicator color=\"#6c5ce7\" />\n")
+			fieldsJSX.WriteString("      <Pressable onPress={() => openPicker(" + urlSetter + ", " + previewSetter + ")} className=\"mb-4 h-40 rounded-2xl border border-dashed border-[#E5E7EB] dark:border-[#2a2a3a] items-center justify-center overflow-hidden bg-white dark:bg-[#111118]\">\n")
+			fieldsJSX.WriteString("        {" + previewVar + " ? (\n")
+			fieldsJSX.WriteString("          <>\n")
+			fieldsJSX.WriteString("            <Image source={{ uri: " + previewVar + " }} style={{ width: \"100%\", height: \"100%\" }} contentFit=\"cover\" />\n")
+			fieldsJSX.WriteString("            {uploading ? (\n")
+			fieldsJSX.WriteString("              <View className=\"absolute inset-0 items-center justify-center bg-black/30\"><ActivityIndicator color=\"#fff\" /></View>\n")
+			fieldsJSX.WriteString("            ) : null}\n")
+			fieldsJSX.WriteString("          </>\n")
 			fieldsJSX.WriteString("        ) : " + urlVar + " ? (\n")
-			fieldsJSX.WriteString("          <Image source={{ uri: " + urlVar + " }} style={{ width: \"100%\", height: \"100%\" }} contentFit=\"cover\" />\n")
+			fieldsJSX.WriteString("          <Image source={{ uri: resolveImageUrl(" + urlVar + ") }} style={{ width: \"100%\", height: \"100%\" }} contentFit=\"cover\" />\n")
 			fieldsJSX.WriteString("        ) : (\n")
 			fieldsJSX.WriteString("          <View className=\"items-center\">\n")
 			fieldsJSX.WriteString("            <Ionicons name=\"image-outline\" size={28} color=\"#9CA3AF\" />\n")
@@ -857,27 +888,29 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
 	pickHandler := ""
 	pickSheet := ""
 	if hasFile {
-		fileImports = "import { useRef } from \"react\";\nimport { Image } from \"expo-image\";\nimport { uploadLocalFile } from \"@/lib/upload\";\nimport { ImagePickerSheet } from \"@/components/ui/image-picker-sheet\";\n"
+		fileImports = "import { useRef } from \"react\";\nimport { Image } from \"expo-image\";\nimport { uploadLocalFile } from \"@/lib/upload\";\nimport { resolveImageUrl } from \"@/lib/images\";\nimport { ImagePickerSheet } from \"@/components/ui/image-picker-sheet\";\n"
 		pickHandler = `
   // A single picker sheet serves every image field: openPicker points it at the
-  // tapped field's setter, then the chosen local image is uploaded and stored.
+  // tapped field's setters, we show the picked LOCAL image instantly, upload it
+  // in the background, then store the returned URL for the payload.
   const [pickerOpen, setPickerOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const pickerTarget = useRef<((u: string) => void) | null>(null);
+  const pickerTarget = useRef<{ setUrl: (u: string) => void; setPreview: (u: string) => void } | null>(null);
 
-  const openPicker = (setter: (u: string) => void) => {
-    pickerTarget.current = setter;
+  const openPicker = (setUrl: (u: string) => void, setPreview: (u: string) => void) => {
+    pickerTarget.current = { setUrl, setPreview };
     setPickerOpen(true);
   };
 
   const onImagesSelected = async (uris: string[]) => {
     setPickerOpen(false);
-    const setter = pickerTarget.current;
-    if (!uris.length || !setter) return;
+    const target = pickerTarget.current;
+    if (!uris.length || !target) return;
+    target.setPreview(uris[0]);
     setUploading(true);
     try {
       const url = await uploadLocalFile(uris[0]);
-      setter(url);
+      target.setUrl(url);
     } catch (e: any) {
       Alert.alert("Upload failed", e.message || "Please try again");
     } finally {
@@ -1135,6 +1168,14 @@ func (g *Generator) ensureMobileUploadHelper() error {
 func (g *Generator) ensureMobileImagePickerSheet() error {
 	path := filepath.Join(g.mobileRoot(), "components", "ui", "image-picker-sheet.tsx")
 	return writeFileWithDirs(path, scaffold.ExpoImagePickerSheet())
+}
+
+// ensureMobileImageResolver writes lib/images.ts (resolveImageUrl), which the
+// generated list, detail and form screens use so stored images load on devices
+// (dev storage URLs point at localhost). Overwritten to stay current.
+func (g *Generator) ensureMobileImageResolver() error {
+	path := filepath.Join(g.mobileRoot(), "lib", "images.ts")
+	return writeFileWithDirs(path, scaffold.ExpoImageResolver())
 }
 
 func (g *Generator) ensureMobileImportStore() error {
