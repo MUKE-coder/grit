@@ -3,6 +3,7 @@ package generate
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -235,12 +236,22 @@ export interface __PLURAL_PASCAL__Page {
 // Paginated, infinite-scroll list. Accumulates pages — call fetchNextPage()
 // when the list reaches its end. Pass equality filters (e.g. a belongs_to
 // foreign key) to scope the list: use__PLURAL_PASCAL__("", { category_id: id }).
-export function use__PLURAL_PASCAL__(search = "", filters: Record<string, string> = {}) {
+export function use__PLURAL_PASCAL__(
+  search = "",
+  filters: Record<string, string> = {},
+  sortBy = "created_at",
+  sortOrder: "asc" | "desc" = "desc",
+) {
   return useInfiniteQuery({
-    queryKey: ["__PLURAL__", { search, filters }],
+    queryKey: ["__PLURAL__", { search, filters, sortBy, sortOrder }],
     initialPageParam: 1,
     queryFn: async ({ pageParam }) => {
-      const qs = new URLSearchParams({ page: String(pageParam), page_size: "20" });
+      const qs = new URLSearchParams({
+        page: String(pageParam),
+        page_size: "20",
+        sort_by: sortBy,
+        sort_order: sortOrder,
+      });
       if (search) qs.set("search", search);
       for (const [k, v] of Object.entries(filters)) if (v) qs.set(k, v);
       return (await api.get("/__PLURAL__?" + qs.toString())) as __PLURAL_PASCAL__Page;
@@ -291,36 +302,107 @@ export function useDelete__PASCAL__() {
 	return writeFileWithDirs(path, content)
 }
 
+// mobileColumn describes one column of the resource table.
+type mobileColumn struct {
+	label    string
+	cellExpr string // JS expression (relative to `item`) for the cell text
+	width    int
+	sortKey  string // API sort_by key; "" = not sortable
+	bold     bool
+}
+
+// mobileColumnFor maps a field to its table cell expression / width / sort key.
+func mobileColumnFor(f Field) (cellExpr string, width int, sortKey string) {
+	n := toSnakeCase(f.Name)
+	switch {
+	case f.IsBelongsTo():
+		base := strings.TrimSuffix(n, "_id")
+		return "(item." + base + " && (item." + base + ".name || item." + base + ".title)) || item." + f.FKColumnName() + " || \"\"", 150, ""
+	case FieldType(f.Type) == FieldBool:
+		return "item." + n + " ? \"Yes\" : \"No\"", 90, ""
+	case FieldType(f.Type) == FieldInt || FieldType(f.Type) == FieldUint || FieldType(f.Type) == FieldFloat:
+		return "String(item." + n + " ?? \"\")", 110, n
+	case FieldType(f.Type) == FieldDatetime || FieldType(f.Type) == FieldDate:
+		return "item." + n + " ? new Date(item." + n + ").toLocaleDateString() : \"\"", 140, n
+	default: // string, slug, text, richtext
+		sk := ""
+		if f.IsSortable() {
+			sk = n
+		}
+		return "String(item." + n + " ?? \"\")", 150, sk
+	}
+}
+
+// mobileTableColumns builds the ordered column set: the title field first
+// (wider, bold), then every scalar/relation field. file/files, many_to_many
+// and string_array are omitted (not cell-friendly).
+func (g *Generator) mobileTableColumns() []mobileColumn {
+	titleN := g.mobileTitleField()
+	var cols []mobileColumn
+
+	var titleField *Field
+	for i := range g.Definition.Fields {
+		if toSnakeCase(g.Definition.Fields[i].Name) == titleN {
+			titleField = &g.Definition.Fields[i]
+			break
+		}
+	}
+	if titleField != nil {
+		expr, _, sk := mobileColumnFor(*titleField)
+		cols = append(cols, mobileColumn{label: humanizeLabel(titleField.Name), cellExpr: expr, width: 180, sortKey: sk, bold: true})
+	} else {
+		cols = append(cols, mobileColumn{label: "ID", cellExpr: "String(item.id).slice(0, 8)", width: 120})
+	}
+
+	for _, f := range g.Definition.Fields {
+		if toSnakeCase(f.Name) == titleN {
+			continue
+		}
+		if f.IsFileField() || f.IsManyToMany() || f.IsStringArray() {
+			continue
+		}
+		label := humanizeLabel(f.Name)
+		if f.IsBelongsTo() {
+			label = f.RelatedModelName()
+		}
+		expr, w, sk := mobileColumnFor(f)
+		cols = append(cols, mobileColumn{label: label, cellExpr: expr, width: w, sortKey: sk})
+	}
+	return cols
+}
+
 func (g *Generator) writeMobileListScreen(names Names) error {
-	title := g.mobileTitleField()
-	imageExpr := g.mobileImageExpr("item")
+	cols := g.mobileTableColumns()
 
-	letterTile := `<View className="w-12 h-12 rounded-xl bg-[#6c5ce7]/12 mr-3 items-center justify-center">
-          <Text className="text-[#6c5ce7] font-bold text-[16px]">{String(item.__TITLE__ || "?").charAt(0).toUpperCase()}</Text>
-        </View>`
-	rowImage := letterTile
-	if imageExpr != "" {
-		rowImage = "{" + imageExpr + " ? (\n" +
-			`          <Image source={{ uri: ` + imageExpr + ` }} style={{ width: 48, height: 48, borderRadius: 12, marginRight: 12 }} contentFit="cover" />` +
-			"\n        ) : (\n          " + letterTile + "\n        )}"
-	}
-
-	subtitle := g.mobileSubtitleField()
-	rowSubtitle := ""
-	if subtitle != "" {
-		rowSubtitle = `<Text className="text-[13px] text-[#6B7280] dark:text-[#9090a8] mt-0.5" numberOfLines={1}>
-          {item.` + subtitle + ` ? String(item.` + subtitle + `) : ""}
-        </Text>`
-	}
-
-	imageImport := ""
-	if imageExpr != "" {
-		imageImport = "import { Image } from \"expo-image\";\n"
+	var header, row strings.Builder
+	total := 0
+	for _, c := range cols {
+		total += c.width
+		w := strconv.Itoa(c.width)
+		// header cell
+		if c.sortKey != "" {
+			header.WriteString("            <Pressable onPress={() => onSort(\"" + c.sortKey + "\")} style={{ width: " + w + " }} className=\"px-3 py-3 flex-row items-center\">\n")
+			header.WriteString("              <Text className=\"text-[12px] font-semibold text-[#6B7280] dark:text-[#9090a8]\" numberOfLines={1}>" + c.label + "</Text>\n")
+			header.WriteString("              {sortBy === \"" + c.sortKey + "\" ? <Ionicons name={sortOrder === \"asc\" ? \"arrow-up\" : \"arrow-down\"} size={12} color=\"#6c5ce7\" style={{ marginLeft: 4 }} /> : null}\n")
+			header.WriteString("            </Pressable>\n")
+		} else {
+			header.WriteString("            <View style={{ width: " + w + " }} className=\"px-3 py-3\">\n")
+			header.WriteString("              <Text className=\"text-[12px] font-semibold text-[#6B7280] dark:text-[#9090a8]\" numberOfLines={1}>" + c.label + "</Text>\n")
+			header.WriteString("            </View>\n")
+		}
+		// row cell
+		textClass := "text-[14px] text-[#0F1018] dark:text-white"
+		if c.bold {
+			textClass = "text-[14px] font-semibold text-[#0F1018] dark:text-white"
+		}
+		row.WriteString("      <View style={{ width: " + w + " }} className=\"px-3 py-3\">\n")
+		row.WriteString("        <Text numberOfLines={1} className=\"" + textClass + "\">{" + c.cellExpr + "}</Text>\n")
+		row.WriteString("      </View>\n")
 	}
 
 	tmpl := `import { useState } from "react";
-import { View, Text, TextInput, FlatList, Pressable, ActivityIndicator, RefreshControl } from "react-native";
-__IMAGE_IMPORT__import { useRouter } from "expo-router";
+import { View, Text, TextInput, ScrollView, FlatList, Pressable, ActivityIndicator, RefreshControl } from "react-native";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { FormSheet } from "@/components/ui/form-sheet";
@@ -328,29 +410,35 @@ import { useTheme } from "@/lib/theme";
 import { use__PLURAL_PASCAL__, useCreate__PASCAL__, type __PASCAL__ } from "@/hooks/use-__KEBAB__";
 import { __PASCAL__Form } from "@/components/resource-forms/__KEBAB__-form";
 
+const TABLE_WIDTH = __TABLE_WIDTH__;
+
 export default function __PLURAL_PASCAL__Screen() {
   const router = useRouter();
   const { palette } = useTheme();
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [sheetOpen, setSheetOpen] = useState(false);
   const create = useCreate__PASCAL__();
-  const query = use__PLURAL_PASCAL__(search);
+  const query = use__PLURAL_PASCAL__(search, {}, sortBy, sortOrder);
   const items = query.data?.pages.flatMap((p) => p.data) ?? [];
+
+  const onSort = (key: string) => {
+    if (sortBy === key) {
+      setSortOrder((o) => (o === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(key);
+      setSortOrder("asc");
+    }
+  };
 
   const renderItem = ({ item }: { item: __PASCAL__ }) => (
     <Pressable
       onPress={() => router.push("/__KEBAB__/" + item.id)}
-      className="flex-row items-center bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#1f1f2b] rounded-2xl p-4 mb-3"
+      className="flex-row items-center border-b border-[#E5E7EB] dark:border-[#1f1f2b] bg-white dark:bg-[#111118]"
+      style={{ width: TABLE_WIDTH }}
     >
-      __ROW_IMAGE__
-      <View className="flex-1">
-        <Text className="text-[15px] font-semibold text-[#0F1018] dark:text-white" numberOfLines={1}>
-          {item.__TITLE__ ? String(item.__TITLE__) : "Untitled"}
-        </Text>
-        __ROW_SUBTITLE__
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={palette.inputIcon} />
-    </Pressable>
+__COLUMNS_ROW__    </Pressable>
   );
 
   return (
@@ -381,34 +469,38 @@ export default function __PLURAL_PASCAL__Screen() {
           />
         </View>
       </View>
-      <FlatList
-        data={items}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
-        onEndReached={() => {
-          if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage();
-        }}
-        onEndReachedThreshold={0.4}
-        refreshControl={
-          <RefreshControl refreshing={query.isRefetching} onRefresh={query.refetch} tintColor={palette.refresh} />
-        }
-        ListEmptyComponent={
-          query.isLoading ? (
-            <ActivityIndicator color={palette.refresh} style={{ marginTop: 40 }} />
-          ) : (
-            <View className="items-center mt-16">
-              <Ionicons name="folder-open-outline" size={40} color={palette.inputIcon} />
-              <Text className="text-[#6B7280] dark:text-[#9090a8] mt-3">No __PLURAL_LOWER__ yet</Text>
-            </View>
-          )
-        }
-        ListFooterComponent={
-          query.isFetchingNextPage ? (
-            <ActivityIndicator color={palette.refresh} style={{ marginVertical: 16 }} />
-          ) : null
-        }
-      />
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={true} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={{ width: TABLE_WIDTH }}>
+          <View className="flex-row border-b-2 border-[#E5E7EB] dark:border-[#2a2a3a]" style={{ width: TABLE_WIDTH }}>
+__COLUMNS_HEADER__          </View>
+          <FlatList
+            data={items}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            style={{ flex: 1 }}
+            onEndReached={() => {
+              if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage();
+            }}
+            onEndReachedThreshold={0.4}
+            refreshControl={
+              <RefreshControl refreshing={query.isRefetching} onRefresh={query.refetch} tintColor={palette.refresh} />
+            }
+            ListEmptyComponent={
+              query.isLoading ? (
+                <ActivityIndicator color={palette.refresh} style={{ marginTop: 40 }} />
+              ) : (
+                <Text className="text-[#6B7280] dark:text-[#9090a8] p-6">No __PLURAL_LOWER__ yet</Text>
+              )
+            }
+            ListFooterComponent={
+              query.isFetchingNextPage ? (
+                <ActivityIndicator color={palette.refresh} style={{ marginVertical: 16 }} />
+              ) : null
+            }
+          />
+        </View>
+      </ScrollView>
 
       <FormSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} title="New __SINGULAR_TITLE__">
         <__PASCAL__Form
@@ -425,10 +517,9 @@ export default function __PLURAL_PASCAL__Screen() {
 }
 `
 	content := g.applyMobileTokens(tmpl, names)
-	content = strings.ReplaceAll(content, "__IMAGE_IMPORT__", imageImport)
-	content = strings.ReplaceAll(content, "__ROW_IMAGE__", rowImage)
-	content = strings.ReplaceAll(content, "__ROW_SUBTITLE__", rowSubtitle)
-	content = strings.ReplaceAll(content, "__TITLE__", title)
+	content = strings.ReplaceAll(content, "__TABLE_WIDTH__", strconv.Itoa(total))
+	content = strings.ReplaceAll(content, "__COLUMNS_HEADER__", header.String())
+	content = strings.ReplaceAll(content, "__COLUMNS_ROW__", row.String())
 
 	path := filepath.Join(g.mobileRoot(), "app", names.PluralKebab, "index.tsx")
 	return writeFileWithDirs(path, content)

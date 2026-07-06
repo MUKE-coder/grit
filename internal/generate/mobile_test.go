@@ -92,11 +92,13 @@ func TestMobile_ScreensContent(t *testing.T) {
 	list := read(t, filepath.Join(expo, "app", "products", "index.tsx"))
 	for _, w := range []string{
 		`import { ScreenHeader } from "@/components/ui/screen-header";`,
-		"useProducts(search)",                 // wired to the hook
-		`router.push("/products/" + item.id)`, // navigates to detail
-		"item.thumbnail?.url",                 // image thumbnail from file field
-		"item.description",                    // subtitle from text field
-		"showBack",                            // back button
+		"useProducts(search, {}, sortBy, sortOrder)", // hook wired with sort
+		"const TABLE_WIDTH =",                        // scrollable table
+		`onSort("name")`,                             // sortable title column
+		"item.description",                           // a field column cell
+		`router.push("/products/" + item.id)`,        // row navigates to detail
+		"FormSheet",                                  // quick-create sheet
+		"showBack",                                   // back button
 	} {
 		if !strings.Contains(list, w) {
 			t.Errorf("list screen missing %q", w)

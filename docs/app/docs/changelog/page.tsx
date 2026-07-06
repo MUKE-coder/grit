@@ -28,6 +28,33 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.64 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.64
+                </span>
+                <span className="text-sm text-muted-foreground">July 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Mobile: scrollable data table.</strong> Generated resource lists now
+                  render as a <strong>horizontally-scrollable table</strong> — a column per field
+                  with tap-to-sort headers — instead of cards.
+                </p>
+                <p>
+                  The title field leads (bold), followed by a column for every scalar and{' '}
+                  <code>belongs_to</code> field; dates, numbers and booleans format per cell. Tap a
+                  sortable header to sort (wired to the API&apos;s <code>sort_by</code> /{' '}
+                  <code>sort_order</code>, which the list hook now accepts), tap a row to open the
+                  detail. Search, infinite-scroll pagination and the quick-create sheet are
+                  unchanged. Re-run <code>grit generate resource</code> to switch a list to the
+                  table.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.63 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
