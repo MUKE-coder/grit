@@ -4,7 +4,7 @@ subtitle: "Point grit generate resource at your Expo app and it scaffolds typed 
 series: "The Daily Grit"
 edition: 3
 date: 2026-07-03
-readingTime: "9 min"
+readingTime: "11 min"
 author: "Muke JohnBaptist"
 tags: [grit, mobile, expo, react-native, code-generation, ecommerce, tutorial]
 canonical: "https://gritframework.dev/blog/build-mobile-app-with-grit"
@@ -14,17 +14,22 @@ A while back we built a full-stack **web** store with Grit — describe your dat
 `grit generate resource` wrote the Go API, the React Query hooks, and an admin panel.
 
 Today we do it on **mobile**. Same command, same models, but now `grit generate
-resource` also scaffolds your **Expo** app: a typed hook, a paginated list screen,
-and a detail screen for every resource. We'll take that and build a real shopping
-flow — **browse categories → tap a category → see its products → open a product →
-scroll its similar products** — and you'll write almost none of the plumbing.
+resource` also scaffolds your **Expo** app — and it does far more than a list. For
+every resource you get a typed hook, a searchable/sortable list **table with image
+thumbnails**, a detail screen, and full **create/edit forms** with a native image
+picker, a searchable relationship select, and CSV import. We'll take all of that and
+build a curated storefront on top — **browse categories → tap a category → see its
+products → open a product → scroll its similar products** — writing almost none of
+the plumbing.
 
 Let's build.
 
 ## 1. Install or update Grit
 
-Mobile code generation landed in Grit **v3.31.56**, so grab the latest release
-before you scaffold.
+The mobile generator has grown a lot since it landed — working image uploads,
+in-form previews, a permission-aware picker, searchable relationship selects,
+multi-image fields, and CSV import all arrived in the **v3.31.6x–v3.31.75** line.
+Grab the latest before you scaffold.
 
 ```bash
 # Install (macOS / Linux)
@@ -38,7 +43,7 @@ grit update
 ```
 
 Prefer Go? `go install github.com/MUKE-coder/grit/v3/cmd/grit@latest`. Confirm you're
-on v3.31.56 or newer:
+on **v3.31.75 or newer** (older builds are missing the upload fixes):
 
 ```bash
 grit version
@@ -78,18 +83,29 @@ grit generate resource Product --fields "name:string,slug:slug,price:int,descrip
 
 ### What you just generated for mobile
 
-Alongside the Go model/service/handler, each command now writes into `apps/expo`:
+Alongside the Go model/service/handler, each command writes a full CRUD experience
+into `apps/expo`:
 
 ```
-✓ apps/expo/hooks/use-<plural>.ts          # typed React Query hook
-✓ apps/expo/app/<plural>/index.tsx          # paginated list screen
-✓ apps/expo/app/<plural>/[id].tsx           # detail screen
-✓ apps/expo/components/ui/screen-header.tsx # shared safe-area header (once)
+✓ hooks/use-<plural>.ts                      # typed React Query hook (list/one/mutations)
+✓ app/<plural>/index.tsx                     # searchable, sortable list TABLE + thumbnails
+✓ app/<plural>/[id].tsx                      # detail screen (hero image + fields)
+✓ app/<plural>/new.tsx  +  edit/[id].tsx     # create + edit screens
+✓ components/resource-forms/<plural>-form.tsx# the shared form (image picker, relation select…)
+✓ components/ui/image-picker-sheet.tsx       # permission → pick/camera → preview → use/crop
+✓ components/ui/relation-select.tsx          # searchable single-select for belongs_to
+✓ lib/upload.ts + lib/images.ts              # reliable uploads + device-safe image URLs
+✓ internal/handlers/<name>_import.go         # CSV bulk import (backend, all architectures)
 ```
 
 expo-router is file-based, so those files **are** the routes — `/products`,
-`/products/:id`, `/categories`, `/categories/:id` all exist now, no registration
-step. Open `apps/expo/hooks/use-products.ts` and you'll find exactly what you need:
+`/products/new`, `/products/:id` all exist now, no registration step. Every resource
+is reachable from the app's **More → Resources** tab, so you get an admin-style
+list/create/edit/detail flow — with working image uploads, in-form previews, a
+searchable relationship picker, multi-image (`files`) fields, CSV export/import, and
+filters — **before you write a line of UI**.
+
+Open `apps/expo/hooks/use-products.ts` and you'll find exactly what you need:
 
 ```ts
 export function useProducts(search = "", filters: Record<string, string> = {}) { … } // infinite list
@@ -100,6 +116,10 @@ export function useCreateProduct() { … }  // + update / delete mutations
 The list hook uses `useInfiniteQuery` — pagination for free — and takes **equality
 filters**. That second argument is the whole reason the store works, and it leans on
 one nice generator detail.
+
+> **Tip:** For a product gallery, make the images field a **`files`** (array) type —
+> `images:files:image` — and the form gives you multi-select from the gallery with a
+> grid of removable thumbnails. A single `file` field stays single-select.
 
 ## 4. Get it running
 
@@ -154,6 +174,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { useTheme } from "@/lib/theme";
+import { resolveImageUrl } from "@/lib/images";
 import { useCategories, type Category } from "@/hooks/use-categories";
 
 export default function ShopScreen() {
@@ -170,7 +191,7 @@ export default function ShopScreen() {
       className="flex-1 m-2 bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#1f1f2b] rounded-2xl overflow-hidden"
     >
       {item.image?.url ? (
-        <Image source={{ uri: item.image.url }} style={{ width: "100%", height: 110 }} contentFit="cover" />
+        <Image source={{ uri: resolveImageUrl(item.image.url) }} style={{ width: "100%", height: 110 }} contentFit="cover" />
       ) : (
         <View style={{ height: 110 }} className="bg-[#6c5ce7]/10 items-center justify-center">
           <Ionicons name="pricetags-outline" size={28} color="#6c5ce7" />
@@ -221,6 +242,14 @@ Then add it to the tab bar in `apps/expo/app/(tabs)/_layout.tsx`:
 `ScreenHeader` (shipped by the scaffold) gives you a safe-area title bar — and a back
 button on any screen that passes `showBack`.
 
+> **Why `resolveImageUrl`?** In dev, MinIO hands back URLs like
+> `http://localhost:9002/…`, and on a phone/emulator `localhost` means *the device
+> itself* — so images silently fail to load. `resolveImageUrl` (in `lib/images.ts`,
+> generated for you) rewrites that host to the same dev machine the app already uses
+> for the API. Wrap **every** stored image URL with it. Real S3/R2 public URLs pass
+> through untouched. The scaffold's `docker-compose.yml` also publishes MinIO on all
+> interfaces (`9002:9000`) so your device can reach it on your LAN.
+
 ## 7. A category's products
 
 Create `apps/expo/app/shop/category/[id].tsx`. This is where the `category_id` filter
@@ -233,6 +262,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { useTheme } from "@/lib/theme";
+import { resolveImageUrl } from "@/lib/images";
 import { useProducts, type Product } from "@/hooks/use-products";
 
 export default function CategoryProductsScreen() {
@@ -248,7 +278,7 @@ export default function CategoryProductsScreen() {
       className="flex-1 m-2 bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#1f1f2b] rounded-2xl overflow-hidden"
     >
       {item.thumbnail?.url ? (
-        <Image source={{ uri: item.thumbnail.url }} style={{ width: "100%", height: 130 }} contentFit="cover" />
+        <Image source={{ uri: resolveImageUrl(item.thumbnail.url) }} style={{ width: "100%", height: 130 }} contentFit="cover" />
       ) : (
         <View style={{ height: 130 }} className="bg-[#6c5ce7]/10 items-center justify-center">
           <Ionicons name="cube-outline" size={28} color="#6c5ce7" />
@@ -299,6 +329,7 @@ import { Image } from "expo-image";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { useTheme } from "@/lib/theme";
+import { resolveImageUrl } from "@/lib/images";
 import { useProduct, useProducts, type Product } from "@/hooks/use-products";
 
 export default function ProductScreen() {
@@ -327,7 +358,7 @@ export default function ProductScreen() {
       <ScreenHeader title="Product" showBack />
       <ScrollView contentContainerStyle={{ paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
         {product.thumbnail?.url ? (
-          <Image source={{ uri: product.thumbnail.url }} style={{ width: "100%", height: 300 }} contentFit="cover" />
+          <Image source={{ uri: resolveImageUrl(product.thumbnail.url) }} style={{ width: "100%", height: 300 }} contentFit="cover" />
         ) : null}
 
         <View className="p-6">
@@ -360,7 +391,7 @@ export default function ProductScreen() {
                   className="w-40 mr-3 bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#1f1f2b] rounded-2xl overflow-hidden"
                 >
                   {item.thumbnail?.url ? (
-                    <Image source={{ uri: item.thumbnail.url }} style={{ width: "100%", height: 110 }} contentFit="cover" />
+                    <Image source={{ uri: resolveImageUrl(item.thumbnail.url) }} style={{ width: "100%", height: 110 }} contentFit="cover" />
                   ) : (
                     <View style={{ height: 110 }} className="bg-[#6c5ce7]/10" />
                   )}
@@ -384,32 +415,29 @@ renders the category chip with zero extra requests.
 
 ## 9. Add a few products and shop
 
-The API and app are already running from step 4. Now add a couple of categories and
-products (through the API, or the admin panel if you scaffolded a `--triple` project),
-each product pointing at a category. Then open the **Shop** tab and tap through:
-category → products → product → similar.
+The API and app are already running from step 4 — and you don't need Postman or an
+admin panel to add data, because the **generated screens are a full CRUD app**. Open
+the **More → Resources** tab, pick **Categories → +**, and the create form gives you
+a text input plus a native **image picker** (permission prompt → pick from gallery or
+camera → instant preview). Add a couple of categories, then do the same under
+**Products**, using the **searchable Category select** to link each product to its
+category.
 
+Everything you upload shows up immediately — the local preview in the form, a
+thumbnail in the list table, the hero image on the detail screen — thanks to the
+upload + `resolveImageUrl` plumbing you got for free.
+
+Now open the **Shop** tab and tap through: category → products → product → similar.
 That whole loop — pagination, relationship filtering, image handling, navigation — is
 running on generated hooks plus the three screens above.
 
 ## The takeaway
 
 `grit generate resource` isn't a backend-only tool anymore. Describe a model once and
-you get a Go API, an admin panel, web hooks — **and** typed mobile screens that
-already know how to paginate, filter by relationship, and render images. The store you
-just built is mostly your generated code; the shop flow is the thin, fun layer on top.
+you get a Go API, an admin panel, web hooks — **and** a complete mobile CRUD app:
+searchable list tables with thumbnails, detail screens, create/edit forms with a real
+image picker, searchable relationship selects, multi-image fields, and CSV import,
+all talking to your API over typed hooks. The store you just built is mostly your
+generated code; the storefront flow is the thin, fun layer on top.
 
 *Go + React. Built with Grit.*
-
----
-
-<!-- THUMBNAIL PROMPT (Neon style) — remove before publishing to the blog -->
-**Gemini thumbnail prompt:** A dark, premium neon-style hero image for a developer
-blog. Deep near-black background (#0a0a0f) with a subtle purple technical grid. Center:
-a glossy smartphone mock rendering a clean mobile shopping app — a 2-column grid of
-product cards with small price tags in electric purple (#6c5ce7). To the left, a
-glowing terminal line reading `grit generate resource Product` with a purple glow.
-Floating connector lines link the terminal to the phone, suggesting "command →
-screens". Top-left corner: the Grit logo (rounded dark app-badge with a bright blue
-"G"). Bold, crisp typography overlay: "Build a mobile store with Grit". Neon accents,
-soft bloom, high contrast, 16:9.
