@@ -28,6 +28,30 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.74 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.74
+                </span>
+                <span className="text-sm text-muted-foreground">July 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Searchable select for relationships on mobile.</strong>{' '}
+                  A <code>belongs_to</code> field in a generated form used to
+                  render every related record as a horizontal row of pills, which
+                  falls apart once there are more than a handful. It now uses a new{' '}
+                  <code>RelationSelect</code> component: a tidy select that opens a
+                  bottom sheet with a pinned search box and a scrollable, filtered
+                  list — pick one and it fills in. Wired into every generated
+                  resource form; regenerating a resource with a relationship picks
+                  it up.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.73 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

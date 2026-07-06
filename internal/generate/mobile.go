@@ -47,6 +47,9 @@ func (g *Generator) writeMobileFiles(names Names) error {
 	if err := g.ensureMobileImageResolver(); err != nil {
 		return err
 	}
+	if err := g.ensureMobileRelationSelect(); err != nil {
+		return err
+	}
 	if err := g.ensureMobileImportHelper(); err != nil {
 		return err
 	}
@@ -800,6 +803,10 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
 				extraImports.WriteString("import { " + hook + " } from \"" + imp + "\";\n")
 				seenImport[imp] = true
 			}
+			if !seenImport["relation-select"] {
+				extraImports.WriteString("import { RelationSelect } from \"@/components/ui/relation-select\";\n")
+				seenImport["relation-select"] = true
+			}
 			fk := f.FKColumnName()
 			fkCamel := lowerCamel(fk)
 			fkSetter := "set" + toPascalCase(fk)
@@ -810,14 +817,7 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
 			optionLines.WriteString("  const " + optsVar + " = " + queryVar + ".data?.pages.flatMap((p: any) => p.data) ?? [];\n")
 			validations.WriteString("    if (!" + fkCamel + ") return setError(\"" + label + " is required\");\n")
 			payload.WriteString("        " + fk + ": " + fkCamel + ",\n")
-			fieldsJSX.WriteString("      <Text className={labelClass}>" + label + "</Text>\n")
-			fieldsJSX.WriteString("      <ScrollView horizontal showsHorizontalScrollIndicator={false} className=\"mb-4\">\n")
-			fieldsJSX.WriteString("        {" + optsVar + ".map((opt: any) => (\n")
-			fieldsJSX.WriteString("          <Pressable key={opt.id} onPress={() => " + fkSetter + "(opt.id)} className={" + fkCamel + " === opt.id ? \"px-4 py-2 mr-2 rounded-full bg-[#6c5ce7]\" : \"px-4 py-2 mr-2 rounded-full bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a]\"}>\n")
-			fieldsJSX.WriteString("            <Text className={" + fkCamel + " === opt.id ? \"text-white font-medium\" : \"text-[#0F1018] dark:text-white\"}>{opt.name || opt.title || opt.id}</Text>\n")
-			fieldsJSX.WriteString("          </Pressable>\n")
-			fieldsJSX.WriteString("        ))}\n")
-			fieldsJSX.WriteString("      </ScrollView>\n")
+			fieldsJSX.WriteString("      <RelationSelect label=\"" + label + "\" value={" + fkCamel + "} onChange={" + fkSetter + "} options={" + optsVar + "} />\n")
 
 		case f.IsFileField():
 			hasFile = true
@@ -1176,6 +1176,13 @@ func (g *Generator) ensureMobileImagePickerSheet() error {
 func (g *Generator) ensureMobileImageResolver() error {
 	path := filepath.Join(g.mobileRoot(), "lib", "images.ts")
 	return writeFileWithDirs(path, scaffold.ExpoImageResolver())
+}
+
+// ensureMobileRelationSelect writes the searchable belongs_to select used by
+// generated forms. Overwritten to stay current.
+func (g *Generator) ensureMobileRelationSelect() error {
+	path := filepath.Join(g.mobileRoot(), "components", "ui", "relation-select.tsx")
+	return writeFileWithDirs(path, scaffold.ExpoRelationSelect())
 }
 
 func (g *Generator) ensureMobileImportStore() error {

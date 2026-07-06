@@ -48,6 +48,7 @@ func writeExpoFiles(root string, opts Options) error {
 		filepath.Join(expoRoot, "components", "ui", "import-sheet.tsx"):           ExpoImportSheet(),
 		filepath.Join(expoRoot, "components", "ui", "import-progress-banner.tsx"): ExpoImportBanner(),
 		filepath.Join(expoRoot, "components", "ui", "image-picker-sheet.tsx"):     ExpoImagePickerSheet(),
+		filepath.Join(expoRoot, "components", "ui", "relation-select.tsx"):        ExpoRelationSelect(),
 		filepath.Join(expoRoot, "lib", "api.ts"):                                  expoAPIClient(),
 		filepath.Join(expoRoot, "lib", "auth.tsx"):                                expoAuthProvider(),
 		filepath.Join(expoRoot, "lib", "theme.tsx"):                               expoThemeProvider(),
