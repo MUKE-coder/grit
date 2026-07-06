@@ -29,6 +29,9 @@ func (g *Generator) writeMobileFiles(names Names) error {
 	if err := g.ensureMobileScreenHeader(); err != nil {
 		return err
 	}
+	if err := g.ensureMobileFormSheet(); err != nil {
+		return err
+	}
 	if err := g.writeMobileHook(names); err != nil {
 		return err
 	}
@@ -320,13 +323,17 @@ import { View, Text, TextInput, FlatList, Pressable, ActivityIndicator, RefreshC
 __IMAGE_IMPORT__import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ScreenHeader } from "@/components/ui/screen-header";
+import { FormSheet } from "@/components/ui/form-sheet";
 import { useTheme } from "@/lib/theme";
-import { use__PLURAL_PASCAL__, type __PASCAL__ } from "@/hooks/use-__KEBAB__";
+import { use__PLURAL_PASCAL__, useCreate__PASCAL__, type __PASCAL__ } from "@/hooks/use-__KEBAB__";
+import { __PASCAL__Form } from "@/components/resource-forms/__KEBAB__-form";
 
 export default function __PLURAL_PASCAL__Screen() {
   const router = useRouter();
   const { palette } = useTheme();
   const [search, setSearch] = useState("");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const create = useCreate__PASCAL__();
   const query = use__PLURAL_PASCAL__(search);
   const items = query.data?.pages.flatMap((p) => p.data) ?? [];
 
@@ -353,7 +360,7 @@ export default function __PLURAL_PASCAL__Screen() {
         subtitle="Browse all __PLURAL_LOWER__"
         showBack
         right={
-          <Pressable onPress={() => router.push("/__KEBAB__/new")} hitSlop={8}>
+          <Pressable onPress={() => setSheetOpen(true)} hitSlop={8}>
             <Ionicons name="add-circle" size={28} color="#6c5ce7" />
           </Pressable>
         }
@@ -402,6 +409,17 @@ export default function __PLURAL_PASCAL__Screen() {
           ) : null
         }
       />
+
+      <FormSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} title="New __SINGULAR_TITLE__">
+        <__PASCAL__Form
+          submitting={create.isPending}
+          submitLabel="Create __SINGULAR_TITLE__"
+          onSubmit={async (values) => {
+            await create.mutateAsync(values);
+            setSheetOpen(false);
+          }}
+        />
+      </FormSheet>
     </View>
   );
 }
@@ -828,6 +846,73 @@ func (g *Generator) ensureMobileScreenHeader() error {
 		return nil
 	}
 	return writeFileWithDirs(path, mobileScreenHeaderContent())
+}
+
+// ensureMobileFormSheet writes the shared FormSheet bottom-sheet component if
+// it is missing (the list screen's quick-create sheet renders inside it).
+// Written once; never overwrites a customised copy.
+func (g *Generator) ensureMobileFormSheet() error {
+	path := filepath.Join(g.mobileRoot(), "components", "ui", "form-sheet.tsx")
+	if fileExists(path) {
+		return nil
+	}
+	return writeFileWithDirs(path, mobileFormSheetContent())
+}
+
+// mobileFormSheetContent is the source for the shared bottom sheet. Built on
+// React Native's Modal (no extra deps) — a themed, keyboard-aware sheet that
+// slides up with a backdrop and drag handle. Kept in sync with the base
+// scaffold's expoFormSheet.
+func mobileFormSheetContent() string {
+	return `import type { ReactNode } from "react";
+import { Modal, View, Text, Pressable, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+interface FormSheetProps {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  children: ReactNode;
+}
+
+// Bottom sheet for quick create/edit. Renders the shared resource form inside
+// a slide-up sheet; a full-page form is used for longer records.
+export function FormSheet({ visible, onClose, title, children }: FormSheetProps) {
+  const insets = useSafeAreaInsets();
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+      <View className="flex-1 justify-end" style={{ backgroundColor: "rgba(0,0,0,0.4)" }}>
+        <Pressable className="flex-1" onPress={onClose} />
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
+          <View className="bg-[#F4F4F6] dark:bg-[#0a0a0f] rounded-t-[28px] overflow-hidden" style={{ maxHeight: "88%" }}>
+            <View className="items-center pt-3 pb-1">
+              <View className="w-10 h-1.5 rounded-full bg-[#D1D5DB] dark:bg-[#2a2a3a]" />
+            </View>
+            <View className="flex-row items-center justify-between px-6 pb-3">
+              <Text className="text-[20px] font-bold text-[#0F1018] dark:text-white">{title}</Text>
+              <Pressable
+                onPress={onClose}
+                hitSlop={10}
+                className="w-8 h-8 rounded-full items-center justify-center bg-white dark:bg-[#1a1a24] border border-[#E5E7EB] dark:border-[#2a2a3a]"
+              >
+                <Ionicons name="close" size={18} color="#9CA3AF" />
+              </Pressable>
+            </View>
+            <ScrollView
+              contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 24 }}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {children}
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    </Modal>
+  );
+}
+`
 }
 
 // mobileScreenHeaderContent is the source for the shared safe-area header

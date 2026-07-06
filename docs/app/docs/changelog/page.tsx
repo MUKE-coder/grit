@@ -28,6 +28,33 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.63 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.63
+                </span>
+                <span className="text-sm text-muted-foreground">July 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Mobile: quick-create bottom sheet.</strong> Adding a record no longer
+                  always means a full-screen navigation — the resource list&apos;s <code>+</code>{' '}
+                  now opens a slide-up <strong>sheet</strong> with the form, while detailed edits
+                  stay a full <strong>page</strong>.
+                </p>
+                <p>
+                  New shared <code>FormSheet</code> component — a themed, keyboard-aware bottom sheet
+                  built on React Native&apos;s <code>Modal</code> (no extra dependencies). The
+                  generated list renders the same <code>&lt;Name&gt;Form</code> inside it for a
+                  fast add; the detail screen&apos;s Edit still opens the full page for longer
+                  records. One form, two containers. Re-run{' '}
+                  <code>grit generate resource</code> to pick it up.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.62 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
