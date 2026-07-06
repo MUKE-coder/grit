@@ -28,6 +28,41 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.69 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.69
+                </span>
+                <span className="text-sm text-muted-foreground">July 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fix: image uploads from the Expo app.</strong> Uploads
+                  were failing with <code>400 &quot;No file provided&quot;</code>{' '}
+                  because <code>expo-file-system</code>&apos;s{' '}
+                  <code>uploadAsync</code> sends an empty body under the New
+                  Architecture on SDK 54 (the request landed in a few ms with no
+                  file). The mobile upload helper now uses{' '}
+                  <code>fetch</code> + <code>FormData</code> with a React Native
+                  file descriptor and — crucially — never sets{' '}
+                  <code>Content-Type</code> by hand, so fetch keeps the multipart
+                  boundary intact. Fixes avatar, blog and every generated
+                  resource-form image field.
+                </p>
+                <p>
+                  The <code>/uploads</code> handler is also more robust: it falls
+                  back to the first file part under any field name and logs the
+                  request&apos;s content-type + fields when a file is genuinely
+                  missing, so client-side multipart problems are diagnosable from
+                  the server terminal. Re-run <code>pnpm i</code> in{' '}
+                  <code>apps/expo</code> after updating (the helper no longer
+                  needs <code>expo-file-system</code> for uploads).
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.68 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

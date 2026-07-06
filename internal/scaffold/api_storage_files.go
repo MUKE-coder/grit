@@ -11,14 +11,14 @@ func writeStorageFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "storage", "storage.go"):       storageServiceGo(),
-		filepath.Join(apiRoot, "internal", "storage", "image.go"):         storageImageGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "upload.go"):       uploadHandlerGo(),
-		filepath.Join(apiRoot, "internal", "files", "file_ref.go"):        filesFileRefGo(),
-		filepath.Join(apiRoot, "internal", "files", "accepts.go"):         filesAcceptsGo(),
-		filepath.Join(apiRoot, "internal", "files", "file_ref_test.go"):   filesFileRefTestGo(),
-		filepath.Join(apiRoot, "internal", "files", "lifecycle.go"):       filesLifecycleGo(),
-		filepath.Join(apiRoot, "internal", "files", "lifecycle_test.go"):  filesLifecycleTestGo(),
+		filepath.Join(apiRoot, "internal", "storage", "storage.go"):      storageServiceGo(),
+		filepath.Join(apiRoot, "internal", "storage", "image.go"):        storageImageGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "upload.go"):      uploadHandlerGo(),
+		filepath.Join(apiRoot, "internal", "files", "file_ref.go"):       filesFileRefGo(),
+		filepath.Join(apiRoot, "internal", "files", "accepts.go"):        filesAcceptsGo(),
+		filepath.Join(apiRoot, "internal", "files", "file_ref_test.go"):  filesFileRefTestGo(),
+		filepath.Join(apiRoot, "internal", "files", "lifecycle.go"):      filesLifecycleGo(),
+		filepath.Join(apiRoot, "internal", "files", "lifecycle_test.go"): filesLifecycleTestGo(),
 	}
 
 	for path, content := range files {
@@ -299,6 +299,7 @@ func uploadHandlerGo() string {
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"net/http"
 	"path/filepath"
@@ -367,6 +368,32 @@ func (h *UploadHandler) Create(c *gin.Context) {
 
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
+		// Fall back to the first file part under ANY field name — some clients
+		// name the field differently. ParseMultipartForm is cheap once gin has
+		// already touched the body.
+		if perr := c.Request.ParseMultipartForm(32 << 20); perr == nil && c.Request.MultipartForm != nil {
+			for _, fhs := range c.Request.MultipartForm.File {
+				if len(fhs) > 0 {
+					if f, oerr := fhs[0].Open(); oerr == nil {
+						file, header, err = f, fhs[0], nil
+					}
+					break
+				}
+			}
+		}
+	}
+	if err != nil || file == nil {
+		// Log what actually arrived so a client-side multipart problem — e.g. a
+		// manually-set Content-Type that drops the boundary, or an empty body
+		// from a broken native uploader — is diagnosable from the server log.
+		fields := []string{}
+		if c.Request.MultipartForm != nil {
+			for k := range c.Request.MultipartForm.File {
+				fields = append(fields, k)
+			}
+		}
+		log.Printf("[uploads] no file part: content-type=%q file-fields=%v content-length=%d",
+			c.ContentType(), fields, c.Request.ContentLength)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{
 				"code":    "INVALID_FILE",
