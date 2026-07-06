@@ -28,6 +28,43 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.59 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.59
+                </span>
+                <span className="text-sm text-muted-foreground">July 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Mobile: create forms + a More tab hub.</strong> Generated mobile
+                  resources can now <em>add</em> data, not just browse it — so a{' '}
+                  <code>--mobile</code> project no longer needs an admin panel to get started.
+                </p>
+
+                <h3>Create screen per resource</h3>
+                <p>
+                  <code>grit generate resource</code> now also scaffolds{' '}
+                  <code>app/&lt;plural&gt;/new.tsx</code> — a form wired to the generated{' '}
+                  <code>useCreate&lt;X&gt;</code> mutation, with an input per field: text / number /
+                  textarea / toggle for scalars, an image picker (upload → FileRef) for{' '}
+                  <code>file</code> fields, and a chip picker for <code>belongs_to</code>{' '}
+                  relationships. The list screen gains a <code>+</code> button to reach it.
+                </p>
+
+                <h3>&quot;More&quot; tab</h3>
+                <p>
+                  The mobile Explore tab is now <strong>More</strong> (with an ellipsis icon) and
+                  acts as the app hub: a <strong>Resources</strong> section that{' '}
+                  <code>grit generate resource</code> injects each new resource into, plus the
+                  Users / Storage / Analytics / Notifications tools. Restart nothing — reload the
+                  Expo app.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.58 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

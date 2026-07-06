@@ -175,6 +175,7 @@ func (g *Generator) Run() error {
 		fmt.Printf("  ✓ apps/expo/hooks/use-%s.ts\n", names.PluralKebab)
 		fmt.Printf("  ✓ apps/expo/app/%s/index.tsx\n", names.PluralKebab)
 		fmt.Printf("  ✓ apps/expo/app/%s/[id].tsx\n", names.PluralKebab)
+		fmt.Printf("  ✓ apps/expo/app/%s/new.tsx\n", names.PluralKebab)
 	}
 
 	fmt.Println()

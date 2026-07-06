@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -34,7 +35,45 @@ func (g *Generator) writeMobileFiles(names Names) error {
 	if err := g.writeMobileListScreen(names); err != nil {
 		return err
 	}
-	return g.writeMobileDetailScreen(names)
+	if err := g.writeMobileDetailScreen(names); err != nil {
+		return err
+	}
+	if err := g.writeMobileCreateScreen(names); err != nil {
+		return err
+	}
+	return g.injectMobileResourceLink(names)
+}
+
+// injectMobileResourceLink adds a card for this resource to the More tab's
+// Resources section, so its list screen is reachable from the app. It's a
+// no-op if the More screen or its marker is missing (older scaffold), or if
+// the link was already injected — keeping repeat generations idempotent.
+func (g *Generator) injectMobileResourceLink(names Names) error {
+	path := filepath.Join(g.mobileRoot(), "app", "(tabs)", "explore.tsx")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	content := string(data)
+	const marker = "// grit:mobile-resources"
+	route := "/" + names.PluralKebab
+	if !strings.Contains(content, marker) || strings.Contains(content, `route: "`+route+`"`) {
+		return nil
+	}
+	entry := "  { title: \"" + names.PluralPascal + "\", description: \"Browse and manage " +
+		strings.ToLower(names.PluralPascal) + "\", icon: \"cube-outline\", color: \"#6c5ce7\", route: \"" + route + "\" },"
+	content = strings.Replace(content, marker, marker+"\n"+entry, 1)
+	return os.WriteFile(path, []byte(content), 0o644)
+}
+
+// lowerCamel converts any field name to lowerCamelCase for a JS identifier:
+// "unit_price" → "unitPrice", "category_id" → "categoryId".
+func lowerCamel(name string) string {
+	p := toPascalCase(name)
+	if p == "" {
+		return p
+	}
+	return strings.ToLower(p[:1]) + p[1:]
 }
 
 // mobileTitleField returns the snake_case field best used as a row/detail
@@ -303,7 +342,16 @@ export default function __PLURAL_PASCAL__Screen() {
 
   return (
     <View className="flex-1 bg-[#F4F4F6] dark:bg-[#0a0a0f]">
-      <ScreenHeader title="__PLURAL_TITLE__" subtitle="Browse all __PLURAL_LOWER__" showBack />
+      <ScreenHeader
+        title="__PLURAL_TITLE__"
+        subtitle="Browse all __PLURAL_LOWER__"
+        showBack
+        right={
+          <Pressable onPress={() => router.push("/__KEBAB__/new")} hitSlop={8}>
+            <Ionicons name="add-circle" size={28} color="#6c5ce7" />
+          </Pressable>
+        }
+      />
       <View className="px-6 pb-3">
         <View
           className="bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-2xl flex-row items-center px-4"
@@ -428,6 +476,222 @@ __DETAIL_ROWS__
 
 	path := filepath.Join(g.mobileRoot(), "app", names.PluralKebab, "[id].tsx")
 	return writeFileWithDirs(path, content)
+}
+
+// writeMobileCreateScreen generates app/<plural>/new.tsx — a form that drives
+// the generated useCreate<X> mutation, so a mobile-only project can add data
+// without an admin panel. It renders an input per field: text/number/toggle
+// for scalars, an image picker (upload → FileRef) for file fields, and a chip
+// picker for belongs_to relationships (loading options from the related hook).
+// slug (auto), many_to_many and string_array are skipped in this v1 form.
+func (g *Generator) writeMobileCreateScreen(names Names) error {
+	var (
+		extraImports strings.Builder
+		stateLines   strings.Builder
+		optionLines  strings.Builder
+		validations  strings.Builder
+		payload      strings.Builder
+		fieldsJSX    strings.Builder
+	)
+	hasFile := false
+	seenImport := map[string]bool{}
+
+	for _, f := range g.Definition.Fields {
+		t := FieldType(f.Type)
+		if t == FieldSlug || t == FieldManyToMany || t == FieldStringArray {
+			continue
+		}
+		n := toSnakeCase(f.Name)
+		camel := lowerCamel(f.Name)
+		pascal := toPascalCase(f.Name)
+		label := humanizeLabel(f.Name)
+
+		switch {
+		case f.IsBelongsTo():
+			rel := f.RelatedModelName()
+			relNames := MakeNames(rel)
+			hook := "use" + relNames.PluralPascal
+			imp := "@/hooks/use-" + relNames.PluralKebab
+			if !seenImport[imp] {
+				extraImports.WriteString("import { " + hook + " } from \"" + imp + "\";\n")
+				seenImport[imp] = true
+			}
+			fk := f.FKColumnName() // category_id
+			fkCamel := lowerCamel(fk)
+			fkSetter := "set" + toPascalCase(fk)
+			optsVar := lowerCamel(relNames.Plural) + "Opts"
+			queryVar := lowerCamel(relNames.Plural) + "Query"
+			stateLines.WriteString("  const [" + fkCamel + ", " + fkSetter + "] = useState(\"\");\n")
+			optionLines.WriteString("  const " + queryVar + " = " + hook + "();\n")
+			optionLines.WriteString("  const " + optsVar + " = " + queryVar + ".data?.pages.flatMap((p: any) => p.data) ?? [];\n")
+			validations.WriteString("    if (!" + fkCamel + ") return setError(\"" + label + " is required\");\n")
+			payload.WriteString("        " + fk + ": " + fkCamel + ",\n")
+			fieldsJSX.WriteString("        <Text className={labelClass}>" + label + "</Text>\n")
+			fieldsJSX.WriteString("        <ScrollView horizontal showsHorizontalScrollIndicator={false} className=\"mb-4\">\n")
+			fieldsJSX.WriteString("          {" + optsVar + ".map((opt: any) => (\n")
+			fieldsJSX.WriteString("            <Pressable key={opt.id} onPress={() => " + fkSetter + "(opt.id)} className={" + fkCamel + " === opt.id ? \"px-4 py-2 mr-2 rounded-full bg-[#6c5ce7]\" : \"px-4 py-2 mr-2 rounded-full bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a]\"}>\n")
+			fieldsJSX.WriteString("              <Text className={" + fkCamel + " === opt.id ? \"text-white font-medium\" : \"text-[#0F1018] dark:text-white\"}>{opt.name || opt.title || opt.id}</Text>\n")
+			fieldsJSX.WriteString("            </Pressable>\n")
+			fieldsJSX.WriteString("          ))}\n")
+			fieldsJSX.WriteString("        </ScrollView>\n")
+
+		case f.IsFileField():
+			hasFile = true
+			urlVar := camel + "Url"
+			urlSetter := "set" + pascal + "Url"
+			stateLines.WriteString("  const [" + urlVar + ", " + urlSetter + "] = useState<string | null>(null);\n")
+			payload.WriteString("        " + n + ": " + urlVar + " ? { url: " + urlVar + " } : undefined,\n")
+			fieldsJSX.WriteString("        <Text className={labelClass}>" + label + "</Text>\n")
+			fieldsJSX.WriteString("        <Pressable onPress={() => onPickImage(" + urlSetter + ")} className=\"mb-4 h-40 rounded-2xl border border-dashed border-[#E5E7EB] dark:border-[#2a2a3a] items-center justify-center overflow-hidden bg-white dark:bg-[#111118]\">\n")
+			fieldsJSX.WriteString("          {" + urlVar + " ? (\n")
+			fieldsJSX.WriteString("            <Image source={{ uri: " + urlVar + " }} style={{ width: \"100%\", height: \"100%\" }} contentFit=\"cover\" />\n")
+			fieldsJSX.WriteString("          ) : (\n")
+			fieldsJSX.WriteString("            <View className=\"items-center\">\n")
+			fieldsJSX.WriteString("              <Ionicons name=\"cloud-upload-outline\" size={28} color=\"#9CA3AF\" />\n")
+			fieldsJSX.WriteString("              <Text className=\"text-[#6B7280] dark:text-[#9090a8] mt-2 text-[13px]\">Tap to upload</Text>\n")
+			fieldsJSX.WriteString("            </View>\n")
+			fieldsJSX.WriteString("          )}\n")
+			fieldsJSX.WriteString("        </Pressable>\n")
+
+		case t == FieldBool:
+			stateLines.WriteString("  const [" + camel + ", set" + pascal + "] = useState(false);\n")
+			payload.WriteString("        " + n + ": " + camel + ",\n")
+			fieldsJSX.WriteString("        <View className=\"flex-row items-center justify-between mb-4\">\n")
+			fieldsJSX.WriteString("          <Text className={labelClass} style={{ marginBottom: 0 }}>" + label + "</Text>\n")
+			fieldsJSX.WriteString("          <Switch value={" + camel + "} onValueChange={set" + pascal + "} trackColor={{ false: \"#D1D5DB\", true: \"#6c5ce7\" }} thumbColor=\"#ffffff\" />\n")
+			fieldsJSX.WriteString("        </View>\n")
+
+		case t == FieldInt || t == FieldUint:
+			stateLines.WriteString("  const [" + camel + ", set" + pascal + "] = useState(\"\");\n")
+			payload.WriteString("        " + n + ": Number(" + camel + ") || 0,\n")
+			fieldsJSX.WriteString(mobileTextInput(label, camel, "set"+pascal, "numeric", false))
+
+		case t == FieldFloat:
+			stateLines.WriteString("  const [" + camel + ", set" + pascal + "] = useState(\"\");\n")
+			payload.WriteString("        " + n + ": parseFloat(" + camel + ") || 0,\n")
+			fieldsJSX.WriteString(mobileTextInput(label, camel, "set"+pascal, "decimal-pad", false))
+
+		case t == FieldText || t == FieldRichtext:
+			stateLines.WriteString("  const [" + camel + ", set" + pascal + "] = useState(\"\");\n")
+			payload.WriteString("        " + n + ": " + camel + ",\n")
+			fieldsJSX.WriteString(mobileTextInput(label, camel, "set"+pascal, "default", true))
+
+		case t == FieldDatetime || t == FieldDate:
+			stateLines.WriteString("  const [" + camel + ", set" + pascal + "] = useState(\"\");\n")
+			payload.WriteString("        " + n + ": " + camel + " || undefined,\n")
+			fieldsJSX.WriteString(mobileTextInput(label, camel, "set"+pascal, "default", false))
+
+		default: // string
+			stateLines.WriteString("  const [" + camel + ", set" + pascal + "] = useState(\"\");\n")
+			payload.WriteString("        " + n + ": " + camel + ",\n")
+			fieldsJSX.WriteString(mobileTextInput(label, camel, "set"+pascal, "default", false))
+		}
+	}
+
+	fileImports := ""
+	pickHandler := ""
+	if hasFile {
+		fileImports = "import { Image } from \"expo-image\";\nimport { pickAndUploadImage } from \"@/lib/upload\";\n"
+		pickHandler = `
+  const onPickImage = async (setter: (u: string) => void) => {
+    try {
+      const url = await pickAndUploadImage();
+      if (url) setter(url);
+    } catch (e: any) {
+      Alert.alert("Upload failed", e.message || "Please try again");
+    }
+  };
+`
+	}
+
+	tmpl := `import { useState } from "react";
+import { View, Text, TextInput, ScrollView, Pressable, Switch, ActivityIndicator, Alert } from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { ScreenHeader } from "@/components/ui/screen-header";
+import { useCreate__PASCAL__ } from "@/hooks/use-__KEBAB__";
+__FILE_IMPORTS____EXTRA_IMPORTS__
+export default function Create__PASCAL__Screen() {
+  const router = useRouter();
+  const create = useCreate__PASCAL__();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+__STATE__
+__OPTIONS__
+  const inputClass =
+    "bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-2xl px-4 py-3.5 text-[#0F1018] dark:text-white text-[15px] mb-4";
+  const labelClass = "text-[13px] font-semibold text-[#6B7280] dark:text-[#9090a8] mb-2";
+__PICK_HANDLER__
+  const onSubmit = async () => {
+    setError("");
+__VALIDATIONS__
+    setSaving(true);
+    try {
+      await create.mutateAsync({
+__PAYLOAD__      });
+      router.back();
+    } catch (e: any) {
+      setError(e.message || "Failed to create __SINGULAR_LOWER__");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <View className="flex-1 bg-[#F4F4F6] dark:bg-[#0a0a0f]">
+      <ScreenHeader title="New __SINGULAR_TITLE__" showBack />
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
+        {error ? (
+          <View className="bg-[#ff6b6b]/10 border border-[#ff6b6b]/25 rounded-2xl px-4 py-3 mb-4 flex-row items-center">
+            <Ionicons name="alert-circle" size={18} color="#ff6b6b" />
+            <Text className="text-[#ff6b6b] text-[13px] ml-2 flex-1">{error}</Text>
+          </View>
+        ) : null}
+
+__FIELDS__
+        <Pressable
+          onPress={onSubmit}
+          disabled={saving}
+          className="bg-[#6c5ce7] rounded-full py-4 items-center mt-2"
+          style={{ opacity: saving ? 0.7 : 1 }}
+        >
+          {saving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text className="text-white font-semibold text-[15px]">Create __SINGULAR_TITLE__</Text>
+          )}
+        </Pressable>
+      </ScrollView>
+    </View>
+  );
+}
+`
+	content := g.applyMobileTokens(tmpl, names)
+	content = strings.ReplaceAll(content, "__SINGULAR_LOWER__", strings.ToLower(names.Pascal))
+	content = strings.ReplaceAll(content, "__FILE_IMPORTS__", fileImports)
+	content = strings.ReplaceAll(content, "__EXTRA_IMPORTS__", extraImports.String())
+	content = strings.ReplaceAll(content, "__STATE__", strings.TrimRight(stateLines.String(), "\n"))
+	content = strings.ReplaceAll(content, "__OPTIONS__", strings.TrimRight(optionLines.String(), "\n"))
+	content = strings.ReplaceAll(content, "__PICK_HANDLER__", pickHandler)
+	content = strings.ReplaceAll(content, "__VALIDATIONS__", strings.TrimRight(validations.String(), "\n"))
+	content = strings.ReplaceAll(content, "__PAYLOAD__", payload.String())
+	content = strings.ReplaceAll(content, "__FIELDS__", strings.TrimRight(fieldsJSX.String(), "\n"))
+
+	path := filepath.Join(g.mobileRoot(), "app", names.PluralKebab, "new.tsx")
+	return writeFileWithDirs(path, content)
+}
+
+// mobileTextInput builds a labelled TextInput block for the create form.
+func mobileTextInput(label, valueVar, setter, keyboard string, multiline bool) string {
+	extra := ""
+	if keyboard != "default" {
+		extra += " keyboardType=\"" + keyboard + "\""
+	}
+	if multiline {
+		extra += " multiline numberOfLines={4} style={{ minHeight: 96, textAlignVertical: \"top\" }}"
+	}
+	return "        <Text className={labelClass}>" + label + "</Text>\n" +
+		"        <TextInput className={inputClass} placeholder=\"" + label + "\" placeholderTextColor=\"#9CA3AF\" value={" + valueVar + "} onChangeText={" + setter + "}" + extra + " />\n"
 }
 
 // applyMobileTokens replaces the shared name tokens used by every mobile

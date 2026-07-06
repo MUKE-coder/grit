@@ -1222,9 +1222,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          title: "Explore",
+          title: "More",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search-outline" size={size} color={color} />
+            <Ionicons name="ellipsis-horizontal" size={size} color={color} />
           ),
         }}
       />
@@ -1394,20 +1394,12 @@ export default function HomeScreen() {
 }
 
 func expoExploreScreen() string {
-	return `import { useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  ScrollView,
-  RefreshControl,
-  TouchableOpacity,
-} from "react-native";
+	return `import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { ScreenHeader } from "@/components/ui/screen-header";
 
-interface ExploreCategory {
-  id: string;
+interface LinkItem {
   title: string;
   description: string;
   icon: string;
@@ -1415,20 +1407,26 @@ interface ExploreCategory {
   route: string;
 }
 
-const categories: ExploreCategory[] = [
-  { id: "1", title: "Users", description: "Manage user accounts", icon: "people-outline", color: "#6c5ce7", route: "/explore/users" },
-  { id: "2", title: "Content", description: "Posts, pages, and media", icon: "document-text-outline", color: "#00b894", route: "/explore/content" },
-  { id: "3", title: "Analytics", description: "Usage and performance", icon: "bar-chart-outline", color: "#74b9ff", route: "/explore/analytics" },
-  { id: "4", title: "Notifications", description: "Alerts and messages", icon: "notifications-outline", color: "#fdcb6e", route: "/explore/notifications" },
-  { id: "5", title: "Storage", description: "Files and uploads", icon: "cloud-outline", color: "#ff6b6b", route: "/explore/storage" },
-  { id: "6", title: "Integrations", description: "Connected services", icon: "extension-puzzle-outline", color: "#a29bfe", route: "/explore/integrations" },
+// Generated resources. ` + "`" + `grit generate resource` + "`" + ` injects an entry below the
+// marker for every resource, so each one's list screen is reachable here.
+const resources: LinkItem[] = [
+  // grit:mobile-resources
 ];
 
-function CategoryCard({ item }: { item: ExploreCategory }) {
+const tools: LinkItem[] = [
+  { title: "Users", description: "Manage user accounts", icon: "people-outline", color: "#6c5ce7", route: "/explore/users" },
+  { title: "Content", description: "Posts, pages, and media", icon: "document-text-outline", color: "#00b894", route: "/explore/content" },
+  { title: "Analytics", description: "Usage and performance", icon: "bar-chart-outline", color: "#74b9ff", route: "/explore/analytics" },
+  { title: "Notifications", description: "Alerts and messages", icon: "notifications-outline", color: "#fdcb6e", route: "/explore/notifications" },
+  { title: "Storage", description: "Files and uploads", icon: "cloud-outline", color: "#ff6b6b", route: "/explore/storage" },
+  { title: "Integrations", description: "Connected services", icon: "extension-puzzle-outline", color: "#a29bfe", route: "/explore/integrations" },
+];
+
+function LinkCard({ item }: { item: LinkItem }) {
   const router = useRouter();
   return (
     <TouchableOpacity
-      className="bg-white dark:bg-[#22222e] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-2xl p-5 mb-3"
+      className="bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#1f1f2b] rounded-2xl p-5 mb-3"
       activeOpacity={0.7}
       onPress={() => router.push(item.route as any)}
     >
@@ -1443,69 +1441,43 @@ function CategoryCard({ item }: { item: ExploreCategory }) {
           <Text className="text-base font-semibold text-[#0F1018] dark:text-white">{item.title}</Text>
           <Text className="text-xs text-[#6B7280] dark:text-[#9090a8] mt-0.5">{item.description}</Text>
         </View>
-        <Ionicons name="chevron-forward" size={18} color="#606078" />
+        <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
       </View>
     </TouchableOpacity>
   );
 }
 
-export default function ExploreScreen() {
-  const [search, setSearch] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
-
-  const filtered = categories.filter(
-    (c) =>
-      c.title.toLowerCase().includes(search.toLowerCase()) ||
-      c.description.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    // Reload data when API endpoints are available
-    setRefreshing(false);
-  }, []);
-
+function SectionTitle({ children }: { children: string }) {
   return (
-    <ScrollView
-      className="flex-1 bg-[#F4F4F6] dark:bg-[#0a0a0f]"
-      contentContainerClassName="px-6 pt-16 pb-28"
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6c5ce7" />
-      }
-    >
-      <Text className="text-2xl font-bold text-[#0F1018] dark:text-white mb-1">Explore</Text>
-      <Text className="text-base text-[#6B7280] dark:text-[#9090a8] mb-6">
-        Browse and discover features.
-      </Text>
+    <Text className="text-[13px] font-semibold uppercase tracking-wider text-[#9CA3AF] dark:text-[#606078] mb-3 mt-2">
+      {children}
+    </Text>
+  );
+}
 
-      <View className="flex-row items-center bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-xl px-4 mb-6">
-        <Ionicons name="search-outline" size={18} color="#606078" />
-        <TextInput
-          className="flex-1 text-[#0F1018] dark:text-white text-base py-3 ml-3"
-          placeholder="Search features..."
-          placeholderTextColor="#606078"
-          value={search}
-          onChangeText={setSearch}
-          autoCapitalize="none"
-        />
-        {search ? (
-          <TouchableOpacity onPress={() => setSearch("")}>
-            <Ionicons name="close-circle" size={18} color="#606078" />
-          </TouchableOpacity>
-        ) : null}
-      </View>
+export default function MoreScreen() {
+  return (
+    <View className="flex-1 bg-[#F4F4F6] dark:bg-[#0a0a0f]">
+      <ScreenHeader title="More" subtitle="Resources & tools" />
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 }}>
+        <SectionTitle>Resources</SectionTitle>
+        {resources.length > 0 ? (
+          resources.map((item) => <LinkCard key={item.route} item={item} />)
+        ) : (
+          <View className="bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#1f1f2b] rounded-2xl p-5 mb-3">
+            <Text className="text-[14px] text-[#6B7280] dark:text-[#9090a8] leading-5">
+              Generate a resource and it shows up here:{"\n"}
+              <Text className="font-semibold text-[#6c5ce7]">grit generate resource Product</Text>
+            </Text>
+          </View>
+        )}
 
-      {filtered.map((item) => (
-        <CategoryCard key={item.id} item={item} />
-      ))}
-
-      {filtered.length === 0 ? (
-        <View className="items-center py-12">
-          <Ionicons name="search-outline" size={48} color="#606078" />
-          <Text className="text-[#9CA3AF] dark:text-[#606078] text-base mt-4">No results found</Text>
-        </View>
-      ) : null}
-    </ScrollView>
+        <SectionTitle>Tools</SectionTitle>
+        {tools.map((item) => (
+          <LinkCard key={item.route} item={item} />
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 `
