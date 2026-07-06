@@ -65,9 +65,12 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "dashboard_layout.go"): strings.ReplaceAll(dashboardLayoutHandlerGo(), "{{MODULE}}", opts.Module()),
 		filepath.Join(apiRoot, "internal", "models", "ticket.go"):             ticketModelGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "ticket.go"):           ticketHandlerGo(),
-		filepath.Join(apiRoot, "internal", "services", "ticket_mail.go"):      ticketMailGo(),
-		filepath.Join(apiRoot, "internal", "routes", "routes.go"):             apiRoutesGo(),
-		filepath.Join(apiRoot, ".air.toml"):                                   airConfig(),
+		// v3.31.68 — background CSV import job tracking (shared across resources)
+		filepath.Join(apiRoot, "internal", "models", "import_job.go"):    importJobModelGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "import_job.go"):  importJobHandlerGo(),
+		filepath.Join(apiRoot, "internal", "services", "ticket_mail.go"): ticketMailGo(),
+		filepath.Join(apiRoot, "internal", "routes", "routes.go"):        apiRoutesGo(),
+		filepath.Join(apiRoot, ".air.toml"):                              airConfig(),
 		// Test files — give the generated API a working test suite out of the box
 		filepath.Join(apiRoot, "internal", "handlers", "auth_test.go"):  apiAuthTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user_test.go"):  apiUserTestGo(),
@@ -83,6 +86,109 @@ func writeAPIFiles(root string, opts Options) error {
 	}
 
 	return nil
+}
+
+// importJobModelGo is the shared ImportJob model. A single table tracks every
+// resource's background CSV imports; the per-resource Import handler creates a
+// row, processes the file in a goroutine, and updates the counters as it goes.
+func importJobModelGo() string {
+	return `package models
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+// ImportJob records the progress of a background CSV import started by
+// POST /<resource>/import. The handler inserts one row, launches a goroutine
+// that streams the file, and updates Processed/Created/Skipped/Failed as it
+// runs. Clients poll GET /imports/:id to drive a live progress bar, then read
+// the final counts and per-row errors when Status is "completed". Errors holds
+// up to the first 50 row failures as a JSON array string.
+type ImportJob struct {
+	ID        string    ` + "`gorm:\"primarykey;size:36\" json:\"id\"`" + `
+	Resource  string    ` + "`gorm:\"size:255;index\" json:\"resource\"`" + `
+	Status    string    ` + "`gorm:\"size:20;index\" json:\"status\"`" + ` // processing | completed | failed
+	Total     int       ` + "`json:\"total\"`" + `
+	Processed int       ` + "`json:\"processed\"`" + `
+	Created   int       ` + "`json:\"created\"`" + `
+	Skipped   int       ` + "`json:\"skipped\"`" + `
+	Failed    int       ` + "`json:\"failed\"`" + `
+	Errors    string    ` + "`gorm:\"type:text\" json:\"-\"`" + `
+	Message   string    ` + "`gorm:\"size:500\" json:\"message\"`" + `
+	CreatedAt time.Time ` + "`json:\"created_at\"`" + `
+	UpdatedAt time.Time ` + "`json:\"updated_at\"`" + `
+}
+
+// BeforeCreate assigns a UUID so the job id is opaque in poll URLs.
+func (m *ImportJob) BeforeCreate(tx *gorm.DB) error {
+	if m.ID == "" {
+		m.ID = uuid.New().String()
+	}
+	if m.Status == "" {
+		m.Status = "processing"
+	}
+	return nil
+}
+`
+}
+
+// importJobHandlerGo is the shared status endpoint clients poll while a
+// background import runs. It is resource-agnostic — the resource field on the
+// job says which table it targeted.
+func importJobHandlerGo() string {
+	return `package handlers
+
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/models"
+)
+
+// ImportJobHandler serves the progress/result of background CSV imports.
+type ImportJobHandler struct {
+	DB *gorm.DB
+}
+
+// GetByID returns a single import job. Poll this while Status is "processing"
+// to drive a progress bar (processed/total), then read created/skipped/failed
+// and the per-row errors once Status is "completed".
+func (h *ImportJobHandler) GetByID(c *gin.Context) {
+	var job models.ImportJob
+	if err := h.DB.First(&job, "id = ?", c.Param("id")).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": gin.H{"code": "NOT_FOUND", "message": "Import job not found"},
+		})
+		return
+	}
+
+	rowErrors := []map[string]interface{}{}
+	if job.Errors != "" {
+		_ = json.Unmarshal([]byte(job.Errors), &rowErrors)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"id":        job.ID,
+			"resource":  job.Resource,
+			"status":    job.Status,
+			"total":     job.Total,
+			"processed": job.Processed,
+			"created":   job.Created,
+			"skipped":   job.Skipped,
+			"failed":    job.Failed,
+			"errors":    rowErrors,
+			"message":   job.Message,
+		},
+	})
+}
+`
 }
 
 func apiGoMod(opts Options) string {
@@ -909,6 +1015,8 @@ func Models() []interface{} {
 		&FormSubmission{},
 		// v3.31.40 — per-user dashboard customisation
 		&DashboardLayout{},
+		// v3.31.68 — background CSV import job tracking
+		&ImportJob{},
 		// grit:models
 	}
 }
@@ -6516,6 +6624,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	syncRegistry.Register("blogs", &models.Blog{})
 	// grit:sync
 	syncHandler := handlers.NewSyncHandler(db, syncRegistry)
+	// v3.31.68 — shared background CSV import status endpoint
+	importJobHandler := &handlers.ImportJobHandler{DB: db}
 	// grit:handlers
 
 	// Health check
@@ -6727,6 +6837,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		protected.PATCH("/tickets/:id/close", ticketHandler.Close)
 		protected.PATCH("/tickets/:id/reopen", ticketHandler.Reopen)
 		protected.PATCH("/tickets/:id/assign", ticketHandler.Assign) // admin-gated inside the handler
+
+		// v3.31.68 — poll a background CSV import's progress/result.
+		protected.GET("/imports/:id", importJobHandler.GetByID)
 
 		// grit:routes:protected
 	}

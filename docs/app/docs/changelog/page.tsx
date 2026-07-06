@@ -28,6 +28,46 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.68 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.68
+                </span>
+                <span className="text-sm text-muted-foreground">July 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Background CSV import — imports now run server-side and
+                  survive leaving the screen.</strong> The import endpoint no
+                  longer blocks: it reads the upload, creates a job, processes
+                  rows in a goroutine and returns <code>202</code> with a job id.
+                </p>
+
+                <h3>Backend (every architecture)</h3>
+                <p>
+                  A shared <code>ImportJob</code> table tracks every resource&apos;s
+                  imports. <code>POST /&lt;plural&gt;/import</code> kicks the work
+                  off and returns immediately; a new shared{' '}
+                  <code>GET /imports/:id</code> reports live{' '}
+                  <code>processed / total</code> plus the final
+                  created / skipped / failed counts and per-row errors, so a
+                  large file never times the request out.
+                </p>
+
+                <h3>Mobile</h3>
+                <p>
+                  Imports run in a module-level store, so they keep uploading and
+                  polling even after you close the import sheet. A persistent
+                  progress <strong>banner</strong> shows every in-flight import
+                  across navigation, then the result — tap &quot;Continue in
+                  background&quot; and carry on using the app. Regenerating any
+                  resource upgrades an existing app to the new flow.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.67 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

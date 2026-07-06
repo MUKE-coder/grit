@@ -11,6 +11,12 @@ import (
 // extra imports don't touch the main handler. Generated for every architecture;
 // POST /<plural>/import and GET /<plural>/import/template are wired by injectAll.
 //
+// The import runs in the BACKGROUND: the handler reads the upload, creates an
+// ImportJob row, then processes the CSV in a goroutine and returns 202 with the
+// job id immediately. Clients poll GET /imports/:id (shared handler) for a live
+// progress bar and the final counts — so a large file never blocks the request
+// and the app can leave the screen while it runs.
+//
 // The CSV header row uses json field names. Recognised columns map to typed
 // fields; unknown columns and the auto-managed id/slug are ignored. Everything
 // is optional except fields the model marks required:
@@ -80,8 +86,8 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"%s
 	"strings"
 
@@ -91,7 +97,9 @@ import (
 	"%s/internal/models"
 )
 
-// Import bulk-creates %s from an uploaded CSV file (multipart field "file").
+// Import kicks off a BACKGROUND CSV import of %s. It reads the upload, creates
+// an ImportJob to track progress, then processes rows in a goroutine and
+// returns 202 immediately. Poll GET /imports/:id for progress and the result.
 func (h *%sHandler) Import(c *gin.Context) {
 	file, _, err := c.Request.FormFile("file")
 	if err != nil {
@@ -104,14 +112,36 @@ func (h *%sHandler) Import(c *gin.Context) {
 
 	reader := csv.NewReader(file)
 	reader.FieldsPerRecord = -1
-	headers, err := reader.Read()
-	if err != nil {
+	records, err := reader.ReadAll()
+	if err != nil || len(records) < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{"code": "INVALID_CSV", "message": "Could not read the CSV header row"},
+			"error": gin.H{"code": "INVALID_CSV", "message": "Could not read the CSV file"},
+		})
+		return
+	}
+	headers, rows := records[0], records[1:]
+
+	job := models.ImportJob{Resource: %q, Status: "processing", Total: len(rows)}
+	if err := h.DB.Create(&job).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "JOB_ERROR", "message": "Could not start import"},
 		})
 		return
 	}
 
+	// Process in the background so a large file never blocks the request.
+	go h.runImport%s(job.ID, headers, rows)
+
+	c.JSON(http.StatusAccepted, gin.H{
+		"data":    gin.H{"job_id": job.ID, "total": len(rows)},
+		"message": "Import started",
+	})
+}
+
+// runImport%s streams the parsed CSV, creating one %s per row and updating the
+// ImportJob as it goes. belongs_to columns are resolved by name (created when
+// missing); unique-conflict rows are skipped; per-row failures are recorded.
+func (h *%sHandler) runImport%s(jobID string, headers []string, rows [][]string) {
 	idx := map[string]int{}
 	for i, name := range headers {
 		idx[strings.TrimSpace(strings.ToLower(name))] = i
@@ -124,48 +154,46 @@ func (h *%sHandler) Import(c *gin.Context) {
 	}
 
 	created, skipped, failed := 0, 0, 0
-	rowErrors := []gin.H{}
-	rowNum := 1 // header is row 1
-	for {
-		rowNum++
-		rec, rerr := reader.Read()
-		if rerr == io.EOF {
-			break
-		}
-		if rerr != nil {
-			failed++
-			if len(rowErrors) < 50 {
-				rowErrors = append(rowErrors, gin.H{"row": rowNum, "message": "malformed row"})
-			}
-			continue
-		}
+	rowErrors := []map[string]interface{}{}
+
+	// checkpoint writes current progress so the client's poll sees movement.
+	checkpoint := func(status, message string) {
+		errsJSON, _ := json.Marshal(rowErrors)
+		h.DB.Model(&models.ImportJob{}).Where("id = ?", jobID).Updates(map[string]interface{}{
+			"status":    status,
+			"processed": created + skipped + failed,
+			"created":   created,
+			"skipped":   skipped,
+			"failed":    failed,
+			"errors":    string(errsJSON),
+			"message":   message,
+		})
+	}
+
+	for i, rec := range rows {
+		rowNum := i + 2 // header is row 1
 
 		item := models.%s{}
 %s		// Skip rows that collide with a unique constraint instead of erroring.
 		res := h.DB.Clauses(clause.OnConflict{DoNothing: true}).Create(&item)
-		if res.Error != nil {
+		switch {
+		case res.Error != nil:
 			failed++
 			if len(rowErrors) < 50 {
-				rowErrors = append(rowErrors, gin.H{"row": rowNum, "message": res.Error.Error()})
+				rowErrors = append(rowErrors, map[string]interface{}{"row": rowNum, "message": res.Error.Error()})
 			}
-			continue
-		}
-		if res.RowsAffected == 0 {
+		case res.RowsAffected == 0:
 			skipped++
-			continue
+		default:
+			created++
 		}
-		created++
+
+		if (i+1)%%25 == 0 {
+			checkpoint("processing", "")
+		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"data": gin.H{
-			"created": created,
-			"skipped": skipped,
-			"failed":  failed,
-			"errors":  rowErrors,
-		},
-		"message": fmt.Sprintf("Imported %%d, skipped %%d, failed %%d", created, skipped, failed),
-	})
+	checkpoint("completed", fmt.Sprintf("Imported %%d, skipped %%d, failed %%d", created, skipped, failed))
 }
 
 // Template returns a ready-to-fill CSV template (header row) for importing %s.
@@ -175,7 +203,9 @@ func (h *%sHandler) Template(c *gin.Context) {
 	c.Header("Content-Disposition", `+"`"+`attachment; filename="%s-template.csv"`+"`"+`)
 	c.String(http.StatusOK, "%s\n")
 }
-`, strconvImport, g.Module, names.Plural, names.Pascal, names.Pascal, assign.String(),
+`, strconvImport, g.Module, names.Plural, names.Pascal, names.PluralKebab,
+		names.Pascal, names.Pascal, names.Pascal, names.Pascal, names.Pascal,
+		names.Pascal, assign.String(),
 		names.Plural, names.Pascal, names.PluralKebab, templateHeaders)
 
 	path := filepath.Join(g.APIRoot(), "internal", "handlers", names.Snake+"_import.go")

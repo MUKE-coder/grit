@@ -41,7 +41,16 @@ func (g *Generator) writeMobileFiles(names Names) error {
 	if err := g.ensureMobileImportHelper(); err != nil {
 		return err
 	}
+	if err := g.ensureMobileImportStore(); err != nil {
+		return err
+	}
 	if err := g.ensureMobileImportSheet(); err != nil {
+		return err
+	}
+	if err := g.ensureMobileImportBanner(); err != nil {
+		return err
+	}
+	if err := g.injectMobileBanner(); err != nil {
 		return err
 	}
 	if err := g.writeMobileHook(names); err != nil {
@@ -1073,24 +1082,62 @@ export async function exportResourceCsv(plural: string, query = ""): Promise<str
 `
 }
 
-// ensureMobileImportHelper / ensureMobileImportSheet write the CSV import
-// helper (lib/import.ts) and the pick→preview→progress→summary sheet if
-// missing. They reuse the base scaffold's source so there's one copy to
-// maintain. Written once; never overwrite a customised copy.
+// The CSV import stack — lib/import.ts (upload + poll), lib/import-progress.ts
+// (background store), components/ui/import-sheet.tsx (pick→preview→progress) and
+// components/ui/import-progress-banner.tsx (persistent banner) — is framework
+// plumbing that must move together: the sheet imports the store, the store polls
+// via the helper. So unlike the ensure-once components, these are OVERWRITTEN to
+// the current scaffold source on every generate, which upgrades older projects
+// to the background-import flow and never leaves a half-old, non-building set.
 func (g *Generator) ensureMobileImportHelper() error {
 	path := filepath.Join(g.mobileRoot(), "lib", "import.ts")
-	if fileExists(path) {
-		return nil
-	}
 	return writeFileWithDirs(path, scaffold.ExpoImportHelper())
+}
+
+func (g *Generator) ensureMobileImportStore() error {
+	path := filepath.Join(g.mobileRoot(), "lib", "import-progress.ts")
+	return writeFileWithDirs(path, scaffold.ExpoImportProgressStore())
 }
 
 func (g *Generator) ensureMobileImportSheet() error {
 	path := filepath.Join(g.mobileRoot(), "components", "ui", "import-sheet.tsx")
-	if fileExists(path) {
+	return writeFileWithDirs(path, scaffold.ExpoImportSheet())
+}
+
+func (g *Generator) ensureMobileImportBanner() error {
+	path := filepath.Join(g.mobileRoot(), "components", "ui", "import-progress-banner.tsx")
+	return writeFileWithDirs(path, scaffold.ExpoImportBanner())
+}
+
+// injectMobileBanner mounts <ImportProgressBanner /> in the root layout so the
+// background-import progress persists across navigation. Idempotent: a no-op if
+// the layout is missing (older scaffold with a different shape) or already wired.
+func (g *Generator) injectMobileBanner() error {
+	path := filepath.Join(g.mobileRoot(), "app", "_layout.tsx")
+	data, err := os.ReadFile(path)
+	if err != nil {
 		return nil
 	}
-	return writeFileWithDirs(path, scaffold.ExpoImportSheet())
+	content := string(data)
+	if strings.Contains(content, "ImportProgressBanner") {
+		return nil
+	}
+	const anchor = "      </Stack>"
+	if !strings.Contains(content, anchor) {
+		return nil
+	}
+	imp := "import { ImportProgressBanner } from \"@/components/ui/import-progress-banner\";\n"
+	// Add the import after the last existing import line at the top of the file.
+	if idx := strings.LastIndex(content, "\nimport "); idx != -1 {
+		end := strings.Index(content[idx+1:], "\n")
+		if end != -1 {
+			pos := idx + 1 + end + 1
+			content = content[:pos] + imp + content[pos:]
+		}
+	}
+	mount := anchor + "\n      {/* grit:mobile-banner */}\n      <ImportProgressBanner />"
+	content = strings.Replace(content, anchor, mount, 1)
+	return os.WriteFile(path, []byte(content), 0o644)
 }
 
 // ensureMobileFormSheet writes the shared FormSheet bottom-sheet component if

@@ -9,45 +9,47 @@ func writeExpoFiles(root string, opts Options) error {
 	expoRoot := filepath.Join(root, "apps", "expo")
 
 	files := map[string]string{
-		filepath.Join(expoRoot, "package.json"):                            expoPackageJSON(opts),
-		filepath.Join(expoRoot, "app.json"):                                expoAppJSON(opts),
-		filepath.Join(expoRoot, "tsconfig.json"):                           expoTSConfig(),
-		filepath.Join(expoRoot, "tailwind.config.js"):                      expoTailwindConfig(),
-		filepath.Join(expoRoot, "metro.config.js"):                         expoMetroConfig(),
-		filepath.Join(expoRoot, "babel.config.js"):                         expoBabelConfig(),
-		filepath.Join(expoRoot, "global.css"):                              expoGlobalCSS(),
-		filepath.Join(expoRoot, "nativewind-env.d.ts"):                     expoNativewindEnv(),
-		filepath.Join(expoRoot, "app", "_layout.tsx"):                      expoRootLayout(),
-		filepath.Join(expoRoot, "components", "ui", "pressable-scale.tsx"): expoPressableScale(),
-		filepath.Join(expoRoot, "components", "ui", "screen-header.tsx"):   expoScreenHeader(),
-		filepath.Join(expoRoot, "components", "ui", "form-sheet.tsx"):      expoFormSheet(),
-		filepath.Join(expoRoot, "app", "(auth)", "_layout.tsx"):            expoAuthLayout(),
-		filepath.Join(expoRoot, "app", "(auth)", "login.tsx"):              expoLoginScreen(),
-		filepath.Join(expoRoot, "app", "(auth)", "register.tsx"):           expoRegisterScreen(),
-		filepath.Join(expoRoot, "app", "(tabs)", "_layout.tsx"):            expoTabsLayout(),
-		filepath.Join(expoRoot, "app", "(tabs)", "index.tsx"):              expoHomeScreen(),
-		filepath.Join(expoRoot, "app", "(tabs)", "explore.tsx"):            expoExploreScreen(),
-		filepath.Join(expoRoot, "app", "(tabs)", "profile.tsx"):            expoProfileScreen(),
-		filepath.Join(expoRoot, "app", "(tabs)", "settings.tsx"):           expoSettingsScreen(),
-		filepath.Join(expoRoot, "app", "explore", "users.tsx"):             expoExploreUsers(),
-		filepath.Join(expoRoot, "app", "explore", "notifications.tsx"):     expoExploreNotifications(),
-		filepath.Join(expoRoot, "app", "explore", "storage.tsx"):           expoExploreStorage(),
-		filepath.Join(expoRoot, "app", "explore", "analytics.tsx"):         expoExploreAnalytics(),
-		filepath.Join(expoRoot, "app", "explore", "content.tsx"):           expoExploreContent(),
-		filepath.Join(expoRoot, "app", "explore", "integrations.tsx"):      expoExploreIntegrations(),
-		filepath.Join(expoRoot, "app", "change-password.tsx"):              expoChangePasswordScreen(),
-		filepath.Join(expoRoot, "app", "blogs", "index.tsx"):               expoBlogListScreen(),
-		filepath.Join(expoRoot, "app", "blogs", "new.tsx"):                 expoBlogCreateScreen(),
-		filepath.Join(expoRoot, "app", "users", "new.tsx"):                 expoUserCreateScreen(),
-		filepath.Join(expoRoot, "hooks", "use-blogs.ts"):                   expoBlogHook(),
-		filepath.Join(expoRoot, "lib", "upload.ts"):                        expoUploadHelper(),
-		filepath.Join(expoRoot, "lib", "export.ts"):                        expoExportHelper(),
-		filepath.Join(expoRoot, "lib", "import.ts"):                        ExpoImportHelper(),
-		filepath.Join(expoRoot, "components", "ui", "import-sheet.tsx"):    ExpoImportSheet(),
-		filepath.Join(expoRoot, "lib", "api.ts"):                           expoAPIClient(),
-		filepath.Join(expoRoot, "lib", "auth.tsx"):                         expoAuthProvider(),
-		filepath.Join(expoRoot, "lib", "theme.tsx"):                        expoThemeProvider(),
-		filepath.Join(expoRoot, "lib", "query-client.ts"):                  expoQueryClient(),
+		filepath.Join(expoRoot, "package.json"):                                   expoPackageJSON(opts),
+		filepath.Join(expoRoot, "app.json"):                                       expoAppJSON(opts),
+		filepath.Join(expoRoot, "tsconfig.json"):                                  expoTSConfig(),
+		filepath.Join(expoRoot, "tailwind.config.js"):                             expoTailwindConfig(),
+		filepath.Join(expoRoot, "metro.config.js"):                                expoMetroConfig(),
+		filepath.Join(expoRoot, "babel.config.js"):                                expoBabelConfig(),
+		filepath.Join(expoRoot, "global.css"):                                     expoGlobalCSS(),
+		filepath.Join(expoRoot, "nativewind-env.d.ts"):                            expoNativewindEnv(),
+		filepath.Join(expoRoot, "app", "_layout.tsx"):                             expoRootLayout(),
+		filepath.Join(expoRoot, "components", "ui", "pressable-scale.tsx"):        expoPressableScale(),
+		filepath.Join(expoRoot, "components", "ui", "screen-header.tsx"):          expoScreenHeader(),
+		filepath.Join(expoRoot, "components", "ui", "form-sheet.tsx"):             expoFormSheet(),
+		filepath.Join(expoRoot, "app", "(auth)", "_layout.tsx"):                   expoAuthLayout(),
+		filepath.Join(expoRoot, "app", "(auth)", "login.tsx"):                     expoLoginScreen(),
+		filepath.Join(expoRoot, "app", "(auth)", "register.tsx"):                  expoRegisterScreen(),
+		filepath.Join(expoRoot, "app", "(tabs)", "_layout.tsx"):                   expoTabsLayout(),
+		filepath.Join(expoRoot, "app", "(tabs)", "index.tsx"):                     expoHomeScreen(),
+		filepath.Join(expoRoot, "app", "(tabs)", "explore.tsx"):                   expoExploreScreen(),
+		filepath.Join(expoRoot, "app", "(tabs)", "profile.tsx"):                   expoProfileScreen(),
+		filepath.Join(expoRoot, "app", "(tabs)", "settings.tsx"):                  expoSettingsScreen(),
+		filepath.Join(expoRoot, "app", "explore", "users.tsx"):                    expoExploreUsers(),
+		filepath.Join(expoRoot, "app", "explore", "notifications.tsx"):            expoExploreNotifications(),
+		filepath.Join(expoRoot, "app", "explore", "storage.tsx"):                  expoExploreStorage(),
+		filepath.Join(expoRoot, "app", "explore", "analytics.tsx"):                expoExploreAnalytics(),
+		filepath.Join(expoRoot, "app", "explore", "content.tsx"):                  expoExploreContent(),
+		filepath.Join(expoRoot, "app", "explore", "integrations.tsx"):             expoExploreIntegrations(),
+		filepath.Join(expoRoot, "app", "change-password.tsx"):                     expoChangePasswordScreen(),
+		filepath.Join(expoRoot, "app", "blogs", "index.tsx"):                      expoBlogListScreen(),
+		filepath.Join(expoRoot, "app", "blogs", "new.tsx"):                        expoBlogCreateScreen(),
+		filepath.Join(expoRoot, "app", "users", "new.tsx"):                        expoUserCreateScreen(),
+		filepath.Join(expoRoot, "hooks", "use-blogs.ts"):                          expoBlogHook(),
+		filepath.Join(expoRoot, "lib", "upload.ts"):                               expoUploadHelper(),
+		filepath.Join(expoRoot, "lib", "export.ts"):                               expoExportHelper(),
+		filepath.Join(expoRoot, "lib", "import.ts"):                               ExpoImportHelper(),
+		filepath.Join(expoRoot, "lib", "import-progress.ts"):                      ExpoImportProgressStore(),
+		filepath.Join(expoRoot, "components", "ui", "import-sheet.tsx"):           ExpoImportSheet(),
+		filepath.Join(expoRoot, "components", "ui", "import-progress-banner.tsx"): ExpoImportBanner(),
+		filepath.Join(expoRoot, "lib", "api.ts"):                                  expoAPIClient(),
+		filepath.Join(expoRoot, "lib", "auth.tsx"):                                expoAuthProvider(),
+		filepath.Join(expoRoot, "lib", "theme.tsx"):                               expoThemeProvider(),
+		filepath.Join(expoRoot, "lib", "query-client.ts"):                         expoQueryClient(),
 	}
 
 	for path, content := range files {
@@ -270,6 +272,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { queryClient } from "@/lib/query-client";
+import { ImportProgressBanner } from "@/components/ui/import-progress-banner";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -308,6 +311,8 @@ function RootNav() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
       </Stack>
+      {/* grit:mobile-banner — persistent background-import progress */}
+      {isAuthenticated ? <ImportProgressBanner /> : null}
     </>
   );
 }

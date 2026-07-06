@@ -86,36 +86,212 @@ export interface ImportResult {
   errors: { row: number; message: string }[];
 }
 
-// Upload the CSV to /<plural>/import, reporting upload progress (0..1).
+export interface ImportJobStatus extends ImportResult {
+  id: string;
+  status: "processing" | "completed" | "failed";
+  total: number;
+  processed: number;
+  message: string;
+}
+
+// Upload the CSV to /<plural>/import. The server processes it in the BACKGROUND
+// and responds 202 with a job id, so a large file never blocks the request.
+// We then poll /imports/:id until it finishes, reporting progress (0..1) so the
+// caller can drive a progress bar. Because the polling loop lives here (and is
+// kicked off from a module-level store), it keeps running even if the screen
+// that started it unmounts.
 export async function importResourceCsv(
   plural: string,
   fileUri: string,
   onProgress?: (fraction: number) => void,
 ): Promise<ImportResult> {
   const token = await SecureStore.getItemAsync("access_token");
-  const url = API_URL + "/" + plural + "/import";
-  const task = FileSystem.createUploadTask(
-    url,
-    fileUri,
-    {
-      httpMethod: "POST",
-      uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-      fieldName: "file",
-      mimeType: "text/csv",
-      headers: token ? { Authorization: "Bearer " + token } : {},
-    },
-    (p) => {
-      if (onProgress && p.totalBytesExpectedToSend > 0) {
-        onProgress(p.totalBytesSent / p.totalBytesExpectedToSend);
-      }
-    },
-  );
-  const res = await task.uploadAsync();
+  const res = await FileSystem.uploadAsync(API_URL + "/" + plural + "/import", fileUri, {
+    httpMethod: "POST",
+    uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+    fieldName: "file",
+    mimeType: "text/csv",
+    headers: token ? { Authorization: "Bearer " + token } : {},
+  });
   if (!res || res.status < 200 || res.status >= 300) {
     const body = res?.body ? JSON.parse(res.body) : null;
     throw new Error(body?.error?.message || "Import failed (" + (res?.status ?? "?") + ")");
   }
-  return JSON.parse(res.body).data as ImportResult;
+  const started = JSON.parse(res.body).data as { job_id: string; total: number };
+  if (onProgress && started.total === 0) onProgress(1);
+  return pollImportJob(started.job_id, onProgress);
+}
+
+// Poll a background import until it reaches a terminal state, reporting
+// processed/total progress on the way. Resolves with the final counts + errors.
+export async function pollImportJob(
+  jobId: string,
+  onProgress?: (fraction: number) => void,
+): Promise<ImportResult> {
+  const token = await SecureStore.getItemAsync("access_token");
+  const url = API_URL + "/imports/" + jobId;
+  for (;;) {
+    const res = await fetch(url, {
+      headers: token ? { Authorization: "Bearer " + token } : {},
+    });
+    if (!res.ok) throw new Error("Could not check import status (" + res.status + ")");
+    const job = (await res.json()).data as ImportJobStatus;
+    if (onProgress && job.total > 0) onProgress(job.processed / job.total);
+    if (job.status === "completed" || job.status === "failed") {
+      return {
+        created: job.created,
+        skipped: job.skipped,
+        failed: job.failed,
+        errors: job.errors || [],
+      };
+    }
+    await new Promise((r) => setTimeout(r, 700));
+  }
+}
+`
+}
+
+// ExpoImportProgressStore is lib/import-progress.ts — a tiny module-level store
+// that owns in-flight background imports. Because it lives outside React, an
+// import keeps uploading + polling even after the sheet that started it closes,
+// which is what makes imports feel like they "run in the background". The banner
+// and the import sheet both subscribe to it.
+func ExpoImportProgressStore() string {
+	return `import { useSyncExternalStore } from "react";
+import { importResourceCsv, type ImportResult } from "./import";
+
+export interface ImportProgress {
+  id: string;
+  plural: string;
+  label: string;
+  status: "processing" | "completed" | "failed";
+  fraction: number;
+  result?: ImportResult;
+  error?: string;
+}
+
+let jobs: ImportProgress[] = [];
+const listeners = new Set<() => void>();
+let counter = 0;
+
+function emit() {
+  listeners.forEach((l) => l());
+}
+function patch(id: string, p: Partial<ImportProgress>) {
+  jobs = jobs.map((j) => (j.id === id ? { ...j, ...p } : j));
+  emit();
+}
+
+export function subscribeImports(l: () => void) {
+  listeners.add(l);
+  return () => {
+    listeners.delete(l);
+  };
+}
+export function getImports() {
+  return jobs;
+}
+export function dismissImport(id: string) {
+  jobs = jobs.filter((j) => j.id !== id);
+  emit();
+}
+
+// Kick off a background import. Uploading + polling continue independently of
+// any screen, so the user can close the sheet and navigate away. Returns the
+// local job id so a still-open sheet can render its own progress/summary.
+export function startImport(
+  plural: string,
+  fileUri: string,
+  label: string,
+  onDone?: () => void,
+): string {
+  const id = "imp-" + counter++;
+  jobs = [...jobs, { id, plural, label, status: "processing", fraction: 0 }];
+  emit();
+  (async () => {
+    try {
+      const result = await importResourceCsv(plural, fileUri, (f) => patch(id, { fraction: f }));
+      patch(id, { status: "completed", fraction: 1, result });
+      onDone?.();
+    } catch (e: any) {
+      patch(id, { status: "failed", error: e?.message || "Import failed" });
+    }
+  })();
+  return id;
+}
+
+// useImports subscribes a component to the live list of background imports.
+export function useImports(): ImportProgress[] {
+  return useSyncExternalStore(subscribeImports, getImports, getImports);
+}
+`
+}
+
+// ExpoImportBanner is components/ui/import-progress-banner.tsx — a persistent
+// bottom banner that shows every in-flight/recent background import. Mounted
+// once at the root so it survives navigation; the import sheet can be closed
+// while an import keeps running here.
+func ExpoImportBanner() string {
+	return `import { View, Text, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useImports, dismissImport, type ImportProgress } from "@/lib/import-progress";
+
+export function ImportProgressBanner() {
+  const jobs = useImports();
+  const insets = useSafeAreaInsets();
+  if (!jobs.length) return null;
+  return (
+    <View
+      pointerEvents="box-none"
+      style={{ position: "absolute", left: 12, right: 12, bottom: insets.bottom + 84 }}
+    >
+      {jobs.map((j) => (
+        <BannerRow key={j.id} job={j} />
+      ))}
+    </View>
+  );
+}
+
+function BannerRow({ job }: { job: ImportProgress }) {
+  const done = job.status === "completed";
+  const failed = job.status === "failed";
+  const icon = failed ? "alert-circle" : done ? "checkmark-circle" : "cloud-upload-outline";
+  const tint = failed ? "#ff6b6b" : done ? "#00b894" : "#6c5ce7";
+  return (
+    <View className="bg-white dark:bg-[#1a1a24] border border-[#E5E7EB] dark:border-[#2a2a3a] rounded-2xl px-4 py-3 mb-2 shadow-lg">
+      <View className="flex-row items-center">
+        <Ionicons name={icon as any} size={18} color={tint} />
+        <Text className="flex-1 text-[13px] font-semibold text-[#0F1018] dark:text-white ml-2" numberOfLines={1}>
+          {failed
+            ? "Import failed"
+            : done
+              ? "Import complete — " + (job.result?.created ?? 0) + " added"
+              : "Importing " + job.label}
+        </Text>
+        {done || failed ? (
+          <Pressable onPress={() => dismissImport(job.id)} hitSlop={8}>
+            <Ionicons name="close" size={16} color="#9CA3AF" />
+          </Pressable>
+        ) : (
+          <Text className="text-[12px] text-[#6B7280] dark:text-[#9090a8]">{Math.round(job.fraction * 100)}%</Text>
+        )}
+      </View>
+      {!done && !failed ? (
+        <View className="w-full h-1.5 rounded-full bg-[#E5E7EB] dark:bg-[#2a2a3a] overflow-hidden mt-2">
+          <View style={{ width: Math.round(job.fraction * 100) + "%" }} className="h-1.5 bg-[#6c5ce7]" />
+        </View>
+      ) : null}
+      {failed && job.error ? (
+        <Text className="text-[12px] text-[#ff6b6b] mt-1" numberOfLines={2}>{job.error}</Text>
+      ) : null}
+      {done && job.result ? (
+        <Text className="text-[12px] text-[#6B7280] dark:text-[#9090a8] mt-1">
+          {job.result.created} created · {job.result.skipped} skipped · {job.result.failed} failed
+        </Text>
+      ) : null}
+    </View>
+  );
 }
 `
 }
@@ -129,7 +305,8 @@ import { View, Text, Pressable, ActivityIndicator, ScrollView } from "react-nati
 import * as DocumentPicker from "expo-document-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { FormSheet } from "./form-sheet";
-import { parseCsvPreview, importResourceCsv, downloadResourceTemplate, type CsvPreview, type ImportResult } from "@/lib/import";
+import { parseCsvPreview, downloadResourceTemplate, type CsvPreview } from "@/lib/import";
+import { startImport, useImports } from "@/lib/import-progress";
 
 interface ImportSheetProps {
   plural: string;
@@ -142,16 +319,19 @@ export function ImportSheet({ plural, visible, onClose, onImported }: ImportShee
   const [fileUri, setFileUri] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
   const [preview, setPreview] = useState<CsvPreview | null>(null);
-  const [progress, setProgress] = useState<number | null>(null);
-  const [result, setResult] = useState<ImportResult | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [error, setError] = useState("");
+
+  // The import runs in a module-level store, so it keeps going after this sheet
+  // closes — we just read its live state back to show progress while open.
+  const jobs = useImports();
+  const job = jobs.find((j) => j.id === activeId) || null;
 
   const reset = () => {
     setFileUri(null);
     setFileName("");
     setPreview(null);
-    setProgress(null);
-    setResult(null);
+    setActiveId(null);
     setError("");
   };
   const close = () => {
@@ -169,7 +349,7 @@ export function ImportSheet({ plural, visible, onClose, onImported }: ImportShee
     const asset = res.assets[0];
     setFileUri(asset.uri);
     setFileName(asset.name);
-    setResult(null);
+    setActiveId(null);
     try {
       setPreview(await parseCsvPreview(asset.uri));
     } catch (e: any) {
@@ -177,19 +357,12 @@ export function ImportSheet({ plural, visible, onClose, onImported }: ImportShee
     }
   };
 
-  const runImport = async () => {
+  const runImport = () => {
     if (!fileUri) return;
     setError("");
-    setProgress(0);
-    try {
-      const r = await importResourceCsv(plural, fileUri, setProgress);
-      setResult(r);
-      onImported?.();
-    } catch (e: any) {
-      setError(e.message || "Import failed");
-    } finally {
-      setProgress(null);
-    }
+    // Hand off to the background store; the sheet can be closed immediately and
+    // the persistent banner will keep showing progress + the result.
+    setActiveId(startImport(plural, fileUri, fileName || plural, onImported));
   };
 
   const onTemplate = async () => {
@@ -203,29 +376,30 @@ export function ImportSheet({ plural, visible, onClose, onImported }: ImportShee
 
   const cw = 130;
   const labelClass = "text-[13px] font-semibold text-[#6B7280] dark:text-[#9090a8]";
+  const displayError = error || (job?.status === "failed" ? job.error || "Import failed" : "");
 
   return (
     <FormSheet visible={visible} onClose={close} title="Import CSV">
-      {error ? (
+      {displayError ? (
         <View className="bg-[#ff6b6b]/10 border border-[#ff6b6b]/25 rounded-2xl px-4 py-3 mb-4 flex-row items-center">
           <Ionicons name="alert-circle" size={18} color="#ff6b6b" />
-          <Text className="text-[#ff6b6b] text-[13px] ml-2 flex-1">{error}</Text>
+          <Text className="text-[#ff6b6b] text-[13px] ml-2 flex-1">{displayError}</Text>
         </View>
       ) : null}
 
-      {result ? (
+      {job?.status === "completed" && job.result ? (
         <View>
           <View className="items-center mb-5">
             <Ionicons name="checkmark-circle" size={44} color="#00b894" />
             <Text className="text-[17px] font-bold text-[#0F1018] dark:text-white mt-2">Import complete</Text>
           </View>
-          <SummaryRow label="Created" value={result.created} color="#00b894" />
-          <SummaryRow label="Skipped (duplicates)" value={result.skipped} color="#fdcb6e" />
-          <SummaryRow label="Failed" value={result.failed} color="#ff6b6b" />
-          {result.errors.length > 0 ? (
+          <SummaryRow label="Created" value={job.result.created} color="#00b894" />
+          <SummaryRow label="Skipped (duplicates)" value={job.result.skipped} color="#fdcb6e" />
+          <SummaryRow label="Failed" value={job.result.failed} color="#ff6b6b" />
+          {job.result.errors.length > 0 ? (
             <View className="mt-3">
               <Text className={labelClass + " mb-2"}>Errors</Text>
-              {result.errors.slice(0, 20).map((e, idx) => (
+              {job.result.errors.slice(0, 20).map((e, idx) => (
                 <Text key={idx} className="text-[12px] text-[#6B7280] dark:text-[#9090a8] mb-1">
                   Row {e.row}: {e.message}
                 </Text>
@@ -236,13 +410,16 @@ export function ImportSheet({ plural, visible, onClose, onImported }: ImportShee
             <Text className="text-white font-semibold text-[15px]">Done</Text>
           </Pressable>
         </View>
-      ) : progress !== null ? (
+      ) : job?.status === "processing" ? (
         <View className="py-8 items-center">
           <Text className="text-[15px] text-[#0F1018] dark:text-white mb-4">Importing {fileName}…</Text>
           <View className="w-full h-2.5 rounded-full bg-[#E5E7EB] dark:bg-[#2a2a3a] overflow-hidden">
-            <View style={{ width: Math.round(progress * 100) + "%" }} className="h-2.5 bg-[#6c5ce7]" />
+            <View style={{ width: Math.round(job.fraction * 100) + "%" }} className="h-2.5 bg-[#6c5ce7]" />
           </View>
-          <Text className="text-[13px] text-[#6B7280] dark:text-[#9090a8] mt-2">{Math.round(progress * 100)}%</Text>
+          <Text className="text-[13px] text-[#6B7280] dark:text-[#9090a8] mt-2">{Math.round(job.fraction * 100)}%</Text>
+          <Pressable onPress={close} className="rounded-full py-3 px-8 items-center mt-4">
+            <Text className="text-[#6c5ce7] font-semibold text-[14px]">Continue in background</Text>
+          </Pressable>
         </View>
       ) : preview ? (
         <View>
