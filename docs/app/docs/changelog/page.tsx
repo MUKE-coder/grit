@@ -28,6 +28,30 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.65 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.65
+                </span>
+                <span className="text-sm text-muted-foreground">July 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Mobile: CSV export.</strong> Every generated resource list gains a
+                  download action that exports the data as CSV and opens the native share sheet.
+                </p>
+                <p>
+                  Tapping export downloads <code>/&lt;plural&gt;/export</code> (honouring the
+                  current search) to a file and hands it to the OS share sheet — mail it, save it,
+                  open it in Sheets. New <code>lib/export.ts</code> helper built on{' '}
+                  <code>expo-file-system</code> + <code>expo-sharing</code> (run <code>pnpm i</code>).
+                  Filters and CSV import land next.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.64 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

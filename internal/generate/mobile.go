@@ -33,6 +33,9 @@ func (g *Generator) writeMobileFiles(names Names) error {
 	if err := g.ensureMobileFormSheet(); err != nil {
 		return err
 	}
+	if err := g.ensureMobileExportHelper(); err != nil {
+		return err
+	}
 	if err := g.writeMobileHook(names); err != nil {
 		return err
 	}
@@ -401,7 +404,7 @@ func (g *Generator) writeMobileListScreen(names Names) error {
 	}
 
 	tmpl := `import { useState } from "react";
-import { View, Text, TextInput, ScrollView, FlatList, Pressable, ActivityIndicator, RefreshControl } from "react-native";
+import { View, Text, TextInput, ScrollView, FlatList, Pressable, ActivityIndicator, RefreshControl, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ScreenHeader } from "@/components/ui/screen-header";
@@ -409,6 +412,7 @@ import { FormSheet } from "@/components/ui/form-sheet";
 import { useTheme } from "@/lib/theme";
 import { use__PLURAL_PASCAL__, useCreate__PASCAL__, type __PASCAL__ } from "@/hooks/use-__KEBAB__";
 import { __PASCAL__Form } from "@/components/resource-forms/__KEBAB__-form";
+import { exportResourceCsv } from "@/lib/export";
 
 const TABLE_WIDTH = __TABLE_WIDTH__;
 
@@ -432,6 +436,14 @@ export default function __PLURAL_PASCAL__Screen() {
     }
   };
 
+  const onExport = async () => {
+    try {
+      await exportResourceCsv("__PLURAL__", search ? "search=" + encodeURIComponent(search) : "");
+    } catch (e: any) {
+      Alert.alert("Export failed", e.message || "Please try again");
+    }
+  };
+
   const renderItem = ({ item }: { item: __PASCAL__ }) => (
     <Pressable
       onPress={() => router.push("/__KEBAB__/" + item.id)}
@@ -448,9 +460,14 @@ __COLUMNS_ROW__    </Pressable>
         subtitle="Browse all __PLURAL_LOWER__"
         showBack
         right={
-          <Pressable onPress={() => setSheetOpen(true)} hitSlop={8}>
-            <Ionicons name="add-circle" size={28} color="#6c5ce7" />
-          </Pressable>
+          <View className="flex-row items-center">
+            <Pressable onPress={onExport} hitSlop={8} className="mr-4">
+              <Ionicons name="download-outline" size={23} color="#6c5ce7" />
+            </Pressable>
+            <Pressable onPress={() => setSheetOpen(true)} hitSlop={8}>
+              <Ionicons name="add-circle" size={28} color="#6c5ce7" />
+            </Pressable>
+          </View>
         }
       />
       <View className="px-6 pb-3">
@@ -937,6 +954,43 @@ func (g *Generator) ensureMobileScreenHeader() error {
 		return nil
 	}
 	return writeFileWithDirs(path, mobileScreenHeaderContent())
+}
+
+// ensureMobileExportHelper writes lib/export.ts (CSV export → share sheet) if
+// missing. Written once; never overwrites a customised copy.
+func (g *Generator) ensureMobileExportHelper() error {
+	path := filepath.Join(g.mobileRoot(), "lib", "export.ts")
+	if fileExists(path) {
+		return nil
+	}
+	return writeFileWithDirs(path, mobileExportHelperContent())
+}
+
+// mobileExportHelperContent is the source for lib/export.ts. Kept in sync with
+// the base scaffold's expoExportHelper.
+func mobileExportHelperContent() string {
+	return `import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
+import * as SecureStore from "expo-secure-store";
+import { API_URL } from "./api";
+
+// Download the resource's CSV export and open the share sheet.
+export async function exportResourceCsv(plural: string, query = ""): Promise<string> {
+  const token = await SecureStore.getItemAsync("access_token");
+  const url = API_URL + "/" + plural + "/export" + (query ? "?" + query : "");
+  const fileUri = FileSystem.cacheDirectory + plural + "-export.csv";
+  const res = await FileSystem.downloadAsync(url, fileUri, {
+    headers: token ? { Authorization: "Bearer " + token } : {},
+  });
+  if (res.status < 200 || res.status >= 300) {
+    throw new Error("Export failed (" + res.status + ")");
+  }
+  if (await Sharing.isAvailableAsync()) {
+    await Sharing.shareAsync(res.uri, { mimeType: "text/csv", dialogTitle: "Export " + plural });
+  }
+  return res.uri;
+}
+`
 }
 
 // ensureMobileFormSheet writes the shared FormSheet bottom-sheet component if
