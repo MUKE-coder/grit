@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.31.72"
+var version = "3.31.73"
 
 func main() {
 	rootCmd := &cobra.Command{

@@ -112,8 +112,12 @@ services:
       # collisions with Portainer (9000) and a handful of monitoring
       # stacks that grab 9000/9001. Container still listens on 9000/9001
       # inside the Docker network.
-      - "127.0.0.1:9002:9000"
-      - "127.0.0.1:9003:9001"
+      #
+      # Bound to all interfaces (not 127.0.0.1) so a phone/emulator on your LAN
+      # can load uploaded images: stored URLs point at this host:9002 and the
+      # Expo app rewrites "localhost" to your dev IP (apps/expo/lib/images.ts).
+      - "9002:9000"
+      - "9003:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin

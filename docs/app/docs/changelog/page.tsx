@@ -28,6 +28,34 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.73 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.73
+                </span>
+                <span className="text-sm text-muted-foreground">July 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>MinIO is now reachable from mobile devices.</strong> The
+                  dev <code>docker-compose.yml</code> published MinIO on{' '}
+                  <code>127.0.0.1:9002</code> (localhost only), so a phone or
+                  emulator couldn&apos;t load uploaded images even though the API
+                  (bound to all interfaces) worked fine — list and detail
+                  thumbnails stayed blank. It now binds <code>9002:9000</code> on
+                  all interfaces, so devices on your LAN can fetch stored images.
+                  Pairs with <code>resolveImageUrl()</code> (v3.31.72), which
+                  rewrites the <code>localhost</code> host to your dev IP. Existing
+                  projects: change the minio <code>ports</code> to{' '}
+                  <code>&quot;9002:9000&quot;</code> /{' '}
+                  <code>&quot;9003:9001&quot;</code> and{' '}
+                  <code>docker compose up -d minio</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.72 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
