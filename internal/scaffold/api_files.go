@@ -11,45 +11,41 @@ func writeAPIFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "go.mod"):                                               apiGoMod(opts),
-		filepath.Join(apiRoot, ".gitignore"):                                           apiGitignore(),
-		filepath.Join(apiRoot, "cmd", "server", "main.go"):                             apiMainGo(opts),
-		filepath.Join(apiRoot, "internal", "config", "config.go"):                      apiConfigGo(),
-		filepath.Join(apiRoot, "internal", "database", "database.go"):                  apiDatabaseGo(),
-		filepath.Join(apiRoot, "internal", "models", "user.go"):                        apiUserModelGo(),
-		filepath.Join(apiRoot, "internal", "models", "upload.go"):                      apiUploadModelGo(),
-		filepath.Join(apiRoot, "internal", "models", "ui_component.go"):                apiUIComponentModelGo(),
-		filepath.Join(apiRoot, "internal", "models", "seed_ui_components.go"):          apiUIComponentSeedGo(),
-		filepath.Join(apiRoot, "internal", "models", "seed_ui_components_extended.go"): apiUIComponentSeedExtendedGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "ui_registry.go"):               apiUIRegistryHandlerGo(),
-		filepath.Join(apiRoot, "internal", "services", "auth.go"):                      apiAuthServiceGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "auth.go"):                      apiAuthHandlerGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "user.go"):                      apiUserHandlerGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "auth.go"):                    apiAuthMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "cors.go"):                    apiCorsMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "logger.go"):                  apiLoggerMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "maintenance.go"):             apiMaintenanceMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "idempotency.go"):             apiIdempotencyMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "paginate", "paginate.go"):                  apiPaginateGo(),
-		filepath.Join(apiRoot, "internal", "realtime", "hub.go"):                       apiRealtimeHubGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "realtime.go"):                  apiRealtimeHandlerGo(),
-		filepath.Join(apiRoot, "internal", "sync", "registry.go"):                      apiSyncRegistryGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "sync.go"):                      apiSyncHandlerGo(),
-		filepath.Join(apiRoot, "internal", "models", "activity_log.go"):                apiActivityLogModelGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "activity.go"):                apiActivityMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "activity.go"):                  apiActivityHandlerGo(),
-		filepath.Join(apiRoot, "internal", "export", "export.go"):                      apiExportGo(),
-		filepath.Join(apiRoot, "internal", "respond", "respond.go"):                    apiRespondGo(),
-		filepath.Join(apiRoot, "internal", "pdf", "pdf.go"):                            apiPDFGo(),
-		filepath.Join(apiRoot, "internal", "pdf", "invoice.go"):                        apiPDFInvoiceGo(),
-		filepath.Join(apiRoot, "internal", "audit", "audit.go"):                        apiAuditGo(),
-		filepath.Join(apiRoot, "internal", "models", "webhook_event.go"):               apiWebhookEventModelGo(),
-		filepath.Join(apiRoot, "internal", "webhooks", "webhooks.go"):                  apiWebhooksGo(),
-		filepath.Join(apiRoot, "internal", "webhooks", "verifiers.go"):                 apiWebhooksVerifiersGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "webhooks.go"):                  apiWebhooksHandlerGo(),
-		filepath.Join(apiRoot, "internal", "models", "feature_flag.go"):                apiFeatureFlagModelGo(),
-		filepath.Join(apiRoot, "internal", "flags", "flags.go"):                        apiFlagsGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "flags.go"):                     apiFlagsHandlerGo(),
+		filepath.Join(apiRoot, "go.mod"):                                   apiGoMod(opts),
+		filepath.Join(apiRoot, ".gitignore"):                               apiGitignore(),
+		filepath.Join(apiRoot, "cmd", "server", "main.go"):                 apiMainGo(opts),
+		filepath.Join(apiRoot, "internal", "config", "config.go"):          apiConfigGo(),
+		filepath.Join(apiRoot, "internal", "database", "database.go"):      apiDatabaseGo(),
+		filepath.Join(apiRoot, "internal", "models", "user.go"):            apiUserModelGo(),
+		filepath.Join(apiRoot, "internal", "models", "upload.go"):          apiUploadModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "auth.go"):          apiAuthServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "auth.go"):          apiAuthHandlerGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "user.go"):          apiUserHandlerGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "auth.go"):        apiAuthMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "cors.go"):        apiCorsMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "logger.go"):      apiLoggerMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "maintenance.go"): apiMaintenanceMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "idempotency.go"): apiIdempotencyMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "paginate", "paginate.go"):      apiPaginateGo(),
+		filepath.Join(apiRoot, "internal", "realtime", "hub.go"):           apiRealtimeHubGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "realtime.go"):      apiRealtimeHandlerGo(),
+		filepath.Join(apiRoot, "internal", "sync", "registry.go"):          apiSyncRegistryGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "sync.go"):          apiSyncHandlerGo(),
+		filepath.Join(apiRoot, "internal", "models", "activity_log.go"):    apiActivityLogModelGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "activity.go"):    apiActivityMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "activity.go"):      apiActivityHandlerGo(),
+		filepath.Join(apiRoot, "internal", "export", "export.go"):          apiExportGo(),
+		filepath.Join(apiRoot, "internal", "respond", "respond.go"):        apiRespondGo(),
+		filepath.Join(apiRoot, "internal", "pdf", "pdf.go"):                apiPDFGo(),
+		filepath.Join(apiRoot, "internal", "pdf", "invoice.go"):            apiPDFInvoiceGo(),
+		filepath.Join(apiRoot, "internal", "audit", "audit.go"):            apiAuditGo(),
+		filepath.Join(apiRoot, "internal", "models", "webhook_event.go"):   apiWebhookEventModelGo(),
+		filepath.Join(apiRoot, "internal", "webhooks", "webhooks.go"):      apiWebhooksGo(),
+		filepath.Join(apiRoot, "internal", "webhooks", "verifiers.go"):     apiWebhooksVerifiersGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "webhooks.go"):      apiWebhooksHandlerGo(),
+		filepath.Join(apiRoot, "internal", "models", "feature_flag.go"):    apiFeatureFlagModelGo(),
+		filepath.Join(apiRoot, "internal", "flags", "flags.go"):            apiFlagsGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "flags.go"):         apiFlagsHandlerGo(),
 
 		// v3.30 — semantic UserActivity log + ticket system
 		filepath.Join(apiRoot, "internal", "models", "user_activity.go"): userActivityModelGo(),
@@ -996,7 +992,6 @@ func Models() []interface{} {
 		&User{},
 		&Upload{},
 		&Blog{},
-		&UIComponent{},
 		&TwoFactorConfig{},
 		&TrustedDevice{},
 		&TOTPPendingToken{},
@@ -2643,8 +2638,6 @@ func Logger() gin.HandlerFunc {
 		"/sentinel/",
 		"/docs/",
 		"/docs",
-		"/r.json",
-		"/r/",
 		"/api/health",
 		"/favicon.ico",
 	}
@@ -6590,7 +6583,6 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	}
 	cronHandler := &handlers.CronHandler{}
 	blogHandler := handlers.NewBlogHandler(db)
-	uiRegistryHandler := handlers.NewUIRegistryHandler(db, cfg.AppURL)
 	totpHandler := &handlers.TOTPHandler{
 		DB:          db,
 		AuthService: authService,
@@ -6752,9 +6744,6 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// webhooks.Register(...) at app boot.
 	r.POST("/webhooks/:provider", webhookHandler.Receive)
 
-	// Public Grit UI component registry (shadcn-compatible)
-	r.GET("/r.json", uiRegistryHandler.GetRegistry)
-	r.GET("/r/:name", uiRegistryHandler.GetComponent)
 
 	// Public blog routes (no auth required)
 	blogs := r.Group("/api/blogs")
@@ -6824,9 +6813,6 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		protected.POST("/ai/chat", aiHandler.Chat)
 		protected.POST("/ai/stream", aiHandler.Stream)
 
-		// Grit UI component registry (authenticated browse)
-		protected.GET("/ui-components", uiRegistryHandler.ListComponents)
-		protected.GET("/ui-components/:name", uiRegistryHandler.GetComponentDetail)
 
 		// In-app notification bell — every authenticated user. Pulls
 		// from a single Notification table that the SecObs poller
@@ -6908,10 +6894,6 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		admin.PUT("/admin/blogs/:id", blogHandler.Update)
 		admin.DELETE("/admin/blogs/:id", blogHandler.Delete)
 
-		// Grit UI component registry (admin management)
-		admin.POST("/admin/ui-components", uiRegistryHandler.CreateComponent)
-		admin.PUT("/admin/ui-components/:name", uiRegistryHandler.UpdateComponent)
-		admin.DELETE("/admin/ui-components/:name", uiRegistryHandler.DeleteComponent)
 
 		// In-app Security dashboard — aggregates Sentinel APIs into one
 		// envelope so the React page does a single round-trip. Operators

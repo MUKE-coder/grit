@@ -108,7 +108,6 @@ function NavStub({ projectName }: { projectName: string }) {
       <span data-testid="brand">{projectName}</span>
       <a href="/">Home</a>
       <a href="/blog">Blog</a>
-      <a href="/components">Components</a>
     </nav>
   );
 }

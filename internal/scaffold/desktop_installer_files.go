@@ -11,11 +11,11 @@ import (
 // into the desktop scaffold. Two installers ship by default:
 //
 //   - project.nsi          — full installer (~150 MB) that bundles the
-//                            Microsoft Edge WebView2 Evergreen Standalone
-//                            Installer so it works on machines with no
-//                            internet / no admin during first launch.
+//     Microsoft Edge WebView2 Evergreen Standalone
+//     Installer so it works on machines with no
+//     internet / no admin during first launch.
 //   - project-slim.nsi     — slim installer (~22 MB) using the online
-//                            Evergreen bootstrapper.
+//     Evergreen bootstrapper.
 //
 // The release pipeline (scripts/release-desktop.sh) builds the binary
 // once and runs makensis twice with different -D flags to produce both.

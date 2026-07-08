@@ -792,6 +792,7 @@ export function Navbar({ user, onMenuToggle, collapsed, onToggleSidebar }: Navba
 //   - Breadcrumbs (optional)
 //   - Title + Description + Actions row
 //   - 4-card stats grid (optional)
+//
 // Follows GRIT_STYLE_GUIDE §7.8.
 func adminPageHeader() string {
 	return `"use client";

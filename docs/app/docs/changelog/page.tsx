@@ -28,6 +28,35 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.78 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.78
+                </span>
+                <span className="text-sm text-muted-foreground">July 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Grit UI is no longer baked into generated apps.</strong> It
+                  lives on as a standalone library, so a new project starts lean.
+                  Scaffolded apps no longer include the <code>UIComponent</code>{' '}
+                  model, the registry handler (<code>/r.json</code>,{' '}
+                  <code>/r/:name</code>, <code>/ui-components</code>, admin CRUD), the
+                  91-component seeder, <code>packages/grit-ui/</code>, or the web{' '}
+                  <code>/components</code> browser.
+                </p>
+                <p>
+                  A fresh <code>--triple</code> project now registers{' '}
+                  <strong>19 models instead of 20</strong>, and seeding no longer
+                  plants 100 component rows — your first backup drops from 109 rows to
+                  9. Existing projects are untouched; delete those files yourself if
+                  you want the same trim.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.77 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

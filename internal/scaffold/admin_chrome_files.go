@@ -17,9 +17,10 @@ import "strings"
 
 // adminDarkModeToggleComponent — robust light/dark switcher. v3.31 makes
 // the toggle defensive by writing THREE signals on every flip:
-//   1. <html data-theme-mode="dark">  — our CSS variable cascade
-//   2. <html class="dark">            — Tailwind's darkMode: "class" hook
-//   3. <html style="color-scheme: dark"> — browser chrome (scrollbars, native inputs)
+//  1. <html data-theme-mode="dark">  — our CSS variable cascade
+//  2. <html class="dark">            — Tailwind's darkMode: "class" hook
+//  3. <html style="color-scheme: dark"> — browser chrome (scrollbars, native inputs)
+//
 // Any one of these is sufficient to repaint the dashboard; carrying all
 // three means the toggle still works when one path breaks (e.g. a custom
 // CSS file forgets to consume data-theme-mode).
@@ -940,8 +941,9 @@ function SidebarLink({ href, icon, label, active, collapsed, onClick }: LinkProp
 //     resets the timer — the modal only opens for genuinely idle tabs.
 //
 // Configurable via two env vars exposed at build time:
-//   NEXT_PUBLIC_SESSION_IDLE_MS    — when to open the modal (default 870_000 = 14:30)
-//   NEXT_PUBLIC_SESSION_COUNTDOWN_MS — how long the countdown runs (default 30_000)
+//
+//	NEXT_PUBLIC_SESSION_IDLE_MS    — when to open the modal (default 870_000 = 14:30)
+//	NEXT_PUBLIC_SESSION_COUNTDOWN_MS — how long the countdown runs (default 30_000)
 func adminSessionWatchdogComponent() string {
 	return `"use client";
 

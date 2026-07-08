@@ -58,7 +58,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.31.77"
+const DefaultVersion = "3.31.78"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -396,12 +396,6 @@ func Run(opts Options) error {
 		spinner.Printf("  → Creating shared package...\n")
 		if err := writeSharedFiles(root, opts); err != nil {
 			return fmt.Errorf("writing shared files: %w", err)
-		}
-
-		// Write Grit UI component registry
-		spinner.Printf("  → Creating Grit UI component registry...\n")
-		if err := writeGritUIFiles(root, opts); err != nil {
-			return fmt.Errorf("writing Grit UI files: %w", err)
 		}
 	}
 
@@ -742,7 +736,6 @@ func createDirectories(root string, opts Options) error {
 			filepath.Join(root, "packages", "shared", "schemas"),
 			filepath.Join(root, "packages", "shared", "types"),
 			filepath.Join(root, "packages", "shared", "constants"),
-			filepath.Join(root, "packages", "grit-ui", "registry"),
 		)
 	}
 
