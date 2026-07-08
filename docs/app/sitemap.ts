@@ -150,7 +150,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/courses/blog-cms', priority: 0.8, changeFrequency: 'monthly' as const },
     { path: '/courses/cicd-github', priority: 0.7, changeFrequency: 'monthly' as const },
     { path: '/courses/custom-middleware', priority: 0.7, changeFrequency: 'monthly' as const },
-    { path: '/courses/grit-ui-components', priority: 0.7, changeFrequency: 'monthly' as const },
 
     // Course (legacy single course page)
     { path: '/course', priority: 0.5, changeFrequency: 'monthly' as const },

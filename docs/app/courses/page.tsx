@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Globe, Monitor, Smartphone, Clock, ArrowRight, BookOpen, Zap, Server, Dumbbell, ShoppingCart, FileText, Shield, Activity, Database, Code2, Rocket, Bot, Receipt, TestTube2, HardDrive, MessageSquare, CreditCard, Newspaper, GitBranch, Wrench, Palette, Wifi, ShieldCheck, Flag, Cable, Layers, FileSpreadsheet, GraduationCap, Trophy, ListChecks, Construction, Sparkles } from "lucide-react"
+import { Globe, Monitor, Smartphone, Clock, ArrowRight, BookOpen, Zap, Server, Dumbbell, ShoppingCart, FileText, Shield, Activity, Database, Code2, Rocket, Bot, Receipt, TestTube2, HardDrive, MessageSquare, CreditCard, Newspaper, GitBranch, Wrench, Wifi, ShieldCheck, Flag, Cable, Layers, FileSpreadsheet, GraduationCap, Trophy, ListChecks, Construction, Sparkles } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import { GridFrame } from "@/components/grid-frame"
 import { Reveal } from "@/components/reveal"
@@ -109,7 +109,6 @@ const standaloneCourses = [
   { title: "Blog & CMS", subtitle: "Complete content management system", href: "/courses/blog-cms", icon: Newspaper, duration: "30 min" },
   { title: "CI/CD with GitHub Actions", subtitle: "Automated testing & deployment", href: "/courses/cicd-github", icon: GitBranch, duration: "30 min" },
   { title: "Custom Middleware", subtitle: "Extending Grit with hooks", href: "/courses/custom-middleware", icon: Wrench, duration: "30 min" },
-  { title: "Grit UI Components", subtitle: "Using the 100-component registry", href: "/courses/grit-ui-components", icon: Palette, duration: "30 min" },
 ]
 
 /* -- Page component ------------------------------------------------------- */
