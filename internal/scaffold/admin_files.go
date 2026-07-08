@@ -206,13 +206,13 @@ func writeAdminFiles(root string, opts Options) error {
 
 	files := map[string]string{
 		// Config files
-		filepath.Join(adminRoot, "package.json"):     adminPackageJSON(opts),
-		filepath.Join(adminRoot, "next.config.ts"):   adminNextConfig(),
+		filepath.Join(adminRoot, "package.json"):       adminPackageJSON(opts),
+		filepath.Join(adminRoot, "next.config.ts"):     adminNextConfig(),
 		filepath.Join(adminRoot, "tailwind.config.ts"): adminTailwindConfig(),
-		filepath.Join(adminRoot, "postcss.config.js"): adminPostCSSConfig(),
-		filepath.Join(adminRoot, "tsconfig.json"):    adminTSConfig(),
+		filepath.Join(adminRoot, "postcss.config.js"):  adminPostCSSConfig(),
+		filepath.Join(adminRoot, "tsconfig.json"):      adminTSConfig(),
 		filepath.Join(adminRoot, "app", "globals.css"): adminGlobalCSS(),
-		filepath.Join(adminRoot, "app", "layout.tsx"): adminRootLayout(opts),
+		filepath.Join(adminRoot, "app", "layout.tsx"):  adminRootLayout(opts),
 
 		// Root redirect page
 		filepath.Join(adminRoot, "app", "page.tsx"): adminRedirectPage(),
@@ -232,39 +232,39 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "app", "(auth)", "callback", "page.tsx"):        adminAuthCallbackPage(),
 
 		// Theme-aware auth shells (v3.28)
-		filepath.Join(adminRoot, "components", "auth", "AuthShell.tsx"):          adminAuthShellDispatcher(),
-		filepath.Join(adminRoot, "components", "auth", "AtlasAuthShell.tsx"):     adminAtlasAuthShell(),
-		filepath.Join(adminRoot, "components", "auth", "AuroraAuthShell.tsx"):    adminAuroraAuthShell(),
-		filepath.Join(adminRoot, "components", "auth", "PulseAuthShell.tsx"):     adminPulseAuthShell(),
-		filepath.Join(adminRoot, "components", "auth", "SocialAuthButtons.tsx"):  adminAuthSocialButtons(),
+		filepath.Join(adminRoot, "components", "auth", "AuthShell.tsx"):         adminAuthShellDispatcher(),
+		filepath.Join(adminRoot, "components", "auth", "AtlasAuthShell.tsx"):    adminAtlasAuthShell(),
+		filepath.Join(adminRoot, "components", "auth", "AuroraAuthShell.tsx"):   adminAuroraAuthShell(),
+		filepath.Join(adminRoot, "components", "auth", "PulseAuthShell.tsx"):    adminPulseAuthShell(),
+		filepath.Join(adminRoot, "components", "auth", "SocialAuthButtons.tsx"): adminAuthSocialButtons(),
 
 		// Chrome components (v3.29) — page header, dark toggle, user menu,
 		// notification bell, refactored collapsible sidebar with 2-logo brand.
-		filepath.Join(adminRoot, "components", "chrome", "PageHeader.tsx"):           adminPageHeaderComponent(),
-		filepath.Join(adminRoot, "components", "chrome", "DarkModeToggle.tsx"):       adminDarkModeToggleComponent(),
-		filepath.Join(adminRoot, "components", "chrome", "UserMenu.tsx"):             adminUserMenuComponent(),
-		filepath.Join(adminRoot, "components", "chrome", "NotificationBell.tsx"):     adminNotificationBellComponent(),
-		filepath.Join(adminRoot, "components", "chrome", "CollapsibleSidebar.tsx"):   adminCollapsibleSidebarComponent(opts),
-		filepath.Join(adminRoot, "components", "chrome", "SessionWatchdog.tsx"):      adminSessionWatchdogComponent(),
+		filepath.Join(adminRoot, "components", "chrome", "PageHeader.tsx"):         adminPageHeaderComponent(),
+		filepath.Join(adminRoot, "components", "chrome", "DarkModeToggle.tsx"):     adminDarkModeToggleComponent(),
+		filepath.Join(adminRoot, "components", "chrome", "UserMenu.tsx"):           adminUserMenuComponent(),
+		filepath.Join(adminRoot, "components", "chrome", "NotificationBell.tsx"):   adminNotificationBellComponent(),
+		filepath.Join(adminRoot, "components", "chrome", "CollapsibleSidebar.tsx"): adminCollapsibleSidebarComponent(opts),
+		filepath.Join(adminRoot, "components", "chrome", "SessionWatchdog.tsx"):    adminSessionWatchdogComponent(),
 
 		// UI primitives (v3.29) — responsive form/table building blocks.
-		filepath.Join(adminRoot, "components", "ui", "ResponsiveSheet.tsx"):  adminResponsiveSheetComponent(),
-		filepath.Join(adminRoot, "components", "ui", "CurrencyInput.tsx"):    adminCurrencyInputComponent(),
-		filepath.Join(adminRoot, "components", "ui", "IconButton.tsx"):       adminIconButtonComponent(),
+		filepath.Join(adminRoot, "components", "ui", "ResponsiveSheet.tsx"): adminResponsiveSheetComponent(),
+		filepath.Join(adminRoot, "components", "ui", "CurrencyInput.tsx"):   adminCurrencyInputComponent(),
+		filepath.Join(adminRoot, "components", "ui", "IconButton.tsx"):      adminIconButtonComponent(),
 		filepath.Join(adminRoot, "components", "ui", "ResponsiveTable.tsx"): adminResponsiveTableComponent(),
-		filepath.Join(adminRoot, "lib", "export.ts"):                         adminExportLib(),
+		filepath.Join(adminRoot, "lib", "export.ts"):                        adminExportLib(),
 
 		// v3.31 UX bundle — toast hook with milliseconds, skeleton, UserCell
 		// table helper, system hub page, full notifications page.
-		filepath.Join(adminRoot, "hooks", "use-toasted-mutation.ts"):         adminToastHook(),
-		filepath.Join(adminRoot, "components", "ui", "Skeleton.tsx"):         adminSkeletonComponent(),
-		filepath.Join(adminRoot, "components", "ui", "UserCell.tsx"):         adminUserCellComponent(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "page.tsx"):                 adminSystemHubPageV2(),
+		filepath.Join(adminRoot, "hooks", "use-toasted-mutation.ts"):                          adminToastHook(),
+		filepath.Join(adminRoot, "components", "ui", "Skeleton.tsx"):                          adminSkeletonComponent(),
+		filepath.Join(adminRoot, "components", "ui", "UserCell.tsx"):                          adminUserCellComponent(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "page.tsx"):                  adminSystemHubPageV2(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "notifications", "page.tsx"): adminNotificationsPage(),
 		// v3.31.5: dedicated System Health / Security / Performance pages.
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "health", "page.tsx"):       adminSystemHealthPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "security", "page.tsx"):     adminSecurityPageV2(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "performance", "page.tsx"):  adminPerformancePageV2(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "health", "page.tsx"):      adminSystemHealthPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "security", "page.tsx"):    adminSecurityPageV2(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "performance", "page.tsx"): adminPerformancePageV2(),
 		// v3.31.20: public form-share management page (Phase 2)
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "form-shares", "page.tsx"): adminFormSharesPage(),
 
@@ -272,7 +272,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"): adminDashboardLayout(),
 
 		// Lib
-		filepath.Join(adminRoot, "lib", "api-client.ts"):  adminAPIClient(),
+		filepath.Join(adminRoot, "lib", "api-client.ts"):   adminAPIClient(),
 		filepath.Join(adminRoot, "lib", "query-client.ts"): adminQueryClient(),
 		filepath.Join(adminRoot, "lib", "utils.ts"):        adminUtils(),
 		filepath.Join(adminRoot, "lib", "resource.ts"):     adminResourceTypes(),
@@ -281,7 +281,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "lib", "file-accepts.ts"): adminFileAcceptsLib(),
 		// v3.31.35 — SheetJS-backed Excel/CSV/JSON helpers used by the
 		// export menu and import modal on every resource list page.
-		filepath.Join(adminRoot, "lib", "excel-utils.ts"):  adminExcelUtils(),
+		filepath.Join(adminRoot, "lib", "excel-utils.ts"): adminExcelUtils(),
 
 		// Shared components
 		filepath.Join(adminRoot, "components", "shared", "providers.tsx"):      adminProviders(),
@@ -294,48 +294,48 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "layout", "page-header.tsx"):  adminPageHeader(),
 
 		// Table components
-		filepath.Join(adminRoot, "components", "tables", "data-table.tsx"):       adminDataTable(),
-		filepath.Join(adminRoot, "components", "tables", "column-header.tsx"):    adminColumnHeader(),
-		filepath.Join(adminRoot, "components", "tables", "cell-renderers.tsx"):   adminCellRenderers(),
-		filepath.Join(adminRoot, "components", "tables", "stacked-cell.tsx"):     adminStackedCell(),
-		filepath.Join(adminRoot, "components", "tables", "table-filters.tsx"):    adminTableFilters(),
-		filepath.Join(adminRoot, "components", "tables", "table-toolbar.tsx"):    adminTableToolbar(),
-		filepath.Join(adminRoot, "components", "tables", "date-filter.tsx"):      adminDateFilter(),
+		filepath.Join(adminRoot, "components", "tables", "data-table.tsx"):     adminDataTable(),
+		filepath.Join(adminRoot, "components", "tables", "column-header.tsx"):  adminColumnHeader(),
+		filepath.Join(adminRoot, "components", "tables", "cell-renderers.tsx"): adminCellRenderers(),
+		filepath.Join(adminRoot, "components", "tables", "stacked-cell.tsx"):   adminStackedCell(),
+		filepath.Join(adminRoot, "components", "tables", "table-filters.tsx"):  adminTableFilters(),
+		filepath.Join(adminRoot, "components", "tables", "table-toolbar.tsx"):  adminTableToolbar(),
+		filepath.Join(adminRoot, "components", "tables", "date-filter.tsx"):    adminDateFilter(),
 		// v3.31.35 — export menu (CSV/Excel/JSON dropdown with
 		// all-pages fetch) + import modal (drop file -> preview ->
 		// batched POST). Both client-side via SheetJS.
-		filepath.Join(adminRoot, "components", "tables", "export-menu.tsx"):      adminExportMenu(),
-		filepath.Join(adminRoot, "components", "tables", "import-modal.tsx"):     adminImportModal(),
-		filepath.Join(adminRoot, "components", "tables", "table-pagination.tsx"): adminTablePagination(),
-		filepath.Join(adminRoot, "components", "tables", "table-skeleton.tsx"):   adminTableSkeleton(),
+		filepath.Join(adminRoot, "components", "tables", "export-menu.tsx"):       adminExportMenu(),
+		filepath.Join(adminRoot, "components", "tables", "import-modal.tsx"):      adminImportModal(),
+		filepath.Join(adminRoot, "components", "tables", "table-pagination.tsx"):  adminTablePagination(),
+		filepath.Join(adminRoot, "components", "tables", "table-skeleton.tsx"):    adminTableSkeleton(),
 		filepath.Join(adminRoot, "components", "tables", "table-empty-state.tsx"): adminTableEmptyState(),
 
 		// Form components
-		filepath.Join(adminRoot, "components", "forms", "form-builder.tsx"):      adminFormBuilder(),
-		filepath.Join(adminRoot, "components", "forms", "form-modal.tsx"):        adminFormModal(),
-		filepath.Join(adminRoot, "components", "forms", "form-sheet.tsx"):        adminFormSheet(),
-		filepath.Join(adminRoot, "components", "forms", "form-page.tsx"):         adminFormPage(),
-		filepath.Join(adminRoot, "components", "forms", "update-groups.tsx"):     adminUpdateGroups(),
-		filepath.Join(adminRoot, "components", "forms", "form-stepper.tsx"):      adminFormStepper(),
-		filepath.Join(adminRoot, "components", "forms", "form-modal-steps.tsx"):  adminFormModalSteps(),
-		filepath.Join(adminRoot, "components", "forms", "form-page-steps.tsx"):   adminFormPageSteps(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "text-field.tsx"):     adminTextField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "textarea-field.tsx"): adminTextareaField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "number-field.tsx"):   adminNumberField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "select-field.tsx"):   adminSelectField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "date-field.tsx"):     adminDateField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "toggle-field.tsx"):   adminToggleField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "checkbox-field.tsx"): adminCheckboxField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "radio-field.tsx"):    adminRadioField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "image-field.tsx"):    adminImageField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "images-field.tsx"):   adminImagesField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "video-field.tsx"):    adminVideoField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "videos-field.tsx"):   adminVideosField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "file-field.tsx"):     adminFileField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "files-field.tsx"):                  adminFilesField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "relationship-select-field.tsx"):      adminRelationshipSelectField(),
+		filepath.Join(adminRoot, "components", "forms", "form-builder.tsx"):                              adminFormBuilder(),
+		filepath.Join(adminRoot, "components", "forms", "form-modal.tsx"):                                adminFormModal(),
+		filepath.Join(adminRoot, "components", "forms", "form-sheet.tsx"):                                adminFormSheet(),
+		filepath.Join(adminRoot, "components", "forms", "form-page.tsx"):                                 adminFormPage(),
+		filepath.Join(adminRoot, "components", "forms", "update-groups.tsx"):                             adminUpdateGroups(),
+		filepath.Join(adminRoot, "components", "forms", "form-stepper.tsx"):                              adminFormStepper(),
+		filepath.Join(adminRoot, "components", "forms", "form-modal-steps.tsx"):                          adminFormModalSteps(),
+		filepath.Join(adminRoot, "components", "forms", "form-page-steps.tsx"):                           adminFormPageSteps(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "text-field.tsx"):                      adminTextField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "textarea-field.tsx"):                  adminTextareaField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "number-field.tsx"):                    adminNumberField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "select-field.tsx"):                    adminSelectField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "date-field.tsx"):                      adminDateField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "toggle-field.tsx"):                    adminToggleField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "checkbox-field.tsx"):                  adminCheckboxField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "radio-field.tsx"):                     adminRadioField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "image-field.tsx"):                     adminImageField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "images-field.tsx"):                    adminImagesField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "video-field.tsx"):                     adminVideoField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "videos-field.tsx"):                    adminVideosField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "file-field.tsx"):                      adminFileField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "files-field.tsx"):                     adminFilesField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "relationship-select-field.tsx"):       adminRelationshipSelectField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "multi-relationship-select-field.tsx"): adminMultiRelationshipSelectField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "rich-text-field.tsx"):                adminRichTextField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "rich-text-field.tsx"):                 adminRichTextField(),
 
 		// UI components
 		filepath.Join(adminRoot, "components", "ui", "dropzone.tsx"):      adminDropzone(),
@@ -365,9 +365,9 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "hooks", "use-system.ts"):   adminUseSystem(),
 		filepath.Join(adminRoot, "hooks", "use-profile.ts"):  adminUseProfile(),
 		// v3.31.40 — per-user dashboard customisation
-		filepath.Join(adminRoot, "hooks", "use-dashboard-layout.ts"):                            adminUseDashboardLayoutTS(),
-		filepath.Join(adminRoot, "lib", "dashboard-catalog.ts"):                                  adminDashboardCatalogTS(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "settings", "dashboard", "page.tsx"):     adminDashboardSettingsPageTS(),
+		filepath.Join(adminRoot, "hooks", "use-dashboard-layout.ts"):                        adminUseDashboardLayoutTS(),
+		filepath.Join(adminRoot, "lib", "dashboard-catalog.ts"):                             adminDashboardCatalogTS(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "settings", "dashboard", "page.tsx"): adminDashboardSettingsPageTS(),
 
 		// Dashboard pages — (dashboard) route group (style variant)
 		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):          adminDashboardPageForStyle(opts.Style),
@@ -375,15 +375,18 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"): adminUsersPage(),
 		// v3.31.7: blog list uses a two-step create flow (sheet -> redirect
 		// to detail page with WordEditor) instead of the stock resource page.
-		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "page.tsx"):       adminBlogsListPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "page.tsx"):         adminBlogsListPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "[id]", "page.tsx"): adminBlogDetailPage(),
 		filepath.Join(adminRoot, "components", "forms", "word-editor.tsx"):                       adminWordEditor(),
 
 		// System pages — under (dashboard) route group
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "jobs", "page.tsx"):  adminJobsPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "files", "page.tsx"): adminFilesPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "cron", "page.tsx"):  adminCronPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "mail", "page.tsx"):     adminMailPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "jobs", "page.tsx"): adminJobsPage(),
+		// v3.31.77 — full-database backups (weekly cron + manual + download)
+		filepath.Join(adminRoot, "hooks", "use-backups.ts"):                             adminUseBackups(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "backups", "page.tsx"): adminBackupsPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "files", "page.tsx"):   adminFilesPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "cron", "page.tsx"):    adminCronPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "mail", "page.tsx"):    adminMailPage(),
 		// v3.31.5: /system/security + /system/performance were redesigned;
 		// the original adminSecurityPage / adminObservabilityPage live on as
 		// alternates under /observability (kept for compatibility) but the
@@ -392,8 +395,8 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "public", ".gitkeep"):                                        "",
 
 		// v3.30 — activity dashboard + ticket system pages
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "activity", "page.tsx"):     adminWalkieActivityPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "support", "page.tsx"):      adminSupportListPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "activity", "page.tsx"):        adminWalkieActivityPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "support", "page.tsx"):         adminSupportListPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "support", "[id]", "page.tsx"): adminTicketThreadPage(),
 	}
 

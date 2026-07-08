@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.31.76"
+var version = "3.31.77"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -50,6 +50,8 @@ func main() {
 	rootCmd.AddCommand(studioCmd())
 	rootCmd.AddCommand(syncCmd())
 	rootCmd.AddCommand(migrateCmd())
+	rootCmd.AddCommand(backupCmd())
+	rootCmd.AddCommand(restoreCmd())
 	rootCmd.AddCommand(seedCmd())
 	rootCmd.AddCommand(upgradeCmd())
 	rootCmd.AddCommand(updateCmd())
@@ -406,6 +408,7 @@ func addCmd() *cobra.Command {
 // customer-facing page" gap:
 //   - middleware.ts          — SSR cookie check, redirects to /login
 //   - components/ProtectedWebRoute.tsx — client wrapper using useMe()
+//
 // Idempotent: pre-existing files are skipped with a notice.
 func addWebAuthCmd() *cobra.Command {
 	var force bool
@@ -703,6 +706,112 @@ func migrateCmd() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&fresh, "fresh", false, "Drop all tables before migrating (migrate:fresh)")
+
+	return cmd
+}
+
+// backupCmd shells out to the project's cmd/backup, which knows the database and
+// object-storage config. Same pattern as `grit migrate`.
+func backupCmd() *cobra.Command {
+	var output string
+
+	cmd := &cobra.Command{
+		Use:   "backup",
+		Short: "Back up the entire database",
+		Long: "Dump every registered model to a ZIP archive: one CSV per table, a dump.sql of\n" +
+			"INSERTs in parent-to-child order, and a metadata.json manifest of row counts.\n\n" +
+			"By default the archive is uploaded to object storage (R2 / S3 / MinIO) and indexed,\n" +
+			"the same way the weekly cron does it. Pass --output to write a local file instead,\n" +
+			"which needs no storage credentials.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+
+			apiDir, err := findAPIDir()
+			if err != nil {
+				return err
+			}
+
+			goArgs := []string{"run", "./cmd/backup"}
+			if output != "" {
+				abs, err := filepath.Abs(output)
+				if err != nil {
+					return err
+				}
+				goArgs = append(goArgs, "--output", abs)
+			}
+
+			c := exec.Command("go", goArgs...)
+			c.Dir = apiDir
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			c.Stdin = os.Stdin
+
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			if output != "" {
+				purple.Printf("\n  Backing up the database to %s...\n", output)
+			} else {
+				purple.Println("\n  Backing up the database to object storage...")
+			}
+
+			return c.Run()
+		},
+	}
+
+	cmd.Flags().StringVarP(&output, "output", "o", "", "Write the archive to a local file instead of uploading it")
+
+	return cmd
+}
+
+// restoreCmd replays an archive. The article's hardest-won lesson: a backup you
+// have never restored is a rumour — so restore ships as a first-class command.
+func restoreCmd() *cobra.Command {
+	var noMigrate bool
+
+	cmd := &cobra.Command{
+		Use:   "restore <backup.zip>",
+		Short: "Restore the database from a backup archive",
+		Long: "Run migrations, then replay the archive's dump.sql inside a single transaction —\n" +
+			"either every row lands or none does.\n\n" +
+			"Point this at an EMPTY database: the archive carries data, not schema, and existing\n" +
+			"rows will collide on their primary keys. Use --no-migrate if the schema already exists.",
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+
+			apiDir, err := findAPIDir()
+			if err != nil {
+				return err
+			}
+
+			// The child runs with cwd=apiDir, so a relative path would resolve
+			// from the wrong directory.
+			archive, err := filepath.Abs(args[0])
+			if err != nil {
+				return err
+			}
+			if _, err := os.Stat(archive); err != nil {
+				return fmt.Errorf("backup archive not found: %s", archive)
+			}
+
+			goArgs := []string{"run", "./cmd/restore"}
+			if noMigrate {
+				goArgs = append(goArgs, "--migrate=false")
+			}
+			goArgs = append(goArgs, archive)
+
+			c := exec.Command("go", goArgs...)
+			c.Dir = apiDir
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			c.Stdin = os.Stdin
+
+			color.New(color.FgHiMagenta, color.Bold).Printf("\n  Restoring the database from %s...\n", args[0])
+
+			return c.Run()
+		},
+	}
+
+	cmd.Flags().BoolVar(&noMigrate, "no-migrate", false, "Skip running migrations before restoring")
 
 	return cmd
 }

@@ -25,13 +25,13 @@ func randomHex(n int) string {
 
 func writeRootFiles(root string, opts Options) error {
 	files := map[string]string{
-		filepath.Join(root, ".env"):               envFile(opts),
-		filepath.Join(root, ".env.example"):       envFile(opts), // Same as .env — serves as documentation for other devs
-		filepath.Join(root, ".gitignore"):         rootGitignore(),
-		filepath.Join(root, "README.md"):          readmeFile(opts),
-		filepath.Join(root, "grit.json"):          gritJSON(opts),
-		filepath.Join(root, ".claude", "skills", "grit", "SKILL.md"):      gritSkillFile(opts),
-		filepath.Join(root, ".claude", "skills", "grit", "reference.md"):  gritSkillReference(opts),
+		filepath.Join(root, ".env"):                                      envFile(opts),
+		filepath.Join(root, ".env.example"):                              envFile(opts), // Same as .env — serves as documentation for other devs
+		filepath.Join(root, ".gitignore"):                                rootGitignore(),
+		filepath.Join(root, "README.md"):                                 readmeFile(opts),
+		filepath.Join(root, "grit.json"):                                 gritJSON(opts),
+		filepath.Join(root, ".claude", "skills", "grit", "SKILL.md"):     gritSkillFile(opts),
+		filepath.Join(root, ".claude", "skills", "grit", "reference.md"): gritSkillReference(opts),
 	}
 
 	// Prettier config (all architectures with frontend)

@@ -58,7 +58,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.31.76"
+const DefaultVersion = "3.31.77"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -333,6 +333,9 @@ func Run(opts Options) error {
 	if err := writeStorageFiles(root, opts); err != nil {
 		return fmt.Errorf("writing storage files: %w", err)
 	}
+	if err := writeBackupFiles(root, opts); err != nil {
+		return fmt.Errorf("writing backup files: %w", err)
+	}
 	if err := writeMailFiles(root, opts); err != nil {
 		return fmt.Errorf("writing mail files: %w", err)
 	}
@@ -517,6 +520,9 @@ func RunSingle(opts Options) error {
 	}
 	if err := writeStorageFiles(root, opts); err != nil {
 		return fmt.Errorf("writing storage files: %w", err)
+	}
+	if err := writeBackupFiles(root, opts); err != nil {
+		return fmt.Errorf("writing backup files: %w", err)
 	}
 	if err := writeMailFiles(root, opts); err != nil {
 		return fmt.Errorf("writing mail files: %w", err)

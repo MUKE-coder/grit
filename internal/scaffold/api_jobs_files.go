@@ -11,9 +11,9 @@ func writeJobsFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "jobs", "client.go"):    jobsClientGo(),
-		filepath.Join(apiRoot, "internal", "jobs", "workers.go"):   jobsWorkersGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "jobs.go"):  jobsHandlerGo(),
+		filepath.Join(apiRoot, "internal", "jobs", "client.go"):   jobsClientGo(),
+		filepath.Join(apiRoot, "internal", "jobs", "workers.go"):  jobsWorkersGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "jobs.go"): jobsHandlerGo(),
 	}
 
 	for path, content := range files {
@@ -45,6 +45,7 @@ const (
 	TypeImageProcess          = "image:process"
 	TypeTokensCleanup         = "tokens:cleanup"
 	TypeUploadsOrphanCleanup  = "uploads:cleanup_orphans" // v3.31.33
+	TypeBackupWeekly          = "backup:weekly"           // v3.31.77
 )
 
 // Default per-task settings used when a caller doesn't override via
@@ -276,6 +277,7 @@ import (
 	"github.com/hibiken/asynq"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/backup"
 	"{{MODULE}}/internal/cache"
 	"{{MODULE}}/internal/mail"
 	"{{MODULE}}/internal/files"
@@ -339,6 +341,7 @@ func StartWorker(redisURL string, deps WorkerDeps) (func(), error) {
 	mux.HandleFunc(TypeImageProcess, handleImageProcess(deps))
 	mux.HandleFunc(TypeTokensCleanup, handleTokensCleanup(deps))
 	mux.HandleFunc(TypeUploadsOrphanCleanup, handleUploadsOrphanCleanup(deps))
+	mux.HandleFunc(TypeBackupWeekly, handleBackupWeekly(deps))
 
 	go func() {
 		if err := srv.Run(mux); err != nil {
@@ -455,6 +458,34 @@ func handleUploadsOrphanCleanup(deps WorkerDeps) func(ctx context.Context, task 
 			return fmt.Errorf("orphan cleanup: %w", err)
 		}
 		log.Printf("Orphan upload cleanup complete, removed %d uploads", deleted)
+		return nil
+	}
+}
+
+// handleBackupWeekly takes the scheduled full-database backup: every registered
+// model is dumped to a ZIP (CSV per table + dump.sql + metadata.json), uploaded
+// to object storage, and old archives are pruned to the newest few.
+//
+// When object storage isn't configured (typical in local dev) we skip silently
+// rather than fail the task forever — there's nowhere to put the archive.
+func handleBackupWeekly(deps WorkerDeps) func(ctx context.Context, task *asynq.Task) error {
+	return func(ctx context.Context, task *asynq.Task) error {
+		if deps.DB == nil {
+			return fmt.Errorf("database not configured")
+		}
+		if deps.Storage == nil {
+			log.Println("Weekly backup skipped: object storage is not configured")
+			return nil
+		}
+
+		log.Println("Running weekly full-database backup...")
+		svc := &backup.Service{DB: deps.DB, Storage: deps.Storage}
+		rec, err := svc.Generate(ctx, "WEEKLY")
+		if err != nil {
+			return fmt.Errorf("weekly backup: %w", err)
+		}
+		log.Printf("Weekly backup %s complete — %d tables, %d rows, %.1f KB",
+			rec.ID, rec.TableCount, rec.RowCount, float64(rec.SizeBytes)/1024)
 		return nil
 	}
 }

@@ -35,12 +35,12 @@ func writeSecurityObservabilityFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "models", "notification.go"):           notificationModelGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "notification.go"):         notificationHandlerGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "security.go"):             securityHandlerGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "observability.go"):        observabilityHandlerGo(),
-		filepath.Join(apiRoot, "internal", "services", "secobs_bridge.go"):        secobsBridgeGo(),
-		filepath.Join(apiRoot, "internal", "services", "secobs_poller.go"):        secobsPollerGo(),
+		filepath.Join(apiRoot, "internal", "models", "notification.go"):    notificationModelGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "notification.go"):  notificationHandlerGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "security.go"):      securityHandlerGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "observability.go"): observabilityHandlerGo(),
+		filepath.Join(apiRoot, "internal", "services", "secobs_bridge.go"): secobsBridgeGo(),
+		filepath.Join(apiRoot, "internal", "services", "secobs_poller.go"): secobsPollerGo(),
 	}
 
 	for path, content := range files {

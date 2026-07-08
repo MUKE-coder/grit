@@ -9,27 +9,27 @@ func writeWebTanStackFiles(root string, opts Options) error {
 	webRoot := filepath.Join(root, "apps", "web")
 
 	files := map[string]string{
-		filepath.Join(webRoot, "package.json"):                              webTanStackPackageJSON(opts),
-		filepath.Join(webRoot, "vite.config.ts"):                           webTanStackViteConfig(),
-		filepath.Join(webRoot, "index.html"):                               webTanStackIndexHTML(opts),
-		filepath.Join(webRoot, "tailwind.config.ts"):                       webTanStackTailwindConfig(),
+		filepath.Join(webRoot, "package.json"):       webTanStackPackageJSON(opts),
+		filepath.Join(webRoot, "vite.config.ts"):     webTanStackViteConfig(),
+		filepath.Join(webRoot, "index.html"):         webTanStackIndexHTML(opts),
+		filepath.Join(webRoot, "tailwind.config.ts"): webTanStackTailwindConfig(),
 		// .cjs (not .js) because package.json sets "type": "module" and PostCSS
 		// config still uses CommonJS module.exports.
-		filepath.Join(webRoot, "postcss.config.cjs"):                       webPostCSSConfig(),
-		filepath.Join(webRoot, "tsconfig.json"):                            webTanStackTSConfig(),
-		filepath.Join(webRoot, "src", "main.tsx"):                          webTanStackMain(),
-		filepath.Join(webRoot, "src", "globals.css"):                       webGlobalCSS(),
-		filepath.Join(webRoot, "src", "routes", "__root.tsx"):              webTanStackRootRoute(opts),
-		filepath.Join(webRoot, "src", "routes", "index.tsx"):               webTanStackIndexRoute(opts),
-		filepath.Join(webRoot, "src", "routes", "blog", "index.tsx"):       webTanStackBlogListRoute(),
-		filepath.Join(webRoot, "src", "routes", "blog", "$slug.tsx"):       webTanStackBlogDetailRoute(),
-		filepath.Join(webRoot, "src", "components", "navbar.tsx"):          webNavbar(opts),
-		filepath.Join(webRoot, "src", "components", "footer.tsx"):          webFooter(opts),
-		filepath.Join(webRoot, "src", "components", "providers.tsx"):       webTanStackProviders(),
-		filepath.Join(webRoot, "src", "lib", "utils.ts"):                   webUtils(),
-		filepath.Join(webRoot, "src", "lib", "api.ts"):                     viteAPIClient(),
-		filepath.Join(webRoot, "src", "hooks", "use-blogs.ts"):             webUseBlogsHook(),
-		filepath.Join(webRoot, "public", ".gitkeep"):                       "",
+		filepath.Join(webRoot, "postcss.config.cjs"):                 webPostCSSConfig(),
+		filepath.Join(webRoot, "tsconfig.json"):                      webTanStackTSConfig(),
+		filepath.Join(webRoot, "src", "main.tsx"):                    webTanStackMain(),
+		filepath.Join(webRoot, "src", "globals.css"):                 webGlobalCSS(),
+		filepath.Join(webRoot, "src", "routes", "__root.tsx"):        webTanStackRootRoute(opts),
+		filepath.Join(webRoot, "src", "routes", "index.tsx"):         webTanStackIndexRoute(opts),
+		filepath.Join(webRoot, "src", "routes", "blog", "index.tsx"): webTanStackBlogListRoute(),
+		filepath.Join(webRoot, "src", "routes", "blog", "$slug.tsx"): webTanStackBlogDetailRoute(),
+		filepath.Join(webRoot, "src", "components", "navbar.tsx"):    webNavbar(opts),
+		filepath.Join(webRoot, "src", "components", "footer.tsx"):    webFooter(opts),
+		filepath.Join(webRoot, "src", "components", "providers.tsx"): webTanStackProviders(),
+		filepath.Join(webRoot, "src", "lib", "utils.ts"):             webUtils(),
+		filepath.Join(webRoot, "src", "lib", "api.ts"):               viteAPIClient(),
+		filepath.Join(webRoot, "src", "hooks", "use-blogs.ts"):       webUseBlogsHook(),
+		filepath.Join(webRoot, "public", ".gitkeep"):                 "",
 	}
 
 	for path, content := range files {

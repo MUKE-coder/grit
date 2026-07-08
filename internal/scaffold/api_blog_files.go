@@ -11,8 +11,8 @@ func writeAPIBlogFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "models", "blog.go"):       blogModelGo(),
-		filepath.Join(apiRoot, "internal", "models", "helpers.go"):    modelsHelpersGo(),
+		filepath.Join(apiRoot, "internal", "models", "blog.go"):           blogModelGo(),
+		filepath.Join(apiRoot, "internal", "models", "helpers.go"):        modelsHelpersGo(),
 		filepath.Join(apiRoot, "internal", "services", "blog_service.go"): blogServiceGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "blog_handler.go"): blogHandlerGo(),
 	}

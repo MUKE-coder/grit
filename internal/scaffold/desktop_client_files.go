@@ -27,36 +27,36 @@ func writeDesktopClientFiles(root string, opts Options) error {
 	files := map[string]string{
 		// Go side (minimal — native OS only)
 		// keychain.go stays at the top level (same `package main` as main.go/app.go).
-		filepath.Join(desktopRoot, "main.go"):               desktopClientMainGo(opts),
-		filepath.Join(desktopRoot, "app.go"):                desktopClientAppGo(),
-		filepath.Join(desktopRoot, "keychain.go"):           desktopClientKeychainGo(opts),
-		filepath.Join(desktopRoot, "go.mod"):                desktopClientGoMod(module),
-		filepath.Join(desktopRoot, "wails.json"):            desktopClientWailsJSON(opts),
-		filepath.Join(desktopRoot, ".gitignore"):            desktopClientGitignore(),
-		filepath.Join(desktopRoot, "README.md"):             desktopClientReadme(opts),
+		filepath.Join(desktopRoot, "main.go"):     desktopClientMainGo(opts),
+		filepath.Join(desktopRoot, "app.go"):      desktopClientAppGo(),
+		filepath.Join(desktopRoot, "keychain.go"): desktopClientKeychainGo(opts),
+		filepath.Join(desktopRoot, "go.mod"):      desktopClientGoMod(module),
+		filepath.Join(desktopRoot, "wails.json"):  desktopClientWailsJSON(opts),
+		filepath.Join(desktopRoot, ".gitignore"):  desktopClientGitignore(),
+		filepath.Join(desktopRoot, "README.md"):   desktopClientReadme(opts),
 
 		// Frontend config
-		filepath.Join(desktopRoot, "frontend", "package.json"):     desktopClientPackageJSON(opts),
-		filepath.Join(desktopRoot, "frontend", "tsconfig.json"):    desktopClientTSConfig(),
-		filepath.Join(desktopRoot, "frontend", "tsconfig.node.json"): desktopClientTSConfigNode(),
-		filepath.Join(desktopRoot, "frontend", "vite.config.ts"):   desktopClientViteConfig(),
-		filepath.Join(desktopRoot, "frontend", "tailwind.config.ts"): desktopClientTailwindConfig(),
-		filepath.Join(desktopRoot, "frontend", "postcss.config.js"): desktopClientPostCSSConfig(),
-		filepath.Join(desktopRoot, "frontend", "index.html"):       desktopClientIndexHTML(opts),
-		filepath.Join(desktopRoot, "frontend", "src", "main.tsx"):  desktopClientMainTSX(),
-		filepath.Join(desktopRoot, "frontend", "src", "globals.css"): desktopClientGlobalsCSS(),
+		filepath.Join(desktopRoot, "frontend", "package.json"):         desktopClientPackageJSON(opts),
+		filepath.Join(desktopRoot, "frontend", "tsconfig.json"):        desktopClientTSConfig(),
+		filepath.Join(desktopRoot, "frontend", "tsconfig.node.json"):   desktopClientTSConfigNode(),
+		filepath.Join(desktopRoot, "frontend", "vite.config.ts"):       desktopClientViteConfig(),
+		filepath.Join(desktopRoot, "frontend", "tailwind.config.ts"):   desktopClientTailwindConfig(),
+		filepath.Join(desktopRoot, "frontend", "postcss.config.js"):    desktopClientPostCSSConfig(),
+		filepath.Join(desktopRoot, "frontend", "index.html"):           desktopClientIndexHTML(opts),
+		filepath.Join(desktopRoot, "frontend", "src", "main.tsx"):      desktopClientMainTSX(),
+		filepath.Join(desktopRoot, "frontend", "src", "globals.css"):   desktopClientGlobalsCSS(),
 		filepath.Join(desktopRoot, "frontend", "src", "vite-env.d.ts"): desktopClientViteEnvDTS(),
 
 		// Routes (TanStack Router file-based)
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "__root.tsx"):      desktopClientRootRoute(),
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "index.tsx"):       desktopClientIndexRoute(),
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "_auth.tsx"):       desktopClientAuthLayoutRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "__root.tsx"):            desktopClientRootRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "index.tsx"):             desktopClientIndexRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "_auth.tsx"):             desktopClientAuthLayoutRoute(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "_auth", "login.tsx"):    desktopClientLoginRoute(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "_auth", "register.tsx"): desktopClientRegisterRoute(),
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "_app.tsx"):        desktopClientAppLayoutRoute(),
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "_app", "index.tsx"):    desktopClientDashboardRoute(),
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "_app", "profile.tsx"):  desktopClientProfileRoute(),
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "_app", "settings.tsx"): desktopClientSettingsRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "_app.tsx"):              desktopClientAppLayoutRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "_app", "index.tsx"):     desktopClientDashboardRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "_app", "profile.tsx"):   desktopClientProfileRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "_app", "settings.tsx"):  desktopClientSettingsRoute(),
 
 		// Layout components
 		filepath.Join(desktopRoot, "frontend", "src", "components", "layout", "title-bar.tsx"):       desktopClientTitleBar(opts),
@@ -67,12 +67,12 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "components", "layout", "app-shell.tsx"):       desktopClientAppShell(),
 
 		// UI components
-		filepath.Join(desktopRoot, "frontend", "src", "components", "ui", "button.tsx"):       desktopClientButton(),
-		filepath.Join(desktopRoot, "frontend", "src", "components", "ui", "input.tsx"):        desktopClientInput(),
-		filepath.Join(desktopRoot, "frontend", "src", "components", "ui", "card.tsx"):         desktopClientCard(),
-		filepath.Join(desktopRoot, "frontend", "src", "components", "ui", "dialog.tsx"):       desktopClientDialog(),
-		filepath.Join(desktopRoot, "frontend", "src", "components", "ui", "avatar.tsx"):       desktopClientAvatar(),
-		filepath.Join(desktopRoot, "frontend", "src", "components", "ui", "badge.tsx"):        desktopClientBadge(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "ui", "button.tsx"): desktopClientButton(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "ui", "input.tsx"):  desktopClientInput(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "ui", "card.tsx"):   desktopClientCard(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "ui", "dialog.tsx"): desktopClientDialog(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "ui", "avatar.tsx"): desktopClientAvatar(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "ui", "badge.tsx"):  desktopClientBadge(),
 
 		// Desktop primitives — list/detail container, form fields, filter chips.
 		// These solve the "every desktop CRUD page reinvents the same 200 LOC" problem.
@@ -90,33 +90,33 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "components", "status-badge.tsx"):      desktopClientStatusBadge(),
 
 		// Lib (API client, auth, utils, shortcuts, Wails bridge)
-		filepath.Join(desktopRoot, "frontend", "src", "lib", "api-client.ts"):     desktopClientApiClientTS(),
-		filepath.Join(desktopRoot, "frontend", "src", "lib", "auth-provider.tsx"): desktopClientAuthProvider(),
-		filepath.Join(desktopRoot, "frontend", "src", "lib", "query-client.ts"):   desktopClientQueryClient(),
+		filepath.Join(desktopRoot, "frontend", "src", "lib", "api-client.ts"):      desktopClientApiClientTS(),
+		filepath.Join(desktopRoot, "frontend", "src", "lib", "auth-provider.tsx"):  desktopClientAuthProvider(),
+		filepath.Join(desktopRoot, "frontend", "src", "lib", "query-client.ts"):    desktopClientQueryClient(),
 		filepath.Join(desktopRoot, "frontend", "src", "lib", "theme-provider.tsx"): desktopClientThemeProvider(),
-		filepath.Join(desktopRoot, "frontend", "src", "lib", "use-shortcuts.ts"):  desktopClientUseShortcuts(),
-		filepath.Join(desktopRoot, "frontend", "src", "lib", "wails-bridge.ts"):   desktopClientWailsBridge(),
-		filepath.Join(desktopRoot, "frontend", "src", "lib", "utils.ts"):          desktopClientUtils(),
+		filepath.Join(desktopRoot, "frontend", "src", "lib", "use-shortcuts.ts"):   desktopClientUseShortcuts(),
+		filepath.Join(desktopRoot, "frontend", "src", "lib", "wails-bridge.ts"):    desktopClientWailsBridge(),
+		filepath.Join(desktopRoot, "frontend", "src", "lib", "utils.ts"):           desktopClientUtils(),
 
 		// Hooks
-		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-auth.ts"):           desktopClientUseAuth(),
-		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-online-status.ts"):  desktopClientUseOnlineStatus(),
-		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-realtime.ts"):       desktopClientUseRealtime(),
-		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-sync.ts"):           desktopClientUseSync(),
+		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-auth.ts"):          desktopClientUseAuth(),
+		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-online-status.ts"): desktopClientUseOnlineStatus(),
+		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-realtime.ts"):      desktopClientUseRealtime(),
+		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-sync.ts"):          desktopClientUseSync(),
 
 		// Sync client wrappers + UI
-		filepath.Join(desktopRoot, "frontend", "src", "lib", "sync-client.ts"):               desktopClientSyncClientTS(),
-		filepath.Join(desktopRoot, "frontend", "src", "components", "sync-button.tsx"):       desktopClientSyncButton(),
-		filepath.Join(desktopRoot, "frontend", "src", "components", "pending-changes.tsx"):   desktopClientPendingChanges(),
-		filepath.Join(desktopRoot, "frontend", "src", "components", "conflict-dialog.tsx"):   desktopClientConflictDialog(),
+		filepath.Join(desktopRoot, "frontend", "src", "lib", "sync-client.ts"):             desktopClientSyncClientTS(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "sync-button.tsx"):     desktopClientSyncButton(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "pending-changes.tsx"): desktopClientPendingChanges(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "conflict-dialog.tsx"): desktopClientConflictDialog(),
 
 		// Realtime client (WebSocket + reconnect + EventTarget bus)
-		filepath.Join(desktopRoot, "frontend", "src", "lib", "realtime.ts"):             desktopClientRealtimeTS(),
+		filepath.Join(desktopRoot, "frontend", "src", "lib", "realtime.ts"): desktopClientRealtimeTS(),
 
 		// Offline-first sync engine (local SQLite + outbox + push/pull orchestration)
-		filepath.Join(desktopRoot, "sync", "engine.go"):                                 desktopSyncEngineGo(),
-		filepath.Join(desktopRoot, "sync", "outbox.go"):                                 desktopSyncOutboxGo(),
-		filepath.Join(desktopRoot, "sync", "local.go"):                                  desktopSyncLocalGo(),
+		filepath.Join(desktopRoot, "sync", "engine.go"): desktopSyncEngineGo(),
+		filepath.Join(desktopRoot, "sync", "outbox.go"): desktopSyncOutboxGo(),
+		filepath.Join(desktopRoot, "sync", "local.go"):  desktopSyncLocalGo(),
 	}
 
 	for path, content := range files {

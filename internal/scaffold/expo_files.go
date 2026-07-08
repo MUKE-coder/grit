@@ -43,6 +43,7 @@ func writeExpoFiles(root string, opts Options) error {
 		filepath.Join(expoRoot, "lib", "upload.ts"):                               ExpoUploadHelper(),
 		filepath.Join(expoRoot, "lib", "images.ts"):                               ExpoImageResolver(),
 		filepath.Join(expoRoot, "lib", "format.ts"):                               ExpoNumberFormat(),
+		filepath.Join(expoRoot, "app", "backups.tsx"):                             ExpoBackupsScreen(),
 		filepath.Join(expoRoot, "lib", "export.ts"):                               expoExportHelper(),
 		filepath.Join(expoRoot, "lib", "import.ts"):                               ExpoImportHelper(),
 		filepath.Join(expoRoot, "lib", "import-progress.ts"):                      ExpoImportProgressStore(),
@@ -1495,6 +1496,7 @@ const tools: LinkItem[] = [
   { title: "Analytics", description: "Usage and performance", icon: "bar-chart-outline", color: "#74b9ff", route: "/explore/analytics" },
   { title: "Notifications", description: "Alerts and messages", icon: "notifications-outline", color: "#fdcb6e", route: "/explore/notifications" },
   { title: "Storage", description: "Files and uploads", icon: "cloud-outline", color: "#ff6b6b", route: "/explore/storage" },
+  { title: "Backups", description: "Weekly database backups", icon: "server-outline", color: "#0984e3", route: "/backups" },
   { title: "Integrations", description: "Connected services", icon: "extension-puzzle-outline", color: "#a29bfe", route: "/explore/integrations" },
 ];
 

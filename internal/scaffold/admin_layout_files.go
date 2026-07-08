@@ -437,6 +437,7 @@ export function Sidebar({ user, collapsed, mobileOpen, onMobileClose }: SidebarP
   const systemItems = isAdmin
     ? [
         { label: "Jobs", href: "/system/jobs", icon: "Briefcase" },
+        { label: "Backups", href: "/system/backups", icon: "Database" },
         { label: "Files", href: "/system/files", icon: "FolderOpen" },
         { label: "Cron", href: "/system/cron", icon: "Calendar" },
         { label: "Mail", href: "/system/mail", icon: "Mail" },

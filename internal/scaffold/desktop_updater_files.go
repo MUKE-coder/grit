@@ -12,11 +12,11 @@ import (
 // drive the UI.
 func writeDesktopUpdaterFiles(root string, opts DesktopOptions) error {
 	files := map[string]string{
-		filepath.Join(root, "updater.go"):                                desktopUpdaterGo(opts),
-		filepath.Join(root, "version.go"):                                desktopVersionGo(opts),
-		filepath.Join(root, "frontend", "src", "lib", "version.ts"):      desktopFrontendVersionTS(opts),
-		filepath.Join(root, "frontend", "src", "hooks", "use-update-checker.ts"): desktopUseUpdateCheckerTS(opts),
-		filepath.Join(root, "frontend", "src", "components", "update-modal.tsx"): desktopUpdateModalTSX(opts),
+		filepath.Join(root, "updater.go"):                                         desktopUpdaterGo(opts),
+		filepath.Join(root, "version.go"):                                         desktopVersionGo(opts),
+		filepath.Join(root, "frontend", "src", "lib", "version.ts"):               desktopFrontendVersionTS(opts),
+		filepath.Join(root, "frontend", "src", "hooks", "use-update-checker.ts"):  desktopUseUpdateCheckerTS(opts),
+		filepath.Join(root, "frontend", "src", "components", "update-modal.tsx"):  desktopUpdateModalTSX(opts),
 		filepath.Join(root, "frontend", "src", "components", "update-banner.tsx"): desktopUpdateBannerTSX(opts),
 	}
 

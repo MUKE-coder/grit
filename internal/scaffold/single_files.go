@@ -64,43 +64,43 @@ func writeSingleFrontendFiles(root string, opts Options) error {
 	// Use TanStack Router by default for single app (Vite produces static dist/)
 	// Next.js can work via `next export` but TanStack/Vite is the natural fit
 	files := map[string]string{
-		filepath.Join(feRoot, "package.json"):                              singleFrontendPackageJSON(opts),
-		filepath.Join(feRoot, "vite.config.ts"):                           singleFrontendViteConfig(),
-		filepath.Join(feRoot, "index.html"):                               webTanStackIndexHTML(opts),
-		filepath.Join(feRoot, "tailwind.config.ts"):                       webTanStackTailwindConfig(),
+		filepath.Join(feRoot, "package.json"):       singleFrontendPackageJSON(opts),
+		filepath.Join(feRoot, "vite.config.ts"):     singleFrontendViteConfig(),
+		filepath.Join(feRoot, "index.html"):         webTanStackIndexHTML(opts),
+		filepath.Join(feRoot, "tailwind.config.ts"): webTanStackTailwindConfig(),
 		// .cjs (not .js) because package.json sets "type": "module" and PostCSS
 		// config still uses CommonJS module.exports.
-		filepath.Join(feRoot, "postcss.config.cjs"):                       webPostCSSConfig(),
-		filepath.Join(feRoot, "tsconfig.json"):                            webTanStackTSConfig(),
-		filepath.Join(feRoot, "src", "main.tsx"):                          webTanStackMain(),
-		filepath.Join(feRoot, "src", "vite-env.d.ts"):                     singleViteEnvTypes(),
-		filepath.Join(feRoot, "src", "globals.css"):                       webGlobalCSS(),
-		filepath.Join(feRoot, "src", "routes", "__root.tsx"):              webTanStackRootRoute(opts),
-		filepath.Join(feRoot, "src", "routes", "index.tsx"):               webTanStackIndexRoute(opts),
-		filepath.Join(feRoot, "src", "routes", "blog", "index.tsx"):       webTanStackBlogListRoute(),
-		filepath.Join(feRoot, "src", "routes", "blog", "$slug.tsx"):       webTanStackBlogDetailRoute(),
+		filepath.Join(feRoot, "postcss.config.cjs"):                 webPostCSSConfig(),
+		filepath.Join(feRoot, "tsconfig.json"):                      webTanStackTSConfig(),
+		filepath.Join(feRoot, "src", "main.tsx"):                    webTanStackMain(),
+		filepath.Join(feRoot, "src", "vite-env.d.ts"):               singleViteEnvTypes(),
+		filepath.Join(feRoot, "src", "globals.css"):                 webGlobalCSS(),
+		filepath.Join(feRoot, "src", "routes", "__root.tsx"):        webTanStackRootRoute(opts),
+		filepath.Join(feRoot, "src", "routes", "index.tsx"):         webTanStackIndexRoute(opts),
+		filepath.Join(feRoot, "src", "routes", "blog", "index.tsx"): webTanStackBlogListRoute(),
+		filepath.Join(feRoot, "src", "routes", "blog", "$slug.tsx"): webTanStackBlogDetailRoute(),
 		// Vite-flavoured navbar/footer (use TanStack Router's <Link> + useRouterState),
 		// not the Next.js variants from web_files.go which import next/link.
-		filepath.Join(feRoot, "src", "components", "navbar.tsx"):          singleViteNavbar(opts),
-		filepath.Join(feRoot, "src", "components", "footer.tsx"):          singleViteFooter(opts),
-		filepath.Join(feRoot, "src", "components", "providers.tsx"):       webTanStackProviders(),
-		filepath.Join(feRoot, "src", "lib", "utils.ts"):                   webUtils(),
+		filepath.Join(feRoot, "src", "components", "navbar.tsx"):    singleViteNavbar(opts),
+		filepath.Join(feRoot, "src", "components", "footer.tsx"):    singleViteFooter(opts),
+		filepath.Join(feRoot, "src", "components", "providers.tsx"): webTanStackProviders(),
+		filepath.Join(feRoot, "src", "lib", "utils.ts"):             webUtils(),
 		// viteAPIClientWithAuth (instead of viteAPIClient) so the axios
 		// instance auto-attaches Authorization from the stored token AND
 		// transparently refreshes on 401 — both gaps called out in the
 		// real-world deployment review.
-		filepath.Join(feRoot, "src", "lib", "api.ts"):                     viteAPIClientWithAuth(),
-		filepath.Join(feRoot, "src", "lib", "auth.ts"):                    singleAuthLib(),
-		filepath.Join(feRoot, "src", "hooks", "use-blogs.ts"):             webUseBlogsHook(),
+		filepath.Join(feRoot, "src", "lib", "api.ts"):         viteAPIClientWithAuth(),
+		filepath.Join(feRoot, "src", "lib", "auth.ts"):        singleAuthLib(),
+		filepath.Join(feRoot, "src", "hooks", "use-blogs.ts"): webUseBlogsHook(),
 		// One file exports both ConfirmProvider (mount once at root) and the
 		// useConfirm() hook. Import via: import { ConfirmProvider, useConfirm } from "@/hooks/use-confirm"
-		filepath.Join(feRoot, "src", "hooks", "use-confirm.tsx"):          singleUseConfirmHook(),
-		filepath.Join(feRoot, "src", "components", "money-input.tsx"):     singleMoneyInput(),
-		filepath.Join(feRoot, "src", "components", "combobox.tsx"):        singleCombobox(),
+		filepath.Join(feRoot, "src", "hooks", "use-confirm.tsx"):                 singleUseConfirmHook(),
+		filepath.Join(feRoot, "src", "components", "money-input.tsx"):            singleMoneyInput(),
+		filepath.Join(feRoot, "src", "components", "combobox.tsx"):               singleCombobox(),
 		filepath.Join(feRoot, "src", "components", "session-expiry-monitor.tsx"): singleSessionExpiryMonitor(),
-		filepath.Join(feRoot, "src", "components", "status-badge.tsx"):    singleStatusBadge(),
-		filepath.Join(feRoot, "src", "components", "stats-row.tsx"):       singleStatsRow(),
-		filepath.Join(feRoot, "public", ".gitkeep"):                       "",
+		filepath.Join(feRoot, "src", "components", "status-badge.tsx"):           singleStatusBadge(),
+		filepath.Join(feRoot, "src", "components", "stats-row.tsx"):              singleStatsRow(),
+		filepath.Join(feRoot, "public", ".gitkeep"):                              "",
 	}
 
 	for path, content := range files {
@@ -119,7 +119,7 @@ func writeSingleFrontendFiles(root string, opts Options) error {
 // writeSingleRootFiles writes single-app specific root files (Makefile, README, .env).
 func writeSingleRootFiles(root string, opts Options) error {
 	files := map[string]string{
-		filepath.Join(root, "Makefile"):  singleMakefile(opts),
+		filepath.Join(root, "Makefile"):   singleMakefile(opts),
 		filepath.Join(root, ".gitignore"): singleGitignore(),
 	}
 

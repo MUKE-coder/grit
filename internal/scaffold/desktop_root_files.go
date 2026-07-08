@@ -8,12 +8,12 @@ import (
 
 func writeDesktopRootFiles(root string, opts DesktopOptions) error {
 	files := map[string]string{
-		filepath.Join(root, "wails.json"):     desktopWailsJSON(opts),
-		filepath.Join(root, "go.mod"):         desktopGoMod(opts),
-		filepath.Join(root, ".gitignore"):     desktopGitignore(),
-		filepath.Join(root, ".env"):           desktopEnvFile(opts),
-		filepath.Join(root, ".env.example"):   desktopEnvExample(opts),
-		filepath.Join(root, "README.md"):      desktopReadme(opts),
+		filepath.Join(root, "wails.json"):                                    desktopWailsJSON(opts),
+		filepath.Join(root, "go.mod"):                                        desktopGoMod(opts),
+		filepath.Join(root, ".gitignore"):                                    desktopGitignore(),
+		filepath.Join(root, ".env"):                                          desktopEnvFile(opts),
+		filepath.Join(root, ".env.example"):                                  desktopEnvExample(opts),
+		filepath.Join(root, "README.md"):                                     desktopReadme(opts),
 		filepath.Join(root, ".claude", "skills", "grit-desktop", "SKILL.md"): desktopGritSkill(opts),
 	}
 

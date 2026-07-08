@@ -7,7 +7,7 @@ import (
 
 func writeDesktopFrontendLayoutFiles(root string, opts DesktopOptions) error {
 	files := map[string]string{
-		filepath.Join(root, "frontend", "src", "components", "layout", "title-bar.tsx"):       desktopTitleBar(),
+		filepath.Join(root, "frontend", "src", "components", "layout", "title-bar.tsx"):        desktopTitleBar(),
 		filepath.Join(root, "frontend", "src", "components", "layout", "sidebar.tsx"):          desktopSidebar(),
 		filepath.Join(root, "frontend", "src", "components", "layout", "draggable-window.tsx"): desktopDraggableWindow(),
 		filepath.Join(root, "frontend", "src", "routes", "_layout.tsx"):                        desktopLayoutRoute(),

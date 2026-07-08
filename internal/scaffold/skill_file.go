@@ -517,19 +517,19 @@ are unlikely to be the cause — check application code first
 %[13]s
 9. **Report bugs** — if you encounter a bug, open an issue at https://github.com/MUKE-coder/grit/issues with the error message and steps to reproduce
 `,
-		bt,                  // [1] backtick
-		opts.ProjectName,    // [2] project name (unused in this format but kept for consistency)
-		opts.Architecture,   // [3] architecture name
-		archTitle(opts),     // [4] human-readable title
-		archDesc,            // [5] architecture description
-		frontendDesc,        // [6] frontend description
-		projectStructure,    // [7] project tree
-		markerSection,       // [8] marker comments
-		singleAppNote,       // [9] single app note (empty if not single)
-		mobileNote,          // [10] mobile note (empty if not mobile)
-		frontendRouting,     // [11] routing info
-		addFieldPaths,       // [12] add field steps
-		frontendRules,       // [13] frontend-specific rules
+		bt,                // [1] backtick
+		opts.ProjectName,  // [2] project name (unused in this format but kept for consistency)
+		opts.Architecture, // [3] architecture name
+		archTitle(opts),   // [4] human-readable title
+		archDesc,          // [5] architecture description
+		frontendDesc,      // [6] frontend description
+		projectStructure,  // [7] project tree
+		markerSection,     // [8] marker comments
+		singleAppNote,     // [9] single app note (empty if not single)
+		mobileNote,        // [10] mobile note (empty if not mobile)
+		frontendRouting,   // [11] routing info
+		addFieldPaths,     // [12] add field steps
+		frontendRules,     // [13] frontend-specific rules
 	)
 }
 

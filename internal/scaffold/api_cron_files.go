@@ -32,6 +32,7 @@ func cronSchedulerGo() string {
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/hibiken/asynq"
 )
@@ -87,6 +88,30 @@ func New(redisURL string) (*Scheduler, error) {
 		Name:     "Cleanup orphan uploads",
 		Schedule: "15 3 * * *",
 		Type:     "uploads:cleanup_orphans",
+	})
+
+	// v3.31.77 -- WEEKLY full-database backup. Sunday 02:00 UTC, the
+	// quietest window. Dumps every registered model to a ZIP (CSV per
+	// table + dump.sql + metadata.json), uploads it to object storage,
+	// and prunes to the newest few archives.
+	//
+	// asynq.Unique bounds the task to one enqueue per 20h. Every replica
+	// runs its own scheduler, so without this a rolling deploy or a
+	// failover would enqueue the same weekly backup several times.
+	_, err = scheduler.Register(
+		"0 2 * * 0",
+		asynq.NewTask("backup:weekly", nil),
+		asynq.Unique(20*time.Hour),
+		asynq.Timeout(30*time.Minute),
+		asynq.MaxRetry(2),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("registering weekly backup: %w", err)
+	}
+	RegisteredTasks = append(RegisteredTasks, Task{
+		Name:     "Weekly database backup",
+		Schedule: "0 2 * * 0",
+		Type:     "backup:weekly",
 	})
 
 	// grit:cron-tasks

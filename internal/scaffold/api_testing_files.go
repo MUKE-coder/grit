@@ -20,15 +20,15 @@ import (
 
 func writeTestingFiles(root string, opts Options) error {
 	files := map[string]string{
-		filepath.Join(root, "tests", "k6", "README.md"):           k6ReadmeMD(opts),
-		filepath.Join(root, "tests", "k6", "lib", "common.js"):    k6CommonJS(),
-		filepath.Join(root, "tests", "k6", "smoke.js"):            k6SmokeJS(),
-		filepath.Join(root, "tests", "k6", "average-load.js"):     k6AverageLoadJS(),
-		filepath.Join(root, "tests", "k6", "stress.js"):           k6StressJS(),
-		filepath.Join(root, "tests", "k6", "spike.js"):            k6SpikeJS(),
-		filepath.Join(root, "tests", "k6", "soak.js"):             k6SoakJS(),
-		filepath.Join(root, "tests", "k6", "breakpoint.js"):       k6BreakpointJS(),
-		filepath.Join(root, ".github", "dependabot.yml"):          dependabotYAML(opts),
+		filepath.Join(root, "tests", "k6", "README.md"):             k6ReadmeMD(opts),
+		filepath.Join(root, "tests", "k6", "lib", "common.js"):      k6CommonJS(),
+		filepath.Join(root, "tests", "k6", "smoke.js"):              k6SmokeJS(),
+		filepath.Join(root, "tests", "k6", "average-load.js"):       k6AverageLoadJS(),
+		filepath.Join(root, "tests", "k6", "stress.js"):             k6StressJS(),
+		filepath.Join(root, "tests", "k6", "spike.js"):              k6SpikeJS(),
+		filepath.Join(root, "tests", "k6", "soak.js"):               k6SoakJS(),
+		filepath.Join(root, "tests", "k6", "breakpoint.js"):         k6BreakpointJS(),
+		filepath.Join(root, ".github", "dependabot.yml"):            dependabotYAML(opts),
 		filepath.Join(root, ".github", "workflows", "security.yml"): securityCIYAML(),
 	}
 

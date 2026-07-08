@@ -26,10 +26,10 @@ func writeFormShareFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "internal", "models", "form_share.go"):              formShareModelGo(),
-		filepath.Join(apiRoot, "internal", "models", "form_submission.go"):         formSubmissionModelGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "form_share.go"):            formShareHandlerGo(),
-		filepath.Join(apiRoot, "internal", "services", "form_share_dispatch.go"):   formShareDispatchGo(),
+		filepath.Join(apiRoot, "internal", "models", "form_share.go"):            formShareModelGo(),
+		filepath.Join(apiRoot, "internal", "models", "form_submission.go"):       formSubmissionModelGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "form_share.go"):          formShareHandlerGo(),
+		filepath.Join(apiRoot, "internal", "services", "form_share_dispatch.go"): formShareDispatchGo(),
 	}
 
 	for path, content := range files {

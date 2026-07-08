@@ -21,12 +21,12 @@ import (
 // once and runs makensis twice with different -D flags to produce both.
 func writeDesktopInstallerFiles(root string, opts DesktopOptions) error {
 	files := map[string]string{
-		filepath.Join(root, "build", "windows", "installer", "project.nsi"):         desktopNSIFull(opts),
-		filepath.Join(root, "build", "windows", "installer", "project-slim.nsi"):    desktopNSISlim(opts),
-		filepath.Join(root, "build", "windows", "installer", ".gitignore"):          desktopInstallerGitignore(),
-		filepath.Join(root, "build", "windows", "installer", "README.md"):           desktopInstallerReadme(opts),
+		filepath.Join(root, "build", "windows", "installer", "project.nsi"):          desktopNSIFull(opts),
+		filepath.Join(root, "build", "windows", "installer", "project-slim.nsi"):     desktopNSISlim(opts),
+		filepath.Join(root, "build", "windows", "installer", ".gitignore"):           desktopInstallerGitignore(),
+		filepath.Join(root, "build", "windows", "installer", "README.md"):            desktopInstallerReadme(opts),
 		filepath.Join(root, "build", "windows", "installer", "webview2", ".gitkeep"): "",
-		filepath.Join(root, "scripts", "release-desktop.sh"):                        desktopReleaseScript(opts),
+		filepath.Join(root, "scripts", "release-desktop.sh"):                         desktopReleaseScript(opts),
 	}
 
 	for path, content := range files {
@@ -328,19 +328,19 @@ Two NSIS templates ship in this directory:
 | project.nsi | %s-Setup-v%s.exe | ~150 MB | Bundles the WebView2 runtime — works offline / behind restrictive firewalls. |
 | project-slim.nsi | %s-Setup-Slim-v%s.exe | ~22 MB | Downloads WebView2 at install time. Smaller, but needs internet. |
 
-Both are produced by ` + "`scripts/release-desktop.sh`" + `. You should not need to invoke ` + "`makensis`" + ` by hand.
+Both are produced by `+"`scripts/release-desktop.sh`"+`. You should not need to invoke `+"`makensis`"+` by hand.
 
 ## Branded look (header.bmp + welcome.bmp)
 
-The release script regenerates both bitmaps from ` + "`../icon.ico`" + ` every build — no design work required. Override by replacing this directory's ` + "`icon.ico`" + `; the bitmaps fall in line on the next release.
+The release script regenerates both bitmaps from `+"`../icon.ico`"+` every build — no design work required. Override by replacing this directory's `+"`icon.ico`"+`; the bitmaps fall in line on the next release.
 
 ## WebView2 offline runtime
 
-The full installer bundles ` + "`webview2/MicrosoftEdgeWebView2RuntimeInstaller.exe`" + ` (~125 MB, the Microsoft Edge WebView2 Evergreen Standalone). The release script downloads it once and caches it; you don't commit the binary.
+The full installer bundles `+"`webview2/MicrosoftEdgeWebView2RuntimeInstaller.exe`"+` (~125 MB, the Microsoft Edge WebView2 Evergreen Standalone). The release script downloads it once and caches it; you don't commit the binary.
 
 ## Code signing (recommended, optional)
 
-A signed .exe skips Windows SmartScreen. A code-signing cert is ~$200/year and pays for itself the first time an enterprise customer doesn't open a support ticket. See ` + "`/docs/desktop/auto-update#code-signing`" + ` for the signtool.exe wiring.
+A signed .exe skips Windows SmartScreen. A code-signing cert is ~$200/year and pays for itself the first time an enterprise customer doesn't open a support ticket. See `+"`/docs/desktop/auto-update#code-signing`"+` for the signtool.exe wiring.
 `, opts.ProjectName, "0.1.0", opts.ProjectName, "0.1.0")
 }
 

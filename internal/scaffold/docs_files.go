@@ -10,7 +10,7 @@ func writeDocsFiles(root string, opts Options) error {
 
 	files := map[string]string{
 		// Config
-		filepath.Join(docsRoot, "package.json"):      docsPackageJSON(opts),
+		filepath.Join(docsRoot, "package.json"):       docsPackageJSON(opts),
 		filepath.Join(docsRoot, "tsconfig.json"):      docsTSConfig(),
 		filepath.Join(docsRoot, "next.config.mjs"):    docsNextConfig(),
 		filepath.Join(docsRoot, "tailwind.config.js"): docsTailwindConfig(),
@@ -36,7 +36,7 @@ func writeDocsFiles(root string, opts Options) error {
 		filepath.Join(docsRoot, "content", "docs", "cli", "meta.json"):    docsContentCLIMeta(),
 
 		// Content — API
-		filepath.Join(docsRoot, "content", "docs", "api", "authentication.mdx"):        docsContentAuth(),
+		filepath.Join(docsRoot, "content", "docs", "api", "authentication.mdx"):         docsContentAuth(),
 		filepath.Join(docsRoot, "content", "docs", "api", "migrations-and-seeding.mdx"): docsContentMigrationsSeeding(),
 		filepath.Join(docsRoot, "content", "docs", "api", "meta.json"):                  docsContentAPIMeta(),
 

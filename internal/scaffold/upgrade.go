@@ -169,43 +169,43 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 	// User-created files (resources/*.ts, app/(dashboard)/resources/*/page.tsx) are NOT touched.
 	files := map[string]string{
 		// Config files
-		filepath.Join(adminRoot, "package.json"):      adminPackageJSON(opts),
+		filepath.Join(adminRoot, "package.json"):       adminPackageJSON(opts),
 		filepath.Join(adminRoot, "tailwind.config.ts"): adminTailwindConfig(),
 		filepath.Join(adminRoot, "postcss.config.mjs"): adminPostCSSConfig(),
 		filepath.Join(adminRoot, "next.config.ts"):     adminNextConfig(),
 		filepath.Join(adminRoot, "tsconfig.json"):      adminTSConfig(),
 
 		// App core
-		filepath.Join(adminRoot, "app", "globals.css"):                              adminGlobalCSS(),
-		filepath.Join(adminRoot, "app", "layout.tsx"):                               adminRootLayout(opts),
-		filepath.Join(adminRoot, "app", "page.tsx"):                                 adminRedirectPage(),
-		filepath.Join(adminRoot, "app", "(auth)", "login", "page.tsx"):              adminLoginPageForStyle(opts.Style),
-		filepath.Join(adminRoot, "app", "(auth)", "sign-up", "page.tsx"):            adminSignUpPageForStyle(opts.Style),
-		filepath.Join(adminRoot, "app", "(auth)", "forgot-password", "page.tsx"):    adminForgotPasswordPageForStyle(opts.Style),
-		filepath.Join(adminRoot, "app", "(auth)", "callback", "page.tsx"):           adminAuthCallbackPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"):                adminDashboardLayout(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):     adminDashboardPageForStyle(opts.Style),
+		filepath.Join(adminRoot, "app", "globals.css"):                                   adminGlobalCSS(),
+		filepath.Join(adminRoot, "app", "layout.tsx"):                                    adminRootLayout(opts),
+		filepath.Join(adminRoot, "app", "page.tsx"):                                      adminRedirectPage(),
+		filepath.Join(adminRoot, "app", "(auth)", "login", "page.tsx"):                   adminLoginPageForStyle(opts.Style),
+		filepath.Join(adminRoot, "app", "(auth)", "sign-up", "page.tsx"):                 adminSignUpPageForStyle(opts.Style),
+		filepath.Join(adminRoot, "app", "(auth)", "forgot-password", "page.tsx"):         adminForgotPasswordPageForStyle(opts.Style),
+		filepath.Join(adminRoot, "app", "(auth)", "callback", "page.tsx"):                adminAuthCallbackPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "layout.tsx"):                     adminDashboardLayout(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):          adminDashboardPageForStyle(opts.Style),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"): adminUsersPage(),
 
 		// System pages
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "jobs", "page.tsx"):  adminJobsPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "files", "page.tsx"): adminFilesPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "cron", "page.tsx"):  adminCronPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "mail", "page.tsx"):     adminMailPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "jobs", "page.tsx"):          adminJobsPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "files", "page.tsx"):         adminFilesPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "cron", "page.tsx"):          adminCronPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "mail", "page.tsx"):          adminMailPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "security", "page.tsx"):      adminSecurityPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "observability", "page.tsx"): adminObservabilityPage(),
 
 		// Lib
-		filepath.Join(adminRoot, "lib", "api-client.ts"):  adminAPIClient(),
+		filepath.Join(adminRoot, "lib", "api-client.ts"):   adminAPIClient(),
 		filepath.Join(adminRoot, "lib", "query-client.ts"): adminQueryClient(),
 		filepath.Join(adminRoot, "lib", "utils.ts"):        adminUtils(),
 		filepath.Join(adminRoot, "lib", "resource.ts"):     adminResourceTypes(),
 		filepath.Join(adminRoot, "lib", "icons.ts"):        adminIconMap(),
 
 		// Hooks
-		filepath.Join(adminRoot, "hooks", "use-auth.ts"):    adminUseAuth(),
+		filepath.Join(adminRoot, "hooks", "use-auth.ts"):     adminUseAuth(),
 		filepath.Join(adminRoot, "hooks", "use-resource.ts"): adminUseResource(),
-		filepath.Join(adminRoot, "hooks", "use-system.ts"):  adminUseSystem(),
+		filepath.Join(adminRoot, "hooks", "use-system.ts"):   adminUseSystem(),
 
 		// Layout components
 		filepath.Join(adminRoot, "components", "layout", "AdminLayout.tsx"):   adminLayoutComponent(),
@@ -226,9 +226,9 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 		filepath.Join(adminRoot, "components", "tables", "Formatters.ts"):       adminFormatters(),
 
 		// Form components
-		filepath.Join(adminRoot, "components", "forms", "FormBuilder.tsx"):         adminFormBuilder(),
-		filepath.Join(adminRoot, "components", "forms", "FormModal.tsx"):           adminFormModal(),
-		filepath.Join(adminRoot, "components", "forms", "form-page.tsx"):        adminFormPage(),
+		filepath.Join(adminRoot, "components", "forms", "FormBuilder.tsx"):             adminFormBuilder(),
+		filepath.Join(adminRoot, "components", "forms", "FormModal.tsx"):               adminFormModal(),
+		filepath.Join(adminRoot, "components", "forms", "form-page.tsx"):               adminFormPage(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "TextField.tsx"):     adminTextField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "TextAreaField.tsx"): adminTextareaField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "NumberField.tsx"):   adminNumberField(),
@@ -239,10 +239,10 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 		filepath.Join(adminRoot, "components", "forms", "fields", "RadioField.tsx"):    adminRadioField(),
 
 		// Widget components
-		filepath.Join(adminRoot, "components", "widgets", "StatsCard.tsx"):    adminStatsCard(),
-		filepath.Join(adminRoot, "components", "widgets", "ChartWidget.tsx"):  adminChartWidget(),
+		filepath.Join(adminRoot, "components", "widgets", "StatsCard.tsx"):      adminStatsCard(),
+		filepath.Join(adminRoot, "components", "widgets", "ChartWidget.tsx"):    adminChartWidget(),
 		filepath.Join(adminRoot, "components", "widgets", "ActivityWidget.tsx"): adminActivityWidget(),
-		filepath.Join(adminRoot, "components", "widgets", "WidgetGrid.tsx"):   adminWidgetGrid(),
+		filepath.Join(adminRoot, "components", "widgets", "WidgetGrid.tsx"):     adminWidgetGrid(),
 
 		// Resource components
 		filepath.Join(adminRoot, "components", "resource", "ResourcePage.tsx"): adminResourcePage(),

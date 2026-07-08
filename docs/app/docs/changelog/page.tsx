@@ -28,6 +28,56 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.77 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.77
+                </span>
+                <span className="text-sm text-muted-foreground">July 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Automatic weekly database backups.</strong> Every Grit API
+                  now takes a full-database backup <strong>every Sunday at 02:00
+                  UTC</strong> and uploads it to your object storage (R2 / S3 /
+                  MinIO). The four most recent are kept; older ones are purged from
+                  storage but their rows survive as an audit trail.
+                </p>
+                <p>
+                  Each archive is a ZIP: one <strong>CSV per table</strong> (opens in
+                  any spreadsheet), a <code>dump.sql</code> of INSERTs in
+                  parent&rarr;child order wrapped in BEGIN/COMMIT, and a{' '}
+                  <code>metadata.json</code> manifest of row counts. It&apos;s pure Go
+                  &mdash; no <code>pg_dump</code> binary &mdash; so it works on
+                  Postgres and SQLite alike. The table list is derived from{' '}
+                  <code>models.Models()</code>, so every{' '}
+                  <code>grit generate resource</code> is included automatically and a
+                  table name can never be injected.
+                </p>
+                <p>
+                  Four surfaces: a <strong>Backups</strong> page in the admin panel
+                  (list, back up now, download), REST endpoints (
+                  <code>GET /backups</code>, <code>POST /backups/generate</code>,{' '}
+                  <code>GET /backups/:id/download</code> &mdash; which mints a
+                  15-minute pre-signed URL so the browser pulls straight from
+                  storage), a mobile <strong>Backups</strong> screen, and the CLI:
+                </p>
+                <pre><code>{`grit backup                 # dump + upload to object storage
+grit backup -o backup.zip   # write a local archive (no storage needed)
+grit restore backup.zip     # migrate, then replay in ONE transaction`}</code></pre>
+                <p>
+                  Restore is a first-class command, not a doc page &mdash; a backup you
+                  have never restored is a rumour. Manual backups are rate-limited to
+                  one per 24h; the weekly cron bypasses it and uses{' '}
+                  <code>asynq.Unique</code> so a rolling deploy can&apos;t enqueue it
+                  twice. Without object storage configured (typical in dev) the weekly
+                  job skips silently.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.76 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

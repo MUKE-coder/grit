@@ -1017,6 +1017,8 @@ func Models() []interface{} {
 		&DashboardLayout{},
 		// v3.31.68 — background CSV import job tracking
 		&ImportJob{},
+		// v3.31.77 — full-database backup index
+		&Backup{},
 		// grit:models
 	}
 }
@@ -6634,6 +6636,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	syncHandler := handlers.NewSyncHandler(db, syncRegistry)
 	// v3.31.68 — shared background CSV import status endpoint
 	importJobHandler := &handlers.ImportJobHandler{DB: db}
+	// v3.31.77 — full-database backups (weekly cron + manual + download)
+	backupHandler := &handlers.BackupHandler{DB: db, Storage: svc.Storage}
 	// grit:handlers
 
 	// Health check
@@ -6938,6 +6942,13 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// v3.31.47 — Preset Chart builder. Same dispatch boundary;
 		// only resources registered in chart_dispatch.go reachable.
 		admin.GET("/admin/dashboard/chart/:resource", chartHandler.Get)
+
+		// v3.31.77 — full-database backups. Weekly cron writes them; an
+		// operator can also take one on demand (rate-limited to 1/24h) and
+		// download it via a short-lived pre-signed URL straight from storage.
+		admin.GET("/backups", backupHandler.List)
+		admin.POST("/backups/generate", backupHandler.Generate)
+		admin.GET("/backups/:id/download", backupHandler.Download)
 
 		// grit:routes:admin
 	}

@@ -9,40 +9,40 @@ func writeWebFiles(root string, opts Options) error {
 	webRoot := filepath.Join(root, "apps", "web")
 
 	files := map[string]string{
-		filepath.Join(webRoot, "package.json"):                        webPackageJSON(opts),
-		filepath.Join(webRoot, "next.config.ts"):                      webNextConfig(),
-		filepath.Join(webRoot, "tailwind.config.ts"):                  webTailwindConfig(),
-		filepath.Join(webRoot, "postcss.config.js"):                   webPostCSSConfig(),
-		filepath.Join(webRoot, "tsconfig.json"):                       webTSConfig(),
-		filepath.Join(webRoot, "app", "globals.css"):                  webGlobalCSS(),
-		filepath.Join(webRoot, "app", "layout.tsx"):                   webRootLayout(opts),
-		filepath.Join(webRoot, "app", "page.tsx"):                     webLandingPage(opts),
-		filepath.Join(webRoot, "app", "error.tsx"):                    webErrorPage(),
-		filepath.Join(webRoot, "app", "not-found.tsx"):                webNotFoundPage(),
-		filepath.Join(webRoot, "app", "global-error.tsx"):             webGlobalErrorPage(),
-		filepath.Join(webRoot, "lib", "utils.ts"):                     webUtils(),
-		filepath.Join(webRoot, "components", "navbar.tsx"):            webNavbar(opts),
-		filepath.Join(webRoot, "components", "footer.tsx"):            webFooter(opts),
+		filepath.Join(webRoot, "package.json"):             webPackageJSON(opts),
+		filepath.Join(webRoot, "next.config.ts"):           webNextConfig(),
+		filepath.Join(webRoot, "tailwind.config.ts"):       webTailwindConfig(),
+		filepath.Join(webRoot, "postcss.config.js"):        webPostCSSConfig(),
+		filepath.Join(webRoot, "tsconfig.json"):            webTSConfig(),
+		filepath.Join(webRoot, "app", "globals.css"):       webGlobalCSS(),
+		filepath.Join(webRoot, "app", "layout.tsx"):        webRootLayout(opts),
+		filepath.Join(webRoot, "app", "page.tsx"):          webLandingPage(opts),
+		filepath.Join(webRoot, "app", "error.tsx"):         webErrorPage(),
+		filepath.Join(webRoot, "app", "not-found.tsx"):     webNotFoundPage(),
+		filepath.Join(webRoot, "app", "global-error.tsx"):  webGlobalErrorPage(),
+		filepath.Join(webRoot, "lib", "utils.ts"):          webUtils(),
+		filepath.Join(webRoot, "components", "navbar.tsx"): webNavbar(opts),
+		filepath.Join(webRoot, "components", "footer.tsx"): webFooter(opts),
 		// v3.31.49 — DevLinks renders every URL the `grit new` welcome
 		// banner prints (API, GORM Studio, Sentinel, Admin, MinIO,
 		// Mailhog, ...) on the landing page, dev-only.
-		filepath.Join(webRoot, "components", "dev-links.tsx"):         webDevLinks(),
-		filepath.Join(webRoot, "components", "providers.tsx"):         webProviders(),
+		filepath.Join(webRoot, "components", "dev-links.tsx"): webDevLinks(),
+		filepath.Join(webRoot, "components", "providers.tsx"): webProviders(),
 		// v3.31.48 -- AppChrome ships in the base scaffold (handles
 		// /forms/<token> chromeless rendering for public form-share).
 		// UserMenu, web-session marker, auth pages, useAuth, auth
 		// shells, and the auth-aware navbar are opt-in via
 		// `grit add web-auth` -- see webAuthFiles() in web_auth.go.
-		filepath.Join(webRoot, "components", "AppChrome.tsx"):               webAppChrome(),
-		filepath.Join(webRoot, "lib", "api.ts"):                             webAPIClient(),
-		filepath.Join(webRoot, "hooks", "use-blogs.ts"):                     webUseBlogsHook(),
-		filepath.Join(webRoot, "app", "blog", "page.tsx"):                   webBlogListPage(),
-		filepath.Join(webRoot, "app", "blog", "[slug]", "page.tsx"):         webBlogDetailPage(),
-		filepath.Join(webRoot, "app", "components", "page.tsx"):             webComponentsPage(opts),
-		filepath.Join(webRoot, "app", "components", "[name]", "page.tsx"):   webComponentDetailPage(opts),
+		filepath.Join(webRoot, "components", "AppChrome.tsx"):             webAppChrome(),
+		filepath.Join(webRoot, "lib", "api.ts"):                           webAPIClient(),
+		filepath.Join(webRoot, "hooks", "use-blogs.ts"):                   webUseBlogsHook(),
+		filepath.Join(webRoot, "app", "blog", "page.tsx"):                 webBlogListPage(),
+		filepath.Join(webRoot, "app", "blog", "[slug]", "page.tsx"):       webBlogDetailPage(),
+		filepath.Join(webRoot, "app", "components", "page.tsx"):           webComponentsPage(opts),
+		filepath.Join(webRoot, "app", "components", "[name]", "page.tsx"): webComponentDetailPage(opts),
 		// v3.31.20: public form-share page (Phase 2)
-		filepath.Join(webRoot, "app", "forms", "[token]", "page.tsx"):       webPublicFormPage(),
-		filepath.Join(webRoot, "public", ".gitkeep"):                         "",
+		filepath.Join(webRoot, "app", "forms", "[token]", "page.tsx"): webPublicFormPage(),
+		filepath.Join(webRoot, "public", ".gitkeep"):                  "",
 	}
 
 	for path, content := range files {
@@ -3118,4 +3118,3 @@ function Field({ field, value, onChange, inputType, hint }: FieldProps) {
 }
 `
 }
-

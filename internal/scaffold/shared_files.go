@@ -9,13 +9,13 @@ func writeSharedFiles(root string, opts Options) error {
 	sharedRoot := filepath.Join(root, "packages", "shared")
 
 	files := map[string]string{
-		filepath.Join(sharedRoot, "package.json"):        sharedPackageJSON(opts),
-		filepath.Join(sharedRoot, "tsconfig.json"):       sharedTSConfig(),
-		filepath.Join(sharedRoot, "schemas", "user.ts"):  sharedUserSchema(),
-		filepath.Join(sharedRoot, "schemas", "index.ts"): sharedSchemasIndex(),
-		filepath.Join(sharedRoot, "types", "user.ts"):    sharedUserTypes(),
-		filepath.Join(sharedRoot, "types", "api.ts"):     sharedAPITypes(),
-		filepath.Join(sharedRoot, "types", "index.ts"):   sharedTypesIndex(),
+		filepath.Join(sharedRoot, "package.json"):          sharedPackageJSON(opts),
+		filepath.Join(sharedRoot, "tsconfig.json"):         sharedTSConfig(),
+		filepath.Join(sharedRoot, "schemas", "user.ts"):    sharedUserSchema(),
+		filepath.Join(sharedRoot, "schemas", "index.ts"):   sharedSchemasIndex(),
+		filepath.Join(sharedRoot, "types", "user.ts"):      sharedUserTypes(),
+		filepath.Join(sharedRoot, "types", "api.ts"):       sharedAPITypes(),
+		filepath.Join(sharedRoot, "types", "index.ts"):     sharedTypesIndex(),
 		filepath.Join(sharedRoot, "constants", "index.ts"): sharedConstants(),
 		filepath.Join(sharedRoot, "types", "upload.ts"):    sharedUploadTypes(),
 		filepath.Join(sharedRoot, "schemas", "blog.ts"):    sharedBlogSchema(),

@@ -67,7 +67,7 @@ services:
       # collisions: a Postgres service installed on the host, and Windows
       # WinNAT reserving 5432 inside its dynamic Hyper-V port range
       # ("An attempt was made to access a socket in a way forbidden..."
-      # — see ` + "`netsh int ipv4 show excludedportrange protocol=tcp`" + `).
+      # — see `+"`netsh int ipv4 show excludedportrange protocol=tcp`"+`).
       # The container still listens on 5432 inside the Docker network.
       - "127.0.0.1:5434:5432"
     # Credentials come from .env (POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB).
@@ -145,15 +145,15 @@ func dockerComposeProd(opts Options) string {
 
 	result := fmt.Sprintf(`# Production stack.
 #
-# Security posture: nothing in this file uses ` + "`ports:`" + ` — only
-# ` + "`expose:`" + `. That means none of these services bind to the public host
+# Security posture: nothing in this file uses `+"`ports:`"+` — only
+# `+"`expose:`"+`. That means none of these services bind to the public host
 # interface. Traffic reaches the API and the front-ends ONLY through
 # your reverse proxy (Traefik, Caddy, nginx, or a managed PaaS like
 # Dokploy/Coolify), which lives on the same Docker network and routes
-# domain.com → ` + "`api:8080`" + `, app.domain.com → ` + "`admin:3000`" + `, etc.
+# domain.com → `+"`api:8080`"+`, app.domain.com → `+"`admin:3000`"+`, etc.
 #
 # Postgres and Redis have NO host binding at all — they're reachable
-# only by containers on the ` + "`%s`" + ` network. That's the property you
+# only by containers on the `+"`%s`"+` network. That's the property you
 # want: a successful host-level compromise still has to pop a container
 # to reach the database.
 #
