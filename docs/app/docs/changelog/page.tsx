@@ -28,6 +28,30 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.76 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.76
+                </span>
+                <span className="text-sm text-muted-foreground">July 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Numeric inputs format as you type — and never rescale.</strong>{' '}
+                  Number fields in generated mobile forms now show thousands
+                  separators while typing (<code>1000</code> renders{' '}
+                  <code>1,000</code>) and submit the plain number. What you type is
+                  what&apos;s stored: enter <code>100</code> and the record holds{' '}
+                  <code>100</code> — no cents conversion, no divide-by-100.
+                  New <code>lib/format.ts</code> exposes{' '}
+                  <code>formatNumberInput()</code> / <code>parseNumberInput()</code>;
+                  <code>float</code> fields keep up to two decimals.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.75 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

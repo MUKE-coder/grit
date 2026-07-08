@@ -50,6 +50,9 @@ func (g *Generator) writeMobileFiles(names Names) error {
 	if err := g.ensureMobileRelationSelect(); err != nil {
 		return err
 	}
+	if err := g.ensureMobileNumberFormat(); err != nil {
+		return err
+	}
 	if err := g.ensureMobileImportHelper(); err != nil {
 		return err
 	}
@@ -781,6 +784,7 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
 		fieldsJSX    strings.Builder
 	)
 	hasFile := false
+	hasNumber := false
 	seenImport := map[string]bool{}
 
 	for _, f := range g.Definition.Fields {
@@ -884,14 +888,16 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
 			fieldsJSX.WriteString("      </View>\n")
 
 		case t == FieldInt || t == FieldUint:
-			stateLines.WriteString("  const [" + camel + ", set" + pascal + "] = useState(i." + n + " != null ? String(i." + n + ") : \"\");\n")
-			payload.WriteString("        " + n + ": Number(" + camel + ") || 0,\n")
-			fieldsJSX.WriteString(mobileTextInput(label, camel, "set"+pascal, "numeric", false))
+			hasNumber = true
+			stateLines.WriteString("  const [" + camel + ", set" + pascal + "] = useState(i." + n + " != null ? formatNumberInput(String(i." + n + ")) : \"\");\n")
+			payload.WriteString("        " + n + ": parseNumberInput(" + camel + "),\n")
+			fieldsJSX.WriteString(mobileNumberInput(label, camel, "set"+pascal, false))
 
 		case t == FieldFloat:
-			stateLines.WriteString("  const [" + camel + ", set" + pascal + "] = useState(i." + n + " != null ? String(i." + n + ") : \"\");\n")
-			payload.WriteString("        " + n + ": parseFloat(" + camel + ") || 0,\n")
-			fieldsJSX.WriteString(mobileTextInput(label, camel, "set"+pascal, "decimal-pad", false))
+			hasNumber = true
+			stateLines.WriteString("  const [" + camel + ", set" + pascal + "] = useState(i." + n + " != null ? formatNumberInput(String(i." + n + "), true) : \"\");\n")
+			payload.WriteString("        " + n + ": parseNumberInput(" + camel + "),\n")
+			fieldsJSX.WriteString(mobileNumberInput(label, camel, "set"+pascal, true))
 
 		case t == FieldText || t == FieldRichtext:
 			stateLines.WriteString("  const [" + camel + ", set" + pascal + "] = useState(i." + n + " ?? \"\");\n")
@@ -908,6 +914,10 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
 			payload.WriteString("        " + n + ": " + camel + ",\n")
 			fieldsJSX.WriteString(mobileTextInput(label, camel, "set"+pascal, "default", false))
 		}
+	}
+
+	if hasNumber {
+		extraImports.WriteString("import { formatNumberInput, parseNumberInput } from \"@/lib/format\";\n")
 	}
 
 	fileImports := ""
@@ -1103,6 +1113,22 @@ export default function Edit__PASCAL__Screen() {
 }
 
 // mobileTextInput builds a labelled TextInput block for the create form.
+// mobileNumberInput renders a numeric TextInput that shows thousands separators
+// as you type ("1000" → "1,000"). The state holds the formatted string; the
+// payload runs it back through parseNumberInput, so the stored value is exactly
+// what was typed (never scaled to cents).
+func mobileNumberInput(label, valueVar, setter string, allowDecimal bool) string {
+	keyboard := "numeric"
+	decArg := ""
+	if allowDecimal {
+		keyboard = "decimal-pad"
+		decArg = ", true"
+	}
+	return "        <Text className={labelClass}>" + label + "</Text>\n" +
+		"        <TextInput className={inputClass} placeholder=\"" + label + "\" placeholderTextColor=\"#9CA3AF\" value={" + valueVar +
+		"} onChangeText={(t) => " + setter + "(formatNumberInput(t" + decArg + "))} keyboardType=\"" + keyboard + "\" />\n"
+}
+
 func mobileTextInput(label, valueVar, setter, keyboard string, multiline bool) string {
 	extra := ""
 	if keyboard != "default" {
@@ -1218,6 +1244,13 @@ func (g *Generator) ensureMobileImageResolver() error {
 func (g *Generator) ensureMobileRelationSelect() error {
 	path := filepath.Join(g.mobileRoot(), "components", "ui", "relation-select.tsx")
 	return writeFileWithDirs(path, scaffold.ExpoRelationSelect())
+}
+
+// ensureMobileNumberFormat writes lib/format.ts (thousands separators for
+// numeric inputs), which generated forms import. Overwritten to stay current.
+func (g *Generator) ensureMobileNumberFormat() error {
+	path := filepath.Join(g.mobileRoot(), "lib", "format.ts")
+	return writeFileWithDirs(path, scaffold.ExpoNumberFormat())
 }
 
 func (g *Generator) ensureMobileImportStore() error {

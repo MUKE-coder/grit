@@ -610,6 +610,40 @@ export function RelationSelect({ label, value, onChange, options, placeholder }:
 `
 }
 
+// ExpoNumberFormat is lib/format.ts — thousands-separator helpers for numeric
+// inputs. Typing 1000 shows "1,000" while the payload still carries the plain
+// number 1000. Values are NOT scaled (no cents conversion): what you type is
+// what's stored.
+func ExpoNumberFormat() string {
+	return `// Format a numeric text input with thousands separators as the user types:
+// "1000" -> "1,000". Set allowDecimal for float fields (keeps up to 2 decimals).
+// The value is never scaled — 100 means 100, not cents.
+export function formatNumberInput(value: string, allowDecimal = false): string {
+  if (value === null || value === undefined || value === "") return "";
+  let cleaned = allowDecimal
+    ? String(value).replace(/[^0-9.]/g, "")
+    : String(value).replace(/[^0-9]/g, "");
+
+  if (allowDecimal) {
+    const parts = cleaned.split(".");
+    if (parts.length > 1) {
+      cleaned = parts[0] + "." + parts.slice(1).join("").slice(0, 2);
+    }
+  }
+
+  const [intPart, decPart] = cleaned.split(".");
+  const withCommas = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return decPart !== undefined ? withCommas + "." + decPart : withCommas;
+}
+
+// Strip the separators back to a plain number for the API payload.
+export function parseNumberInput(value: string): number {
+  const n = Number(String(value ?? "").replace(/,/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+`
+}
+
 // ExpoImageResolver is lib/images.ts — resolveImageUrl(). Dev storage (MinIO)
 // hands back URLs like http://localhost:9002/... which only resolve on the
 // machine running the server; a device/emulator can't reach "localhost". This

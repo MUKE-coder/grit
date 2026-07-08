@@ -78,8 +78,10 @@ grit generate resource Category --fields "name:string,slug:slug,image:file:image
 grit generate resource Product --fields "name:string,slug:slug,price:int,description:text,thumbnail:file:image,category:belongs_to:Category"
 ```
 
-> **Money tip:** `price:int` stores the amount in the smallest unit (cents) so you
-> never fight float rounding. We divide by 100 for display.
+> **Money tip:** `price:int` stores exactly what you type — enter `1000` and the
+> record holds `1000`. The generated form formats the input with thousands
+> separators as you type (`1,000`), and submits the plain number. Use
+> `toLocaleString()` to render it the same way.
 
 ### What you just generated for mobile
 
@@ -286,7 +288,7 @@ export default function CategoryProductsScreen() {
       )}
       <View className="p-3">
         <Text className="text-[14px] font-semibold text-[#0F1018] dark:text-white" numberOfLines={1}>{item.name}</Text>
-        <Text className="text-[14px] font-bold text-[#6c5ce7] mt-1">${(item.price / 100).toFixed(2)}</Text>
+        <Text className="text-[14px] font-bold text-[#6c5ce7] mt-1">${item.price.toLocaleString()}</Text>
       </View>
     </Pressable>
   );
@@ -363,7 +365,7 @@ export default function ProductScreen() {
 
         <View className="p-6">
           <Text className="text-[24px] font-bold text-[#0F1018] dark:text-white">{product.name}</Text>
-          <Text className="text-[22px] font-bold text-[#6c5ce7] mt-2">${(product.price / 100).toFixed(2)}</Text>
+          <Text className="text-[22px] font-bold text-[#6c5ce7] mt-2">${product.price.toLocaleString()}</Text>
           {product.category?.name ? (
             <View className="self-start bg-[#6c5ce7]/12 px-3 py-1 rounded-full mt-3">
               <Text className="text-[12px] font-medium text-[#6c5ce7]">{product.category.name}</Text>
@@ -397,7 +399,7 @@ export default function ProductScreen() {
                   )}
                   <View className="p-3">
                     <Text className="text-[13px] font-semibold text-[#0F1018] dark:text-white" numberOfLines={1}>{item.name}</Text>
-                    <Text className="text-[13px] font-bold text-[#6c5ce7] mt-1">${(item.price / 100).toFixed(2)}</Text>
+                    <Text className="text-[13px] font-bold text-[#6c5ce7] mt-1">${item.price.toLocaleString()}</Text>
                   </View>
                 </Pressable>
               )}
