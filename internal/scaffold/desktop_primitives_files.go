@@ -910,6 +910,7 @@ func desktopClientNavConfig() string {
   Home,
   User,
   Settings,
+  Box,
   type LucideIcon,
 } from "lucide-react";
 
@@ -939,6 +940,14 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    title: "Manage",
+    items: [
+      // grit generate resource injects generated resources here. Box is a
+      // shared icon so no per-resource import is needed.
+      // grit:nav
+    ],
+  },
+  {
     title: "Account",
     items: [
       { to: "/app/profile", label: "Profile", icon: User },
@@ -946,6 +955,8 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
 ];
+
+void Box;
 `
 }
 
@@ -976,7 +987,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 p-3 overflow-y-auto">
-        {NAV_SECTIONS.map((section, idx) => (
+        {NAV_SECTIONS.filter((s) => s.items.length > 0).map((section, idx) => (
           <div key={idx} className={cn(idx > 0 && "mt-4")}>
             {section.title && (
               <h3 className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-foreground-muted">

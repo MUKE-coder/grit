@@ -185,10 +185,18 @@ func (g *Generator) Run() error {
 		fmt.Printf("  ✓ apps/expo/components/resource-forms/%s-form.tsx\n", names.PluralKebab)
 	}
 
-	// Monorepo desktop client (apps/desktop): register the new resource for
-	// offline sync so the background mirror + offline toggle cover it. The Go
-	// syncTables var is the single source of truth (the frontend reads it).
+	// Monorepo desktop client (apps/desktop): generate offline-first CRUD
+	// screens (local mirror + outbox via the sync engine) AND register the
+	// resource for background sync. The Go syncTables var is the single source
+	// of truth (the frontend reads it).
 	if g.hasDesktopClient() {
+		if err := g.writeDesktopClientResourceFiles(names); err != nil {
+			return fmt.Errorf("writing desktop client files: %w", err)
+		}
+		fmt.Printf("  ✓ apps/desktop/frontend/src/routes/_app/%s.index.tsx\n", names.Plural)
+		fmt.Printf("  ✓ apps/desktop/frontend/src/routes/_app/%s.new.tsx\n", names.Plural)
+		fmt.Printf("  ✓ apps/desktop/frontend/src/routes/_app/%s.$id.edit.tsx\n", names.Plural)
+		fmt.Printf("  ✓ apps/desktop/frontend/src/hooks/use-%s.ts\n", names.PluralKebab)
 		if err := g.injectDesktopSyncTable(names); err != nil {
 			return fmt.Errorf("registering desktop sync table: %w", err)
 		}

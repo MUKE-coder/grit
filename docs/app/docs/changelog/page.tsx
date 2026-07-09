@@ -28,6 +28,34 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.33.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.33.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Generated offline-first desktop screens.</strong>{' '}
+                  In a monorepo with a desktop client (<code>--full</code> or{' '}
+                  <code>--desktop</code>), <code>grit generate resource</code> now
+                  scaffolds full CRUD screens for the Wails desktop app — a list
+                  view, create/edit forms (with typed inputs and{' '}
+                  <code>belongs_to</code> pickers), a React Query hook, and a
+                  sidebar entry. Every screen reads and writes through the{' '}
+                  <strong>offline-first sync engine</strong> (local SQLite mirror +
+                  outbox), so it works with no connection and reconciles
+                  automatically when you&apos;re back online — the same command
+                  that already fans out to web, admin, and mobile now covers
+                  desktop too. This is what makes a full offline/online desktop app
+                  (a POS, an inventory tool, a field-ops app) mostly generated code.
+                </p>
+              </div>
+            </div>
+
             {/* v3.32.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
