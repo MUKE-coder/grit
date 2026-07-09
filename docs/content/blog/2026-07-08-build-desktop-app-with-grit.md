@@ -90,23 +90,20 @@ the shared source of truth. The desktop app:
 
 You don't wire any of that. It's what `--full` scaffolds.
 
-## 2. Start the server (the "online" side)
+## 2. Bring up the infrastructure & install
 
-Spin up Postgres and run the API:
-
-```bash
-docker compose up -d           # Postgres (+ Redis, MinIO) on localhost
-cd apps/api
-cp .env.example .env           # DATABASE_URL points at the docker Postgres
-go run cmd/server/main.go      # API on http://localhost:8080
-```
-
-Leave that running. The desktop app talks to it at `http://localhost:8080/api`.
-Seed a login while you're here:
+Start the local Postgres the desktop app will sync against, install the
+workspace (one install now covers the desktop frontend too), and point the API
+at the database:
 
 ```bash
-go run ./cmd/seed              # creates admin@example.com / admin123 (dev only)
+docker compose up -d                     # Postgres (+ Redis, MinIO) on localhost
+pnpm i                                   # install all deps: web, admin, desktop, expo
+cp apps/api/.env.example apps/api/.env   # DATABASE_URL points at that Postgres
 ```
+
+That `cp` is the only non-Grit setup step — everything from here on is a `grit`
+command.
 
 > The desktop app authenticates against this API and stores its token in the OS
 > keychain. When it's online it syncs against Postgres; when it's offline it
@@ -213,14 +210,30 @@ export function useCreateProduct() {
 in the outbox. Reads see it instantly; the background loop pushes it up later.
 That's why the generated CRUD works with the network unplugged.
 
-## 4. Run the POS
+## 4. Migrate, seed & run — all Grit commands
+
+Now that the models exist, create their tables, seed a login, and start the API.
+Run these from anywhere inside the project — `grit` finds `apps/api` for you:
 
 ```bash
-# from the repo root — one install covers the desktop frontend now too
-pnpm install
-cd apps/desktop
-wails dev
+grit migrate                   # AutoMigrate every model into Postgres
+grit seed                      # admin@example.com / admin123 (dev only)
+grit start server              # Go API on http://localhost:8080 (hot-reloads with air)
 ```
+
+Leave that running. In a second terminal, start the desktop app. `grit start`
+detects the Wails project and runs it:
+
+```bash
+cd apps/desktop
+grit start                     # runs the desktop app (wails dev under the hood)
+```
+
+> **Sticking to Grit:** `grit migrate`, `grit seed`, and `grit start server`
+> all locate `apps/api` themselves — no `cd` needed. `grit start` from the repo
+> root runs the API + web together; from `apps/desktop` it runs the desktop app.
+> (The monorepo also scaffolds an Expo app in `apps/expo` with the same
+> resources — outside this tutorial, but it's there when you want mobile.)
 
 Wails compiles the Go binary, generates the TypeScript bindings and the route
 tree, and opens the window. Log in with **admin@example.com / admin123**. In the
@@ -474,9 +487,9 @@ export const NAV_SECTIONS: NavSection[] = [
 ];
 ```
 
-`wails dev` hot-reloads. You now have a real checkout: tap products, adjust
-quantities, take a discount, pick cash or mobile money, enter the amount
-received, see the change, hit **Complete Sale**. Every part of that —
+The still-running `grit start` hot-reloads it. You now have a real checkout: tap
+products, adjust quantities, take a discount, pick cash or mobile money, enter
+the amount received, see the change, hit **Complete Sale**. Every part of that —
 `createSale`, the stock decrements — goes through the local-first engine, so it
 **works with no connection** and syncs the sale (and the new stock levels) to
 Postgres when you're back online.
