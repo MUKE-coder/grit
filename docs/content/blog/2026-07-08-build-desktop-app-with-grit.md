@@ -92,18 +92,17 @@ You don't wire any of that. It's what `--full` scaffolds.
 
 ## 2. Bring up the infrastructure & install
 
-Start the local Postgres the desktop app will sync against, install the
-workspace (one install now covers the desktop frontend too), and point the API
-at the database:
+Start the local Postgres the desktop app will sync against, and install the
+workspace (one install now covers the desktop frontend too):
 
 ```bash
-docker compose up -d                     # Postgres (+ Redis, MinIO) on localhost
-pnpm i                                   # install all deps: web, admin, desktop, expo
-cp apps/api/.env.example apps/api/.env   # DATABASE_URL points at that Postgres
+docker compose up -d           # Postgres (+ Redis, MinIO) on localhost
+pnpm i                         # install all deps: web, admin, desktop, expo
 ```
 
-That `cp` is the only non-Grit setup step — everything from here on is a `grit`
-command.
+No `.env` juggling — `grit new` already wrote a populated `.env` at the project
+root with a per-scaffold Postgres password, and both `docker compose` and the
+Go API read it. So `grit migrate` and `grit start server` work out of the box.
 
 > The desktop app authenticates against this API and stores its token in the OS
 > keychain. When it's online it syncs against Postgres; when it's offline it
