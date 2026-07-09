@@ -28,6 +28,29 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.80 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.80
+                </span>
+                <span className="text-sm text-muted-foreground">July 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fix: desktop list crashed on file fields.</strong> A
+                  generated desktop list rendered a <code>file</code> field&apos;s
+                  FileRef object directly into a table cell, which React refuses
+                  (&quot;Objects are not valid as a React child&quot;). File
+                  columns now render a thumbnail (and <code>files</code> columns a
+                  small stack), so an inventory list with a product photo displays
+                  instead of white-screening. Completes the desktop upload support
+                  from v3.31.79.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.79 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

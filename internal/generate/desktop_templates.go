@@ -358,6 +358,22 @@ func (g *DesktopGenerator) writeDesktopListRoute(names Names) error {
 			bodyCells += "                  <td className=\"px-4 py-3 text-sm text-text-secondary\">\n"
 			bodyCells += "                    {item." + jsonName + " ? new Date(item." + jsonName + ").toLocaleDateString(\"en-US\", { year: \"numeric\", month: \"short\", day: \"numeric\" }) : \"-\"}\n"
 			bodyCells += "                  </td>\n"
+		case "file":
+			// FileRef object → a small thumbnail from its URL (served by the
+			// embedded API), or a dash.
+			bodyCells += "                  <td className=\"px-4 py-3\">\n"
+			bodyCells += "                    {item." + jsonName + "?.url ? <img src={item." + jsonName + ".url} alt=\"\" className=\"h-10 w-10 rounded object-cover border border-border\" /> : <span className=\"text-sm text-text-muted\">-</span>}\n"
+			bodyCells += "                  </td>\n"
+		case "files":
+			bodyCells += "                  <td className=\"px-4 py-3\">\n"
+			bodyCells += "                    {item." + jsonName + "?.length ? (\n"
+			bodyCells += "                      <div className=\"flex -space-x-2\">\n"
+			bodyCells += "                        {item." + jsonName + ".slice(0, 3).map((img: any, i: number) => (\n"
+			bodyCells += "                          <img key={i} src={img.url} alt=\"\" className=\"h-10 w-10 rounded object-cover border-2 border-background\" />\n"
+			bodyCells += "                        ))}\n"
+			bodyCells += "                      </div>\n"
+			bodyCells += "                    ) : <span className=\"text-sm text-text-muted\">-</span>}\n"
+			bodyCells += "                  </td>\n"
 		default:
 			bodyCells += "                  <td className=\"px-4 py-3 text-sm text-text-secondary\">{item." + jsonName + " || \"-\"}</td>\n"
 		}
