@@ -229,16 +229,18 @@ grit start                     # API + web + admin + the desktop app, in paralle
 Next.js apps, and — because this project has `apps/desktop` — the **Wails
 desktop window** too. Ctrl+C stops them all.
 
-> **Want just one app?** Every app has its own starter you can run from the
-> project root, exactly like `grit start server`:
->
-> ```bash
-> grit start server    # Go API only
-> grit start desktop   # just the desktop app
-> grit start web       # just the web app
-> grit start admin     # just the admin panel
-> grit start expo      # the Expo mobile app (same resources, for free)
-> ```
+**Want just one app?** Every app has its own starter you can run from the
+project root, exactly like `grit start server`:
+
+| Command | Starts |
+|---|---|
+| `grit start` | everything in parallel (API + web + admin + desktop) |
+| `grit start server` | Go API only |
+| `grit start web` | web app (Next.js, port 3000) |
+| `grit start admin` | admin panel (Next.js, port 3001) |
+| `grit start expo` | Expo mobile app |
+| `grit start desktop` | Wails desktop app |
+| `grit start client` | all frontends via Turborepo |
 
 Wails compiles the desktop binary, generates its TypeScript bindings and route
 tree, and opens the window. Log in with **admin@example.com / admin123**. In the
