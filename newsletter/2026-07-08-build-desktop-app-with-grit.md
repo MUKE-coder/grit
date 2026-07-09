@@ -91,7 +91,9 @@ The router is mounted **twice** (see `main.go`):
 - as the Wails **asset-server handler**, so the webview can `fetch("/api/uploads")`
   and render `<img src="/uploads/photo.jpg">` **same-origin** — no port to find,
   no CORS to configure;
-- on **`127.0.0.1:34115`**, so `curl` or any other client can hit the same API.
+- on **`127.0.0.1:34999`**, so `curl` or any other client can hit the same API.
+  (The Wails dev window itself runs on `localhost:34115` during `wails dev` —
+  the embedded API deliberately uses a different port so they never collide.)
 
 That's the whole trick behind uploads below.
 

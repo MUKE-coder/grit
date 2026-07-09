@@ -310,6 +310,7 @@ import (
 	"` + "{{MODULE}}" + `/internal/database"
 	"` + "{{MODULE}}" + `/internal/jobs"
 	"` + "{{MODULE}}" + `/internal/mail"
+	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/routes"
 	"` + "{{MODULE}}" + `/internal/services"
 	"` + "{{MODULE}}" + `/internal/storage"
@@ -462,6 +463,32 @@ func main() {
 			}
 		}
 	}
+
+	// Reap ImportJobs orphaned by a crash or restart. A background CSV import
+	// runs in a goroutine that flips the job to completed/failed at the end;
+	// if the process dies first, the row is stuck "processing" forever and the
+	// client's poll never terminates. This needs no Redis, so it always runs.
+	go func() {
+		// At boot, ANY processing job is orphaned — its goroutine died with
+		// the previous process — so reap them all immediately.
+		db.Model(&models.ImportJob{}).Where("status = ?", "processing").
+			Updates(map[string]interface{}{
+				"status":  "failed",
+				"message": "import interrupted by server restart",
+			})
+		// Thereafter, reap only jobs with no progress for 15 minutes (a stall).
+		ticker := time.NewTicker(10 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			cutoff := time.Now().Add(-15 * time.Minute)
+			db.Model(&models.ImportJob{}).
+				Where("status = ? AND updated_at < ?", "processing", cutoff).
+				Updates(map[string]interface{}{
+					"status":  "failed",
+					"message": "import stalled (no progress for 15 minutes)",
+				})
+		}
+	}()
 
 	// Create server
 	srv := &http.Server{
@@ -1596,7 +1623,32 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	tokens, err := h.AuthService.GenerateTokenPair(claims.UserID, claims.Email, claims.Role)
+	// Re-verify the account on every refresh. A stateless refresh token is
+	// otherwise valid for its full lifetime even after the user is deleted or
+	// deactivated; re-loading the user closes that window and lets a role
+	// change take effect on the next refresh (partial revocation without a
+	// server-side token store).
+	var user models.User
+	if err := h.DB.First(&user, "id = ?", claims.UserID).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": gin.H{
+				"code":    "INVALID_TOKEN",
+				"message": "Account no longer exists",
+			},
+		})
+		return
+	}
+	if !user.Active {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": gin.H{
+				"code":    "ACCOUNT_DISABLED",
+				"message": "This account has been disabled",
+			},
+		})
+		return
+	}
+
+	tokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
@@ -2930,6 +2982,28 @@ func parseDateInput(s string, endOfDay bool) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("invalid date %q", s)
 }
 
+// isSafeDateColumn reports whether the client-supplied date_field column is
+// safe to interpolate into a WHERE fragment. Only bare identifiers that are
+// either a known timestamp column or an explicitly-declared sortable column
+// are allowed; everything else is rejected so the caller falls back to
+// "created_at". This is the guard behind the date-filter injection fix.
+func isSafeDateColumn(col string, cfg Config) bool {
+	if col == "" {
+		return false
+	}
+	// Reject anything that isn't a plain snake_case identifier up front —
+	// no spaces, parens, quotes, or SQL operators can survive this.
+	for _, r := range col {
+		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_') {
+			return false
+		}
+	}
+	if col == "created_at" || col == "updated_at" {
+		return true
+	}
+	return cfg.Sortable[col]
+}
+
 // List runs the query with search / sort / filters / pagination applied and
 // returns a typed Result[T]. The caller is expected to have already set the
 // model and any relevant Preload() chains on the passed-in *gorm.DB.
@@ -2965,13 +3039,23 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 
 	// v3.31.34 — date-window filter. DateField defaults to "created_at"
 	// in Bind() so we only need to apply when at least one bound is set.
-	// Quoted with backticks so reserved-word column names (e.g. "order"
-	// has none, but defensive) don't blow up on Postgres.
+	//
+	// SECURITY (v3.31.84): DateField arrives straight from the ?date_field=
+	// query param, so it MUST be whitelisted before it touches a WHERE
+	// fragment — GORM treats the condition string as raw SQL. We allow the
+	// two always-present timestamp columns plus anything the resource
+	// already declared sortable (a strict, developer-controlled set), and
+	// fall back to "created_at" on anything else. This closes the
+	// date_field SQL-injection vector reachable by any authenticated user.
+	dateField := p.DateField
+	if !isSafeDateColumn(dateField, cfg) {
+		dateField = "created_at"
+	}
 	if !p.DateFrom.IsZero() {
-		query = query.Where(p.DateField+" >= ?", p.DateFrom)
+		query = query.Where(dateField+" >= ?", p.DateFrom)
 	}
 	if !p.DateTo.IsZero() {
-		query = query.Where(p.DateField+" <= ?", p.DateTo)
+		query = query.Where(dateField+" <= ?", p.DateTo)
 	}
 
 	// Apply search across configured columns.
@@ -3529,41 +3613,101 @@ func (h *SyncHandler) Pull(c *gin.Context) {
 		return
 	}
 
-	// Build a slice of the right type via reflection so we can return
-	// proper struct values (not gin.H maps).
+	// Build a slice of the right type via reflection.
 	sliceType := reflect.SliceOf(reflect.TypeOf(proto).Elem())
 	results := reflect.New(sliceType)
 
-	q := h.DB.Model(proto)
+	// Effective change time = the LATER of updated_at and deleted_at. A soft
+	// delete only sets deleted_at, so ordering/cursoring on updated_at alone
+	// would never carry the delete to offline clients (they'd keep a ghost
+	// row forever). We order + cursor on the effective time and mark deleted
+	// rows with "_deleted": true so the client can drop them from its mirror.
+	effExpr := "MAX(updated_at, COALESCE(deleted_at, updated_at))"
+	if h.DB.Dialector.Name() == "postgres" {
+		effExpr = "GREATEST(updated_at, COALESCE(deleted_at, updated_at))"
+	}
+
+	// Unscoped so soft-deleted rows are included (they're the tombstones).
+	q := h.DB.Unscoped().Model(proto)
 	if sinceStr != "" {
 		t, err := time.Parse(time.RFC3339Nano, sinceStr)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "INVALID_SINCE", "message": err.Error()}})
 			return
 		}
-		q = q.Where("updated_at > ?", t)
+		q = q.Where("updated_at > ? OR deleted_at > ?", t, t)
 	}
-	if err := q.Order("updated_at asc").Limit(limit).Find(results.Interface()).Error; err != nil {
+	if err := q.Order(effExpr + " asc").Limit(limit).Find(results.Interface()).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
 
-	// Cursor = last UpdatedAt in the page so the client picks up there
-	// next time. Empty when nothing came back.
-	cursor := sinceStr
 	rs := results.Elem()
-	if rs.Len() > 0 {
-		last := rs.Index(rs.Len() - 1).Addr().Interface()
-		if t, ok := getTimeField(last, "UpdatedAt"); ok {
-			cursor = t.Format(time.RFC3339Nano)
+	rows := make([]map[string]interface{}, 0, rs.Len())
+	cursor := sinceStr
+	var maxEff time.Time
+	for i := 0; i < rs.Len(); i++ {
+		item := rs.Index(i).Addr().Interface()
+		b, merr := json.Marshal(item)
+		if merr != nil {
+			continue
 		}
+		var m map[string]interface{}
+		if uerr := json.Unmarshal(b, &m); uerr != nil {
+			continue
+		}
+		m["_deleted"] = isSyncDeleted(item)
+		rows = append(rows, m)
+		if eff, ok := effectiveSyncTime(item); ok && eff.After(maxEff) {
+			maxEff = eff
+		}
+	}
+	if !maxEff.IsZero() {
+		cursor = maxEff.Format(time.RFC3339Nano)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data":   results.Elem().Interface(),
+		"data":   rows,
 		"cursor": cursor,
-		"count":  rs.Len(),
+		"count":  len(rows),
 	})
+}
+
+// isSyncDeleted reports whether a model row is soft-deleted (a tombstone).
+func isSyncDeleted(obj interface{}) bool {
+	v := reflect.ValueOf(obj)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	f := v.FieldByName("DeletedAt")
+	if !f.IsValid() {
+		return false
+	}
+	if d, ok := f.Interface().(gorm.DeletedAt); ok {
+		return d.Valid
+	}
+	return false
+}
+
+// effectiveSyncTime returns the later of a row's UpdatedAt and DeletedAt — the
+// timestamp the pull cursor advances on so both edits and deletes are carried.
+func effectiveSyncTime(obj interface{}) (time.Time, bool) {
+	v := reflect.ValueOf(obj)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	var eff time.Time
+	if f := v.FieldByName("UpdatedAt"); f.IsValid() {
+		if t, ok := f.Interface().(time.Time); ok {
+			eff = t
+		}
+	}
+	if f := v.FieldByName("DeletedAt"); f.IsValid() {
+		if d, ok := f.Interface().(gorm.DeletedAt); ok && d.Valid && d.Time.After(eff) {
+			eff = d.Time
+		}
+	}
+	return eff, !eff.IsZero()
 }
 
 // decodeInto round-trips a map through JSON into the target struct so

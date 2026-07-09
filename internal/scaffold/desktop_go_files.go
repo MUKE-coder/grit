@@ -78,7 +78,13 @@ func main() {
 		addr := "127.0.0.1:" + cfg.APIPort
 		log.Printf("REST API listening on http://%s", addr)
 		if err := http.ListenAndServe(addr, router); err != nil {
-			log.Printf("REST API stopped: %v", err)
+			// A bind error here almost always means the port is already
+			// taken — most commonly by the Wails dev server (34115) if
+			// API_PORT was set back to it. The in-webview API still works
+			// (it's mounted on the AssetServer handler, port-free); only
+			// the loopback listener for curl/other clients is affected.
+			log.Printf("WARNING: embedded REST API could not start on %s: %v", addr, err)
+			log.Printf("         (in-app features still work; set a free API_PORT to enable curl/external access)")
 		}
 	}()
 
@@ -126,6 +132,7 @@ func desktopAppGo() string {
 import (
 	"context"
 	"fmt"
+	"time"
 
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 
@@ -133,6 +140,15 @@ import (
 	"<MODULE>/internal/service"
 	// grit:imports
 )
+
+// fmtDesktopDate renders a *time.Time for CSV/PDF export, tolerating nil (an
+// unset optional date) instead of panicking.
+func fmtDesktopDate(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return t.Format("2006-01-02")
+}
 
 type App struct {
 	ctx     context.Context

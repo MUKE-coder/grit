@@ -61,6 +61,19 @@ func BuildNames(def *ResourceDefinition) Names {
 func (g *DesktopGenerator) Run() error {
 	names := BuildNames(g.Definition)
 
+	// many_to_many and string_array aren't wired for desktop resources yet
+	// (m2m needs join-table handling + a multi-select UI; string_array needs
+	// the datatypes column + an array editor). Fail early with an actionable
+	// message instead of emitting a project that won't compile.
+	for _, f := range g.Definition.Fields {
+		if f.IsManyToMany() {
+			return fmt.Errorf("field %q: many_to_many isn't supported for desktop apps yet — model the link as a separate resource with two belongs_to fields instead", f.Name)
+		}
+		if f.IsStringArray() {
+			return fmt.Errorf("field %q: string_array isn't supported for desktop apps yet — use a text field, or a related resource", f.Name)
+		}
+	}
+
 	fmt.Printf("\n  Generating desktop resource: %s\n\n", names.Pascal)
 
 	// 1. Write Go model

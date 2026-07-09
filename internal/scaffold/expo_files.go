@@ -2177,7 +2177,7 @@ class ApiClient {
           const data = await refreshRes.json();
           await this.setTokens(data.data.tokens.access_token, data.data.tokens.refresh_token);
 
-          headers["Authorization"] = ` + "`" + `Bearer ${data.data.access_token}` + "`" + `;
+          headers["Authorization"] = ` + "`" + `Bearer ${data.data.tokens.access_token}` + "`" + `;
           res = await fetchWithTimeout(` + "`" + `${API_URL}${endpoint}` + "`" + `, {
             method: options.method || "GET",
             headers,

@@ -45,7 +45,9 @@ func Load() *Config {
 		DBDriver: getEnv("DB_DRIVER", "sqlite"),
 		DBDSN:    getEnv("DB_DSN", "app.db"),
 		AppName:  getEnv("APP_NAME", "Grit Desktop"),
-		APIPort:  getEnv("API_PORT", "34115"),
+		// 34999 (not 34115): the Wails dev server binds 34115 during
+		// "wails dev", so the embedded API must not collide with it.
+		APIPort:  getEnv("API_PORT", "34999"),
 	}
 }
 

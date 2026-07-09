@@ -28,6 +28,62 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.32.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.32.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Offline-first desktop, and a deep security &amp; correctness pass.</strong>{' '}
+                  This release makes the monorepo desktop client a true
+                  online/offline hybrid, and fixes a batch of issues found in a
+                  full audit of the generated code.
+                </p>
+                <p>
+                  <strong>New — offline-hybrid desktop.</strong> The{' '}
+                  <code>apps/desktop</code> client (from <code>--full</code> or{' '}
+                  <code>--desktop</code>) now works online by default,{' '}
+                  <em>continuously mirroring</em> server data into a local SQLite
+                  copy in the background. A <strong>Work offline</strong> toggle in
+                  the dashboard&apos;s Settings lets you keep working against that
+                  local copy with no connection; every edit queues, and the moment
+                  you switch back online it <strong>auto-reconciles</strong> — pushes
+                  your changes (with the existing per-field conflict merge) and pulls
+                  anything new. Deletes now propagate to offline clients via
+                  tombstones. <code>grit generate resource</code> registers each new
+                  model for offline sync automatically.
+                </p>
+                <p>
+                  <strong>Security.</strong> Closed a SQL-injection vector in the
+                  shared paginator&apos;s <code>date_field</code> parameter
+                  (reachable on every generated list endpoint) and whitelisted the
+                  generated service&apos;s <code>ORDER BY</code>. Uploads now sniff
+                  real content type instead of trusting the client header, cap the
+                  request body, and reject HTML/SVG payloads. The seeder refuses the
+                  default <code>admin123</code> password in production, and token
+                  refresh re-checks that the account still exists and is active.
+                </p>
+                <p>
+                  <strong>Correctness.</strong> Fixed generated <strong>desktop CRUD</strong>{' '}
+                  (models now assign their UUID and use string IDs end-to-end — the
+                  old code could store only one record and silently no-op updates and
+                  deletes); the desktop embedded API moved off port <code>34115</code>{' '}
+                  so it no longer collides with <code>wails dev</code>; date fields,
+                  a <code>belongs_to</code> CSV-import build breaker, and a mobile{' '}
+                  <code>Bearer undefined</code> token-refresh bug are all fixed.
+                  Backups now stream (no more loading the whole database into memory),
+                  include many-to-many join tables, and no longer corrupt values
+                  containing <code>--</code>. CSV import streams and batches instead
+                  of buffering the whole file, and stalled import jobs are reaped.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.83 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

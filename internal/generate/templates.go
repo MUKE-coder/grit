@@ -211,6 +211,7 @@ func (g *Generator) writeGoService(names Names) error {
 		"{{lower}}", names.Lower,
 		"{{plural}}", names.Plural,
 		"{{SEARCH_WHERE}}", searchWhere,
+		"{{SORTABLE_SET}}", g.buildSortableSet(),
 	)
 
 	content := r.Replace(`package services
@@ -249,7 +250,10 @@ func (s *{{Pascal}}Service) List(params {{Pascal}}ListParams) ([]models.{{Pascal
 	if params.SortOrder != "asc" && params.SortOrder != "desc" {
 		params.SortOrder = "desc"
 	}
-	if params.SortBy == "" {
+	// SortBy is interpolated into ORDER BY below, so it MUST be whitelisted
+	// against real columns — never trust a client-supplied sort column.
+	sortable{{Pascal}} := {{SORTABLE_SET}}
+	if !sortable{{Pascal}}[params.SortBy] {
 		params.SortBy = "created_at"
 	}
 
@@ -344,6 +348,44 @@ func (g *Generator) buildServiceSearchWhere() string {
 	}
 
 	return `"` + clause + `"` + args
+}
+
+// buildSortableSet returns a Go map literal of the columns the generated
+// service will permit in ORDER BY. It's the whitelist that stops a
+// client-supplied sort_by from being interpolated as raw SQL. Always includes
+// the system timestamp/id columns, plus every scalar (non-relation, non-file,
+// non-array) field's DB column, plus each belongs_to's foreign-key column.
+func (g *Generator) buildSortableSet() string {
+	cols := []string{"id", "created_at", "updated_at"}
+	seen := map[string]bool{"id": true, "created_at": true, "updated_at": true}
+	add := func(c string) {
+		if c != "" && !seen[c] {
+			seen[c] = true
+			cols = append(cols, c)
+		}
+	}
+	for _, f := range g.Definition.Fields {
+		switch {
+		case f.IsFile(), f.IsFiles(), f.IsManyToMany(), f.IsStringArray():
+			// not a sortable scalar column
+			continue
+		case f.IsBelongsTo():
+			base := strings.TrimSuffix(toSnakeCase(f.Name), "_id")
+			add(base + "_id")
+		default:
+			add(toSnakeCase(f.Name))
+		}
+	}
+	var b strings.Builder
+	b.WriteString("map[string]bool{")
+	for i, c := range cols {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		b.WriteString(fmt.Sprintf("%q: true", c))
+	}
+	b.WriteString("}")
+	return b.String()
 }
 
 // writeGoHandler creates the Gin handler file for the resource.

@@ -47,22 +47,19 @@ func (g *DesktopGenerator) writeDesktopModel(names Names) error {
 
 	hasSlug := slugField != nil
 
-	// Build imports
-	stdImports := ""
-	if hasSlug && needsTime {
+	// Build imports. time is ALWAYS needed (CreatedAt/UpdatedAt are time.Time)
+	// and uuid is ALWAYS needed (the BeforeCreate hook below assigns the PK).
+	// fmt is only needed when a slug hook formats the source value.
+	stdImports := "\t\"time\""
+	if hasSlug {
 		stdImports = "\t\"fmt\"\n\t\"time\""
-	} else if hasSlug {
-		stdImports = "\t\"fmt\""
-	} else if needsTime {
-		stdImports = "\t\"time\""
 	}
+	_ = needsTime // time is unconditionally imported now; kept for clarity above
 
-	extImports := "\t\"gorm.io/gorm\""
+	extImports := "\t\"github.com/google/uuid\"\n\t\"gorm.io/gorm\""
 
 	imports := "import (\n"
-	if stdImports != "" {
-		imports += stdImports + "\n\n"
-	}
+	imports += stdImports + "\n\n"
 	imports += extImports + "\n)"
 
 	// Build struct fields
@@ -95,58 +92,23 @@ func (g *DesktopGenerator) writeDesktopModel(names Names) error {
 	content += "\tDeletedAt gorm.DeletedAt " + "`" + "gorm:\"index\" json:\"-\"" + "`" + "\n"
 	content += "}\n"
 
-	// Add BeforeCreate hook for slug
+	// BeforeCreate assigns the UUID primary key (nothing else sets it — a
+	// string PK left empty makes the SECOND insert collide on the empty
+	// string) and, when the model has a slug field, fills that too. This
+	// mirrors the base scaffolded models (User/Blog/Contact).
+	content += "\n// BeforeCreate assigns the UUID primary key (and slug, if any) before inserting.\n"
+	content += "func (m *" + names.Pascal + ") BeforeCreate(tx *gorm.DB) error {\n"
+	content += "\tif m.ID == \"\" {\n"
+	content += "\t\tm.ID = uuid.New().String()\n"
+	content += "\t}\n"
 	if hasSlug {
 		slugGoName := toPascalCase(slugField.Name)
-		content += "\n// BeforeCreate auto-generates the slug before inserting.\n"
-		content += "func (m *" + names.Pascal + ") BeforeCreate(tx *gorm.DB) error {\n"
 		content += "\tif m." + slugGoName + " == \"\" {\n"
 		content += "\t\tm." + slugGoName + " = slugify(fmt.Sprintf(\"%v\", m." + slugSourceGo + "))\n"
 		content += "\t}\n"
-		content += "\treturn nil\n"
-		content += "}\n"
 	}
-
-	// Also need time import even without explicit date fields because CreatedAt/UpdatedAt use time.Time
-	// Re-check: we always need time because of CreatedAt/UpdatedAt
-	if !needsTime && !hasSlug {
-		// Need to add time import since CreatedAt/UpdatedAt require it
-		imports = "import (\n\t\"time\"\n\n\t\"gorm.io/gorm\"\n)"
-		content = "package models\n\n"
-		content += imports + "\n\n"
-		content += "// " + names.Pascal + " represents a " + names.Lower + " in the system.\n"
-		content += "type " + names.Pascal + " struct {\n"
-		content += "\tID        string         " + "`" + "gorm:\"primarykey;size:36\" json:\"id\"" + "`" + "\n"
-		content += structFields
-		content += "\tCreatedAt time.Time      " + "`" + "json:\"created_at\"" + "`" + "\n"
-		content += "\tUpdatedAt time.Time      " + "`" + "json:\"updated_at\"" + "`" + "\n"
-		content += "\tDeletedAt gorm.DeletedAt " + "`" + "gorm:\"index\" json:\"-\"" + "`" + "\n"
-		content += "}\n"
-	} else if !needsTime && hasSlug {
-		// slug needs fmt but also need time for CreatedAt/UpdatedAt
-		imports = "import (\n\t\"fmt\"\n\t\"time\"\n\n\t\"gorm.io/gorm\"\n)"
-		tmpContent := "package models\n\n"
-		tmpContent += imports + "\n\n"
-		tmpContent += "// " + names.Pascal + " represents a " + names.Lower + " in the system.\n"
-		tmpContent += "type " + names.Pascal + " struct {\n"
-		tmpContent += "\tID        string         " + "`" + "gorm:\"primarykey;size:36\" json:\"id\"" + "`" + "\n"
-		tmpContent += structFields
-		tmpContent += "\tCreatedAt time.Time      " + "`" + "json:\"created_at\"" + "`" + "\n"
-		tmpContent += "\tUpdatedAt time.Time      " + "`" + "json:\"updated_at\"" + "`" + "\n"
-		tmpContent += "\tDeletedAt gorm.DeletedAt " + "`" + "gorm:\"index\" json:\"-\"" + "`" + "\n"
-		tmpContent += "}\n"
-
-		slugGoName := toPascalCase(slugField.Name)
-		tmpContent += "\n// BeforeCreate auto-generates the slug before inserting.\n"
-		tmpContent += "func (m *" + names.Pascal + ") BeforeCreate(tx *gorm.DB) error {\n"
-		tmpContent += "\tif m." + slugGoName + " == \"\" {\n"
-		tmpContent += "\t\tm." + slugGoName + " = slugify(fmt.Sprintf(\"%v\", m." + slugSourceGo + "))\n"
-		tmpContent += "\t}\n"
-		tmpContent += "\treturn nil\n"
-		tmpContent += "}\n"
-
-		content = tmpContent
-	}
+	content += "\treturn nil\n"
+	content += "}\n"
 
 	// file/files fields use files.FileRef — add the import. The import block is
 	// rebuilt in several branches above but every one ends with the gorm line,
@@ -176,6 +138,14 @@ func (g *DesktopGenerator) writeDesktopService(names Names) error {
 			continue
 		}
 		goName := toPascalCase(f.Name)
+		// date/datetime arrive from the form as a string (Wails can't unmarshal
+		// a "YYYY-MM-DD" form value straight into *time.Time), so the Input
+		// field is a string and we parse it into the model's *time.Time here.
+		if ft := FieldType(f.Type); ft == FieldDate || ft == FieldDatetime {
+			createAssignments += "\t\t" + goName + ": parseDesktopTime(input." + goName + "),\n"
+			updateAssignments += "\titem." + goName + " = parseDesktopTime(input." + goName + ")\n"
+			continue
+		}
 		createAssignments += "\t\t" + goName + ": input." + goName + ",\n"
 		updateAssignments += "\titem." + goName + " = input." + goName + "\n"
 	}
@@ -250,9 +220,9 @@ func (g *DesktopGenerator) writeDesktopService(names Names) error {
 	content += "}\n\n"
 
 	// GetByID
-	content += "func (s *" + names.Pascal + "Service) GetByID(id uint) (*models." + names.Pascal + ", error) {\n"
+	content += "func (s *" + names.Pascal + "Service) GetByID(id string) (*models." + names.Pascal + ", error) {\n"
 	content += "\tvar item models." + names.Pascal + "\n"
-	content += "\tif err := s.db.First(&item, id).Error; err != nil {\n"
+	content += "\tif err := s.db.First(&item, \"id = ?\", id).Error; err != nil {\n"
 	content += "\t\treturn nil, fmt.Errorf(\"" + names.Lower + " not found\")\n"
 	content += "\t}\n"
 	content += "\treturn &item, nil\n"
@@ -270,9 +240,9 @@ func (g *DesktopGenerator) writeDesktopService(names Names) error {
 	content += "}\n\n"
 
 	// Update
-	content += "func (s *" + names.Pascal + "Service) Update(id uint, input models." + names.Pascal + "Input) (*models." + names.Pascal + ", error) {\n"
+	content += "func (s *" + names.Pascal + "Service) Update(id string, input models." + names.Pascal + "Input) (*models." + names.Pascal + ", error) {\n"
 	content += "\tvar item models." + names.Pascal + "\n"
-	content += "\tif err := s.db.First(&item, id).Error; err != nil {\n"
+	content += "\tif err := s.db.First(&item, \"id = ?\", id).Error; err != nil {\n"
 	content += "\t\treturn nil, fmt.Errorf(\"" + names.Lower + " not found\")\n"
 	content += "\t}\n"
 	content += updateAssignments
@@ -283,8 +253,8 @@ func (g *DesktopGenerator) writeDesktopService(names Names) error {
 	content += "}\n\n"
 
 	// Delete
-	content += "func (s *" + names.Pascal + "Service) Delete(id uint) error {\n"
-	content += "\tif err := s.db.Delete(&models." + names.Pascal + "{}, id).Error; err != nil {\n"
+	content += "func (s *" + names.Pascal + "Service) Delete(id string) error {\n"
+	content += "\tif err := s.db.Delete(&models." + names.Pascal + "{}, \"id = ?\", id).Error; err != nil {\n"
 	content += "\t\treturn fmt.Errorf(\"failed to delete " + names.Lower + ": %w\", err)\n"
 	content += "\t}\n"
 	content += "\treturn nil\n"
@@ -422,7 +392,7 @@ func (g *DesktopGenerator) writeDesktopListRoute(names Names) error {
 	content += "  });\n"
 	content += "\n"
 	content += "  const deleteMutation = useMutation({\n"
-	content += "    mutationFn: (id: number) => " + deleteFunc + "(id),\n"
+	content += "    mutationFn: (id: string) => " + deleteFunc + "(id),\n"
 	content += "    onSuccess: () => {\n"
 	content += "      toast.success(\"" + names.Pascal + " deleted\");\n"
 	content += "      queryClient.invalidateQueries({ queryKey: [\"" + names.Plural + "\"] });\n"
@@ -430,7 +400,7 @@ func (g *DesktopGenerator) writeDesktopListRoute(names Names) error {
 	content += "    onError: (err: any) => toast.error(err?.message || \"Failed to delete\"),\n"
 	content += "  });\n"
 	content += "\n"
-	content += "  const handleDelete = (id: number, label: string) => {\n"
+	content += "  const handleDelete = (id: string, label: string) => {\n"
 	content += "    if (window.confirm(\"Delete \\\"\" + label + \"\\\"? This cannot be undone.\")) {\n"
 	content += "      deleteMutation.mutate(id);\n"
 	content += "    }\n"
@@ -687,7 +657,7 @@ func (g *DesktopGenerator) writeDesktopEditRoute(names Names) error {
 	content += "\n"
 	content += effects
 	content += "  useEffect(() => {\n"
-	content += "    " + getFunc + "(Number(id))\n"
+	content += "    " + getFunc + "(id)\n"
 	content += "      .then((data: any) => {\n"
 	content += fetchAssignments
 	content += "      })\n"
@@ -702,7 +672,7 @@ func (g *DesktopGenerator) writeDesktopEditRoute(names Names) error {
 	content += "    e.preventDefault();\n"
 	content += "    setLoading(true);\n"
 	content += "    try {\n"
-	content += "      await " + updateFunc + "(Number(id), {\n"
+	content += "      await " + updateFunc + "(id, {\n"
 	content += inputFields
 	content += "      });\n"
 	content += "      toast.success(\"" + names.Pascal + " updated\");\n"
@@ -1009,8 +979,12 @@ func (g *DesktopGenerator) buildFetchAssignments() string {
 			fetchAssignments += "        " + setter + "(data." + jsonName + " || 0);\n"
 		case "toggle":
 			fetchAssignments += "        " + setter + "(data." + jsonName + " || false);\n"
-		case "date", "datetime":
+		case "date":
+			// RFC3339 "2026-01-02T…" → "2026-01-02" for <input type="date">.
 			fetchAssignments += "        " + setter + "(data." + jsonName + " ? data." + jsonName + ".slice(0, 10) : \"\");\n"
+		case "datetime":
+			// RFC3339 → "2026-01-02T15:04" for <input type="datetime-local">.
+			fetchAssignments += "        " + setter + "(data." + jsonName + " ? data." + jsonName + ".slice(0, 16) : \"\");\n"
 		case "file":
 			fetchAssignments += "        " + setter + "(data." + jsonName + " || null);\n"
 		case "files":

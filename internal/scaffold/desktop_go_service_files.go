@@ -119,10 +119,28 @@ import (
 	"math"
 	"regexp"
 	"strings"
+	"time"
 
 	"<MODULE>/internal/models"
 	"gorm.io/gorm"
 )
+
+// parseDesktopTime turns a form date/datetime string ("YYYY-MM-DD",
+// "YYYY-MM-DDTHH:MM", or full RFC3339) into a *time.Time. Empty or
+// unparseable input becomes nil, so an optional date left blank stays NULL
+// instead of blowing up the Wails call.
+func parseDesktopTime(s string) *time.Time {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+	for _, layout := range []string{time.RFC3339, "2006-01-02T15:04", "2006-01-02"} {
+		if t, err := time.Parse(layout, s); err == nil {
+			return &t
+		}
+	}
+	return nil
+}
 
 type BlogService struct {
 	db *gorm.DB

@@ -41,7 +41,7 @@ func writeRootFiles(root string, opts Options) error {
 	}
 
 	if opts.ShouldUseTurborepo() {
-		files[filepath.Join(root, "pnpm-workspace.yaml")] = pnpmWorkspace()
+		files[filepath.Join(root, "pnpm-workspace.yaml")] = pnpmWorkspace(opts.ShouldIncludeDesktop())
 		files[filepath.Join(root, "turbo.json")] = turboJSON()
 		files[filepath.Join(root, "package.json")] = rootPackageJSON(opts)
 		files[filepath.Join(root, "grit.config.ts")] = gritConfig(opts)
@@ -519,11 +519,20 @@ pnpm-lock.yaml
 `
 }
 
-func pnpmWorkspace() string {
-	return `packages:
+func pnpmWorkspace(includeDesktop bool) string {
+	ws := `packages:
   - "apps/*"
   - "packages/*"
 `
+	// The Wails desktop client keeps its React app in apps/desktop/frontend,
+	// which "apps/*" doesn't match. Add it so a single root ` + "`pnpm install`" + `
+	// covers the desktop frontend too (otherwise it only gets installed the
+	// first time you run ` + "`wails dev`" + `).
+	if includeDesktop {
+		ws += `  - "apps/desktop/frontend"
+`
+	}
+	return ws
 }
 
 func turboJSON() string {
@@ -770,7 +779,13 @@ func gritJSON(opts Options) string {
 	return fmt.Sprintf(`{
   "architecture": "%s",
   "frontend": "%s",
-  "version": "%s"
+  "version": "%s",
+  "apps": {
+    "expo": %t,
+    "desktop": %t,
+    "docs": %t
+  }
 }
-`, string(opts.Architecture), string(opts.Frontend), opts.Version)
+`, string(opts.Architecture), string(opts.Frontend), opts.Version,
+		opts.ShouldIncludeExpo(), opts.ShouldIncludeDesktop(), opts.ShouldIncludeDocs())
 }

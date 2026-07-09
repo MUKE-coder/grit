@@ -53,7 +53,7 @@ func Upgrade(uOpts UpgradeOptions) error {
 	spinner.Printf("  → Updating root configuration...\n")
 	rootFiles := map[string]string{
 		filepath.Join(root, "turbo.json"):          turboJSON(),
-		filepath.Join(root, "pnpm-workspace.yaml"): pnpmWorkspace(),
+		filepath.Join(root, "pnpm-workspace.yaml"): pnpmWorkspace(dirExists(filepath.Join(root, "apps", "desktop", "frontend"))),
 	}
 	n, err := writeUpgradeFiles(rootFiles, uOpts.Force)
 	if err != nil {

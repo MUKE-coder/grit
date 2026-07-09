@@ -26,8 +26,8 @@ Let's build.
 
 ## 1. Install or update Grit
 
-Desktop file uploads and the hybrid API landed in the **v3.31.79–v3.31.83** line,
-so grab the latest.
+Desktop file uploads and the hybrid API landed in the **v3.31.79+** line, and
+**v3.32.0** fixes desktop resource CRUD end-to-end — so grab the latest.
 
 ```bash
 # Install (macOS / Linux)
@@ -40,7 +40,7 @@ iwr -useb https://gritframework.dev/install.ps1 | iex
 grit update
 ```
 
-Confirm you're on **v3.31.83 or newer**:
+Confirm you're on **v3.32.0 or newer**:
 
 ```bash
 grit version
@@ -91,7 +91,9 @@ The router is mounted **twice** (see `main.go`):
 - as the Wails **asset-server handler**, so the webview can `fetch("/api/uploads")`
   and render `<img src="/uploads/photo.jpg">` **same-origin** — no port to find,
   no CORS to configure;
-- on **`127.0.0.1:34115`**, so `curl` or any other client can hit the same API.
+- on **`127.0.0.1:34999`**, so `curl` or any other client can hit the same API.
+  (The Wails dev window itself runs on `localhost:34115` during `wails dev` —
+  the embedded API deliberately uses a different port so they never collide.)
 
 That's the whole trick behind uploads below.
 

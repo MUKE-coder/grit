@@ -299,6 +299,7 @@ func uploadHandlerGo() string {
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"math"
 	"net/http"
@@ -365,6 +366,12 @@ func (h *UploadHandler) Create(c *gin.Context) {
 		})
 		return
 	}
+
+	// Cap the request body before multipart parsing so a malicious huge upload
+	// isn't fully spooled to temp disk before the per-field size check rejects
+	// it. 512MB comfortably clears the largest legitimate accept (video).
+	const absoluteMaxUpload = 512 << 20
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, absoluteMaxUpload)
 
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
@@ -438,6 +445,41 @@ func (h *UploadHandler) Create(c *gin.Context) {
 	}
 
 	mimeType := header.Header.Get("Content-Type")
+
+	// The client-declared Content-Type is trivially spoofable, so sniff the
+	// real type from the first 512 bytes and reconcile. This stops an
+	// executable or HTML payload from masquerading as an allowed image.
+	sniff := make([]byte, 512)
+	n, _ := io.ReadFull(file, sniff)
+	if _, serr := file.Seek(0, io.SeekStart); serr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "UPLOAD_FAILED", "message": "Could not read the uploaded file"},
+		})
+		return
+	}
+	detected := strings.SplitN(http.DetectContentType(sniff[:n]), ";", 2)[0]
+
+	// Never trust an HTML/SVG payload (stored-XSS vectors), regardless of the
+	// declared type.
+	if detected == "text/html" || detected == "image/svg+xml" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "File type not allowed"},
+		})
+		return
+	}
+	// If the client claims an image, the bytes must actually be one.
+	if strings.HasPrefix(mimeType, "image/") && !strings.HasPrefix(detected, "image/") {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "File content does not match its declared type"},
+		})
+		return
+	}
+	// Prefer the sniffed type for the allow-list decision + storage when it's a
+	// concrete image type; otherwise keep the declared type (some valid
+	// documents sniff as application/octet-stream).
+	if strings.HasPrefix(detected, "image/") {
+		mimeType = detected
+	}
 
 	// If accepts was provided, validate against the per-field allow set.
 	// Otherwise fall back to the global allowlist (backwards-compat).

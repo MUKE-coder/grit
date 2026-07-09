@@ -276,14 +276,15 @@ export function use__PLURAL_PASCAL__(
   filters: Record<string, string> = {},
   sortBy = "created_at",
   sortOrder: "asc" | "desc" = "desc",
+  pageSize = 20,
 ) {
   return useInfiniteQuery({
-    queryKey: ["__PLURAL__", { search, filters, sortBy, sortOrder }],
+    queryKey: ["__PLURAL__", { search, filters, sortBy, sortOrder, pageSize }],
     initialPageParam: 1,
     queryFn: async ({ pageParam }) => {
       const qs = new URLSearchParams({
         page: String(pageParam),
-        page_size: "20",
+        page_size: String(pageSize),
         sort_by: sortBy,
         sort_order: sortOrder,
       });
@@ -472,7 +473,8 @@ func (g *Generator) writeMobileListScreen(names Names) error {
 		fk := f.FKColumnName()
 		optsVar := "f" + toPascalCase(fk) + "Opts"
 		qVar := "f" + toPascalCase(fk) + "Query"
-		filterQueries.WriteString("  const " + qVar + " = " + hook + "();\n")
+		// Large first page so the filter pills aren't capped at the list default (20).
+		filterQueries.WriteString("  const " + qVar + " = " + hook + "(\"\", {}, \"created_at\", \"desc\", 500);\n")
 		filterQueries.WriteString("  const " + optsVar + " = " + qVar + ".data?.pages.flatMap((p: any) => p.data) ?? [];\n")
 		unsel := "\"px-4 py-2 mr-2 rounded-full bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a]\""
 		sel := "\"px-4 py-2 mr-2 rounded-full bg-[#6c5ce7]\""
@@ -817,7 +819,10 @@ func (g *Generator) writeMobileFormComponent(names Names) error {
 			optsVar := lowerCamel(relNames.Plural) + "Opts"
 			queryVar := lowerCamel(relNames.Plural) + "Query"
 			stateLines.WriteString("  const [" + fkCamel + ", " + fkSetter + "] = useState(i." + fk + " ?? \"\");\n")
-			optionLines.WriteString("  const " + queryVar + " = " + hook + "();\n")
+			// Load a large first page so the picker isn't silently capped at the
+			// list default (20). Covers the overwhelming majority of belongs_to
+			// relations without a paginated in-modal search.
+			optionLines.WriteString("  const " + queryVar + " = " + hook + "(\"\", {}, \"created_at\", \"desc\", 500);\n")
 			optionLines.WriteString("  const " + optsVar + " = " + queryVar + ".data?.pages.flatMap((p: any) => p.data) ?? [];\n")
 			validations.WriteString("    if (!" + fkCamel + ") return setError(\"" + label + " is required\");\n")
 			payload.WriteString("        " + fk + ": " + fkCamel + ",\n")

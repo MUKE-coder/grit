@@ -268,6 +268,7 @@ func desktopAPIUploadsGo() string {
 	return `package api
 
 import (
+	"io"
 	"net/http"
 	"strings"
 
@@ -306,7 +307,18 @@ func (s *Server) CreateUpload(c *gin.Context) {
 		return
 	}
 
-	mime := strings.ToLower(header.Header.Get("Content-Type"))
+	// Sniff the real content type from the first 512 bytes — the client-declared
+	// Content-Type is spoofable, and http.DetectContentType reliably identifies
+	// the allowed image formats. Validate against the sniffed type.
+	sniff := make([]byte, 512)
+	n, _ := io.ReadFull(file, sniff)
+	if _, serr := file.Seek(0, io.SeekStart); serr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "UPLOAD_FAILED", "message": "Could not read the uploaded file"},
+		})
+		return
+	}
+	mime := strings.SplitN(http.DetectContentType(sniff[:n]), ";", 2)[0]
 	if !allowedMIME[mime] {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "Only JPEG, PNG, GIF and WebP images are allowed"},

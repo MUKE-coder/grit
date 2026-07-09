@@ -95,6 +95,7 @@ func backupServiceGo() string {
 
 import (
 	"archive/zip"
+	"bufio"
 	"bytes"
 	"context"
 	"database/sql"
@@ -103,7 +104,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -145,6 +148,10 @@ type Manifest struct {
 func Tables(db *gorm.DB) ([]string, error) {
 	var out []string
 	seen := map[string]bool{}
+	// joinTables are collected in a second bucket so they sort AFTER their
+	// owning models — the m2m rows reference both sides, so both parent tables
+	// must be inserted first on restore.
+	var joinTables []string
 	for _, m := range models.Models() {
 		stmt := &gorm.Statement{DB: db}
 		if err := stmt.Parse(m); err != nil {
@@ -154,64 +161,95 @@ func Tables(db *gorm.DB) ([]string, error) {
 			seen[t] = true
 			out = append(out, t)
 		}
+		// many_to_many fields create an implicit join table that is NOT in
+		// models.Models(); without this its rows are silently dropped from
+		// every backup (the relationship data vanishes on restore).
+		for _, rel := range stmt.Schema.Relationships.Relations {
+			if rel.JoinTable != nil {
+				if t := rel.JoinTable.Table; t != "" && !seen[t] {
+					seen[t] = true
+					joinTables = append(joinTables, t)
+				}
+			}
+		}
 	}
-	return out, nil
+	return append(out, joinTables...), nil
 }
 
-type tableData struct {
-	Name    string
-	Columns []string
-	Types   []string
-	Rows    [][]any
-}
-
-// dumpTable reads a whole table with raw database/sql, scanning columns
-// dynamically. No struct mapping, so it works for any registered model.
-func dumpTable(ctx context.Context, sqlDB *sql.DB, table string) (*tableData, error) {
-	// table comes from Tables() — the model registry, not user input.
-	rows, err := sqlDB.QueryContext(ctx, "SELECT * FROM \"" + table + "\"")
+// streamTable reads one table row-at-a-time with raw database/sql, writing each
+// row to the CSV entry AND an INSERT line to the dump buffer as it goes. Columns
+// are scanned dynamically, so it works for any registered model (and join
+// table). Crucially it holds ONE row in memory at a time — the whole table (let
+// alone the whole database) is never materialised, which is what keeps the
+// weekly backup from OOMing on a large database. Returns the row count.
+//
+// table comes from Tables() — the model registry, not user input — so it can't
+// be injected into the raw SQL below.
+func streamTable(ctx context.Context, sqlDB *sql.DB, table string, csvw *csv.Writer, dbuf *bufio.Writer) (int, error) {
+	rows, err := sqlDB.QueryContext(ctx, "SELECT * FROM \""+table+"\"")
 	if err != nil {
-		return nil, fmt.Errorf("select %s: %w", table, err)
+		return 0, fmt.Errorf("select %s: %w", table, err)
 	}
 	defer rows.Close()
 
 	cols, err := rows.Columns()
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	colTypes, err := rows.ColumnTypes()
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	types := make([]string, len(colTypes))
 	for i, ct := range colTypes {
 		types[i] = strings.ToUpper(ct.DatabaseTypeName())
 	}
 
-	td := &tableData{Name: table, Columns: cols, Types: types}
-	for rows.Next() {
-		vals := make([]any, len(cols))
-		ptrs := make([]any, len(cols))
-		for i := range vals {
-			ptrs[i] = &vals[i]
-		}
-		if err := rows.Scan(ptrs...); err != nil {
-			return nil, fmt.Errorf("scanning %s: %w", table, err)
-		}
-		// Copy []byte: drivers may reuse the underlying buffer between rows.
-		row := make([]any, len(cols))
-		for i, v := range vals {
-			if b, ok := v.([]byte); ok {
-				cp := make([]byte, len(b))
-				copy(cp, b)
-				row[i] = cp
-			} else {
-				row[i] = v
-			}
-		}
-		td.Rows = append(td.Rows, row)
+	if err := csvw.Write(cols); err != nil {
+		return 0, err
 	}
-	return td, rows.Err()
+
+	quoted := make([]string, len(cols))
+	for i, c := range cols {
+		quoted[i] = "\"" + c + "\""
+	}
+	prefix := "INSERT INTO \"" + table + "\" (" + strings.Join(quoted, ", ") + ") VALUES ("
+
+	vals := make([]any, len(cols))
+	ptrs := make([]any, len(cols))
+	for i := range vals {
+		ptrs[i] = &vals[i]
+	}
+	rec := make([]string, len(cols))
+	sqlVals := make([]string, len(cols))
+
+	count := 0
+	for rows.Next() {
+		if err := rows.Scan(ptrs...); err != nil {
+			return count, fmt.Errorf("scanning %s: %w", table, err)
+		}
+		// Both formatters consume each value immediately (into a string), so
+		// the driver reusing its []byte buffer between rows is harmless — no
+		// per-row copy needed.
+		for i, v := range vals {
+			rec[i] = csvFormat(v)
+			sqlVals[i] = sqlFormat(v, types[i])
+		}
+		if err := csvw.Write(rec); err != nil {
+			return count, err
+		}
+		if _, err := dbuf.WriteString(prefix + strings.Join(sqlVals, ", ") + ");\n"); err != nil {
+			return count, err
+		}
+		count++
+	}
+	if err := rows.Err(); err != nil {
+		return count, err
+	}
+	if count > 0 {
+		dbuf.WriteString("\n")
+	}
+	return count, nil
 }
 
 // csvFormat renders a scanned value for a spreadsheet. NULL becomes an empty cell.
@@ -271,104 +309,102 @@ func quote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", "''") + "'"
 }
 
-// Archive builds the backup ZIP in memory:
+// ArchiveTo streams the backup ZIP to w, holding one row in memory at a time:
 //
 //	tables/<table>.csv — one per table, opens in any spreadsheet
 //	dump.sql           — INSERTs parent->child, wrapped in BEGIN/COMMIT
 //	metadata.json      — row counts, for verifying a restore
-func (s *Service) Archive(ctx context.Context) ([]byte, Manifest, error) {
+//
+// A zip.Writer only allows one entry open at a time, but dump.sql spans every
+// table while the CSV entries are per-table. So the SQL is streamed to a temp
+// file alongside the CSVs, then copied into its own entry at the end. Nothing
+// buffers the whole database — this is the memory-safe path the weekly cron and
+// object-storage upload use.
+func (s *Service) ArchiveTo(ctx context.Context, w io.Writer) (Manifest, error) {
 	man := Manifest{GeneratedAt: time.Now().UTC(), RowCounts: map[string]int{}}
 
 	tables, err := Tables(s.DB)
 	if err != nil {
-		return nil, man, err
+		return man, err
 	}
 	sqlDB, err := s.DB.DB()
 	if err != nil {
-		return nil, man, err
+		return man, err
 	}
 
-	var buf bytes.Buffer
-	zw := zip.NewWriter(&buf)
+	dumpFile, err := os.CreateTemp("", "grit-dump-*.sql")
+	if err != nil {
+		return man, err
+	}
+	dumpPath := dumpFile.Name()
+	defer os.Remove(dumpPath)
+	defer dumpFile.Close()
+	dbuf := bufio.NewWriter(dumpFile)
 
-	var dump strings.Builder
-	dump.WriteString("-- Grit full-database backup\n")
-	dump.WriteString("-- Restore: run migrations on an empty database, then replay this file.\n")
-	dump.WriteString("--   grit restore backup.zip     (or)     psql \"$DATABASE_URL\" < dump.sql\n\n")
-	dump.WriteString("BEGIN;\n\n")
+	dbuf.WriteString("-- Grit full-database backup\n")
+	dbuf.WriteString("-- Restore: run migrations on an empty database, then replay this file.\n")
+	dbuf.WriteString("--   grit restore backup.zip     (or)     psql \"$DATABASE_URL\" < dump.sql\n\n")
+	dbuf.WriteString("BEGIN;\n\n")
+
+	zw := zip.NewWriter(w)
 
 	for _, table := range tables {
-		td, err := dumpTable(ctx, sqlDB, table)
+		cw, err := zw.Create("tables/" + table + ".csv")
 		if err != nil {
-			return nil, man, err
+			return man, err
 		}
+		csvw := csv.NewWriter(cw)
 
-		// CSV — one file per table.
-		w, err := zw.Create("tables/" + table + ".csv")
+		count, err := streamTable(ctx, sqlDB, table, csvw, dbuf)
 		if err != nil {
-			return nil, man, err
+			return man, err
 		}
-		cw := csv.NewWriter(w)
-		if err := cw.Write(td.Columns); err != nil {
-			return nil, man, err
-		}
-		for _, r := range td.Rows {
-			rec := make([]string, len(r))
-			for i, v := range r {
-				rec[i] = csvFormat(v)
-			}
-			if err := cw.Write(rec); err != nil {
-				return nil, man, err
-			}
-		}
-		cw.Flush()
-		if err := cw.Error(); err != nil {
-			return nil, man, err
+		csvw.Flush()
+		if err := csvw.Error(); err != nil {
+			return man, err
 		}
 
-		// SQL — INSERTs in registration (parent -> child) order.
-		if len(td.Rows) > 0 {
-			quoted := make([]string, len(td.Columns))
-			for i, c := range td.Columns {
-				quoted[i] = "\"" + c + "\""
-			}
-			prefix := "INSERT INTO \"" + table + "\" (" + strings.Join(quoted, ", ") + ") VALUES ("
-			for _, r := range td.Rows {
-				vals := make([]string, len(r))
-				for i, v := range r {
-					vals[i] = sqlFormat(v, td.Types[i])
-				}
-				dump.WriteString(prefix + strings.Join(vals, ", ") + ");\n")
-			}
-			dump.WriteString("\n")
-		}
-
-		man.RowCounts[table] = len(td.Rows)
-		man.TotalRows += len(td.Rows)
+		man.RowCounts[table] = count
+		man.TotalRows += count
 	}
 
-	man.Tables = tables
-	dump.WriteString("COMMIT;\n")
+	dbuf.WriteString("COMMIT;\n")
+	if err := dbuf.Flush(); err != nil {
+		return man, err
+	}
+	if _, err := dumpFile.Seek(0, io.SeekStart); err != nil {
+		return man, err
+	}
 
 	dw, err := zw.Create("dump.sql")
 	if err != nil {
-		return nil, man, err
+		return man, err
 	}
-	if _, err := dw.Write([]byte(dump.String())); err != nil {
-		return nil, man, err
+	if _, err := io.Copy(dw, dumpFile); err != nil {
+		return man, err
 	}
 
+	man.Tables = tables
 	mw, err := zw.Create("metadata.json")
 	if err != nil {
-		return nil, man, err
+		return man, err
 	}
 	enc := json.NewEncoder(mw)
 	enc.SetIndent("", "  ")
 	if err := enc.Encode(man); err != nil {
-		return nil, man, err
+		return man, err
 	}
 
-	if err := zw.Close(); err != nil {
+	return man, zw.Close()
+}
+
+// Archive builds the whole archive in memory. Prefer ArchiveTo for large
+// databases; this convenience wrapper is fine for small/local use and keeps the
+// original signature for any caller that already depends on it.
+func (s *Service) Archive(ctx context.Context) ([]byte, Manifest, error) {
+	var buf bytes.Buffer
+	man, err := s.ArchiveTo(ctx, &buf)
+	if err != nil {
 		return nil, man, err
 	}
 	return buf.Bytes(), man, nil
@@ -392,14 +428,34 @@ func (s *Service) Run(ctx context.Context, rec *models.Backup) error {
 		return ErrStorageUnconfigured
 	}
 
-	data, man, err := s.Archive(ctx)
+	// Stream the archive to a temp file (constant memory) and upload from it,
+	// rather than building the whole ZIP in RAM.
+	tmp, err := os.CreateTemp("", "grit-backup-*.zip")
 	if err != nil {
+		s.fail(rec, err)
+		return err
+	}
+	tmpPath := tmp.Name()
+	defer os.Remove(tmpPath)
+	defer tmp.Close()
+
+	man, err := s.ArchiveTo(ctx, tmp)
+	if err != nil {
+		s.fail(rec, err)
+		return err
+	}
+	size, err := tmp.Seek(0, io.SeekEnd)
+	if err != nil {
+		s.fail(rec, err)
+		return err
+	}
+	if _, err := tmp.Seek(0, io.SeekStart); err != nil {
 		s.fail(rec, err)
 		return err
 	}
 
 	key := fmt.Sprintf("backups/%s-%s.zip", time.Now().UTC().Format("2006-01-02"), rec.ID)
-	if err := s.Storage.Upload(ctx, key, bytes.NewReader(data), "application/zip"); err != nil {
+	if err := s.Storage.Upload(ctx, key, tmp, "application/zip"); err != nil {
 		s.fail(rec, err)
 		return err
 	}
@@ -408,7 +464,7 @@ func (s *Service) Run(ctx context.Context, rec *models.Backup) error {
 	now := time.Now()
 	rec.Status = "READY"
 	rec.StorageKey = key
-	rec.SizeBytes = int64(len(data))
+	rec.SizeBytes = size
 	rec.TableCount = len(man.Tables)
 	rec.RowCount = man.TotalRows
 	rec.RowCounts = string(counts)
@@ -550,15 +606,46 @@ func SplitStatements(script string) []string {
 	return out
 }
 
-// stripComments drops our "--" header lines before splitting.
+// stripComments removes SQL "--" comments, but ONLY when they're real comments
+// and not part of a quoted string value. The naive line-based version dropped
+// any line beginning with "--", which corrupted multi-line string values whose
+// continuation line happened to start with "--" (e.g. a note field). This walks
+// the script tracking string state (with '' escape handling), so text inside a
+// literal is never touched.
 func stripComments(script string) string {
 	var b strings.Builder
-	for _, line := range strings.Split(script, "\n") {
-		if strings.HasPrefix(strings.TrimSpace(line), "--") {
+	inString := false
+	for i := 0; i < len(script); i++ {
+		c := script[i]
+		if inString {
+			b.WriteByte(c)
+			if c == '\'' {
+				// A doubled '' is an escaped quote — stays inside the string.
+				if i+1 < len(script) && script[i+1] == '\'' {
+					b.WriteByte(script[i+1])
+					i++
+					continue
+				}
+				inString = false
+			}
 			continue
 		}
-		b.WriteString(line)
-		b.WriteString("\n")
+		if c == '\'' {
+			inString = true
+			b.WriteByte(c)
+			continue
+		}
+		// Outside a string, "--" begins a comment that runs to end of line.
+		if c == '-' && i+1 < len(script) && script[i+1] == '-' {
+			for i < len(script) && script[i] != '\n' {
+				i++
+			}
+			if i < len(script) {
+				b.WriteByte('\n')
+			}
+			continue
+		}
+		b.WriteByte(c)
 	}
 	return b.String()
 }
@@ -791,15 +878,24 @@ func main() {
 	defer cancel()
 
 	if *out != "" {
-		data, man, err := svc.Archive(ctx)
+		f, err := os.Create(*out)
 		if err != nil {
+			log.Fatalf("Failed to create %s: %v", *out, err)
+		}
+		man, err := svc.ArchiveTo(ctx, f)
+		if err != nil {
+			f.Close()
 			log.Fatalf("Backup failed: %v", err)
 		}
-		if err := os.WriteFile(*out, data, 0o644); err != nil {
+		if err := f.Close(); err != nil {
 			log.Fatalf("Failed to write %s: %v", *out, err)
 		}
+		var sizeKB float64
+		if fi, err := os.Stat(*out); err == nil {
+			sizeKB = float64(fi.Size()) / 1024
+		}
 		fmt.Printf("Backup written to %s — %d tables, %d rows, %.1f KB\n",
-			*out, len(man.Tables), man.TotalRows, float64(len(data))/1024)
+			*out, len(man.Tables), man.TotalRows, sizeKB)
 		return
 	}
 

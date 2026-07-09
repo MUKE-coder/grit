@@ -56,6 +56,14 @@ type Engine struct {
 	HTTP      *http.Client
 	cursors   map[string]string // last pull cursor per model
 	cursorsMu gosync.RWMutex
+
+	// Background auto-sync state (offline-hybrid UX).
+	autoMu     gosync.Mutex
+	stopAuto   chan struct{}
+	syncModels []string
+	lastSync   time.Time
+	lastErr    string
+	online     bool
 }
 
 // Open initializes a sync engine. dbPath is the absolute path to the
@@ -71,7 +79,7 @@ func Open(dbPath, apiURL string, getToken func() (string, error)) (*Engine, erro
 	if err != nil {
 		return nil, fmt.Errorf("opening local db: %w", err)
 	}
-	if err := db.AutoMigrate(&Record{}, &Outbox{}, &Cursor{}); err != nil {
+	if err := db.AutoMigrate(&Record{}, &Outbox{}, &Cursor{}, &Setting{}); err != nil {
 		return nil, fmt.Errorf("migrating local db: %w", err)
 	}
 	return &Engine{
@@ -118,6 +126,167 @@ func (e *Engine) Sync(models []string) (*SyncResult, error) {
 	return res, nil
 }
 
+// Setting is a tiny key/value table for engine flags that must survive an app
+// restart — currently just the manual "Work offline" toggle.
+type Setting struct {
+	Key   string ` + "`" + `gorm:"primarykey"` + "`" + `
+	Value string
+}
+
+func (Setting) TableName() string { return "sync_settings" }
+
+func (e *Engine) getSetting(key string) string {
+	var s Setting
+	if err := e.DB.First(&s, "key = ?", key).Error; err != nil {
+		return ""
+	}
+	return s.Value
+}
+
+func (e *Engine) setSetting(key, value string) error {
+	return e.DB.Save(&Setting{Key: key, Value: value}).Error
+}
+
+// SetForceOffline persists the manual "Work offline" toggle. While on, the
+// background loop stops syncing and every write just queues locally; flip it
+// back off and the next tick (or SyncNow) reconciles.
+func (e *Engine) SetForceOffline(v bool) error {
+	val := "0"
+	if v {
+		val = "1"
+	}
+	return e.setSetting("force_offline", val)
+}
+
+// IsForceOffline reports the persisted manual-offline toggle.
+func (e *Engine) IsForceOffline() bool { return e.getSetting("force_offline") == "1" }
+
+// Reachable pings /api/health to tell "the server is down / no network" apart
+// from "the user chose offline". Short timeout so the UI stays responsive.
+func (e *Engine) Reachable() bool {
+	req, err := http.NewRequest(http.MethodGet, e.APIURL+"/health", nil)
+	if err != nil {
+		return false
+	}
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode < 500
+}
+
+// StartAutoSync launches the background mirror loop: every interval, if the
+// server is reachable AND the user hasn't chosen offline, it runs Sync (Pull
+// then Push). This is what continuously mirrors server data locally while
+// online, and what auto-reconciles offline edits the moment you're back on.
+// Safe to call once at startup; a second call is a no-op.
+func (e *Engine) StartAutoSync(models []string, interval time.Duration) {
+	e.autoMu.Lock()
+	if e.stopAuto != nil {
+		e.autoMu.Unlock()
+		return
+	}
+	stop := make(chan struct{})
+	e.stopAuto = stop
+	e.syncModels = models
+	e.autoMu.Unlock()
+
+	go func() {
+		e.tick() // sync shortly after startup so the mirror is fresh
+		t := time.NewTicker(interval)
+		defer t.Stop()
+		for {
+			select {
+			case <-stop:
+				return
+			case <-t.C:
+				e.tick()
+			}
+		}
+	}()
+}
+
+// StopAutoSync stops the background loop (call on shutdown).
+func (e *Engine) StopAutoSync() {
+	e.autoMu.Lock()
+	if e.stopAuto != nil {
+		close(e.stopAuto)
+		e.stopAuto = nil
+	}
+	e.autoMu.Unlock()
+}
+
+// tick is one iteration of the background loop.
+func (e *Engine) tick() {
+	reachable := e.Reachable()
+	e.autoMu.Lock()
+	e.online = reachable
+	models := e.syncModels
+	e.autoMu.Unlock()
+
+	if e.IsForceOffline() || !reachable {
+		return
+	}
+	_, err := e.Sync(models)
+	e.autoMu.Lock()
+	if err != nil {
+		e.lastErr = err.Error()
+	} else {
+		e.lastErr = ""
+		e.lastSync = time.Now()
+	}
+	e.autoMu.Unlock()
+}
+
+// SyncNow forces an immediate Pull+Push (used when the user flips back online).
+func (e *Engine) SyncNow() (*SyncResult, error) {
+	if e.IsForceOffline() {
+		return nil, fmt.Errorf("offline mode is on")
+	}
+	e.autoMu.Lock()
+	models := e.syncModels
+	e.autoMu.Unlock()
+	res, err := e.Sync(models)
+	e.autoMu.Lock()
+	if err == nil {
+		e.lastSync = time.Now()
+		e.lastErr = ""
+	}
+	e.autoMu.Unlock()
+	return res, err
+}
+
+// SyncStatus is the snapshot the dashboard/title-bar shows.
+type SyncStatus struct {
+	Reachable    bool   ` + "`" + `json:"reachable"` + "`" + `
+	ForceOffline bool   ` + "`" + `json:"force_offline"` + "`" + `
+	Pending      int64  ` + "`" + `json:"pending"` + "`" + `
+	LastSync     string ` + "`" + `json:"last_sync,omitempty"` + "`" + `
+	LastError    string ` + "`" + `json:"last_error,omitempty"` + "`" + `
+}
+
+// Status returns the current sync snapshot. Reachability comes from the last
+// background tick (no extra network call on every poll).
+func (e *Engine) Status() SyncStatus {
+	pending, _ := e.PendingCount()
+	e.autoMu.Lock()
+	ls := ""
+	if !e.lastSync.IsZero() {
+		ls = e.lastSync.Format(time.RFC3339)
+	}
+	st := SyncStatus{
+		Reachable:    e.online,
+		ForceOffline: e.IsForceOffline(),
+		Pending:      pending,
+		LastSync:     ls,
+		LastError:    e.lastErr,
+	}
+	e.autoMu.Unlock()
+	return st
+}
+
 // Pull fetches every row in modelName updated after our last cursor
 // and UPSERTs them into local records. Returns the number of rows seen.
 func (e *Engine) Pull(modelName string) (int, error) {
@@ -147,6 +316,7 @@ func (e *Engine) Pull(modelName string) (int, error) {
 			continue
 		}
 		version, _ := toInt(row["version"])
+		deleted, _ := row["_deleted"].(bool)
 		raw, err := json.Marshal(row)
 		if err != nil {
 			continue
@@ -163,6 +333,10 @@ func (e *Engine) Pull(modelName string) (int, error) {
 			Data:      raw,
 			Version:   version,
 			UpdatedAt: updatedAt,
+			// A server-side delete arrives as a tombstone — mark the mirror
+			// row deleted so reads (LocalList/LocalGet) hide it. We keep the
+			// row rather than hard-deleting so a later re-create still upserts.
+			Deleted: deleted,
 		}
 		// UPSERT: pulled state always wins over the cached version.
 		if err := e.DB.Save(&rec).Error; err != nil {
@@ -615,10 +789,11 @@ func (e *Engine) LocalDelete(tableName, id string) error {
 	return enqueue(e, tableName, id, "delete", nil, knownVersion)
 }
 
-// LocalGet returns the cached record decoded from JSON, or nil if missing.
+// LocalGet returns the cached record decoded from JSON, or nil if missing or
+// tombstoned (deleted locally or via a pulled server delete).
 func (e *Engine) LocalGet(tableName, id string) (map[string]interface{}, error) {
 	var rec Record
-	if err := e.DB.First(&rec, "model = ? AND id = ?", tableName, id).Error; err != nil {
+	if err := e.DB.First(&rec, "model = ? AND id = ? AND deleted = ?", tableName, id, false).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
@@ -636,7 +811,7 @@ func (e *Engine) LocalGet(tableName, id string) (map[string]interface{}, error) 
 // SQL-shaped queries through to SQLite.
 func (e *Engine) LocalList(tableName string) ([]map[string]interface{}, error) {
 	var rows []Record
-	if err := e.DB.Where("model = ?", tableName).Order("updated_at desc").Find(&rows).Error; err != nil {
+	if err := e.DB.Where("model = ? AND deleted = ?", tableName, false).Order("updated_at desc").Find(&rows).Error; err != nil {
 		return nil, err
 	}
 	out := make([]map[string]interface{}, 0, len(rows))

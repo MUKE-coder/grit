@@ -222,7 +222,8 @@ The app opens in a native window. Go changes trigger a rebuild; React changes ho
 
 ## How It Works
 
-This is NOT a web app. There is **no HTTP server**.
+This is NOT a typical web app. Data CRUD uses Wails bindings (no HTTP), with a
+small embedded REST API in the same binary just for file uploads/serving.
 
 {{BT}}
 React Component
@@ -232,7 +233,7 @@ React Component
         → SQLite Database (local .db file)
 {{BT}}
 
-React calls Go functions **directly** via Wails bindings:
+For data, React calls Go functions **directly** via Wails bindings:
 {{BT}}tsx
 import { GetBlogs, CreateBlog } from "../../wailsjs/go/main/App";
 
@@ -466,7 +467,7 @@ name: grit-desktop
 description: >
   Grit Desktop framework conventions for native Wails v2 applications.
   Use when working with Go + Wails + React desktop apps scaffolded by grit new-desktop.
-  Desktop uses direct Go method bindings (no REST API) and SQLite.
+  Desktop uses Go method bindings for CRUD plus a small embedded REST API for file uploads, backed by SQLite.
 user-invocable: false
 ---
 
@@ -478,7 +479,7 @@ user-invocable: false
 
 A **native desktop application** built with:
 
-- **Backend**: Go (Wails v2 bindings) — direct function calls, no HTTP server
+- **Backend**: Go (Wails v2 bindings) for CRUD, plus a small embedded Gin REST API (in the same binary) for file uploads and serving stored files
 - **Frontend**: Vite + React + TanStack Router (file-based) + TanStack Query + Tailwind CSS
 - **Database**: SQLite (default, local) via GORM — fully offline-first
 - **Distribution**: Single binary (~10-15 MB) for Windows, macOS, and Linux
@@ -488,19 +489,30 @@ Scaffolded with {{B}}grit new-desktop {{NAME}}{{B}}.
 
 ---
 
-## 2. Architecture — No HTTP Server
+## 2. Architecture — Hybrid (bindings + embedded REST API)
 
-There is **no REST API**. React calls Go functions directly via Wails bindings.
+Data CRUD goes through Wails bindings (React calls Go methods directly). File
+uploads and stored-file serving go through a **small embedded Gin REST API**
+mounted in the same binary — because Wails bindings can't handle
+{{B}}<input type="file">{{B}} or {{B}}<img src>{{B}} URLs.
 
 {{BT}}
+Data (CRUD):
 React Component
   → Wails TypeScript Binding (auto-generated at frontend/wailsjs/)
     → Go App Method (on App struct in app.go)
       → GORM Service (internal/service/)
         → SQLite Database (local .db file)
+
+Files (uploads / images):
+React fetch("/api/uploads")  (same-origin inside the Wails webview)
+  → Gin router (internal/api/) → internal/storage → OS app-data dir
+  <img src="/uploads/x.jpg">  served straight off disk by the same router
 {{BT}}
 
-**Never** suggest fetch(), Axios, HTTP endpoints, or REST patterns.
+**Use Wails bindings for all data CRUD.** Use {{B}}fetch("/api/uploads"){{B}} and
+{{B}}<img src="/uploads/…">{{B}} ONLY for file upload/display — never build data
+CRUD over HTTP; that's what the bindings are for.
 
 ---
 

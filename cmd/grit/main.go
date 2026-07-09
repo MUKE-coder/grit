@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.31.83"
+var version = "3.32.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -1631,8 +1631,9 @@ func printDesktopSuccess(name string) {
 	fmt.Println()
 
 	gray.Println("  ─────────────────────────────────────")
-	gray.Printf("  Desktop App: http://localhost:34115\n")
-	gray.Printf("  Database:    SQLite (%s.db)\n", name)
+	gray.Printf("  Desktop App:  http://localhost:34115  (Wails dev window)\n")
+	gray.Printf("  Embedded API: http://127.0.0.1:34999  (curl / other clients)\n")
+	gray.Printf("  Database:     SQLite (%s.db)\n", name)
 	gray.Println("  ─────────────────────────────────────")
 	fmt.Println()
 

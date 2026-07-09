@@ -109,6 +109,8 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "components", "sync-button.tsx"):     desktopClientSyncButton(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "pending-changes.tsx"): desktopClientPendingChanges(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "conflict-dialog.tsx"): desktopClientConflictDialog(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "offline-mode-toggle.tsx"): desktopClientOfflineToggle(),
+		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-sync-status.ts"):          desktopClientUseSyncStatus(),
 
 		// Realtime client (WebSocket + reconnect + EventTarget bus)
 		filepath.Join(desktopRoot, "frontend", "src", "lib", "realtime.ts"): desktopClientRealtimeTS(),
@@ -217,11 +219,22 @@ import (
 	"os"
 	"path/filepath"
 	goruntime "runtime"
+	"time"
 
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"{{MODULE}}/sync"
 )
+
+// syncTables is the single source of truth for which models the background
+// auto-sync loop and manual Sync cover. The frontend reads it via
+// GetSyncTables(), and ~grit generate resource~ appends new resources at the
+// marker below — so a new resource joins offline sync automatically.
+var syncTables = []string{
+	"users",
+	"uploads",
+	// grit:sync-tables
+}
 
 // App exposes native OS methods + the offline sync engine to the React
 // frontend via Wails bindings. Online business logic still goes through
@@ -266,6 +279,12 @@ func (a *App) startup(ctx context.Context) {
 		return
 	}
 	a.sync = engine
+
+	// Start the background mirror loop. While the server is reachable and the
+	// user hasn't chosen "Work offline", this pulls fresh server data into the
+	// local mirror and pushes any queued offline edits every 30s — so going
+	// offline always has recent data, and coming back online auto-reconciles.
+	engine.StartAutoSync(syncTables, 30*time.Second)
 }
 
 // ─── Token storage (OS keychain) ──────────────────────────────────
@@ -375,6 +394,44 @@ func (a *App) Sync(tables []string) (*sync.SyncResult, error) {
 		return nil, fmt.Errorf("sync engine not initialized")
 	}
 	return a.sync.Sync(tables)
+}
+
+// GetSyncTables returns the models covered by offline sync. The frontend uses
+// this instead of a hardcoded list, so a newly generated resource is picked up
+// automatically.
+func (a *App) GetSyncTables() []string { return syncTables }
+
+// SetOfflineMode toggles the manual "Work offline" switch shown in the
+// dashboard. Turning it OFF (going back online) triggers an immediate
+// background reconcile so queued edits push and fresh data pulls right away.
+func (a *App) SetOfflineMode(offline bool) error {
+	if a.sync == nil {
+		return fmt.Errorf("sync engine not initialized")
+	}
+	if err := a.sync.SetForceOffline(offline); err != nil {
+		return err
+	}
+	if !offline {
+		go func() { _, _ = a.sync.SyncNow() }()
+	}
+	return nil
+}
+
+// GetSyncStatus returns the reachable/offline/pending snapshot for the
+// dashboard indicator.
+func (a *App) GetSyncStatus() sync.SyncStatus {
+	if a.sync == nil {
+		return sync.SyncStatus{}
+	}
+	return a.sync.Status()
+}
+
+// SyncNow forces an immediate Pull+Push (the dashboard "Sync now" action).
+func (a *App) SyncNow() (*sync.SyncResult, error) {
+	if a.sync == nil {
+		return nil, fmt.Errorf("sync engine not initialized")
+	}
+	return a.sync.SyncNow()
 }
 
 // PendingCount returns the number of unpushed entries — wired to the
@@ -1454,6 +1511,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme-provider";
 import { Moon, Sun } from "lucide-react";
+import { OfflineModeToggle } from "@/components/offline-mode-toggle";
 
 export const Route = createFileRoute("/_app/settings")({
   component: SettingsPage,
@@ -1467,6 +1525,20 @@ function SettingsPage() {
       <PageHeader title="Settings" description="Configure your desktop app" />
 
       <div className="mt-6 max-w-2xl space-y-4">
+        <Card>
+          <CardContent className="p-6">
+            <div>
+              <h3 className="text-[15px] font-semibold text-foreground">Sync &amp; Offline</h3>
+              <p className="mt-1 mb-4 text-[13px] text-foreground-secondary">
+                By default the app works online and mirrors your data locally.
+                Switch to offline to keep working against the local copy — your
+                changes queue up and sync automatically when you switch back.
+              </p>
+              <OfflineModeToggle />
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -1531,13 +1603,7 @@ import {
 } from "@/lib/wails-bridge";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import { SyncButton } from "@/components/sync-button";
-
-// SYNC_TABLES is the list of table names this app pulls/pushes when the
-// user clicks Sync. Extend it as you scaffold new offline-capable
-// resources. The default set covers the User and Upload models that
-// every Grit project ships with — most apps will replace it with their
-// own domain models like "buildings", "tenants", etc.
-const SYNC_TABLES: string[] = ["users", "uploads"];
+import { getSyncTables } from "@/lib/wails-bridge";
 
 interface TitleBarProps {
   showSidebarControls?: boolean;
@@ -1547,9 +1613,13 @@ interface TitleBarProps {
 // macOS: traffic lights on the left. Windows/Linux: min/max/close on the right.
 export function TitleBar({ showSidebarControls: _ = true }: TitleBarProps) {
   const [platform, setPlatform] = useState<"darwin" | "windows" | "linux">("windows");
+  // Sync tables are owned by the Go side (grit generate resource appends to
+  // them), so read them at runtime rather than hardcoding a list here.
+  const [syncTables, setSyncTables] = useState<string[]>(["users", "uploads"]);
 
   useEffect(() => {
     getPlatform().then(setPlatform);
+    getSyncTables().then(setSyncTables).catch(() => {});
   }, []);
 
   const isMac = platform === "darwin";
@@ -1583,7 +1653,7 @@ export function TitleBar({ showSidebarControls: _ = true }: TitleBarProps) {
 
       {/* Right: sync button + connection indicator + (on Windows/Linux) window controls */}
       <div className="no-drag flex items-center">
-        <SyncButton tables={SYNC_TABLES} />
+        <SyncButton tables={syncTables} />
         <ConnectionIndicator />
         {!isMac && (
           <>
@@ -2416,6 +2486,172 @@ export async function openFileDialog(title: string): Promise<string> {
 export async function saveFileDialog(title: string, defaultFilename: string): Promise<string> {
   if (isWails) return window.go!.main.App.SaveFileDialog(title, defaultFilename);
   throw new Error("saveFileDialog requires Wails runtime");
+}
+
+// ─── Offline sync mode ────────────────────────────────────────────
+
+export interface SyncStatus {
+  reachable: boolean;
+  force_offline: boolean;
+  pending: number;
+  last_sync?: string;
+  last_error?: string;
+}
+
+// getSyncTables returns the models covered by offline sync (owned by the Go
+// side so a newly generated resource is included automatically).
+export async function getSyncTables(): Promise<string[]> {
+  if (isWails) return window.go!.main.App.GetSyncTables();
+  return ["users", "uploads"];
+}
+
+// setOfflineMode flips the manual "Work offline" switch. Turning it off
+// triggers an immediate background reconcile on the Go side.
+export async function setOfflineMode(offline: boolean): Promise<void> {
+  if (isWails) return window.go!.main.App.SetOfflineMode(offline);
+}
+
+// getSyncStatus returns the reachable/offline/pending snapshot.
+export async function getSyncStatus(): Promise<SyncStatus> {
+  if (isWails) return window.go!.main.App.GetSyncStatus();
+  return { reachable: true, force_offline: false, pending: 0 };
+}
+
+// syncNow forces an immediate Pull+Push.
+export async function syncNow(): Promise<unknown> {
+  if (isWails) return window.go!.main.App.SyncNow();
+  return null;
+}
+`
+}
+
+// desktopClientUseSyncStatus polls the Go engine's sync status so the dashboard
+// toggle and any status pill stay live.
+func desktopClientUseSyncStatus() string {
+	return `import { useCallback, useEffect, useState } from "react";
+import { getSyncStatus, setOfflineMode as setOfflineModeBridge, syncNow, type SyncStatus } from "@/lib/wails-bridge";
+
+// useSyncStatus polls the engine every 4s (and on demand) for the
+// reachable/offline/pending snapshot, and exposes actions to toggle offline
+// mode and force a sync.
+export function useSyncStatus() {
+  const [status, setStatus] = useState<SyncStatus>({
+    reachable: true,
+    force_offline: false,
+    pending: 0,
+  });
+  const [busy, setBusy] = useState(false);
+
+  const refresh = useCallback(async () => {
+    try {
+      setStatus(await getSyncStatus());
+    } catch {
+      /* engine not ready yet — keep last snapshot */
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    const id = setInterval(refresh, 4000);
+    return () => clearInterval(id);
+  }, [refresh]);
+
+  const setOffline = useCallback(
+    async (offline: boolean) => {
+      setBusy(true);
+      try {
+        await setOfflineModeBridge(offline);
+        await refresh();
+      } finally {
+        setBusy(false);
+      }
+    },
+    [refresh],
+  );
+
+  const forceSync = useCallback(async () => {
+    setBusy(true);
+    try {
+      await syncNow();
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  }, [refresh]);
+
+  return { status, busy, setOffline, forceSync, refresh };
+}
+`
+}
+
+// desktopClientOfflineToggle is the dashboard "Work offline" switch + status
+// pill. Toggling it OFF (back online) triggers an immediate reconcile.
+func desktopClientOfflineToggle() string {
+	return `import { Cloud, CloudOff, RefreshCw } from "lucide-react";
+import { useSyncStatus } from "@/hooks/use-sync-status";
+
+// OfflineModeToggle is the dashboard control for switching between online
+// (mirror + sync) and offline (work against the local copy) mode. When online
+// it shows reachability + pending count; when offline it shows how many edits
+// are queued to push on reconnect.
+export function OfflineModeToggle() {
+  const { status, busy, setOffline, forceSync } = useSyncStatus();
+  const offline = status.force_offline;
+
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2">
+      {offline ? (
+        <CloudOff className="h-4 w-4 text-warning" />
+      ) : (
+        <Cloud className={"h-4 w-4 " + (status.reachable ? "text-success" : "text-danger")} />
+      )}
+
+      <div className="min-w-0 flex-1">
+        <div className="text-[13px] font-medium text-foreground">
+          {offline ? "Working offline" : status.reachable ? "Online" : "Server unreachable"}
+        </div>
+        <div className="text-[11px] text-foreground-muted">
+          {status.pending > 0
+            ? status.pending + " change" + (status.pending === 1 ? "" : "s") + " waiting to sync"
+            : status.last_sync
+              ? "Last synced " + new Date(status.last_sync).toLocaleTimeString()
+              : "All changes synced"}
+        </div>
+      </div>
+
+      {!offline && status.reachable && (
+        <button
+          type="button"
+          onClick={forceSync}
+          disabled={busy}
+          title="Sync now"
+          className="rounded p-1.5 text-foreground-secondary hover:bg-surface-hover disabled:opacity-50"
+        >
+          <RefreshCw className={"h-4 w-4 " + (busy ? "animate-spin" : "")} />
+        </button>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setOffline(!offline)}
+        disabled={busy}
+        role="switch"
+        aria-checked={offline}
+        title={offline ? "Switch back online" : "Switch to offline mode"}
+        className={
+          "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors " +
+          (offline ? "bg-warning" : "bg-accent")
+        }
+      >
+        <span
+          className={
+            "inline-block h-4 w-4 rounded-full bg-white transition-transform " +
+            (offline ? "translate-x-6" : "translate-x-1")
+          }
+        />
+      </button>
+    </div>
+  );
 }
 `
 }

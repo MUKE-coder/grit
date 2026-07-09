@@ -185,6 +185,16 @@ func (g *Generator) Run() error {
 		fmt.Printf("  ✓ apps/expo/components/resource-forms/%s-form.tsx\n", names.PluralKebab)
 	}
 
+	// Monorepo desktop client (apps/desktop): register the new resource for
+	// offline sync so the background mirror + offline toggle cover it. The Go
+	// syncTables var is the single source of truth (the frontend reads it).
+	if g.hasDesktopClient() {
+		if err := g.injectDesktopSyncTable(names); err != nil {
+			return fmt.Errorf("registering desktop sync table: %w", err)
+		}
+		fmt.Printf("  ✓ apps/desktop: registered %q for offline sync\n", names.Plural)
+	}
+
 	fmt.Println()
 
 	// 2. Inject into existing files
@@ -483,6 +493,52 @@ func toSnakeCase(s string) string {
 func fileExists(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && !info.IsDir()
+}
+
+// hasDesktopClient reports whether the monorepo has a Wails desktop client
+// (apps/desktop with the sync-enabled app.go) to register the resource with.
+func (g *Generator) hasDesktopClient() bool {
+	return fileExists(filepath.Join(g.Root, "apps", "desktop", "app.go"))
+}
+
+// injectDesktopSyncTable adds the resource's table to the desktop client's
+// syncTables var (the // grit:sync-tables marker), so the background mirror and
+// offline toggle cover it automatically. Idempotent.
+//
+// This does NOT use the generic injectBefore: the table name (e.g. "buildings")
+// appears in docstring examples elsewhere in app.go, which would make the
+// substring-based already-injected guard falsely skip a real injection. So we
+// scope both the duplicate check and the insertion to the syncTables var block.
+func (g *Generator) injectDesktopSyncTable(names Names) error {
+	path := filepath.Join(g.Root, "apps", "desktop", "app.go")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("reading %s: %w", path, err)
+	}
+	content := string(data)
+
+	const marker = "// grit:sync-tables"
+	markerIdx := strings.Index(content, marker)
+	if markerIdx == -1 {
+		// Older desktop scaffold without the marker — nothing to do.
+		return nil
+	}
+	// The var block is everything from "var syncTables" up to the marker.
+	blockStart := strings.Index(content, "var syncTables")
+	if blockStart == -1 || blockStart > markerIdx {
+		return nil
+	}
+	block := content[blockStart:markerIdx]
+	entryQuoted := "\"" + names.Plural + "\""
+	if strings.Contains(block, entryQuoted) {
+		return nil // already registered
+	}
+
+	// Insert the entry on its own line immediately before the marker line.
+	lineStart := strings.LastIndexByte(content[:markerIdx], '\n') + 1
+	insertion := "\t" + entryQuoted + ",\n"
+	updated := content[:lineStart] + insertion + content[lineStart:]
+	return os.WriteFile(path, []byte(updated), 0o644)
 }
 
 func dirExists(path string) bool {

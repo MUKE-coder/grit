@@ -151,7 +151,7 @@ func (g *DesktopGenerator) buildBoundMethods(names Names) string {
 	b.WriteString("}\n\n")
 
 	// GetByID
-	b.WriteString(fmt.Sprintf("func (a *App) Get%s(id uint) (*models.%s, error) {\n", names.Pascal, names.Pascal))
+	b.WriteString(fmt.Sprintf("func (a *App) Get%s(id string) (*models.%s, error) {\n", names.Pascal, names.Pascal))
 	b.WriteString(fmt.Sprintf("\treturn a.%s.GetByID(id)\n", names.Camel))
 	b.WriteString("}\n\n")
 
@@ -161,12 +161,12 @@ func (g *DesktopGenerator) buildBoundMethods(names Names) string {
 	b.WriteString("}\n\n")
 
 	// Update
-	b.WriteString(fmt.Sprintf("func (a *App) Update%s(id uint, input models.%sInput) (*models.%s, error) {\n", names.Pascal, names.Pascal, names.Pascal))
+	b.WriteString(fmt.Sprintf("func (a *App) Update%s(id string, input models.%sInput) (*models.%s, error) {\n", names.Pascal, names.Pascal, names.Pascal))
 	b.WriteString(fmt.Sprintf("\treturn a.%s.Update(id, input)\n", names.Camel))
 	b.WriteString("}\n\n")
 
 	// Delete
-	b.WriteString(fmt.Sprintf("func (a *App) Delete%s(id uint) error {\n", names.Pascal))
+	b.WriteString(fmt.Sprintf("func (a *App) Delete%s(id string) error {\n", names.Pascal))
 	b.WriteString(fmt.Sprintf("\treturn a.%s.Delete(id)\n", names.Camel))
 	b.WriteString("}\n\n")
 
@@ -223,7 +223,8 @@ func (g *DesktopGenerator) buildExportFieldsInfo() (string, string) {
 		case FieldType(f.Type) == FieldBool:
 			accessors = append(accessors, fmt.Sprintf("fmt.Sprintf(\"%%v\", item.%s)", pascalField))
 		case FieldType(f.Type) == FieldDatetime || FieldType(f.Type) == FieldDate:
-			accessors = append(accessors, fmt.Sprintf("item.%s.Format(\"2006-01-02\")", pascalField))
+			// *time.Time may be nil — guard so export never panics.
+			accessors = append(accessors, fmt.Sprintf("fmtDesktopDate(item.%s)", pascalField))
 		case FieldType(f.Type) == FieldInt || FieldType(f.Type) == FieldUint || FieldType(f.Type) == FieldFloat || FieldType(f.Type) == FieldBelongsTo:
 			accessors = append(accessors, fmt.Sprintf("fmt.Sprintf(\"%%v\", item.%s)", pascalField))
 		default:
@@ -249,6 +250,12 @@ func (g *DesktopGenerator) buildInputStruct(names Names) string {
 		pascalField := toPascalCase(f.Name)
 		snakeField := toSnakeCase(toPascalCase(f.Name))
 		goType := f.GoType()
+
+		// date/datetime cross the Wails boundary as a string ("YYYY-MM-DD" or
+		// "YYYY-MM-DDTHH:MM"); the service parses it into the model's *time.Time.
+		if ft := FieldType(f.Type); ft == FieldDate || ft == FieldDatetime {
+			goType = "string"
+		}
 
 		b.WriteString(fmt.Sprintf("\t%s %s `json:\"%s\"`\n", pascalField, goType, snakeField))
 	}
