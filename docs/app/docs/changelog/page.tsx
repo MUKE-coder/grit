@@ -28,6 +28,48 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.79 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.79
+                </span>
+                <span className="text-sm text-muted-foreground">July 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Desktop apps are now hybrid — and support file uploads.</strong>{' '}
+                  A <code>grit new-desktop</code> app still runs on Wails + SQLite/Postgres,
+                  but it now also embeds a real Gin REST API in the same binary.
+                  The router is mounted twice: as the Wails asset-server handler
+                  (so the webview calls <code>/api/…</code> and loads{' '}
+                  <code>&lt;img src="/uploads/x.jpg"&gt;</code> same-origin, no port,
+                  no CORS) and on <code>127.0.0.1:34115</code> for curl / other
+                  clients.
+                </p>
+                <p>
+                  <strong>File uploads work end-to-end.</strong>{' '}
+                  <code>grit generate resource ... photo:file:image</code> now
+                  produces a working image field: a native file picker that uploads
+                  to <code>POST /api/uploads</code>, files stored under the OS
+                  app-data dir (writable even when the app is installed in Program
+                  Files), a preview in the form, and <code>files:image</code> for
+                  multi-image galleries. New <code>internal/files</code>,{' '}
+                  <code>internal/storage</code> and <code>internal/api</code>{' '}
+                  packages back it.
+                </p>
+                <p>
+                  <strong>Two codegen bugs fixed along the way:</strong> a{' '}
+                  <code>file:</code> field used to emit <code>*files.FileRef</code>{' '}
+                  with no import (and no <code>files</code> package at all), breaking
+                  the build; and a <code>slug</code> field called{' '}
+                  <code>slugify()</code> from a package that didn&apos;t define it.
+                  Both now compile.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.78 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

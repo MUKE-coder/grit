@@ -148,6 +148,15 @@ func (g *DesktopGenerator) writeDesktopModel(names Names) error {
 		content = tmpContent
 	}
 
+	// file/files fields use files.FileRef — add the import. The import block is
+	// rebuilt in several branches above but every one ends with the gorm line,
+	// so a single targeted insert covers them all.
+	if strings.Contains(content, "files.FileRef") {
+		content = strings.Replace(content,
+			"\t\"gorm.io/gorm\"\n)",
+			"\t\"gorm.io/gorm\"\n\n\t\"<MODULE>/internal/files\"\n)", 1)
+	}
+
 	content = strings.ReplaceAll(content, "<MODULE>", g.Module)
 
 	path := filepath.Join(g.Root, "internal", "models", names.Snake+".go")
@@ -737,6 +746,11 @@ func (g *DesktopGenerator) buildFormHelpers(names Names) (stateDecls, inputField
 			stateDecls += "  const [" + camel + ", " + setter + "] = useState(0);\n"
 		case "toggle":
 			stateDecls += "  const [" + camel + ", " + setter + "] = useState(false);\n"
+		case "file":
+			// a FileRef object (from /api/uploads) or null
+			stateDecls += "  const [" + camel + ", " + setter + "] = useState<any>(null);\n"
+		case "files":
+			stateDecls += "  const [" + camel + ", " + setter + "] = useState<any[]>([]);\n"
 		default:
 			stateDecls += "  const [" + camel + ", " + setter + "] = useState(\"\");\n"
 		}
@@ -841,6 +855,66 @@ func (g *DesktopGenerator) buildFormHelpers(names Names) (stateDecls, inputField
 			formFields += "            />\n"
 			formFields += "          </div>\n\n"
 
+		case "file":
+			// Upload to the embedded REST API (same origin inside the webview),
+			// store the returned FileRef, preview it. quantity/price still submit
+			// fine because the FileRef is only for this field's state.
+			inputCls := "w-full text-sm text-text-secondary file:mr-3 file:rounded-lg file:border-0 file:bg-accent file:px-3 file:py-2 file:text-white hover:file:bg-accent/90 file:cursor-pointer"
+			formFields += "          <div>\n"
+			formFields += "            <label className=\"block text-sm font-medium text-foreground mb-1.5\">" + label + "</label>\n"
+			formFields += "            {" + camel + "?.url ? (\n"
+			formFields += "              <img src={" + camel + ".url} alt=\"\" className=\"mb-2 h-32 w-32 rounded-lg object-cover border border-border\" />\n"
+			formFields += "            ) : null}\n"
+			formFields += "            <input\n"
+			formFields += "              type=\"file\"\n"
+			formFields += "              accept=\"image/*\"\n"
+			formFields += "              onChange={async (e) => {\n"
+			formFields += "                const f = e.target.files?.[0];\n"
+			formFields += "                if (!f) return;\n"
+			formFields += "                const fd = new FormData();\n"
+			formFields += "                fd.append(\"file\", f);\n"
+			formFields += "                const res = await fetch(\"/api/uploads\", { method: \"POST\", body: fd });\n"
+			formFields += "                const json = await res.json();\n"
+			formFields += "                if (res.ok) " + setter + "(json.data);\n"
+			formFields += "                else toast.error(json.error?.message || \"Upload failed\");\n"
+			formFields += "              }}\n"
+			formFields += "              className=\"" + inputCls + "\"\n"
+			formFields += "            />\n"
+			formFields += "          </div>\n\n"
+
+		case "files":
+			inputCls := "w-full text-sm text-text-secondary file:mr-3 file:rounded-lg file:border-0 file:bg-accent file:px-3 file:py-2 file:text-white hover:file:bg-accent/90 file:cursor-pointer"
+			formFields += "          <div>\n"
+			formFields += "            <label className=\"block text-sm font-medium text-foreground mb-1.5\">" + label + "</label>\n"
+			formFields += "            {" + camel + ".length > 0 ? (\n"
+			formFields += "              <div className=\"mb-2 flex flex-wrap gap-2\">\n"
+			formFields += "                {" + camel + ".map((img: any, i: number) => (\n"
+			formFields += "                  <div key={i} className=\"relative\">\n"
+			formFields += "                    <img src={img.url} alt=\"\" className=\"h-20 w-20 rounded-lg object-cover border border-border\" />\n"
+			formFields += "                    <button type=\"button\" onClick={() => " + setter + "(" + camel + ".filter((_: any, j: number) => j !== i))} className=\"absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-black/70 text-white text-xs\">×</button>\n"
+			formFields += "                  </div>\n"
+			formFields += "                ))}\n"
+			formFields += "              </div>\n"
+			formFields += "            ) : null}\n"
+			formFields += "            <input\n"
+			formFields += "              type=\"file\"\n"
+			formFields += "              accept=\"image/*\"\n"
+			formFields += "              multiple\n"
+			formFields += "              onChange={async (e) => {\n"
+			formFields += "                const files = Array.from(e.target.files || []);\n"
+			formFields += "                for (const f of files) {\n"
+			formFields += "                  const fd = new FormData();\n"
+			formFields += "                  fd.append(\"file\", f);\n"
+			formFields += "                  const res = await fetch(\"/api/uploads\", { method: \"POST\", body: fd });\n"
+			formFields += "                  const json = await res.json();\n"
+			formFields += "                  if (res.ok) " + setter + "((prev: any[]) => [...prev, json.data]);\n"
+			formFields += "                  else toast.error(json.error?.message || \"Upload failed\");\n"
+			formFields += "                }\n"
+			formFields += "              }}\n"
+			formFields += "              className=\"" + inputCls + "\"\n"
+			formFields += "            />\n"
+			formFields += "          </div>\n\n"
+
 		default:
 			formFields += "          <div>\n"
 			formFields += "            <label className=\"block text-sm font-medium text-foreground mb-1.5\">" + label + "</label>\n"
@@ -875,6 +949,10 @@ func (g *DesktopGenerator) buildFetchAssignments() string {
 			fetchAssignments += "        " + setter + "(data." + jsonName + " || false);\n"
 		case "date", "datetime":
 			fetchAssignments += "        " + setter + "(data." + jsonName + " ? data." + jsonName + ".slice(0, 10) : \"\");\n"
+		case "file":
+			fetchAssignments += "        " + setter + "(data." + jsonName + " || null);\n"
+		case "files":
+			fetchAssignments += "        " + setter + "(data." + jsonName + " || []);\n"
 		default:
 			fetchAssignments += "        " + setter + "(data." + jsonName + " || \"\");\n"
 		}

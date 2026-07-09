@@ -55,7 +55,7 @@ func detectColumnPacks(fields []Field) (map[string]columnPack, bool) {
 	case have["first_name"] && have["last_name"]:
 		pack := columnPack{
 			primary: "first_name",
-			line: `{ key: "first_name", label: "Name", sortable: true, searchable: true, cell: (row) => StackedCell({ top: String(row.first_name ?? "") + " " + String(row.last_name ?? "") }) },`,
+			line:    `{ key: "first_name", label: "Name", sortable: true, searchable: true, cell: (row) => StackedCell({ top: String(row.first_name ?? "") + " " + String(row.last_name ?? "") }) },`,
 		}
 		out["first_name"] = pack
 		out["last_name"] = pack

@@ -79,8 +79,8 @@ func TestNames_FromSnakeCase(t *testing.T) {
 
 func TestNames_IrregularPlural(t *testing.T) {
 	tests := []struct {
-		name         string
-		wantPlural   string
+		name       string
+		wantPlural string
 	}{
 		{"Category", "categories"},
 		{"Person", "people"},

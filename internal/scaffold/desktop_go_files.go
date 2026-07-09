@@ -29,15 +29,18 @@ import (
 	"context"
 	"embed"
 	"log"
+	"net/http"
 
 	"github.com/joho/godotenv"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 
+	"<MODULE>/internal/api"
 	"<MODULE>/internal/config"
 	"<MODULE>/internal/db"
 	"<MODULE>/internal/service"
+	"<MODULE>/internal/storage"
 )
 
 //go:embed all:frontend/dist
@@ -56,13 +59,36 @@ func main() {
 
 	app := NewApp(authSvc, blogSvc, contactSvc, exportSvc, /* grit:app-args */)
 
+	// Hybrid: alongside the Wails bindings this app runs a real REST API.
+	//
+	// Uploads land in the OS app-data dir (writable even when the binary sits in
+	// Program Files), and the router is mounted twice:
+	//
+	//   AssetServer.Handler  → the webview fetches /api/... and loads
+	//                          <img src="/uploads/x.jpg"> same-origin, so there's
+	//                          no port to discover and no CORS to configure.
+	//   127.0.0.1:APIPort    → curl, scripts, or a second client hit the same API.
+	store, err := storage.New(cfg.AppName)
+	if err != nil {
+		log.Fatalf("storage: %v", err)
+	}
+	router := api.NewRouter(&api.Server{DB: database, Storage: store})
+
+	go func() {
+		addr := "127.0.0.1:" + cfg.APIPort
+		log.Printf("REST API listening on http://%s", addr)
+		if err := http.ListenAndServe(addr, router); err != nil {
+			log.Printf("REST API stopped: %v", err)
+		}
+	}()
+
 	// In-app auto-updater. Best-effort cleanup of the .exe.old left
 	// behind by a previous in-app update runs in the background so
 	// startup isn't held up by a busy filesystem.
 	updater := NewUpdater()
 	go updater.CleanupOldOnStartup()
 
-	err := wails.Run(&options.App{
+	err = wails.Run(&options.App{
 		Title:     cfg.AppName,
 		Width:     1280,
 		Height:    800,
@@ -71,6 +97,9 @@ func main() {
 		Frameless: true,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
+			// Anything the frontend bundle doesn't resolve (/api/*, /uploads/*)
+			// falls through to the REST API — same origin as the webview.
+			Handler: router,
 		},
 		BackgroundColour: &options.RGBA{R: 10, G: 10, B: 15, A: 1},
 		OnStartup: func(ctx context.Context) {

@@ -126,12 +126,12 @@ func TestField_GORMTag(t *testing.T) {
 
 func TestField_TypeHelpers(t *testing.T) {
 	cases := []struct {
-		typ            string
-		isSlug         bool
-		isBelongsTo    bool
-		isManyToMany   bool
-		isRelationship bool
-		isStringArray  bool
+		typ             string
+		isSlug          bool
+		isBelongsTo     bool
+		isManyToMany    bool
+		isRelationship  bool
+		isStringArray   bool
 		needsTimeImport bool
 	}{
 		{"slug", true, false, false, false, false, false},
@@ -214,11 +214,11 @@ func TestField_RelatedModelName(t *testing.T) {
 
 func TestField_UIHelpers(t *testing.T) {
 	tests := []struct {
-		fieldType      string
-		columnFormat   string
-		formFieldType  string
-		isSortable     bool
-		isSearchable   bool
+		fieldType     string
+		columnFormat  string
+		formFieldType string
+		isSortable    bool
+		isSearchable  bool
 	}{
 		{"string", "text", "text", true, true},
 		{"text", "text", "textarea", false, true},

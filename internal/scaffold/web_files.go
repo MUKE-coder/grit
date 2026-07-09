@@ -1207,7 +1207,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 // viteAPIClient is the Vite/TanStack-flavoured API client. It uses
 // import.meta.env.VITE_API_URL (the Vite convention) instead of
 // process.env.NEXT_PUBLIC_API_URL (which is a Next.js-only prefix and
-// undefined in a Vite project). Default is '' so the embedded single-binary
+// undefined in a Vite project). Default is ” so the embedded single-binary
 // deploy serves SPA + API from the same origin without configuration.
 func viteAPIClient() string {
 	return `import axios from "axios";

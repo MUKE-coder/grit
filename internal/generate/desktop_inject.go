@@ -78,6 +78,14 @@ func (g *DesktopGenerator) injectDesktopAll(names Names) error {
 	// 8. Inject input type — types.go
 	typesFile := filepath.Join(g.Root, "internal", "models", "types.go")
 	if fileExists(typesFile) {
+		// file/files inputs are files.FileRef(s) — make sure the package is
+		// imported. Idempotent: injectBefore skips if it's already there.
+		if g.definitionHasFileField() {
+			imp := "\t\"" + g.Module + "/internal/files\""
+			if err := injectBefore(typesFile, "// grit:input-imports", imp); err != nil {
+				return fmt.Errorf("injecting files import into types.go: %w", err)
+			}
+		}
 		inputStruct := g.buildInputStruct(names)
 		if err := injectBefore(typesFile, "// grit:input-types", inputStruct); err != nil {
 			return fmt.Errorf("injecting input type into types.go: %w", err)
@@ -117,6 +125,17 @@ func (g *DesktopGenerator) injectDesktopAll(names Names) error {
 	}
 
 	return nil
+}
+
+// definitionHasFileField reports whether any field is a file or files type, in
+// which case models and the input type reference the files package.
+func (g *DesktopGenerator) definitionHasFileField() bool {
+	for _, f := range g.Definition.Fields {
+		if f.IsFile() || f.IsFiles() {
+			return true
+		}
+	}
+	return false
 }
 
 // buildBoundMethods generates the Wails-bound CRUD + export methods for app.go.
@@ -189,7 +208,10 @@ func (g *DesktopGenerator) buildExportFieldsInfo() (string, string) {
 	var accessors []string
 
 	for _, f := range g.Definition.Fields {
-		if f.IsSlug() || f.IsManyToMany() || f.IsStringArray() {
+		// Skip fields that don't render as a single CSV/PDF cell: slug (internal),
+		// m2m / string arrays (multi-valued), and file/files (a FileRef object,
+		// not a string — exporting an image URL to a spreadsheet isn't useful).
+		if f.IsSlug() || f.IsManyToMany() || f.IsStringArray() || f.IsFile() || f.IsFiles() {
 			continue
 		}
 

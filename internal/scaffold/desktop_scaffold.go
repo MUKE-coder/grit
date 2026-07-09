@@ -46,6 +46,10 @@ func RunDesktop(opts DesktopOptions) error {
 		return fmt.Errorf("writing Go service files: %w", err)
 	}
 
+	if err := writeDesktopAPIFiles(root, opts); err != nil {
+		return fmt.Errorf("writing API files: %w", err)
+	}
+
 	if err := writeDesktopStudioFiles(root, opts); err != nil {
 		return fmt.Errorf("writing studio files: %w", err)
 	}

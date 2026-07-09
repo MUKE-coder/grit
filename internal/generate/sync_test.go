@@ -80,10 +80,10 @@ func TestExtractTag(t *testing.T) {
 		{`gorm:"primarykey" json:"id"`, "json", "id"},
 		{`gorm:"primarykey" json:"id"`, "gorm", "primarykey"},
 		{`json:"first_name" binding:"required,min=2"`, "json", "first_name"},
-		{`json:"email,omitempty"`, "json", "email"},   // omitempty stripped
-		{`json:"-"`, "json", "-"},                     // skip sentinel preserved
-		{`gorm:"size:255"`, "binding", ""},            // missing key
-		{``, "json", ""},                              // empty tag
+		{`json:"email,omitempty"`, "json", "email"}, // omitempty stripped
+		{`json:"-"`, "json", "-"},                   // skip sentinel preserved
+		{`gorm:"size:255"`, "binding", ""},          // missing key
+		{``, "json", ""},                            // empty tag
 	}
 
 	for _, tt := range tests {

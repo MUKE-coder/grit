@@ -14,6 +14,7 @@ func writeDesktopGoInternalFiles(root string, opts DesktopOptions) error {
 		filepath.Join(root, "internal", "models", "blog.go"):    desktopBlogModel(),
 		filepath.Join(root, "internal", "models", "contact.go"): desktopContactModel(),
 		filepath.Join(root, "internal", "models", "types.go"):   desktopTypesGo(),
+		filepath.Join(root, "internal", "models", "slug.go"):    desktopSlugGo(),
 	}
 
 	for path, content := range files {
@@ -34,6 +35,9 @@ type Config struct {
 	DBDriver string
 	DBDSN    string
 	AppName  string
+	// APIPort is the loopback port the embedded REST API listens on, so curl
+	// and other clients can reach the same endpoints the webview uses.
+	APIPort string
 }
 
 func Load() *Config {
@@ -41,6 +45,7 @@ func Load() *Config {
 		DBDriver: getEnv("DB_DRIVER", "sqlite"),
 		DBDSN:    getEnv("DB_DSN", "app.db"),
 		AppName:  getEnv("APP_NAME", "Grit Desktop"),
+		APIPort:  getEnv("API_PORT", "34115"),
 	}
 }
 
@@ -218,8 +223,34 @@ func (c *Contact) BeforeCreate(tx *gorm.DB) error {
 `
 }
 
+// desktopSlugGo puts slugify in the models package so a generated model's
+// BeforeCreate hook (for a slug field) can call it. The service package has its
+// own copy for input handling; models needs one too since Go scopes by package.
+func desktopSlugGo() string {
+	return `package models
+
+import (
+	"regexp"
+	"strings"
+)
+
+var slugRe = regexp.MustCompile(` + "`" + `[^a-z0-9]+` + "`" + `)
+
+// slugify turns "Hello World!" into "hello-world".
+func slugify(s string) string {
+	s = strings.ToLower(s)
+	s = slugRe.ReplaceAllString(s, "-")
+	return strings.Trim(s, "-")
+}
+`
+}
+
 func desktopTypesGo() string {
 	return `package models
+
+import (
+	// grit:input-imports
+)
 
 type AuthResponse struct {
 	User  User   ` + "`" + `json:"user"` + "`" + `
