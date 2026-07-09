@@ -28,6 +28,61 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.34.1 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.34.1
+                </span>
+                <span className="text-sm text-muted-foreground">July 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Critical: Sentinel upgraded to v2.1.1 — the WAF was
+                  403&apos;ing real users in production.</strong> Grit scaffolds
+                  Sentinel with <code>WAF.Mode = ModeBlock</code> outside dev, and
+                  the pinned version carried two false-positive bugs that rejected
+                  ordinary traffic:
+                </p>
+                <ul>
+                  <li>
+                    <strong>Every Chrome 140 user got a 403.</strong> The SSRF rule
+                    matched the unanchored string <code>0.0.0.0</code>, which occurs
+                    inside the User-Agent <code>Chrome/140.0.0.0</code> (and 130,
+                    120, 110). Fixed upstream in Sentinel v2.1.0.
+                  </li>
+                  <li>
+                    <strong>Roughly one session in ten was 403&apos;d at random.</strong>{' '}
+                    <code>SQLi_Basic</code> matched a bare <code>--</code> anywhere,
+                    and SQLi patterns were scanned against headers. JWTs are
+                    base64url (which includes <code>-</code>), so a cookie holding
+                    two tokens contains <code>--</code> about 9% of the time — and it
+                    re-rolled on every token refresh, so it looked like flaky
+                    networking, not a firewall. Fixed upstream in Sentinel v2.1.1.
+                  </li>
+                </ul>
+                <p>
+                  New projects now pin <code>github.com/MUKE-coder/sentinel/v2 v2.1.1</code>{' '}
+                  (Sentinel finally ships a proper <code>/v2</code> module path, so
+                  we track real tags instead of a pseudo-version). Real SSRF, SQLi
+                  and XSS payloads are still detected — only the false positives are
+                  gone.
+                </p>
+                <p>
+                  <strong>Existing projects must migrate by hand</strong> —{' '}
+                  <code>grit upgrade</code> doesn&apos;t rewrite your{' '}
+                  <code>apps/api/go.mod</code>. In <code>apps/api</code>, change the
+                  import in <code>internal/routes/routes.go</code> from{' '}
+                  <code>&quot;github.com/MUKE-coder/sentinel&quot;</code> to{' '}
+                  <code>sentinel &quot;github.com/MUKE-coder/sentinel/v2&quot;</code>, then run{' '}
+                  <code>go get github.com/MUKE-coder/sentinel/v2@v2.1.1 &amp;&amp; go mod tidy</code>.
+                  If you worked around this by setting <code>ModeLog</code>, it is now
+                  safe to go back to <code>ModeBlock</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.34.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

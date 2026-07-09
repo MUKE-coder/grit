@@ -215,12 +215,13 @@ require (
 	github.com/redis/go-redis/v9 v9.4.0
 	github.com/xuri/excelize/v2 v2.8.1
 	golang.org/x/crypto v0.23.0
-	// Pinned to the v2.0.1 commit on main. Upstream is tagged v2.0.1
-	// but the module path lacks the /v2 suffix Go modules requires for
-	// major versions >= 2, so the tag fails go.sum verification. A
-	// pseudo-version side-steps the rule; the underlying code is the
-	// same as the tag. Advance the pin once sentinel re-tags with /v2.
-	github.com/MUKE-coder/sentinel v0.0.0-20260529033414-0e945440db7f
+	// Sentinel now ships a proper /v2 module path, so we track real tags.
+	// v2.1.1 is the first release safe to run with WAF.Mode = ModeBlock:
+	// v2.1.0 fixed the SSRF rule matching "0.0.0.0" inside a Chrome
+	// User-Agent (403'ing every Chrome 140/130/120/110 user), and v2.1.1
+	// fixed SQLi_Basic matching a bare "--" inside JWT cookies (roughly
+	// one session in ten 403'd at random). Do not downgrade below v2.1.1.
+	github.com/MUKE-coder/sentinel/v2 v2.1.1
 	gorm.io/datatypes v1.2.7
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.25.12
@@ -6476,7 +6477,7 @@ import (
 	"github.com/MUKE-coder/gin-docs/gindocs"
 	"github.com/MUKE-coder/gorm-studio/studio"
 	"github.com/MUKE-coder/pulse/pulse"
-	"github.com/MUKE-coder/sentinel"
+	sentinel "github.com/MUKE-coder/sentinel/v2"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
@@ -6554,14 +6555,14 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			}
 		}
 
-		// Sentinel v2.0.1 — use MountE so we can recover gracefully on
+		// Sentinel v2 — use MountE so we can recover gracefully on
 		// misconfiguration in dev instead of log.Fatalf-ing the host.
 		if err := sentinel.MountE(r, db, sentinel.Config{
 			Dashboard: sentinel.DashboardConfig{
 				Username:               cfg.SentinelUsername,
 				Password:               cfg.SentinelPassword,
 				SecretKey:              cfg.SentinelSecretKey,
-				// v2.0 refuses default credentials in gin.ReleaseMode;
+				// Sentinel refuses default credentials in gin.ReleaseMode;
 				// opt-in only for dev so prod can't ship forgeable JWTs.
 				AllowInsecureDefaults:  isDev,
 			},
@@ -6618,7 +6619,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		}); err != nil {
 			log.Printf("Warning: Sentinel mount failed: %v", err)
 		} else {
-			log.Println("Sentinel v2.0 mounted at /sentinel")
+			log.Println("Sentinel v2.1.1 mounted at /sentinel")
 		}
 	}
 
