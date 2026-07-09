@@ -26,7 +26,7 @@ Let's build.
 
 ## 1. Install or update Grit
 
-Desktop file uploads and the hybrid API landed in the **v3.31.79–v3.31.81** line,
+Desktop file uploads and the hybrid API landed in the **v3.31.79–v3.31.82** line,
 so grab the latest.
 
 ```bash
@@ -40,7 +40,7 @@ iwr -useb https://gritframework.dev/install.ps1 | iex
 grit update
 ```
 
-Confirm you're on **v3.31.81 or newer**:
+Confirm you're on **v3.31.82 or newer**:
 
 ```bash
 grit version
@@ -188,14 +188,31 @@ confirmation — is generated. You're just decorating one cell.
 
 ## 7. Ship it
 
+One command turns the app into something you can hand to a user:
+
 ```bash
-wails build
+grit package
 ```
 
-That produces a native binary (a signed installer with a bit more config) — a
-single artifact you can hand to a shopkeeper who has never heard of Docker. It
-carries its own SQLite database and its own uploads folder. Point it at Postgres
-later by shipping a different `.env`; the code doesn't change.
+On Windows that produces an **NSIS installer** (a single `*-installer.exe` in
+`build/bin/`) — the file a shopkeeper double-clicks to install your app. On
+macOS/Linux it produces the platform binary/app bundle. `grit package` is a
+friendly wrapper over `wails build`: it checks you have the toolchain
+(`wails`, plus `makensis` for the Windows installer), builds, and tells you where
+the artifact landed. Skip the installer with `--no-installer`, or cross-compile
+with `--platform darwin/arm64`.
+
+```bash
+grit package                    # installer for the current OS
+grit package --no-installer     # just the raw binary
+grit package --platform windows/amd64
+```
+
+The result is a single artifact that carries its own SQLite database and uploads
+folder — no Docker, no server. Point it at Postgres later by shipping a different
+`.env`; the code doesn't change. (For a full versioned release with branded
+installer art and a GitHub release, the scaffold also ships
+`scripts/release-desktop.sh <version>`.)
 
 ## The takeaway
 

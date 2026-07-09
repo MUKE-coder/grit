@@ -28,6 +28,34 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.82 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.82
+                </span>
+                <span className="text-sm text-muted-foreground">July 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>New: <code>grit package</code> — build a distributable
+                  desktop installer.</strong> Run it inside a{' '}
+                  <code>grit new-desktop</code> app and it produces the artifact you
+                  hand to a user: on Windows an NSIS installer (the single{' '}
+                  <code>*-installer.exe</code> in <code>build/bin/</code>), on
+                  macOS/Linux the platform binary/app bundle. It wraps{' '}
+                  <code>wails build</code>, checks the toolchain (<code>wails</code>,
+                  plus <code>makensis</code> for the installer) up front with a
+                  clear error, and prints where the artifact landed.{' '}
+                  <code>--no-installer</code> builds the raw binary only;{' '}
+                  <code>--platform</code> cross-compiles. For a full versioned
+                  release, <code>scripts/release-desktop.sh &lt;version&gt;</code>{' '}
+                  still ships.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.81 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

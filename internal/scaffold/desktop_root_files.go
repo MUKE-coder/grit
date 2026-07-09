@@ -373,17 +373,18 @@ APP_NAME={{TITLE}}
 ## Build for Distribution
 
 {{BT}}bash
-# Build for current platform
-grit compile
-# Output: build/bin/{{NAME}}.exe (Windows) or build/bin/{{NAME}} (macOS/Linux)
+# Build a distributable installer for the current OS (the usual command).
+# On Windows this is an NSIS installer (build/bin/*-installer.exe); on
+# macOS/Linux, the platform binary/app bundle.
+grit package
 
-# Cross-compile
+grit package --no-installer       # raw binary only, skip the NSIS installer
+grit package --platform darwin/arm64   # cross-compile another target
+
+# Or drive wails directly:
+grit compile                      # current platform → build/bin/
 wails build -platform windows/amd64
-wails build -platform darwin/arm64
-wails build -platform linux/amd64
-
-# Windows installer (requires NSIS)
-wails build -nsis
+wails build -nsis                 # Windows installer (requires NSIS)
 {{BT}}
 
 The binary embeds everything: Go runtime, React frontend, static assets, and SQLite driver. Distribute a single file.
@@ -675,9 +676,12 @@ const columns = [
 ## 9. Building for Distribution
 
 {{BT}}bash
-grit compile              # Current platform → build/bin/
+grit package              # Distributable installer (.exe on Windows) → build/bin/
+grit package --no-installer   # Raw binary only, no NSIS
+grit package --platform darwin/arm64
+
+# Or drive wails directly:
 wails build -platform windows/amd64
-wails build -platform darwin/arm64
 wails build -nsis         # Windows installer (requires NSIS)
 {{BT}}
 

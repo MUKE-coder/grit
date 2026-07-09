@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.31.81"
+var version = "3.31.82"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -52,6 +52,7 @@ func main() {
 	rootCmd.AddCommand(migrateCmd())
 	rootCmd.AddCommand(backupCmd())
 	rootCmd.AddCommand(restoreCmd())
+	rootCmd.AddCommand(packageCmd())
 	rootCmd.AddCommand(seedCmd())
 	rootCmd.AddCommand(upgradeCmd())
 	rootCmd.AddCommand(updateCmd())
@@ -816,6 +817,102 @@ func restoreCmd() *cobra.Command {
 	return cmd
 }
 
+// packageCmd builds a distributable desktop installer. It's a thin, friendly
+// wrapper over `wails build` — detects the desktop project, checks prerequisites,
+// runs the build, and prints where the artifact landed. For a full versioned
+// release (branded installers + GitHub release) use scripts/release-desktop.sh.
+func packageCmd() *cobra.Command {
+	var platform string
+	var noInstaller, clean bool
+
+	cmd := &cobra.Command{
+		Use:   "package",
+		Short: "Build a distributable desktop installer (.exe / .app / binary)",
+		Long: "Compile the desktop app into a shippable artifact you can hand to a user.\n\n" +
+			"On Windows this produces an NSIS installer (.exe) by default — the single file\n" +
+			"someone double-clicks to install your app. On macOS/Linux it produces the\n" +
+			"platform binary/app bundle. Run this from inside a `grit new-desktop` project.\n\n" +
+			"It wraps `wails build`; for a full versioned release (branded installers +\n" +
+			"GitHub release) use scripts/release-desktop.sh <version> instead.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			info, err := project.DetectProject()
+			if err != nil || info.Type != project.ProjectDesktop {
+				return fmt.Errorf("not inside a desktop project — run this from a `grit new-desktop` app")
+			}
+
+			// wails is required; makensis is required for the Windows installer.
+			if _, err := exec.LookPath("wails"); err != nil {
+				return fmt.Errorf("wails is not installed or not on PATH — see https://wails.io/docs/gettingstarted/installation")
+			}
+			targetsWindows := strings.HasPrefix(platform, "windows") ||
+				(platform == "" && runtime.GOOS == "windows")
+			buildInstaller := targetsWindows && !noInstaller
+			if buildInstaller {
+				if _, err := exec.LookPath("makensis"); err != nil {
+					return fmt.Errorf("makensis (NSIS) is not installed or not on PATH — needed for the Windows installer.\n" +
+						"Install NSIS (https://nsis.sourceforge.io), or pass --no-installer to build just the raw .exe")
+				}
+			}
+
+			printLogo()
+			purple := color.New(color.FgHiMagenta, color.Bold)
+
+			wailsArgs := []string{"build"}
+			if platform != "" {
+				wailsArgs = append(wailsArgs, "-platform", platform)
+			}
+			if clean {
+				wailsArgs = append(wailsArgs, "-clean")
+			}
+			if buildInstaller {
+				wailsArgs = append(wailsArgs, "-nsis")
+				purple.Println("\n  Building desktop installer (this can take a minute)...")
+			} else {
+				purple.Println("\n  Building desktop app...")
+			}
+
+			c := exec.Command("wails", wailsArgs...)
+			c.Dir = info.Root
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			c.Stdin = os.Stdin
+			if err := c.Run(); err != nil {
+				return fmt.Errorf("wails build failed: %w", err)
+			}
+
+			// Point at the artifacts. Wails writes everything to build/bin.
+			binDir := filepath.Join(info.Root, "build", "bin")
+			green := color.New(color.FgHiGreen, color.Bold)
+			cyan := color.New(color.FgHiCyan)
+			gray := color.New(color.FgHiBlack)
+			green.Println("\n  ✓ Build complete")
+			fmt.Println()
+			if buildInstaller {
+				cyan.Println("  Your installer is in build/bin/ (the *-installer.exe file).")
+				gray.Println("  Hand that single file to anyone — double-click to install.")
+			} else {
+				cyan.Println("  Your app is in build/bin/.")
+			}
+			if entries, derr := os.ReadDir(binDir); derr == nil {
+				for _, e := range entries {
+					if e.IsDir() {
+						continue
+					}
+					gray.Printf("    build/bin/%s\n", e.Name())
+				}
+			}
+			fmt.Println()
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&platform, "platform", "", "Target platform, e.g. windows/amd64, darwin/arm64 (default: host)")
+	cmd.Flags().BoolVar(&noInstaller, "no-installer", false, "Build the raw binary only, skip the NSIS installer (Windows)")
+	cmd.Flags().BoolVar(&clean, "clean", false, "Clean the build directory before building")
+
+	return cmd
+}
+
 func seedCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "seed",
@@ -1535,8 +1632,8 @@ func printDesktopSuccess(name string) {
 	gray.Println("  ─────────────────────────────────────")
 	fmt.Println()
 
-	gray.Println("  To build for production:")
-	cyan.Println("    wails build")
+	gray.Println("  To build a distributable installer:")
+	cyan.Println("    grit package")
 	fmt.Println()
 }
 
