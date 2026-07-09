@@ -28,6 +28,30 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.34.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.34.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 9, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong><code>grit start</code> now runs every app — including
+                  the desktop.</strong> From the project root, <code>grit start</code>{' '}
+                  boots the Go API, the Next.js apps, and (when{' '}
+                  <code>apps/desktop</code> exists) the Wails desktop window too,
+                  all in parallel — Ctrl+C stops them together. And you can start
+                  any single app from the root, just like <code>grit start server</code>:{' '}
+                  <code>grit start web</code>, <code>grit start admin</code>,{' '}
+                  <code>grit start expo</code>, and <code>grit start desktop</code>.
+                  No more <code>cd</code>-ing into each app to run its dev server.
+                </p>
+              </div>
+            </div>
+
             {/* v3.33.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

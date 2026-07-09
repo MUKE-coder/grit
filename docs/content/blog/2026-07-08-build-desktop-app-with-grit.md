@@ -211,30 +211,36 @@ That's why the generated CRUD works with the network unplugged.
 
 ## 4. Migrate, seed & run — all Grit commands
 
-Now that the models exist, create their tables, seed a login, and start the API.
-Run these from anywhere inside the project — `grit` finds `apps/api` for you:
+Now that the models exist, create their tables and seed a login. Run these from
+anywhere inside the project — `grit` finds `apps/api` for you:
 
 ```bash
 grit migrate                   # AutoMigrate every model into Postgres
 grit seed                      # admin@example.com / admin123 (dev only)
-grit start server              # Go API on http://localhost:8080 (hot-reloads with air)
 ```
 
-Leave that running. In a second terminal, start the desktop app. `grit start`
-detects the Wails project and runs it:
+Then start everything with one command from the project root:
 
 ```bash
-cd apps/desktop
-grit start                     # runs the desktop app (wails dev under the hood)
+grit start                     # API + web + admin + the desktop app, in parallel
 ```
 
-> **Sticking to Grit:** `grit migrate`, `grit seed`, and `grit start server`
-> all locate `apps/api` themselves — no `cd` needed. `grit start` from the repo
-> root runs the API + web together; from `apps/desktop` it runs the desktop app.
-> (The monorepo also scaffolds an Expo app in `apps/expo` with the same
-> resources — outside this tutorial, but it's there when you want mobile.)
+`grit start` boots the Go API (hot-reloading with `air` if it's installed), the
+Next.js apps, and — because this project has `apps/desktop` — the **Wails
+desktop window** too. Ctrl+C stops them all.
 
-Wails compiles the Go binary, generates the TypeScript bindings and the route
+> **Want just one app?** Every app has its own starter you can run from the
+> project root, exactly like `grit start server`:
+>
+> ```bash
+> grit start server    # Go API only
+> grit start desktop   # just the desktop app
+> grit start web       # just the web app
+> grit start admin     # just the admin panel
+> grit start expo      # the Expo mobile app (same resources, for free)
+> ```
+
+Wails compiles the desktop binary, generates its TypeScript bindings and route
 tree, and opens the window. Log in with **admin@example.com / admin123**. In the
 sidebar under **Manage** you'll see **Categories, Products, Clients, Suppliers,
 Purchases, Sales** — all generated, all working.

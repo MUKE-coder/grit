@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.33.0"
+var version = "3.34.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -1185,7 +1185,17 @@ func startCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Start development servers",
-		Long:  "With no args, starts BOTH the Go API server and the frontend apps in parallel — Ctrl+C stops both. Use 'grit start server' or 'grit start client' to run just one. In a desktop project, runs 'wails dev'.",
+		Long: "With no args, starts every app in the project in parallel — the Go API, the " +
+			"frontend apps (web/admin via pnpm dev), and, when apps/desktop exists, the Wails " +
+			"desktop app too. Ctrl+C stops all of them.\n\n" +
+			"Run a single app from anywhere in the project:\n" +
+			"  grit start server    Go API only\n" +
+			"  grit start web       web app (Next.js)\n" +
+			"  grit start admin     admin panel (Next.js)\n" +
+			"  grit start expo      Expo mobile app\n" +
+			"  grit start desktop   Wails desktop app\n" +
+			"  grit start client    all frontend apps via Turborepo\n\n" +
+			"Inside a standalone desktop project (grit new-desktop), 'grit start' runs 'wails dev'.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			info, err := project.DetectProject()
 			if err != nil {
@@ -1215,8 +1225,48 @@ func startCmd() *cobra.Command {
 
 	cmd.AddCommand(startClientCmd())
 	cmd.AddCommand(startServerCmd())
+	// Per-app starters, so `grit start <app>` from the root runs just one.
+	cmd.AddCommand(startAppCmd("web", "Start the web app (Next.js)", "apps/web", "pnpm", []string{"dev"}, false))
+	cmd.AddCommand(startAppCmd("admin", "Start the admin panel (Next.js)", "apps/admin", "pnpm", []string{"dev"}, false))
+	cmd.AddCommand(startAppCmd("expo", "Start the Expo mobile app", "apps/expo", "pnpm", []string{"start"}, false))
+	cmd.AddCommand(startAppCmd("desktop", "Start the Wails desktop app", "apps/desktop", "wails", []string{"dev"}, true))
 
 	return cmd
+}
+
+// startAppCmd builds a `grit start <app>` subcommand that runs a single app's
+// dev process from anywhere in the project. appSubdir is relative to the
+// project root; requiresWails gates the desktop app on the Wails toolchain.
+func startAppCmd(use, short, appSubdir, bin string, args []string, requiresWails bool) *cobra.Command {
+	return &cobra.Command{
+		Use:   use,
+		Short: short,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			root, err := scaffold.FindProjectRoot()
+			if err != nil {
+				return err
+			}
+			dir := filepath.Join(root, appSubdir)
+			if _, err := os.Stat(dir); err != nil {
+				return fmt.Errorf("this project has no %s app (expected %s/)", use, appSubdir)
+			}
+			if requiresWails {
+				if _, err := exec.LookPath("wails"); err != nil {
+					return fmt.Errorf("the Wails toolchain isn't on PATH — install it from https://wails.io, then run 'grit start %s'", use)
+				}
+			}
+
+			purple := color.New(color.FgHiMagenta, color.Bold)
+			purple.Printf("\n  Starting %s...\n", use)
+
+			c := exec.Command(bin, args...)
+			c.Dir = dir
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			c.Stdin = os.Stdin
+			return c.Run()
+		},
+	}
 }
 
 // runDevPair launches the Go API and the pnpm dev pipeline in parallel,
@@ -1229,9 +1279,6 @@ func startCmd() *cobra.Command {
 func runDevPair(projectRoot, apiDir string) error {
 	printLogo()
 	purple := color.New(color.FgHiMagenta, color.Bold)
-	purple.Println("\n  Starting API + client apps in parallel...")
-	color.New(color.FgHiBlack).Println("  Press Ctrl+C to stop both.")
-	fmt.Println()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -1239,9 +1286,7 @@ func runDevPair(projectRoot, apiDir string) error {
 	// v3.31.9: prefer `air` for the API so .go file edits trigger an
 	// auto-rebuild + restart. `apps/api/.air.toml` is already scaffolded
 	// — air just needs to be on PATH (`go install github.com/air-verse/air@latest`).
-	// Falls back to `go run` so the command still works in a clean
-	// install. We surface the choice so the developer knows which loop
-	// they're in.
+	// Falls back to `go run` so the command still works in a clean install.
 	apiBin := "go"
 	apiArgs := []string{"run", "cmd/server/main.go"}
 	hotReload := false
@@ -1249,11 +1294,6 @@ func runDevPair(projectRoot, apiDir string) error {
 		apiBin = "air"
 		apiArgs = nil
 		hotReload = true
-	}
-	if hotReload {
-		color.New(color.FgHiBlack).Println("  API hot-reload via air (.go files auto-rebuild).")
-	} else {
-		color.New(color.FgYellow).Println("  Tip: install air (go install github.com/air-verse/air@latest) for Go hot-reload.")
 	}
 
 	apiCmd := exec.CommandContext(ctx, apiBin, apiArgs...)
@@ -1264,65 +1304,111 @@ func runDevPair(projectRoot, apiDir string) error {
 	clientCmd.Dir = projectRoot
 	clientCmd.Stdin = nil
 
-	// Prefix each line of output so a developer can tell which process
-	// said what. ANSI colours mark the source even after copy-paste.
-	apiPrefix := color.New(color.FgHiGreen).Sprint("[api] ")
-	webPrefix := color.New(color.FgHiCyan).Sprint("[web] ")
-
-	apiOut, _ := apiCmd.StdoutPipe()
-	apiErr, _ := apiCmd.StderrPipe()
-	clientOut, _ := clientCmd.StdoutPipe()
-	clientErr, _ := clientCmd.StderrPipe()
-
-	if err := apiCmd.Start(); err != nil {
-		return fmt.Errorf("starting API: %w", err)
-	}
-	if err := clientCmd.Start(); err != nil {
-		// API already started — bring it down before returning.
-		_ = killProcess(apiCmd)
-		return fmt.Errorf("starting client: %w", err)
+	// Prefix each line of output so a developer can tell which process said
+	// what. ANSI colours mark the source even after copy-paste.
+	procs := []devProc{
+		{prefix: color.New(color.FgHiGreen).Sprint("[api] "), cmd: apiCmd},
+		{prefix: color.New(color.FgHiCyan).Sprint("[web] "), cmd: clientCmd},
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(4)
-	go prefixCopy(&wg, apiPrefix, apiOut, os.Stdout)
-	go prefixCopy(&wg, apiPrefix, apiErr, os.Stderr)
-	go prefixCopy(&wg, webPrefix, clientOut, os.Stdout)
-	go prefixCopy(&wg, webPrefix, clientErr, os.Stderr)
+	// If the monorepo includes the Wails desktop client, launch it too — so a
+	// single `grit start` at the root brings up every app. Best-effort: skip
+	// (with a note) when the Wails toolchain isn't installed, rather than
+	// failing the whole command. Non-desktop projects are unaffected.
+	desktopDir := filepath.Join(projectRoot, "apps", "desktop")
+	desktopIncluded := false
+	if _, err := os.Stat(filepath.Join(desktopDir, "wails.json")); err == nil {
+		if _, err := exec.LookPath("wails"); err == nil {
+			desktopCmd := exec.CommandContext(ctx, "wails", "dev")
+			desktopCmd.Dir = desktopDir
+			desktopCmd.Stdin = nil
+			procs = append(procs, devProc{prefix: color.New(color.FgHiMagenta).Sprint("[desktop] "), cmd: desktopCmd})
+			desktopIncluded = true
+		} else {
+			color.New(color.FgYellow).Println("  apps/desktop found, but 'wails' isn't on PATH — skipping the desktop app.")
+			color.New(color.FgHiBlack).Println("  Install Wails (https://wails.io) to launch it with grit start.")
+		}
+	}
 
-	// Forward Ctrl+C and SIGTERM to both children.
+	if desktopIncluded {
+		purple.Println("\n  Starting API + web + desktop in parallel...")
+	} else {
+		purple.Println("\n  Starting API + client apps in parallel...")
+	}
+	if hotReload {
+		color.New(color.FgHiBlack).Println("  API hot-reload via air (.go files auto-rebuild).")
+	} else {
+		color.New(color.FgYellow).Println("  Tip: install air (go install github.com/air-verse/air@latest) for Go hot-reload.")
+	}
+	color.New(color.FgHiBlack).Println("  Press Ctrl+C to stop everything.")
+	fmt.Println()
+
+	return runDevProcs(ctx, cancel, procs)
+}
+
+// devProc is one child in the parallel dev runner.
+type devProc struct {
+	prefix string
+	cmd    *exec.Cmd
+}
+
+// runDevProcs starts every process, streams their prefixed output onto one
+// terminal, forwards Ctrl+C / SIGTERM to all of them, and when any one exits
+// (or the user interrupts) shuts the rest down so they leave together.
+func runDevProcs(ctx context.Context, cancel context.CancelFunc, procs []devProc) error {
+	var outWg sync.WaitGroup
+	started := make([]*exec.Cmd, 0, len(procs))
+
+	for _, p := range procs {
+		out, _ := p.cmd.StdoutPipe()
+		errPipe, _ := p.cmd.StderrPipe()
+		if err := p.cmd.Start(); err != nil {
+			for _, s := range started {
+				_ = killProcess(s)
+			}
+			return fmt.Errorf("starting process: %w", err)
+		}
+		started = append(started, p.cmd)
+		outWg.Add(2)
+		go prefixCopy(&outWg, p.prefix, out, os.Stdout)
+		go prefixCopy(&outWg, p.prefix, errPipe, os.Stderr)
+	}
+
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(sigCh)
 
-	// If either child exits, the wait below resolves; we then shut down
-	// the other one so they leave together.
-	doneCh := make(chan error, 2)
-	go func() { doneCh <- apiCmd.Wait() }()
-	go func() { doneCh <- clientCmd.Wait() }()
+	// One waiter per process. doneCh is buffered to len(started) so no send
+	// ever blocks (Wait is called exactly once per process).
+	var procWg sync.WaitGroup
+	doneCh := make(chan error, len(started))
+	for _, c := range started {
+		c := c
+		procWg.Add(1)
+		go func() { doneCh <- c.Wait(); procWg.Done() }()
+	}
 
 	select {
 	case <-sigCh:
-		color.New(color.FgHiBlack).Println("\n  Caught Ctrl+C — stopping API + client...")
+		color.New(color.FgHiBlack).Println("\n  Caught Ctrl+C — stopping all apps...")
 	case err := <-doneCh:
-		// One child exited on its own. Print why, then kill the other.
 		if err != nil {
-			color.New(color.FgHiYellow).Printf("\n  A child process exited: %v — stopping the other.\n", err)
+			color.New(color.FgHiYellow).Printf("\n  A process exited: %v — stopping the rest.\n", err)
 		} else {
-			color.New(color.FgHiBlack).Println("\n  A child process exited — stopping the other.")
+			color.New(color.FgHiBlack).Println("\n  A process exited — stopping the rest.")
 		}
 	}
 
-	// Cancelling the context delivers a kill on most platforms. We also
-	// try a polite Interrupt first so children get a chance to flush.
-	_ = apiCmd.Process.Signal(os.Interrupt)
-	_ = clientCmd.Process.Signal(os.Interrupt)
+	// Polite Interrupt first, then cancel the context (kills on most platforms).
+	for _, c := range started {
+		if c.Process != nil {
+			_ = c.Process.Signal(os.Interrupt)
+		}
+	}
 	cancel()
 
-	// Drain whichever waits are still pending so we don't leak goroutines.
-	go func() { <-doneCh }()
-	wg.Wait()
-
+	procWg.Wait()
+	outWg.Wait()
 	return nil
 }
 
