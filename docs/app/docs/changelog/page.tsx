@@ -28,6 +28,27 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.81 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.81
+                </span>
+                <span className="text-sm text-muted-foreground">July 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Desktop relationship fields are now a real dropdown.</strong>{' '}
+                  A <code>belongs_to</code> field in a generated desktop form used
+                  to render as a plain text box where you had to paste the related
+                  row&apos;s id. It now loads the related records via their list
+                  binding and renders a proper <code>&lt;select&gt;</code> of
+                  names — pick a Category from the list instead of typing a UUID.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.80 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

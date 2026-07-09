@@ -580,15 +580,19 @@ func (g *DesktopGenerator) writeDesktopListRoute(names Names) error {
 
 // writeDesktopNewRoute generates frontend/src/routes/_layout/<plural>.new.tsx.
 func (g *DesktopGenerator) writeDesktopNewRoute(names Names) error {
-	stateDecls, inputFields, formFields := g.buildFormHelpers(names)
+	stateDecls, inputFields, formFields, extraImports, effects := g.buildFormHelpers(names)
 
 	createFunc := "Create" + names.Pascal
+	reactImport := "import { useState } from \"react\";\n"
+	if effects != "" {
+		reactImport = "import { useState, useEffect } from \"react\";\n"
+	}
 
 	content := "import { createFileRoute, useNavigate } from \"@tanstack/react-router\";\n"
-	content += "import { useState } from \"react\";\n"
+	content += reactImport
 	content += "import { toast } from \"sonner\";\n"
 	content += "// @ts-ignore\n"
-	content += "import { " + createFunc + " } from \"../../../wailsjs/go/main/App\";\n"
+	content += "import { " + createFunc + extraImports + " } from \"../../../wailsjs/go/main/App\";\n"
 	content += "\n"
 	content += "export const Route = createFileRoute(\"/_layout/" + names.Plural + "/new\")({\n"
 	content += "  component: " + names.Pascal + "NewPage,\n"
@@ -600,6 +604,10 @@ func (g *DesktopGenerator) writeDesktopNewRoute(names Names) error {
 	content += stateDecls
 	content += "  const [loading, setLoading] = useState(false);\n"
 	content += "\n"
+	content += effects
+	if effects != "" {
+		content += "\n"
+	}
 	content += "  const handleSubmit = async (e: React.FormEvent) => {\n"
 	content += "    e.preventDefault();\n"
 	content += "    setLoading(true);\n"
@@ -653,7 +661,7 @@ func (g *DesktopGenerator) writeDesktopNewRoute(names Names) error {
 
 // writeDesktopEditRoute generates frontend/src/routes/_layout/<plural>.$id.edit.tsx.
 func (g *DesktopGenerator) writeDesktopEditRoute(names Names) error {
-	stateDecls, inputFields, formFields := g.buildFormHelpers(names)
+	stateDecls, inputFields, formFields, extraImports, effects := g.buildFormHelpers(names)
 	fetchAssignments := g.buildFetchAssignments()
 
 	getFunc := "Get" + names.Pascal
@@ -663,7 +671,7 @@ func (g *DesktopGenerator) writeDesktopEditRoute(names Names) error {
 	content += "import { useState, useEffect } from \"react\";\n"
 	content += "import { toast } from \"sonner\";\n"
 	content += "// @ts-ignore\n"
-	content += "import { " + getFunc + ", " + updateFunc + " } from \"../../../wailsjs/go/main/App\";\n"
+	content += "import { " + getFunc + ", " + updateFunc + extraImports + " } from \"../../../wailsjs/go/main/App\";\n"
 	content += "\n"
 	content += "export const Route = createFileRoute(\"/_layout/" + names.Plural + "/$id/edit\")({\n"
 	content += "  component: " + names.Pascal + "EditPage,\n"
@@ -677,6 +685,7 @@ func (g *DesktopGenerator) writeDesktopEditRoute(names Names) error {
 	content += "  const [loading, setLoading] = useState(false);\n"
 	content += "  const [fetching, setFetching] = useState(true);\n"
 	content += "\n"
+	content += effects
 	content += "  useEffect(() => {\n"
 	content += "    " + getFunc + "(Number(id))\n"
 	content += "      .then((data: any) => {\n"
@@ -749,13 +758,18 @@ func (g *DesktopGenerator) writeDesktopEditRoute(names Names) error {
 }
 
 // buildFormHelpers extracts shared state declarations, input fields, and form fields for new/edit routes.
-func (g *DesktopGenerator) buildFormHelpers(names Names) (stateDecls, inputFields, formFields string) {
+func (g *DesktopGenerator) buildFormHelpers(names Names) (stateDecls, inputFields, formFields, extraImports, effects string) {
+	// belongs_to fields need the related list binding imported and loaded into a
+	// dropdown. Collect the bindings so the route can import them (deduped).
+	seenBinding := map[string]bool{}
+
 	for _, f := range g.Definition.Fields {
 		if f.IsSlug() {
 			continue
 		}
 		camel := toLowerFirst(toPascalCase(f.Name))
 		setter := "set" + toPascalCase(f.Name)
+		pascalField := toPascalCase(f.Name)
 
 		switch f.FormFieldType() {
 		case "number":
@@ -767,6 +781,20 @@ func (g *DesktopGenerator) buildFormHelpers(names Names) (stateDecls, inputField
 			stateDecls += "  const [" + camel + ", " + setter + "] = useState<any>(null);\n"
 		case "files":
 			stateDecls += "  const [" + camel + ", " + setter + "] = useState<any[]>([]);\n"
+		case "relationship-select":
+			// value is the related row's id (a string); options populate a <select>
+			relPascal := toPascalCase(f.RelatedModelName())
+			relPluralPascal := toPascalCase(Pluralize(toSnakeCase(relPascal)))
+			binding := "Get" + relPluralPascal
+			stateDecls += "  const [" + camel + ", " + setter + "] = useState(\"\");\n"
+			stateDecls += "  const [" + camel + "Options, set" + pascalField + "Options] = useState<any[]>([]);\n"
+			effects += "  useEffect(() => {\n"
+			effects += "    " + binding + "(1, 1000, \"\").then((r: any) => set" + pascalField + "Options(r?.data || [])).catch(() => {});\n"
+			effects += "  }, []);\n"
+			if !seenBinding[binding] {
+				extraImports += ", " + binding
+				seenBinding[binding] = true
+			}
 		default:
 			stateDecls += "  const [" + camel + ", " + setter + "] = useState(\"\");\n"
 		}
@@ -898,6 +926,24 @@ func (g *DesktopGenerator) buildFormHelpers(names Names) (stateDecls, inputField
 			formFields += "            />\n"
 			formFields += "          </div>\n\n"
 
+		case "relationship-select":
+			formFields += "          <div>\n"
+			formFields += "            <label className=\"block text-sm font-medium text-foreground mb-1.5\">" + label + "</label>\n"
+			formFields += "            <select\n"
+			formFields += "              value={" + camel + "}\n"
+			formFields += "              onChange={(e) => " + setter + "(e.target.value)}\n"
+			if f.Required {
+				formFields += "              required\n"
+			}
+			formFields += "              className=\"w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors\"\n"
+			formFields += "            >\n"
+			formFields += "              <option value=\"\">Select " + toLower(label) + "…</option>\n"
+			formFields += "              {" + camel + "Options.map((o: any) => (\n"
+			formFields += "                <option key={o.id} value={o.id}>{o.name || o.title || o.id}</option>\n"
+			formFields += "              ))}\n"
+			formFields += "            </select>\n"
+			formFields += "          </div>\n\n"
+
 		case "files":
 			inputCls := "w-full text-sm text-text-secondary file:mr-3 file:rounded-lg file:border-0 file:bg-accent file:px-3 file:py-2 file:text-white hover:file:bg-accent/90 file:cursor-pointer"
 			formFields += "          <div>\n"
@@ -945,7 +991,7 @@ func (g *DesktopGenerator) buildFormHelpers(names Names) (stateDecls, inputField
 		}
 	}
 
-	return stateDecls, inputFields, formFields
+	return stateDecls, inputFields, formFields, extraImports, effects
 }
 
 // buildFetchAssignments generates the setter calls for populating form state from fetched data.
