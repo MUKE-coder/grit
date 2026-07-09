@@ -20,3 +20,9 @@ demo/pulse.db
 demo/pulse.db-shm
 demo/pulse.db-wal
 demo/sentinel.db
+
+# stray runtime/test artifacts (do not commit)
+/sentinel.db
+/sentinel.db-shm
+/sentinel.db-wal
+docs/pnpm-workspace.yaml
