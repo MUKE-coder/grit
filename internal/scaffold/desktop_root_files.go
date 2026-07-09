@@ -145,6 +145,9 @@ Compiles to a single binary (~10-15 MB) for Windows, macOS, and Linux.
 | Go | 1.21+ | [golang.org/dl](https://golang.org/dl) |
 | Node.js | 18+ | [nodejs.org](https://nodejs.org) |
 | Wails CLI | v2 | {{B}}go install github.com/wailsapp/wails/v2/cmd/wails@latest{{B}} |
+| NSIS *(Windows installer only)* | 3+ | {{B}}winget install NSIS.NSIS{{B}} · {{B}}choco install nsis{{B}} · [nsis.sourceforge.io](https://nsis.sourceforge.io) |
+
+> **NSIS** is only needed to build the Windows {{B}}*-installer.exe{{B}} (via {{B}}grit package{{B}} or {{B}}wails build -nsis{{B}}). After installing, make sure {{B}}makensis{{B}} is on your PATH — the NSIS install dir is usually {{B}}C:\Program Files (x86)\NSIS{{B}}. You don't need it for {{B}}wails dev{{B}} or {{B}}grit package --no-installer{{B}}.
 
 ---
 

@@ -26,7 +26,7 @@ Let's build.
 
 ## 1. Install or update Grit
 
-Desktop file uploads and the hybrid API landed in the **v3.31.79–v3.31.82** line,
+Desktop file uploads and the hybrid API landed in the **v3.31.79–v3.31.83** line,
 so grab the latest.
 
 ```bash
@@ -40,14 +40,26 @@ iwr -useb https://gritframework.dev/install.ps1 | iex
 grit update
 ```
 
-Confirm you're on **v3.31.82 or newer**:
+Confirm you're on **v3.31.83 or newer**:
 
 ```bash
 grit version
 ```
 
 You'll also need the [Wails](https://wails.io) toolchain (`wails doctor` should
-be green) and Go 1.21+.
+be green), Go 1.21+, and Node 18+.
+
+**One more, for the installer step:** to package a Windows `.exe` installer in
+step 7 you need **NSIS**. Install it now so the build doesn't stop halfway:
+
+```powershell
+winget install NSIS.NSIS      # or: choco install nsis  /  scoop install nsis
+```
+
+After installing, add the NSIS folder (usually `C:\Program Files (x86)\NSIS`) to
+your PATH so `makensis` resolves — `grit package` checks for it up front and will
+tell you if it's missing. You don't need NSIS for `wails dev` or for
+`grit package --no-installer` (raw binary, no installer).
 
 ## 2. Scaffold the desktop app
 

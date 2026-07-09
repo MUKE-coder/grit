@@ -28,6 +28,30 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.31.83 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.31.83
+                </span>
+                <span className="text-sm text-muted-foreground">July 8, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>NSIS made discoverable for desktop installers.</strong>{' '}
+                  Building a Windows installer with <code>grit package</code> needs
+                  NSIS, and it was easy to miss. The desktop app&apos;s README now
+                  lists NSIS as a prerequisite (with{' '}
+                  <code>winget install NSIS.NSIS</code> and friends), and when
+                  <code>makensis</code> is missing <code>grit package</code> now
+                  prints the exact install commands and a PATH hint instead of a
+                  bare link — or points you at <code>--no-installer</code>. No
+                  behaviour change, just fewer dead ends.
+                </p>
+              </div>
+            </div>
+
             {/* v3.31.82 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

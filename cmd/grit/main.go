@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.31.82"
+var version = "3.31.83"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -849,8 +849,12 @@ func packageCmd() *cobra.Command {
 			buildInstaller := targetsWindows && !noInstaller
 			if buildInstaller {
 				if _, err := exec.LookPath("makensis"); err != nil {
-					return fmt.Errorf("makensis (NSIS) is not installed or not on PATH — needed for the Windows installer.\n" +
-						"Install NSIS (https://nsis.sourceforge.io), or pass --no-installer to build just the raw .exe")
+					return fmt.Errorf("makensis (NSIS) is not installed or not on PATH — needed to build the Windows installer.\n\n" +
+						"  Install it:\n" +
+						"    winget install NSIS.NSIS   (or)   choco install nsis   (or)   scoop install nsis\n" +
+						"    Then add the NSIS folder (usually C:\\Program Files (x86)\\NSIS) to your PATH so 'makensis' resolves.\n" +
+						"    Download instead: https://nsis.sourceforge.io\n\n" +
+						"  Or run 'grit package --no-installer' to build just the raw .exe (no installer).")
 				}
 			}
 
