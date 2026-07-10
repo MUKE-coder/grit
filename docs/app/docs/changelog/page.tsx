@@ -28,6 +28,51 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.34.4 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.34.4
+                </span>
+                <span className="text-sm text-muted-foreground">July 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fixed: blank white/black screen from mismatched React
+                  versions.</strong> The desktop window opened but rendered nothing,
+                  and the culprit was a dependency-resolution bug affecting the whole
+                  monorepo — not just desktop.
+                </p>
+                <p>
+                  <code>apps/expo</code> pins <code>react</code> to exactly{' '}
+                  <code>19.1.0</code> (React Native requires an exact match), so pnpm
+                  deduped every <code>^19.0.0</code> in the workspace down to 19.1.0 —
+                  but nothing constrained <code>react-dom</code>, which floated up to{' '}
+                  <code>19.2.7</code>. React 19.2&apos;s <code>react-dom</code> checks
+                  that the two versions match and throws{' '}
+                  <em>&quot;Incompatible React versions&quot;</em> (React error #527) at
+                  mount, so the app renders <strong>nothing at all</strong>, with no
+                  visible error. <code>apps/web</code> and <code>apps/admin</code>{' '}
+                  resolved to the same broken pair.
+                </p>
+                <p>
+                  The root <code>package.json</code> now pins both workspace-wide:
+                </p>
+                <pre><code>{`"pnpm": { "overrides": { "react": "19.1.0", "react-dom": "19.1.0" } }`}</code></pre>
+                <p>
+                  Verified by rendering the built desktop app headlessly: before the
+                  fix <code>&lt;div id=&quot;app&quot;&gt;</code> was empty with React
+                  error #527; after, the login screen renders with zero JS errors.
+                </p>
+                <p>
+                  <strong>Existing projects:</strong> add that{' '}
+                  <code>pnpm.overrides</code> block to your root{' '}
+                  <code>package.json</code> and re-run <code>pnpm i</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.34.3 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

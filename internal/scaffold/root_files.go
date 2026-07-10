@@ -611,6 +611,22 @@ func rootPackageJSON(opts Options) string {
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"`
 
+	// react and react-dom MUST resolve to the exact same version — react-dom
+	// throws "Incompatible React versions" (React error #527) at mount
+	// otherwise, and the app renders a blank screen with no other clue.
+	//
+	// apps/expo pins react to 19.1.0 (React Native requires an exact match), so
+	// pnpm dedupes every "^19.0.0" down to 19.1.0 — but nothing constrains
+	// react-dom, which floats to the latest 19.x. That mismatch silently breaks
+	// web, admin and the desktop client. Pin both here, workspace-wide.
+	overrides := `,
+  "pnpm": {
+    "overrides": {
+      "react": "19.1.0",
+      "react-dom": "19.1.0"
+    }
+  }`
+
 	return fmt.Sprintf(`{
   "name": "%s",
   "private": true,
@@ -621,9 +637,9 @@ func rootPackageJSON(opts Options) string {
     "@playwright/test": "^1.48.0",
     "turbo": "^2.0.0"
   },
-  "packageManager": "pnpm@10.0.0"
+  "packageManager": "pnpm@10.0.0"%s
 }
-`, opts.ProjectName, scripts)
+`, opts.ProjectName, scripts, overrides)
 }
 
 func gritConfig(opts Options) string {
