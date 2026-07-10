@@ -58,7 +58,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.34.2"
+const DefaultVersion = "3.34.3"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -763,8 +763,13 @@ func createDirectories(root string, opts Options) error {
 
 	if opts.ShouldIncludeDesktop() {
 		dirs = append(dirs,
-			filepath.Join(root, "apps", "desktop", "frontend", "src", "routes", "_auth"),
-			filepath.Join(root, "apps", "desktop", "frontend", "src", "routes", "_app"),
+			// Real path segments, NOT "_auth"/"_app": a leading underscore makes
+			// a TanStack pathless layout, so routes/_app/index.tsx would resolve
+			// to "/" and collide with routes/index.tsx (the route generator then
+			// errors and never writes routeTree.gen.ts). The app links to
+			// /app/... and /auth/login, so these must be real segments.
+			filepath.Join(root, "apps", "desktop", "frontend", "src", "routes", "auth"),
+			filepath.Join(root, "apps", "desktop", "frontend", "src", "routes", "app"),
 			filepath.Join(root, "apps", "desktop", "frontend", "src", "components", "layout"),
 			filepath.Join(root, "apps", "desktop", "frontend", "src", "components", "ui"),
 			filepath.Join(root, "apps", "desktop", "frontend", "src", "lib"),

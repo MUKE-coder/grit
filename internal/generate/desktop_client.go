@@ -21,9 +21,9 @@ func (g *Generator) desktopClientRoot() string {
 //
 //	frontend/src/hooks/use-<plural>.ts                    — React Query over Local*
 //	frontend/src/components/resource-forms/<plural>-form.tsx
-//	frontend/src/routes/_app/<plural>.index.tsx           — list
-//	frontend/src/routes/_app/<plural>.new.tsx
-//	frontend/src/routes/_app/<plural>.$id.edit.tsx
+//	frontend/src/routes/app/<plural>.index.tsx           — list
+//	frontend/src/routes/app/<plural>.new.tsx
+//	frontend/src/routes/app/<plural>.$id.edit.tsx
 //
 // …and injects a sidebar nav entry.
 func (g *Generator) writeDesktopClientResourceFiles(names Names) error {
@@ -32,9 +32,9 @@ func (g *Generator) writeDesktopClientResourceFiles(names Names) error {
 	files := map[string]string{
 		filepath.Join(root, "frontend", "src", "hooks", "use-"+names.PluralKebab+".ts"):                       g.desktopClientHook(names),
 		filepath.Join(root, "frontend", "src", "components", "resource-forms", names.PluralKebab+"-form.tsx"): g.desktopClientForm(names),
-		filepath.Join(root, "frontend", "src", "routes", "_app", names.Plural+".index.tsx"):                   g.desktopClientListRoute(names),
-		filepath.Join(root, "frontend", "src", "routes", "_app", names.Plural+".new.tsx"):                     g.desktopClientNewRoute(names),
-		filepath.Join(root, "frontend", "src", "routes", "_app", names.Plural+".$id.edit.tsx"):                g.desktopClientEditRoute(names),
+		filepath.Join(root, "frontend", "src", "routes", "app", names.Plural+".index.tsx"):                   g.desktopClientListRoute(names),
+		filepath.Join(root, "frontend", "src", "routes", "app", names.Plural+".new.tsx"):                     g.desktopClientNewRoute(names),
+		filepath.Join(root, "frontend", "src", "routes", "app", names.Plural+".$id.edit.tsx"):                g.desktopClientEditRoute(names),
 	}
 	for path, content := range files {
 		if err := writeFileWithDirs(path, content); err != nil {
@@ -299,7 +299,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { use` + Plural + `, useDelete` + Pascal + ` } from "@/hooks/use-` + names.PluralKebab + `";
 
-export const Route = createFileRoute("/_app/` + p + `/")({
+export const Route = createFileRoute("/app/` + p + `/")({
   component: ` + Plural + `Page,
 });
 
@@ -388,7 +388,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ` + Pascal + `Form } from "@/components/resource-forms/` + names.PluralKebab + `-form";
 import { useCreate` + Pascal + ` } from "@/hooks/use-` + names.PluralKebab + `";
 
-export const Route = createFileRoute("/_app/` + p + `/new")({
+export const Route = createFileRoute("/app/` + p + `/new")({
   component: New` + Pascal + `Page,
 });
 
@@ -424,13 +424,13 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ` + Pascal + `Form } from "@/components/resource-forms/` + names.PluralKebab + `-form";
 import { use` + Pascal + `, useUpdate` + Pascal + ` } from "@/hooks/use-` + names.PluralKebab + `";
 
-export const Route = createFileRoute("/_app/` + p + `/$id/edit")({
+export const Route = createFileRoute("/app/` + p + `/$id/edit")({
   component: Edit` + Pascal + `Page,
 });
 
 function Edit` + Pascal + `Page() {
   const navigate = useNavigate();
-  const { id } = useParams({ from: "/_app/` + p + `/$id/edit" });
+  const { id } = useParams({ from: "/app/` + p + `/$id/edit" });
   const { data: record, isLoading } = use` + Pascal + `(id);
   const update = useUpdate` + Pascal + `();
 

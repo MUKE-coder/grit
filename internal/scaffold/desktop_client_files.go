@@ -50,13 +50,13 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		// Routes (TanStack Router file-based)
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "__root.tsx"):            desktopClientRootRoute(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "index.tsx"):             desktopClientIndexRoute(),
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "_auth.tsx"):             desktopClientAuthLayoutRoute(),
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "_auth", "login.tsx"):    desktopClientLoginRoute(),
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "_auth", "register.tsx"): desktopClientRegisterRoute(),
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "_app.tsx"):              desktopClientAppLayoutRoute(),
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "_app", "index.tsx"):     desktopClientDashboardRoute(),
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "_app", "profile.tsx"):   desktopClientProfileRoute(),
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "_app", "settings.tsx"):  desktopClientSettingsRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "auth.tsx"):             desktopClientAuthLayoutRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "auth", "login.tsx"):    desktopClientLoginRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "auth", "register.tsx"): desktopClientRegisterRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app.tsx"):              desktopClientAppLayoutRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "index.tsx"):     desktopClientDashboardRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "profile.tsx"):   desktopClientProfileRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "settings.tsx"):  desktopClientSettingsRoute(),
 
 		// Layout components
 		filepath.Join(desktopRoot, "frontend", "src", "components", "layout", "title-bar.tsx"):       desktopClientTitleBar(opts),
@@ -649,6 +649,15 @@ See [GRIT_STYLE_GUIDE.md](../../GRIT_STYLE_GUIDE.md) §14.5 for desktop design p
 // Frontend config
 // ═══════════════════════════════════════════════════════════════════
 
+// desktopClientPackageJSON emits the Wails frontend package.json.
+//
+// The "build" script runs vite BEFORE tsc on purpose: the TanStack Router
+// plugin generates src/routeTree.gen.ts during vite's build, and tsc can't
+// typecheck the routes until that file exists. With "tsc -b && vite build" a
+// fresh clone fails with "Cannot find module './routeTree.gen'" plus a
+// createFileRoute error on every route — which breaks `wails build`, since it
+// shells out to this script. tsc still gates the build: a type error exits
+// non-zero and wails aborts.
 func desktopClientPackageJSON(opts Options) string {
 	return `{
   "name": "@` + opts.ProjectName + `/desktop",
@@ -657,7 +666,8 @@ func desktopClientPackageJSON(opts Options) string {
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build && tsc -b",
+    "typecheck": "tsc -b",
     "preview": "vite preview",
     "format": "prettier --write ."
   },
@@ -1006,8 +1016,48 @@ html, body, #app {
 func desktopClientViteEnvDTS() string {
 	return `/// <reference types="vite/client" />
 
-// Wails bindings are injected at runtime. This is a placeholder type
-// so TypeScript doesn't complain before the first build.
+// Wails bindings are injected at runtime. This is a placeholder type so
+// TypeScript compiles before the first build generates wailsjs/.
+//
+// IMPORTANT: every method bound on the Go App struct (app.go) must be declared
+// here, or any file that calls it fails typechecking — which is what
+// "pnpm build" (and therefore "wails build") runs. Add a binding in app.go?
+// Add it here too.
+
+// Structural mirrors of the Go sync types. Kept structural (not imported) so
+// this .d.ts has no module dependencies; lib/sync-client.ts declares the same
+// shapes and TypeScript matches them by structure.
+type WailsSyncResult = {
+  pushed: number;
+  pulled: number;
+  conflicts: number;
+  errors?: string[];
+  started_at: string;
+  finished_at: string;
+};
+
+type WailsOutboxEntry = {
+  ID: number;
+  Model: string;
+  EntityID: string;
+  Op: "create" | "update" | "delete";
+  Data: string | null;
+  Version: number;
+  CreatedAt: number;
+  HasConflict: boolean;
+  ServerData: string | null;
+  ServerVersion: number;
+  ConflictMsg: string;
+};
+
+type WailsSyncStatus = {
+  reachable: boolean;
+  force_offline: boolean;
+  pending: number;
+  last_sync?: string;
+  last_error?: string;
+};
+
 declare global {
   interface Window {
     runtime?: {
@@ -1030,6 +1080,28 @@ declare global {
           SaveFileDialog: (title: string, defaultFilename: string) => Promise<string>;
           GetPlatform: () => Promise<"darwin" | "windows" | "linux">;
           GetAppVersion: () => Promise<string>;
+
+          // Offline sync engine (local mirror + outbox)
+          LocalCreate: (table: string, id: string, data: Record<string, unknown>) => Promise<void>;
+          LocalUpdate: (table: string, id: string, data: Record<string, unknown>) => Promise<void>;
+          LocalDelete: (table: string, id: string) => Promise<void>;
+          LocalGet: (table: string, id: string) => Promise<Record<string, unknown> | null>;
+          LocalList: (table: string) => Promise<Record<string, unknown>[]>;
+          Sync: (tables: string[]) => Promise<WailsSyncResult>;
+          PendingCount: () => Promise<number>;
+          GetPendingChanges: () => Promise<WailsOutboxEntry[]>;
+          ResolveConflict: (
+            table: string,
+            entityID: string,
+            mergedData: Record<string, unknown>,
+            serverVersion: number,
+          ) => Promise<void>;
+
+          // Online/offline mode
+          GetSyncTables: () => Promise<string[]>;
+          SetOfflineMode: (offline: boolean) => Promise<void>;
+          GetSyncStatus: () => Promise<WailsSyncStatus>;
+          SyncNow: () => Promise<WailsSyncResult>;
         };
       };
     };
@@ -1079,7 +1151,7 @@ func desktopClientAuthLayoutRoute() string {
 	return `import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { TitleBar } from "@/components/layout/title-bar";
 
-export const Route = createFileRoute("/_auth")({
+export const Route = createFileRoute("/auth")({
   beforeLoad: async () => {
     const { getToken } = await import("@/lib/wails-bridge");
     const token = await getToken("access_token");
@@ -1112,7 +1184,7 @@ import { useState } from "react";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useLogin } from "@/hooks/use-auth";
 
-export const Route = createFileRoute("/_auth/login")({
+export const Route = createFileRoute("/auth/login")({
   component: LoginPage,
 });
 
@@ -1240,7 +1312,7 @@ import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { useRegister } from "@/hooks/use-auth";
 
-export const Route = createFileRoute("/_auth/register")({
+export const Route = createFileRoute("/auth/register")({
   component: RegisterPage,
 });
 
@@ -1353,7 +1425,7 @@ import { Topbar } from "@/components/layout/topbar";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { useShortcuts } from "@/lib/use-shortcuts";
 
-export const Route = createFileRoute("/_app")({
+export const Route = createFileRoute("/app")({
   beforeLoad: async () => {
     const { getToken } = await import("@/lib/wails-bridge");
     const token = await getToken("access_token");
@@ -1415,7 +1487,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Activity, Users, Zap, Clock } from "lucide-react";
 
-export const Route = createFileRoute("/_app/")({
+export const Route = createFileRoute("/app/")({
   component: DashboardPage,
 });
 
@@ -1468,7 +1540,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMe } from "@/hooks/use-auth";
 
-export const Route = createFileRoute("/_app/profile")({
+export const Route = createFileRoute("/app/profile")({
   component: ProfilePage,
 });
 
@@ -1513,7 +1585,7 @@ import { useTheme } from "@/lib/theme-provider";
 import { Moon, Sun } from "lucide-react";
 import { OfflineModeToggle } from "@/components/offline-mode-toggle";
 
-export const Route = createFileRoute("/_app/settings")({
+export const Route = createFileRoute("/app/settings")({
   component: SettingsPage,
 });
 

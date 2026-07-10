@@ -92,20 +92,26 @@ func Open(dbPath, apiURL string, getToken func() (string, error)) (*Engine, erro
 }
 
 // SyncResult summarizes one Sync run for the UI.
+//
+// StartedAt/FinishedAt are RFC3339 strings, not time.Time. This struct crosses
+// the Wails boundary, and Wails' TypeScript binding generator cannot resolve
+// time.Time ("Not found: time.Time") — it then drops the models AND every App
+// method that mentions them, so the frontend loses Sync/LocalCreate/... The
+// JSON shape is identical either way (time.Time already marshals to RFC3339).
 type SyncResult struct {
-	Pushed     int            ` + "`" + `json:"pushed"` + "`" + `
-	Pulled     int            ` + "`" + `json:"pulled"` + "`" + `
-	Conflicts  int            ` + "`" + `json:"conflicts"` + "`" + `
-	Errors     []string       ` + "`" + `json:"errors,omitempty"` + "`" + `
-	StartedAt  time.Time      ` + "`" + `json:"started_at"` + "`" + `
-	FinishedAt time.Time      ` + "`" + `json:"finished_at"` + "`" + `
+	Pushed     int      ` + "`" + `json:"pushed"` + "`" + `
+	Pulled     int      ` + "`" + `json:"pulled"` + "`" + `
+	Conflicts  int      ` + "`" + `json:"conflicts"` + "`" + `
+	Errors     []string ` + "`" + `json:"errors,omitempty"` + "`" + `
+	StartedAt  string   ` + "`" + `json:"started_at"` + "`" + `
+	FinishedAt string   ` + "`" + `json:"finished_at"` + "`" + `
 }
 
 // Sync runs Pull → Push. Pull first so the user pushes against the
 // freshest server state and conflict surface area is minimized. Models
 // is the list of table names to pull; pass empty to skip pull.
 func (e *Engine) Sync(models []string) (*SyncResult, error) {
-	res := &SyncResult{StartedAt: time.Now()}
+	res := &SyncResult{StartedAt: time.Now().Format(time.RFC3339)}
 
 	for _, m := range models {
 		n, err := e.Pull(m)
@@ -122,7 +128,7 @@ func (e *Engine) Sync(models []string) (*SyncResult, error) {
 	}
 	res.Pushed = pushed
 	res.Conflicts = conflicts
-	res.FinishedAt = time.Now()
+	res.FinishedAt = time.Now().Format(time.RFC3339)
 	return res, nil
 }
 

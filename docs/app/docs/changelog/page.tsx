@@ -28,6 +28,80 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.34.3 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.34.3
+                </span>
+                <span className="text-sm text-muted-foreground">July 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fixed: the monorepo desktop app couldn&apos;t build at
+                  all.</strong> <code>grit start desktop</code> in a{' '}
+                  <code>--full</code> / <code>--desktop</code> project failed during{' '}
+                  <code>wails build</code>. Four separate defects stacked up, and the
+                  frontend had never compiled since the sync engine landed:
+                </p>
+                <ul>
+                  <li>
+                    <strong>The route tree was never generated.</strong> Routes lived
+                    in <code>routes/_app/</code> and <code>routes/_auth/</code>, but a
+                    leading underscore makes a TanStack <em>pathless layout</em> — so{' '}
+                    <code>_app/index.tsx</code> resolved to <code>/</code> and collided
+                    with <code>routes/index.tsx</code>. The generator errored
+                    (&quot;Conflicting configuration paths&quot;) and never wrote{' '}
+                    <code>routeTree.gen.ts</code>, which cascaded into a{' '}
+                    <code>createFileRoute</code> error on every route. Renamed to real
+                    segments (<code>routes/app/</code>, <code>routes/auth/</code>),
+                    matching the <code>/app/...</code> and <code>/auth/login</code>{' '}
+                    links the app already used.
+                  </li>
+                  <li>
+                    <strong>The build script ran in the wrong order.</strong>{' '}
+                    <code>tsc -b &amp;&amp; vite build</code> typechecked before Vite&apos;s
+                    router plugin generated <code>routeTree.gen.ts</code>, so a fresh
+                    clone always failed. Now <code>vite build &amp;&amp; tsc -b</code>{' '}
+                    (tsc still gates the build).
+                  </li>
+                  <li>
+                    <strong>Half the Wails bindings weren&apos;t typed.</strong> The{' '}
+                    <code>window.go.main.App</code> declaration in{' '}
+                    <code>vite-env.d.ts</code> listed 13 methods and omitted every sync
+                    binding (<code>LocalCreate</code>, <code>Sync</code>,{' '}
+                    <code>PendingCount</code>, <code>ResolveConflict</code>…) plus the
+                    offline-mode ones — even though <code>sync-client.ts</code> called
+                    them. All are declared now.
+                  </li>
+                  <li>
+                    <strong>Wails couldn&apos;t generate bindings for{' '}
+                    <code>SyncResult</code>.</strong> Its <code>time.Time</code> fields
+                    made the generator print{' '}
+                    <code>Not found: time.Time</code> and drop the models. They&apos;re
+                    RFC3339 strings now — identical JSON, since{' '}
+                    <code>time.Time</code> already marshalled that way.
+                  </li>
+                </ul>
+                <p>
+                  Verified end-to-end: a fresh <code>--full</code> project with
+                  generated resources now runs <code>pnpm build</code> clean —{' '}
+                  <code>routeTree.gen.ts</code> is produced with the right{' '}
+                  <code>/app/products/$id/edit</code> routes, and{' '}
+                  <code>tsc -b --force</code> reports zero errors.
+                </p>
+                <p>
+                  <strong>Existing <code>--full</code> projects:</strong> rename{' '}
+                  <code>apps/desktop/frontend/src/routes/_app</code> →{' '}
+                  <code>app</code> and <code>_auth</code> → <code>auth</code> (and{' '}
+                  <code>_app.tsx</code>/<code>_auth.tsx</code> likewise), then update the{' '}
+                  <code>createFileRoute(&quot;/_app/…&quot;)</code> ids to{' '}
+                  <code>&quot;/app/…&quot;</code>. Or just re-scaffold the desktop app.
+                </p>
+              </div>
+            </div>
+
             {/* v3.34.2 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
