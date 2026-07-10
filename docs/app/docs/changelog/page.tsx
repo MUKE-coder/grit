@@ -28,6 +28,43 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.35.1 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.35.1
+                </span>
+                <span className="text-sm text-muted-foreground">July 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fixed: desktop login failed with &quot;Network Error&quot; —
+                  CORS blocked the Wails webview.</strong> The desktop app calls the API
+                  at <code>http://localhost:8080/api</code>, but{' '}
+                  <code>CORS_ORIGINS</code> only allowed the web app (3000) and admin
+                  (3001). The webview&apos;s origin was never in the allowlist, so the
+                  login request was rejected before it left the browser and axios
+                  surfaced nothing but a bare <em>Network Error</em>.
+                </p>
+                <p>
+                  The scaffolded <code>.env</code> and the Go default now include every
+                  Wails origin: <code>localhost:5174</code> and{' '}
+                  <code>localhost:34115</code> (wails dev), <code>wails.localhost</code>{' '}
+                  (Windows build) and <code>wails://wails</code> (macOS + Linux build).
+                  A web page can&apos;t forge these origins, so this adds no attack
+                  surface — verified that <code>evil.example.com</code> and{' '}
+                  <code>null</code> are still rejected.
+                </p>
+                <p>
+                  <strong>Existing projects:</strong> append the desktop origins to{' '}
+                  <code>CORS_ORIGINS</code> in your root <code>.env</code> and restart
+                  the API:
+                </p>
+                <pre><code>{`CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5174,http://localhost:34115,http://wails.localhost,wails://wails`}</code></pre>
+              </div>
+            </div>
+
             {/* v3.35.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

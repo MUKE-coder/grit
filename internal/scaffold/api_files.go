@@ -671,7 +671,12 @@ func Load() (*Config, error) {
 		ResendAPIKey: getEnv("RESEND_API_KEY", ""),
 		MailFrom:     getEnv("MAIL_FROM", "noreply@localhost"),
 
-		CORSOrigins: strings.Split(getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"), ","),
+		// Defaults cover the web app (3000), admin (3001) and the Wails desktop
+		// webview: localhost:5174 (wails dev), wails.localhost (Windows build)
+		// and wails://wails (macOS + Linux build). A browser page cannot forge
+		// these origins, so including them costs no attack surface — and without
+		// them the desktop login fails with an opaque "Network Error".
+		CORSOrigins: strings.Split(getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:5174,http://localhost:34115,http://wails.localhost,wails://wails"), ","),
 
 		GORMStudioEnabled:  getEnv("GORM_STUDIO_ENABLED", "true") == "true",
 		GORMStudioUsername: getEnv("GORM_STUDIO_USERNAME", "admin"),
