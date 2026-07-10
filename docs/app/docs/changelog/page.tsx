@@ -28,6 +28,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.35.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.35.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The desktop app now shares the admin&apos;s themes.</strong>{' '}
+                  <code>grit new --theme=atlas|aurora|pulse</code> already styled the
+                  admin panel and web app; the Wails desktop client ignored it entirely
+                  and shipped its own hardcoded dark palette. It now reads the same{' '}
+                  <code>packages/shared/themes.ts</code> token bag, so both apps look
+                  like one product.
+                </p>
+                <p>
+                  <strong>Every surface, not just auth.</strong> The desktop&apos;s
+                  Tailwind colours were already wired to CSS variables, so driving those
+                  variables from the shared tokens means the dashboard, settings,
+                  sidebar, topbar <em>and every generated resource screen</em> adopt the
+                  active theme with no per-page changes. Fonts and border radius come
+                  from the theme too (atlas → Inter, aurora → Geist, pulse → Onest + DM
+                  Serif Display), and the right Google Fonts stylesheet is emitted at
+                  scaffold time.
+                </p>
+                <p>
+                  <strong>Themed auth shells.</strong> Login and register now render the
+                  same three shells the admin uses, picked from the theme&apos;s{' '}
+                  <code>authLayout</code>: <code>atlas</code> → split-static (hero panel
+                  left, form right), <code>aurora</code> → centered card on a pastel
+                  wallpaper, <code>pulse</code> → editorial split-carousel.
+                </p>
+                <p>
+                  <strong>Dark mode stays.</strong> The desktop keeps its light/dark
+                  toggle — it defaults to light to match the admin, and dark mode adopts
+                  the theme&apos;s brand colours over neutral dark surfaces rather than
+                  inventing a second palette per theme.
+                </p>
+                <p>
+                  Verified by building and rendering the desktop bundle headlessly for
+                  all three themes: each mounts with zero JS errors and shows its own
+                  layout, palette and font (atlas <code>#4f46e5</code> hero, aurora{' '}
+                  <code>#7c3aed</code> centered card, pulse <code>#fbbf24</code> accent +
+                  DM Serif).
+                </p>
+              </div>
+            </div>
+
             {/* v3.34.4 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

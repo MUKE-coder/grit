@@ -112,6 +112,16 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "components", "offline-mode-toggle.tsx"): desktopClientOfflineToggle(),
 		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-sync-status.ts"):          desktopClientUseSyncStatus(),
 
+		// Theming — shares packages/shared/themes.ts with the admin panel so
+		// --theme=atlas|aurora|pulse styles both apps identically.
+		filepath.Join(desktopRoot, "frontend", "src", "lib", "theme-tokens.ts"):             desktopClientThemeTokens(opts),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "auth", "AuthShell.tsx"):       desktopClientAuthShell(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "auth", "AuthField.tsx"):       desktopClientAuthField(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "auth", "BrandMark.tsx"):       desktopClientBrandMark(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "auth", "AtlasAuthShell.tsx"):  desktopAtlasAuthShell(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "auth", "AuroraAuthShell.tsx"): desktopAuroraAuthShell(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "auth", "PulseAuthShell.tsx"):  desktopPulseAuthShell(),
+
 		// Realtime client (WebSocket + reconnect + EventTarget bus)
 		filepath.Join(desktopRoot, "frontend", "src", "lib", "realtime.ts"): desktopClientRealtimeTS(),
 
@@ -687,6 +697,7 @@ func desktopClientPackageJSON(opts Options) string {
   },
   "devDependencies": {
     "@tanstack/router-plugin": "^1.95.0",
+    "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
@@ -796,7 +807,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Onest", "system-ui", "sans-serif"],
+        // Driven by the active theme (atlas: Inter, aurora: Geist,
+        // pulse: Onest + DM Serif Display). See lib/theme-tokens.ts.
+        sans: ["var(--font-ui)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "var(--font-ui)", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "ui-monospace", "monospace"],
       },
       colors: {
@@ -834,7 +848,9 @@ export default {
         "focus": "0 0 0 2px rgba(108, 92, 231, 0.25)",
       },
       borderRadius: {
-        DEFAULT: "0.5rem",
+        // Each theme ships its own radius token (atlas .625rem, aurora .75rem,
+        // pulse .5rem).
+        DEFAULT: "var(--radius)",
       },
       spacing: {
         // Desktop uses larger padding than web — more breathing room
@@ -862,14 +878,14 @@ func desktopClientPostCSSConfig() string {
 
 func desktopClientIndexHTML(opts Options) string {
 	return `<!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>` + opts.ProjectName + `</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="` + desktopThemeFontURL(opts.Theme) + `" rel="stylesheet" />
   </head>
   <body>
     <div id="app"></div>
@@ -1166,7 +1182,9 @@ function AuthLayout() {
   return (
     <div className="flex flex-col h-screen bg-background">
       <TitleBar showSidebarControls={false} />
-      <div className="flex-1 flex items-center justify-center overflow-auto">
+      {/* The themed AuthShell owns its own layout (split hero / centered card),
+          so this wrapper only provides the scroll container. */}
+      <div className="flex-1 overflow-auto">
         <Outlet />
       </div>
     </div>
@@ -1176,13 +1194,15 @@ function AuthLayout() {
 }
 
 func desktopClientLoginRoute() string {
-	return `import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+	return `import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useState } from "react";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useLogin } from "@/hooks/use-auth";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { authInputCls, authInputStyle, AuthSubmit } from "@/components/auth/AuthField";
 
 export const Route = createFileRoute("/auth/login")({
   component: LoginPage,
@@ -1209,108 +1229,70 @@ function LoginPage() {
   };
 
   return (
-    <div className="relative w-full max-w-[420px] px-4">
-      {/* Subtle radial glow */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-24 h-[400px] opacity-60"
-        style={{
-          background: "radial-gradient(600px at 50% 0%, rgba(108, 92, 231, 0.12), transparent 70%)",
-        }}
-      />
-
-      <div className="relative rounded-2xl border border-border bg-surface p-10 shadow-sm">
-        <div className="flex justify-center">
-          <div className="h-10 w-10 rounded-xl bg-accent flex items-center justify-center shadow-sm">
-            <span className="text-[17px] font-bold text-white">G</span>
-          </div>
+    <AuthShell
+      mode="login"
+      title="Welcome back"
+      subtitle="Sign in to your account"
+      errorMessage={error ? ((error as Error).message || "Invalid email or password") : undefined}
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="block text-sm font-medium">Email</label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            className={authInputCls}
+            style={authInputStyle}
+            {...register("email")}
+          />
+          {errors.email && <p className="text-xs text-[#dc2626]">{errors.email.message}</p>}
         </div>
 
-        <div className="mt-5 text-center">
-          <h1 className="text-[22px] font-semibold text-foreground tracking-tight">
-            Welcome back
-          </h1>
-          <p className="mt-1.5 text-[13px] text-foreground-secondary">
-            Sign in to continue
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-7 space-y-5">
-          {error && (
-            <div className="rounded-lg border border-danger/30 bg-danger/10 px-3.5 py-2.5 text-[13px] text-danger">
-              {(error as Error).message || "Invalid email or password"}
-            </div>
-          )}
-
-          <div className="space-y-1.5">
-            <label htmlFor="email" className="block text-[13px] font-medium text-foreground-secondary">
-              Email
-            </label>
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="block text-sm font-medium">Password</label>
+          <div className="relative">
             <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              className="w-full h-11 rounded-lg border border-border bg-surface-2 px-3.5 text-[14px] text-foreground placeholder:text-foreground-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-              {...register("email")}
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              placeholder="Enter your password"
+              className={authInputCls + " pr-10"}
+              style={authInputStyle}
+              {...register("password")}
             />
-            {errors.email && <p className="text-[12px] text-danger">{errors.email.message}</p>}
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 opacity-60 hover:opacity-100"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
           </div>
+          {errors.password && <p className="text-xs text-[#dc2626]">{errors.password.message}</p>}
+        </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="password" className="block text-[13px] font-medium text-foreground-secondary">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                placeholder="Enter your password"
-                className="w-full h-11 rounded-lg border border-border bg-surface-2 px-3.5 pr-10 text-[14px] text-foreground placeholder:text-foreground-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                {...register("password")}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-foreground-muted hover:text-foreground"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            {errors.password && <p className="text-[12px] text-danger">{errors.password.message}</p>}
-          </div>
-
-          <button
-            type="submit"
-            disabled={isPending}
-            className="w-full h-11 rounded-lg bg-accent text-[14px] font-medium text-white hover:bg-accent-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isPending ? "Signing in..." : "Sign in"}
-          </button>
-        </form>
-
-        <p className="mt-7 text-center text-[13px] text-foreground-secondary">
-          Don't have an account?{" "}
-          <Link to="/auth/register" className="font-medium text-accent hover:underline">
-            Sign up
-          </Link>
-        </p>
-      </div>
-    </div>
+        <AuthSubmit disabled={isPending}>
+          {isPending ? (<><Loader2 className="h-4 w-4 animate-spin" /> Signing in…</>) : "Sign In"}
+        </AuthSubmit>
+      </form>
+    </AuthShell>
   );
 }
 `
 }
 
 func desktopClientRegisterRoute() string {
-	return `import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+	return `import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { useRegister } from "@/hooks/use-auth";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { authInputCls, authInputStyle, AuthSubmit } from "@/components/auth/AuthField";
 
 export const Route = createFileRoute("/auth/register")({
   component: RegisterPage,
@@ -1337,85 +1319,48 @@ function RegisterPage() {
     registerUser(data, { onSuccess: () => navigate({ to: "/app" }) });
   };
 
-  const input = "w-full h-11 rounded-lg border border-border bg-surface-2 px-3.5 text-[14px] text-foreground placeholder:text-foreground-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
-
   return (
-    <div className="relative w-full max-w-[420px] px-4">
-      <div className="relative rounded-2xl border border-border bg-surface p-10 shadow-sm">
-        <div className="flex justify-center">
-          <div className="h-10 w-10 rounded-xl bg-accent flex items-center justify-center shadow-sm">
-            <span className="text-[17px] font-bold text-white">G</span>
+    <AuthShell
+      mode="sign-up"
+      title="Create your account"
+      subtitle="Get started in less than a minute"
+      errorMessage={error ? ((error as Error).message || "Could not create your account") : undefined}
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium">First name</label>
+            <input type="text" placeholder="Jane" className={authInputCls} style={authInputStyle} {...register("first_name")} />
+            {errors.first_name && <p className="text-xs text-[#dc2626]">{errors.first_name.message}</p>}
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium">Last name</label>
+            <input type="text" placeholder="Doe" className={authInputCls} style={authInputStyle} {...register("last_name")} />
+            {errors.last_name && <p className="text-xs text-[#dc2626]">{errors.last_name.message}</p>}
           </div>
         </div>
 
-        <div className="mt-5 text-center">
-          <h1 className="text-[22px] font-semibold text-foreground tracking-tight">
-            Create account
-          </h1>
-          <p className="mt-1.5 text-[13px] text-foreground-secondary">
-            Get started in 30 seconds
-          </p>
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium">Email</label>
+          <input type="email" autoComplete="email" placeholder="you@example.com" className={authInputCls} style={authInputStyle} {...register("email")} />
+          {errors.email && <p className="text-xs text-[#dc2626]">{errors.email.message}</p>}
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-7 space-y-5">
-          {error && (
-            <div className="rounded-lg border border-danger/30 bg-danger/10 px-3.5 py-2.5 text-[13px] text-danger">
-              {(error as Error).message || "Registration failed"}
-            </div>
-          )}
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium">Password</label>
+          <input type="password" autoComplete="new-password" placeholder="At least 8 characters" className={authInputCls} style={authInputStyle} {...register("password")} />
+          {errors.password && <p className="text-xs text-[#dc2626]">{errors.password.message}</p>}
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="block text-[13px] font-medium text-foreground-secondary">
-                First name
-              </label>
-              <input type="text" placeholder="Jane" className={input} {...register("first_name")} />
-              {errors.first_name && <p className="text-[12px] text-danger">{errors.first_name.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <label className="block text-[13px] font-medium text-foreground-secondary">
-                Last name
-              </label>
-              <input type="text" placeholder="Doe" className={input} {...register("last_name")} />
-              {errors.last_name && <p className="text-[12px] text-danger">{errors.last_name.message}</p>}
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="block text-[13px] font-medium text-foreground-secondary">Email</label>
-            <input type="email" placeholder="you@example.com" className={input} {...register("email")} />
-            {errors.email && <p className="text-[12px] text-danger">{errors.email.message}</p>}
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="block text-[13px] font-medium text-foreground-secondary">Password</label>
-            <input type="password" placeholder="Min 8 characters" className={input} {...register("password")} />
-            {errors.password && <p className="text-[12px] text-danger">{errors.password.message}</p>}
-          </div>
-
-          <button
-            type="submit"
-            disabled={isPending}
-            className="w-full h-11 rounded-lg bg-accent text-[14px] font-medium text-white hover:bg-accent-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isPending ? "Creating..." : "Create account"}
-          </button>
-        </form>
-
-        <p className="mt-7 text-center text-[13px] text-foreground-secondary">
-          Already have an account?{" "}
-          <Link to="/auth/login" className="font-medium text-accent hover:underline">
-            Sign in
-          </Link>
-        </p>
-      </div>
-    </div>
+        <AuthSubmit disabled={isPending}>
+          {isPending ? (<><Loader2 className="h-4 w-4 animate-spin" /> Creating account…</>) : "Create account"}
+        </AuthSubmit>
+      </form>
+    </AuthShell>
   );
 }
 `
 }
-
 func desktopClientAppLayoutRoute() string {
 	return `import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -2886,41 +2831,57 @@ export const queryClient = new QueryClient({
 
 func desktopClientThemeProvider() string {
 	return `import { createContext, useContext, useEffect, useState } from "react";
+import { activeTheme, applyThemeVars } from "@/lib/theme-tokens";
 
 type Theme = "light" | "dark";
 
 interface ThemeContextValue {
+  /** Light/dark colour mode. */
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  /** The active brand theme (atlas | aurora | pulse) from @repo/shared. */
+  tokens: typeof activeTheme;
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
   theme: "dark",
   setTheme: () => {},
+  tokens: activeTheme,
 });
 
 export function useTheme() {
   return useContext(ThemeContext);
 }
 
+// ThemeProvider owns two orthogonal things:
+//   1. the brand theme (atlas/aurora/pulse) — fixed at scaffold time, shared
+//      with the admin panel via packages/shared/themes.ts
+//   2. the light/dark colour mode — a desktop affordance the user toggles
+//
+// It writes both onto <html> as CSS variables, which every Tailwind colour
+// utility in this app already reads. That's why changing the theme restyles
+// the dashboard, settings, sidebar and generated resource screens without
+// touching a single page.
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("grit-theme") as Theme | null;
       if (saved === "light" || saved === "dark") return saved;
     }
-    return "dark";
+    // Light-first mirrors the admin panel, whose themes are light palettes.
+    return "light";
   });
 
   useEffect(() => {
     const root = document.documentElement;
     if (theme === "dark") root.classList.add("dark");
     else root.classList.remove("dark");
+    applyThemeVars(theme);
     localStorage.setItem("grit-theme", theme);
   }, [theme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme: setThemeState }}>
+    <ThemeContext.Provider value={{ theme, setTheme: setThemeState, tokens: activeTheme }}>
       {children}
     </ThemeContext.Provider>
   );
