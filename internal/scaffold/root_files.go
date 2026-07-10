@@ -167,11 +167,11 @@ MAIL_FROM=noreply@%s.dev
 SUPPORT_EMAIL=
 
 # CORS
-# The Wails desktop webview origins are included so the desktop app can reach
-# the API: localhost:5174 + localhost:34115 (wails dev), wails.localhost (Windows build),
-# wails://wails (macOS + Linux build). Without them the login request is blocked
-# by CORS and axios surfaces only a bare "Network Error".
-CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5174,http://localhost:34115,http://wails.localhost,wails://wails
+# Browser origins allowed to call the API. The Wails desktop webview does NOT
+# need an entry here: its origin varies (http://wails.localhost:34115 in dev,
+# http://wails.localhost in a Windows build, wails://wails on macOS/Linux), so
+# the CORS middleware matches the wails.localhost host on any port instead.
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 
 # GORM Studio
 GORM_STUDIO_ENABLED=true
@@ -320,11 +320,11 @@ RESEND_API_KEY=re_your_api_key
 MAIL_FROM=noreply@myapp.dev
 
 # CORS — Allowed frontend origins (comma-separated)
-# The Wails desktop webview origins are included so the desktop app can reach
-# the API: localhost:5174 + localhost:34115 (wails dev), wails.localhost (Windows build),
-# wails://wails (macOS + Linux build). Without them the login request is blocked
-# by CORS and axios surfaces only a bare "Network Error".
-CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5174,http://localhost:34115,http://wails.localhost,wails://wails
+# Browser origins allowed to call the API. The Wails desktop webview does NOT
+# need an entry here: its origin varies (http://wails.localhost:34115 in dev,
+# http://wails.localhost in a Windows build, wails://wails on macOS/Linux), so
+# the CORS middleware matches the wails.localhost host on any port instead.
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 
 # GORM Studio — Visual database browser
 GORM_STUDIO_ENABLED=true
@@ -407,11 +407,11 @@ RESEND_API_KEY=re_your_api_key_here
 MAIL_FROM=noreply@yourdomain.com
 
 # ─── CORS ──────────────────────────────────────────────
-# The Wails desktop webview origins are included so the desktop app can reach
-# the API: localhost:5174 + localhost:34115 (wails dev), wails.localhost (Windows build),
-# wails://wails (macOS + Linux build). Without them the login request is blocked
-# by CORS and axios surfaces only a bare "Network Error".
-CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5174,http://localhost:34115,http://wails.localhost,wails://wails
+# Browser origins allowed to call the API. The Wails desktop webview does NOT
+# need an entry here: its origin varies (http://wails.localhost:34115 in dev,
+# http://wails.localhost in a Windows build, wails://wails on macOS/Linux), so
+# the CORS middleware matches the wails.localhost host on any port instead.
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 
 # ─── GORM Studio ──────────────────────────────────────
 GORM_STUDIO_ENABLED=true

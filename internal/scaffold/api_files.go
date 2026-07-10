@@ -671,12 +671,10 @@ func Load() (*Config, error) {
 		ResendAPIKey: getEnv("RESEND_API_KEY", ""),
 		MailFrom:     getEnv("MAIL_FROM", "noreply@localhost"),
 
-		// Defaults cover the web app (3000), admin (3001) and the Wails desktop
-		// webview: localhost:5174 (wails dev), wails.localhost (Windows build)
-		// and wails://wails (macOS + Linux build). A browser page cannot forge
-		// these origins, so including them costs no attack surface — and without
-		// them the desktop login fails with an opaque "Network Error".
-		CORSOrigins: strings.Split(getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:5174,http://localhost:34115,http://wails.localhost,wails://wails"), ","),
+		// The Wails desktop webview is allowed by middleware.isWailsOrigin (it
+		// matches the wails.localhost host on any port), so it needs no entry
+		// here — its dev origin includes a configurable port.
+		CORSOrigins: strings.Split(getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"), ","),
 
 		GORMStudioEnabled:  getEnv("GORM_STUDIO_ENABLED", "true") == "true",
 		GORMStudioUsername: getEnv("GORM_STUDIO_USERNAME", "admin"),
@@ -2522,9 +2520,39 @@ func apiCorsMiddlewareGo() string {
 
 import (
 	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 )
+
+// isWailsOrigin reports whether the request came from the Wails desktop
+// webview, whose origin is not stably enumerable:
+//
+//	wails dev   (Windows)     http://wails.localhost:34115   <- port from wails.json
+//	wails build (Windows)     http://wails.localhost
+//	wails build (mac/linux)   wails://wails
+//
+// The dev-server port is configurable, so pinning exact origins in
+// CORS_ORIGINS is fragile: change the port and the desktop login silently
+// starts failing with an opaque "Network Error". Match on the host instead.
+//
+// Safe by construction: "wails.localhost" is a virtual host the webview
+// resolves internally, so a page on the public internet cannot be served
+// from it and cannot forge this origin. Every other origin still has to be
+// in the explicit CORS_ORIGINS allowlist.
+func isWailsOrigin(origin string) bool {
+	if origin == "wails://wails" {
+		return true
+	}
+	u, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return false
+	}
+	return u.Hostname() == "wails.localhost"
+}
 
 // CORS creates a CORS middleware with the given allowed origins.
 func CORS(allowedOrigins []string) gin.HandlerFunc {
@@ -2536,7 +2564,7 @@ func CORS(allowedOrigins []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
 
-		if originsMap[origin] {
+		if originsMap[origin] || isWailsOrigin(origin) {
 			c.Header("Access-Control-Allow-Origin", origin)
 		}
 

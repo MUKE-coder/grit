@@ -28,6 +28,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.35.2 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.35.2
+                </span>
+                <span className="text-sm text-muted-foreground">July 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Desktop CORS, properly fixed.</strong> v3.35.1 tried to
+                  allowlist the Wails webview by enumerating origins, and got them
+                  wrong — the real dev origin is{' '}
+                  <code>http://wails.localhost:34115</code> (host <em>and</em> port),
+                  not <code>http://wails.localhost</code> or{' '}
+                  <code>http://localhost:34115</code>. Worse, that port comes from{' '}
+                  <code>wails.json</code>, so any enumeration is one config change away
+                  from silently breaking again.
+                </p>
+                <p>
+                  The CORS middleware now matches the Wails webview by <em>host</em>{' '}
+                  instead: any <code>http(s)://wails.localhost</code> on any port, plus{' '}
+                  <code>wails://wails</code> for macOS/Linux builds. Nothing needs to go
+                  in <code>CORS_ORIGINS</code>, which is back to just the web app and
+                  admin.
+                </p>
+                <p>
+                  This is safe by construction — <code>wails.localhost</code> is a
+                  virtual host the webview resolves internally, so no page on the public
+                  internet can be served from it. Verified with preflight and actual
+                  requests: the six legitimate origins are allowed, while{' '}
+                  <code>evil.example.com</code>, <code>null</code>, and three spoof
+                  attempts (<code>wails.localhost.evil.com</code>, a{' '}
+                  <code>wails.localhost</code> query string, and a{' '}
+                  <code>wails.localhost@evil.com</code> userinfo trick) are all blocked.
+                </p>
+                <p>
+                  <strong>Existing projects</strong> can unblock immediately without
+                  touching code by adding the dev origin to <code>CORS_ORIGINS</code> in
+                  the root <code>.env</code> and restarting the API:{' '}
+                  <code>http://wails.localhost:34115</code>. Re-scaffolding the API picks
+                  up the robust host match.
+                </p>
+              </div>
+            </div>
+
             {/* v3.35.1 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
