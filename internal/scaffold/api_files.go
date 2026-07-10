@@ -216,12 +216,14 @@ require (
 	github.com/xuri/excelize/v2 v2.8.1
 	golang.org/x/crypto v0.23.0
 	// Sentinel now ships a proper /v2 module path, so we track real tags.
-	// v2.1.1 is the first release safe to run with WAF.Mode = ModeBlock:
-	// v2.1.0 fixed the SSRF rule matching "0.0.0.0" inside a Chrome
-	// User-Agent (403'ing every Chrome 140/130/120/110 user), and v2.1.1
-	// fixed SQLi_Basic matching a bare "--" inside JWT cookies (roughly
-	// one session in ten 403'd at random). Do not downgrade below v2.1.1.
-	github.com/MUKE-coder/sentinel/v2 v2.1.1
+	// v2.1.1 is the minimum safe release for WAF.Mode = ModeBlock: v2.1.0
+	// fixed the SSRF rule matching "0.0.0.0" inside a Chrome User-Agent
+	// (403'ing every Chrome 140/130/120/110 user), and v2.1.1 fixed
+	// SQLi_Basic matching a bare "--" inside JWT cookies (roughly one
+	// session in ten 403'd at random). v2.2.0 adds ValidateConfig, which
+	// Mount runs at startup so dead config shows up in the boot log rather
+	// than as a 403 weeks later. Do not downgrade below v2.1.1.
+	github.com/MUKE-coder/sentinel/v2 v2.2.0
 	gorm.io/datatypes v1.2.7
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.25.12
@@ -6472,6 +6474,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/MUKE-coder/gin-docs/gindocs"
@@ -6555,9 +6558,22 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			}
 		}
 
+		// Sentinel persists its security data (threat log, blocked IPs,
+		// audit trail) through its own storage adapter, NOT the *gorm.DB we
+		// pass in. Left unset it silently falls back to a local sentinel.db
+		// SQLite file — which is ephemeral inside a container, so every
+		// redeploy would drop the threat log and the blocked-IP list. Point
+		// it at the same database the app uses when that's Postgres.
+		sentinelStorage := sentinel.StorageConfig{Driver: sentinel.SQLite, DSN: "sentinel.db"}
+		if !strings.HasPrefix(cfg.DatabaseURL, "sqlite:") {
+			sentinelStorage = sentinel.StorageConfig{Driver: sentinel.Postgres, DSN: cfg.DatabaseURL}
+		}
+
 		// Sentinel v2 — use MountE so we can recover gracefully on
 		// misconfiguration in dev instead of log.Fatalf-ing the host.
+		// Mount runs sentinel.ValidateConfig and logs any dead config.
 		if err := sentinel.MountE(r, db, sentinel.Config{
+			Storage: sentinelStorage,
 			Dashboard: sentinel.DashboardConfig{
 				Username:               cfg.SentinelUsername,
 				Password:               cfg.SentinelPassword,
@@ -6588,19 +6604,26 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 				// body as a payload. These routes still pass through auth
 				// + RBAC + binding validation; WAF is just stepped aside
 				// for their bodies.
+				//
+				// IMPORTANT: the WAF matches these against the real request
+				// path (c.Request.URL.Path), NOT gin's route template. Gin
+				// params like "/api/blogs/:id" therefore match only the
+				// literal string ":id" and never "/api/blogs/123" — they
+				// were silent dead config. Use "/*" (a subtree match) so the
+				// id/token routes are actually excluded.
 				ExcludeRoutes: []string{
 					"/api/blogs",
-					"/api/blogs/:id",
+					"/api/blogs/*",
 					"/api/posts",
-					"/api/posts/:id",
+					"/api/posts/*",
 					"/api/articles",
-					"/api/articles/:id",
+					"/api/articles/*",
 					"/api/uploads",
 					// v3.31.20 — public form-share submissions. Auth is
 					// the share's bcrypt password (optional) and the
-					// token itself; Sentinel rate-limits the path.
-					"/api/public/forms/:token",
-					"/api/public/forms/:token/submit",
+					// token itself; Sentinel rate-limits the path. The
+					// subtree match also covers .../submit.
+					"/api/public/forms/*",
 				},
 			},
 			RateLimit: sentinel.RateLimitConfig{
@@ -6619,7 +6642,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		}); err != nil {
 			log.Printf("Warning: Sentinel mount failed: %v", err)
 		} else {
-			log.Println("Sentinel v2.1.1 mounted at /sentinel")
+			log.Println("Sentinel v2.2.0 mounted at /sentinel")
 		}
 	}
 

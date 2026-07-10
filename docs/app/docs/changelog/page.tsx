@@ -28,6 +28,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.34.2 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.34.2
+                </span>
+                <span className="text-sm text-muted-foreground">July 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Sentinel v2.2.0 — and it immediately caught a dead-config
+                  bug in Grit&apos;s own WAF settings.</strong> Sentinel v2.2.0 adds{' '}
+                  <code>ValidateConfig</code>, which <code>Mount</code> now runs at
+                  startup so config that silently does nothing shows up in the boot
+                  log instead of as a 403 weeks later. Running it against Grit&apos;s
+                  scaffolded config surfaced two real problems, both now fixed.
+                </p>
+                <p>
+                  <strong>1. WAF exclusions never matched.</strong> The WAF matches{' '}
+                  <code>ExcludeRoutes</code> against the real request path
+                  (<code>c.Request.URL.Path</code>), not gin&apos;s route template — so
+                  entries like <code>/api/blogs/:id</code> only ever matched the
+                  literal string <code>:id</code>, never <code>/api/blogs/123</code>.
+                  Five of seven excluded routes were dead. In production
+                  (<code>ModeBlock</code>) that meant editing a blog/post/article with
+                  richtext was WAF-inspected and its <code>&lt;p&gt;</code>/<code>&lt;img&gt;</code>{' '}
+                  tags flagged as XSS — a 403 on every rich-text save, and on both
+                  public form-share endpoints. Now uses subtree wildcards
+                  (<code>/api/blogs/*</code>), verified against real URLs.
+                </p>
+                <p>
+                  <strong>2. Security data was being thrown away on every deploy.</strong>{' '}
+                  Grit passed its <code>*gorm.DB</code> but never set{' '}
+                  <code>Storage</code>, so Sentinel silently fell back to a local{' '}
+                  <code>sentinel.db</code> SQLite file — ephemeral inside a container,
+                  so each redeploy dropped the threat log and blocked-IP list. Storage
+                  is now set explicitly, pointing at the app&apos;s Postgres (falling
+                  back to SQLite when the app itself runs on SQLite).
+                </p>
+                <p>
+                  Also picks up Sentinel v2.1.2 (globstar route patterns after segment
+                  wildcards). Grit&apos;s config now validates with zero errors and zero
+                  warnings.
+                </p>
+              </div>
+            </div>
+
             {/* v3.34.1 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
