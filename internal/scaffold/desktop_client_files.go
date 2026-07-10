@@ -2749,13 +2749,16 @@ apiClient.interceptors.response.use(
 
         const { data } = await axios.post(` + "`" + `${API_URL}/auth/refresh` + "`" + `, { refresh_token: refreshToken });
 
-        await setToken("access_token", data.access_token);
-        await setToken("refresh_token", data.refresh_token);
+        // Same wrapper as login: { data: { tokens: { access_token, ... } } }
+        const tokens = data.data.tokens;
 
-        refreshQueue.forEach((cb) => cb(data.access_token));
+        await setToken("access_token", tokens.access_token);
+        await setToken("refresh_token", tokens.refresh_token);
+
+        refreshQueue.forEach((cb) => cb(tokens.access_token));
         refreshQueue = [];
 
-        if (original.headers) original.headers.Authorization = ` + "`" + `Bearer ${data.access_token}` + "`" + `;
+        if (original.headers) original.headers.Authorization = ` + "`" + `Bearer ${tokens.access_token}` + "`" + `;
         return apiClient(original);
       } catch (refreshErr) {
         await deleteToken("access_token");
@@ -3771,10 +3774,21 @@ interface RegisterInput {
   password: string;
 }
 
-interface AuthResponse {
+// The API wraps auth payloads as:
+//   { "data": { "user": {...}, "tokens": { access_token, refresh_token, expires_at } } }
+// apiClient hands us the body, so mutationFn returns data.data — i.e. this shape.
+// Reading access_token off the top level (the old bug) stored an undefined token,
+// which made /app's beforeLoad bounce straight back to /auth/login after a
+// *successful* login.
+interface AuthTokens {
   access_token: string;
   refresh_token: string;
+  expires_at: number;
+}
+
+interface AuthResponse {
   user: User;
+  tokens: AuthTokens;
 }
 
 export function useMe() {
@@ -3796,8 +3810,8 @@ export function useLogin() {
       return data.data;
     },
     onSuccess: async (data) => {
-      await setToken("access_token", data.access_token);
-      await setToken("refresh_token", data.refresh_token);
+      await setToken("access_token", data.tokens.access_token);
+      await setToken("refresh_token", data.tokens.refresh_token);
       qc.setQueryData(["me"], data.user);
     },
   });
@@ -3811,8 +3825,8 @@ export function useRegister() {
       return data.data;
     },
     onSuccess: async (data) => {
-      await setToken("access_token", data.access_token);
-      await setToken("refresh_token", data.refresh_token);
+      await setToken("access_token", data.tokens.access_token);
+      await setToken("refresh_token", data.tokens.refresh_token);
       qc.setQueryData(["me"], data.user);
     },
   });

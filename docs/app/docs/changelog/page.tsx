@@ -28,6 +28,43 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.35.3 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.35.3
+                </span>
+                <span className="text-sm text-muted-foreground">July 10, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fixed: desktop login succeeded but never redirected.</strong>{' '}
+                  The API returns{' '}
+                  <code>{`{ data: { user, tokens: { access_token, refresh_token } } }`}</code>,
+                  but the desktop&apos;s <code>useLogin</code> read{' '}
+                  <code>access_token</code> off the top level. It stored{' '}
+                  <code>undefined</code> as the token — so the very next thing that
+                  happened was <code>/app</code>&apos;s <code>beforeLoad</code> finding
+                  no token and redirecting straight back to <code>/auth/login</code>.
+                  The login itself had worked; the token was simply thrown away.
+                </p>
+                <p>
+                  The same shape mismatch was in <code>useRegister</code> and in the
+                  api-client&apos;s 401 refresh interceptor (which read{' '}
+                  <code>data.access_token</code> instead of{' '}
+                  <code>data.data.tokens.access_token</code>), so a token refresh would
+                  have logged the user out. All three are fixed, and{' '}
+                  <code>AuthResponse</code> now models the real payload.
+                </p>
+                <p>
+                  Verified against a running API: the old expression evaluates to{' '}
+                  <code>undefined</code> on the real login and refresh responses, the new
+                  one yields a valid JWT.
+                </p>
+              </div>
+            </div>
+
             {/* v3.35.2 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
