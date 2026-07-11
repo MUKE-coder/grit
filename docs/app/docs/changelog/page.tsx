@@ -28,6 +28,49 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.40.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.40.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>A configurable floating quick-access button — on both the
+                  admin panel and the desktop app.</strong> A round &quot;+&quot;
+                  button floats over every page; click it for a quick menu with a{' '}
+                  <strong>New {'{'}Resource{'}'}</strong> action for every resource
+                  you&apos;ve generated, plus system shortcuts (New ticket, and New
+                  blog post on desktop).
+                </p>
+                <p>
+                  It&apos;s configurable in place: click the gear in the menu to pick
+                  the <strong>button&apos;s corner</strong> (any of the four), toggle
+                  which default actions show, and add your own{' '}
+                  <strong>custom links</strong>. Config is stored per-device in{' '}
+                  <code>localStorage</code> (key <code>grit-quick-access</code>), so
+                  it&apos;s instant and works fully offline on the desktop.
+                </p>
+                <p>
+                  The two apps share an identical design and config shape; each just
+                  wires navigation and its resource list to its own router (Next.js
+                  on admin, TanStack on desktop). Existing projects pick it up with{' '}
+                  <code>grit update</code>. Verified: the desktop button, its menu
+                  (New-per-resource + shortcuts) and the config panel all render and
+                  work with zero console errors; the admin build typechecks clean.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  This completes the desktop↔admin parity series (v3.36–v3.40):
+                  full-height login &amp; collapsible sidebar, the Sync center, the
+                  dashboard, resource tables &amp; drawers, all system pages, and now
+                  the quick-access button.
+                </p>
+              </div>
+            </div>
+
             {/* v3.39.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -132,6 +132,7 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "components", "tables", "data-table.tsx"):  desktopClientDataTable(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "tables", "date-filter.tsx"): desktopClientDateFilter(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "resource-drawer.tsx"):       desktopClientResourceDrawer(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "quick-access.tsx"):          desktopClientQuickAccess(),
 
 		// Theming — shares packages/shared/themes.ts with the admin panel so
 		// --theme=atlas|aurora|pulse styles both apps identically.
@@ -1395,6 +1396,7 @@ import { TitleBar } from "@/components/layout/title-bar";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { CommandPalette } from "@/components/layout/command-palette";
+import { QuickAccess } from "@/components/quick-access";
 import { useShortcuts } from "@/lib/use-shortcuts";
 
 export const Route = createFileRoute("/app")({
@@ -1447,6 +1449,9 @@ function AppLayout() {
 
       {/* Command palette (Cmd+K) */}
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+
+      {/* Floating quick-access button (configurable) */}
+      <QuickAccess />
     </div>
   );
 }

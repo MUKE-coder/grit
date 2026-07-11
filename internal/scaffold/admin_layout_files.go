@@ -129,6 +129,8 @@ func adminIconMap() string {
   Globe,
   Menu,
   ArrowUpRight,
+  ArrowRight,
+  Settings2,
   ArrowDownRight,
   Flag,
   LogIn,
@@ -259,6 +261,8 @@ export {
   ShoppingCart,
   FileText,
   ArrowUpRight,
+  ArrowRight,
+  Settings2,
   ArrowDownRight,
   Flag,
   LogIn,
@@ -298,6 +302,7 @@ import { useRouter } from "next/navigation";
 import { useMe } from "@/hooks/use-auth";
 import { CollapsibleSidebar } from "@/components/chrome/CollapsibleSidebar";
 import { SessionWatchdog } from "@/components/chrome/SessionWatchdog";
+import { QuickAccess } from "@/components/chrome/QuickAccess";
 import { Menu } from "@/lib/icons";
 
 // v3.29: navbar is gone — pages now drop a <PageHeader> at the top of
@@ -388,6 +393,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
         <main className="flex-1 px-4 py-6 md:px-8">{children}</main>
       </div>
+
+      {/* Floating quick-access button (configurable) */}
+      <QuickAccess />
     </div>
   );
 }
