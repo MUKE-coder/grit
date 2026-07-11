@@ -1,38 +1,44 @@
 package scaffold
 
-// adminQuickAccessComponent is the admin panel's floating quick-access button
-// (FAB) — the same feature the desktop client ships (desktopClientQuickAccess),
-// with an identical localStorage config shape ("grit-quick-access"). It opens a
-// quick menu with a "New {Resource}" action for every registered resource plus
-// a system shortcut, and an in-place config panel (position, which default
-// actions to show, custom links).
+// adminQuickAccessComponent is the admin panel's floating quick-access button —
+// the same Windows-Start style grid menu the desktop client ships
+// (desktopClientQuickAccess), with the same localStorage config shape
+// ("grit-quick-access"). A grid button (bottom-left by default) opens a wide
+// grid of icon cards: navigation shortcuts, a "New {Resource}" card per
+// registered resource, and a system shortcut. Cards, custom links and the
+// corner are configurable in place.
 func adminQuickAccessComponent() string {
 	return `"use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X, Settings2, Trash2, ArrowRight } from "@/lib/icons";
+import {
+  LayoutGrid, X, Settings2, Trash2, Home, MessageSquare, Link as LinkIcon, getIcon,
+} from "@/lib/icons";
 import { resources } from "@/resources";
+import type { LucideIcon } from "lucide-react";
 
-type Corner = "bottom-right" | "bottom-left" | "top-right" | "top-left";
+type Corner = "bottom-left" | "bottom-right" | "top-left" | "top-right";
 
-interface QuickAction { key: string; label: string; to: string }
+interface QuickAction { key: string; label: string; description: string; icon: LucideIcon; to: string }
 interface QuickConfig { position: Corner; hidden: string[]; custom: { label: string; to: string }[] }
 
 const STORAGE_KEY = "grit-quick-access";
-const DEFAULT_CONFIG: QuickConfig = { position: "bottom-right", hidden: [], custom: [] };
+const DEFAULT_CONFIG: QuickConfig = { position: "bottom-left", hidden: [], custom: [] };
 
 const CORNERS: { key: Corner; label: string; cls: string }[] = [
-  { key: "bottom-right", label: "Bottom right", cls: "bottom-6 right-6 items-end" },
-  { key: "bottom-left", label: "Bottom left", cls: "bottom-6 left-6 items-start" },
-  { key: "top-right", label: "Top right", cls: "top-6 right-6 items-end" },
-  { key: "top-left", label: "Top left", cls: "top-6 left-6 items-start" },
+  { key: "bottom-left", label: "Bottom left", cls: "bottom-6 left-6" },
+  { key: "bottom-right", label: "Bottom right", cls: "bottom-6 right-6" },
+  { key: "top-left", label: "Top left", cls: "top-6 left-6" },
+  { key: "top-right", label: "Top right", cls: "top-6 right-6" },
 ];
 
-// System shortcuts shown after the per-resource "New" actions. Support isn't a
-// resource, so it gets a built-in entry.
+const NAV_ACTIONS: QuickAction[] = [
+  { key: "nav:dashboard", label: "Dashboard", description: "Overview & metrics", icon: Home, to: "/dashboard" },
+  { key: "nav:hub", label: "System Hub", description: "Jobs, files, security & more", icon: LayoutGrid, to: "/system" },
+];
 const SYSTEM_ACTIONS: QuickAction[] = [
-  { key: "sys:ticket", label: "New ticket", to: "/system/support" },
+  { key: "sys:ticket", label: "New ticket", description: "Open a support ticket", icon: MessageSquare, to: "/system/support" },
 ];
 
 function cx(...c: (string | false | undefined)[]) { return c.filter(Boolean).join(" "); }
@@ -48,7 +54,13 @@ function loadConfig(): QuickConfig {
 function resourceActions(): QuickAction[] {
   return resources.map((r) => {
     const singular = r.label?.singular ?? r.name;
-    return { key: "res:" + r.slug, label: "New " + singular, to: "/resources/" + r.slug + "?action=create" };
+    return {
+      key: "res:" + r.slug,
+      label: "New " + singular,
+      description: "Create a new " + singular.toLowerCase(),
+      icon: getIcon(r.icon),
+      to: "/resources/" + r.slug + "?action=create",
+    };
   });
 }
 
@@ -57,16 +69,12 @@ export function QuickAccess() {
   const [config, setConfig] = useState<QuickConfig>(DEFAULT_CONFIG);
   const [open, setOpen] = useState(false);
   const [configuring, setConfiguring] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setConfig(loadConfig()), []);
-
   useEffect(() => {
-    const onDown = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { setOpen(false); setConfiguring(false); } };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   const persist = (next: QuickConfig) => {
@@ -74,59 +82,80 @@ export function QuickAccess() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   };
 
-  const allDefaults = useMemo(() => [...resourceActions(), ...SYSTEM_ACTIONS], []);
-  const visible = useMemo(
+  const allDefaults = useMemo(() => [...NAV_ACTIONS, ...resourceActions(), ...SYSTEM_ACTIONS], []);
+  const visible = useMemo<QuickAction[]>(
     () => [
       ...allDefaults.filter((a) => !config.hidden.includes(a.key)),
-      ...config.custom.map((c, i) => ({ key: "custom:" + i, label: c.label, to: c.to })),
+      ...config.custom.map((c, i) => ({
+        key: "custom:" + i, label: c.label, description: c.to, icon: LinkIcon, to: c.to,
+      })),
     ],
     [allDefaults, config],
   );
 
   const corner = CORNERS.find((c) => c.key === config.position) ?? CORNERS[0];
-  const menuAbove = config.position.startsWith("bottom");
-
   const run = (to: string) => { setOpen(false); router.push(to); };
 
   return (
-    <div ref={rootRef} className={cx("fixed z-40 flex flex-col gap-3", corner.cls)}>
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        title="Quick access"
+        className={cx("fixed z-40 flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-white shadow-lg transition-transform hover:bg-accent-hover hover:scale-105", corner.cls)}
+      >
+        <LayoutGrid className="h-6 w-6" />
+      </button>
+
       {open && (
-        <div className={cx("w-64 overflow-hidden rounded-xl border border-border bg-bg-secondary shadow-2xl", menuAbove ? "order-first" : "order-last")}>
-          <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-            <span className="text-[12px] font-semibold uppercase tracking-wider text-text-muted">Quick access</span>
-            <button onClick={() => setConfiguring(true)} title="Configure" className="rounded p-1 text-text-muted hover:bg-bg-hover hover:text-foreground">
-              <Settings2 className="h-4 w-4" />
-            </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setOpen(false)}>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+          <div onClick={(e) => e.stopPropagation()} className="relative z-10 w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-bg-secondary shadow-2xl">
+            <header className="flex items-center justify-between border-b border-border px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Quick access</h2>
+                <p className="text-[13px] text-text-secondary">Jump to a page or start a new record, one click away.</p>
+              </div>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setConfiguring(true)} title="Configure" className="rounded-lg p-2 text-text-muted hover:bg-bg-hover hover:text-foreground">
+                  <Settings2 className="h-4 w-4" />
+                </button>
+                <button onClick={() => setOpen(false)} title="Close" className="rounded-lg p-2 text-text-muted hover:bg-bg-hover hover:text-foreground">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </header>
+            <div className="max-h-[70vh] overflow-y-auto p-6">
+              {visible.length === 0 ? (
+                <p className="py-8 text-center text-[13px] text-text-muted">No actions. Add one in settings.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                  {visible.map((a) => {
+                    const Icon = a.icon;
+                    return (
+                      <button
+                        key={a.key}
+                        onClick={() => run(a.to)}
+                        className="group flex flex-col rounded-xl border border-border bg-bg-tertiary p-4 text-left transition-colors hover:border-accent/40 hover:bg-bg-hover"
+                      >
+                        <span className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        <span className="text-[14px] font-semibold text-foreground group-hover:text-accent">{a.label}</span>
+                        <span className="mt-0.5 line-clamp-2 text-[12px] text-text-muted">{a.description}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-          <ul className="max-h-80 overflow-y-auto py-1">
-            {visible.length === 0 ? (
-              <li className="px-4 py-3 text-[13px] text-text-muted">No actions. Add one in settings.</li>
-            ) : (
-              visible.map((a) => (
-                <li key={a.key}>
-                  <button onClick={() => run(a.to)} className="flex w-full items-center justify-between px-4 py-2 text-left text-[13px] text-foreground hover:bg-bg-hover">
-                    {a.label}
-                    <ArrowRight className="h-3.5 w-3.5 text-text-muted" />
-                  </button>
-                </li>
-              ))
-            )}
-          </ul>
         </div>
       )}
-
-      <button
-        onClick={() => setOpen((o) => !o)}
-        title="Quick access"
-        className={cx("flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-lg transition-transform hover:bg-accent-hover", open && "rotate-45")}
-      >
-        <Plus className="h-6 w-6" />
-      </button>
 
       {configuring && (
         <QuickAccessConfig config={config} defaults={allDefaults} onClose={() => setConfiguring(false)} onChange={persist} />
       )}
-    </div>
+    </>
   );
 }
 
@@ -147,8 +176,8 @@ function QuickAccessConfig({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
       <div onClick={(e) => e.stopPropagation()} className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-bg-secondary shadow-2xl">
         <header className="flex items-center justify-between border-b border-border px-5 py-3.5">
           <h2 className="text-[15px] font-semibold text-foreground">Configure quick access</h2>
@@ -156,7 +185,6 @@ function QuickAccessConfig({
             <X className="h-4 w-4" />
           </button>
         </header>
-
         <div className="max-h-[70vh] overflow-y-auto p-5">
           <p className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-text-muted">Button position</p>
           <div className="mb-5 grid grid-cols-2 gap-2">
@@ -171,7 +199,7 @@ function QuickAccessConfig({
             ))}
           </div>
 
-          <p className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-text-muted">Default actions</p>
+          <p className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-text-muted">Cards</p>
           <div className="mb-5 space-y-1">
             {defaults.map((a) => (
               <label key={a.key} className="flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-[13px] text-foreground hover:bg-bg-hover">

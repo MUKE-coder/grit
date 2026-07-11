@@ -28,6 +28,40 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.43.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.43.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The quick-access button is now a Windows-Start style grid
+                  launcher.</strong> Instead of a small dropdown list, the floating
+                  button (now a grid icon, docked <strong>bottom-left</strong> by
+                  default) opens a wide, centered menu of <strong>icon cards</strong>
+                  — each with an icon, title and description.
+                </p>
+                <p>
+                  The grid includes navigation shortcuts (Dashboard, Sync, System
+                  Hub), a <strong>New {'{'}Resource{'}'}</strong> card for every
+                  generated resource (using that resource&apos;s own icon), and
+                  system shortcuts. You can still configure the corner, toggle which
+                  cards appear, and add custom links — all stored per-device.
+                </p>
+                <p>
+                  Both the admin panel and the desktop app get the identical
+                  launcher. Existing projects: <code>grit update</code>. Verified:
+                  the desktop button docks bottom-left with the grid icon and opens a
+                  1024px grid of icon cards with zero console errors; the admin build
+                  typechecks clean.
+                </p>
+              </div>
+            </div>
+
             {/* v3.42.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
