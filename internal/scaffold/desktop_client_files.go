@@ -113,6 +113,11 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "components", "offline-mode-toggle.tsx"): desktopClientOfflineToggle(),
 		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-sync-status.ts"):          desktopClientUseSyncStatus(),
 
+		// Shared resource-table components (list DataTable, date filter, form drawer)
+		filepath.Join(desktopRoot, "frontend", "src", "components", "tables", "data-table.tsx"):  desktopClientDataTable(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "tables", "date-filter.tsx"): desktopClientDateFilter(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "resource-drawer.tsx"):       desktopClientResourceDrawer(),
+
 		// Theming — shares packages/shared/themes.ts with the admin panel so
 		// --theme=atlas|aurora|pulse styles both apps identically.
 		filepath.Join(desktopRoot, "frontend", "src", "lib", "theme-tokens.ts"):             desktopClientThemeTokens(opts),
@@ -844,6 +849,7 @@ export default {
         success: "#059669",
         warning: "#D97706",
         danger: "#DC2626",
+        info: "#2563EB",
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgba(0, 0, 0, 0.3)",

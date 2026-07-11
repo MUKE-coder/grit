@@ -28,6 +28,51 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.38.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.38.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Desktop parity, round three: generated resource pages
+                  now match the admin panel.</strong> A generated resource on the
+                  desktop used to be a bare search box + a three-column table + a
+                  plain full-page form. It&apos;s now the same rich experience the
+                  admin ships.
+                </p>
+                <p>
+                  Every generated list page renders a full <strong>DataTable</strong>:
+                  four stat cards (Total, This week, This month, Updated recently),
+                  a search box, a date-range filter, a column-visibility toggle, CSV
+                  export, sortable headers, row actions, and pagination. Create and
+                  edit now happen in a <strong>right slide-over drawer</strong> (the
+                  same &quot;sheet&quot; form the admin uses) instead of separate
+                  full pages, with a proper Cancel/Save footer.
+                </p>
+                <p>
+                  It&apos;s all <strong>offline-first</strong>: the table reads the
+                  rows the sync engine already mirrored locally, and every stat,
+                  search, filter, sort and page is computed in-memory — no network,
+                  works fully offline. Charts and tables are themed off your active
+                  theme tokens.
+                </p>
+                <p>
+                  Note: file/image dropzone fields still aren&apos;t rendered in the
+                  offline form (uploads need the API); that&apos;s the next follow-up.
+                  Existing projects pick this up with <code>grit update</code> and a
+                  re-generate. Verified end to end on a freshly scaffolded project:
+                  stat cards, the full toolbar, sortable headers, pagination, and the
+                  create/edit drawer with all typed fields render with zero console
+                  errors.
+                </p>
+              </div>
+            </div>
+
             {/* v3.37.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

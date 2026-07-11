@@ -224,18 +224,20 @@ func (g *Generator) desktopClientForm(names Names) string {
 	Pascal := names.Pascal
 
 	return `import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 ` + parts.imports + `
 const inputCls =
-  "w-full bg-background border border-border rounded-lg px-3 py-2 text-[13px] text-foreground focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors";
+  "w-full rounded-lg border border-border bg-surface-2 px-4 py-2.5 text-[13px] text-foreground placeholder:text-foreground-muted outline-none transition-colors focus:border-accent focus:ring-1 focus:ring-accent";
 
 interface ` + Pascal + `FormProps {
   record?: Record<string, unknown> | null;
   submitting?: boolean;
   submitLabel: string;
   onSubmit: (values: Record<string, unknown>) => void | Promise<void>;
+  onCancel?: () => void;
 }
 
-export function ` + Pascal + `Form({ record, submitting, submitLabel, onSubmit }: ` + Pascal + `FormProps) {
+export function ` + Pascal + `Form({ record, submitting, submitLabel, onSubmit, onCancel }: ` + Pascal + `FormProps) {
 ` + parts.state + parts.optionLd + `
   useEffect(() => {
     if (!record) return;
@@ -248,131 +250,158 @@ export function ` + Pascal + `Form({ record, submitting, submitLabel, onSubmit }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
-` + parts.jsx + `
-      <button
-        type="submit"
-        disabled={submitting}
-        className="rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
-      >
-        {submitting ? "Saving…" : submitLabel}
-      </button>
+    <form onSubmit={handleSubmit} className="flex h-full flex-col">
+      <div className="flex-1 space-y-4">
+` + parts.jsx + `      </div>
+
+      <div className="mt-6 flex justify-end gap-3 border-t border-border pt-4">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg border border-border px-4 py-2 text-[13px] font-medium text-foreground-secondary transition-colors hover:bg-surface-hover"
+          >
+            Cancel
+          </button>
+        )}
+        <button
+          type="submit"
+          disabled={submitting}
+          className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+        >
+          {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+          {submitting ? "Saving…" : submitLabel}
+        </button>
+      </div>
     </form>
   );
 }
 `
 }
 
-// desktopClientListRoute is the table view. Reads the local mirror, supports a
-// simple in-memory search, and links to create/edit; delete is local-first.
+// desktopClientListRoute is the rich list view: a shared client-side DataTable
+// (stat cards + search + date filter + column visibility + CSV export +
+// sortable headers + pagination) over the offline mirror, with create/edit in
+// a right slide-over drawer — mirroring the admin panel's DataTable/FormSheet.
 func (g *Generator) desktopClientListRoute(names Names) string {
 	p := names.Plural
 	Pascal := names.Pascal
 	Plural := names.PluralPascal
+	kebab := names.PluralKebab
 	title := humanizeLabel(names.Plural)
+	lower := strings.ToLower(names.Lower)
 
-	// Choose up to 3 scalar columns for the table.
-	var cols []string
+	// Build table columns from the fields (skip auto/file/relation-array
+	// fields the offline form doesn't render). belongs_to shows the FK value.
+	var colLines []string
+	var searchKeys []string
 	for _, f := range g.Definition.Fields {
-		if f.IsSlug() || f.IsFile() || f.IsFiles() || f.IsManyToMany() || f.IsStringArray() || f.IsBelongsTo() {
+		if f.IsSlug() || f.IsFile() || f.IsFiles() || f.IsManyToMany() || f.IsStringArray() {
 			continue
 		}
-		cols = append(cols, toSnakeCase(f.Name))
-		if len(cols) >= 3 {
-			break
+		var key, label, format string
+		if f.IsBelongsTo() {
+			key = f.FKColumnName()
+			label = humanizeLabel(strings.TrimSuffix(f.Name, "_id"))
+			format = "text"
+		} else {
+			key = toSnakeCase(f.Name)
+			label = humanizeLabel(f.Name)
+			format = f.ColumnFormat()
+			switch FieldType(f.Type) {
+			case FieldString, FieldText:
+				searchKeys = append(searchKeys, key)
+			}
 		}
+		colLines = append(colLines, "  { key: \""+key+"\", label: \""+label+"\", format: \""+format+"\" },")
 	}
-	if len(cols) == 0 {
-		cols = []string{"id"}
+	colLines = append(colLines, "  { key: \"created_at\", label: \"Created\", format: \"relative\" },")
+	if len(searchKeys) == 0 {
+		// fall back so the search box still filters on something.
+		searchKeys = []string{"id"}
 	}
-	var headJSX, cellJSX strings.Builder
-	for _, c := range cols {
-		headJSX.WriteString("              <th className=\"text-left font-medium px-4 py-2\">" + humanizeLabel(c) + "</th>\n")
-		cellJSX.WriteString("                <td className=\"px-4 py-2\">{String(item." + c + " ?? \"\")}</td>\n")
+	quotedKeys := make([]string, 0, len(searchKeys))
+	for _, k := range searchKeys {
+		quotedKeys = append(quotedKeys, "\""+k+"\"")
 	}
-	searchCol := cols[0]
 
-	return `import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+	return `import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
-import { Card, CardContent } from "@/components/ui/card";
-import { use` + Plural + `, useDelete` + Pascal + ` } from "@/hooks/use-` + names.PluralKebab + `";
+import { DataTable, type DataColumn } from "@/components/tables/data-table";
+import { ResourceDrawer } from "@/components/resource-drawer";
+import { ` + Pascal + `Form } from "@/components/resource-forms/` + kebab + `-form";
+import {
+  use` + Plural + `,
+  useCreate` + Pascal + `,
+  useUpdate` + Pascal + `,
+  useDelete` + Pascal + `,
+  type ` + Pascal + `,
+} from "@/hooks/use-` + kebab + `";
 
 export const Route = createFileRoute("/app/` + p + `/")({
   component: ` + Plural + `Page,
 });
 
-function ` + Plural + `Page() {
-  const navigate = useNavigate();
-  const { data: items = [], isLoading } = use` + Plural + `();
-  const del = useDelete` + Pascal + `();
-  const [search, setSearch] = useState("");
+const COLUMNS: DataColumn[] = [
+` + strings.Join(colLines, "\n") + `
+];
 
-  const filtered = items.filter((i) =>
-    !search || String(i.` + searchCol + ` ?? "").toLowerCase().includes(search.toLowerCase()),
-  );
+const SEARCH_KEYS = [` + strings.Join(quotedKeys, ", ") + `];
+
+function ` + Plural + `Page() {
+  const { data: items = [], isLoading } = use` + Plural + `();
+  const create = useCreate` + Pascal + `();
+  const update = useUpdate` + Pascal + `();
+  const del = useDelete` + Pascal + `();
+  const [drawer, setDrawer] = useState<{ open: boolean; record: ` + Pascal + ` | null }>({
+    open: false,
+    record: null,
+  });
+
+  const closeDrawer = () => setDrawer({ open: false, record: null });
 
   return (
     <div>
       <PageHeader title="` + title + `" description="Manage your ` + strings.ToLower(title) + `" />
 
-      <div className="mt-6 flex items-center justify-between gap-3">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search…"
-          className="w-72 bg-background border border-border rounded-lg px-3 py-2 text-[13px] text-foreground outline-none focus:border-accent"
+      <div className="mt-6">
+        <DataTable<` + Pascal + `>
+          title="` + title + `"
+          singular="` + Pascal + `"
+          columns={COLUMNS}
+          rows={items}
+          loading={isLoading}
+          searchKeys={SEARCH_KEYS}
+          onNew={() => setDrawer({ open: true, record: null })}
+          onEdit={(row) => setDrawer({ open: true, record: row })}
+          onDelete={(row) => {
+            if (confirm("Delete this ` + lower + `?")) del.mutate(String(row.id));
+          }}
         />
-        <Link
-          to="/app/` + p + `/new"
-          className="flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover transition-colors"
-        >
-          <Plus className="h-4 w-4" /> New
-        </Link>
       </div>
 
-      <Card className="mt-4">
-        <CardContent className="p-0">
-          <table className="w-full text-[13px]">
-            <thead className="text-foreground-secondary border-b border-border-subtle">
-              <tr>
-` + headJSX.String() + `                <th className="px-4 py-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr><td className="px-4 py-6 text-foreground-muted" colSpan={99}>Loading…</td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td className="px-4 py-6 text-foreground-muted" colSpan={99}>No ` + strings.ToLower(title) + ` yet.</td></tr>
-              ) : (
-                filtered.map((item) => (
-                  <tr key={String(item.id)} className="border-b border-border-subtle last:border-0 hover:bg-surface-hover">
-` + cellJSX.String() + `                    <td className="px-4 py-2 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => navigate({ to: "/app/` + p + `/$id/edit", params: { id: String(item.id) } })}
-                        className="p-1.5 rounded hover:bg-surface-2 text-foreground-secondary"
-                        title="Edit"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm("Delete this ` + strings.ToLower(names.Lower) + `?")) del.mutate(String(item.id));
-                        }}
-                        className="p-1.5 rounded hover:bg-danger/10 text-danger"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+      <ResourceDrawer
+        open={drawer.open}
+        title={drawer.record ? "Edit ` + Pascal + `" : "New ` + Pascal + `"}
+        description={drawer.record ? "Update this ` + lower + `" : "Create a new ` + lower + `"}
+        onClose={closeDrawer}
+      >
+        <` + Pascal + `Form
+          record={drawer.record}
+          submitting={create.isPending || update.isPending}
+          submitLabel={drawer.record ? "Save changes" : "Create ` + Pascal + `"}
+          onCancel={closeDrawer}
+          onSubmit={async (values) => {
+            if (drawer.record) {
+              await update.mutateAsync({ id: String(drawer.record.id), data: values });
+            } else {
+              await create.mutateAsync(values);
+            }
+            closeDrawer();
+          }}
+        />
+      </ResourceDrawer>
     </div>
   );
 }
