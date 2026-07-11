@@ -28,6 +28,42 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.35.4 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.35.4
+                </span>
+                <span className="text-sm text-muted-foreground">July 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Go hot-reload now works out of the box — no more &quot;install
+                  air&quot; tip.</strong> <code>grit start</code> and{' '}
+                  <code>grit start server</code> used to fall back to a plain{' '}
+                  <code>go run</code> (no reload) and print{' '}
+                  <em>&quot;Tip: install air…&quot;</em> unless you&apos;d globally
+                  installed it yourself. A Grit app is supposed to hot-reload without
+                  any setup.
+                </p>
+                <p>
+                  Grit now runs air via <code>go run github.com/air-verse/air@v1.65.3</code>{' '}
+                  when it isn&apos;t already on your PATH — so it&apos;s effectively
+                  bundled: no <code>go install</code>, compiled once then served from the
+                  build cache. Every Grit API already ships a <code>.air.toml</code>, so{' '}
+                  <code>.go</code> edits rebuild and restart automatically. A
+                  globally-installed <code>air</code> is still preferred when present.
+                </p>
+                <p>
+                  This needs no project changes and works on existing projects too —{' '}
+                  just <code>grit update</code>. Verified end to end: with no global
+                  air, <code>grit start server</code> launches air, serves the API, and
+                  a <code>.go</code> file change triggers a rebuild.
+                </p>
+              </div>
+            </div>
+
             {/* v3.35.3 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

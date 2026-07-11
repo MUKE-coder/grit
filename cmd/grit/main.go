@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.35.3"
+var version = "3.35.4"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -945,6 +945,28 @@ func seedCmd() *cobra.Command {
 }
 
 // findAPIDir locates the apps/api directory from the project root.
+// airVersion pins the air hot-reload tool. Grit runs it via `go run` when it
+// isn't already on PATH, so a Grit app hot-reloads out of the box — the user
+// never has to `go install` anything. Bump this to upgrade the bundled air.
+const airVersion = "v1.65.3"
+
+// apiHotReloadArgv returns the command to run the Go API from apiDir with Go
+// hot-reload, and a one-line note describing which path was chosen. Order:
+//   1. a globally-installed `air` on PATH (fastest — respects the user's own)
+//   2. air via `go run github.com/air-verse/air@<pinned>` — no install needed;
+//      compiled once, then served from the build cache
+// Both read the .air.toml that every Grit API ships with. There's no
+// no-hot-reload fallback anymore: `go run` air always works when Go is present
+// (the first run downloads air, which needs network — same as any first build).
+func apiHotReloadArgv() (bin string, args []string, note string) {
+	if p, err := exec.LookPath("air"); err == nil {
+		return p, nil, "API hot-reload via air (.go files auto-rebuild)."
+	}
+	return "go",
+		[]string{"run", "github.com/air-verse/air@" + airVersion},
+		"API hot-reload via air (bundled — first run downloads it, then cached)."
+}
+
 func findAPIDir() (string, error) {
 	root, err := scaffold.FindProjectRoot()
 	if err != nil {
@@ -1283,18 +1305,9 @@ func runDevPair(projectRoot, apiDir string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// v3.31.9: prefer `air` for the API so .go file edits trigger an
-	// auto-rebuild + restart. `apps/api/.air.toml` is already scaffolded
-	// — air just needs to be on PATH (`go install github.com/air-verse/air@latest`).
-	// Falls back to `go run` so the command still works in a clean install.
-	apiBin := "go"
-	apiArgs := []string{"run", "cmd/server/main.go"}
-	hotReload := false
-	if _, err := exec.LookPath("air"); err == nil {
-		apiBin = "air"
-		apiArgs = nil
-		hotReload = true
-	}
+	// Run the API with Go hot-reload via air, bundled through `go run` so the
+	// user never installs it. Uses a global `air` when present.
+	apiBin, apiArgs, apiNote := apiHotReloadArgv()
 
 	apiCmd := exec.CommandContext(ctx, apiBin, apiArgs...)
 	apiCmd.Dir = apiDir
@@ -1335,11 +1348,7 @@ func runDevPair(projectRoot, apiDir string) error {
 	} else {
 		purple.Println("\n  Starting API + client apps in parallel...")
 	}
-	if hotReload {
-		color.New(color.FgHiBlack).Println("  API hot-reload via air (.go files auto-rebuild).")
-	} else {
-		color.New(color.FgYellow).Println("  Tip: install air (go install github.com/air-verse/air@latest) for Go hot-reload.")
-	}
+	color.New(color.FgHiBlack).Println("  " + apiNote)
 	color.New(color.FgHiBlack).Println("  Press Ctrl+C to stop everything.")
 	fmt.Println()
 
@@ -1540,17 +1549,9 @@ func startServerCmd() *cobra.Command {
 			purple := color.New(color.FgHiMagenta, color.Bold)
 			purple.Println("\n  Starting API server...")
 
-			// Mirror runDevPair: prefer air when present so Go edits
-			// auto-rebuild the binary. Otherwise plain go run.
-			bin := "go"
-			args2 := []string{"run", "cmd/server/main.go"}
-			if _, err := exec.LookPath("air"); err == nil {
-				bin = "air"
-				args2 = nil
-				color.New(color.FgHiBlack).Println("  Hot-reload via air.")
-			} else {
-				color.New(color.FgYellow).Println("  Tip: install air (go install github.com/air-verse/air@latest) for Go hot-reload.")
-			}
+			// Go hot-reload via air, bundled through `go run` (no install).
+			bin, args2, note := apiHotReloadArgv()
+			color.New(color.FgHiBlack).Println("  " + note)
 
 			c := exec.Command(bin, args2...)
 			c.Dir = apiDir
