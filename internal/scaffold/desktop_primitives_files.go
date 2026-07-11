@@ -920,6 +920,9 @@ func desktopClientNavConfig() string {
   TrendingUp,
   Shield,
   LayoutGrid,
+  HardDrive,
+  Boxes,
+  CalendarClock,
   type LucideIcon,
 } from "lucide-react";
 
@@ -973,6 +976,9 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: "/app/system/health", label: "System Health", icon: Activity },
       { to: "/app/system/performance", label: "Performance", icon: TrendingUp },
       { to: "/app/system/security", label: "Security", icon: Shield },
+      { to: "/app/system/files", label: "File Storage", icon: HardDrive },
+      { to: "/app/system/jobs", label: "Background Jobs", icon: Boxes },
+      { to: "/app/system/cron", label: "Cron Schedules", icon: CalendarClock },
       { to: "/app/system", label: "System Hub", icon: LayoutGrid },
     ],
   },

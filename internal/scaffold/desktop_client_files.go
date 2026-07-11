@@ -74,6 +74,9 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.support.tsx"):            desktopClientSystemSupportPage(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.support.$id.tsx"):        desktopClientSystemSupportThreadPage(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.dashboard-settings.tsx"): desktopClientSystemDashboardSettingsPage(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.files.tsx"):              desktopClientSystemFilesPage(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.jobs.tsx"):               desktopClientSystemJobsPage(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.cron.tsx"):               desktopClientSystemCronPage(),
 
 		// Layout components
 		filepath.Join(desktopRoot, "frontend", "src", "components", "layout", "title-bar.tsx"):       desktopClientTitleBar(opts),

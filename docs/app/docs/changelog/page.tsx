@@ -28,6 +28,39 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.48.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.48.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Three more system pages land on the desktop: File Storage,
+                  Background Jobs and Cron Schedules.</strong> These were on the admin
+                  System hub but missing from the desktop; now both sidebars match.
+                </p>
+                <p>
+                  <strong>File Storage</strong> — total files, total size and image
+                  count, plus a thumbnail grid of recent uploads (opens the file).{' '}
+                  <strong>Background Jobs</strong> — the async queue&apos;s Active /
+                  Pending / Completed / Failed / Retry counts (with a clear
+                  &quot;needs Redis&quot; state when the queue is offline).{' '}
+                  <strong>Cron Schedules</strong> — the recurring tasks registered
+                  with the scheduler and their cron expressions.
+                </p>
+                <p>
+                  All three are wired into the System sidebar section and the System
+                  Hub tile grid, and stay offline-graceful like the rest. Existing
+                  projects: <code>grit update</code>. Verified on a fresh scaffold:
+                  all three render and appear in the nav with zero console errors.
+                </p>
+              </div>
+            </div>
+
             {/* v3.47.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
