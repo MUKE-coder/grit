@@ -115,10 +115,11 @@ func (g *Generator) buildDesktopClientForm(names Names) desktopClientFieldParts 
 	var parts desktopClientFieldParts
 	var imp, st, pf, jsx, pay, opt strings.Builder
 	seenRelImport := map[string]bool{}
+	seenFileImport := false
 
 	for _, f := range g.Definition.Fields {
-		if f.IsSlug() || f.IsFile() || f.IsFiles() || f.IsManyToMany() || f.IsStringArray() {
-			// slug is auto; file/array/m2m aren't rendered in the offline form.
+		if f.IsSlug() || f.IsManyToMany() || f.IsStringArray() {
+			// slug is auto; array/m2m aren't rendered in the offline form.
 			continue
 		}
 		camel := lowerCamel(f.Name)
@@ -128,6 +129,28 @@ func (g *Generator) buildDesktopClientForm(names Names) desktopClientFieldParts 
 		ft := FieldType(f.Type)
 
 		switch {
+		case f.IsFile() || f.IsFiles():
+			if !seenFileImport {
+				imp.WriteString("import { FileDropzone } from \"@/components/file-dropzone\";\n")
+				imp.WriteString("import type { FileRef } from \"@/lib/api-client\";\n")
+				seenFileImport = true
+			}
+			accept := desktopFileAccept(f.FileAccepts)
+			acceptAttr := ""
+			if accept != "" {
+				acceptAttr = " accept=\"" + accept + "\""
+			}
+			if f.IsFiles() {
+				st.WriteString("  const [" + camel + ", " + setter + "] = useState<FileRef[]>([]);\n")
+				pf.WriteString("      " + setter + "((record." + json + " as FileRef[]) ?? []);\n")
+				jsx.WriteString("        <FileDropzone label=\"" + label + "\" value={" + camel + "} onChange={(v) => " + setter + "((v as FileRef[]) ?? [])} multiple" + acceptAttr + " />\n")
+			} else {
+				st.WriteString("  const [" + camel + ", " + setter + "] = useState<FileRef | null>(null);\n")
+				pf.WriteString("      " + setter + "((record." + json + " as FileRef | null) ?? null);\n")
+				jsx.WriteString("        <FileDropzone label=\"" + label + "\" value={" + camel + "} onChange={(v) => " + setter + "((v as FileRef) ?? null)}" + acceptAttr + " />\n")
+			}
+			pay.WriteString("      " + json + ": " + camel + ",\n")
+
 		case f.IsBelongsTo():
 			rel := MakeNames(f.RelatedModelName())
 			hook := "use" + rel.PluralPascal
@@ -215,6 +238,33 @@ func (g *Generator) buildDesktopClientForm(names Names) desktopClientFieldParts 
 	parts.payload = pay.String()
 	parts.optionLd = opt.String()
 	return parts
+}
+
+// desktopFileAccept turns a file field's accept-aliases (image, video, pdf, …)
+// into an <input accept="…"> string. "all"/empty means no restriction.
+func desktopFileAccept(accepts []string) string {
+	aliases := map[string]string{
+		"image": "image/*",
+		"video": "video/*",
+		"audio": "audio/*",
+		"pdf":   ".pdf",
+		"doc":   ".doc,.docx",
+		"docx":  ".doc,.docx",
+		"xls":   ".xls,.xlsx",
+		"xlsx":  ".xls,.xlsx",
+		"csv":   ".csv",
+		"zip":   ".zip",
+	}
+	var parts []string
+	for _, a := range accepts {
+		if a == "all" || a == "" {
+			return ""
+		}
+		if v, ok := aliases[a]; ok {
+			parts = append(parts, v)
+		}
+	}
+	return strings.Join(parts, ",")
 }
 
 // desktopClientForm is the shared create/edit form component. It takes an

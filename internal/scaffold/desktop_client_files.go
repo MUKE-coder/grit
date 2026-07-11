@@ -133,6 +133,7 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "components", "tables", "date-filter.tsx"): desktopClientDateFilter(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "resource-drawer.tsx"):       desktopClientResourceDrawer(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "quick-access.tsx"):          desktopClientQuickAccess(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "file-dropzone.tsx"):         desktopClientFileDropzone(),
 
 		// Theming — shares packages/shared/themes.ts with the admin panel so
 		// --theme=atlas|aurora|pulse styles both apps identically.
@@ -3369,6 +3370,32 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// FileRef mirrors the server's files.FileRef — what the upload endpoint returns
+// and what a file/files form field stores.
+export interface FileRef {
+  url: string;
+  key?: string;
+  name: string;
+  mime?: string;
+  size?: number;
+  thumbnail_url?: string;
+}
+
+// uploadFile posts a single file to /uploads (multipart) and returns its
+// FileRef. Uploads require the API — offline callers should guard on
+// reachability first. onProgress reports 0–100.
+export async function uploadFile(file: File, onProgress?: (pct: number) => void): Promise<FileRef> {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await apiClient.post("/uploads", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+    onUploadProgress: (e) => {
+      if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100));
+    },
+  });
+  return data.data as FileRef;
+}
 `
 }
 

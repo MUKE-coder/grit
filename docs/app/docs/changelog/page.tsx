@@ -28,6 +28,49 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.41.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.41.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The desktop offline form now handles image &amp; file
+                  fields.</strong> This closes the one gap called out when the
+                  desktop resource forms first reached parity: <code>file</code> and{' '}
+                  <code>files</code> fields were skipped. They now render a proper
+                  dropzone.
+                </p>
+                <p>
+                  Drag-and-drop (or click) upload with image thumbnails and file
+                  chips, single or multiple files, and an <code>accept</code> filter
+                  derived from the field&apos;s type (e.g.{' '}
+                  <code>cover:file:image</code> only takes images). Uploads go
+                  through the API&apos;s <code>/uploads</code> endpoint and store the
+                  returned <code>FileRef</code> in the record — which the offline
+                  sync engine mirrors like any other field.
+                </p>
+                <p>
+                  Because a binary can&apos;t be pushed through the JSON sync outbox,
+                  the dropzone is <strong>offline-aware</strong>: when the app
+                  can&apos;t reach the server it disables itself with a &quot;reconnect
+                  to upload&quot; hint instead of silently failing. No new
+                  dependencies — it&apos;s a hidden input plus drag handlers, themed
+                  off your active tokens.
+                </p>
+                <p>
+                  Existing projects pick this up with <code>grit update</code> and a
+                  re-generate. Verified on a freshly scaffolded <code>Photo</code>{' '}
+                  resource: a single-image Cover field and a multi-image Gallery
+                  field render in the create/edit drawer with zero console errors.
+                </p>
+              </div>
+            </div>
+
             {/* v3.40.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
