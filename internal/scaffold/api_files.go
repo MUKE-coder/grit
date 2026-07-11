@@ -3494,6 +3494,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"` + "{{MODULE}}" + `/internal/services"
 	"` + "{{MODULE}}" + `/internal/sync"
 )
 
@@ -3547,16 +3548,32 @@ func (h *SyncHandler) Push(c *gin.Context) {
 
 	results := make([]PushResult, len(req.Changes))
 	for i, ch := range req.Changes {
-		results[i] = h.applyChange(ch)
+		results[i] = h.applyChange(c, ch)
 	}
 	c.JSON(http.StatusOK, gin.H{"results": results})
 }
 
-func (h *SyncHandler) applyChange(ch PushChange) PushResult {
+// syncIdentifier picks a human-friendly label for the semantic activity feed
+// from a change payload (name / title / slug / email), falling back to the id.
+func syncIdentifier(data map[string]interface{}, id string) string {
+	for _, k := range []string{"name", "title", "slug", "email"} {
+		if v, ok := data[k]; ok {
+			if s, ok := v.(string); ok && s != "" {
+				return s
+			}
+		}
+	}
+	return id
+}
+
+func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 	proto, err := h.Registry.New(ch.Model)
 	if err != nil {
 		return PushResult{OK: false, Code: "UNKNOWN_MODEL", Message: err.Error()}
 	}
+	// The Go struct name (e.g. "Category") is the nicest entity label for the
+	// activity feed — offline edits should read the same as online ones.
+	entityType := reflect.TypeOf(proto).Elem().Name()
 
 	switch ch.Op {
 	case "create":
@@ -3571,6 +3588,9 @@ func (h *SyncHandler) applyChange(ch PushChange) PushResult {
 		if err := h.DB.Create(obj).Error; err != nil {
 			return PushResult{OK: false, Code: "CREATE_FAILED", Message: err.Error()}
 		}
+		// Mirror the online handler: emit a semantic activity row so offline
+		// creates surface in /system/activity, not just the raw audit log.
+		services.LogCreate(h.DB, c, entityType, syncIdentifier(ch.Data, ch.ID), ch.ID, "")
 		return PushResult{OK: true, NewVersion: 1}
 
 	case "update":
@@ -3597,6 +3617,7 @@ func (h *SyncHandler) applyChange(ch PushChange) PushResult {
 		if err := h.DB.Model(current).Updates(ch.Data).Error; err != nil {
 			return PushResult{OK: false, Code: "UPDATE_FAILED", Message: err.Error()}
 		}
+		services.LogUpdate(h.DB, c, entityType, syncIdentifier(ch.Data, ch.ID), ch.ID, services.DiffSummary(ch.Data))
 		return PushResult{OK: true, NewVersion: serverVersion + 1}
 
 	case "delete":
@@ -3621,6 +3642,7 @@ func (h *SyncHandler) applyChange(ch PushChange) PushResult {
 		if err := h.DB.Delete(current, "id = ?", ch.ID).Error; err != nil {
 			return PushResult{OK: false, Code: "DELETE_FAILED", Message: err.Error()}
 		}
+		services.LogDelete(h.DB, c, entityType, ch.ID, ch.ID)
 		return PushResult{OK: true}
 
 	default:

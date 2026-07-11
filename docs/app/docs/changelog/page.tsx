@@ -28,6 +28,42 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.47.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.47.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Offline edits now show up in the activity feed.</strong>{' '}
+                  Creating, updating or deleting a record on the desktop app goes
+                  through the offline sync engine (<code>/sync/push</code>), which
+                  applied the change but never wrote a semantic activity row — so the
+                  audit feed only ever showed sign-ins.
+                </p>
+                <p>
+                  The sync push handler now emits the same{' '}
+                  <strong>Created / Updated / Deleted {'{'}Entity{'}'}</strong>{' '}
+                  activity that the online REST handlers do, attributed to the
+                  signed-in user, with a human label pulled from the record
+                  (name/title/slug). So a category you create offline reads
+                  &quot;Created Category — Phones&quot; in <em>Activity</em> once it
+                  syncs, exactly like one created online. (The online admin path
+                  already logged these.)
+                </p>
+                <p>
+                  Existing projects: <code>grit update</code>. The semantic activity
+                  pipeline is confirmed working end to end (auth events already write
+                  activity rows); the sync handler now calls the identical logging
+                  functions on every applied change.
+                </p>
+              </div>
+            </div>
+
             {/* v3.46.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
