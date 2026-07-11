@@ -28,6 +28,41 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.44.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.44.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Every page header now carries the standard action
+                  cluster on the desktop, matching the admin.</strong> The top-right
+                  of each page&apos;s <code>PageHeader</code> now shows a consistent
+                  row: <strong>refresh · theme switcher · [page action] ·
+                  notifications · user menu</strong>.
+                </p>
+                <p>
+                  Refresh re-fetches the page&apos;s data, the switcher toggles
+                  light/dark, a page&apos;s primary CTA (e.g. &quot;New ticket&quot;)
+                  slots into the middle, the bell opens Notifications, and the avatar
+                  opens a menu (Profile, Settings, Log out). The desktop&apos;s
+                  separate top bar is now just the ⌘K search — the action buttons
+                  that used to be duplicated there live in the header, so there&apos;s
+                  one consistent place for them.
+                </p>
+                <p>
+                  Existing projects: <code>grit update</code>. Verified: the
+                  dashboard header shows refresh/theme/notifications/user, and a page
+                  with a CTA (Support) shows all five including &quot;New ticket&quot;,
+                  with zero console errors.
+                </p>
+              </div>
+            </div>
+
             {/* v3.43.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -1507,6 +1507,7 @@ import { useMe } from "@/hooks/use-auth";
 import { apiClient } from "@/lib/api-client";
 import { NAV_SECTIONS } from "@/lib/nav-config";
 import { useSyncStatus } from "@/hooks/use-sync-status";
+import { PageHeader } from "@/components/layout/page-header";
 
 // The desktop dashboard mirrors the admin panel's "captivating" dashboard:
 // a time-of-day greeting, four stat tiles, a 7-day activity area chart, a
@@ -1632,14 +1633,11 @@ function DashboardPage() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          {greeting}, {user?.first_name || "there"}
-        </h1>
-        <p className="text-[14px] text-foreground-secondary">
-          Here's a snapshot of what's happening across your app right now.
-        </p>
-      </div>
+      <PageHeader
+        title={greeting + ", " + (user?.first_name || "there")}
+        description="Here's a snapshot of what's happening across your app right now."
+      />
+
 
       {/* Stat tiles */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -2209,103 +2207,28 @@ export function Sidebar() {
 }
 
 func desktopClientTopbar() string {
-	return `import { useState } from "react";
-import { Bell, Search, Sun, Moon, LogOut, Command } from "lucide-react";
-import { useTheme } from "@/lib/theme-provider";
-import { useMe, useLogout } from "@/hooks/use-auth";
-import { useNavigate } from "@tanstack/react-router";
+	return `import { Search } from "lucide-react";
 
 interface TopbarProps {
   onOpenPalette: () => void;
 }
 
-// Topbar for desktop app. Same structure as admin v3.8.0 but without the
-// sidebar collapse toggle (desktop sidebar is fixed).
+// Slim top bar: just the ⌘K search/command-palette trigger. The standard
+// action cluster (refresh · theme · New · notifications · user menu) lives in
+// each page's <PageHeader>, matching the admin panel.
 export function Topbar({ onOpenPalette }: TopbarProps) {
-  const { theme, setTheme } = useTheme();
-  const { data: user } = useMe();
-  const { mutate: logout } = useLogout();
-  const navigate = useNavigate();
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-
-  const handleLogout = () => {
-    setUserMenuOpen(false);
-    logout(undefined, { onSuccess: () => navigate({ to: "/auth/login" }) });
-  };
-
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-subtle bg-background px-6">
-      {/* Search trigger (opens command palette) */}
+    <header className="flex h-14 shrink-0 items-center border-b border-border-subtle bg-background px-6">
       <button
         onClick={onOpenPalette}
-        className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 h-9 w-80 text-[13px] text-foreground-muted hover:bg-surface-hover transition-colors"
+        className="flex h-9 w-80 items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 text-[13px] text-foreground-muted transition-colors hover:bg-surface-hover"
       >
         <Search className="h-3.5 w-3.5" />
         <span>Search or jump to...</span>
-        <div className="ml-auto flex items-center gap-1 text-[11px] font-mono">
+        <div className="ml-auto flex items-center gap-1 font-mono text-[11px]">
           <kbd className="rounded bg-surface px-1 py-0.5">⌘K</kbd>
         </div>
       </button>
-
-      {/* Right cluster */}
-      <div className="flex items-center gap-1">
-        <button className="flex items-center justify-center h-9 w-9 rounded-lg hover:bg-surface-hover text-foreground-secondary transition-colors" aria-label="Notifications">
-          <Bell className="h-4 w-4" />
-        </button>
-
-        <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="flex items-center justify-center h-9 w-9 rounded-lg hover:bg-surface-hover text-foreground-secondary transition-colors"
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </button>
-
-        <div className="relative">
-          <button
-            onClick={() => setUserMenuOpen(!userMenuOpen)}
-            className="flex items-center gap-2 rounded-lg pl-1 pr-2 py-1 hover:bg-surface-hover transition-colors"
-          >
-            <div className="h-7 w-7 rounded-full bg-accent/20 flex items-center justify-center">
-              <span className="text-[13px] font-medium text-accent">
-                {user?.first_name?.charAt(0)?.toUpperCase() || "?"}
-              </span>
-            </div>
-          </button>
-
-          {userMenuOpen && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
-              <div className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-border bg-surface-3 shadow-xl z-50 overflow-hidden">
-                <div className="px-4 py-3 border-b border-border-subtle">
-                  <p className="text-[13px] font-semibold text-foreground">
-                    {user?.first_name} {user?.last_name}
-                  </p>
-                  <p className="text-[12px] text-foreground-muted truncate">{user?.email}</p>
-                </div>
-                <div className="p-1">
-                  <button
-                    onClick={() => { setUserMenuOpen(false); navigate({ to: "/app/profile" }); }}
-                    className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] text-foreground-secondary hover:bg-surface-hover hover:text-foreground transition-colors"
-                  >
-                    <Command className="h-4 w-4" />
-                    Profile
-                  </button>
-                </div>
-                <div className="p-1 border-t border-border-subtle">
-                  <button
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] text-danger hover:bg-danger/10 transition-colors"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Log out
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
     </header>
   );
 }
@@ -2313,8 +2236,14 @@ export function Topbar({ onOpenPalette }: TopbarProps) {
 }
 
 func desktopClientPageHeader() string {
-	return `import type { LucideIcon } from "lucide-react";
-import { TrendingUp, TrendingDown } from "lucide-react";
+	return `import { useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import { TrendingUp, TrendingDown, RefreshCw, Bell, Sun, Moon, User, Settings, LogOut } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useTheme } from "@/lib/theme-provider";
+import { useMe, useLogout } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
 
 export interface StatCard {
   label: string;
@@ -2327,21 +2256,26 @@ export interface StatCard {
 interface PageHeaderProps {
   title: string;
   description?: string;
+  /** Page-specific primary action(s) — e.g. a "New X" button — shown inline
+      in the action cluster (the "New" slot of refresh · theme · New · bell · user). */
   actions?: React.ReactNode;
   stats?: StatCard[];
 }
 
+// PageHeader owns the standard top-right action cluster on every page (matches
+// the admin panel): refresh, theme switcher, [page action], notifications,
+// user menu. Pages pass their primary CTA via the actions prop.
 export function PageHeader({ title, description, actions, stats }: PageHeaderProps) {
   return (
     <div className="mb-8">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">{title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
           {description && (
             <p className="mt-1 text-[14px] text-foreground-secondary">{description}</p>
           )}
         </div>
-        {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+        <HeaderActions>{actions}</HeaderActions>
       </div>
 
       {stats && stats.length > 0 && (
@@ -2351,6 +2285,86 @@ export function PageHeader({ title, description, actions, stats }: PageHeaderPro
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+const iconBtn =
+  "flex h-9 w-9 items-center justify-center rounded-lg text-foreground-secondary transition-colors hover:bg-surface-hover hover:text-foreground";
+
+function HeaderActions({ children }: { children?: React.ReactNode }) {
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
+  const { data: user } = useMe();
+  const { mutate: logout } = useLogout();
+  const [spinning, setSpinning] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const refresh = () => {
+    setSpinning(true);
+    qc.invalidateQueries();
+    setTimeout(() => setSpinning(false), 600);
+  };
+
+  return (
+    <div className="flex shrink-0 items-center gap-1.5">
+      <button onClick={refresh} className={iconBtn} title="Refresh" aria-label="Refresh">
+        <RefreshCw className={cn("h-4 w-4", spinning && "animate-spin")} />
+      </button>
+      <button
+        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        className={iconBtn}
+        title="Toggle theme"
+        aria-label="Toggle theme"
+      >
+        {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      </button>
+
+      {children && <div className="mx-0.5 flex items-center gap-2">{children}</div>}
+
+      <button
+        onClick={() => navigate({ to: "/app/system/notifications" })}
+        className={iconBtn}
+        title="Notifications"
+        aria-label="Notifications"
+      >
+        <Bell className="h-4 w-4" />
+      </button>
+
+      <div className="relative">
+        <button
+          onClick={() => setMenuOpen((o) => !o)}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 transition-colors hover:bg-accent/30"
+          title="Account"
+        >
+          <span className="text-[13px] font-semibold text-accent">
+            {user?.first_name?.charAt(0)?.toUpperCase() || "?"}
+          </span>
+        </button>
+        {menuOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+            <div className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-border bg-surface-3 shadow-xl">
+              <div className="border-b border-border-subtle px-4 py-3">
+                <p className="text-[13px] font-semibold text-foreground">{user?.first_name} {user?.last_name}</p>
+                <p className="truncate text-[12px] text-foreground-muted">{user?.email}</p>
+              </div>
+              <div className="p-1">
+                <button onClick={() => { setMenuOpen(false); navigate({ to: "/app/profile" }); }} className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] text-foreground-secondary hover:bg-surface-hover hover:text-foreground">
+                  <User className="h-4 w-4" /> Profile
+                </button>
+                <button onClick={() => { setMenuOpen(false); navigate({ to: "/app/settings" }); }} className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] text-foreground-secondary hover:bg-surface-hover hover:text-foreground">
+                  <Settings className="h-4 w-4" /> Settings
+                </button>
+                <button onClick={() => { setMenuOpen(false); logout(undefined, { onSuccess: () => navigate({ to: "/auth/login" }) }); }} className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] text-danger hover:bg-danger/10">
+                  <LogOut className="h-4 w-4" /> Log out
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
