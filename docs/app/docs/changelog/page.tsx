@@ -28,6 +28,52 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.39.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.39.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Desktop parity, round four: the full admin sidebar and
+                  every system page.</strong> The desktop client now has the same
+                  Internal and System sections the admin panel ships — so the
+                  sidebars finally match top to bottom.
+                </p>
+                <p>
+                  Ten new pages: <strong>Users</strong> (accounts &amp; roles via the
+                  shared DataTable), <strong>Blogs</strong> (list + a full post
+                  editor), <strong>Activity</strong> (audit log with summary cards and
+                  All/Flagged/Critical tabs), <strong>Support</strong> (tickets +
+                  conversation threads with replies and close/reopen),{' '}
+                  <strong>Notifications</strong> (with mark-as-read),{' '}
+                  <strong>Dashboard settings</strong> (widget toggles),{' '}
+                  <strong>System Health</strong> (Postgres/Redis/API/Jobs/Email
+                  cards), <strong>Performance</strong> (latency/traffic/errors/
+                  saturation + slowest routes), <strong>Security</strong> (bans,
+                  rate-limit hits, recent threats + the escalating-ban policy), and
+                  a <strong>System Hub</strong> landing grid.
+                </p>
+                <p>
+                  Every page is <strong>offline-graceful</strong>: each query falls
+                  back to an empty/zero shape when the app is offline, exactly like
+                  the admin&apos;s own try/catch behaviour, so nothing errors out —
+                  System Hub and Dashboard settings even render entirely from local
+                  state. All pages are themed off your active theme tokens.
+                </p>
+                <p>
+                  Existing projects pick this up with <code>grit update</code>.
+                  Verified end to end on a freshly scaffolded project: the full
+                  sidebar renders in the right order and all ten pages load with
+                  zero console errors.
+                </p>
+              </div>
+            </div>
+
             {/* v3.38.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -59,6 +59,21 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "settings.tsx"):  desktopClientSettingsRoute(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "sync.tsx"):      desktopClientSyncPage(),
 
+		// System / admin pages — full parity with the admin Internal + System nav.
+		filepath.Join(desktopRoot, "frontend", "src", "components", "system-ui.tsx"):                     desktopClientSystemUI(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.index.tsx"):              desktopClientSystemHubPage(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.users.tsx"):              desktopClientSystemUsersPage(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.activity.tsx"):           desktopClientSystemActivityPage(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.notifications.tsx"):      desktopClientSystemNotificationsPage(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.health.tsx"):             desktopClientSystemHealthPage(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.performance.tsx"):        desktopClientSystemPerformancePage(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.security.tsx"):           desktopClientSystemSecurityPage(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.blogs.tsx"):              desktopClientSystemBlogsPage(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.blogs.$id.tsx"):          desktopClientSystemBlogDetailPage(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.support.tsx"):            desktopClientSystemSupportPage(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.support.$id.tsx"):        desktopClientSystemSupportThreadPage(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.dashboard-settings.tsx"): desktopClientSystemDashboardSettingsPage(),
+
 		// Layout components
 		filepath.Join(desktopRoot, "frontend", "src", "components", "layout", "title-bar.tsx"):       desktopClientTitleBar(opts),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "layout", "sidebar.tsx"):         desktopClientSidebarV2(),

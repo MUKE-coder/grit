@@ -912,6 +912,14 @@ func desktopClientNavConfig() string {
   Settings,
   Box,
   RefreshCw,
+  Users,
+  FileText,
+  Activity,
+  MessageSquare,
+  Bell,
+  TrendingUp,
+  Shield,
+  LayoutGrid,
   type LucideIcon,
 } from "lucide-react";
 
@@ -946,6 +954,26 @@ export const NAV_SECTIONS: NavSection[] = [
       // grit generate resource injects generated resources here. Box is a
       // shared icon so no per-resource import is needed.
       // grit:nav
+    ],
+  },
+  {
+    title: "Internal",
+    items: [
+      { to: "/app/system/activity", label: "Activity", icon: Activity },
+      { to: "/app/system/support", label: "Support", icon: MessageSquare },
+      { to: "/app/system/notifications", label: "Notifications", icon: Bell },
+    ],
+  },
+  {
+    title: "System",
+    items: [
+      { to: "/app/system/users", label: "Users", icon: Users },
+      { to: "/app/system/blogs", label: "Blogs", icon: FileText },
+      { to: "/app/system/dashboard-settings", label: "Dashboard settings", icon: Settings },
+      { to: "/app/system/health", label: "System Health", icon: Activity },
+      { to: "/app/system/performance", label: "Performance", icon: TrendingUp },
+      { to: "/app/system/security", label: "Security", icon: Shield },
+      { to: "/app/system", label: "System Hub", icon: LayoutGrid },
     ],
   },
   {

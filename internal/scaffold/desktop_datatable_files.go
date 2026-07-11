@@ -232,9 +232,11 @@ interface DataTableProps<T extends Record<string, unknown> & { id: string | numb
   searchKeys: string[];
   createdKey?: string;
   updatedKey?: string;
-  onNew: () => void;
-  onEdit: (row: T) => void;
-  onDelete: (row: T) => void;
+  newLabel?: string;
+  onNew?: () => void;
+  onEdit?: (row: T) => void;
+  onDelete?: (row: T) => void;
+  onRowClick?: (row: T) => void;
 }
 
 function relTime(iso: unknown): string {
@@ -276,7 +278,7 @@ function cellText(value: unknown, format?: ColumnFormat): string {
 export function DataTable<T extends Record<string, unknown> & { id: string | number }>({
   title, singular, columns, rows, loading, searchKeys,
   createdKey = "created_at", updatedKey = "updated_at",
-  onNew, onEdit, onDelete,
+  newLabel, onNew, onEdit, onDelete, onRowClick,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>({ key: createdKey, dir: "desc" });
@@ -421,13 +423,15 @@ export function DataTable<T extends Record<string, unknown> & { id: string | num
           >
             <Download className="h-4 w-4" /> Export
           </button>
-          <button
-            type="button"
-            onClick={onNew}
-            className="flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-accent-hover"
-          >
-            <Plus className="h-4 w-4" /> New {singular}
-          </button>
+          {onNew && (
+            <button
+              type="button"
+              onClick={onNew}
+              className="flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-accent-hover"
+            >
+              <Plus className="h-4 w-4" /> {newLabel ?? "New " + singular}
+            </button>
+          )}
         </div>
 
         {/* Table */}
@@ -450,7 +454,7 @@ export function DataTable<T extends Record<string, unknown> & { id: string | num
                     </span>
                   </th>
                 ))}
-                <th className="w-[100px] px-4 py-3" />
+                {(onEdit || onDelete) && <th className="w-[100px] px-4 py-3" />}
               </tr>
             </thead>
             <tbody>
@@ -467,20 +471,33 @@ export function DataTable<T extends Record<string, unknown> & { id: string | num
                 </tr>
               ) : (
                 pageRows.map((row) => (
-                  <tr key={String(row.id)} className="border-b border-border/50 transition-colors hover:bg-surface-hover/50">
+                  <tr
+                    key={String(row.id)}
+                    onClick={onRowClick ? () => onRowClick(row) : undefined}
+                    className={cn(
+                      "border-b border-border/50 transition-colors hover:bg-surface-hover/50",
+                      onRowClick && "cursor-pointer",
+                    )}
+                  >
                     {visibleCols.map((c) => (
                       <td key={c.key} className="px-4 py-3 text-[13px] text-foreground">
                         <Cell value={row[c.key]} format={c.format} />
                       </td>
                     ))}
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
-                      <button onClick={() => onEdit(row)} title="Edit" className="rounded p-1.5 text-foreground-secondary hover:bg-surface-2 hover:text-accent">
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => onDelete(row)} title="Delete" className="rounded p-1.5 text-foreground-secondary hover:bg-danger/10 hover:text-danger">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </td>
+                    {(onEdit || onDelete) && (
+                      <td className="px-4 py-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        {onEdit && (
+                          <button onClick={() => onEdit(row)} title="Edit" className="rounded p-1.5 text-foreground-secondary hover:bg-surface-2 hover:text-accent">
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        )}
+                        {onDelete && (
+                          <button onClick={() => onDelete(row)} title="Delete" className="rounded p-1.5 text-foreground-secondary hover:bg-danger/10 hover:text-danger">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
