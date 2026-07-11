@@ -44,6 +44,7 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "postcss.config.js"):    desktopClientPostCSSConfig(),
 		filepath.Join(desktopRoot, "frontend", "index.html"):           desktopClientIndexHTML(opts),
 		filepath.Join(desktopRoot, "frontend", "src", "main.tsx"):      desktopClientMainTSX(),
+		filepath.Join(desktopRoot, "frontend", "src", "lib", "fonts.ts"): desktopClientFontsTS(),
 		filepath.Join(desktopRoot, "frontend", "src", "globals.css"):   desktopClientGlobalsCSS(),
 		filepath.Join(desktopRoot, "frontend", "src", "vite-env.d.ts"): desktopClientViteEnvDTS(),
 
@@ -705,6 +706,11 @@ func desktopClientPackageJSON(opts Options) string {
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@fontsource-variable/geist": "^5.2.9",
+    "@fontsource/dm-serif-display": "^5.2.8",
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@fontsource/onest": "^5.2.11",
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-router": "^1.95.0",
     "axios": "^1.7.9",
@@ -908,9 +914,9 @@ func desktopClientIndexHTML(opts Options) string {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>` + opts.ProjectName + `</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="` + desktopThemeFontURL(opts.Theme) + `" rel="stylesheet" />
+    <!-- Fonts are self-hosted (bundled by Vite via @fontsource, imported in
+         src/lib/fonts.ts) so they render offline inside the Wails webview —
+         no external CDN. -->
   </head>
   <body>
     <div id="app"></div>
@@ -929,6 +935,7 @@ import { routeTree } from "./routeTree.gen";
 import { queryClient } from "./lib/query-client";
 import { AuthProvider } from "./lib/auth-provider";
 import { ThemeProvider } from "./lib/theme-provider";
+import "./lib/fonts";
 import "./globals.css";
 
 // Hash history works inside Wails' single-page webview context.
@@ -955,6 +962,29 @@ ReactDOM.createRoot(document.getElementById("app")!).render(
     </ThemeProvider>
   </React.StrictMode>
 );
+`
+}
+
+// desktopClientFontsTS bundles every theme's fonts locally (via @fontsource)
+// so they render inside the Wails webview with no network — the previous
+// Google-Fonts CDN link never loaded offline. All themes are imported since
+// the active theme is switchable at runtime.
+func desktopClientFontsTS() string {
+	return `// Self-hosted fonts, bundled by Vite. Imported once from main.tsx.
+// atlas → Inter, aurora → Geist, pulse → Onest + DM Serif Display; mono → JetBrains Mono.
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+import "@fontsource/onest/400.css";
+import "@fontsource/onest/500.css";
+import "@fontsource/onest/600.css";
+import "@fontsource/onest/700.css";
+import "@fontsource-variable/geist";
+import "@fontsource/dm-serif-display/400.css";
+import "@fontsource/jetbrains-mono/400.css";
+import "@fontsource/jetbrains-mono/500.css";
+import "@fontsource/jetbrains-mono/600.css";
 `
 }
 
@@ -1008,7 +1038,9 @@ func desktopClientGlobalsCSS() string {
 html, body, #app {
   height: 100%;
   margin: 0;
-  font-family: Onest, system-ui, sans-serif;
+  /* Driven by the active theme (atlas: Inter, aurora: Geist, pulse: Onest).
+     Fonts are bundled via @fontsource — see src/lib/fonts.ts. */
+  font-family: var(--font-ui), system-ui, sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-foreground);
   -webkit-font-smoothing: antialiased;

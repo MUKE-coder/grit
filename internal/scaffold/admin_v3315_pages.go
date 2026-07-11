@@ -559,7 +559,7 @@ export default function PerformancePage() {
             title="Traffic"
             tagline="How much demand the API is handling right now."
           >
-            <Signal label="Throughput" value={fmt(data?.traffic?.throughput, "/s")} icon={<TrendingUp className="h-4 w-4 text-success" />} />
+            <Signal label="Throughput" value={fmtRate(data?.traffic?.throughput)} icon={<TrendingUp className="h-4 w-4 text-success" />} />
             <Signal label="Total requests" value={fmt(data?.traffic?.total)} icon={<TrendingUp className="h-4 w-4 text-success" />} />
           </SignalGroup>
 
@@ -698,6 +698,15 @@ function Signal({ label, value, icon, tone = "default" }: SignalProps) {
 function fmt(n: number | undefined, suffix: string = ""): string {
   if (n === undefined || n === null || Number.isNaN(n)) return "—";
   return Math.round(n).toLocaleString() + suffix;
+}
+
+// fmtRate formats a per-second rate. Rounding to an integer would collapse a
+// low-but-real throughput (e.g. 0.14 req/s) to "0/s", so keep two decimals
+// below 10 and switch to whole numbers once the rate is large.
+function fmtRate(n: number | undefined): string {
+  if (n === undefined || n === null || Number.isNaN(n)) return "—";
+  if (n > 0 && n < 10) return n.toFixed(2) + "/s";
+  return Math.round(n).toLocaleString() + "/s";
 }
 
 function fmtPct(n: number | undefined): string {

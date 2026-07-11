@@ -16,22 +16,6 @@ import "fmt"
 // split-carousel).
 // ═══════════════════════════════════════════════════════════════════
 
-// desktopThemeFontURL returns the Google Fonts stylesheet the active theme
-// needs. Themes pick different families (atlas: Inter, aurora: Geist,
-// pulse: Onest + DM Serif Display); JetBrains Mono is always loaded for
-// numerics and code.
-func desktopThemeFontURL(theme string) string {
-	families := "family=Inter:wght@400;500;600;700"
-	switch theme {
-	case "aurora":
-		families = "family=Geist:wght@400;500;600;700"
-	case "pulse":
-		families = "family=Onest:wght@400;500;600;700&family=DM+Serif+Display"
-	}
-	return "https://fonts.googleapis.com/css2?" + families +
-		"&family=JetBrains+Mono:wght@400;500;600&display=swap"
-}
-
 // desktopClientThemeTokens generates lib/theme-tokens.ts — the bridge from
 // the shared theme palette to the CSS variables the desktop's Tailwind
 // config consumes.

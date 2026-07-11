@@ -28,6 +28,44 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.42.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.42.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Desktop fonts now render (offline), and Performance
+                  throughput reads correctly.</strong> Two fixes from desktop
+                  polish feedback.
+                </p>
+                <p>
+                  <strong>Fonts.</strong> The desktop app pulled its fonts from the
+                  Google Fonts CDN — which the Wails webview can&apos;t reach
+                  offline — and the body was hardcoded to a font that was never
+                  loaded, so everything fell back to the system font. Fonts are now
+                  <strong> self-hosted</strong> via <code>@fontsource</code> (bundled
+                  by Vite: Inter, Geist, Onest, DM Serif Display, JetBrains Mono) and
+                  the body follows the active theme&apos;s font variable. Verified:
+                  Inter loads from the bundle with no network and applies to the UI.
+                </p>
+                <p>
+                  <strong>Throughput.</strong> The admin Performance page rounded
+                  throughput to a whole number, so a real-but-low rate like 0.14
+                  req/s displayed as <code>0/s</code>. It now keeps two decimals
+                  below 10 req/s (and the desktop page rounds its raw value the same
+                  way instead of showing a 17-digit float).
+                </p>
+                <p>
+                  Existing projects: <code>grit update</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.41.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
