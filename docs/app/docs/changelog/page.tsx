@@ -28,6 +28,48 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.37.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.37.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Desktop parity, round two: the dashboard now matches the
+                  admin panel.</strong> The desktop app&apos;s home screen was a pair
+                  of placeholder cards; it&apos;s now the same &quot;captivating&quot;
+                  dashboard the admin ships.
+                </p>
+                <p>
+                  A time-of-day greeting (&quot;Good morning, Ada&quot;), four live
+                  stat tiles (Users, Events in the last 24h, Notifications, and a
+                  desktop-specific Sync-status tile), a 7-day activity area chart, a
+                  severity-mix donut, a recent-activity feed, and quick-access tiles
+                  for every generated resource. Charts are rendered with the same{' '}
+                  <code>recharts</code> the admin uses, themed off your active theme
+                  tokens.
+                </p>
+                <p>
+                  It stays <strong>offline-first</strong>: every stat query falls
+                  back to zero or empty when the app is offline, so the dashboard
+                  never blanks out, and the resource tiles come from the local nav
+                  config so they render instantly with no network. The Sync-status
+                  tile reads straight from the offline engine (online/offline +
+                  pending-change count) and links to the Sync center.
+                </p>
+                <p>
+                  Existing projects pick this up with <code>grit update</code>.
+                  Verified end to end on a freshly scaffolded project: greeting, all
+                  four tiles, both charts, the activity feed, and quick-access all
+                  render with zero console errors.
+                </p>
+              </div>
+            </div>
+
             {/* v3.36.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
