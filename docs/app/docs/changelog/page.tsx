@@ -28,6 +28,46 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.45.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.45.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Desktop tables get row selection, an export menu, bulk
+                  import and image/slug columns — plus a full Users manager.</strong>
+                </p>
+                <p>
+                  The desktop <strong>DataTable</strong> now matches the admin&apos;s
+                  feature set: a <strong>checkbox column</strong> with a bulk-action
+                  bar (select rows → delete many at once), an <strong>Export</strong>
+                  dropdown (CSV <em>or</em> JSON), and <strong>bulk Import</strong>
+                  from a CSV. Generated resource tables also stopped hiding{' '}
+                  <strong>slug</strong> and <strong>image/file</strong> columns — an
+                  uploaded image now shows as a thumbnail (with a &quot;+N&quot; count
+                  for multi-file fields) and the slug is visible.
+                </p>
+                <p>
+                  <strong>Users</strong> moved into the <em>Manage</em> section and is
+                  now a full CRUD screen: create, edit and delete accounts (name,
+                  email, password, role, active) through a slide-over form, plus
+                  bulk-delete.
+                </p>
+                <p>
+                  Existing projects: <code>grit update</code> and re-generate.
+                  Verified on a fresh scaffold: a Category table shows Name / Slug /
+                  Cover (thumbnail) / Created with a checkbox column, Import button
+                  and CSV/JSON export menu; the Users page creates accounts via its
+                  drawer form — zero console errors.
+                </p>
+              </div>
+            </div>
+
             {/* v3.44.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

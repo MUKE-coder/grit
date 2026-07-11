@@ -346,15 +346,26 @@ func (g *Generator) desktopClientListRoute(names Names) string {
 	var colLines []string
 	var searchKeys []string
 	for _, f := range g.Definition.Fields {
-		if f.IsSlug() || f.IsFile() || f.IsFiles() || f.IsManyToMany() || f.IsStringArray() {
+		// m2m / string arrays are too noisy for a table cell; everything else
+		// (incl. slug and file/image fields) gets a column.
+		if f.IsManyToMany() || f.IsStringArray() {
 			continue
 		}
 		var key, label, format string
-		if f.IsBelongsTo() {
+		switch {
+		case f.IsBelongsTo():
 			key = f.FKColumnName()
 			label = humanizeLabel(strings.TrimSuffix(f.Name, "_id"))
 			format = "text"
-		} else {
+		case f.IsFile() || f.IsFiles():
+			key = toSnakeCase(f.Name)
+			label = humanizeLabel(f.Name)
+			format = "image"
+		case f.IsSlug():
+			key = toSnakeCase(f.Name)
+			label = humanizeLabel(f.Name)
+			format = "text"
+		default:
 			key = toSnakeCase(f.Name)
 			label = humanizeLabel(f.Name)
 			format = f.ColumnFormat()
@@ -428,6 +439,10 @@ function ` + Plural + `Page() {
           onDelete={(row) => {
             if (confirm("Delete this ` + lower + `?")) del.mutate(String(row.id));
           }}
+          onBulkDelete={(rows) => {
+            if (confirm("Delete " + rows.length + " ` + lower + `(s)?")) rows.forEach((r) => del.mutate(String(r.id)));
+          }}
+          onImport={(records) => records.forEach((rec) => create.mutate(rec))}
         />
       </div>
 

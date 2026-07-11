@@ -139,12 +139,16 @@ function SystemHubPage() {
 `
 }
 
-// desktopClientSystemUsersPage lists user accounts via the shared DataTable.
+// desktopClientSystemUsersPage is the full-CRUD Users management page: the
+// shared DataTable plus a slide-over form to create/edit/delete accounts
+// (create/update/delete go through the admin /users endpoints).
 func desktopClientSystemUsersPage() string {
-	return `import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+	return `import { useEffect, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/layout/page-header";
 import { DataTable, type DataColumn } from "@/components/tables/data-table";
+import { ResourceDrawer } from "@/components/resource-drawer";
 import { apiClient } from "@/lib/api-client";
 
 export const Route = createFileRoute("/app/system/users")({
@@ -161,7 +165,13 @@ const COLUMNS: DataColumn[] = [
   { key: "created_at", label: "Created", format: "relative" },
 ];
 
+const inputCls =
+  "w-full rounded-lg border border-border bg-surface-2 px-4 py-2.5 text-[13px] text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent";
+
 function SystemUsersPage() {
+  const qc = useQueryClient();
+  const [drawer, setDrawer] = useState<{ open: boolean; record: UserRow | null }>({ open: false, record: null });
+
   const { data = [], isLoading } = useQuery<UserRow[]>({
     queryKey: ["system", "users"],
     queryFn: async () => {
@@ -179,6 +189,18 @@ function SystemUsersPage() {
     refetchInterval: 60_000,
   });
 
+  const save = useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      drawer.record
+        ? apiClient.put("/users/" + drawer.record.id, payload)
+        : apiClient.post("/users", payload),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["system", "users"] }); setDrawer({ open: false, record: null }); },
+  });
+  const del = useMutation({
+    mutationFn: (id: string) => apiClient.delete("/users/" + id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["system", "users"] }),
+  });
+
   return (
     <div>
       <PageHeader title="Users" description="Accounts, roles and status" />
@@ -190,9 +212,102 @@ function SystemUsersPage() {
           rows={data}
           loading={isLoading}
           searchKeys={["name", "email", "role"]}
+          onNew={() => setDrawer({ open: true, record: null })}
+          onEdit={(row) => setDrawer({ open: true, record: row })}
+          onDelete={(row) => { if (confirm("Delete this user?")) del.mutate(String(row.id)); }}
+          onBulkDelete={(rows) => { if (confirm("Delete " + rows.length + " users?")) rows.forEach((r) => del.mutate(String(r.id))); }}
         />
       </div>
+
+      <ResourceDrawer
+        open={drawer.open}
+        title={drawer.record ? "Edit user" : "New user"}
+        description={drawer.record ? "Update this account" : "Create a new account"}
+        onClose={() => setDrawer({ open: false, record: null })}
+      >
+        <UserForm
+          key={drawer.record?.id ?? "new"}
+          record={drawer.record}
+          submitting={save.isPending}
+          onCancel={() => setDrawer({ open: false, record: null })}
+          onSubmit={(payload) => save.mutate(payload)}
+        />
+      </ResourceDrawer>
     </div>
+  );
+}
+
+function UserForm({
+  record, submitting, onSubmit, onCancel,
+}: { record: UserRow | null; submitting: boolean; onSubmit: (p: Record<string, unknown>) => void; onCancel: () => void }) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("USER");
+  const [active, setActive] = useState(true);
+
+  useEffect(() => {
+    setFirstName(String(record?.first_name ?? ""));
+    setLastName(String(record?.last_name ?? ""));
+    setEmail(String(record?.email ?? ""));
+    setRole(String(record?.role ?? "USER"));
+    setActive(record ? Boolean(record.active) : true);
+    setPassword("");
+  }, [record]);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload: Record<string, unknown> = { first_name: firstName, last_name: lastName, email, role, active };
+    if (password) payload.password = password;
+    onSubmit(payload);
+  };
+
+  return (
+    <form onSubmit={submit} className="flex h-full flex-col">
+      <div className="flex-1 space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1.5 block text-[13px] font-medium text-foreground">First name</label>
+            <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[13px] font-medium text-foreground">Last name</label>
+            <input value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputCls} />
+          </div>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-[13px] font-medium text-foreground">Email</label>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-[13px] font-medium text-foreground">
+            Password {record && <span className="text-foreground-muted">(leave blank to keep)</span>}
+          </label>
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1.5 block text-[13px] font-medium text-foreground">Role</label>
+            <select value={role} onChange={(e) => setRole(e.target.value)} className={inputCls}>
+              <option value="USER">User</option>
+              <option value="EDITOR">Editor</option>
+              <option value="ADMIN">Admin</option>
+            </select>
+          </div>
+          <label className="mt-6 flex items-center gap-2 text-[13px] text-foreground">
+            <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="h-4 w-4 accent-accent" />
+            Active
+          </label>
+        </div>
+      </div>
+      <div className="mt-6 flex justify-end gap-3 border-t border-border pt-4">
+        <button type="button" onClick={onCancel} className="rounded-lg border border-border px-4 py-2 text-[13px] font-medium text-foreground-secondary hover:bg-surface-hover">Cancel</button>
+        <button type="submit" disabled={submitting || !email} className="rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50">
+          {submitting ? "Saving…" : record ? "Save changes" : "Create user"}
+        </button>
+      </div>
+    </form>
   );
 }
 `

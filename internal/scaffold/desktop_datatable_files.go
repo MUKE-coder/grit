@@ -202,9 +202,9 @@ export function ResourceDrawer({ open, title, description, onClose, children }: 
 // filtering, sorting, column visibility, CSV export, stat cards and
 // pagination entirely in the browser — so it works with no connection.
 func desktopClientDataTable() string {
-	return `import { useMemo, useState } from "react";
+	return `import { useMemo, useRef, useState } from "react";
 import {
-  Plus, Search, Columns3, Download, Pencil, Trash2, Database,
+  Plus, Search, Columns3, Download, Upload, Pencil, Trash2, Database,
   ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Check, X as XIcon,
   Calendar as CalendarIcon, TrendingUp, RefreshCw, LayoutGrid,
 } from "lucide-react";
@@ -236,6 +236,8 @@ interface DataTableProps<T extends Record<string, unknown> & { id: string | numb
   onNew?: () => void;
   onEdit?: (row: T) => void;
   onDelete?: (row: T) => void;
+  onBulkDelete?: (rows: T[]) => void;
+  onImport?: (rows: Record<string, unknown>[]) => void;
   onRowClick?: (row: T) => void;
 }
 
@@ -259,6 +261,17 @@ function within(iso: unknown, days: number): boolean {
   return !Number.isNaN(t) && Date.now() - t <= days * 864e5;
 }
 
+// imageUrl pulls a displayable URL out of a file/image field value, which may
+// be a FileRef object, an array of FileRefs, or a plain URL string.
+function imageUrl(value: unknown): string {
+  const first = Array.isArray(value) ? value[0] : value;
+  if (first && typeof first === "object") {
+    const ref = first as { thumbnail_url?: string; url?: string };
+    return ref.thumbnail_url || ref.url || "";
+  }
+  return typeof first === "string" ? first : "";
+}
+
 function cellText(value: unknown, format?: ColumnFormat): string {
   if (value === null || value === undefined || value === "") return "";
   switch (format) {
@@ -270,15 +283,17 @@ function cellText(value: unknown, format?: ColumnFormat): string {
       return relTime(value);
     case "boolean":
       return value ? "Yes" : "No";
+    case "image":
+      return imageUrl(value);
     default:
-      return String(value);
+      return typeof value === "object" ? JSON.stringify(value) : String(value);
   }
 }
 
 export function DataTable<T extends Record<string, unknown> & { id: string | number }>({
   title, singular, columns, rows, loading, searchKeys,
   createdKey = "created_at", updatedKey = "updated_at",
-  newLabel, onNew, onEdit, onDelete, onRowClick,
+  newLabel, onNew, onEdit, onDelete, onBulkDelete, onImport, onRowClick,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>({ key: createdKey, dir: "desc" });
@@ -287,6 +302,9 @@ export function DataTable<T extends Record<string, unknown> & { id: string | num
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [colsOpen, setColsOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const importRef = useRef<HTMLInputElement>(null);
 
   const stats = useMemo(() => ({
     total: rows.length,
@@ -327,20 +345,78 @@ export function DataTable<T extends Record<string, unknown> & { id: string | num
     setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
   };
 
-  const exportCsv = () => {
-    const head = visibleCols.map((c) => c.label);
-    const escape = (v: string) => (/[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v);
-    const lines = [head.map(escape).join(",")];
-    for (const r of filtered) {
-      lines.push(visibleCols.map((c) => escape(cellText(r[c.key], c.format))).join(","));
-    }
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  // Selection (checkboxes + bulk actions) operates on the current filtered set.
+  const pageIds = pageRows.map((r) => String(r.id));
+  const allOnPage = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const toggleAll = () =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (allOnPage) pageIds.forEach((id) => next.delete(id));
+      else pageIds.forEach((id) => next.add(id));
+      return next;
+    });
+  const toggleRow = (id: string) =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  const selectedRows = filtered.filter((r) => selected.has(String(r.id)));
+
+  const fileName = title.toLowerCase().replace(/\s+/g, "-");
+  const download = (content: string, type: string, ext: string) => {
+    const blob = new Blob([content], { type });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = title.toLowerCase().replace(/\s+/g, "-") + ".csv";
+    a.download = fileName + "." + ext;
     a.click();
     URL.revokeObjectURL(url);
+  };
+  const exportCsv = () => {
+    const escape = (v: string) => (/[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v);
+    const lines = [visibleCols.map((c) => escape(c.label)).join(",")];
+    for (const r of filtered) lines.push(visibleCols.map((c) => escape(cellText(r[c.key], c.format))).join(","));
+    download(lines.join("\n"), "text/csv;charset=utf-8", "csv");
+    setExportOpen(false);
+  };
+  const exportJson = () => {
+    download(JSON.stringify(filtered, null, 2), "application/json", "json");
+    setExportOpen(false);
+  };
+
+  // Bulk import: parse a CSV (header row → keys) into records and hand them to
+  // the caller, which creates them one by one.
+  const handleImport = async (file: File) => {
+    if (!onImport) return;
+    const text = await file.text();
+    const rows = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+    if (rows.length < 2) return;
+    const parseLine = (line: string) => {
+      const out: string[] = [];
+      let cur = "", q = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (q) {
+          if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+          else if (ch === '"') q = false;
+          else cur += ch;
+        } else if (ch === '"') q = true;
+        else if (ch === ",") { out.push(cur); cur = ""; }
+        else cur += ch;
+      }
+      out.push(cur);
+      return out;
+    };
+    const header = parseLine(rows[0]).map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
+    const records = rows.slice(1).map((line) => {
+      const cells = parseLine(line);
+      const rec: Record<string, unknown> = {};
+      header.forEach((key, i) => { if (key) rec[key] = cells[i] ?? ""; });
+      return rec;
+    });
+    onImport(records);
+    if (importRef.current) importRef.current.value = "";
   };
 
   const statCards = [
@@ -416,13 +492,39 @@ export function DataTable<T extends Record<string, unknown> & { id: string | num
               </div>
             )}
           </div>
-          <button
-            type="button"
-            onClick={exportCsv}
-            className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-[13px] text-foreground-secondary hover:bg-surface-hover"
-          >
-            <Download className="h-4 w-4" /> Export
-          </button>
+          {onImport && (
+            <>
+              <input
+                ref={importRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImport(f); }}
+              />
+              <button
+                type="button"
+                onClick={() => importRef.current?.click()}
+                className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-[13px] text-foreground-secondary hover:bg-surface-hover"
+              >
+                <Upload className="h-4 w-4" /> Import
+              </button>
+            </>
+          )}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setExportOpen((o) => !o)}
+              className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-[13px] text-foreground-secondary hover:bg-surface-hover"
+            >
+              <Download className="h-4 w-4" /> Export <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+            {exportOpen && (
+              <div className="absolute right-0 z-50 mt-2 w-40 rounded-lg border border-border bg-surface-3 p-1 shadow-lg">
+                <button onClick={exportCsv} className="block w-full rounded-md px-3 py-1.5 text-left text-[13px] text-foreground hover:bg-surface-hover">Export as CSV</button>
+                <button onClick={exportJson} className="block w-full rounded-md px-3 py-1.5 text-left text-[13px] text-foreground hover:bg-surface-hover">Export as JSON</button>
+              </div>
+            )}
+          </div>
           {onNew && (
             <button
               type="button"
@@ -434,11 +536,33 @@ export function DataTable<T extends Record<string, unknown> & { id: string | num
           )}
         </div>
 
+        {/* Bulk action bar */}
+        {selected.size > 0 && (
+          <div className="flex items-center gap-3 border-b border-border bg-accent/5 px-4 py-2.5 text-[13px]">
+            <span className="font-medium text-foreground">{selected.size} selected</span>
+            <button onClick={() => setSelected(new Set())} className="text-foreground-muted hover:text-foreground">Clear</button>
+            <div className="flex-1" />
+            {onBulkDelete && (
+              <button
+                onClick={() => { onBulkDelete(selectedRows); setSelected(new Set()); }}
+                className="flex items-center gap-1.5 rounded-lg bg-danger/10 px-3 py-1.5 font-medium text-danger hover:bg-danger/20"
+              >
+                <Trash2 className="h-4 w-4" /> Delete {selected.size}
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
+                {onBulkDelete && (
+                  <th className="w-[44px] px-4 py-3">
+                    <input type="checkbox" checked={allOnPage} onChange={toggleAll} className="h-4 w-4 accent-accent" aria-label="Select all" />
+                  </th>
+                )}
                 {visibleCols.map((c) => (
                   <th
                     key={c.key}
@@ -477,8 +601,14 @@ export function DataTable<T extends Record<string, unknown> & { id: string | num
                     className={cn(
                       "border-b border-border/50 transition-colors hover:bg-surface-hover/50",
                       onRowClick && "cursor-pointer",
+                      selected.has(String(row.id)) && "bg-accent/5",
                     )}
                   >
+                    {onBulkDelete && (
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <input type="checkbox" checked={selected.has(String(row.id))} onChange={() => toggleRow(String(row.id))} className="h-4 w-4 accent-accent" aria-label="Select row" />
+                      </td>
+                    )}
                     {visibleCols.map((c) => (
                       <td key={c.key} className="px-4 py-3 text-[13px] text-foreground">
                         <Cell value={row[c.key]} format={c.format} />
@@ -560,8 +690,16 @@ function Cell({ value, format }: { value: unknown; format?: ColumnFormat }) {
     case "email":
     case "link":
       return <a href={format === "email" ? "mailto:" + value : String(value)} className="text-accent hover:underline">{String(value)}</a>;
-    case "image":
-      return <img src={String(value)} alt="" className="h-8 w-8 rounded object-cover" />;
+    case "image": {
+      const url = imageUrl(value);
+      const extra = Array.isArray(value) && value.length > 1 ? " +" + (value.length - 1) : "";
+      return url ? (
+        <span className="flex items-center gap-1.5">
+          <img src={url} alt="" className="h-8 w-8 rounded object-cover" />
+          {extra && <span className="text-[11px] text-foreground-muted">{extra}</span>}
+        </span>
+      ) : <span className="text-foreground-muted">—</span>;
+    }
     default:
       return <>{cellText(value, format)}</>;
   }
