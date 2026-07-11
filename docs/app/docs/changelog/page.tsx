@@ -28,6 +28,56 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.36.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.36.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Desktop parity, round one: full-height login, a
+                  collapsible sidebar, and a real Sync page.</strong> The desktop
+                  client is being brought to visual and behavioral parity with the
+                  admin panel. This release lands the app chrome and the offline
+                  control center.
+                </p>
+                <p>
+                  <strong>Login now fills the window.</strong> The split auth shell
+                  (hero panel + form) stretches to the full height under the
+                  titlebar, matching the admin login exactly — the form wrapper
+                  wasn&apos;t resolving <code>min-h-full</code> inside a{' '}
+                  <code>flex-1</code> parent, so the shell collapsed to content
+                  height. Verified: the hero panel measures the full window height
+                  minus the native titlebar.
+                </p>
+                <p>
+                  <strong>The sidebar collapses.</strong> Just like the admin, the
+                  desktop sidebar now toggles between a 240px labeled rail and a
+                  64px icon-only rail (with tooltips), and the choice persists
+                  across launches. Nav is driven from a single{' '}
+                  <code>nav-config</code> source of truth.
+                </p>
+                <p>
+                  <strong>New: a Sync page.</strong> Because the desktop app is
+                  offline-first, there&apos;s now a dedicated <code>/app/sync</code>{' '}
+                  screen — Overview, Modules, and Pending-changes tabs showing live
+                  sync status (online/offline), last-sync time, per-module pending
+                  counts, a stable device ID, a Work-offline toggle, and a
+                  Sync-now action. The sync engine now issues and persists a device
+                  ID and reports the set of synced tables.
+                </p>
+                <p>
+                  Existing projects pick this up with <code>grit update</code>. More
+                  parity work (dashboard, resource tables &amp; forms, system pages,
+                  quick-access button) is on the way.
+                </p>
+              </div>
+            </div>
+
             {/* v3.35.4 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

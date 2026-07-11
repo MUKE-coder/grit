@@ -57,6 +57,7 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "index.tsx"):     desktopClientDashboardRoute(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "profile.tsx"):   desktopClientProfileRoute(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "settings.tsx"):  desktopClientSettingsRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "sync.tsx"):      desktopClientSyncPage(),
 
 		// Layout components
 		filepath.Join(desktopRoot, "frontend", "src", "components", "layout", "title-bar.tsx"):       desktopClientTitleBar(opts),
@@ -1072,6 +1073,8 @@ type WailsSyncStatus = {
   pending: number;
   last_sync?: string;
   last_error?: string;
+  device_id?: string;
+  tables?: string[];
 };
 
 declare global {
@@ -1182,9 +1185,11 @@ function AuthLayout() {
   return (
     <div className="flex flex-col h-screen bg-background">
       <TitleBar showSidebarControls={false} />
-      {/* The themed AuthShell owns its own layout (split hero / centered card),
-          so this wrapper only provides the scroll container. */}
-      <div className="flex-1 overflow-auto">
+      {/* flex + min-h-0 so the AuthShell (a flex child) STRETCHES to the full
+          remaining height. A plain flex-1 wrapper computes height:auto, leaving
+          the shell's min-h-full resolving to content height — that's why the
+          split hero didn't reach the bottom. overflow-auto scrolls a tall form. */}
+      <div className="flex-1 flex min-h-0 overflow-auto">
         <Outlet />
       </div>
     </div>
@@ -2513,6 +2518,8 @@ export interface SyncStatus {
   pending: number;
   last_sync?: string;
   last_error?: string;
+  device_id?: string;
+  tables?: string[];
 }
 
 // getSyncTables returns the models covered by offline sync (owned by the Go
@@ -2667,6 +2674,238 @@ export function OfflineModeToggle() {
           }
         />
       </button>
+    </div>
+  );
+}
+`
+}
+
+// desktopClientSyncPage is the dedicated Sync screen for the offline-first
+// desktop app: device status, per-module sync state, the pending-change queue,
+// a Work-offline toggle and a Sync-now action. Mirrors the layout of a
+// production offline app's sync page.
+func desktopClientSyncPage() string {
+	return `import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { RefreshCw, Cloud, CloudOff, Database, ListChecks } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
+import { useSyncStatus } from "@/hooks/use-sync-status";
+import { getPendingChanges, type OutboxEntry } from "@/lib/sync-client";
+
+export const Route = createFileRoute("/app/sync")({ component: SyncPage });
+
+type Tab = "overview" | "modules" | "pending";
+
+function relTime(iso?: string): string {
+  if (!iso) return "never";
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "never";
+  const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+  if (s < 60) return s + "s ago";
+  const m = Math.round(s / 60);
+  if (m < 60) return m + "m ago";
+  const h = Math.round(m / 60);
+  if (h < 24) return h + "h ago";
+  return Math.round(h / 24) + "d ago";
+}
+
+function StatCard({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-surface p-5">
+      <div className="text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">{label}</div>
+      <div className="mt-2 text-[18px] font-semibold text-foreground">{value}</div>
+      {hint && <div className="mt-0.5 text-[12px] text-foreground-secondary">{hint}</div>}
+    </div>
+  );
+}
+
+function SyncPage() {
+  const { status, busy, setOffline, forceSync } = useSyncStatus();
+  const [tab, setTab] = useState<Tab>("overview");
+  const [pending, setPending] = useState<OutboxEntry[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      getPendingChanges()
+        .then((p) => { if (alive) setPending(p); })
+        .catch(() => {});
+    load();
+    const id = setInterval(load, 3000);
+    return () => { alive = false; clearInterval(id); };
+  }, []);
+
+  const offline = status.force_offline;
+  const tables = status.tables ?? [];
+  const perModel: Record<string, number> = {};
+  for (const p of pending) perModel[p.Model] = (perModel[p.Model] || 0) + 1;
+
+  const statusText = offline
+    ? "Working offline"
+    : status.reachable
+      ? "Online"
+      : "Server unreachable";
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: "overview", label: "Overview" },
+    { key: "modules", label: "Modules" },
+    { key: "pending", label: "Pending changes" },
+  ];
+
+  return (
+    <div>
+      <PageHeader title="Sync" description="Status, modules, and pending changes for this device." />
+
+      {/* Tab bar + Sync now */}
+      <div className="mt-6 flex items-center justify-between border-b border-border-subtle">
+        <div className="flex gap-1">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={
+                "px-3 py-2 text-[13px] font-medium border-b-2 -mb-px transition-colors " +
+                (tab === t.key
+                  ? "border-accent text-accent"
+                  : "border-transparent text-foreground-secondary hover:text-foreground")
+              }
+            >
+              {t.label}
+              {t.key === "pending" && pending.length > 0 && (
+                <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent/15 px-1.5 text-[10px] font-semibold text-accent">
+                  {pending.length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={forceSync}
+          disabled={busy || offline}
+          className="mb-2 flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
+        >
+          <RefreshCw className={"h-4 w-4 " + (busy ? "animate-spin" : "")} /> Sync now
+        </button>
+      </div>
+
+      {tab === "overview" && (
+        <div className="mt-6 space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              label="Status"
+              value={
+                <span className={"flex items-center gap-2 " + (offline ? "text-warning" : status.reachable ? "text-success" : "text-danger")}>
+                  {offline ? <CloudOff className="h-4 w-4" /> : <Cloud className="h-4 w-4" />}
+                  {statusText}
+                </span>
+              }
+            />
+            <StatCard label="Last sync" value={relTime(status.last_sync)} />
+            <StatCard label="Pending changes" value={String(status.pending)} hint={status.pending === 0 ? "all synced" : "waiting to push"} />
+            <StatCard label="Device ID" value={<span className="font-mono text-[13px]">{(status.device_id || "—").slice(0, 8)}…</span>} />
+          </div>
+
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-[15px] font-semibold text-foreground">Work offline</h3>
+                <p className="mt-1 max-w-2xl text-[13px] text-foreground-secondary">
+                  When on, this device stops talking to the server. Your edits keep working against the local
+                  copy and queue up; they push automatically the moment you switch back online.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOffline(!offline)}
+                disabled={busy}
+                role="switch"
+                aria-checked={offline}
+                className={
+                  "relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors " +
+                  (offline ? "bg-warning" : "bg-accent")
+                }
+              >
+                <span className={"inline-block h-4 w-4 rounded-full bg-white transition-transform " + (offline ? "translate-x-6" : "translate-x-1")} />
+              </button>
+            </div>
+            {status.last_error && (
+              <p className="mt-3 rounded-lg bg-danger/10 px-3 py-2 text-[12px] text-danger">Last error: {status.last_error}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {tab === "modules" && (
+        <div className="mt-6 rounded-xl border border-border bg-surface overflow-hidden">
+          <table className="w-full text-[13px]">
+            <thead className="border-b border-border-subtle text-foreground-secondary">
+              <tr>
+                <th className="px-4 py-2 text-left font-medium">Module</th>
+                <th className="px-4 py-2 text-right font-medium">Pending</th>
+                <th className="px-4 py-2 text-right font-medium">State</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tables.length === 0 ? (
+                <tr><td className="px-4 py-6 text-foreground-muted" colSpan={3}>No modules registered for sync yet.</td></tr>
+              ) : (
+                tables.map((m) => (
+                  <tr key={m} className="border-b border-border-subtle last:border-0">
+                    <td className="px-4 py-2.5">
+                      <span className="flex items-center gap-2 text-foreground">
+                        <Database className="h-4 w-4 text-foreground-muted" /> {m}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-right">{perModel[m] || 0}</td>
+                    <td className="px-4 py-2.5 text-right">
+                      {perModel[m] ? (
+                        <span className="text-warning">queued</span>
+                      ) : (
+                        <span className="text-success">synced</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {tab === "pending" && (
+        <div className="mt-6 rounded-xl border border-border bg-surface overflow-hidden">
+          {pending.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <ListChecks className="h-8 w-8 text-foreground-muted" />
+              <p className="mt-3 text-[14px] font-medium text-foreground">Nothing pending</p>
+              <p className="text-[13px] text-foreground-secondary">Every local change has been pushed to the server.</p>
+            </div>
+          ) : (
+            <table className="w-full text-[13px]">
+              <thead className="border-b border-border-subtle text-foreground-secondary">
+                <tr>
+                  <th className="px-4 py-2 text-left font-medium">Module</th>
+                  <th className="px-4 py-2 text-left font-medium">Change</th>
+                  <th className="px-4 py-2 text-left font-medium">Record</th>
+                  <th className="px-4 py-2 text-right font-medium">State</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pending.map((p) => (
+                  <tr key={p.ID} className="border-b border-border-subtle last:border-0">
+                    <td className="px-4 py-2.5 text-foreground">{p.Model}</td>
+                    <td className="px-4 py-2.5"><span className="uppercase text-[11px] font-semibold text-foreground-secondary">{p.Op}</span></td>
+                    <td className="px-4 py-2.5 font-mono text-[12px] text-foreground-secondary">{String(p.EntityID).slice(0, 8)}…</td>
+                    <td className="px-4 py-2.5 text-right">
+                      {p.HasConflict ? <span className="text-danger">conflict</span> : <span className="text-warning">queued</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
     </div>
   );
 }

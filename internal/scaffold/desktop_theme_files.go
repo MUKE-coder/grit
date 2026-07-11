@@ -258,7 +258,7 @@ export function AtlasAuthShell({ theme, mode, title, subtitle, children, errorMe
 
   return (
     <div
-      className="flex min-h-full"
+      className="flex min-h-full w-full"
       style={{
         fontFamily: f.ui,
         background: t.bg,
@@ -348,7 +348,7 @@ export function AuroraAuthShell({ theme, mode, title, subtitle, children, errorM
 
   return (
     <div
-      className="flex min-h-full items-center justify-center px-4 py-12"
+      className="flex min-h-full w-full items-center justify-center px-4 py-12"
       style={{
         fontFamily: f.ui,
         background: wallpaper,
@@ -406,7 +406,7 @@ export function PulseAuthShell({ theme, mode, title, subtitle, children, errorMe
 
   return (
     <div
-      className="flex min-h-full"
+      className="flex min-h-full w-full"
       style={{
         fontFamily: f.ui,
         background: t.bg,

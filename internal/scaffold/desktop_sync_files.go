@@ -43,6 +43,7 @@ import (
 	"time"
 
 	"github.com/glebarez/sqlite"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -64,6 +65,7 @@ type Engine struct {
 	lastSync   time.Time
 	lastErr    string
 	online     bool
+	deviceID   string
 }
 
 // Open initializes a sync engine. dbPath is the absolute path to the
@@ -82,13 +84,21 @@ func Open(dbPath, apiURL string, getToken func() (string, error)) (*Engine, erro
 	if err := db.AutoMigrate(&Record{}, &Outbox{}, &Cursor{}, &Setting{}); err != nil {
 		return nil, fmt.Errorf("migrating local db: %w", err)
 	}
-	return &Engine{
+	e := &Engine{
 		DB:       db,
 		APIURL:   apiURL,
 		GetToken: getToken,
 		HTTP:     &http.Client{Timeout: 30 * time.Second},
 		cursors:  make(map[string]string),
-	}, nil
+	}
+	// A stable per-install device id, generated once and persisted. Shown on
+	// the Sync page and useful for correlating a device's changes server-side.
+	e.deviceID = e.getSetting("device_id")
+	if e.deviceID == "" {
+		e.deviceID = uuid.New().String()
+		_ = e.setSetting("device_id", e.deviceID)
+	}
+	return e, nil
 }
 
 // SyncResult summarizes one Sync run for the UI.
@@ -271,6 +281,8 @@ type SyncStatus struct {
 	Pending      int64  ` + "`" + `json:"pending"` + "`" + `
 	LastSync     string ` + "`" + `json:"last_sync,omitempty"` + "`" + `
 	LastError    string ` + "`" + `json:"last_error,omitempty"` + "`" + `
+	DeviceID     string ` + "`" + `json:"device_id,omitempty"` + "`" + `
+	Tables       []string ` + "`" + `json:"tables,omitempty"` + "`" + `
 }
 
 // Status returns the current sync snapshot. Reachability comes from the last
@@ -288,6 +300,8 @@ func (e *Engine) Status() SyncStatus {
 		Pending:      pending,
 		LastSync:     ls,
 		LastError:    e.lastErr,
+		DeviceID:     e.deviceID,
+		Tables:       e.syncModels,
 	}
 	e.autoMu.Unlock()
 	return st
