@@ -28,6 +28,39 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.46.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.46.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The desktop Profile page is now the full account manager,
+                  matching the admin.</strong> It was a single read-only card; it now
+                  has five sections.
+                </p>
+                <p>
+                  <strong>Profile picture</strong> (upload a new avatar — it uploads
+                  via the API and saves to your profile), <strong>Personal
+                  information</strong> (first/last name, email),{' '}
+                  <strong>Professional information</strong> (job title + bio),{' '}
+                  <strong>Password</strong> (new + confirm with match/length
+                  validation), and a <strong>Delete account</strong> danger zone with
+                  a confirm step that logs you out. Each block saves independently via{' '}
+                  <code>PUT /profile</code>.
+                </p>
+                <p>
+                  Existing projects: <code>grit update</code>. Verified on a fresh
+                  scaffold: all five sections render with eight inputs and two
+                  save buttons, zero console errors.
+                </p>
+              </div>
+            </div>
+
             {/* v3.45.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

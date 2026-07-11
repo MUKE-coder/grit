@@ -1873,42 +1873,194 @@ function timeAgo(iso: string): string {
 }
 
 func desktopClientProfileRoute() string {
-	return `import { createFileRoute } from "@tanstack/react-router";
+	return `import { useEffect, useRef, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { User as UserIcon, Briefcase, Lock, Upload, Loader2, Save, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
-import { Card, CardContent } from "@/components/ui/card";
-import { useMe } from "@/hooks/use-auth";
+import { useMe, useLogout } from "@/hooks/use-auth";
+import { apiClient, uploadFile } from "@/lib/api-client";
 
 export const Route = createFileRoute("/app/profile")({
   component: ProfilePage,
 });
 
+const inputCls =
+  "w-full rounded-lg border border-border bg-surface-2 px-4 py-2.5 text-[13px] text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent";
+const cardCls = "rounded-xl border border-border bg-surface p-6";
+
+function Section({ icon: Icon, title, description, children }: { icon: any; title: string; description: string; children: React.ReactNode }) {
+  return (
+    <div className={cardCls}>
+      <div className="mb-5 flex items-center gap-3">
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent"><Icon className="h-4 w-4" /></span>
+        <div>
+          <h3 className="text-[14px] font-semibold text-foreground">{title}</h3>
+          <p className="text-[12px] text-foreground-muted">{description}</p>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 function ProfilePage() {
   const { data: user } = useMe();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const { mutate: logout } = useLogout();
+  const avatarRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [bio, setBio] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [pwError, setPwError] = useState("");
+
+  useEffect(() => {
+    if (!user) return;
+    setFirstName(user.first_name ?? "");
+    setLastName(user.last_name ?? "");
+    setEmail(user.email ?? "");
+    setJobTitle((user as any).job_title ?? "");
+    setBio((user as any).bio ?? "");
+  }, [user]);
+
+  const update = useMutation({
+    mutationFn: (data: Record<string, unknown>) => apiClient.put("/profile", data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["me"] }),
+  });
+  const del = useMutation({
+    mutationFn: () => apiClient.delete("/profile"),
+    onSuccess: () => logout(undefined, { onSuccess: () => navigate({ to: "/auth/login" }) }),
+  });
+
+  const onAvatar = async (file: File) => {
+    setUploading(true);
+    try {
+      const ref = await uploadFile(file);
+      update.mutate({ avatar: ref.url });
+    } finally {
+      setUploading(false);
+      if (avatarRef.current) avatarRef.current.value = "";
+    }
+  };
+
+  const savePassword = () => {
+    setPwError("");
+    if (password.length < 8) { setPwError("Password must be at least 8 characters"); return; }
+    if (password !== confirm) { setPwError("Passwords do not match"); return; }
+    update.mutate({ password }, { onSuccess: () => { setPassword(""); setConfirm(""); } });
+  };
+
+  const avatarUrl = (user as any)?.avatar as string | undefined;
 
   return (
     <div>
-      <PageHeader title="Profile" description="Manage your account details" />
+      <PageHeader title="Profile" description="Manage your personal details, job profile, and password." />
 
-      <Card className="mt-6 max-w-2xl">
-        <CardContent className="p-6">
+      <div className="mt-6 max-w-3xl space-y-4">
+        {/* Profile picture */}
+        <div className={cardCls}>
           <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-full bg-accent/20 flex items-center justify-center">
-              <span className="text-xl font-semibold text-accent">
-                {user?.first_name?.charAt(0)?.toUpperCase() || "?"}
-              </span>
+            <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl bg-accent/20">
+              {avatarUrl ? <img src={avatarUrl} alt="" className="h-full w-full object-cover" /> : <span className="text-xl font-semibold text-accent">{user?.first_name?.charAt(0)?.toUpperCase() || "?"}</span>}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[16px] font-semibold text-foreground">{user?.first_name} {user?.last_name}</p>
+              <p className="text-[13px] text-foreground-secondary">{user?.email}</p>
+              <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-accent">{user?.role}</p>
+            </div>
+            <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onAvatar(f); }} />
+            <button onClick={() => avatarRef.current?.click()} disabled={uploading} className="flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50">
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Upload new
+            </button>
+          </div>
+        </div>
+
+        {/* Personal */}
+        <Section icon={UserIcon} title="Personal information" description="Your name and primary email address.">
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-foreground-muted">First name</label>
+                <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputCls} />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-foreground-muted">Last name</label>
+                <input value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputCls} />
+              </div>
             </div>
             <div>
-              <p className="text-[16px] font-semibold text-foreground">
-                {user?.first_name} {user?.last_name}
-              </p>
-              <p className="text-[13px] text-foreground-secondary">{user?.email}</p>
-              <p className="mt-1 inline-block text-[11px] font-semibold uppercase tracking-wider text-accent">
-                {user?.role}
-              </p>
+              <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-foreground-muted">Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
+            </div>
+            <div className="flex justify-end">
+              <button onClick={() => update.mutate({ first_name: firstName, last_name: lastName, email })} disabled={update.isPending} className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50">
+                <Save className="h-4 w-4" /> Save changes
+              </button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </Section>
+
+        {/* Professional */}
+        <Section icon={Briefcase} title="Professional information" description="What you do, and a short bio teammates and customers can see.">
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-foreground-muted">Job title</label>
+              <input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="Software Engineer" className={inputCls} />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-foreground-muted">Bio</label>
+              <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={4} placeholder="A short bio about yourself..." className={inputCls} />
+            </div>
+            <div className="flex justify-end">
+              <button onClick={() => update.mutate({ job_title: jobTitle, bio })} disabled={update.isPending} className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50">
+                <Save className="h-4 w-4" /> Save changes
+              </button>
+            </div>
+          </div>
+        </Section>
+
+        {/* Password */}
+        <Section icon={Lock} title="Password" description="Choose a new password that's at least 8 characters long.">
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-foreground-muted">New password</label>
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" className={inputCls} />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wider text-foreground-muted">Confirm password</label>
+                <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Re-enter your password" className={inputCls} />
+              </div>
+            </div>
+            {pwError && <p className="text-[12px] text-danger">{pwError}</p>}
+            <div className="flex justify-end">
+              <button onClick={savePassword} disabled={update.isPending} className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50">
+                <Lock className="h-4 w-4" /> Update password
+              </button>
+            </div>
+          </div>
+        </Section>
+
+        {/* Delete account */}
+        <div className="rounded-xl border border-danger/30 bg-danger/5 p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h3 className="text-[14px] font-semibold text-foreground">Delete account</h3>
+              <p className="text-[12px] text-foreground-muted">Permanently remove your account and all associated data. This action cannot be undone.</p>
+            </div>
+            <button onClick={() => { if (window.confirm("Permanently delete your account? This cannot be undone.")) del.mutate(); }} className="flex shrink-0 items-center gap-2 rounded-lg border border-danger/40 px-4 py-2 text-[13px] font-semibold text-danger hover:bg-danger/10">
+              <Trash2 className="h-4 w-4" /> Delete account
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
