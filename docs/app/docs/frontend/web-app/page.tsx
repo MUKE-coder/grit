@@ -24,7 +24,7 @@ export default function WebAppPage() {
                 Web App
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Grit scaffolds a full Next.js 14+ frontend with App Router, Tailwind CSS, shadcn/ui,
+                Grit scaffolds a full Next.js 16 frontend with App Router, Tailwind CSS, shadcn/ui,
                 React Query, and a pre-built authentication flow -- all wired to your Go API out of the box.
               </p>
             </div>
@@ -69,7 +69,7 @@ export default function WebAppPage() {
 │   └── use-blogs.ts            # Blog data fetching hooks
 ├── lib/
 │   ├── api.ts                  # API helper functions
-│   ├── api-client.ts           # Axios instance with JWT interceptor
+│   ├── api-client.ts           # Axios instance (HttpOnly cookies + CSRF)
 │   ├── query-client.ts         # React Query client config
 │   └── utils.ts                # Utility functions (cn, etc.)
 ├── next.config.ts
@@ -256,7 +256,6 @@ export default function LoginPage() {
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useMe } from "@/hooks/use-auth";
-import Cookies from "js-cookie";
 
 export default function DashboardLayout({
   children,
@@ -264,19 +263,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  // Auth lives in HttpOnly cookies (grit_access / grit_refresh) that JS
+  // can't read, so we don't check a token client-side. Instead useMe()
+  // calls GET /api/auth/me — if the cookie is missing or expired the API
+  // returns 401 and we redirect to login.
   const { data: user, isLoading, isError } = useMe();
 
   useEffect(() => {
-    const token = Cookies.get("access_token");
-    if (!token) {
-      router.replace("/login");
-    }
-  }, [router]);
-
-  useEffect(() => {
     if (isError) {
-      Cookies.remove("access_token");
-      Cookies.remove("refresh_token");
       router.replace("/login");
     }
   }, [isError, router]);
@@ -343,62 +337,49 @@ export default function DashboardPage() {
                   API Client Setup
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  The API client is an Axios instance configured to point at the Go backend. It automatically
-                  injects the JWT access token from cookies into every request, and handles token refresh
-                  when a 401 response is received.
+                  The API client is an Axios instance pointed at the Go backend. Auth is
+                  cookie-based: <code>/api/auth/login</code> sets <strong>HttpOnly</strong>{' '}
+                  <code>grit_access</code> / <code>grit_refresh</code> cookies, and{' '}
+                  <code>withCredentials: true</code> tells the browser to send them on every
+                  request (including cross-origin in dev, where the API is on <code>:8080</code>{' '}
+                  and the web app on <code>:3000</code>). There is no <code>Authorization: Bearer</code>{' '}
+                  header and no token in JavaScript &mdash; that&apos;s the point: HttpOnly cookies
+                  can&apos;t be read by scripts, so they&apos;re immune to token-stealing XSS.
                 </p>
 
                 <CodeBlock language="typescript" filename="apps/web/lib/api-client.ts" code={`import axios from "axios";
-import Cookies from "js-cookie";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-export const apiClient = axios.create({
+export const api = axios.create({
   baseURL: API_URL,
   headers: { "Content-Type": "application/json" },
+  // Send the HttpOnly grit_access / grit_refresh cookies automatically.
+  // Without this, axios drops them on cross-origin requests in dev and the
+  // server treats every call as anonymous.
+  withCredentials: true,
 });
 
-// Inject JWT token into every request
-apiClient.interceptors.request.use((config) => {
-  const token = Cookies.get("access_token");
-  if (token) {
-    config.headers.Authorization = \`Bearer \${token}\`;
+// Double-submit CSRF: echo the (non-HttpOnly) grit_csrf cookie into a header
+// on state-changing requests. Also stamp an Idempotency-Key so any mutation
+// gets safe-retry semantics for free.
+api.interceptors.request.use((config) => {
+  if (typeof document !== "undefined") {
+    const m = document.cookie.match(/(?:^|; )grit_csrf=([^;]+)/);
+    if (m && config.headers) {
+      config.headers["X-CSRF-Token"] = decodeURIComponent(m[1]);
+    }
+  }
+  const method = (config.method || "get").toUpperCase();
+  const unsafe = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+  if (unsafe && config.headers && !config.headers["Idempotency-Key"]) {
+    config.headers["Idempotency-Key"] = crypto.randomUUID();
   }
   return config;
 });
 
-// Handle 401 by refreshing the token
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        const refreshToken = Cookies.get("refresh_token");
-        const { data } = await axios.post(
-          \`\${API_URL}/api/auth/refresh\`,
-          { refresh_token: refreshToken }
-        );
-
-        Cookies.set("access_token", data.data.access_token);
-        Cookies.set("refresh_token", data.data.refresh_token);
-
-        originalRequest.headers.Authorization =
-          \`Bearer \${data.data.access_token}\`;
-        return apiClient(originalRequest);
-      } catch {
-        Cookies.remove("access_token");
-        Cookies.remove("refresh_token");
-        window.location.href = "/login";
-      }
-    }
-
-    return Promise.reject(error);
-  }
-);`} />
+// Alias kept so generated React Query hooks importing { apiClient } resolve.
+export const apiClient = api;`} />
               </div>
 
               {/* React Query Setup */}
