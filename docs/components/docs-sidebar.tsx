@@ -21,6 +21,7 @@ import {
   GraduationCap,
   Download,
   Monitor,
+  Smartphone,
   Menu,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -162,13 +163,21 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    title: 'Frontend',
+    title: 'Web App',
     icon: <Layers className="h-3.5 w-3.5" />,
     items: [
       { title: 'Web App (Next.js)', href: '/docs/frontend/web-app' },
       { title: 'TanStack Router (Vite)', href: '/docs/frontend/tanstack-router' },
       { title: 'React Query Hooks', href: '/docs/frontend/hooks' },
       { title: 'Shared Package', href: '/docs/frontend/shared-package' },
+    ],
+  },
+  {
+    title: 'Mobile (Expo)',
+    icon: <Smartphone className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Overview (API + Expo)', href: '/docs/concepts/architecture-modes/mobile' },
+      { title: 'Mobile Tech Kit', href: '/docs/tech-kits/mobile' },
     ],
   },
   {
