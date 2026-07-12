@@ -313,7 +313,7 @@ func (a *AI) Stream(ctx context.Context, req CompletionRequest, handler StreamHa
           </p>
 
           <Challenge number={5} title="Test the Complete Endpoint">
-            <p>If you have an AI Gateway API key, start your project with <Code>grit dev</Code> and
+            <p>If you have an AI Gateway API key, start your project with <Code>grit start</Code> and
             open the Swagger docs at <Code>localhost:8080/swagger/index.html</Code>. Find the{' '}
             <Code>POST /api/ai/complete</Code> endpoint. Send the prompt {'"'}What is Go?{'"'} and examine
             the response. How many tokens did it use?</p>

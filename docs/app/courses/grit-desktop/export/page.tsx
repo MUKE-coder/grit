@@ -75,10 +75,10 @@ export default function ExportCourse() {
 
           <p className="text-muted-foreground leading-relaxed mb-4">
             Grit desktop apps include a built-in export service in Go with three main methods. The
-            service lives in the <Code>internal/services/</Code> directory:
+            service lives in the <Code>internal/service/</Code> directory:
           </p>
 
-          <CodeBlock filename="internal/services/export_service.go (overview)">
+          <CodeBlock filename="internal/service/export.go (overview)">
 {`type ExportService struct {
     db *gorm.DB
 }
@@ -112,7 +112,7 @@ func (s *ExportService) GenerateCSV(resource string) (string, error) {
           </p>
 
           <Challenge number={1} title="Find the Export Service">
-            <p>Open the export service file in your project (look in <Code>internal/services/</Code>). What methods does it have? What Go libraries does it import for PDF and Excel generation?</p>
+            <p>Open the export service file in your project (look in <Code>internal/service/</Code>). What methods does it have? What Go libraries does it import for PDF and Excel generation?</p>
           </Challenge>
         </section>
 

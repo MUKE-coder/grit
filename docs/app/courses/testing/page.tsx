@@ -680,13 +680,13 @@ pnpm test:e2e auth.spec.ts`}
 
           <Tip>
             E2E tests require the application to be running. Start your API and frontend first
-            with <Code>grit dev</Code>, then run <Code>pnpm test:e2e</Code> in a separate terminal.
+            with <Code>grit start</Code>, then run <Code>pnpm test:e2e</Code> in a separate terminal.
           </Tip>
 
           <Challenge number={9} title="Find the Playwright Config">
             <p>Find the Playwright configuration file in your project (<Code>playwright.config.ts</Code>).
             What base URL is it configured to use? What browsers does it test against? Start your app
-            with <Code>grit dev</Code>, then run <Code>pnpm test:e2e</Code>. Do the tests pass?</p>
+            with <Code>grit start</Code>, then run <Code>pnpm test:e2e</Code>. Do the tests pass?</p>
           </Challenge>
         </section>
 

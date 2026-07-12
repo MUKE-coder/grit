@@ -195,13 +195,16 @@ export default function FileStorageCourse() {
 
           <CodeBlock filename=".env">
 {`# Storage Configuration
-STORAGE_DRIVER=s3
-STORAGE_ENDPOINT=localhost:9000
-STORAGE_BUCKET=uploads
-STORAGE_ACCESS_KEY=minioadmin
-STORAGE_SECRET_KEY=minioadmin
-STORAGE_REGION=us-east-1
-STORAGE_USE_SSL=false`}
+STORAGE_DRIVER=minio          # minio | s3 | r2 | b2
+MINIO_ENDPOINT=http://localhost:9002
+MINIO_BUCKET=uploads
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_REGION=us-east-1
+MINIO_USE_SSL=false
+
+# For AWS S3 set STORAGE_DRIVER=s3 and use S3_* vars;
+# for Cloudflare R2 use R2_*; for Backblaze B2 use B2_*.`}
           </CodeBlock>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -209,13 +212,13 @@ STORAGE_USE_SSL=false`}
           </p>
 
           <ul className="space-y-3 text-muted-foreground mb-6">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">STORAGE_DRIVER</strong> — The storage backend to use. Set to <Code>s3</Code> for any S3-compatible service (MinIO, R2, AWS S3, B2). This tells Grit which client library to initialize.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">STORAGE_ENDPOINT</strong> — The hostname (and optional port) of the storage service. For local MinIO: <Code>localhost:9000</Code>. For R2: <Code>your-account.r2.cloudflarestorage.com</Code>. For AWS S3: leave empty or use the regional endpoint.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">STORAGE_BUCKET</strong> — The name of the S3 bucket where files will be stored. Grit uses a single bucket and organizes files with key prefixes.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">STORAGE_ACCESS_KEY</strong> — The access key ID for authenticating with the storage service. For MinIO: <Code>minioadmin</Code>. For cloud providers: your IAM access key.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">STORAGE_SECRET_KEY</strong> — The secret access key. For MinIO: <Code>minioadmin</Code>. For cloud providers: your IAM secret key. Keep this secret — never commit it to Git.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">STORAGE_REGION</strong> — The AWS region for the bucket. Required by the S3 protocol. For MinIO: <Code>us-east-1</Code> (any value works). For R2: <Code>auto</Code>. For AWS S3: your actual region like <Code>us-west-2</Code>.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">STORAGE_USE_SSL</strong> — Whether to use HTTPS when connecting to the storage endpoint. Set to <Code>false</Code> for local MinIO (HTTP). Set to <Code>true</Code> for any cloud provider (HTTPS).</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">STORAGE_DRIVER</strong> — The storage backend: <Code>minio</Code> (local dev), <Code>s3</Code>, <Code>r2</Code>, or <Code>b2</Code>. This selects which set of provider variables Grit reads and which client it initializes.</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_ENDPOINT</strong> — The MinIO URL for local dev: <Code>http://localhost:9002</Code>. (Cloud drivers use their own endpoint var — <Code>S3_ENDPOINT</Code>, <Code>R2_ENDPOINT</Code>, <Code>B2_ENDPOINT</Code>; leave S3 empty for the AWS regional default.)</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_BUCKET</strong> — The bucket where files are stored. Grit uses a single bucket and organizes files with key prefixes.</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_ACCESS_KEY</strong> — The access key ID. For local MinIO: <Code>minioadmin</Code>. For cloud providers: your IAM access key (via <Code>S3_ACCESS_KEY</Code> / <Code>R2_ACCESS_KEY</Code>).</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_SECRET_KEY</strong> — The secret access key. For local MinIO: <Code>minioadmin</Code>. Keep production secrets out of Git.</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_REGION</strong> — Required by the S3 protocol. For MinIO any value works (<Code>us-east-1</Code>); R2 uses <Code>auto</Code>; AWS S3 uses your real region.</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MINIO_USE_SSL</strong> — HTTPS on/off. <Code>false</Code> for local MinIO (HTTP), <Code>true</Code> for cloud providers.</li>
           </ul>
 
           <Tip>
@@ -225,7 +228,7 @@ STORAGE_USE_SSL=false`}
           </Tip>
 
           <Challenge number={2} title="Find Your Storage Variables">
-            <p>Open your project{"'"}s <Code>.env</Code> file and find all the <Code>STORAGE_</Code> variables.
+            <p>Open your project{"'"}s <Code>.env</Code> file and find the <Code>STORAGE_DRIVER</Code> and <Code>MINIO_</Code> variables.
             What driver is configured by default? What bucket name is used? What endpoint does it
             point to?</p>
           </Challenge>
@@ -255,11 +258,11 @@ STORAGE_USE_SSL=false`}
 
           <ul className="space-y-2 text-muted-foreground mb-6">
             <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Port 9000</strong> — The S3 API endpoint. Your Go API connects here to generate presigned URLs and manage files.</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Port 9001</strong> — The MinIO Console (web UI). Open <Code>localhost:9001</Code> in your browser to manage buckets and browse files visually.</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Port 9001</strong> — The MinIO Console (web UI). Open <Code>localhost:9003</Code> in your browser to manage buckets and browse files visually.</li>
           </ul>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            To access the MinIO Console, open <Code>http://localhost:9001</Code> and log in with
+            To access the MinIO Console, open <Code>http://localhost:9003</Code> and log in with
             the default credentials:
           </p>
 
@@ -286,7 +289,7 @@ Password: minioadmin`}
           </p>
 
           <CodeBlock filename="Creating a Bucket">
-{`1. Open http://localhost:9001
+{`1. Open http://localhost:9003
 2. Log in with minioadmin / minioadmin
 3. Click "Buckets" in the sidebar
 4. Click "Create Bucket"
@@ -305,7 +308,7 @@ The bucket is now ready to receive files.`}
 
           <Challenge number={3} title="Explore MinIO Console">
             <p>Make sure Docker is running with <Code>docker compose up -d</Code>. Open{' '}
-            <Code>localhost:9001</Code> in your browser and log in with{' '}
+            <Code>localhost:9003</Code> in your browser and log in with{' '}
             <Code>minioadmin</Code> / <Code>minioadmin</Code>. Can you see the{' '}
             <Code>uploads</Code> bucket? Create a test bucket called {'"'}images{'"'} and verify
             it appears in the list.</p>
@@ -337,7 +340,7 @@ The bucket is now ready to receive files.`}
 // Response
 {
   "data": {
-    "upload_url": "http://localhost:9000/uploads/abc123-photo.jpg?X-Amz-Algorithm=...",
+    "upload_url": "http://localhost:9002/uploads/abc123-photo.jpg?X-Amz-Algorithm=...",
     "key": "uploads/abc123-photo.jpg"
   }
 }`}
@@ -451,7 +454,7 @@ The bucket is now ready to receive files.`}
           </Tip>
 
           <Challenge number={4} title="Call the Presign Endpoint">
-            <p>With your project running (<Code>grit dev</Code>), use the API docs or a tool like
+            <p>With your project running (<Code>grit start</Code>), use the API docs or a tool like
             curl to call the presign endpoint:</p>
             <CodeBlock filename="Terminal">
 {`curl -X POST http://localhost:8080/api/uploads/presign \\
@@ -470,7 +473,7 @@ The bucket is now ready to receive files.`}
             </CodeBlock>
             <p className="mt-2">Open the admin panel, go to the Products page, and create a new product.
             Upload an image file through the form. Check the MinIO console at{' '}
-            <Code>localhost:9001</Code> — can you find your uploaded file in the{' '}
+            <Code>localhost:9003</Code> — can you find your uploaded file in the{' '}
             <Code>uploads</Code> bucket?</p>
           </Challenge>
         </section>
@@ -572,7 +575,7 @@ The bucket is now ready to receive files.`}
           <Challenge number={6} title="Check for Thumbnails">
             <p>Upload a JPG or PNG image through the admin panel (a product image, profile photo,
             etc.). Wait a few seconds for the background worker to process it, then open the MinIO
-            console at <Code>localhost:9001</Code>. Browse the <Code>uploads</Code> bucket. Can you
+            console at <Code>localhost:9003</Code>. Browse the <Code>uploads</Code> bucket. Can you
             find the original file and its thumbnail versions (<Code>_thumb</Code> and{' '}
             <Code>_medium</Code> suffixes)?</p>
           </Challenge>
@@ -597,13 +600,12 @@ The bucket is now ready to receive files.`}
           </p>
 
           <CodeBlock filename=".env (Cloudflare R2)">
-{`STORAGE_DRIVER=s3
-STORAGE_ENDPOINT=your-account-id.r2.cloudflarestorage.com
-STORAGE_BUCKET=my-uploads
-STORAGE_ACCESS_KEY=your-r2-access-key
-STORAGE_SECRET_KEY=your-r2-secret-key
-STORAGE_REGION=auto
-STORAGE_USE_SSL=true`}
+{`STORAGE_DRIVER=r2
+R2_ENDPOINT=https://your-account-id.r2.cloudflarestorage.com
+R2_BUCKET=my-uploads
+R2_ACCESS_KEY=your-r2-access-key
+R2_SECRET_KEY=your-r2-secret-key
+R2_REGION=auto`}
           </CodeBlock>
 
           <h3 className="text-xl font-semibold text-foreground mb-3">AWS S3</h3>
@@ -615,12 +617,11 @@ STORAGE_USE_SSL=true`}
 
           <CodeBlock filename=".env (AWS S3)">
 {`STORAGE_DRIVER=s3
-STORAGE_ENDPOINT=s3.us-west-2.amazonaws.com
-STORAGE_BUCKET=my-app-uploads
-STORAGE_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE
-STORAGE_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-STORAGE_REGION=us-west-2
-STORAGE_USE_SSL=true`}
+S3_ENDPOINT=                 # empty = AWS regional default
+S3_BUCKET=my-app-uploads
+S3_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE
+S3_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+S3_REGION=us-west-2`}
           </CodeBlock>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
@@ -680,12 +681,12 @@ STORAGE_USE_SSL=true`}
 
           <CodeBlock filename="apps/api/internal/models/upload.go">
 {`type Upload struct {
-    ID          uint      \`gorm:"primaryKey" json:"id"\`
+    ID          string    \`gorm:"primaryKey;size:36" json:"id"\`
     Filename    string    \`gorm:"not null" json:"filename"\`
     Key         string    \`gorm:"not null;uniqueIndex" json:"key"\`
     ContentType string    \`gorm:"not null" json:"content_type"\`
     Size        int64     \`json:"size"\`
-    UserID      uint      \`json:"user_id"\`
+    UserID      string    \`gorm:"size:36" json:"user_id"\`
     User        User      \`gorm:"foreignKey:UserID" json:"user,omitempty"\`
     CreatedAt   time.Time \`json:"created_at"\`
     UpdatedAt   time.Time \`json:"updated_at"\`
@@ -724,7 +725,7 @@ STORAGE_USE_SSL=true`}
         return
     }
 
-    userID := c.GetUint("userID") // from auth middleware
+    userID := c.GetString("userID") // from auth middleware
 
     upload := models.Upload{
         Filename:    req.Filename,
@@ -880,7 +881,7 @@ const columns = [
               <li>Why do we use XHR instead of fetch for the upload step?</li>
               <li>What happens if you try to use a presigned URL after 15 minutes?</li>
               <li>What is the default MinIO endpoint in development?</li>
-              <li>What STORAGE_REGION value should you use for Cloudflare R2?</li>
+              <li>What R2_REGION value should you use for Cloudflare R2?</li>
             </ol>
           </Challenge>
 
@@ -927,7 +928,7 @@ const columns = [
               <li>Open the admin panel and find the Photos page</li>
               <li>Upload 5 photos with different titles and descriptions</li>
               <li>Open GORM Studio at <Code>localhost:8080/studio</Code> and find the photos table — verify all 5 records exist</li>
-              <li>Open the MinIO console at <Code>localhost:9001</Code> and browse the uploads bucket — find all 5 original images and their thumbnails</li>
+              <li>Open the MinIO console at <Code>localhost:9003</Code> and browse the uploads bucket — find all 5 original images and their thumbnails</li>
               <li>Check the uploads table in GORM Studio — are there corresponding upload records for each photo?</li>
               <li>Delete one photo from the admin panel and verify the file is removed from both the database and MinIO</li>
             </ol>

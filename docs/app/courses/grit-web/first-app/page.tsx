@@ -516,17 +516,17 @@ docker compose up -d`}
               <tbody className="text-muted-foreground">
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">PostgreSQL</td>
-                  <td className="px-4 py-3">5432</td>
+                  <td className="px-4 py-3">5434</td>
                   <td className="px-4 py-3">Main database — stores users, posts, everything</td>
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">Redis</td>
-                  <td className="px-4 py-3">6379</td>
+                  <td className="px-4 py-3">6380</td>
                   <td className="px-4 py-3">Cache (fast temporary storage) and job queue</td>
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-3 font-medium text-foreground">MinIO</td>
-                  <td className="px-4 py-3">9000 / 9001</td>
+                  <td className="px-4 py-3">9002 / 9003</td>
                   <td className="px-4 py-3">File storage (S3-compatible, for uploads)</td>
                 </tr>
                 <tr>
@@ -574,11 +574,13 @@ docker compose up -d`}
           </p>
 
           <CodeBlock filename="Terminal">
-{`pnpm dev`}
+{`grit start`}
           </CodeBlock>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            This starts three servers simultaneously using <a href="https://turbo.build" target="_blank" rel="noreferrer" className="text-primary hover:underline">Turborepo</a>:
+            The bare <Code>grit start</Code> boots all three servers at once. You can also start them
+            individually: <Code>grit start server</Code> for just the Go API, or <Code>grit start client</Code> for
+            just the frontend apps. Under the hood it uses <a href="https://turbo.build" target="_blank" rel="noreferrer" className="text-primary hover:underline">Turborepo</a>:
           </p>
 
           <div className="overflow-x-auto mb-4">
@@ -611,11 +613,11 @@ docker compose up -d`}
           </div>
 
           <Note>
-            If the Go API doesn{"'"}t start with <Code>pnpm dev</Code>, open a separate terminal and run: <Code>cd apps/api && go run cmd/server/main.go</Code>
+            If the Go API doesn{"'"}t come up with <Code>grit start</Code>, open a separate terminal and run just the API with <Code>grit start server</Code>.
           </Note>
 
           <Challenge number={9} title="Start Everything">
-            <p>Run <Code>pnpm install</Code> then <Code>pnpm dev</Code>. Open all three URLs in your browser.</p>
+            <p>Run <Code>pnpm install</Code> then <Code>grit start</Code>. Open all three URLs in your browser.</p>
           </Challenge>
 
           <Challenge number={10} title="Register an Account">
@@ -705,13 +707,13 @@ docker compose up -d`}
 APP_NAME=myapp
 APP_ENV=development
 APP_PORT=8080
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/myapp?sslmode=disable
+DATABASE_URL=postgres://postgres:postgres@localhost:5434/myapp?sslmode=disable
 JWT_SECRET=your-secret-key
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://localhost:6380
 
 # Storage (MinIO for local development)
 STORAGE_DRIVER=minio
-STORAGE_ENDPOINT=localhost:9000
+MINIO_ENDPOINT=http://localhost:9002
 
 # Email
 RESEND_API_KEY=

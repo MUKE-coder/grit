@@ -89,7 +89,7 @@ export default function AdminPanelCourse() {
           </Tip>
 
           <Challenge number={1} title="Explore the Admin Panel">
-            <p>Start your project with <Code>grit dev</Code>, then open <Code>localhost:3001</Code> in
+            <p>Start your project with <Code>grit start</Code>, then open <Code>localhost:3001</Code> in
             your browser and log in. Click through every item in the sidebar. List 5 different pages
             you can see in the admin panel.</p>
           </Challenge>
@@ -490,7 +490,7 @@ grit new test-glass --triple --next --style glass`}
 
           <Challenge number={10} title="Compare Admin Styles">
             <p>Create a temporary project with <Code>grit new test-glass --triple --next --style glass</Code>.
-            Start it with <Code>grit dev</Code> and open the admin panel. Compare the login page and
+            Start it with <Code>grit start</Code> and open the admin panel. Compare the login page and
             dashboard with your default-style project. What visual differences do you notice? Look at
             backgrounds, borders, and shadows.</p>
           </Challenge>

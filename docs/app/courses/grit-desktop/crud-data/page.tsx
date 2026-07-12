@@ -56,7 +56,9 @@ export default function CrudDataCourse() {
 
           <p className="text-muted-foreground leading-relaxed mb-4">
             In <strong className="text-foreground">desktop apps</strong>, React calls Go functions directly
-            via Wails bindings. No HTTP, no endpoints, no network — just function calls:
+            via Wails bindings — no REST endpoints to define and no <Code>fetch()</Code> calls to write by hand.
+            (Under the hood, Grit runs an embedded Gin API bound to <Code>127.0.0.1:34999</Code> that the bindings
+            talk to, but you never touch the HTTP layer yourself.) From your React code it{"'"}s just function calls:
           </p>
 
           <div className="overflow-x-auto mb-4">
@@ -94,8 +96,9 @@ export default function CrudDataCourse() {
           </div>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            This is simpler and faster — no serialization, no HTTP overhead, no CORS configuration.
-            Your React code just calls Go functions and gets results back.
+            This is simpler and faster — no hand-written serialization, no CORS configuration to manage.
+            Your React code just calls Go functions and gets results back; the Wails bindings and the
+            embedded local API handle the plumbing.
           </p>
         </section>
 
@@ -131,7 +134,7 @@ export default function CrudDataCourse() {
                   <td className="px-4 py-3">GORM model with struct tags</td>
                 </tr>
                 <tr className="border-b border-border/20">
-                  <td className="px-4 py-3 font-mono text-foreground text-xs">internal/services/task_service.go</td>
+                  <td className="px-4 py-3 font-mono text-foreground text-xs">internal/service/task.go</td>
                   <td className="px-4 py-3">Business logic (List, Create, GetByID, Update, Delete)</td>
                 </tr>
                 <tr className="border-b border-border/20">
@@ -180,17 +183,17 @@ func (a *App) CreateTask(input types.CreateTaskInput) (*models.Task, error) {
 }
 
 // Get a single task by ID
-func (a *App) GetTask(id uint) (*models.Task, error) {
+func (a *App) GetTask(id string) (*models.Task, error) {
     return a.taskService.GetByID(id)
 }
 
 // Update an existing task
-func (a *App) UpdateTask(id uint, input types.UpdateTaskInput) (*models.Task, error) {
+func (a *App) UpdateTask(id string, input types.UpdateTaskInput) (*models.Task, error) {
     return a.taskService.Update(id, input)
 }
 
 // Delete a task
-func (a *App) DeleteTask(id uint) error {
+func (a *App) DeleteTask(id string) error {
     return a.taskService.Delete(id)
 }`}
           </CodeBlock>
@@ -323,7 +326,7 @@ type Task struct {
             separate from the transport layer:
           </p>
 
-          <CodeBlock filename="internal/services/task_service.go (simplified)">
+          <CodeBlock filename="internal/service/task.go (simplified)">
 {`type TaskService struct {
     db *gorm.DB
 }
@@ -349,13 +352,13 @@ func (s *TaskService) Create(input types.CreateTaskInput) (*models.Task, error) 
     return &task, result.Error
 }
 
-func (s *TaskService) GetByID(id uint) (*models.Task, error) {
+func (s *TaskService) GetByID(id string) (*models.Task, error) {
     var task models.Task
     result := s.db.First(&task, id)
     return &task, result.Error
 }
 
-func (s *TaskService) Update(id uint, input types.UpdateTaskInput) (*models.Task, error) {
+func (s *TaskService) Update(id string, input types.UpdateTaskInput) (*models.Task, error) {
     var task models.Task
     if err := s.db.First(&task, id).Error; err != nil {
         return nil, err
@@ -364,7 +367,7 @@ func (s *TaskService) Update(id uint, input types.UpdateTaskInput) (*models.Task
     return &task, result.Error
 }
 
-func (s *TaskService) Delete(id uint) error {
+func (s *TaskService) Delete(id string) error {
     return s.db.Delete(&models.Task{}, id).Error
 }`}
           </CodeBlock>
@@ -376,7 +379,7 @@ func (s *TaskService) Delete(id uint) error {
           </Tip>
 
           <Challenge number={5} title="Read the Service">
-            <p>Open the task service at <Code>internal/services/task_service.go</Code>. Read the <Code>List()</Code> method. What GORM query does it use? What order does it sort by?</p>
+            <p>Open the task service at <Code>internal/service/task.go</Code>. Read the <Code>List()</Code> method. What GORM query does it use? What order does it sort by?</p>
           </Challenge>
         </section>
 

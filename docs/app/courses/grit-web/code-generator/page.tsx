@@ -203,7 +203,7 @@ type Book struct {
           <h2 className="text-2xl font-bold text-foreground mb-4">Field Types</h2>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Grit supports <strong className="text-foreground">13 field types</strong>. Each type maps to a Go type,
+            Grit supports <strong className="text-foreground">15 field types</strong>. Each type maps to a Go type,
             a TypeScript type, and a database column type. Here is the complete reference:
           </p>
 
@@ -270,7 +270,7 @@ type Book struct {
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-2"><Code>datetime</Code></td>
-                  <td className="px-4 py-2">time.Time</td>
+                  <td className="px-4 py-2">*time.Time</td>
                   <td className="px-4 py-2">string (ISO 8601)</td>
                   <td className="px-4 py-2">timestamp</td>
                   <td className="px-4 py-2">Date and time (event_date)</td>
@@ -291,10 +291,10 @@ type Book struct {
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-2"><Code>belongs_to</Code></td>
-                  <td className="px-4 py-2">uint</td>
-                  <td className="px-4 py-2">number</td>
-                  <td className="px-4 py-2">integer (FK)</td>
-                  <td className="px-4 py-2">Foreign key relationship</td>
+                  <td className="px-4 py-2">string</td>
+                  <td className="px-4 py-2">string</td>
+                  <td className="px-4 py-2">varchar(36) (FK)</td>
+                  <td className="px-4 py-2">Foreign key relationship (UUID)</td>
                 </tr>
                 <tr className="border-b border-border/20">
                   <td className="px-4 py-2"><Code>many_to_many</Code></td>
@@ -303,12 +303,26 @@ type Book struct {
                   <td className="px-4 py-2">junction table</td>
                   <td className="px-4 py-2">Many-to-many relationship</td>
                 </tr>
-                <tr>
+                <tr className="border-b border-border/20">
                   <td className="px-4 py-2"><Code>string_array</Code></td>
                   <td className="px-4 py-2">pq.StringArray</td>
                   <td className="px-4 py-2">string[]</td>
                   <td className="px-4 py-2">jsonb</td>
                   <td className="px-4 py-2">Array of strings (tags, categories)</td>
+                </tr>
+                <tr className="border-b border-border/20">
+                  <td className="px-4 py-2"><Code>file</Code></td>
+                  <td className="px-4 py-2">string</td>
+                  <td className="px-4 py-2">string</td>
+                  <td className="px-4 py-2">varchar</td>
+                  <td className="px-4 py-2">Single file/image upload (e.g. image:file:image)</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-2"><Code>files</Code></td>
+                  <td className="px-4 py-2">pq.StringArray</td>
+                  <td className="px-4 py-2">string[]</td>
+                  <td className="px-4 py-2">jsonb</td>
+                  <td className="px-4 py-2">Multiple files/gallery (e.g. gallery:files:image)</td>
                 </tr>
               </tbody>
             </table>
@@ -519,7 +533,7 @@ grit generate resource Post --fields "title:string,content:richtext,category_id:
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> A <Code>CategoryID uint</Code> field on the Post model</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> A <Code>CategoryID string</Code> field (UUID, varchar(36)) on the Post model</li>
             <li className="flex gap-2"><span className="text-primary">•</span> A foreign key index in the database</li>
             <li className="flex gap-2"><span className="text-primary">•</span> A <strong className="text-foreground">dropdown select</strong> in the admin form to pick a category</li>
             <li className="flex gap-2"><span className="text-primary">•</span> The API automatically returns the related category data when fetching posts</li>
@@ -774,7 +788,7 @@ bookGroup.POST("", handler.BookHandler.Create)
             </li>
             <li className="flex gap-3">
               <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-              <span><strong className="text-foreground">All 13 field types</strong> — string, text, richtext, int, uint, float, bool, datetime, date, slug, belongs_to, many_to_many, string_array</span>
+              <span><strong className="text-foreground">All 15 field types</strong> — string, text, richtext, int, uint, float, bool, datetime, date, slug, belongs_to, many_to_many, string_array, file, files</span>
             </li>
             <li className="flex gap-3">
               <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />

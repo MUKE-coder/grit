@@ -148,7 +148,7 @@ export default function SaasWithAICourse() {
           </Tip>
 
           <Challenge number={3} title="Scaffold and Explore">
-            <p>Scaffold the project with the command above. Start the dev server with <Code>grit dev</Code>. Visit the web app, admin panel, and API health endpoint. Everything should work out of the box.</p>
+            <p>Scaffold the project with the command above. Start the dev servers with <Code>grit start</Code>. Visit the web app, admin panel, and API health endpoint. Everything should work out of the box.</p>
           </Challenge>
         </section>
 

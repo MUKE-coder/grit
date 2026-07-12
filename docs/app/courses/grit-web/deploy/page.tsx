@@ -77,7 +77,7 @@ export default function DeployToProductionCourse() {
           </Definition>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            On your local machine, you type <Code>grit dev</Code> and everything just works. But your users need
+            On your local machine, you type <Code>grit start</Code> and everything just works. But your users need
             to access your app from their browsers — they cannot connect to your laptop. A VPS gives your app a
             permanent home on the internet with a public IP address. You point your domain name to that IP, and
             suddenly <Code>myapp.com</Code> loads your Grit application.

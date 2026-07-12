@@ -255,7 +255,7 @@ export default function JobsEmailCourse() {
 const TypeReportGenerate = "report:generate"
 
 type ReportPayload struct {
-    UserID uint   \`json:"user_id"\`
+    UserID string \`json:"user_id"\`
     Type   string \`json:"type"\`
 }`}
           </CodeBlock>
@@ -276,7 +276,7 @@ type ReportPayload struct {
     }
 
     // Generate the report...
-    log.Printf("Generating %s report for user %d", p.Type, p.UserID)
+    log.Printf("Generating %s report for user %s", p.Type, p.UserID)
 
     // In a real app, you would:
     // 1. Query the database for the relevant data
@@ -308,7 +308,7 @@ type ReportPayload struct {
 
           <CodeBlock filename="apps/api/internal/handlers/report_handler.go">
 {`payload, _ := json.Marshal(jobs.ReportPayload{
-    UserID: 1,
+    UserID: "usr_abc123",
     Type:   "monthly",
 })
 task := asynq.NewTask(jobs.TypeReportGenerate, payload)

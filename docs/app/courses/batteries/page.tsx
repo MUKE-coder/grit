@@ -30,13 +30,13 @@ export default function BatteriesIncludedCourse() {
             <span className="text-xs font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">Standalone Course</span>
             <span className="text-xs text-muted-foreground">~30 min</span>
             <span className="text-xs text-muted-foreground">•</span>
-            <span className="text-xs text-muted-foreground">15 challenges</span>
+            <span className="text-xs text-muted-foreground">14 challenges</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Batteries Included: Every Feature That Ships with Grit
           </h1>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            Every Grit project ships with 18 production-ready features pre-configured and wired together.
+            Every Grit project ships with 17 production-ready features pre-configured and wired together.
             This course walks through every single one — what it is, why it matters, how it{"'"}s configured,
             and how to use it. By the end, you{"'"}ll know your project inside and out.
           </p>
@@ -63,7 +63,7 @@ export default function BatteriesIncludedCourse() {
           </Definition>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Grit ships <strong className="text-foreground">18 features</strong> pre-configured and wired
+            Grit ships <strong className="text-foreground">17 features</strong> pre-configured and wired
             together in every project. They work on day one — no setup required. And because they{"'"}re
             modular, you can remove any feature you don{"'"}t need without breaking the others.
           </p>
@@ -94,13 +94,12 @@ export default function BatteriesIncludedCourse() {
                   ['9', 'API Docs', 'Auto-generated OpenAPI 3.1 at /docs'],
                   ['10', 'Sentinel', 'WAF, rate limiting, security dashboard'],
                   ['11', 'Pulse', 'Request tracing, DB monitoring, metrics'],
-                  ['12', 'Grit UI', '100 shadcn-compatible components'],
-                  ['13', 'Docker Setup', 'Dev + production compose files'],
-                  ['14', 'JWT Auth', 'Access + refresh tokens, middleware'],
-                  ['15', 'CORS Middleware', 'Pre-configured cross-origin requests'],
-                  ['16', 'Gzip Compression', 'Automatic response compression'],
-                  ['17', 'Request Logging', 'Structured request/response logs'],
-                  ['18', 'Connection Pooling', 'Optimized DB connection management'],
+                  ['12', 'Docker Setup', 'Dev + production compose files'],
+                  ['13', 'JWT Auth', 'Access + refresh tokens, middleware'],
+                  ['14', 'CORS Middleware', 'Pre-configured cross-origin requests'],
+                  ['15', 'Gzip Compression', 'Automatic response compression'],
+                  ['16', 'Request Logging', 'Structured request/response logs'],
+                  ['17', 'Connection Pooling', 'Optimized DB connection management'],
                 ].map(([num, name, desc]) => (
                   <tr key={num} className="border-b border-border/20">
                     <td className="px-3 py-2 text-muted-foreground">{num}</td>
@@ -113,7 +112,7 @@ export default function BatteriesIncludedCourse() {
           </div>
 
           <Tip>
-            You don{"'"}t need to memorize all 18 features right now. This course walks through each one
+            You don{"'"}t need to memorize all 17 features right now. This course walks through each one
             with examples and hands-on challenges. By the end, you{"'"}ll have used every single battery
             in your project.
           </Tip>
@@ -178,7 +177,7 @@ cache.Delete("user:1")`}
 
           <CodeBlock filename=".env">
 {`# Redis configuration
-REDIS_URL=redis://localhost:6379`}
+REDIS_URL=redis://localhost:6380`}
           </CodeBlock>
 
           <Note>
@@ -245,7 +244,7 @@ REDIS_URL=redis://localhost:6379`}
 
           <CodeBlock filename=".env">
 {`# File storage (S3-compatible)
-STORAGE_ENDPOINT=localhost:9000
+MINIO_ENDPOINT=http://localhost:9002
 STORAGE_ACCESS_KEY=minioadmin
 STORAGE_SECRET_KEY=minioadmin
 STORAGE_BUCKET=uploads
@@ -255,13 +254,13 @@ STORAGE_REGION=us-east-1`}
 
           <Tip>
             In development, MinIO runs via Docker Compose. You can browse uploaded files at
-            <Code>localhost:9001</Code> using the MinIO Console. The default credentials
+            <Code>localhost:9003</Code> using the MinIO Console. The default credentials
             are <Code>minioadmin</Code> / <Code>minioadmin</Code>.
           </Tip>
 
           <Challenge number={3} title="Upload a File">
             <p>Start your Grit project with Docker Compose. Open the admin panel and upload a file
-            (any image will do). Then open the MinIO Console at <Code>localhost:9001</Code>. Can
+            (any image will do). Then open the MinIO Console at <Code>localhost:9003</Code>. Can
             you find the file in the <Code>uploads</Code> bucket? What is the full path of the file?</p>
           </Challenge>
         </section>
@@ -758,60 +757,7 @@ http://localhost:8080/pulse/metrics`}
           </Challenge>
         </section>
 
-        {/* ═══ Section 13: Grit UI Components ═══ */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-foreground mb-4">Grit UI Components</h2>
-
-          <p className="text-muted-foreground leading-relaxed mb-4">
-            Every Grit project ships with access to <strong className="text-foreground">100 pre-built
-            UI components</strong> in the shadcn/ui format. These aren{"'"}t npm packages — they{"'"}re
-            source code files you install directly into your project, giving you full control to
-            customize them.
-          </p>
-
-          <p className="text-muted-foreground leading-relaxed mb-4">
-            The components are organized into 5 categories:
-          </p>
-
-          <div className="overflow-x-auto mb-4">
-            <table className="w-full text-sm border border-border/40 rounded-lg overflow-hidden">
-              <thead>
-                <tr className="bg-muted/20">
-                  <th className="text-left px-3 py-2.5 font-semibold text-foreground border-b border-border/40">Category</th>
-                  <th className="text-left px-3 py-2.5 font-semibold text-foreground border-b border-border/40">Count</th>
-                  <th className="text-left px-3 py-2.5 font-semibold text-foreground border-b border-border/40">Examples</th>
-                </tr>
-              </thead>
-              <tbody className="text-muted-foreground">
-                <tr className="border-b border-border/20"><td className="px-3 py-2 font-medium text-foreground">Marketing</td><td className="px-3 py-2">21</td><td className="px-3 py-2">Hero sections, feature grids, pricing tables, testimonials</td></tr>
-                <tr className="border-b border-border/20"><td className="px-3 py-2 font-medium text-foreground">Auth</td><td className="px-3 py-2">10</td><td className="px-3 py-2">Login forms, register forms, forgot password, 2FA pages</td></tr>
-                <tr className="border-b border-border/20"><td className="px-3 py-2 font-medium text-foreground">SaaS</td><td className="px-3 py-2">30</td><td className="px-3 py-2">Dashboard layouts, billing cards, settings pages, onboarding</td></tr>
-                <tr className="border-b border-border/20"><td className="px-3 py-2 font-medium text-foreground">E-commerce</td><td className="px-3 py-2">20</td><td className="px-3 py-2">Product cards, cart, checkout, order history, wishlists</td></tr>
-                <tr><td className="px-3 py-2 font-medium text-foreground">Layout</td><td className="px-3 py-2">20</td><td className="px-3 py-2">Navbars, sidebars, footers, app shells, mobile menus</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <CodeBlock filename="Browsing & Installing Components">
-{`# Browse all components in your browser
-http://localhost:3000/components
-
-# The registry API serves component metadata
-GET /api/r.json          → lists all 100 components
-GET /api/r/hero-split.json  → metadata + source for a specific component
-
-# Install a component (shadcn CLI compatible)
-npx shadcn@latest add "http://localhost:8080/r/hero-split.json"`}
-          </CodeBlock>
-
-          <Challenge number={13} title="Browse the Registry">
-            <p>Open the component browser at <Code>localhost:3000/components</Code> (or call the API
-            at <Code>localhost:8080/api/r.json</Code>). How many components are in the {'"'}saas{'"'} category?
-            Pick one component and explain how you would install it into your project.</p>
-          </Challenge>
-        </section>
-
-        {/* ═══ Section 14: Docker Setup ═══ */}
+        {/* ═══ Section 13: Docker Setup ═══ */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-foreground mb-4">Docker Setup</h2>
 
@@ -833,9 +779,9 @@ npx shadcn@latest add "http://localhost:8080/r/hero-split.json"`}
           </p>
 
           <ul className="space-y-2 text-muted-foreground mb-4">
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">PostgreSQL</strong> — the primary database (port 5432)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Redis</strong> — caching and job queue (port 6379)</li>
-            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MinIO</strong> — S3-compatible file storage (port 9000, console on 9001)</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">PostgreSQL</strong> — the primary database (port 5434)</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Redis</strong> — caching and job queue (port 6380)</li>
+            <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">MinIO</strong> — S3-compatible file storage (port 9002, console on 9003)</li>
             <li className="flex gap-2"><span className="text-primary">•</span> <strong className="text-foreground">Mailhog</strong> — email capture for testing (SMTP on 1025, UI on 8025)</li>
           </ul>
 
@@ -862,15 +808,15 @@ docker compose down -v`}
             for configuration, and includes health checks.
           </p>
 
-          <Challenge number={14} title="List Running Services">
+          <Challenge number={13} title="List Running Services">
             <p>Run <Code>docker compose up -d</Code> to start all services. Then
             run <Code>docker compose ps</Code>. List every running service, its port mapping, and
             its status. Visit each service{"'"}s UI: PostgreSQL has no UI, but check MinIO
-            at <Code>localhost:9001</Code> and Mailhog at <Code>localhost:8025</Code>.</p>
+            at <Code>localhost:9003</Code> and Mailhog at <Code>localhost:8025</Code>.</p>
           </Challenge>
         </section>
 
-        {/* ═══ Section 15: Summary ═══ */}
+        {/* ═══ Section 14: Summary ═══ */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-foreground mb-4">Summary</h2>
 
@@ -891,7 +837,6 @@ docker compose down -v`}
               'API Documentation — auto-generated OpenAPI 3.1 spec at /docs',
               'Sentinel — WAF, rate limiting, brute-force protection, security dashboard',
               'Pulse — request tracing, DB monitoring, metrics, health checks',
-              'Grit UI — 100 shadcn-compatible components across 5 categories',
               'Docker Setup — dev compose (4 services) + production compose',
               'JWT Authentication — access + refresh tokens with middleware',
               'CORS Middleware — pre-configured cross-origin request handling',
@@ -906,7 +851,7 @@ docker compose down -v`}
             ))}
           </ul>
 
-          <Challenge number={15} title="Tour Every Tool">
+          <Challenge number={14} title="Tour Every Tool">
             <p>Visit each of these URLs in your running Grit project and confirm they work:</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li><Code>localhost:8080/studio</Code> — GORM Studio</li>
@@ -914,7 +859,7 @@ docker compose down -v`}
               <li><Code>localhost:8080/pulse/ui</Code> — Pulse Observability</li>
               <li><Code>localhost:8080/sentinel/ui</Code> — Sentinel Security</li>
               <li><Code>localhost:8025</Code> — Mailhog (email capture)</li>
-              <li><Code>localhost:9001</Code> — MinIO Console (file storage)</li>
+              <li><Code>localhost:9003</Code> — MinIO Console (file storage)</li>
             </ul>
             <p className="mt-2">Take a screenshot of each. You now know every tool in your Grit project.
             These aren{"'"}t plugins you installed — they shipped with your project from the very first
