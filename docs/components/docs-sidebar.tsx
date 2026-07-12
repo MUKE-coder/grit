@@ -137,6 +137,9 @@ const navItems: NavItem[] = [
       { title: 'RBAC & Roles', href: '/docs/backend/rbac' },
       { title: 'API Documentation', href: '/docs/backend/api-docs' },
       { title: 'Pulse (Observability)', href: '/docs/backend/pulse' },
+      { title: 'Feature Flags', href: '/docs/backend/feature-flags' },
+      { title: 'Webhooks', href: '/docs/backend/webhooks' },
+      { title: 'Realtime (WebSockets)', href: '/docs/backend/realtime' },
     ],
   },
   {

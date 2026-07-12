@@ -198,6 +198,21 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Self-hosted observability for Grit APIs with Pulse: request tracing, database monitoring, runtime metrics, error tracking, health checks, alerting, and Prometheus export.',
   },
+  '/docs/backend/feature-flags': {
+    title: 'Feature Flags & A/B Testing',
+    description:
+      'Ship behind flags in Grit: the FeatureFlag model, an in-memory Engine with IsEnabled/Variant, percentage rollouts, allow/block lists, date windows, sticky per-user bucketing, A/B variants, the exposure log, and admin CRUD.',
+  },
+  '/docs/backend/webhooks': {
+    title: 'Webhooks',
+    description:
+      'Receive inbound webhooks in Grit: the universal POST /webhooks/:provider endpoint, built-in Stripe / GitHub / HMAC signature verifiers, event extraction, idempotent dedupe via WebhookEvent, handler dispatch, admin replay, and writing a custom verifier.',
+  },
+  '/docs/backend/realtime': {
+    title: 'Realtime (WebSockets)',
+    description:
+      'Push live updates to clients in Grit with the realtime Hub: the GET /api/ws WebSocket endpoint, JWT handshake auth, SendToUser vs Broadcast, multi-device fan-out, the JSON event envelope, and a worked notify-on-job-finish example.',
+  },
   '/docs/security': {
     title: 'Security Guide — OWASP Top 10:2025 defences',
     description:
