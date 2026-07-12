@@ -4,7 +4,7 @@ subtitle: "One command scaffolds a Wails desktop app that works online AND offli
 series: "The Daily Grit"
 edition: 9
 date: 2026-07-09
-readingTime: "22 min"
+readingTime: "25 min"
 author: "Muke JohnBaptist"
 tags: [grit, desktop, wails, go, react, pos, offline, sync, code-generation, inventory, tutorial]
 canonical: "https://gritframework.dev/blog/build-desktop-app-with-grit"
@@ -37,7 +37,7 @@ Let's build it.
 
 ## What you'll need
 
-- **Grit v3.33.0+** — `grit update`, then `grit version` to confirm
+- **Grit v3.54.0+** — `grit update`, then `grit version` to confirm
 - The [Wails](https://wails.io) toolchain (`wails doctor` green), **Go 1.21+**, **Node 18+**, **pnpm**
 - **Docker** (for Postgres — the "online" database the desktop app syncs to)
 - For the installer at the end: **NSIS** on Windows (`winget install NSIS.NSIS`)
@@ -48,7 +48,7 @@ curl -fsSL https://gritframework.dev/install.sh | sh
 # Install (Windows PowerShell)
 iwr -useb https://gritframework.dev/install.ps1 | iex
 # Already have it?
-grit update && grit version   # want v3.33.0 or newer
+grit update && grit version   # want v3.54.0 or newer
 ```
 
 ## 1. Scaffold the mega project
@@ -121,17 +121,22 @@ Here's the money moment. Each `grit generate resource` now creates, in one shot:
 
 Order matters for relationships — create parents first.
 
-**Categories** (products belong to one):
+**Categories** (products belong to one) — with a cover **image**:
 
 ```bash
-grit generate resource Category --fields "name:string,slug:slug"
+grit generate resource Category --fields "name:string,slug:slug,image:file:image"
 ```
 
-**Products** — price, stock, and a category link:
+**Products** — price, stock, a category link, a **thumbnail** and a **gallery**:
 
 ```bash
-grit generate resource Product --fields "name:string,sku:string,price:float,stock:int,category:belongs_to:Category"
+grit generate resource Product --fields "name:string,sku:string,price:float,stock:int,category:belongs_to:Category,thumbnail:file:image,images:files:image"
 ```
+
+Those `file:image` / `files:image` fields are the reason we're here. On the
+desktop they generate a **dropzone** that works offline — more on that in a
+second. In the table they render as **thumbnails**; in the form they're a
+drag-and-drop upload.
 
 **Clients** (your customers):
 
@@ -166,9 +171,9 @@ Watch the output on the Product one — notice the **desktop** lines:
 ✓ apps/web/hooks/use-products.ts
 ✓ apps/admin/... (resource + page)
 ✓ apps/expo/app/products/...
-✓ apps/desktop/frontend/src/routes/_app/products.index.tsx
-✓ apps/desktop/frontend/src/routes/_app/products.new.tsx
-✓ apps/desktop/frontend/src/routes/_app/products.$id.edit.tsx
+✓ apps/desktop/frontend/src/routes/app/products.index.tsx
+✓ apps/desktop/frontend/src/routes/app/products.new.tsx
+✓ apps/desktop/frontend/src/routes/app/products.$id.edit.tsx
 ✓ apps/desktop/frontend/src/hooks/use-products.ts
 ✓ apps/desktop: registered "products" for offline sync
 ```
@@ -209,6 +214,25 @@ export function useCreateProduct() {
 in the outbox. Reads see it instantly; the background loop pushes it up later.
 That's why the generated CRUD works with the network unplugged.
 
+### Images, offline
+
+A binary can't ride the JSON sync outbox, so images get special handling — and
+you don't have to write any of it. The generated dropzone does the right thing:
+
+- **Online**, dropping a file uploads it to the API's `/uploads` endpoint and
+  stores the returned file reference on the record.
+- **Offline**, the file is kept **inline as a `data:` URL** — so the product
+  saves and its thumbnail shows *immediately*, tagged **Pending**.
+- **On reconnect**, a background reconciler (`usePendingUploads`) walks the local
+  mirror, finds those pending images, uploads each, swaps in the real file URL,
+  and the normal sync pushes the corrected record up.
+
+So a clerk can photograph a new product with the shop's Wi-Fi down, keep
+selling, and the picture quietly lands in object storage the moment the
+connection returns. No lost uploads, no blocked workflow. In the table, the
+`thumbnail` column renders the image (with a `+N` badge for the gallery); an
+empty image is just a dash.
+
 ## 4. Migrate, seed & run — all Grit commands
 
 Now that the models exist, create their tables and seed a login. Run these from
@@ -218,6 +242,23 @@ anywhere inside the project — `grit` finds `apps/api` for you:
 grit migrate                   # AutoMigrate every model into Postgres
 grit seed                      # admin@example.com / admin123 (dev only)
 ```
+
+**Want a shop full of stock to play with?** Give any resource a seeder. Each
+resource seeder lives in its own `internal/database/<name>_seeder.go` file, and
+`--faker` fills it with realistic rows — including **sample images** for
+`file:image` fields:
+
+```bash
+grit generate seeder Category --faker --count 8
+grit generate seeder Product  --faker --count 60
+grit seed                      # now runs every seeder, catalogue included
+```
+
+`--faker` picks values from each field's name and type (names, prices, a real
+sample image URL per product), so you get a believable catalogue in seconds. The
+default (no `--faker`) drops **one editable example record** you can fill in by
+hand. You can also emit a seeder right when you scaffold a resource with
+`grit generate resource Product --fields "..." --seed`.
 
 Then start everything with one command from the project root:
 
@@ -275,14 +316,29 @@ drop to zero as it pushes.
 > **Why this matters for a POS:** a checkout that freezes when the wifi hiccups
 > loses you sales. This one doesn't. The cashier never sees the network.
 
-## 6. The checkout screen (the fun part)
+## 6. Two ways to sell: New Sale + a POS lane
 
-The generated **Sales** screen is a normal CRUD list — fine for viewing history,
-wrong for ringing up a customer. A POS wants a **product grid + a cart**. So we
-write one custom screen on top of the generated hooks. This is the only
-hand-written screen in the whole app.
+Real shops sell in two modes, and a good POS gives you both:
 
-Create `apps/desktop/frontend/src/routes/_app/pos.tsx`:
+- **New Sale** — for a *registered* customer or a credit sale. You pick the
+  client, choose a payment method, and capture amounts (so a balance-due > 0
+  becomes a credit sale). This is exactly the **generated Sales screen** — the
+  `client:belongs_to`, `payment_method`, `total`, `discount` and
+  `amount_received` fields we generated give you a create/edit **drawer** and a
+  searchable client picker for free. Click **New Sale**, fill the form, save. No
+  custom code.
+- **POS lane** — for fast, walk-in cash sales. No forms, no client required:
+  a **product grid + a cart** where you tap items, adjust quantities, take
+  payment and print. This is the one screen we hand-write, on top of the same
+  generated hooks.
+
+That split mirrors how a real counter works — the invoiced/credit path runs
+through the generated CRUD, the rapid cash path runs through the POS lane. Both
+write through the **same offline sync engine**, so both keep working with the
+network unplugged.
+
+Let's build the POS lane. Create
+`apps/desktop/frontend/src/routes/app/pos.tsx`:
 
 ```tsx
 import { createFileRoute } from "@tanstack/react-router";
@@ -291,7 +347,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { useProducts, useUpdateProduct } from "@/hooks/use-products";
 import { useCreateSale } from "@/hooks/use-sales";
 
-export const Route = createFileRoute("/_app/pos")({ component: POSPage });
+export const Route = createFileRoute("/app/pos")({ component: POSPage });
 
 type CartLine = { id: string; name: string; price: number; qty: number; stock: number };
 
