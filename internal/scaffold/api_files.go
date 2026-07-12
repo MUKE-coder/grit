@@ -202,6 +202,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.0
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.16.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.51.0
+	github.com/brianvoe/gofakeit/v7 v7.15.0
 	github.com/disintegration/imaging v1.6.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-pdf/fpdf v0.9.0

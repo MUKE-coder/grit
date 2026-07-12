@@ -11,10 +11,13 @@ func writeMigrateSeedFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "cmd", "migrate", "main.go"):          apiMigrateMainGo(),
-		filepath.Join(apiRoot, "cmd", "seed", "main.go"):             apiSeedMainGo(),
-		filepath.Join(apiRoot, "internal", "database", "seed.go"):    apiSeedGo(),
-		filepath.Join(apiRoot, "internal", "database", "migrate.go"): apiMigrateGo(),
+		filepath.Join(apiRoot, "cmd", "migrate", "main.go"):                 apiMigrateMainGo(),
+		filepath.Join(apiRoot, "cmd", "seed", "main.go"):                    apiSeedMainGo(),
+		filepath.Join(apiRoot, "internal", "database", "seed.go"):           apiSeedGo(),
+		filepath.Join(apiRoot, "internal", "database", "users_seeder.go"):   apiUsersSeederGo(),
+		filepath.Join(apiRoot, "internal", "database", "blogs_seeder.go"):   apiBlogsSeederGo(),
+		filepath.Join(apiRoot, "internal", "database", "faker.go"):          apiSeedFakerGo(),
+		filepath.Join(apiRoot, "internal", "database", "migrate.go"):        apiMigrateGo(),
 	}
 
 	for path, content := range files {
@@ -153,36 +156,60 @@ func DropAll(db *gorm.DB) error {
 }
 
 // apiSeedGo returns the database/seed.go with the default seeder.
+// apiSeedGo returns the thin seed runner. Each resource's seeder lives in its
+// own <resource>_seeder.go file (SeedUsers, SeedBlogs, …) so seeders are easy
+// to find and edit; `grit generate seeder <Resource>` adds more and registers
+// them at the grit:seeders marker.
 func apiSeedGo() string {
+	return `package database
+
+import (
+	"fmt"
+
+	"gorm.io/gorm"
+)
+
+// Seed runs every seeder. Seeders live in their own <name>_seeder.go files in
+// this package — edit those to change the seed data, or run
+// "grit generate seeder <Resource>" to add a new one.
+func Seed(db *gorm.DB) error {
+	if err := SeedUsers(db); err != nil {
+		return fmt.Errorf("seeding users: %w", err)
+	}
+
+	if err := SeedBlogs(db); err != nil {
+		return fmt.Errorf("seeding blogs: %w", err)
+	}
+
+	// grit:seeders
+
+	return nil
+}
+`
+}
+
+// apiUsersSeederGo returns internal/database/users_seeder.go.
+func apiUsersSeederGo() string {
 	return `package database
 
 import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"{{MODULE}}/internal/models"
 	"gorm.io/gorm"
 )
 
-// Seed populates the database with initial data.
-// Add your seeders to this function.
-func Seed(db *gorm.DB) error {
+// SeedUsers creates the default admin account plus a few demo accounts.
+// Edit the slices below to change who gets seeded.
+func SeedUsers(db *gorm.DB) error {
 	if err := seedAdminUser(db); err != nil {
 		return fmt.Errorf("seeding admin user: %w", err)
 	}
-
 	if err := seedDemoUsers(db); err != nil {
 		return fmt.Errorf("seeding demo users: %w", err)
 	}
-
-	if err := seedBlogs(db); err != nil {
-		return fmt.Errorf("seeding blogs: %w", err)
-	}
-
-	// grit:seeders
-
 	return nil
 }
 
@@ -262,9 +289,39 @@ func seedDemoUsers(db *gorm.DB) error {
 
 	return nil
 }
+`
+}
 
-// seedBlogs creates sample blog posts for development.
-func seedBlogs(db *gorm.DB) error {
+// apiSeedFakerGo keeps gofakeit in go.mod even before any faker seeder exists,
+// so "grit generate seeder --faker" (and --faker on generate resource) works
+// offline without a network fetch. Faker seeders import gofakeit directly.
+func apiSeedFakerGo() string {
+	return `package database
+
+// gofakeit powers the optional faker seeders (grit generate seeder --faker).
+// This reference keeps it in go.mod so ` + "`go mod tidy`" + ` won't drop it before
+// your first faker seeder is generated.
+import "github.com/brianvoe/gofakeit/v7"
+
+var _ = gofakeit.Name
+`
+}
+
+// apiBlogsSeederGo returns internal/database/blogs_seeder.go.
+func apiBlogsSeederGo() string {
+	return `package database
+
+import (
+	"log"
+	"time"
+
+	"{{MODULE}}/internal/models"
+	"gorm.io/gorm"
+)
+
+// SeedBlogs creates sample blog posts for development. Edit the slice below to
+// change the seeded content.
+func SeedBlogs(db *gorm.DB) error {
 	var count int64
 	db.Model(&models.Blog{}).Count(&count)
 	if count > 0 {

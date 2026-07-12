@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.53.0"
+var version = "3.54.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -308,6 +308,53 @@ func generateCmd() *cobra.Command {
 
 	cmd.AddCommand(generateResourceCmd())
 	cmd.AddCommand(generateSequenceCmd())
+	cmd.AddCommand(generateSeederCmd())
+
+	return cmd
+}
+
+func generateSeederCmd() *cobra.Command {
+	var faker bool
+	var count int
+
+	cmd := &cobra.Command{
+		Use:   "seeder <Resource> [Resource2 ...]",
+		Short: "Generate a database seeder for one or more existing resources",
+		Long: `Generate a seeder file (internal/database/<name>_seeder.go) for an
+already-generated resource, with one example record you can edit. The seeder is
+registered in seed.go and runs with "grit seed" (and on migrate).
+
+Pass --faker to fill many rows with gofakeit instead of a single example.
+
+Examples:
+  grit generate seeder Customer
+  grit generate seeder Customer Order Product
+  grit generate seeder Customer --faker --count 50`,
+		Args: cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+
+			for _, name := range args {
+				def, err := generate.DefinitionFromModel(name)
+				if err != nil {
+					return err
+				}
+				gen, err := generate.NewGenerator(def)
+				if err != nil {
+					return err
+				}
+				if err := gen.WriteSeeder(generate.SeederOptions{Faker: faker, Count: count}); err != nil {
+					return err
+				}
+			}
+			fmt.Println()
+			color.New(color.FgGreen).Println("  Seeder(s) created. Run 'grit seed' to populate the database.")
+			return nil
+		},
+	}
+
+	cmd.Flags().BoolVar(&faker, "faker", false, "Fill many rows with gofakeit instead of one example record")
+	cmd.Flags().IntVar(&count, "count", 10, "Number of rows for the faker seeder")
 
 	return cmd
 }
@@ -597,6 +644,9 @@ func generateResourceCmd() *cobra.Command {
 	var interactive bool
 	var fields string
 	var roles string
+	var seed bool
+	var faker bool
+	var seedCount int
 
 	cmd := &cobra.Command{
 		Use:   "resource <Name>",
@@ -657,7 +707,17 @@ func generateResourceCmd() *cobra.Command {
 				}
 			}
 
-			return gen.Run()
+			if err := gen.Run(); err != nil {
+				return err
+			}
+
+			// --seed / --faker: also emit a seeder for this resource.
+			if seed || faker {
+				if err := gen.WriteSeeder(generate.SeederOptions{Faker: faker, Count: seedCount}); err != nil {
+					return err
+				}
+			}
+			return nil
 		},
 	}
 
@@ -665,6 +725,9 @@ func generateResourceCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Interactively define fields")
 	cmd.Flags().StringVar(&fields, "fields", "", "Inline field definitions (e.g., \"title:string,content:text,published:bool\")")
 	cmd.Flags().StringVar(&roles, "roles", "", "Restrict routes to specific roles (comma-separated, e.g., \"ADMIN,EDITOR\")")
+	cmd.Flags().BoolVar(&seed, "seed", false, "Also generate a seeder file with one example record")
+	cmd.Flags().BoolVar(&faker, "faker", false, "Also generate a seeder that fills many rows with gofakeit (implies --seed)")
+	cmd.Flags().IntVar(&seedCount, "count", 10, "Number of rows for the faker seeder")
 
 	return cmd
 }

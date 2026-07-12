@@ -28,6 +28,61 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.54.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.54.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Database seeders per resource — with an example record,
+                  faker, and a one-flag hook on generate.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>Per-resource seeder files.</strong> The single seed file
+                    is now split into <code>internal/database/&lt;name&gt;_seeder.go</code>
+                    — including the built-ins (<code>users_seeder.go</code>,{' '}
+                    <code>blogs_seeder.go</code>) — each easy to find and edit. A thin{' '}
+                    <code>Seed()</code> runner calls them all.
+                  </li>
+                  <li>
+                    <strong>New command.</strong>{' '}
+                    <code>grit generate seeder &lt;Resource&gt; [more...]</code>{' '}
+                    creates a seeder for an existing resource, pre-filled with one
+                    example record (values inferred from each field&apos;s type), and
+                    registers it in the runner.
+                  </li>
+                  <li>
+                    <strong>Generate hook.</strong>{' '}
+                    <code>grit generate resource X --fields ... --seed</code> emits
+                    the seeder alongside the resource.
+                  </li>
+                  <li>
+                    <strong>Faker.</strong> Add <code>--faker</code> (and{' '}
+                    <code>--count N</code>, default 10) to generate a loop that fills
+                    rows with <code>gofakeit</code> — name/email/price/etc. picked
+                    from the field name and type, and image fields get a real sample
+                    image URL. gofakeit ships in the API so it works offline.
+                  </li>
+                  <li>
+                    <strong>Run.</strong> <code>grit seed</code> runs every seeder
+                    (also runs on migrate).
+                  </li>
+                </ul>
+                <p>
+                  Verified end to end: a scaffolded API generates static + faker
+                  seeders that compile, and <code>grit seed</code> populates the
+                  database (users, blogs, an example customer, 5 faker products with
+                  images, a category). Existing projects: <code>grit update</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.53.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
