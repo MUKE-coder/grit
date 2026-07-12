@@ -61,7 +61,7 @@ export default function MiddlewarePage() {
     // ── Admin routes (auth + role check) ────────────────
     admin := r.Group("/api")
     admin.Use(middleware.Auth(db, authService))     // 4. Require JWT
-    admin.Use(middleware.RequireRole("admin"))       // 5. Require admin role
+    admin.Use(middleware.RequireRole("ADMIN"))       // 5. Require admin role
     {
         admin.GET("/users", userHandler.List)
         admin.DELETE("/users/:id", userHandler.Delete)
@@ -167,7 +167,7 @@ export default function MiddlewarePage() {
     currentUser := user.(models.User)
 
     // Or get individual fields
-    userID, _ := c.Get("user_id")    // uint
+    userID, _ := c.Get("user_id")    // string (UUID)
     role, _ := c.Get("user_role")     // string
 }`} />
 
@@ -223,10 +223,10 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 }`} />
               <p>Usage examples:</p>
               <CodeBlock filename="role_examples.go" code={`// Admin only
-admin.Use(middleware.RequireRole("admin"))
+admin.Use(middleware.RequireRole("ADMIN"))
 
 // Admin or editor
-editors.Use(middleware.RequireRole("admin", "editor"))
+editors.Use(middleware.RequireRole("ADMIN", "EDITOR"))
 
 // Any authenticated user (no RequireRole needed, just Auth middleware)`} />
 

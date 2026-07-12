@@ -37,12 +37,13 @@ export default function ResponseFormatPage() {
                 <code>data</code> field. An optional <code>message</code> field provides
                 a human-readable description of what happened.
               </p>
-              <CodeBlock filename="GET /api/users/1 -- 200 OK" code={`{
+              <CodeBlock filename="GET /api/users/9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d -- 200 OK" code={`{
     "data": {
-        "id": 1,
-        "name": "John Doe",
+        "id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        "first_name": "John",
+        "last_name": "Doe",
         "email": "john@example.com",
-        "role": "admin",
+        "role": "ADMIN",
         "avatar": "",
         "active": true,
         "email_verified_at": null,
@@ -56,12 +57,12 @@ export default function ResponseFormatPage() {
               </p>
               <CodeBlock filename="POST /api/posts -- 201 Created" code={`{
     "data": {
-        "id": 42,
+        "id": "3f2a1c6e-8d94-4b7a-bc11-2e5f9a0d4c88",
         "title": "Getting Started with Grit",
         "slug": "getting-started-with-grit",
         "body": "Grit is a full-stack meta-framework...",
         "published": false,
-        "author_id": 1,
+        "author_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
         "created_at": "2026-02-11T14:30:00Z",
         "updated_at": "2026-02-11T14:30:00Z"
     },
@@ -89,19 +90,21 @@ c.JSON(http.StatusOK, gin.H{
               <CodeBlock filename="GET /api/users?page=2&page_size=10 -- 200 OK" code={`{
     "data": [
         {
-            "id": 11,
-            "name": "Alice Smith",
+            "id": "1c8f0a2b-5e3d-4a91-b7c6-0f2a9d8e1b34",
+            "first_name": "Alice",
+            "last_name": "Smith",
             "email": "alice@example.com",
-            "role": "user",
+            "role": "USER",
             "active": true,
             "created_at": "2026-02-10T09:00:00Z",
             "updated_at": "2026-02-10T09:00:00Z"
         },
         {
-            "id": 12,
-            "name": "Bob Johnson",
+            "id": "7d6c5b4a-3e2f-4109-a8b7-c6d5e4f3a2b1",
+            "first_name": "Bob",
+            "last_name": "Johnson",
             "email": "bob@example.com",
-            "role": "editor",
+            "role": "EDITOR",
             "active": true,
             "created_at": "2026-02-10T10:30:00Z",
             "updated_at": "2026-02-10T10:30:00Z"
@@ -377,10 +380,11 @@ c.JSON(http.StatusUnprocessableEntity, gin.H{
               <CodeBlock filename="POST /api/auth/register -- 201 Created" code={`{
     "data": {
         "user": {
-            "id": 1,
-            "name": "John Doe",
+            "id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+            "first_name": "John",
+            "last_name": "Doe",
             "email": "john@example.com",
-            "role": "user",
+            "role": "USER",
             "avatar": "",
             "active": true,
             "email_verified_at": null,
@@ -432,10 +436,11 @@ c.JSON(http.StatusUnprocessableEntity, gin.H{
               <CodeBlock filename="GET /api/users?page=1&page_size=2&search=john -- 200 OK" code={`{
     "data": [
         {
-            "id": 1,
-            "name": "John Doe",
+            "id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+            "first_name": "John",
+            "last_name": "Doe",
             "email": "john@example.com",
-            "role": "admin",
+            "role": "ADMIN",
             "avatar": "",
             "active": true,
             "email_verified_at": null,
@@ -443,10 +448,11 @@ c.JSON(http.StatusUnprocessableEntity, gin.H{
             "updated_at": "2026-02-11T10:00:00Z"
         },
         {
-            "id": 15,
-            "name": "Johnny Appleseed",
+            "id": "a4e17b90-2c6d-4f38-9a1b-5d8e0c7f2a63",
+            "first_name": "Johnny",
+            "last_name": "Appleseed",
             "email": "johnny@example.com",
-            "role": "user",
+            "role": "USER",
             "avatar": "",
             "active": true,
             "email_verified_at": "2026-02-11T12:00:00Z",

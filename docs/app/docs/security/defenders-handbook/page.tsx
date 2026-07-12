@@ -85,7 +85,7 @@ SENTINEL_TRUSTED_PROXIES=10.0.0.0/8   # trust the LB, no one else`}
         defence: (
           <>
             <p>
-              Every admin route lives behind <code>middleware.RequireRoles(&quot;admin&quot;)</code>{' '}
+              Every admin route lives behind <code>authz.RequireRoles(&quot;ADMIN&quot;)</code>{' '}
               and returns 404 — not 403 — when access is denied, so brute-force tools
               can&apos;t distinguish &quot;does exist, you&apos;re blocked&quot; from &quot;doesn&apos;t exist&quot;.
               No path leaks via status code.
@@ -100,7 +100,7 @@ SENTINEL_TRUSTED_PROXIES=10.0.0.0/8   # trust the LB, no one else`}
               filename="apps/api/internal/routes/routes.go"
               language="go"
               code={`admin := api.Group("/admin")
-admin.Use(middleware.RequireRoles("admin"))   // role gate
+admin.Use(authz.RequireRoles("ADMIN"))   // role gate
 {
     admin.GET("/users", ...)   // brute-forcer sees 404, never 403
 }`}
@@ -574,7 +574,7 @@ networks:
               v3.25 review patch). The Postgres role used by the API has
               <code>CREATE</code> only on its own schema, no <code>SUPERUSER</code>,
               and no read access to <code>pg_authid</code>. Role-based access in
-              app code uses <code>middleware.RequireRoles</code> — every privileged
+              app code uses <code>authz.RequireRoles</code> — every privileged
               route is explicit, none are gated by &quot;is-authenticated&quot; alone.
             </p>
           </>

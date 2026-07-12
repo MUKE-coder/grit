@@ -218,8 +218,8 @@ func (h *PostHandler) Create(c *gin.Context) {
 
     // Whitelist allowed sort columns
     allowedSorts := map[string]bool{
-        "id": true, "name": true, "email": true,
-        "role": true, "created_at": true,
+        "id": true, "first_name": true, "last_name": true,
+        "email": true, "role": true, "created_at": true,
     }
     if !allowedSorts[sortBy] {
         sortBy = "created_at"
@@ -230,8 +230,8 @@ func (h *PostHandler) Create(c *gin.Context) {
     // Search across multiple fields
     if search != "" {
         query = query.Where(
-            "name ILIKE ? OR email ILIKE ?",
-            "%"+search+"%", "%"+search+"%",
+            "first_name ILIKE ? OR last_name ILIKE ? OR email ILIKE ?",
+            "%"+search+"%", "%"+search+"%", "%"+search+"%",
         )
     }
 
@@ -282,7 +282,7 @@ func (h *PostHandler) Create(c *gin.Context) {
                     <tr className="border-b border-border/20">
                       <td className="px-4 py-2.5 font-mono text-xs">search</td>
                       <td className="px-4 py-2.5 font-mono text-xs">(empty)</td>
-                      <td className="px-4 py-2.5">Full-text search across name + email</td>
+                      <td className="px-4 py-2.5">Full-text search across first_name + last_name + email</td>
                     </tr>
                     <tr className="border-b border-border/20">
                       <td className="px-4 py-2.5 font-mono text-xs">sort_by</td>
@@ -331,7 +331,7 @@ func (h *PostHandler) Create(c *gin.Context) {
         Title:     req.Title,
         Body:      req.Body,
         Published: req.Published,
-        AuthorID:  userID.(uint),
+        AuthorID:  userID.(string),
     }
 
     if err := h.DB.Create(&post).Error; err != nil {

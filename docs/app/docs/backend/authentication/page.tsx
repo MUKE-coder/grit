@@ -43,7 +43,8 @@ export default function AuthenticationPage() {
   Client                           Grit API
     |                                  |
     |  POST /api/auth/register         |
-    |  { name, email, password }       |
+    |  { first_name, last_name,        |
+    |    email, password }             |
     | -------------------------------->|
     |                                  |  Hash password (bcrypt)
     |                                  |  Create user in DB
@@ -110,7 +111,7 @@ JWT_REFRESH_EXPIRY=168h`} />
               <h3 id="token-claims">Token Claims (JWT Payload)</h3>
               <p>Each token contains these claims:</p>
               <CodeBlock filename="services/auth.go" code={`type Claims struct {
-    UserID uint   \`json:"user_id"\`
+    UserID string \`json:"user_id"\`
     Email  string \`json:"email"\`
     Role   string \`json:"role"\`
     jwt.RegisteredClaims  // exp, iat, etc.
@@ -184,7 +185,8 @@ JWT_REFRESH_EXPIRY=168h`} />
               <h3 id="register">Register</h3>
               <CodeBlock filename="POST /api/auth/register" code={`// Request
 {
-    "name": "John Doe",
+    "first_name": "John",
+    "last_name": "Doe",
     "email": "john@example.com",
     "password": "securepassword123"
 }
@@ -193,10 +195,11 @@ JWT_REFRESH_EXPIRY=168h`} />
 {
     "data": {
         "user": {
-            "id": 1,
-            "name": "John Doe",
+            "id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+            "first_name": "John",
+            "last_name": "Doe",
             "email": "john@example.com",
-            "role": "user",
+            "role": "USER",
             "avatar": "",
             "active": true,
             "email_verified_at": null,
@@ -304,7 +307,7 @@ protected.Use(middleware.Auth(db, authService))
 // Admin routes -- admin role required
 admin := r.Group("/api")
 admin.Use(middleware.Auth(db, authService))
-admin.Use(middleware.RequireRole("admin"))
+admin.Use(middleware.RequireRole("ADMIN"))
 {
     admin.GET("/users", userHandler.List)
     admin.DELETE("/users/:id", userHandler.Delete)
@@ -327,17 +330,17 @@ admin.Use(middleware.RequireRole("admin"))
                   </thead>
                   <tbody className="text-muted-foreground">
                     <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5 font-mono text-xs">admin</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">ADMIN</td>
                       <td className="px-4 py-2.5 font-mono text-xs">models.RoleAdmin</td>
                       <td className="px-4 py-2.5">Full access to all resources, user management, admin panel</td>
                     </tr>
                     <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5 font-mono text-xs">editor</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">EDITOR</td>
                       <td className="px-4 py-2.5 font-mono text-xs">models.RoleEditor</td>
                       <td className="px-4 py-2.5">Can create and edit content, limited admin access</td>
                     </tr>
                     <tr>
-                      <td className="px-4 py-2.5 font-mono text-xs">user</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">USER</td>
                       <td className="px-4 py-2.5 font-mono text-xs">models.RoleUser</td>
                       <td className="px-4 py-2.5">Default role, can access own data only</td>
                     </tr>
@@ -346,15 +349,15 @@ admin.Use(middleware.RequireRole("admin"))
               </div>
               <CodeBlock filename="models/user.go" code={`// Built-in roles
 const (
-    RoleAdmin  = "admin"
-    RoleEditor = "editor"
-    RoleUser   = "user"
+    RoleAdmin  = "ADMIN"
+    RoleEditor = "EDITOR"
+    RoleUser   = "USER"
 )
 
 // Add custom roles:
 const (
-    RoleManager   = "manager"
-    RoleModerator = "moderator"
+    RoleManager   = "MANAGER"
+    RoleModerator = "MODERATOR"
 )`} />
 
               {/* ── Token Storage (Frontend) ─────────────────────────────── */}
@@ -627,7 +630,7 @@ func (u *User) CheckPassword(password string) bool {
               </p>
               <CodeBlock filename="services/auth.go" code={`// GenerateTokenPair creates access + refresh tokens.
 func (s *AuthService) GenerateTokenPair(
-    userID uint, email, role string,
+    userID string, email, role string,
 ) (*TokenPair, error) {
     accessToken, expiresAt, err := s.generateToken(
         userID, email, role, s.AccessExpiry,
@@ -651,7 +654,7 @@ func (s *AuthService) GenerateTokenPair(
 }
 
 func (s *AuthService) generateToken(
-    userID uint, email, role string, expiry time.Duration,
+    userID string, email, role string, expiry time.Duration,
 ) (string, int64, error) {
     expiresAt := time.Now().Add(expiry)
 

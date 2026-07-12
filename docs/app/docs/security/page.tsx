@@ -40,7 +40,7 @@ const OWASP_2025: Row[] = [
 func (i *Invoice) GetOwnerID() string { return i.UserID }`} />
         <p>
           For tenant / team scoping use <code>authz.CheckScope</code>. For admin-only
-          routes use <code>authz.RequireRoles(&quot;admin&quot;)</code>. SSRF (absorbed into A01 in
+          routes use <code>authz.RequireRoles(&quot;ADMIN&quot;)</code>. SSRF (absorbed into A01 in
           2025) is handled by the <code>internal/safefetch</code> package — see A05 below.
         </p>
       </>
@@ -170,7 +170,7 @@ db.Raw("SELECT * FROM users WHERE email = '" + email + "'")`} />
           <code> internal/safefetch</code> package for any HTTP request whose URL came
           from the caller (webhooks, image-from-URL, PDF render, OEmbed):
         </p>
-        <CodeBlock filename="webhook delivery" code={`import "{module}}/internal/safefetch"
+        <CodeBlock filename="webhook delivery" code={`import "{module}/internal/safefetch"
 
 resp, err := safefetch.Get(ctx, userProvidedURL)
 if errors.Is(err, safefetch.ErrBlocked) {
@@ -201,8 +201,8 @@ if errors.Is(err, safefetch.ErrBlocked) {
           pre-applied.
         </p>
         <p>
-          When you generate a resource with <code>grit add model</code> (or
-          <code> generate</code>), the produced handlers already call
+          When you generate a resource with <code>grit generate resource</code>,
+          the produced handlers already call
           <code> authz.MustOwn</code> on every object access — IDOR is closed by the
           generator, not by the developer remembering.
         </p>
