@@ -81,7 +81,9 @@ export default function DesktopLLMReferencePage() {
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
                   grit remove
                 </code>
-                . Desktop uses Wails bindings, not HTTP — there is no REST API.
+                . Desktop is hybrid: CRUD goes through Wails bindings, plus an
+                embedded Gin REST API on 127.0.0.1:34999 for uploads, health,
+                and external clients.
               </Tip>
             </div>
 
@@ -114,7 +116,7 @@ export default function DesktopLLMReferencePage() {
                     {
                       label: "Backend",
                       value:
-                        "Go (Wails v2 bindings) — direct function calls, no HTTP server",
+                        "Go (Wails v2 bindings) for CRUD + an embedded Gin REST API on 127.0.0.1:34999 for uploads, health, and external clients",
                     },
                     {
                       label: "Frontend",
@@ -301,21 +303,27 @@ export default function DesktopLLMReferencePage() {
                   Architecture
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Unlike Grit web projects (which use Gin HTTP server), desktop
-                  projects have{" "}
-                  <strong className="text-foreground/80">no HTTP server</strong>.
-                  Wails bridges Go and JavaScript directly. The React frontend
-                  calls Go functions through generated TypeScript bindings.
+                  Desktop projects are{" "}
+                  <strong className="text-foreground/80">hybrid</strong>. CRUD
+                  goes through Wails bindings — the React frontend calls Go
+                  functions through generated TypeScript bindings, no HTTP — while
+                  an embedded Gin REST API bound to{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    127.0.0.1:34999
+                  </code>{" "}
+                  (in <code>internal/api/</code>) serves native file uploads, a
+                  health check, and any external clients.
                 </p>
 
                 <Warn>
-                  There is no REST API in desktop projects. React calls Go
-                  functions directly via{" "}
+                  For generated resource CRUD, React calls Go functions directly
+                  via{" "}
                   <code className="font-mono bg-red-500/10 px-1 rounded">
                     window.go.main.App.MethodName()
                   </code>
-                  . Never suggest HTTP endpoints, fetch calls, or Axios for
-                  desktop projects.
+                  . Do not route generated CRUD through HTTP/fetch/Axios — the
+                  embedded REST API is only for uploads, health, and external
+                  clients.
                 </Warn>
 
                 <h3 className="text-base font-semibold text-foreground/80 mb-3">
@@ -325,10 +333,15 @@ export default function DesktopLLMReferencePage() {
                   language="bash"
                   filename="Desktop call flow"
                   code={`React Component
-  --> Wails TypeScript Binding (auto-generated)
+  --> Wails TypeScript Binding (auto-generated)   [CRUD]
     --> Go App Method (on the App struct)
       --> GORM Service (business logic + queries)
-        --> SQLite Database`}
+        --> SQLite Database (app.db)
+
+React Component
+  --> POST 127.0.0.1:34999/api/uploads            [file uploads]
+    --> internal/api + internal/storage
+      --> FileRef (internal/files) persisted on the record`}
                 />
 
                 <div className="space-y-3 mt-6 mb-4">
@@ -341,7 +354,7 @@ export default function DesktopLLMReferencePage() {
                     {
                       step: "2",
                       title: "React Frontend (frontend/)",
-                      desc: "A Vite-powered React app with TanStack Router (file-based routing) and TanStack Query for state management. Calls Go functions via the generated Wails bindings — no fetch, no Axios, no HTTP.",
+                      desc: "A Vite-powered React app with TanStack Router (file-based routing) and TanStack Query for state management. Calls Go functions via the generated Wails bindings for CRUD (no fetch/Axios); file uploads POST to the embedded REST API on 127.0.0.1:34999.",
                     },
                     {
                       step: "3",
@@ -415,10 +428,18 @@ export default function DesktopLLMReferencePage() {
 │   │   ├── user.go          # User model (auth)
 │   │   ├── blog.go          # Blog post model (scaffolded example)
 │   │   └── contact.go       # Contact model (scaffolded example)
-│   └── service/
-│       ├── auth.go          # Authentication service (register, login, JWT)
-│       ├── blog.go          # Blog CRUD service
-│       └── contact.go       # Contact CRUD service
+│   ├── service/
+│   │   ├── auth.go          # Authentication service (register, login, JWT)
+│   │   ├── blog.go          # Blog CRUD service
+│   │   ├── contact.go       # Contact CRUD service
+│   │   └── export.go        # PDF / Excel export service
+│   ├── api/
+│   │   ├── router.go        # Embedded Gin REST API (127.0.0.1:34999)
+│   │   └── uploads.go       # POST /api/uploads, GET /api/health
+│   ├── storage/
+│   │   └── storage.go       # Writes uploads into the OS app-data dir
+│   └── files/
+│       └── file_ref.go      # FileRef — stored upload JSON shape
 │
 ├── frontend/
 │   ├── src/
@@ -434,7 +455,7 @@ export default function DesktopLLMReferencePage() {
 │   ├── index.html
 │   ├── package.json
 │   ├── vite.config.ts
-│   └── tailwind.config.js
+│   └── tailwind.config.ts
 │
 ├── build/
 │   ├── appicon.png           # App icon (1024x1024 — auto-converted per platform)
@@ -676,8 +697,20 @@ export default function DesktopLLMReferencePage() {
                         {
                           type: "belongs_to",
                           go: "uint (foreign key)",
-                          form: "Number input (FK ID)",
-                          note: "Foreign key to parent model",
+                          form: "Relationship picker (searchable select)",
+                          note: "Loads related rows; resolves FK to parent model",
+                        },
+                        {
+                          type: "file",
+                          go: "files.FileRef",
+                          form: "Native upload (FileDropzone)",
+                          note: "Uploads via embedded /api/uploads → FileRef",
+                        },
+                        {
+                          type: "files",
+                          go: "[]files.FileRef",
+                          form: "Multi-file native upload",
+                          note: "Uploads via /api/uploads → FileRef[]",
                         },
                       ].map((row) => (
                         <tr key={row.type}>
@@ -1004,8 +1037,13 @@ func (s *ProductService) Delete(id uint) error { ... }`}
                         ],
                         [
                           "belongs_to",
-                          "Number input (FK ID)",
-                          "Enter the related record ID directly",
+                          "Relationship picker (searchable select)",
+                          "Searchable select that loads related rows; resolves the FK",
+                        ],
+                        [
+                          "file / files",
+                          "Native upload (FileDropzone)",
+                          "Uploads to the embedded /api/uploads, stored as FileRef(s)",
                         ],
                       ].map(([type_, input, behavior]) => (
                         <tr key={type_}>
@@ -1152,8 +1190,10 @@ const excelBytes = await ExportProductsExcel();
                   <code className="font-mono bg-amber-500/10 px-1 rounded">
                     fetch(&quot;/api/products&quot;)
                   </code>
-                  . There is no HTTP involved. The call goes directly from
-                  JavaScript to Go through the Wails bridge.
+                  . CRUD involves no HTTP — the call goes directly from
+                  JavaScript to Go through the Wails bridge. (File uploads are
+                  the exception: they POST to the embedded REST API on
+                  127.0.0.1:34999.)
                 </Note>
               </div>
 
@@ -1186,6 +1226,22 @@ const excelBytes = await ExportProductsExcel();
                     //go:embed all:frontend/dist
                   </code>{" "}
                   — no separate files need to be distributed.
+                </p>
+
+                <p className="text-sm text-muted-foreground/70 mb-6">
+                  To ship a distributable Windows installer, run{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    grit package
+                  </code>{" "}
+                  — it builds an NSIS installer (.exe), auto-detecting{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    makensis
+                  </code>{" "}
+                  on your PATH (use{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
+                    --no-installer
+                  </code>{" "}
+                  for the raw binary only).
                 </p>
 
                 <h3 className="text-base font-semibold text-foreground/80 mb-3">
@@ -1334,7 +1390,7 @@ wails build -platform linux/amd64`}
                         [
                           "Backend",
                           "Gin HTTP server",
-                          "Wails bindings (direct Go calls)",
+                          "Wails bindings (CRUD) + embedded Gin API :34999 (uploads/health)",
                         ],
                         [
                           "Frontend",
@@ -1349,7 +1405,7 @@ wails build -platform linux/amd64`}
                         [
                           "Communication",
                           "HTTP/REST + React Query + fetch",
-                          "Direct Go calls + React Query + Wails bindings",
+                          "Direct Go calls (CRUD) + embedded REST for uploads/health",
                         ],
                         [
                           "State management",
@@ -1930,9 +1986,9 @@ wails build -nsis`}
                         "Only exported methods on the App struct (in app.go) are available as Wails bindings. Methods on other structs or in other files are not accessible from the frontend.",
                     },
                     {
-                      rule: "The frontend calls Go functions directly — there is no REST API",
+                      rule: "The frontend calls Go functions directly for CRUD — the embedded REST API is only for uploads/health/external clients",
                       detail:
-                        "Never suggest fetch(), Axios, HTTP endpoints, or REST patterns for desktop projects. React calls Go via GetProducts(), CreateProduct(), etc. — generated Wails TypeScript bindings.",
+                        "For generated resource CRUD, React calls Go via GetProducts(), CreateProduct(), etc. — the generated Wails TypeScript bindings — never fetch()/Axios. The scaffold does run an embedded Gin API on 127.0.0.1:34999 (internal/api), but it exists only for native file uploads (POST /api/uploads → FileRef), a health check, and any external clients.",
                     },
                     {
                       rule: "Restart wails dev after Go file changes",
@@ -1945,9 +2001,9 @@ wails build -nsis`}
                         "Code injected by grit generate goes directly above the // grit:methods marker. Place custom methods above the generated block to avoid them being accidentally removed by grit remove.",
                     },
                     {
-                      rule: "Do not create handlers or routes files for desktop",
+                      rule: "Do not create per-resource handlers or routes files for desktop CRUD",
                       detail:
-                        "Desktop projects do not have handlers/, routes/, or middleware/ directories. All request handling is done through methods on the App struct. If a user asks for an API endpoint, explain that desktop uses Wails bindings instead.",
+                        "Generated CRUD does not use handlers/, routes/, or middleware/ directories — it runs through methods on the App struct. The only HTTP surface is the scaffold's embedded internal/api (uploads + health); if a user asks for a resource API endpoint, use Wails bindings instead.",
                     },
                     {
                       rule: "Generate parent models before child models (belongs_to)",

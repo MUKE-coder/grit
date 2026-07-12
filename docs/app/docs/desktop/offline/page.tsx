@@ -195,6 +195,13 @@ const SYNC_TABLES: string[] = [
                   for the merge UI.
                 </li>
               </ol>
+              <p className="mt-4">
+                Manual Sync isn&apos;t the only trigger. The engine also runs a background
+                auto-sync loop (<code>StartAutoSync</code>): on an interval it checks whether
+                the server is reachable (online detection) and, when it is and the user
+                hasn&apos;t forced offline mode, replays the same Pull + Push automatically —
+                so offline edits reconcile the moment connectivity returns.
+              </p>
             </div>
 
             {/* Conflicts */}

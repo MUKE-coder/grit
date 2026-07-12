@@ -156,7 +156,9 @@ export default function DesktopResourceGenerationPage() {
                     ["date", "time.Time", "Date picker"],
                     ["datetime", "time.Time", "DateTime picker"],
                     ["slug", "string", "Auto-generated from source field"],
-                    ["belongs_to", "uint", "Number input (foreign key)"],
+                    ["belongs_to", "uint", "Relationship picker (searchable select that loads related rows)"],
+                    ["file", "files.FileRef", "Native upload → FileRef via the embedded /api/uploads"],
+                    ["files", "[]files.FileRef", "Multi-file native upload → FileRef[] via /api/uploads"],
                   ].map(([type_, go_, form]) => (
                     <tr key={type_}>
                       <td className="p-3 font-mono text-xs text-primary">

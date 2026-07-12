@@ -468,7 +468,7 @@ type Sale struct {
               </div>
               <CodeBlock
                 language="go"
-                filename="internal/services/product.go"
+                filename="internal/service/product.go"
                 code={`// GetLowStock returns products with stock below the given threshold.
 func (s *ProductService) GetLowStock(threshold int) ([]models.Product, error) {
 	var products []models.Product

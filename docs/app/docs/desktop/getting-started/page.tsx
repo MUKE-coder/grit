@@ -112,6 +112,9 @@ export default function DesktopGettingStartedPage() {
                 <p>
                   The scaffolded project has the following layout. Go code lives at the root
                   and in <code>internal/</code>, while the React frontend lives in <code>frontend/</code>.
+                  Alongside the Wails bindings, an embedded Gin REST API runs on{' '}
+                  <code>127.0.0.1:34999</code> (see <code>internal/api/</code>) to serve native file
+                  uploads, a health check, and any external clients.
                 </p>
               </div>
               <CodeBlock language="bash" filename="myapp/" code={`myapp/
@@ -129,10 +132,18 @@ export default function DesktopGettingStartedPage() {
 │   │   ├── user.go          # User model + AutoMigrate
 │   │   ├── blog.go          # Blog post model
 │   │   └── contact.go       # Contact model
-│   ├── services/
+│   ├── service/
 │   │   ├── auth.go          # Authentication service
 │   │   ├── blog.go          # Blog CRUD service
-│   │   └── contact.go       # Contact CRUD service
+│   │   ├── contact.go       # Contact CRUD service
+│   │   └── export.go        # PDF / Excel export service
+│   ├── api/
+│   │   ├── router.go        # Embedded Gin REST API (127.0.0.1:34999)
+│   │   └── uploads.go       # POST /api/uploads, GET /api/health
+│   ├── storage/
+│   │   └── storage.go       # Writes uploads into the OS app-data dir
+│   ├── files/
+│   │   └── file_ref.go      # FileRef — the stored upload's JSON shape
 │   └── types/
 │       └── types.go         # Shared request/response types
 ├── frontend/
@@ -148,7 +159,7 @@ export default function DesktopGettingStartedPage() {
 │   ├── index.html
 │   ├── package.json
 │   ├── vite.config.ts
-│   └── tailwind.config.js
+│   └── tailwind.config.ts
 └── cmd/
     └── studio/
         └── main.go           # GORM Studio standalone server`} className="mb-0" />

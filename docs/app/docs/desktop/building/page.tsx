@@ -109,11 +109,12 @@ wails build -platform darwin/arm64
 wails build -platform linux/amd64`}
             />
 
-            {/* NSIS Installer */}
+            {/* Package / NSIS Installer */}
             <div className="prose-grit mb-10 mt-10">
-              <h2>Windows Installer (NSIS)</h2>
+              <h2>Windows Installer (grit package)</h2>
               <p>
-                Create a Windows installer with NSIS (requires{" "}
+                Build a distributable Windows installer in one step with{" "}
+                <code>grit package</code>. It compiles the app and produces an{" "}
                 <a
                   href="https://nsis.sourceforge.io/"
                   target="_blank"
@@ -122,16 +123,31 @@ wails build -platform linux/amd64`}
                 >
                   NSIS
                 </a>{" "}
-                installed):
+                installer (<code>.exe</code>), auto-detecting{" "}
+                <code>makensis</code> on your PATH.
               </p>
             </div>
 
-            <CodeBlock terminal code="wails build -nsis" />
+            <CodeBlock terminal code="grit package" />
 
             <div className="prose-grit mb-10 mt-6">
               <p>
                 This produces a <code>.exe</code> installer that handles
-                installation, Start Menu shortcuts, and uninstallation.
+                installation, Start Menu shortcuts, and uninstallation. If NSIS
+                is not installed, run{" "}
+                <code>grit package --no-installer</code> to build just the raw
+                binary. Under the hood you can still call{" "}
+                <code>wails build -nsis</code> directly for finer control.
+              </p>
+              <p>
+                Installed apps can update themselves — see the{" "}
+                <a
+                  href="/docs/desktop/auto-update"
+                  className="text-primary hover:underline"
+                >
+                  Auto-Update
+                </a>{" "}
+                guide for shipping new releases in-app.
               </p>
             </div>
 
@@ -173,13 +189,14 @@ wails build -platform linux/amd64`}
               </div>
               <div className="rounded-lg border border-border bg-card p-4">
                 <h3 className="font-semibold text-foreground mb-1">
-                  Database Location
+                  Database & Uploads Location
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  SQLite creates <code>app.db</code> in the working directory.
-                  For a better user experience, consider using{" "}
-                  <code>os.UserConfigDir()</code> to store the database in the
-                  user&apos;s config folder.
+                  SQLite creates <code>app.db</code> in the working directory
+                  (override with the <code>DB_DSN</code> env var). Native file
+                  uploads are written to the OS app-data directory, so they stay
+                  writable even when the binary lives in a read-only install
+                  location.
                 </p>
               </div>
             </div>

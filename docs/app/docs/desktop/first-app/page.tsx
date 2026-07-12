@@ -184,10 +184,14 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
 │   │   ├── user.go          # User model + AutoMigrate
 │   │   ├── blog.go          # Blog post model
 │   │   └── contact.go       # Contact model
-│   ├── services/
+│   ├── service/
 │   │   ├── auth.go          # Authentication service
 │   │   ├── blog.go          # Blog CRUD service
-│   │   └── contact.go       # Contact CRUD service
+│   │   ├── contact.go       # Contact CRUD service
+│   │   └── export.go        # PDF / Excel export service
+│   ├── api/                 # Embedded Gin REST API (127.0.0.1:34999)
+│   ├── storage/             # Upload storage in the OS app-data dir
+│   ├── files/               # FileRef — stored upload JSON shape
 │   └── types/
 │       └── types.go         # Shared request/response types
 ├── frontend/
@@ -203,7 +207,7 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
 │   ├── index.html
 │   ├── package.json
 │   ├── vite.config.ts
-│   └── tailwind.config.js
+│   └── tailwind.config.ts
 └── cmd/
     └── studio/
         └── main.go           # GORM Studio standalone server`}
@@ -217,7 +221,7 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                 {[
                   {
                     label: "Go backend with Wails bindings",
-                    desc: "All Go services are bound to the Wails runtime so React can call them directly — no HTTP server needed.",
+                    desc: "Go services are bound to the Wails runtime so React can call them directly for CRUD, while an embedded Gin REST API on 127.0.0.1:34999 handles native uploads, health, and external clients.",
                   },
                   {
                     label: "React frontend with Vite",
@@ -428,7 +432,7 @@ wails dev`}
                     desc: "GORM model struct with all fields, timestamps, and soft delete",
                   },
                   {
-                    file: "internal/services/task.go",
+                    file: "internal/service/task.go",
                     desc: "Service with List, ListAll, GetByID, Create, Update, Delete methods",
                   },
                   {
@@ -920,8 +924,9 @@ function EditTaskPage() {
 
               <div className="prose-grit mb-0">
                 <blockquote>
-                  For Windows, you can also create an NSIS installer with{" "}
-                  <code>wails build -nsis</code>. See the{" "}
+                  For a distributable Windows installer, run{" "}
+                  <code>grit package</code> — it builds an NSIS installer (.exe)
+                  and auto-detects <code>makensis</code> on your PATH. See the{" "}
                   <Link
                     href="/docs/desktop/building"
                     className="text-primary hover:underline"

@@ -86,13 +86,36 @@ wails dev`} className="mb-0 glow-purple-sm" />
                   Architecture
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Instead of HTTP requests between client and server, Wails uses direct Go bindings.
+                  Grit Desktop is a <strong className="text-foreground/80">hybrid</strong> app. CRUD flows
+                  through direct Wails bindings — the React frontend calls Go functions with no HTTP — while
+                  an embedded Gin REST API bound to <code>127.0.0.1:34999</code> handles native file uploads,
+                  a health endpoint, and any external clients. Both talk to the same SQLite database.
+                </p>
+                <CodeBlock
+                  language="text"
+                  className="mb-4"
+                  code={`  ┌──────────────────────────────────────────────┐
+  │  Wails Window                                  │
+  │  ┌────────────────┐      ┌──────────────────┐  │
+  │  │  React UI      │ ⇄    │  Go bindings     │  │
+  │  │  (Vite)        │      │  (wailsjs/go)    │  │
+  │  └────────────────┘      └────────┬─────────┘  │
+  │           │                       │            │
+  │           │ uploads / health      │ CRUD       │
+  │           ▼                       ▼            │
+  │  ┌────────────────┐      ┌──────────────────┐  │
+  │  │ Embedded Gin   │─────▶│  SQLite (app.db) │  │
+  │  │ API :34999     │      │  offline-first   │  │
+  │  └────────────────┘      └──────────────────┘  │
+  └──────────────────────────────────────────────┘`}
+                />
+                <p className="text-muted-foreground leading-relaxed mb-4">
                   The React frontend calls Go functions directly, with Wails handling the bridge
                   between the two runtimes.
                 </p>
                 <div className="space-y-3 mb-6">
                   {[
-                    { step: '1', title: 'Go Backend (Wails Bindings)', desc: 'Business logic lives in Go structs. Methods on the App struct are automatically exposed to the frontend via Wails bindings. No HTTP server needed.' },
+                    { step: '1', title: 'Go Backend (Wails Bindings + Embedded API)', desc: 'Business logic lives in Go structs. Methods on the App struct are exposed to the frontend via Wails bindings for CRUD, while an embedded Gin REST API on 127.0.0.1:34999 serves uploads, health, and external clients.' },
                     { step: '2', title: 'React Frontend (Vite)', desc: 'A Vite-powered React app with TanStack Router (file-based routing) and TanStack Query for state management. Calls Go functions through the generated Wails bindings.' },
                     { step: '3', title: 'SQLite / PostgreSQL', desc: 'GORM handles the database layer. SQLite is the default for portable desktop apps. PostgreSQL is supported for networked setups.' },
                     { step: '4', title: 'Single Binary Output', desc: 'The entire application -- Go backend, React frontend, and all assets -- compiles into a single executable that you distribute.' },
@@ -170,6 +193,9 @@ wails dev`} className="mb-0 glow-purple-sm" />
                     { name: 'Dark Theme', desc: 'Grit dark theme with Tailwind CSS and shadcn/ui components' },
                     { name: 'Resource Generation', desc: 'Generate new resources with grit generate resource' },
                     { name: 'Toast Notifications', desc: 'User feedback with sonner toast notifications' },
+                    { name: 'Native File Uploads', desc: 'Upload files through the embedded REST API on 127.0.0.1:34999, stored as FileRef records' },
+                    { name: 'In-App Auto-Update', desc: 'Background update checks with in-app download and install of new releases' },
+                    { name: 'Installer Packaging', desc: 'grit package builds a distributable NSIS installer (.exe) on Windows' },
                   ].map((feature) => (
                     <div
                       key={feature.name}
