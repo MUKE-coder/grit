@@ -74,8 +74,8 @@ func docsPackageJSON(opts Options) string {
   },
   "dependencies": {
     "next": "^15.1.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
     "fumadocs-core": "^14.0.0",
     "fumadocs-ui": "^14.0.0",
     "fumadocs-mdx": "^11.0.0"

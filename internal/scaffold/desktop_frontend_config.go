@@ -38,8 +38,8 @@ func desktopPackageJSON(opts DesktopOptions) string {
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
     "@tanstack/react-router": "^1.95.0",
     "@tanstack/react-query": "^5.62.0",
     "react-hook-form": "^7.54.0",

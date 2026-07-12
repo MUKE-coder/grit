@@ -28,6 +28,46 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.53.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.53.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fixed a React version mismatch that white-screened the
+                  desktop app.</strong> React 19 hard-errors when{' '}
+                  <code>react</code> and <code>react-dom</code> aren&apos;t the exact
+                  same version (&quot;Incompatible React versions&quot;), and the app
+                  renders a blank black screen.
+                </p>
+                <p>
+                  The previous pin lived in a pnpm override that pnpm 10 applied to{' '}
+                  <code>react</code> but not <code>react-dom</code>, so they drifted
+                  onto different 19.x lines (react 19.1.0 vs react-dom 19.2.7). Both
+                  are now pinned to one exact version <strong>directly in every
+                  frontend&apos;s package.json</strong> — a far more reliable
+                  guarantee than an override. <code>grit update</code> also
+                  surgically re-pins them in existing apps without touching your
+                  other dependencies.
+                </p>
+                <p>
+                  Verified: a fresh <code>--full</code> app installs with react and
+                  react-dom both at 19.2.7, the desktop app renders (no version
+                  error), and the desktop/admin builds pass.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Existing app white-screening? <code>grit update</code>, then{' '}
+                  <code>rm -rf node_modules pnpm-lock.yaml &amp;&amp; pnpm install</code>,
+                  and restart the desktop.
+                </p>
+              </div>
+            </div>
+
             {/* v3.52.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -62,6 +62,14 @@ func Upgrade(uOpts UpgradeOptions) error {
 	}
 	updated += n
 
+	// --- React version pin ---
+	// react and react-dom must be the exact same version (React 19 hard-errors
+	// otherwise). Older scaffolds left them at "^19.0.0" and relied on a pnpm
+	// override that pnpm 10 doesn't apply to react-dom — so they drift onto
+	// different 19.x lines and the app white-screens. Surgically pin both in
+	// every frontend package.json without clobbering the user's other deps.
+	pinReactVersions(root, spinner)
+
 	// --- Docker files ---
 	spinner.Printf("  → Updating Docker configuration...\n")
 	dockerFiles := map[string]string{
@@ -278,6 +286,39 @@ func writeUpgradeFiles(files map[string]string, force bool) (int, error) {
 		count++
 	}
 	return count, nil
+}
+
+// pinReactVersions surgically pins react + react-dom to one exact version in
+// every frontend package.json, leaving the rest of the file untouched. Older
+// scaffolds used "^19.0.0" (which drifts) or a "19.1.0" pin (which pnpm 10
+// applies to react only), producing a react/react-dom mismatch that
+// white-screens the app.
+func pinReactVersions(root string, spinner *color.Color) {
+	const target = "19.2.7"
+	replacer := strings.NewReplacer(
+		`"react": "^19.0.0"`, `"react": "`+target+`"`,
+		`"react-dom": "^19.0.0"`, `"react-dom": "`+target+`"`,
+		`"react": "19.1.0"`, `"react": "`+target+`"`,
+		`"react-dom": "19.1.0"`, `"react-dom": "`+target+`"`,
+	)
+	paths := []string{
+		filepath.Join(root, "package.json"), // single-app scaffold
+		filepath.Join(root, "apps", "admin", "package.json"),
+		filepath.Join(root, "apps", "web", "package.json"),
+		filepath.Join(root, "apps", "desktop", "frontend", "package.json"),
+	}
+	for _, p := range paths {
+		data, err := os.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		out := replacer.Replace(string(data))
+		if out != string(data) {
+			if err := os.WriteFile(p, []byte(out), 0o644); err == nil {
+				spinner.Printf("  ✓ pinned react/react-dom to %s in %s\n", target, filepath.Base(filepath.Dir(p)))
+			}
+		}
+	}
 }
 
 // FindProjectRoot walks up from the current directory looking for a Grit project.

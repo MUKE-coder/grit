@@ -545,14 +545,11 @@ func pnpmWorkspace(includeDesktop bool) string {
 		ws += `  - "apps/desktop/frontend"
 `
 	}
-	// pnpm 10 reads dependency overrides from here (the package.json "pnpm"
-	// field is ignored). Pin a single React so every workspace package shares
-	// one copy — multiple React instances break hooks.
-	ws += `
-overrides:
-  react: 19.1.0
-  react-dom: 19.1.0
-`
+	// React/react-dom are pinned to one exact version directly in every
+	// frontend package.json (see the *_files.go templates) so the two always
+	// match — React 19 hard-errors on a version mismatch. Exact direct pins are
+	// more reliable than a pnpm override (pnpm 10 didn't consistently apply the
+	// react-dom override, leaving react and react-dom on different 19.x lines).
 	return ws
 }
 

@@ -418,8 +418,8 @@ func singleFrontendPackageJSON(opts Options) string {
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
