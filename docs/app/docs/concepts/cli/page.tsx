@@ -327,8 +327,15 @@ grit rm resource <Name>`} />
                   grit update
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Update the Grit CLI itself to the latest version. This removes the current binary
-                  and installs the newest release from GitHub using <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">go install</code>.
+                  Update the Grit CLI itself to the latest version. It first checks GitHub for the
+                  newest release and exits immediately if you are already up to date. Otherwise it
+                  picks a strategy: if the Go toolchain is on your PATH it runs{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">go install ...@&lt;latest&gt;</code>;
+                  if Go is not installed it downloads the matching prebuilt binary from the GitHub
+                  release and atomically swaps it in. On Windows the running{" "}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.exe</code> is locked, so
+                  the old binary is renamed to <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.old</code>{" "}
+                  before the new one is written (and restored if the update fails).
                 </p>
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
@@ -342,12 +349,20 @@ grit rm resource <Name>`} />
                   <div className="p-5 font-mono text-sm">
                     <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit update</span></div>
                     <div className="mt-1 text-muted-foreground/40 text-xs space-y-0.5">
-                      <div>  → Removing old binary: /home/user/go/bin/grit</div>
-                      <div>  → Installing latest version...</div>
-                      <div className="text-primary/60">  ✓ Grit CLI updated successfully!</div>
+                      <div>  Grit self-update — current: v3.55.0</div>
+                      <div>  → Checking GitHub for the latest release...</div>
+                      <div>  → New version available: v3.55.0 → v3.56.0</div>
+                      <div>  → Running: go install github.com/MUKE-coder/grit/v3/cmd/grit@v3.56.0</div>
+                      <div className="text-primary/60">  ✓ Updated to v3.56.0</div>
                     </div>
                   </div>
                 </div>
+                <p className="text-sm text-muted-foreground/60 mt-3">
+                  Aliased as <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit self-update</code>.
+                  Pass <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--from-release</code> to skip
+                  the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">go install</code> path and
+                  always pull the prebuilt binary from the GitHub release.
+                </p>
                 <div className="mt-4 rounded-lg border border-border/20 bg-accent/20 p-3">
                   <p className="text-sm text-muted-foreground/70">
                     <strong className="text-foreground/80">Note:</strong>{" "}
@@ -379,7 +394,7 @@ grit rm resource <Name>`} />
                   </div>
                   <div className="p-5 font-mono text-sm">
                     <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit version</span></div>
-                    <div className="mt-1"><span className="text-muted-foreground/60">grit version 3.6.0</span></div>
+                    <div className="mt-1"><span className="text-muted-foreground/60">grit version 3.55.0</span></div>
                   </div>
                 </div>
               </div>
@@ -399,8 +414,16 @@ grit rm resource <Name>`} />
                     </thead>
                     <tbody className="text-muted-foreground">
                       <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit init</td>
+                        <td className="px-4 py-2.5">Write CLAUDE.md / AGENTS.md convention docs to the project root</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit new &lt;name&gt;</td>
                         <td className="px-4 py-2.5">Scaffold a new project (interactive by default)</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit new-desktop &lt;name&gt;</td>
+                        <td className="px-4 py-2.5">Scaffold a standalone Wails desktop app</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit new .</td>
@@ -463,6 +486,14 @@ grit rm resource <Name>`} />
                         <td className="px-4 py-2.5">Shorthand for generate resource</td>
                       </tr>
                       <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit generate seeder &lt;Resource&gt;</td>
+                        <td className="px-4 py-2.5">Generate a database seeder for existing resources</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit generate sequence &lt;Name&gt;</td>
+                        <td className="px-4 py-2.5">Generate a sequential numbering helper (e.g. INV-202605-0001)</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit remove resource &lt;Name&gt;</td>
                         <td className="px-4 py-2.5">Remove a generated resource and clean up markers</td>
                       </tr>
@@ -471,12 +502,40 @@ grit rm resource <Name>`} />
                         <td className="px-4 py-2.5">Add a new role across all project files</td>
                       </tr>
                       <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit add web-auth</td>
+                        <td className="px-4 py-2.5">Add page protection helpers to apps/web/</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit expose form &lt;Resource&gt;</td>
+                        <td className="px-4 py-2.5">Scaffold a public form page for a resource</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit expose table &lt;Resource&gt;</td>
+                        <td className="px-4 py-2.5">Scaffold a paginated list page for a resource</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit start</td>
+                        <td className="px-4 py-2.5">Start every app in the project in parallel</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit start client</td>
                         <td className="px-4 py-2.5">Start frontend apps via pnpm dev</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit start server</td>
-                        <td className="px-4 py-2.5">Start Go API server</td>
+                        <td className="px-4 py-2.5">Start Go API server (hot-reload via air)</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit compile</td>
+                        <td className="px-4 py-2.5">Build the desktop app executable (Wails)</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit package</td>
+                        <td className="px-4 py-2.5">Build a distributable desktop installer (.exe / .app / binary)</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit studio</td>
+                        <td className="px-4 py-2.5">Open the GORM Studio database browser</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit sync</td>
@@ -493,6 +552,14 @@ grit rm resource <Name>`} />
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit seed</td>
                         <td className="px-4 py-2.5">Populate database with initial data</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit backup</td>
+                        <td className="px-4 py-2.5">Back up the entire database to a ZIP archive</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit restore &lt;backup.zip&gt;</td>
+                        <td className="px-4 py-2.5">Restore the database from a backup archive</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit upgrade</td>
