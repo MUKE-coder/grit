@@ -244,7 +244,7 @@ cd apps/api && go mod tidy && cd ../..`} className="mb-0" />
               <div className="rounded-lg border border-border/30 bg-card/30 p-4">
                 <h4 className="text-sm font-semibold mb-2">2. Start the Go API</h4>
                 <CodeBlock terminal code={`cd apps/api
-go run cmd/api/main.go`} className="mb-0" />
+go run cmd/server/main.go`} className="mb-0" />
                 <p className="text-xs text-muted-foreground mt-2">
                   Runs on <code>http://localhost:8080</code>. Auto-migrates the database on first run.
                 </p>

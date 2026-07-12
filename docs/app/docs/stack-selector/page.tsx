@@ -68,7 +68,7 @@ export default function StackSelectorPage() {
                   { icon: Layers, title: 'Webhook receiver framework', desc: 'Stripe / GitHub / HMAC verifiers shipped. Auto-dedupe.' },
                   { icon: Wifi, title: 'WebSocket realtime hub', desc: 'SendToUser / Broadcast helpers. Auto-reconnecting client.' },
                   { icon: FileText, title: 'PDF generation + CSV/Excel export', desc: 'Per-resource auto-emitted; styled templates.' },
-                  { icon: Bot, title: 'AI gateway (Claude/OpenAI)', desc: 'Single API key, streaming completion, chat.' },
+                  { icon: Bot, title: 'Vercel AI Gateway (one key, many models)', desc: 'Single API key, streaming completion, chat.' },
                   { icon: Database, title: 'File storage (S3 / R2 / MinIO)', desc: 'Presigned URLs, image processing, progress tracking.' },
                   { icon: Server, title: 'Background jobs (asynq + Redis)', desc: 'Dashboard at /admin/jobs. Cron scheduler too.' },
                   { icon: Shield, title: 'Sentinel security suite', desc: 'WAF, per-IP rate limit, brute-force lockout, geo gate.' },

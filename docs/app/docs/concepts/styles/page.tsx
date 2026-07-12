@@ -24,7 +24,7 @@ export default function StyleVariantsPage() {
                 Style Variants
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Grit ships with 4 admin panel style variants so every scaffolded project
+                Grit ships with 5 admin panel style variants so every scaffolded project
                 doesn&apos;t look identical. Choose a style when you create your project and it
                 applies to both the auth screens and the dashboard.
               </p>

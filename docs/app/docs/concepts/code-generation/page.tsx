@@ -25,7 +25,7 @@ export default function CodeGenerationPage() {
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 The Grit code generator creates full-stack CRUD resources from a single command.
-                It generates 8 new files and injects code into 10 existing files, wiring everything
+                It generates 9 new files and injects code into 10 existing files, wiring everything
                 together automatically so your resource is immediately usable.
               </p>
             </div>
@@ -63,10 +63,10 @@ export default function CodeGenerationPage() {
               {/* Files Created */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
-                  Files Created (8 New Files)
+                  Files Created (9 New Files)
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  For a resource named &quot;Post&quot;, the generator creates the following files.
+                  For a resource named &quot;Post&quot;, the generator creates the following 9 files.
                   Each file is complete, ready to use, and follows Grit&apos;s conventions.
                 </p>
                 <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden">
@@ -91,6 +91,10 @@ export default function CodeGenerationPage() {
                         <td className="px-4 py-2.5 text-xs">Gin handlers: List, GetByID, Create, Update, Delete with validation</td>
                       </tr>
                       <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">apps/api/internal/handlers/post_import.go</td>
+                        <td className="px-4 py-2.5 text-xs">Bulk CSV import handler for the resource</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">packages/shared/schemas/post.ts</td>
                         <td className="px-4 py-2.5 text-xs">CreatePostSchema, UpdatePostSchema with Zod validators</td>
                       </tr>
@@ -107,7 +111,7 @@ export default function CodeGenerationPage() {
                         <td className="px-4 py-2.5 text-xs">Resource definition: columns, form fields, filters, dashboard widget</td>
                       </tr>
                       <tr>
-                        <td className="px-4 py-2.5 font-mono text-xs">apps/admin/app/resources/posts/page.tsx</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">apps/admin/app/(dashboard)/resources/posts/page.tsx</td>
                         <td className="px-4 py-2.5 text-xs">Admin page component that renders the resource using ResourcePage</td>
                       </tr>
                     </tbody>
@@ -450,7 +454,7 @@ fields:
                         <td className="px-4 py-2.5 font-mono text-xs">type</td>
                         <td className="px-4 py-2.5 font-mono text-xs">string</td>
                         <td className="px-4 py-2.5 font-mono text-xs">(required)</td>
-                        <td className="px-4 py-2.5 text-xs">One of: string, text, richtext, int, uint, float, bool, datetime, date, slug, belongs_to, many_to_many, string_array</td>
+                        <td className="px-4 py-2.5 text-xs">One of: string, text, richtext, int, uint, float, bool, datetime, date, slug, belongs_to, many_to_many, string_array, file, files</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">required</td>
@@ -594,11 +598,27 @@ fields:
                         <td className="px-3 py-2.5 text-xs">No</td>
                         <td className="px-3 py-2.5 text-xs">No</td>
                       </tr>
-                      <tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-3 py-2.5 font-mono text-xs">string_array</td>
                         <td className="px-3 py-2.5 font-mono text-xs">type:json</td>
                         <td className="px-3 py-2.5 font-mono text-xs">text</td>
                         <td className="px-3 py-2.5 font-mono text-xs">images</td>
+                        <td className="px-3 py-2.5 text-xs">No</td>
+                        <td className="px-3 py-2.5 text-xs">No</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-3 py-2.5 font-mono text-xs">file</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">type:json</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">file</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">file</td>
+                        <td className="px-3 py-2.5 text-xs">No</td>
+                        <td className="px-3 py-2.5 text-xs">No</td>
+                      </tr>
+                      <tr>
+                        <td className="px-3 py-2.5 font-mono text-xs">files</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">type:json</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">files</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">files</td>
                         <td className="px-3 py-2.5 text-xs">No</td>
                         <td className="px-3 py-2.5 text-xs">No</td>
                       </tr>

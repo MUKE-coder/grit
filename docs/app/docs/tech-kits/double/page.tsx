@@ -51,7 +51,7 @@ export default function DoubleKitPage() {
         </BrowserFrame>
       }
       features={[
-        { icon: Globe,      title: 'Next.js 14 + App Router', body: 'Server components, ISR, route handlers; everything modern.' },
+        { icon: Globe,      title: 'Next.js 16 + App Router', body: 'Server components, ISR, route handlers; everything modern.' },
         { icon: Layers,     title: 'Turborepo',          body: 'Cached builds, single pnpm install, parallel dev.' },
         { icon: Shield,     title: 'Auth + 2FA',         body: 'JWT, OAuth, TOTP. The Go API owns auth; Next.js calls in.' },
         { icon: Database,   title: 'GORM + Postgres',    body: 'Production DB by default; SQLite for tests.' },

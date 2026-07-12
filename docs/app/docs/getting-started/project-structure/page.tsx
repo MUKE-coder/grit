@@ -143,7 +143,7 @@ export default function ProjectStructurePage() {
     ├── cron/
     │   └── cron.go             # Asynq cron scheduler
     └── ai/
-        └── ai.go               # AI integration (Claude + OpenAI)`} />
+        └── ai.go               # AI integration (Vercel AI Gateway — one key, many models)`} />
             </div>
 
             <div className="prose-grit mb-10">

@@ -291,9 +291,10 @@ export default function ApiOnlyArchitecturePage() {
               <p className="text-sm text-muted-foreground/60 mt-3">
                 Example:{' '}
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">
-                  grit generate resource Post title:string body:text published:bool
+                  grit generate resource Post --fields &quot;title:string,body:text,published:bool&quot;
                 </code>{' '}
-                creates 3 Go files and injects routes -- that&apos;s it.
+                creates 4 Go files (model, service, handler, and a &lt;name&gt;_import.go handler)
+                and injects routes -- that&apos;s it.
               </p>
             </div>
 

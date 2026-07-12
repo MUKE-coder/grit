@@ -15,13 +15,13 @@ export default function MobileKitPage() {
         <>
           <p>
             <code>grit new --mobile</code> scaffolds a Turborepo with{' '}
-            <code>apps/mobile</code> (Expo + React Native) and <code>apps/api</code> (Go). Same
+            <code>apps/expo</code> (Expo + React Native) and <code>apps/api</code> (Go). Same
             shared types in <code>packages/shared</code> as the web kits — Zod schemas validate
             on both ends. EAS Build, OTA updates, and a mobile-friendly auth flow are wired in.
           </p>
           <IncludedRow>Expo SDK 50+ with React Native</IncludedRow>
           <IncludedRow>Shared Zod schemas + generated TS types</IncludedRow>
-          <IncludedRow>Mobile-friendly auth (refresh tokens, AsyncStorage)</IncludedRow>
+          <IncludedRow>Mobile-friendly auth (refresh tokens, expo-secure-store (SecureStore))</IncludedRow>
           <IncludedRow>EAS Build configuration shipped; OTA-ready</IncludedRow>
         </>
       }
@@ -65,7 +65,7 @@ export default function MobileKitPage() {
       }
       features={[
         { icon: Smartphone, title: 'Expo SDK 50+',       body: 'React Native with Expo Router; works on iOS, Android, web.' },
-        { icon: Shield,     title: 'Auth + 2FA',         body: 'JWT refresh in AsyncStorage; biometric unlock optional.' },
+        { icon: Shield,     title: 'Auth + 2FA',         body: 'JWT refresh in expo-secure-store (SecureStore); biometric unlock optional.' },
         { icon: Bell,       title: 'Push notifications', body: 'Expo Push wired through the notification bell.' },
         { icon: Database,   title: 'GORM API',           body: 'Same Go API; offline-first sync available.' },
         { icon: Bot,        title: 'AI Gateway',         body: 'Stream completions to mobile, structured tool calls.' },

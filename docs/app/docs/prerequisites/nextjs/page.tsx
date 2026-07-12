@@ -553,7 +553,7 @@ export default function NextjsForGritPage() {
                   <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
                   <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                     All Grit code is TypeScript. Shared types live
-                    in <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">packages/shared/src/types/</code> and
+                    in <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">packages/shared/types/</code> and
                     are generated from your Go models by <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit sync</code>.
                     Both the admin panel and web app import these types, ensuring your frontend
                     always matches your backend data structures.
@@ -727,7 +727,7 @@ export default function NextjsForGritPage() {
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
                   <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
                   <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
-                    Zod schemas live in <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">packages/shared/src/schemas/</code> and
+                    Zod schemas live in <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">packages/shared/schemas/</code> and
                     are shared across the admin panel and web app. When you run <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate resource</code>,
                     it creates Zod schemas matching your Go model fields.
                     The <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit sync</code> command
