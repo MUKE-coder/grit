@@ -31,6 +31,41 @@ export default function MigrationsPage() {
             </div>
 
             <div className="prose-grit">
+              {/* Mental model / diagram */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  The lifecycle at a glance
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Migrations create the <em>tables</em>; seeders fill them with{' '}
+                  <em>rows</em>. Both are explicit commands you run &mdash; never on
+                  server startup &mdash; so you always control when the schema and data
+                  change. The usual first-run order is migrate, then seed, then serve.
+                </p>
+
+                <CodeBlock
+                  language="text"
+                  filename="first run"
+                  code={`  models.Models()          grit migrate            grit seed
+   (the registry)     →     creates missing   →     fills tables
+                            tables only              (idempotent)
+        │                        │                        │
+   &User{}, &Upload{},     ✓ User    (skip)        SeedUsers  → admin + demo
+   &Category{},            ✓ Upload  (skip)        SeedBlogs  → sample posts
+   &Product{}, …           ✓ Category (created)    SeedCategories / SeedProducts
+   // grit:models          ✓ Product  (created)    // grit:seeders
+        │                        │                        │
+        └──── generate resource adds an entry to BOTH lists automatically ────┘`}
+                />
+
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  This page covers the left two boxes &mdash; the model registry and the
+                  migrate command. For the third box (filling tables with data, faker,
+                  and relationships) see{' '}
+                  <Link href="/docs/backend/seeders" className="text-primary hover:underline">Seeders</Link>.
+                </p>
+              </div>
+
               {/* Running Migrations */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
