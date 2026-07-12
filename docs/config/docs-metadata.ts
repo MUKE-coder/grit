@@ -542,6 +542,33 @@ export const docsMetadata: Record<string, DocPage> = {
       'The complete Grit Desktop reference for AI assistants and LLMs: architecture, Wails bindings, CLI commands, resource generation, field types, code markers, DataTable, FormBuilder, building executables, and the golden rules.',
   },
 
+  // Mobile (Expo)
+  '/docs/mobile/getting-started': {
+    title: 'Getting Started with Mobile',
+    description:
+      'Prerequisites, scaffolding, and the development workflow for Grit mobile apps with Expo. Covers grit new --mobile, project structure, grit start expo, and the device-vs-emulator API URL matrix.',
+  },
+  '/docs/mobile/first-app': {
+    title: 'Your First Mobile App',
+    description:
+      'Step-by-step tutorial: build a Notes app with Grit and Expo. Scaffold the project, generate a resource, migrate and seed, then run the generated CRUD screens on your phone with Expo Go.',
+  },
+  '/docs/mobile/resource-generation': {
+    title: 'Mobile Resource Generation',
+    description:
+      'Deep dive into the six Expo files grit generate resource emits: the typed React Query hook, list/detail/create/edit screens, and the shared form. How belongs_to renders as a picker and file fields as native uploads.',
+  },
+  '/docs/mobile/building': {
+    title: 'Building & Publishing',
+    description:
+      'Ship Grit mobile apps with EAS Build: configure eas.json, build iOS and Android binaries, submit to the App Store and Google Play, and push JavaScript-only OTA updates with EAS Update.',
+  },
+  '/docs/mobile/offline': {
+    title: 'Offline & Caching',
+    description:
+      'How Grit mobile apps behave offline: React Query in-memory caching, SecureStore token persistence, fast-fail networking with token refresh, and how to layer on true offline-first support.',
+  },
+
   // Changelog
   '/docs/changelog': {
     title: 'Changelog',

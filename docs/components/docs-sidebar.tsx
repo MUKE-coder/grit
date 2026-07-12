@@ -177,6 +177,11 @@ const navItems: NavItem[] = [
     icon: <Smartphone className="h-3.5 w-3.5" />,
     items: [
       { title: 'Overview (API + Expo)', href: '/docs/concepts/architecture-modes/mobile' },
+      { title: 'Getting Started', href: '/docs/mobile/getting-started' },
+      { title: 'Your First Mobile App', href: '/docs/mobile/first-app' },
+      { title: 'Resource Generation', href: '/docs/mobile/resource-generation' },
+      { title: 'Building & Publishing', href: '/docs/mobile/building' },
+      { title: 'Offline & Sync', href: '/docs/mobile/offline' },
       { title: 'Mobile Tech Kit', href: '/docs/tech-kits/mobile' },
     ],
   },
