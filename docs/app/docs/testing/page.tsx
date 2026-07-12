@@ -29,6 +29,14 @@ export default function TestingPage() {
               </p>
             </div>
 
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                <strong className="text-foreground">Go deeper:</strong> the{' '}
+                <Link href="/courses/testing" className="text-primary hover:underline">Testing Your Grit App</Link>{' '}
+                course walks through Go, Vitest and Playwright suites end to end.
+              </p>
+            </div>
+
             <div className="prose-grit">
               {/* ── 1. PERFORMANCE TESTING ─────────────────────────────────── */}
               <h2 id="performance-testing" className="flex items-center gap-2">
