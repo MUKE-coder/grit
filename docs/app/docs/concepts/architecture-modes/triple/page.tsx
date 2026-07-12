@@ -162,9 +162,11 @@ grit new myapp --triple --vite`} />
 │           ├── resources/            # Resource definitions // grit:resources
 │           └── (dashboard)/          # Admin pages (users, system)
 └── packages/
-    └── grit-ui/                      # 100 shadcn-compatible components
-        ├── registry.json
-        └── registry/                 # Per-component JSON + TSX`} />
+    └── shared/                       # Types + Zod shared by web & admin
+        ├── types/                    # TS types (grit sync ← Go structs)
+        ├── schemas/                  # Zod schemas // grit:schemas
+        ├── themes/                   # Shared theme tokens
+        └── constants/                # API route constants`} />
           </section>
 
           {/* ── Section 3: Directory Explanations ── */}
@@ -248,7 +250,7 @@ grit new myapp --triple --vite`} />
                   <tbody className="text-muted-foreground">
                     <tr className="border-b border-border/20"><td className="p-3 font-mono text-xs">cmd/server/</td><td className="p-3">Application entry point. Loads config, connects to database, initializes all services, registers routes, and starts the Gin server on port 8080.</td></tr>
                     <tr className="border-b border-border/20"><td className="p-3 font-mono text-xs">cmd/migrate/</td><td className="p-3">Standalone migration runner. Calls GORM AutoMigrate on all registered models.</td></tr>
-                    <tr className="border-b border-border/20"><td className="p-3 font-mono text-xs">cmd/seed/</td><td className="p-3">Database seeder. Creates admin user, sample data, and UI component registry seed.</td></tr>
+                    <tr className="border-b border-border/20"><td className="p-3 font-mono text-xs">cmd/seed/</td><td className="p-3">Seeder entrypoint. Runs every <code className="text-xs font-mono bg-accent/50 px-1 rounded">Seed&lt;Resource&gt;</code> function (admin + demo users, sample blogs, plus any you generate).</td></tr>
                     <tr className="border-b border-border/20"><td className="p-3 font-mono text-xs">internal/config/</td><td className="p-3">Loads all environment variables from <code className="text-xs font-mono bg-accent/30 px-1 rounded">.env</code> into a typed <code className="text-xs font-mono bg-accent/30 px-1 rounded">Config</code> struct. Accessed throughout the application.</td></tr>
                     <tr className="border-b border-border/20"><td className="p-3 font-mono text-xs">internal/database/</td><td className="p-3">GORM connection setup. Opens PostgreSQL (production) or SQLite (development/testing). Runs AutoMigrate for all models.</td></tr>
                     <tr className="border-b border-border/20"><td className="p-3 font-mono text-xs">internal/models/</td><td className="p-3">GORM model definitions. Each model is a Go struct with <code className="text-xs font-mono bg-accent/30 px-1 rounded">gorm</code>, <code className="text-xs font-mono bg-accent/30 px-1 rounded">json</code>, and <code className="text-xs font-mono bg-accent/30 px-1 rounded">binding</code> struct tags. New models are injected at the <code className="text-xs font-mono bg-accent/30 px-1 rounded">// grit:models</code> marker.</td></tr>
@@ -323,16 +325,15 @@ grit new myapp --triple --vite`} />
               </div>
             </div>
 
-            {/* packages/grit-ui */}
+            {/* packages/shared */}
             <div className="mb-8">
-              <h3 className="text-lg font-semibold text-foreground mb-3">packages/grit-ui/ (Component Registry)</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-3">packages/shared/ (Shared Types &amp; Schemas)</h3>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                A registry of 100 shadcn-compatible components organized into five categories:
-                marketing (21), auth (10), saas (30), ecommerce (20), and layout (20). Each component
-                has a JSON metadata file and TSX source file. The API serves them
-                at <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">GET /r.json</code> (full registry)
-                and <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">GET /r/:name.json</code> (individual component),
-                making them installable via the shadcn CLI pattern.
+                The single source of truth shared by the web app and the admin panel:
+                TypeScript types, Zod validation schemas, shared theme tokens, and API
+                route constants. When your Go structs change, <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit sync</code> regenerates
+                the TypeScript types here, so both frontends stay in lock-step with the API &mdash;
+                no drift, no hand-maintained duplicate interfaces.
               </p>
             </div>
 
