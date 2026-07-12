@@ -96,8 +96,10 @@ func (s *Scheduler) Stop()`} />
                   Built-in Tasks
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Grit ships with one built-in cron task: cleanup expired tokens, which runs every hour.
-                  This removes soft-deleted user records older than 30 days.
+                  Grit ships with three built-in cron tasks &mdash; expired-token cleanup (hourly),
+                  orphan-upload cleanup (daily), and a weekly full-database backup. They&apos;re
+                  registered before the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">// grit:cron-tasks</code> marker,
+                  so your own tasks slot in right after them.
                 </p>
 
                 <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-6">
@@ -111,11 +113,23 @@ func (s *Scheduler) Stop()`} />
                       </tr>
                     </thead>
                     <tbody className="text-muted-foreground">
-                      <tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5">Cleanup expired tokens</td>
                         <td className="px-4 py-2.5 font-mono text-xs">0 * * * *</td>
                         <td className="px-4 py-2.5 font-mono text-xs">tokens:cleanup</td>
                         <td className="px-4 py-2.5">Every hour, on the hour</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5">Cleanup orphan uploads</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">15 3 * * *</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">uploads:cleanup_orphans</td>
+                        <td className="px-4 py-2.5">Daily at 03:15 (low traffic)</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2.5">Weekly database backup</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">0 2 * * 0</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">backup:weekly</td>
+                        <td className="px-4 py-2.5">Sunday 02:00 UTC</td>
                       </tr>
                     </tbody>
                   </table>
@@ -141,6 +155,24 @@ func (s *Scheduler) Stop()`} />
         Name:     "Cleanup expired tokens",
         Schedule: "0 * * * *",
         Type:     "tokens:cleanup",
+    })
+
+    // Cleanup orphan uploads -- daily at 03:15
+    _, err = scheduler.Register("15 3 * * *", asynq.NewTask("uploads:cleanup_orphans", nil))
+    if err != nil {
+        return nil, fmt.Errorf("registering orphan upload cleanup: %w", err)
+    }
+    RegisteredTasks = append(RegisteredTasks, Task{
+        Name: "Cleanup orphan uploads", Schedule: "15 3 * * *", Type: "uploads:cleanup_orphans",
+    })
+
+    // Weekly full-database backup -- Sunday 02:00 UTC
+    _, err = scheduler.Register("0 2 * * 0", asynq.NewTask("backup:weekly", nil))
+    if err != nil {
+        return nil, fmt.Errorf("registering weekly backup: %w", err)
+    }
+    RegisteredTasks = append(RegisteredTasks, Task{
+        Name: "Weekly database backup", Schedule: "0 2 * * 0", Type: "backup:weekly",
     })
 
     // grit:cron-tasks

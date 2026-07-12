@@ -113,17 +113,27 @@ SENTINEL_SECRET_KEY=change-me-in-production`} />
                   This means every request passes through Sentinel&apos;s security middleware:
                 </p>
 
-                <CodeBlock language="go" filename="internal/routes/routes.go" code={`// Mount Sentinel security suite
+                <CodeBlock language="go" filename="internal/routes/routes.go" code={`// Mount Sentinel security suite. MountE returns an error so a bad
+// config fails fast at boot instead of silently running unprotected.
 if cfg.SentinelEnabled {
-    sentinel.Mount(r, db, sentinel.Config{
+    if err := sentinel.MountE(r, db, sentinel.Config{
         Dashboard: sentinel.DashboardConfig{
             Username:  cfg.SentinelUsername,
             Password:  cfg.SentinelPassword,
             SecretKey: cfg.SentinelSecretKey,
+            // Only dev may run on default creds; prod (gin.ReleaseMode) refuses them.
+            AllowInsecureDefaults: isDev,
         },
         WAF: sentinel.WAFConfig{
             Enabled: true,
-            Mode:    sentinel.ModeLog,
+            // Log-only in dev, block in production — set automatically.
+            Mode: func() sentinel.WAFMode {
+                if isDev { return sentinel.ModeLog }
+                return sentinel.ModeBlock
+            }(),
+            MaxBodyBytes:        1 * 1024 * 1024, // 1 MB (richtext payloads)
+            RejectOversizedBody: true,
+            TrustedProxies:      cfg.SentinelTrustedProxies,
         },
         RateLimit: sentinel.RateLimitConfig{
             Enabled: true,
@@ -143,7 +153,9 @@ if cfg.SentinelEnabled {
         Geo: sentinel.GeoConfig{
             Enabled: true,
         },
-    })
+    }); err != nil {
+        log.Fatalf("mounting Sentinel: %v", err)
+    }
 }`} />
 
                 <p className="text-muted-foreground leading-relaxed mb-4">
@@ -197,7 +209,7 @@ if cfg.SentinelEnabled {
                 <div className="grid gap-3 sm:grid-cols-2 mb-4">
                   <div className="rounded-lg border border-border/30 bg-card/30 px-4 py-3">
                     <code className="text-sm font-mono text-primary/70 font-medium">ModeLog</code>
-                    <span className="ml-2 text-xs text-warning bg-warning/10 px-1.5 py-0.5 rounded-full">default</span>
+                    <span className="ml-2 text-xs text-warning bg-warning/10 px-1.5 py-0.5 rounded-full">dev default</span>
                     <p className="text-xs text-muted-foreground/60 mt-1 leading-relaxed">
                       Detects and logs threats but does not block requests. Use during development and initial
                       deployment to identify false positives before switching to block mode.
@@ -213,10 +225,13 @@ if cfg.SentinelEnabled {
                   </div>
                 </div>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  To switch modes, change <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">sentinel.ModeLog</code> to{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">sentinel.ModeBlock</code> in
-                  your <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">routes.go</code>. You can
-                  also toggle the mode at runtime from the dashboard.
+                  Grit picks the mode for you: <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">ModeLog</code> in
+                  development and <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">ModeBlock</code> in
+                  production (<code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">gin.ReleaseMode</code>), so
+                  you log-and-review locally and block for real once deployed. Override the{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Mode</code> in{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">routes.go</code> if you want a fixed
+                  mode, or toggle it at runtime from the dashboard.
                 </p>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   The WAF detects the following attack types with configurable sensitivity per rule (off, low, medium, strict):
