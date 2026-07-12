@@ -36,15 +36,18 @@ export default function DashboardWidgetsPage() {
               <p>
                 When an admin user opens the admin panel, the first page they see is the
                 dashboard (<code>apps/admin/app/page.tsx</code>). It aggregates widgets from
-                all registered resources that define a <code>dashboard</code> section, plus
-                any global widgets you configure.
+                all registered resources &mdash; both the preset widgets every resource
+                gets automatically and any custom widgets you declare in the resource&apos;s
+                <code>dashboard</code> section.
               </p>
               <p>
-                The dashboard layout uses a responsive grid that adapts to the screen size:
+                The dashboard layout uses a responsive grid. Each widget claims a number of
+                columns through its <code>colSpan</code> property (1&ndash;4), and the grid
+                collapses to fewer columns on smaller screens:
               </p>
               <ul>
-                <li><strong>Desktop (lg+)</strong> &mdash; 4-column grid for stats cards, 2-column grid for charts.</li>
-                <li><strong>Tablet (md)</strong> &mdash; 2-column grid for stats, full-width charts.</li>
+                <li><strong>Desktop (lg+)</strong> &mdash; 4-column grid; a <code>colSpan: 2</code> widget takes half the row.</li>
+                <li><strong>Tablet (md)</strong> &mdash; 2-column grid; wide widgets span the full width.</li>
                 <li><strong>Mobile (sm)</strong> &mdash; single column, all widgets stacked vertically.</li>
               </ul>
               <p>
@@ -53,225 +56,67 @@ export default function DashboardWidgetsPage() {
                 ones show skeleton loaders.
               </p>
 
+              {/* Preset widgets */}
+              <h2>Preset Widgets (Opt-Out)</h2>
+              <p>
+                Every generated resource <strong>automatically gets a set of preset dashboard
+                widgets</strong> &mdash; a <em>Total</em> stat with a sparkline and a
+                <em>Latest N</em> activity list. You do not need to configure anything to get
+                them. They are opt-<strong>out</strong>: to hide a resource&apos;s preset
+                widgets from the dashboard, set <code>enabled: false</code> on its
+                <code>dashboard</code> definition.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock language="typescript" filename="Hide the preset widgets" code={`dashboard: {
+  enabled: false,   // hides the preset Total + Latest N widgets for this resource
+}`} />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                Declaring <code>widgets</code> does not disable the presets &mdash; your custom
+                widgets render <em>alongside</em> the presets unless you also set
+                <code>enabled: false</code>.
+              </p>
+
               {/* Widget Types */}
               <h2>Widget Types</h2>
-
-              {/* Stats Card */}
-              <h3>Stats Card</h3>
               <p>
-                A compact card that displays a single metric. Stats cards are the most common
-                widget type and typically appear in a row of 3-4 across the top of the
-                dashboard.
-              </p>
-            </div>
-
-            {/* Stats card config */}
-            <div className="mt-4 mb-8">
-              <CodeBlock filename="StatsCard properties" code={`interface StatsCardWidget {
-  type: 'stat'
-  label: string              // Display label (e.g. "Total Revenue")
-  query: string              // Server query (e.g. "sum:amount")
-  format?: 'number' | 'currency' | 'percent'
-  color?: string             // Accent color: 'purple' | 'green' | 'blue' | 'yellow' | 'red'
-  icon?: string              // Lucide icon name
-  changeQuery?: string       // Query for period-over-period change %
-}`} />
-            </div>
-
-            <div className="prose-grit">
-              <p>
-                Each stats card renders:
-              </p>
-              <ul>
-                <li><strong>Value</strong> &mdash; the main metric, formatted according to the <code>format</code> property (plain number, currency with <code>$</code> prefix, or percentage).</li>
-                <li><strong>Label</strong> &mdash; descriptive text below the value.</li>
-                <li><strong>Change indicator</strong> &mdash; if <code>changeQuery</code> is set, a green upward arrow or red downward arrow with the percentage change compared to the previous period.</li>
-                <li><strong>Icon</strong> &mdash; a Lucide icon on the right side of the card, rendered in the accent color.</li>
-                <li><strong>Color</strong> &mdash; a subtle colored accent on the left border or background of the card.</li>
-              </ul>
-            </div>
-
-            <div className="mt-4 mb-8">
-              <CodeBlock filename="Stats card examples" code={`dashboard: {
-  widgets: [
-    {
-      type: 'stat',
-      label: 'Total Revenue',
-      query: 'sum:amount',
-      format: 'currency',
-      icon: 'DollarSign',
-      color: 'green',
-      changeQuery: 'sum:amount:change:month',
-    },
-    {
-      type: 'stat',
-      label: 'Total Users',
-      query: 'count',
-      format: 'number',
-      icon: 'Users',
-      color: 'blue',
-    },
-    {
-      type: 'stat',
-      label: 'Pending Orders',
-      query: 'count:status=pending',
-      format: 'number',
-      icon: 'Clock',
-      color: 'yellow',
-    },
-    {
-      type: 'stat',
-      label: 'Conversion Rate',
-      query: 'custom:conversion-rate',
-      format: 'percent',
-      icon: 'TrendingUp',
-      color: 'purple',
-    },
-  ],
-}`} />
-            </div>
-
-            <div className="prose-grit">
-              {/* Line Chart */}
-              <h3>Line Chart</h3>
-              <p>
-                Line charts display time-series data using <a href="https://recharts.org" target="_blank" rel="noreferrer">Recharts</a>.
-                They are ideal for showing trends over time &mdash; revenue per month, new
-                users per week, or page views per day.
+                Every dashboard widget shares a single shape, <code>WidgetDefinition</code>.
+                The <code>type</code> field selects the kind of widget, and for charts the
+                <code>chartType</code> field selects the visualization. Import the types (and
+                <code>defineResource</code>) from <code>@/lib/resource</code>.
               </p>
             </div>
 
             <div className="mt-4 mb-8">
-              <CodeBlock filename="LineChart properties" code={`interface LineChartWidget {
-  type: 'chart'
-  chartType: 'line'
-  label: string              // Chart title
-  query: string              // e.g. "sum:amount:by:month" or "count:by:week"
-  format?: 'number' | 'currency'
-  color?: string             // Line color
-  height?: number            // Chart height in px (default: 300)
-}`} />
-            </div>
+              <CodeBlock language="typescript" filename="apps/admin/lib/resource.ts" code={`export type WidgetType = "stat" | "chart" | "activity";
+export type ChartType = "line" | "bar" | "pie";
+export type WidgetFormat = "number" | "currency" | "percentage";
 
-            <div className="prose-grit">
-              <p>
-                The chart component renders a smooth line with a gradient fill area below it.
-                Hovering over a data point shows a tooltip with the exact value and date.
-                The X-axis shows time labels (months, weeks, or days depending on the query
-                granularity) and the Y-axis auto-scales to fit the data range.
-              </p>
-            </div>
-
-            <div className="mt-4 mb-8">
-              <CodeBlock filename="Line chart example" code={`{
-  type: 'chart',
-  chartType: 'line',
-  label: 'Revenue Over Time',
-  query: 'sum:amount:by:month',
-  format: 'currency',
-  color: 'purple',
-  height: 320,
-}`} />
-            </div>
-
-            <div className="prose-grit">
-              {/* Bar Chart */}
-              <h3>Bar Chart</h3>
-              <p>
-                Bar charts display categorical data &mdash; comparisons between categories,
-                status breakdowns, or grouped counts. They use the same Recharts library and
-                share the same tooltip and axis styling as line charts.
-              </p>
-            </div>
-
-            <div className="mt-4 mb-8">
-              <CodeBlock filename="BarChart properties" code={`interface BarChartWidget {
-  type: 'chart'
-  chartType: 'bar'
-  label: string              // Chart title
-  query: string              // e.g. "count:by:category" or "sum:amount:by:status"
-  format?: 'number' | 'currency'
-  color?: string             // Bar color
-  height?: number            // Chart height in px (default: 300)
-}`} />
-            </div>
-
-            <div className="mt-4 mb-8">
-              <CodeBlock filename="Bar chart example" code={`{
-  type: 'chart',
-  chartType: 'bar',
-  label: 'Posts by Category',
-  query: 'count:by:category',
-  format: 'number',
-  color: 'blue',
-}`} />
-            </div>
-
-            <div className="prose-grit">
-              {/* Recent Activity */}
-              <h3>Recent Activity</h3>
-              <p>
-                The activity widget displays a chronological list of recent events &mdash; new
-                records created, records updated, users logged in, jobs completed, etc. Each
-                event shows a timestamp, an icon, a description, and optionally a link to
-                the related resource.
-              </p>
-            </div>
-
-            <div className="mt-4 mb-8">
-              <CodeBlock filename="Activity widget properties" code={`interface ActivityWidget {
-  type: 'activity'
-  label: string              // Widget title (e.g. "Recent Activity")
-  query: string              // e.g. "recent:10" (last 10 events)
-  height?: number            // Max height in px (scrollable)
+export interface WidgetDefinition {
+  type: WidgetType;
+  label: string;
+  endpoint?: string;         // where the widget fetches its data
+  icon?: string;             // Lucide icon name
+  color?: string;            // accent color
+  format?: WidgetFormat;     // how "stat" values are formatted
+  chartType?: ChartType;     // only for type "chart"
+  limit?: number;            // e.g. how many rows for an "activity" widget
+  colSpan?: 1 | 2 | 3 | 4;   // grid width
 }
 
-// API response format for activity events
-interface ActivityEvent {
-  id: string
-  type: 'created' | 'updated' | 'deleted' | 'login' | 'custom'
-  resource: string           // Resource name (e.g. "Post")
-  description: string        // "John created a new post"
-  user?: { name: string; avatar?: string }
-  timestamp: string          // ISO 8601
-  link?: string              // Optional link to the resource
-}`} />
-            </div>
-
-            <div className="mt-4 mb-8">
-              <CodeBlock filename="Activity widget example" code={`{
-  type: 'activity',
-  label: 'Recent Activity',
-  query: 'recent:15',
-  height: 400,
+export interface DashboardDefinition {
+  enabled?: boolean;              // false hides the preset per-resource widgets
+  widgets?: WidgetDefinition[];   // custom widgets
 }`} />
             </div>
 
             <div className="prose-grit">
-              {/* Widget Grid Layout */}
-              <h2>Widget Grid Layout</h2>
               <p>
-                The dashboard arranges widgets in a responsive grid. The layout logic follows
-                these rules:
-              </p>
-              <ul>
-                <li><strong>Stats cards</strong> are grouped together and rendered in a 4-column row (lg), 2-column (md), or 1-column (sm).</li>
-                <li><strong>Charts</strong> take half the grid width on desktop (2 charts side by side) and full width on smaller screens.</li>
-                <li><strong>Activity widgets</strong> take half the grid width on desktop and full width on smaller screens.</li>
-              </ul>
-              <p>
-                Widgets from different resources are merged and grouped by type. All stats
-                cards from all resources appear in one row at the top, followed by charts,
-                then activity feeds. This creates a cohesive dashboard rather than
-                resource-isolated sections.
-              </p>
-
-              {/* Data Fetching */}
-              <h2>Widget Data Fetching</h2>
-              <p>
-                Each widget fetches its data independently from the Go API using React Query.
-                The <code>query</code> string in the widget definition is translated to an
-                API call:
+                The three widget types, and the <code>chartType</code> matrix for charts:
               </p>
             </div>
 
@@ -280,23 +125,23 @@ interface ActivityEvent {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border/30 bg-accent/20">
-                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Widget Query</th>
-                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">API Call</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">type</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">chartType</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Renders</th>
                     </tr>
                   </thead>
                   <tbody className="text-muted-foreground">
                     {[
-                      ['count', 'GET /api/posts/stats?metric=count'],
-                      ['sum:amount', 'GET /api/invoices/stats?metric=sum&field=amount'],
-                      ['count:status=pending', 'GET /api/orders/stats?metric=count&status=pending'],
-                      ['sum:amount:by:month', 'GET /api/invoices/stats?metric=sum&field=amount&group=month'],
-                      ['count:by:category', 'GET /api/posts/stats?metric=count&group=category'],
-                      ['recent:10', 'GET /api/activity?limit=10'],
-                      ['custom:conversion-rate', 'GET /api/stats/conversion-rate'],
-                    ].map(([query, api]) => (
-                      <tr key={query} className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-mono text-xs text-primary">{query}</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">{api}</td>
+                      ['stat', '—', 'A single metric value (formatted by format), icon, and color.'],
+                      ['chart', 'line', 'A time-series line chart.'],
+                      ['chart', 'bar', 'A categorical bar chart.'],
+                      ['chart', 'pie', 'A proportional pie chart.'],
+                      ['activity', '—', 'A list of the latest limit records/events.'],
+                    ].map(([type, chart, renders]) => (
+                      <tr key={`${type}-${chart}`} className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs text-primary">{type}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">{chart}</td>
+                        <td className="px-4 py-2.5 text-xs">{renders}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -305,134 +150,285 @@ interface ActivityEvent {
             </div>
 
             <div className="prose-grit">
+              {/* Stat widget */}
+              <h3>Stat Widget</h3>
               <p>
-                Widget data is cached by React Query with a default stale time of 30 seconds.
-                Stats cards poll for fresh data every 60 seconds in the background so the
-                dashboard stays reasonably current without excessive API calls.
+                A compact card that displays a single metric fetched from its
+                <code>endpoint</code>. The <code>format</code> property controls how the value
+                is rendered: <code>&quot;number&quot;</code>, <code>&quot;currency&quot;</code>,
+                or <code>&quot;percentage&quot;</code>.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock language="typescript" filename="Stat widget" code={`{
+  type: 'stat',
+  label: 'Total Revenue',
+  endpoint: '/api/orders/stats/revenue',
+  format: 'currency',
+  icon: 'DollarSign',
+  color: 'green',
+  colSpan: 1,
+}`} />
+            </div>
+
+            <div className="prose-grit">
+              {/* Chart widget */}
+              <h3>Chart Widget</h3>
+              <p>
+                Charts render with <a href="https://recharts.org" target="_blank" rel="noreferrer">Recharts</a>.
+                Set <code>type: &apos;chart&apos;</code> and pick a <code>chartType</code> of
+                <code>&apos;line&apos;</code> (trends over time), <code>&apos;bar&apos;</code>
+                (categorical comparisons), or <code>&apos;pie&apos;</code> (proportions of a
+                whole). The widget fetches an array of data points from its
+                <code>endpoint</code>.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock language="typescript" filename="Chart widgets" code={`// Line chart — revenue over time
+{
+  type: 'chart',
+  chartType: 'line',
+  label: 'Revenue Over Time',
+  endpoint: '/api/orders/stats/revenue-by-month',
+  format: 'currency',
+  color: 'purple',
+  colSpan: 2,
+}
+
+// Bar chart — orders grouped by status
+{
+  type: 'chart',
+  chartType: 'bar',
+  label: 'Orders by Status',
+  endpoint: '/api/orders/stats/by-status',
+  color: 'blue',
+  colSpan: 2,
+}
+
+// Pie chart — share of orders per category
+{
+  type: 'chart',
+  chartType: 'pie',
+  label: 'Orders by Category',
+  endpoint: '/api/orders/stats/by-category',
+  colSpan: 2,
+}`} />
+            </div>
+
+            <div className="prose-grit">
+              {/* Activity widget */}
+              <h3>Activity Widget</h3>
+              <p>
+                The activity widget displays a chronological list of the most recent records
+                or events. Use <code>limit</code> to control how many rows it shows; the
+                widget requests them from its <code>endpoint</code>.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock language="typescript" filename="Activity widget" code={`{
+  type: 'activity',
+  label: 'Recent Orders',
+  endpoint: '/api/orders?sort=-created_at',
+  limit: 10,
+  colSpan: 2,
+}`} />
+            </div>
+
+            <div className="prose-grit">
+              {/* Grid Layout */}
+              <h2>Grid Layout</h2>
+              <p>
+                The dashboard is a 4-column grid on desktop. Each widget&apos;s
+                <code>colSpan</code> (1&ndash;4) decides how many columns it occupies; widgets
+                flow left-to-right and wrap onto the next row when the current one fills. A
+                typical layout &mdash; a row of four <code>colSpan: 1</code> stats, then two
+                <code>colSpan: 2</code> charts, then a full-width activity feed &mdash; looks
+                like this:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock language="text" filename="Dashboard grid (colSpan)" code={`┌──────────┬──────────┬──────────┬──────────┐
+│  stat    │  stat    │  stat    │  stat    │   colSpan: 1  ×4
+│  (1)     │  (1)     │  (1)     │  (1)     │
+├──────────┴──────────┼──────────┴──────────┤
+│  chart · line       │  chart · bar        │   colSpan: 2  ×2
+│  (2)                │  (2)                │
+├─────────────────────┴─────────────────────┤
+│  activity · Recent Orders                 │   colSpan: 4
+│  (4)                                      │
+└───────────────────────────────────────────┘`} />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                On tablet the grid collapses to 2 columns and on mobile to a single column, so
+                a <code>colSpan: 2</code> widget becomes full-width and everything stacks.
               </p>
 
-              {/* Custom Widget Endpoints */}
+              {/* Custom Endpoints */}
               <h2>Custom Widget Endpoints</h2>
               <p>
-                For metrics that cannot be expressed as simple aggregations, use the
-                <code>custom:</code> prefix in the query string. This tells the widget to call a
-                custom API endpoint that you implement in Go:
+                Each widget names an <code>endpoint</code>, and the admin fetches that URL
+                directly with React Query &mdash; there is no query DSL or translation layer.
+                Your Go handler decides what the widget shows; return the payload under a
+                <code>data</code> key following the standard Grit response format.
+              </p>
+              <p>
+                A <code>stat</code> widget expects a single value, a <code>chart</code> widget
+                expects an array of <code>{'{ label, value }'}</code> points, and an
+                <code>activity</code> widget expects an array of records.
               </p>
             </div>
 
             <div className="mt-4 mb-8">
-              <CodeBlock filename="apps/api/internal/handlers/stats.go" code={`// Custom endpoint for conversion rate widget
-func (h *StatsHandler) GetConversionRate(c *gin.Context) {
-    totalVisitors, err := h.service.CountVisitors(c)
+              <CodeBlock filename="apps/api/internal/handlers/stats.go" code={`// GET /api/orders/stats/revenue  →  feeds a { type: 'stat' } widget
+func (h *StatsHandler) GetRevenue(c *gin.Context) {
+    total, err := h.service.SumOrderTotals(c)
     if err != nil {
-        c.JSON(500, gin.H{"error": err.Error()})
+        c.JSON(500, gin.H{"error": gin.H{"message": err.Error()}})
         return
     }
-
-    totalSignups, err := h.service.CountSignups(c)
-    if err != nil {
-        c.JSON(500, gin.H{"error": err.Error()})
-        return
-    }
-
-    rate := float64(totalSignups) / float64(totalVisitors) * 100
 
     c.JSON(200, gin.H{
-        "data": gin.H{
-            "value": rate,
-            "label": "Conversion Rate",
-        },
+        "data": total, // e.g. 84350.00 — rendered with format: 'currency'
     })
+}
+
+// GET /api/orders/stats/revenue-by-month  →  feeds a { type: 'chart' } widget
+func (h *StatsHandler) GetRevenueByMonth(c *gin.Context) {
+    points, err := h.service.RevenueByMonth(c)
+    if err != nil {
+        c.JSON(500, gin.H{"error": gin.H{"message": err.Error()}})
+        return
+    }
+
+    // points: []gin.H{{"label": "Sep 2025", "value": 12400}, ...}
+    c.JSON(200, gin.H{"data": points})
 }`} />
             </div>
 
             <div className="prose-grit">
               <p>
-                Register the custom endpoint in your routes file:
+                Register the endpoints in your routes file:
               </p>
             </div>
 
             <div className="mt-4 mb-8">
-              <CodeBlock filename="apps/api/internal/routes/routes.go" code={`// Stats endpoints
-stats := api.Group("/stats")
-stats.Use(middleware.AuthMiddleware(), middleware.RequireRole("admin"))
+              <CodeBlock filename="apps/api/internal/routes/routes.go" code={`// Order stats endpoints
+orders := api.Group("/orders/stats")
+orders.Use(middleware.AuthMiddleware(), middleware.RequireRole("admin"))
 {
-    stats.GET("/conversion-rate", statsHandler.GetConversionRate)
-    stats.GET("/monthly-mrr", statsHandler.GetMonthlyMRR)
+    orders.GET("/revenue", statsHandler.GetRevenue)
+    orders.GET("/revenue-by-month", statsHandler.GetRevenueByMonth)
+    orders.GET("/by-status", statsHandler.GetOrdersByStatus)
 }`} />
             </div>
 
             <div className="prose-grit">
-              {/* Adding Widgets to Resources */}
-              <h2>Adding Widgets to Resource Definitions</h2>
+              {/* Stat cards above tables */}
+              <h2>Stat Cards Above the Table</h2>
               <p>
-                Each resource can define its own widgets in the <code>dashboard</code> section.
-                These widgets are automatically included on the admin dashboard alongside
-                widgets from other resources.
+                Separate from dashboard widgets, every resource page can show a row of
+                <strong>stat cards above its data table</strong>. These are configured with the
+                resource&apos;s <code>stats</code> property, which accepts either a boolean or a
+                <code>StatsConfig</code> object:
+              </p>
+              <ul>
+                <li><strong>Omit <code>stats</code></strong> &mdash; you get 4 auto-generated cards (Total, This Week, This Month, Updated Recently).</li>
+                <li><strong><code>stats: false</code></strong> &mdash; disables the stat cards for this resource page.</li>
+                <li><strong><code>stats: {'{ cards: [...] }'}</code></strong> &mdash; fully custom cards.</li>
+              </ul>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock language="typescript" filename="apps/admin/lib/resource.ts" code={`export interface StatsConfig {
+  enabled?: boolean;
+  cards?: StatCardConfig[];
+}
+
+export interface StatCardConfig {
+  label: string;
+  icon?: string;
+  color?: "default" | "success" | "warning" | "danger" | "info";
+  value?: string | number;         // a fixed value, or…
+  endpoint?: string;               // …fetch the value from here
+  field?: string;                  // which field in the response to read
+  trend?: { value: number; direction: "up" | "down" };
+}`} />
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock language="typescript" filename="Custom stat cards" code={`stats: {
+  cards: [
+    {
+      label: 'Total Orders',
+      icon: 'ShoppingCart',
+      color: 'default',
+      endpoint: '/api/orders/stats/count',
+      field: 'value',
+    },
+    {
+      label: 'Revenue',
+      icon: 'DollarSign',
+      color: 'success',
+      endpoint: '/api/orders/stats/revenue',
+      field: 'value',
+      trend: { value: 12.5, direction: 'up' },
+    },
+    {
+      label: 'Pending',
+      icon: 'Clock',
+      color: 'warning',
+      value: 18,
+    },
+  ],
+}`} />
+            </div>
+
+            <div className="prose-grit">
+              {/* Full example */}
+              <h2>Full Resource Example</h2>
+              <p>
+                Putting it together &mdash; a resource with custom dashboard widgets and custom
+                stat cards. The preset dashboard widgets are hidden here with
+                <code>dashboard.enabled: false</code> so only the custom widgets show.
               </p>
             </div>
 
             <div className="mt-4 mb-8">
-              <CodeBlock language="typescript" filename="apps/admin/resources/orders.ts" code={`import { defineResource } from '@grit/admin'
+              <CodeBlock language="typescript" filename="apps/admin/resources/orders.ts" code={`import { defineResource } from '@/lib/resource'
 
 export default defineResource({
   name: 'Order',
+  slug: 'orders',
   endpoint: '/api/orders',
   icon: 'ShoppingCart',
 
   table: { /* ... columns and filters ... */ },
   form: { /* ... fields ... */ },
 
+  // Custom stat cards above the orders table
+  stats: {
+    cards: [
+      { label: 'Total Orders', icon: 'ShoppingCart', endpoint: '/api/orders/stats/count', field: 'value' },
+      { label: 'Revenue', icon: 'DollarSign', color: 'success', endpoint: '/api/orders/stats/revenue', field: 'value', trend: { value: 12.5, direction: 'up' } },
+      { label: 'Pending', icon: 'Clock', color: 'warning', value: 18 },
+    ],
+  },
+
+  // Dashboard widgets (presets hidden via enabled: false)
   dashboard: {
+    enabled: false,
     widgets: [
-      // Stats cards
-      {
-        type: 'stat',
-        label: 'Total Orders',
-        query: 'count',
-        icon: 'ShoppingCart',
-        color: 'purple',
-      },
-      {
-        type: 'stat',
-        label: 'Revenue',
-        query: 'sum:total',
-        format: 'currency',
-        icon: 'DollarSign',
-        color: 'green',
-        changeQuery: 'sum:total:change:month',
-      },
-      {
-        type: 'stat',
-        label: 'Pending Orders',
-        query: 'count:status=pending',
-        icon: 'Clock',
-        color: 'yellow',
-      },
-
-      // Charts
-      {
-        type: 'chart',
-        chartType: 'line',
-        label: 'Revenue Over Time',
-        query: 'sum:total:by:month',
-        format: 'currency',
-        color: 'purple',
-      },
-      {
-        type: 'chart',
-        chartType: 'bar',
-        label: 'Orders by Status',
-        query: 'count:by:status',
-        color: 'blue',
-      },
-
-      // Activity feed
-      {
-        type: 'activity',
-        label: 'Recent Orders',
-        query: 'recent:10',
-      },
+      { type: 'stat', label: 'Total Revenue', endpoint: '/api/orders/stats/revenue', format: 'currency', icon: 'DollarSign', color: 'green', colSpan: 1 },
+      { type: 'stat', label: 'Total Orders', endpoint: '/api/orders/stats/count', format: 'number', icon: 'ShoppingCart', color: 'purple', colSpan: 1 },
+      { type: 'chart', chartType: 'line', label: 'Revenue Over Time', endpoint: '/api/orders/stats/revenue-by-month', format: 'currency', color: 'purple', colSpan: 2 },
+      { type: 'chart', chartType: 'bar', label: 'Orders by Status', endpoint: '/api/orders/stats/by-status', color: 'blue', colSpan: 2 },
+      { type: 'activity', label: 'Recent Orders', endpoint: '/api/orders?sort=-created_at', limit: 10, colSpan: 4 },
     ],
   },
 })`} />
@@ -442,83 +438,30 @@ export default defineResource({
               {/* API Response Format */}
               <h2>Widget API Response Format</h2>
               <p>
-                The Go API must return widget data in these formats:
+                Widget endpoints return their payload under a <code>data</code> key. The shape
+                of <code>data</code> depends on the widget type consuming it.
               </p>
-
-              <h3>Stats Response</h3>
             </div>
 
             <div className="mt-4 mb-8">
-              <CodeBlock language="json" filename="Stats API response" code={`// GET /api/orders/stats?metric=count
-{
-  "data": {
-    "value": 1247,
-    "change": 12.5,         // +12.5% vs previous period (optional)
-    "previous": 1108        // previous period value (optional)
-  }
-}
+              <CodeBlock language="json" filename="Widget API responses" code={`// stat widget  →  GET /api/orders/stats/revenue
+{ "data": 84350.00 }
 
-// GET /api/orders/stats?metric=sum&field=total
-{
-  "data": {
-    "value": 84350.00,
-    "change": -3.2
-  }
-}`} />
-            </div>
-
-            <div className="prose-grit">
-              <h3>Chart Response</h3>
-            </div>
-
-            <div className="mt-4 mb-8">
-              <CodeBlock language="json" filename="Chart API response" code={`// GET /api/orders/stats?metric=sum&field=total&group=month
+// chart widget →  GET /api/orders/stats/revenue-by-month
 {
   "data": [
     { "label": "Sep 2025", "value": 12400 },
     { "label": "Oct 2025", "value": 15800 },
     { "label": "Nov 2025", "value": 13200 },
-    { "label": "Dec 2025", "value": 19500 },
-    { "label": "Jan 2026", "value": 17800 },
-    { "label": "Feb 2026", "value": 21300 }
+    { "label": "Dec 2025", "value": 19500 }
   ]
 }
 
-// GET /api/posts/stats?metric=count&group=category
+// activity widget →  GET /api/orders?sort=-created_at
 {
   "data": [
-    { "label": "Tech",     "value": 42 },
-    { "label": "Design",   "value": 28 },
-    { "label": "Business", "value": 15 }
-  ]
-}`} />
-            </div>
-
-            <div className="prose-grit">
-              <h3>Activity Response</h3>
-            </div>
-
-            <div className="mt-4 mb-8">
-              <CodeBlock language="json" filename="Activity API response" code={`// GET /api/activity?limit=10
-{
-  "data": [
-    {
-      "id": "act_001",
-      "type": "created",
-      "resource": "Order",
-      "description": "New order #1247 placed by John Doe",
-      "user": { "name": "John Doe", "avatar": "https://..." },
-      "timestamp": "2026-02-11T14:30:00Z",
-      "link": "/resources/orders/1247"
-    },
-    {
-      "id": "act_002",
-      "type": "updated",
-      "resource": "Invoice",
-      "description": "Invoice INV-089 marked as paid",
-      "user": { "name": "Admin" },
-      "timestamp": "2026-02-11T14:15:00Z"
-    }
+    { "id": 1247, "status": "paid", "total": 129.00, "created_at": "2026-02-11T14:30:00Z" },
+    { "id": 1246, "status": "pending", "total": 84.50, "created_at": "2026-02-11T14:15:00Z" }
   ]
 }`} />
             </div>
@@ -530,8 +473,8 @@ export default defineResource({
                 All widgets follow the Grit dark theme aesthetic. Cards have subtle borders
                 (<code>border-border/40</code>), slightly elevated backgrounds
                 (<code>bg-card/80</code>), and consistent padding. Charts use the purple accent
-                color by default with gradient fills. Stats cards have a thin colored left
-                border matching their <code>color</code> property.
+                color by default with gradient fills. Stat widgets and stat cards render their
+                icon and accent using the <code>color</code> property.
               </p>
               <p>
                 Skeleton loaders match the exact dimensions of each widget type, preventing
