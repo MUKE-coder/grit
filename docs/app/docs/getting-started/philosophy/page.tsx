@@ -28,6 +28,14 @@ export default function PhilosophyPage() {
               </p>
             </div>
 
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                <strong className="text-foreground">The story behind Grit.</strong> This page is the
+                short version &mdash; the long-form founder story is on the blog:{' '}
+                <Link href="/blog/why-i-built-grit" className="text-primary hover:underline">Why I built Grit &rarr;</Link>
+              </p>
+            </div>
+
             <div className="prose-grit">
               {/* Why Grit Exists */}
               <h2>Why Grit Exists</h2>

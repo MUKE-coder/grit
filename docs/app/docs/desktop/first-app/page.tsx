@@ -32,6 +32,14 @@ export default function DesktopFirstAppPage() {
               </p>
             </div>
 
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-10">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                <strong className="text-foreground">Prefer a narrative walkthrough?</strong> This build has a
+                story-form companion on the blog &mdash; an offline-first POS:{' '}
+                <Link href="/blog/build-desktop-app-with-grit" className="text-primary hover:underline">Build a desktop app with Grit &rarr;</Link>
+              </p>
+            </div>
+
             {/* What you'll build */}
             <div className="rounded-lg border border-border/30 bg-card/30 px-5 py-4 mb-10">
               <h3 className="font-semibold text-foreground mb-2">

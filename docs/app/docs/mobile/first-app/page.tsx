@@ -31,6 +31,14 @@ export default function MobileFirstAppPage() {
               </p>
             </div>
 
+            <div className="mb-10 rounded-lg border border-primary/20 bg-primary/5 p-4">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                <strong className="text-foreground">Prefer a narrative walkthrough?</strong> There&apos;s a
+                story-form companion on the blog:{' '}
+                <Link href="/blog/build-mobile-app-with-grit" className="text-primary hover:underline">Build a mobile app with Grit &rarr;</Link>
+              </p>
+            </div>
+
             {/* Step 1 */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-4">

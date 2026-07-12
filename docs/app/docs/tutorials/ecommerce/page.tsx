@@ -35,6 +35,14 @@ export default function TutorialEcommercePage() {
               </p>
             </div>
 
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-10">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                <strong className="text-foreground">Prefer a narrative walkthrough?</strong> The blog builds
+                a smaller Category &rarr; Product store step by step:{' '}
+                <Link href="/blog/build-your-first-grit-app" className="text-primary hover:underline">Build your first Grit app &rarr;</Link>
+              </p>
+            </div>
+
             {/* Prerequisites */}
             <div className="mb-12">
               <h2 className="text-2xl font-semibold tracking-tight mb-4">
