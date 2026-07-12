@@ -480,8 +480,10 @@ export default function TabLayout() {
               <p className="text-muted-foreground leading-relaxed mb-4">
                 Running{' '}
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate resource</code>{' '}
-                in a mobile project creates Go backend files and shared TypeScript types. It does
-                not auto-generate mobile screens -- you build those yourself using the shared types.
+                in a mobile project scaffolds the full stack &mdash; Go backend, shared TypeScript
+                types, <strong>and</strong> a working set of Expo Router screens (list, detail, create,
+                edit) plus a typed React Query hook and a form component. You get a functioning CRUD
+                flow on the device immediately, then style it to taste.
               </p>
 
               <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden">
@@ -499,35 +501,45 @@ export default function TabLayout() {
                     </tr>
                     <tr className="border-b border-border/20">
                       <td className="px-4 py-2.5">Go service</td>
-                      <td className="px-4 py-2.5 font-mono text-xs">apps/api/internal/services/post_service.go</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">apps/api/internal/services/post.go</td>
                     </tr>
                     <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5">Go handler</td>
-                      <td className="px-4 py-2.5 font-mono text-xs">apps/api/internal/handlers/post_handler.go</td>
+                      <td className="px-4 py-2.5">Go handler (+ CSV import)</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">apps/api/internal/handlers/post.go, post_import.go</td>
                     </tr>
                     <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5">Route injection</td>
-                      <td className="px-4 py-2.5 font-mono text-xs">apps/api/internal/routes/routes.go</td>
+                      <td className="px-4 py-2.5">Zod schema + TS types</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">packages/shared/schemas/post.ts, types/post.ts</td>
                     </tr>
                     <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5">Zod schema</td>
-                      <td className="px-4 py-2.5 font-mono text-xs">packages/shared/schemas/post.ts</td>
+                      <td className="px-4 py-2.5">Expo list + detail screens</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">apps/expo/app/posts/index.tsx, [id].tsx</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5">Expo create + edit screens</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">apps/expo/app/posts/new.tsx, edit/[id].tsx</td>
+                    </tr>
+                    <tr className="border-b border-border/20">
+                      <td className="px-4 py-2.5">Expo form component</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">apps/expo/components/resource-forms/posts-form.tsx</td>
                     </tr>
                     <tr>
-                      <td className="px-4 py-2.5">TypeScript types</td>
-                      <td className="px-4 py-2.5 font-mono text-xs">packages/shared/types/post.ts</td>
+                      <td className="px-4 py-2.5">React Query hook</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">apps/expo/hooks/use-posts.ts</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
-              <div className="rounded-lg border border-border/40 bg-accent/20 p-5 mt-6">
-                <h4 className="text-sm font-semibold text-foreground mb-2">No auto-generated mobile screens</h4>
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-5 mt-6">
+                <h4 className="text-sm font-semibold text-foreground mb-2">Working screens, then make them yours</h4>
                 <p className="text-sm text-muted-foreground">
-                  Unlike the triple architecture (which generates admin pages), the mobile architecture
-                  does not auto-generate Expo screens. Mobile UIs are too diverse -- a list screen for
-                  a social feed looks nothing like a list screen for an e-commerce catalog. Instead,
-                  you build screens yourself and import the shared types.
+                  The generated Expo screens are real, navigable, and wired to the API through the typed
+                  hook &mdash; a full create/read/update/delete flow the moment you generate the resource.
+                  They&apos;re a starting point, not a cage: restyle the <code className="text-xs font-mono bg-accent/50 px-1 rounded">FlatList</code>,
+                  swap components, or rework the form in{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1 rounded">resource-forms/posts-form.tsx</code> &mdash;
+                  the shared types keep everything in sync with the backend.
                 </p>
               </div>
             </div>

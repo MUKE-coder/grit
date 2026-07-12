@@ -88,7 +88,7 @@ export default function StatelessServiceLoadTestPage() {
               <h2 className="text-2xl font-semibold tracking-tight mb-4">Prerequisites</h2>
               <ul className="space-y-2.5">
                 {[
-                  'Go 1.21+ installed (verify with `go version`)',
+                  'Go 1.24+ installed (verify with `go version`)',
                   'Grit CLI installed (`go install github.com/MUKE-coder/grit/v3/cmd/grit@latest`) — needs to be from v3.24+ for SQLite support',
                   'k6 — install instructions in Step 4 below',
                   'Either curl or any HTTP client to sanity-check the endpoint',
