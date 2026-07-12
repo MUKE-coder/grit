@@ -131,13 +131,13 @@ export default function LLMGuidePage() {
 │   │       ├── config/               # DB, Redis, env, storage
 │   │       ├── middleware/           # Gzip, CORS, RequestID, Logger, Auth, Cache
 │   │       ├── models/               # GORM structs + model registry
-│   │       │   └── models.go         # // GRIT:MODELS marker — NEVER remove
+│   │       │   └── user.go           # // grit:models marker — NEVER remove
 │   │       ├── handlers/             # Thin HTTP handlers (call services)
 │   │       ├── services/             # Business logic + GORM queries
 │   │       ├── routes/               # Route registration
-│   │       │   └── routes.go         # // GRIT:ROUTES marker — NEVER remove
+│   │       │   └── routes.go         # // grit:routes:* markers — NEVER remove
 │   │       ├── jobs/                 # asynq background jobs
-│   │       └── seeders/              # DB seed data
+│   │       └── database/             # seed.go (// grit:seeders) + <plural>_seeder.go
 │   ├── web/                          # Next.js public website
 │   │   ├── app/                      # App Router pages
 │   │   ├── components/
@@ -219,7 +219,7 @@ export default function LLMGuidePage() {
                   There is no <code className="font-mono bg-red-500/10 px-1 rounded">grit dev</code> command — it does not exist. Run the API and frontend in separate terminals:{' '}
                   <code className="font-mono bg-red-500/10 px-1 rounded">grit start server</code> in Terminal 1,
                   then <code className="font-mono bg-red-500/10 px-1 rounded">grit start client</code> in Terminal 2.
-                  Alternatively, <code className="font-mono bg-red-500/10 px-1 rounded">pnpm dev</code> from the project root starts all apps via Turborepo.
+                  Or run <code className="font-mono bg-red-500/10 px-1 rounded">grit start</code> to launch everything at once.
                 </Warn>
 
                 {/* Code generation */}
@@ -228,8 +228,13 @@ export default function LLMGuidePage() {
                   {[
                     {
                       cmd: 'grit generate resource <Name> --fields "field:type,..."',
-                      desc: 'Generate a full-stack resource: Go model + GORM migration, handler, service, routes, Zod schema, TypeScript types, React Query hook, and admin page — all wired together. Fields are comma-separated name:type pairs. Special types: slug:slug (auto-generated from title), image/images/video/videos/file/files (presigned upload), enum:A,B,C (select), uint:fk:Model (belongs_to), []uint:m2m:Model (many_to_many). Extra flags: --from schema.yaml (fields from YAML), -i / --interactive (prompt per field), --roles "ADMIN,EDITOR" (restrict to roles).',
-                      example: 'grit generate resource Product --fields "name:string,slug:slug,price:float64,image:image"',
+                      desc: 'Generate a full-stack resource: Go model + GORM migration, handler, service, routes, Zod schema, TypeScript types, React Query hook, and admin page — all wired together. Fields are comma-separated name:type[:extra] triples. Special types: slug:slug:title (auto-generated from the title field), file/files with an accept-list (image:file:image, gallery:files:image, doc:file:all), category:belongs_to (one-to-many parent, model inferred), tags:many_to_many:Tag (join table), sizes:string_array (JSON array). Extra flags: --seed (also emit a seeder), --faker + --count N (seed many realistic rows), --from schema.yaml (fields from YAML), -i / --interactive (prompt per field), --roles "ADMIN,EDITOR" (restrict to roles).',
+                      example: 'grit generate resource Product --fields "name:string,slug:slug:name,price:float,image:file:image"',
+                    },
+                    {
+                      cmd: 'grit generate seeder <Resource> [<Resource2> ...]',
+                      desc: 'Add a seeder to one or more already-generated resources. Each seeder is written to internal/database/<plural>_seeder.go and registered at the // grit:seeders marker in seed.go. Pass --faker to fill many rows with realistic gofakeit data (--count N sets the row count, default 10). Faker links belongs_to fields to REAL existing parent rows, so seed parents first.',
+                      example: 'grit generate seeder Product\ngrit generate seeder Category Product --faker --count 50',
                     },
                     {
                       cmd: 'grit sync',
@@ -268,7 +273,7 @@ export default function LLMGuidePage() {
                     },
                     {
                       cmd: 'grit seed',
-                      desc: 'Run the database seeders in apps/api/internal/seeders/. Creates the default admin user and sample data.',
+                      desc: 'Run every seeder in apps/api/internal/database/ (users_seeder.go, blogs_seeder.go, and any <plural>_seeder.go you generate). Creates the default admin user and sample data. Seeders are idempotent — they skip a table that already has rows, so grit seed is safe to re-run.',
                       example: 'grit seed',
                     },
                     {
@@ -357,8 +362,10 @@ export default function LLMGuidePage() {
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Fields follow the format{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">name:type</code> or{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">name:type:fk:RelatedModel</code> for relationships.
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">name:type</code> with an optional third part:{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">name:type:extra</code> (a modifier like{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">unique</code>, a slug source field, a related model, or a file accept-list).
+                  There are exactly 15 valid types — anything else fails validation. String fields default to <strong>required</strong>; every other type defaults to <strong>optional</strong>.
                 </p>
 
                 {/* Type table */}
@@ -374,24 +381,21 @@ export default function LLMGuidePage() {
                     </thead>
                     <tbody className="divide-y divide-border/20 text-xs font-mono">
                       {[
-                        { type: 'string', go: 'string', admin: 'text input', note: 'Short text, titles, names' },
-                        { type: 'slug', go: 'string (uniqueIndex)', admin: 'text input (auto-generated)', note: 'URL-friendly slug auto-generated from title on save' },
+                        { type: 'string', go: 'string', admin: 'text input', note: 'Short text, titles, names. Defaults to required.' },
                         { type: 'text', go: 'string', admin: 'textarea', note: 'Long text, descriptions' },
                         { type: 'richtext', go: 'string', admin: 'rich text editor', note: 'HTML content (TipTap)' },
                         { type: 'int', go: 'int', admin: 'number input', note: 'Signed integer' },
-                        { type: 'uint', go: 'uint', admin: 'number input', note: 'Unsigned integer, IDs' },
-                        { type: 'float64', go: 'float64', admin: 'number input (decimal)', note: 'Prices, coordinates' },
+                        { type: 'uint', go: 'uint', admin: 'number input', note: 'Unsigned integer (counts, quantities)' },
+                        { type: 'float', go: 'float64', admin: 'number input (decimal)', note: 'Prices, coordinates. Use float, never float64.' },
                         { type: 'bool', go: 'bool', admin: 'toggle / checkbox', note: 'Active, published, featured' },
-                        { type: 'time', go: 'time.Time', admin: 'date picker', note: 'Timestamps, due dates' },
-                        { type: 'image', go: 'string', admin: 'image upload (dropzone)', note: 'Single image URL (presigned upload)' },
-                        { type: 'images', go: 'pq.StringArray', admin: 'multi-image dropzone', note: 'Array of image URLs' },
-                        { type: 'video', go: 'string', admin: 'video upload (dropzone)', note: 'Single video URL' },
-                        { type: 'videos', go: 'pq.StringArray', admin: 'multi-video dropzone', note: 'Array of video URLs' },
-                        { type: 'file', go: 'string', admin: 'file upload (dropzone)', note: 'Single file URL (PDF, doc…)' },
-                        { type: 'files', go: 'pq.StringArray', admin: 'multi-file dropzone', note: 'Array of file URLs' },
-                        { type: 'enum:A,B,C', go: 'string', admin: 'select dropdown', note: 'Fixed set of values' },
-                        { type: 'uint:fk:Model', go: 'uint + Model field', admin: 'relationship select', note: 'belongs_to (one-to-many from child side)' },
-                        { type: '[]uint:m2m:Model', go: '[]Model (GORM M2M)', admin: 'multi-relationship select', note: 'many_to_many join table' },
+                        { type: 'datetime', go: '*time.Time', admin: 'date-time picker', note: 'Timestamps (published_at). Use datetime, never time.' },
+                        { type: 'date', go: '*time.Time', admin: 'date picker', note: 'Calendar date only (due dates)' },
+                        { type: 'slug', go: 'string (uniqueIndex)', admin: 'text input (auto-generated)', note: 'slug:slug:title — 3rd part is the source field. Auto-unique.' },
+                        { type: 'belongs_to', go: 'string FK + Model field', admin: 'relationship select', note: 'category:belongs_to or author:belongs_to:User. FK column <name>_id. Required by default.' },
+                        { type: 'many_to_many', go: '[]Model (GORM M2M)', admin: 'multi-relationship select', note: 'tags:many_to_many:Tag — related model required as 3rd part.' },
+                        { type: 'string_array', go: 'datatypes.JSONSlice[string]', admin: 'tag / multi-text input', note: 'sizes:string_array — JSON array of strings' },
+                        { type: 'file', go: '*files.FileRef', admin: 'file upload (dropzone)', note: 'image:file:image · doc:file:all · att:file:[pdf,doc,image]' },
+                        { type: 'files', go: 'files.FileRefs', admin: 'multi-file dropzone', note: 'gallery:files:image — multiple files with an accept-list' },
                       ].map((row) => (
                         <tr key={row.type}>
                           <td className="px-4 py-2 text-primary/80">{row.type}</td>
@@ -411,22 +415,32 @@ export default function LLMGuidePage() {
                     A <strong className="text-foreground/80">slug</strong> is a URL-friendly string derived from a title.
                     Instead of <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/blog/42</code>, you get{' '}
                     <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">/blog/my-first-post</code>.
-                    In Grit, use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:slug</code> (not <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:string</code>) as the field type.
-                    The Go service auto-generates the slug from the title using a slugify helper before saving, and GORM adds a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">uniqueIndex</code> automatically.
+                    In Grit, use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:slug:title</code> (not <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:string</code>) — the third part names the source field to slugify.
+                    The model&apos;s <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">BeforeCreate</code> hook auto-generates the slug before saving, and GORM adds a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">uniqueIndex</code> automatically.
                   </p>
                   <CodeBlock language="go" filename="apps/api/internal/models/post.go (generated)" code={`type Post struct {
-    gorm.Model
-    Title     string \`gorm:"not null" json:"title"\`
-    Slug      string \`gorm:"uniqueIndex;not null" json:"slug"\`
+    ID        string \`gorm:"type:varchar(36);primaryKey" json:"id"\`
+    Title     string \`gorm:"size:255;not null" json:"title"\`
+    Slug      string \`gorm:"size:255;uniqueIndex" json:"slug"\`
     Content   string \`gorm:"type:text" json:"content"\`
     Published bool   \`gorm:"default:false" json:"published"\`
+    CreatedAt time.Time \`json:"created_at"\`
+    UpdatedAt time.Time \`json:"updated_at"\`
 }
 
-// Service auto-generates slug before saving:
-// slug = strings.ToLower(strings.ReplaceAll(title, " ", "-"))
+// BeforeCreate assigns the UUID primary key and auto-generates the slug:
+func (m *Post) BeforeCreate(tx *gorm.DB) error {
+    if m.ID == "" {
+        m.ID = uuid.NewString()
+    }
+    if m.Slug == "" {
+        m.Slug = slug.Make(m.Title)
+    }
+    return nil
+}
 // The public GetBySlug handler route: GET /api/posts/slug/:slug`} />
                   <p className="text-sm text-muted-foreground/60 mt-2">
-                    Always use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:slug</code> (not <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:string</code>) — the dedicated type adds a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">uniqueIndex</code> and wires up auto-generation from the title automatically.
+                    Always use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:slug:title</code> (not <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">slug:string</code>) — the dedicated type adds a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">uniqueIndex</code> and wires up auto-generation from the source field automatically.
                   </p>
                 </div>
 
@@ -447,17 +461,17 @@ export default function LLMGuidePage() {
                       <tbody className="divide-y divide-border/20 font-mono">
                         <tr>
                           <td className="px-4 py-2 text-foreground/70 font-sans">One-to-Many (belongs_to)</td>
-                          <td className="px-4 py-2 text-primary/80">fieldname_id:uint:fk:ModelName</td>
+                          <td className="px-4 py-2 text-primary/80">name:belongs_to  or  name:belongs_to:Model</td>
                           <td className="px-4 py-2 text-muted-foreground/60 font-sans">Searchable single select</td>
                         </tr>
                         <tr>
-                          <td className="px-4 py-2 text-foreground/70 font-sans">One-to-One (has_one)</td>
-                          <td className="px-4 py-2 text-primary/80">fieldname_id:uint:fk:ModelName</td>
+                          <td className="px-4 py-2 text-foreground/70 font-sans">One-to-One</td>
+                          <td className="px-4 py-2 text-primary/80">name:belongs_to:Model (add uniqueIndex manually)</td>
                           <td className="px-4 py-2 text-muted-foreground/60 font-sans">Searchable single select</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-2 text-foreground/70 font-sans">Many-to-Many</td>
-                          <td className="px-4 py-2 text-primary/80">fieldname_ids:[]uint:m2m:ModelName</td>
+                          <td className="px-4 py-2 text-primary/80">name:many_to_many:Model</td>
                           <td className="px-4 py-2 text-muted-foreground/60 font-sans">Multi-select tag input</td>
                         </tr>
                       </tbody>
@@ -473,18 +487,18 @@ export default function LLMGuidePage() {
                       <div className="p-4 space-y-3">
                         <p className="text-xs text-muted-foreground/70 leading-relaxed">
                           A child record belongs to one parent. Syntax:{' '}
-                          <code className="font-mono bg-accent/50 px-1 rounded">fieldname_id:uint:fk:ModelName</code>.
-                          Use the parent model name in PascalCase after <code className="font-mono bg-accent/50 px-1 rounded">fk:</code>.
-                          This adds a <code className="font-mono bg-accent/50 px-1 rounded">CategoryID uint</code> FK column and a{' '}
-                          <code className="font-mono bg-accent/50 px-1 rounded">Category Category</code> preload field to the struct.
+                          <code className="font-mono bg-accent/50 px-1 rounded">name:belongs_to</code> (parent inferred from the field name) or{' '}
+                          <code className="font-mono bg-accent/50 px-1 rounded">name:belongs_to:Model</code> to name it explicitly.
+                          This adds a <code className="font-mono bg-accent/50 px-1 rounded">CategoryID string</code> FK column (varchar(36), matching the parent&apos;s UUID) and a{' '}
+                          <code className="font-mono bg-accent/50 px-1 rounded">Category Category</code> preload field to the struct. belongs_to is <strong>required by default</strong>.
                           The admin form renders a <strong>searchable single-select dropdown</strong> populated from <code className="font-mono bg-accent/50 px-1 rounded">/api/categories</code>.
                         </p>
                         <CodeBlock language="bash" filename="Example — Post belongs to Category" code={`# 1. Generate the parent first
-grit generate resource Category --fields "name:string,slug:slug,description:text"
+grit generate resource Category --fields "name:string,slug:slug:name,description:text"
 
-# 2. Generate the child referencing it
+# 2. Generate the child referencing it (category → Category)
 grit generate resource Post \\
-  --fields "title:string,slug:slug,content:richtext,category_id:uint:fk:Category,is_published:bool"
+  --fields "title:string,slug:slug:title,content:richtext,category:belongs_to,is_published:bool"
 
 grit migrate`} />
                       </div>
@@ -497,19 +511,20 @@ grit migrate`} />
                       </div>
                       <div className="p-4 space-y-3">
                         <p className="text-xs text-muted-foreground/70 leading-relaxed">
-                          Exactly one child per parent. Uses the <strong>same FK syntax</strong> as belongs_to —{' '}
-                          <code className="font-mono bg-accent/50 px-1 rounded">fieldname_id:uint:fk:ModelName</code> — but the CLI automatically adds a{' '}
-                          <code className="font-mono bg-accent/50 px-1 rounded">uniqueIndex</code> on the FK column.
-                          GORM treats it as one-to-one when the FK has a unique constraint.
+                          Exactly one child per parent. Uses the <strong>same belongs_to syntax</strong> —{' '}
+                          <code className="font-mono bg-accent/50 px-1 rounded">name:belongs_to:Model</code> — which produces a{' '}
+                          <code className="font-mono bg-accent/50 px-1 rounded">UserID string</code> FK column.
+                          To enforce one-to-one, add a <code className="font-mono bg-accent/50 px-1 rounded">uniqueIndex</code> to that FK column in the generated Go model, then run <code className="font-mono bg-accent/50 px-1 rounded">grit migrate</code>.
                           The admin form also renders a single-select dropdown (same as belongs_to).
                         </p>
                         <CodeBlock language="bash" filename="Example — Profile has one User" code={`# 1. User model already exists (built in)
 
-# 2. Generate Profile with a unique FK to User
+# 2. Generate Profile with a belongs_to to User
 grit generate resource Profile \\
-  --fields "bio:text,avatar:image,website:string,user_id:uint:fk:User"
+  --fields "bio:text,avatar:file:image,website:string,user:belongs_to:User"
 
-# The CLI adds uniqueIndex on user_id automatically for one-to-one FK fields
+# For strict one-to-one, add uniqueIndex to the UserID gorm tag in
+# apps/api/internal/models/profile.go, then run grit migrate
 
 grit migrate`} />
                       </div>
@@ -523,19 +538,17 @@ grit migrate`} />
                       <div className="p-4 space-y-3">
                         <p className="text-xs text-muted-foreground/70 leading-relaxed">
                           A record can belong to many of another, and vice versa. Syntax:{' '}
-                          <code className="font-mono bg-accent/50 px-1 rounded">fieldname_ids:[]uint:m2m:ModelName</code>.
-                          Key differences from belongs_to: the field name is <strong>plural</strong> (e.g. <code className="font-mono bg-accent/50 px-1 rounded">tag_ids</code>),
-                          the type prefix is <code className="font-mono bg-accent/50 px-1 rounded">[]uint</code> (not <code className="font-mono bg-accent/50 px-1 rounded">uint</code>),
-                          and the keyword is <code className="font-mono bg-accent/50 px-1 rounded">m2m</code> (not <code className="font-mono bg-accent/50 px-1 rounded">fk</code>).
+                          <code className="font-mono bg-accent/50 px-1 rounded">name:many_to_many:Model</code>.
+                          The related model is <strong>required</strong> as the third part (e.g. <code className="font-mono bg-accent/50 px-1 rounded">tags:many_to_many:Tag</code>) — Grit does not infer it.
                           GORM creates a join table automatically (e.g. <code className="font-mono bg-accent/50 px-1 rounded">product_tags</code>).
                           The admin form renders a <strong>multi-select tag input</strong> populated from <code className="font-mono bg-accent/50 px-1 rounded">/api/tags</code>.
                         </p>
                         <CodeBlock language="bash" filename="Example — Product has many Tags" code={`# 1. Generate the related model first
-grit generate resource Tag --fields "name:string,slug:slug,color:string"
+grit generate resource Tag --fields "name:string,slug:slug:name,color:string"
 
-# 2. Generate Product with M2M relationship
+# 2. Generate Product with an M2M relationship
 grit generate resource Product \\
-  --fields "name:string,slug:slug,price:float64,thumbnail:image,tag_ids:[]uint:m2m:Tag,is_active:bool"
+  --fields "name:string,slug:slug:name,price:float,thumbnail:file:image,tags:many_to_many:Tag,is_active:bool"
 
 # GORM auto-creates the product_tags join table
 
@@ -561,9 +574,12 @@ grit migrate`} />
                 {/* Example 1: Simple */}
                 <div className="mb-8">
                   <h3 className="text-base font-semibold text-foreground/80 mb-2">Simple Model — No Media, No Relations</h3>
-                  <p className="text-sm text-muted-foreground/70 mb-3">A contact form submission with an enum status.</p>
+                  <p className="text-sm text-muted-foreground/70 mb-3">
+                    A contact form submission. There is no enum type — model a status as a plain{' '}
+                    <code className="font-mono bg-accent/50 px-1 rounded">string</code> and validate the allowed values (new, read, replied) in app code.
+                  </p>
                   <CodeBlock language="bash" code={`grit generate resource Contact \\
-  --fields "name:string,email:string,subject:string,message:text,status:enum:new,read,replied,is_spam:bool"
+  --fields "name:string,email:string,subject:string,message:text,status:string,is_spam:bool"
 
 grit migrate`} />
                 </div>
@@ -572,25 +588,24 @@ grit migrate`} />
                 <div className="mb-8">
                   <h3 className="text-base font-semibold text-foreground/80 mb-2">Blog Post — Slug + Single Image + Rich Text</h3>
                   <p className="text-sm text-muted-foreground/70 mb-3">
-                    Use <code className="font-mono bg-accent/50 px-1 rounded">slug:slug</code> for SEO-friendly URLs.
-                    The service layer auto-generates the slug from the title on save.
+                    Use <code className="font-mono bg-accent/50 px-1 rounded">slug:slug:title</code> for SEO-friendly URLs (the third part is the source field).
+                    A single image is a <code className="font-mono bg-accent/50 px-1 rounded">file:image</code> field, and a timestamp is <code className="font-mono bg-accent/50 px-1 rounded">datetime</code>.
                   </p>
                   <CodeBlock language="bash" code={`grit generate resource Post \\
-  --fields "title:string,slug:slug,excerpt:text,content:richtext,cover_image:image,status:enum:draft,published,archived,published_at:time,views:int"
+  --fields "title:string,slug:slug:title,excerpt:text,content:richtext,cover_image:file:image,status:string,published_at:datetime,views:int"
 
 grit migrate`} />
                 </div>
 
                 {/* Example 3: Product with multiple images */}
                 <div className="mb-8">
-                  <h3 className="text-base font-semibold text-foreground/80 mb-2">Product — Multiple Images + Gallery + Slug</h3>
+                  <h3 className="text-base font-semibold text-foreground/80 mb-2">Product — Gallery + Single Image + Slug</h3>
                   <p className="text-sm text-muted-foreground/70 mb-3">
-                    <code className="font-mono bg-accent/50 px-1 rounded">images</code> generates a{' '}
-                    <code className="font-mono bg-accent/50 px-1 rounded">pq.StringArray</code> stored as a PostgreSQL array.
-                    The admin shows a multi-upload dropzone.
+                    A gallery is a <code className="font-mono bg-accent/50 px-1 rounded">files:image</code> field (multiple files, stored as JSON), and a single hero image is <code className="font-mono bg-accent/50 px-1 rounded">file:image</code>.
+                    Prices are <code className="font-mono bg-accent/50 px-1 rounded">float</code>, and the status is a plain <code className="font-mono bg-accent/50 px-1 rounded">string</code>.
                   </p>
                   <CodeBlock language="bash" code={`grit generate resource Product \\
-  --fields "name:string,slug:slug,description:text,price:float64,compare_price:float64,sku:string,stock:int,thumbnail:image,gallery:images,is_featured:bool,is_active:bool,status:enum:draft,published,out_of_stock"
+  --fields "name:string,slug:slug:name,description:text,price:float,compare_price:float,sku:string,stock:int,thumbnail:file:image,gallery:files:image,is_featured:bool,is_active:bool,status:string"
 
 grit migrate`} />
                 </div>
@@ -602,16 +617,16 @@ grit migrate`} />
                     Generate Category first (parent), then Product referencing it. Tags are many-to-many.
                   </p>
                   <CodeBlock language="bash" code={`# Step 1: generate parent models first
-grit generate resource Category --fields "name:string,slug:slug,description:text,image:image"
-grit generate resource Tag --fields "name:string,slug:slug,color:string"
+grit generate resource Category --fields "name:string,slug:slug:name,description:text,image:file:image"
+grit generate resource Tag --fields "name:string,slug:slug:name,color:string"
 
-# Step 2: generate the child with FK (belongs_to) and M2M (many_to_many)
+# Step 2: generate the child with belongs_to and many_to_many
 grit generate resource Article \\
-  --fields "title:string,slug:slug,content:richtext,cover_image:image,category_id:uint:fk:Category,tag_ids:[]uint:m2m:Tag,author_id:uint:fk:User,is_published:bool,published_at:time"
+  --fields "title:string,slug:slug:title,content:richtext,cover_image:file:image,category:belongs_to,tags:many_to_many:Tag,author:belongs_to:User,is_published:bool,published_at:datetime"
 
 grit migrate`} />
                   <p className="text-sm text-muted-foreground/60 mt-2">
-                    This creates: <code className="font-mono bg-accent/50 px-1 rounded">category_id</code> FK column,{' '}
+                    This creates: <code className="font-mono bg-accent/50 px-1 rounded">category_id</code> FK column (varchar(36)),{' '}
                     <code className="font-mono bg-accent/50 px-1 rounded">article_tags</code> join table,{' '}
                     and <code className="font-mono bg-accent/50 px-1 rounded">author_id</code> FK to users — all wired in GORM with preload support.
                   </p>
@@ -619,19 +634,19 @@ grit migrate`} />
 
                 {/* Example 5: Course with video */}
                 <div className="mb-8">
-                  <h3 className="text-base font-semibold text-foreground/80 mb-2">Course + Lessons — Video + Videos Array</h3>
+                  <h3 className="text-base font-semibold text-foreground/80 mb-2">Course + Lessons — Video Uploads + belongs_to</h3>
                   <p className="text-sm text-muted-foreground/70 mb-3">
-                    <code className="font-mono bg-accent/50 px-1 rounded">video</code> for a single video,{' '}
-                    <code className="font-mono bg-accent/50 px-1 rounded">videos</code> for multiple videos array.
+                    Video is a file accept-alias: <code className="font-mono bg-accent/50 px-1 rounded">intro_video:file:video</code> for a single video,{' '}
+                    <code className="font-mono bg-accent/50 px-1 rounded">lesson_videos:files:video</code> for a set.
                     These use presigned URL uploads directly to R2/S3 — the API never handles the binary.
                   </p>
                   <CodeBlock language="bash" code={`# Course (parent)
 grit generate resource Course \\
-  --fields "title:string,slug:slug,description:text,thumbnail:image,intro_video:video,price:float64,level:enum:beginner,intermediate,advanced,is_published:bool"
+  --fields "title:string,slug:slug:title,description:text,thumbnail:file:image,intro_video:file:video,price:float,level:string,is_published:bool"
 
-# Lesson (child — belongs to Course via course_id:uint:fk:Course)
+# Lesson (child — belongs to Course via course:belongs_to)
 grit generate resource Lesson \\
-  --fields "title:string,slug:slug,description:text,video_url:video,duration:int,position:int,is_preview:bool,course_id:uint:fk:Course,attachments:files"
+  --fields "title:string,slug:slug:title,description:text,video:file:video,duration:int,position:int,is_preview:bool,course:belongs_to:Course,attachments:files:all"
 
 grit migrate`} />
                 </div>
@@ -639,8 +654,12 @@ grit migrate`} />
                 {/* Example 6: Fully complex */}
                 <div className="mb-4">
                   <h3 className="text-base font-semibold text-foreground/80 mb-2">E-Commerce Order — Full Complexity</h3>
+                  <p className="text-sm text-muted-foreground/70 mb-3">
+                    Status-style columns are plain <code className="font-mono bg-accent/50 px-1 rounded">string</code> fields (validate the allowed values in app code),
+                    money is <code className="font-mono bg-accent/50 px-1 rounded">float</code>, timestamps are <code className="font-mono bg-accent/50 px-1 rounded">datetime</code>, and the customer is <code className="font-mono bg-accent/50 px-1 rounded">belongs_to:User</code>.
+                  </p>
                   <CodeBlock language="bash" code={`grit generate resource Order \\
-  --fields "order_number:string,status:enum:pending,processing,shipped,delivered,cancelled,refunded,subtotal:float64,tax:float64,shipping_fee:float64,total:float64,notes:text,shipping_address:text,payment_method:enum:card,mobile_money,cash,payment_status:enum:unpaid,paid,refunded,paid_at:time,shipped_at:time,delivered_at:time,customer_id:uint:fk:User"
+  --fields "order_number:string,status:string,subtotal:float,tax:float,shipping_fee:float,total:float,notes:text,shipping_address:text,payment_method:string,payment_status:string,paid_at:datetime,shipped_at:datetime,delivered_at:datetime,customer:belongs_to:User"
 
 grit migrate`} />
                 </div>
@@ -770,20 +789,25 @@ export default function ProductsPage() {
                   <code className="font-mono bg-red-500/10 px-1 rounded">grit add role</code>.
                   Never remove, rename, or move them.
                 </Warn>
-                <CodeBlock language="go" filename="apps/api/internal/models/models.go" code={`var RegisteredModels = []interface{}{
-    // GRIT:MODELS — do not remove this comment
-    &User{}, &Upload{}, &Blog{},
-    &Product{}, // grit generate adds new models here
-    // END GRIT:MODELS
+                <CodeBlock language="go" filename="apps/api/internal/models/user.go" code={`// Models returns every GORM model registered for AutoMigrate.
+func Models() []interface{} {
+    return []interface{}{
+        &User{}, &Upload{}, &Blog{},
+        &Product{}, // grit generate adds new models above this marker
+        // grit:models
+    }
 }`} />
-                <CodeBlock language="go" filename="apps/api/internal/routes/routes.go" code={`// GRIT:ROUTES — do not remove this comment
-productHandler := &handlers.ProductHandler{Service: &services.ProductService{DB: db}}
-// END GRIT:ROUTES
-
-// GRIT:PROTECTED_ROUTES — do not remove this comment
+                <CodeBlock language="go" filename="apps/api/internal/routes/routes.go" code={`// Protected routes (require a valid JWT)
 protected.GET("/products", productHandler.List)
 protected.POST("/products", productHandler.Create)
-// END GRIT:PROTECTED_ROUTES`} />
+// grit:routes:protected
+
+// Admin-only routes (require the ADMIN role)
+admin.DELETE("/products/:id", productHandler.Delete)
+// grit:routes:admin
+
+// Public / custom routes and role-restricted resource groups
+// grit:routes:custom`} />
               </div>
 
               {/* ════════════════════════════════════════════════════
@@ -1342,13 +1366,10 @@ pnpm install
 cd apps/api && go mod tidy && cd ../..
 
 # Terminal 1 — Go API (auto-migrates on first run)
-cd apps/api && go run cmd/api/main.go
+grit start server
 
-# Terminal 2 — Web frontend
-pnpm --filter web dev      # http://localhost:3000
-
-# Terminal 3 — Admin panel
-pnpm --filter admin dev    # http://localhost:3001`} />
+# Terminal 2 — Next.js web + admin (Turborepo)
+grit start client          # web http://localhost:3000 · admin http://localhost:3001`} />
               </div>
 
               {/* ════════════════════════════════════════════════════
@@ -1361,14 +1382,14 @@ pnpm --filter admin dev    # http://localhost:3001`} />
                 <Note>Non-negotiable. Violating them causes silent failures, broken code generation, or corrupted project state.</Note>
                 <div className="space-y-3">
                   {[
-                    { rule: 'Never remove GRIT: markers', detail: '// GRIT:MODELS, // END GRIT:MODELS, // GRIT:ROUTES, // END GRIT:ROUTES — permanent injection points for the CLI. Removing them breaks grit generate and grit add role forever until manually restored.' },
+                    { rule: 'Never remove grit: markers', detail: '// grit:models, // grit:routes:protected, // grit:routes:admin, // grit:routes:custom, // grit:schemas, // grit:resources, // grit:seeders — permanent injection points for the CLI (lowercase, no END markers). Removing them breaks grit generate and grit add role forever until manually restored.' },
                     { rule: 'Never use multipart/form-data for uploads', detail: 'Grit uses presigned URL uploads. Call uploadFile() from lib/api-client.ts — it handles the 3-step flow (presign → PUT to storage → complete). Never POST a FormData object directly to the API.' },
                     { rule: 'Always use the standard error response shape', detail: '{ "error": { "code": "VALIDATION_ERROR", "message": "…" } } — frontend hooks and admin components check for this exact shape. Any deviation breaks error display.' },
-                    { rule: 'Always register new models between the GRIT:MODELS markers', detail: 'AutoMigrate only runs on models in RegisteredModels. A model not listed here never creates its DB table.' },
+                    { rule: 'Always register new models at the // grit:models marker', detail: 'AutoMigrate only runs on models returned by Models() in internal/models/user.go. A model not listed there never creates its DB table.' },
                     { rule: 'Keep handlers thin — no DB queries in handlers', detail: 'All GORM queries belong in service files. Handlers only parse requests and call services. This keeps the pattern consistent with generated code.' },
                     { rule: 'Import types from @shared/schemas, never duplicate them', detail: 'Zod schemas and TypeScript types live in packages/shared. Both web and admin import from there. Duplicating schemas causes drift.' },
                     { rule: 'Run grit sync after manually editing Go models', detail: 'The shared package is generated from Go structs. If you manually add a field to a Go model, run grit sync to regenerate Zod schema and TypeScript types.' },
-                    { rule: 'Generate parent models before child models', detail: 'When using FK relationships (category_id:uint:fk:Category), generate Category first so the referenced model exists when you generate Product.' },
+                    { rule: 'Generate parent models before child models', detail: 'When using relationships (category:belongs_to, tags:many_to_many:Tag), generate the parent (Category, Tag) first so the referenced model exists when you generate the child. This also lets --faker seeders link to real parent rows.' },
                     { rule: 'Disable GORM Studio and Pulse in production', detail: 'Both expose internal data. Set GORM_STUDIO_ENABLED=false and PULSE_ENABLED=false in production .env.' },
                     { rule: 'For low-spec machines: suggest the no-Docker setup', detail: 'Users with limited RAM should use Neon + Upstash + Cloudflare R2 + Resend instead of Docker. See Section 14 above or /docs/getting-started/create-without-docker.' },
                   ].map((item, i) => (
@@ -1410,12 +1431,16 @@ grit start client`} />
 grit new myapp && cd myapp
 cp .env.cloud.example .env
 pnpm install && cd apps/api && go mod tidy && cd ../..
-# Terminal 1: cd apps/api && go run cmd/api/main.go
-# Terminal 2: pnpm --filter web dev
-# Terminal 3: pnpm --filter admin dev`} />
-                  <CodeBlock language="bash" filename="Add a full-stack resource" code={`grit generate resource Product \\
-  --fields "name:string,slug:slug,price:float64,thumbnail:image,gallery:images,category_id:uint:fk:Category,status:enum:draft,published"
-grit migrate`} />
+grit migrate && grit seed
+# Terminal 1 — Go API:
+grit start server
+# Terminal 2 — Next.js web + admin:
+grit start client`} />
+                  <CodeBlock language="bash" filename="Add a full-stack resource (seed parents first)" code={`grit generate resource Category --fields "name:string,slug:slug:name" --seed
+grit generate resource Product \\
+  --fields "name:string,slug:slug:name,price:float,thumbnail:file:image,gallery:files:image,category:belongs_to,status:string" \\
+  --seed --faker --count 50
+grit migrate && grit seed`} />
                   <CodeBlock language="bash" filename="Start servers independently" code={`grit start server    # Go API only (no hot-reload)
 grit start client    # Frontend only (pnpm dev via Turborepo)`} />
                   <CodeBlock language="bash" filename="Other common tasks" code={`grit add role MODERATOR   # adds role in 7 places

@@ -82,23 +82,28 @@ func (c *Client) Close() error`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3">Enqueue Methods</h3>
 
-                <CodeBlock language="go" filename="internal/jobs/client.go (enqueue methods)" code={`// EnqueueSendEmail enqueues an email send job.
-// Max retries: 3
+                <CodeBlock language="go" filename="internal/jobs/client.go (enqueue methods)" code={`// Every enqueue method takes a context.Context first and accepts
+// optional ...EnqueueOption (queue, max retries, delay, idempotency key).
+
+// EnqueueSendEmail enqueues an email send job.
 func (c *Client) EnqueueSendEmail(
+    ctx context.Context,
     to, subject, template string,
     data map[string]interface{},
+    opts ...EnqueueOption,
 ) error
 
 // EnqueueProcessImage enqueues an image processing job.
-// Max retries: 2
+// (uploadID is the Upload's UUID string.)
 func (c *Client) EnqueueProcessImage(
-    uploadID uint,
+    ctx context.Context,
+    uploadID string,
     key, mimeType string,
+    opts ...EnqueueOption,
 ) error
 
 // EnqueueTokensCleanup enqueues a token cleanup job.
-// Max retries: 1
-func (c *Client) EnqueueTokensCleanup() error`} />
+func (c *Client) EnqueueTokensCleanup(ctx context.Context) error`} />
 
                 <h3 className="text-lg font-semibold tracking-tight mb-3">Job Payloads</h3>
 
@@ -112,7 +117,7 @@ type EmailPayload struct {
 
 // ImagePayload holds the data for an image processing job.
 type ImagePayload struct {
-    UploadID uint   \`json:"upload_id"\`
+    UploadID string \`json:"upload_id"\` // Upload UUID
     Key      string \`json:"key"\`
     MimeType string \`json:"mime_type"\`
 }`} />
@@ -229,25 +234,25 @@ defer stopWorker()`} />
                   the job is moved to the &quot;archived&quot; (failed) state.
                 </p>
 
-                <CodeBlock language="go" filename="retry-config.go" code={`// Email: 3 retries (important to deliver)
-task := asynq.NewTask(TypeEmailSend, payload)
-_, err = c.client.Enqueue(task, asynq.MaxRetry(3))
+                <CodeBlock language="go" filename="retry-config.go" code={`// c.Enqueue(ctx, taskType, payload, ...EnqueueOption) wraps asynq and
+// applies framework defaults; override per call with an EnqueueOption.
 
-// Image: 2 retries (can be re-triggered)
-task := asynq.NewTask(TypeImageProcess, payload)
-_, err = c.client.Enqueue(task, asynq.MaxRetry(2))
+// Email: 3 attempts (important to deliver)
+c.Enqueue(ctx, TypeEmailSend, payload, EnqueueOption{MaxRetries: 3})
 
-// Cleanup: 1 retry (runs hourly anyway)
-task := asynq.NewTask(TypeTokensCleanup, nil)
-_, err = c.client.Enqueue(task, asynq.MaxRetry(1))
+// Image: 2 attempts (can be re-triggered)
+c.Enqueue(ctx, TypeImageProcess, payload, EnqueueOption{MaxRetries: 2})
 
-// Custom: enqueue to a specific queue with custom retry
-task := asynq.NewTask("invoice:generate", payload)
-_, err = c.client.Enqueue(task,
-    asynq.MaxRetry(5),
-    asynq.Queue("critical"),
-    asynq.Timeout(30*time.Second),
-)`} />
+// Cleanup: 1 attempt (runs hourly anyway)
+c.Enqueue(ctx, TypeTokensCleanup, nil, EnqueueOption{MaxRetries: 1})
+
+// Custom: specific queue, timeout, and idempotency key
+c.Enqueue(ctx, "invoice:generate", payload, EnqueueOption{
+    MaxRetries:     5,
+    Queue:          "critical",       // default | critical | low
+    Timeout:        30 * time.Second,
+    IdempotencyKey: "invoice-" + orderID, // dedupes re-enqueues
+})`} />
               </div>
 
               {/* Adding Custom Jobs */}
@@ -266,19 +271,16 @@ const TypeInvoiceGenerate = "invoice:generate"
 
 // 2. Define payload
 type InvoicePayload struct {
-    OrderID   uint   \`json:"order_id"\`
+    OrderID   string \`json:"order_id"\` // Order UUID
     UserEmail string \`json:"user_email"\`
 }
 
-// 3. Add enqueue method to Client
-func (c *Client) EnqueueGenerateInvoice(orderID uint, email string) error {
-    payload, _ := json.Marshal(InvoicePayload{
+// 3. Add enqueue method to Client (Enqueue marshals the payload for you)
+func (c *Client) EnqueueGenerateInvoice(ctx context.Context, orderID, email string) error {
+    return c.Enqueue(ctx, TypeInvoiceGenerate, InvoicePayload{
         OrderID:   orderID,
         UserEmail: email,
-    })
-    task := asynq.NewTask(TypeInvoiceGenerate, payload)
-    _, err := c.client.Enqueue(task, asynq.MaxRetry(3))
-    return err
+    }, EnqueueOption{MaxRetries: 3})
 }
 
 // 4. Write handler function

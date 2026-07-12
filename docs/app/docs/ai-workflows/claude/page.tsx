@@ -125,9 +125,9 @@ Here's what I want to build:
 Please create these 3 files for me:
 
 1. project-description.md — Full project spec with all models, their
-   fields (use Grit field types: string, text, int, uint, float, bool,
-   datetime, date, slug, belongs_to, many_to_many), relationships,
-   user roles, and features.
+   fields (use Grit field types: string, text, richtext, int, uint,
+   float, bool, datetime, date, slug, string_array, belongs_to,
+   many_to_many, file, files), relationships, user roles, and features.
 
 2. claude-code-prompt.md — Step-by-step instructions that I'll give
    to Claude Code (AI coding agent). Include exact grit CLI commands
@@ -534,17 +534,31 @@ Grit is a full-stack framework: Go (Gin + GORM) backend + Next.js (React + TypeS
 grit new <name>                    # Scaffold full project
 grit new <name> --api              # API only
 grit generate resource <Name> --fields "field:type,..."  # Full-stack CRUD
+grit generate resource <Name> --fields "..." --seed --faker --count 50  # + seeder
+grit generate seeder <Resource>    # Add a seeder to an existing resource
 grit remove resource <Name>        # Remove a resource
 grit sync                          # Sync Go types → TypeScript
 grit migrate                       # Run GORM AutoMigrate
-grit seed                          # Seed database
+grit seed                          # Run all seeders (idempotent)
+grit start server                  # Run the Go API
+grit start client                  # Run web + admin
 grit add role <ROLE>               # Add a new role
 
-## Field Types
+## Field Types (exactly 15 — anything else fails validation)
 
-string, text, int, uint, float, bool, datetime, date, slug
-belongs_to (e.g., category:belongs_to)
+string, text, richtext, int, uint, float, bool, datetime, date, slug
+string_array (e.g., sizes:string_array)
+belongs_to (e.g., category:belongs_to or author:belongs_to:User)
 many_to_many (e.g., tags:many_to_many:Tag)
+file  (e.g., image:file:image, doc:file:all)
+files (e.g., gallery:files:image)
+
+## Models
+
+UUID string primary keys (NOT gorm.Model, NOT uint):
+  ID string \`gorm:"type:varchar(36);primaryKey"\`  (set in BeforeCreate)
+belongs_to FK columns are string (varchar(36)), e.g. CategoryID string.
+User has FirstName + LastName; roles are UPPERCASE: ADMIN, EDITOR, USER (default USER).
 
 ## Project Structure
 
@@ -569,18 +583,18 @@ project/
 - Styling: Tailwind CSS + shadcn/ui, dark theme default
 - Admin: defineResource() API with DataTable, FormBuilder, widgets
 
-## Code Generation Markers (DO NOT REMOVE)
+## Code Generation Markers (DO NOT REMOVE — lowercase, no END markers)
 
-// grit:models, /* grit:studio */, // grit:handlers, // grit:routes:protected,
-// grit:routes:admin, // grit:routes:custom, // grit:schemas, // grit:types,
-// grit:api-routes, // grit:resources, // grit:resource-list
+// grit:models, // grit:routes:protected, // grit:routes:admin,
+// grit:routes:custom, // grit:schemas, // grit:resources, // grit:seeders
 
 ## How to Build with Grit
 
 1. grit new myapp && cd myapp && docker compose up -d
 2. grit generate resource <Name> --fields "..." for each model
-3. cd apps/api && air (hot reload)
-4. cd apps/admin && pnpm install && pnpm dev
+   (seed parents first, then children; add --seed --faker to generate data)
+3. grit migrate && grit seed
+4. Terminal 1: grit start server   |   Terminal 2: grit start client
 5. Customize handlers, add business logic, build frontend pages`} />
               </div>
 
@@ -657,9 +671,9 @@ Here's what I want to build:
 Please create these 3 files for me:
 
 1. project-description.md — Full project spec with all models, their
-   fields (use Grit field types: string, text, int, uint, float, bool,
-   datetime, date, slug, belongs_to, many_to_many), relationships,
-   user roles, and features.
+   fields (use Grit field types: string, text, richtext, int, uint,
+   float, bool, datetime, date, slug, string_array, belongs_to,
+   many_to_many, file, files), relationships, user roles, and features.
 
 2. claude-code-prompt.md — Step-by-step instructions that I'll give
    to Claude Code (AI coding agent). Include exact grit CLI commands
