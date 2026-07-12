@@ -311,6 +311,16 @@ export default function SecurityGuidePage() {
               </p>
             </div>
 
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                <strong className="text-foreground">Go deeper:</strong> the{' '}
+                <Link href="/courses/security-deep-dive" className="text-primary hover:underline">Security Deep Dive</Link>{' '}
+                course walks through auth, 2FA, the WAF and rate limiting hands-on, and{' '}
+                <Link href="/courses/audit-log" className="text-primary hover:underline">Audit Log + Hash Chain</Link>{' '}
+                covers tamper-evident activity tracking.
+              </p>
+            </div>
+
             <div className="prose-grit">
               <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-4 flex gap-3">
                 <ShieldCheck className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
