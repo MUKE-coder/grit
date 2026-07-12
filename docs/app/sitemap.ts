@@ -132,23 +132,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/courses/batteries', priority: 0.8, changeFrequency: 'monthly' as const },
     { path: '/courses/api-masterclass', priority: 0.8, changeFrequency: 'monthly' as const },
     { path: '/courses/mobile-fitness-app', priority: 0.7, changeFrequency: 'monthly' as const },
-    { path: '/courses/ecommerce-spa', priority: 0.8, changeFrequency: 'monthly' as const },
     { path: '/courses/api-docs-scalar', priority: 0.7, changeFrequency: 'monthly' as const },
     { path: '/courses/security-deep-dive', priority: 0.8, changeFrequency: 'monthly' as const },
     { path: '/courses/pulse-analytics', priority: 0.7, changeFrequency: 'monthly' as const },
     { path: '/courses/gorm-studio', priority: 0.7, changeFrequency: 'monthly' as const },
     { path: '/courses/react-vite-go', priority: 0.8, changeFrequency: 'monthly' as const },
     { path: '/courses/deployment-guide', priority: 0.8, changeFrequency: 'monthly' as const },
-    { path: '/courses/saas-with-ai', priority: 0.8, changeFrequency: 'monthly' as const },
     { path: '/courses/invoice-desktop', priority: 0.7, changeFrequency: 'monthly' as const },
 
     { path: '/courses/testing', priority: 0.8, changeFrequency: 'monthly' as const },
     { path: '/courses/gorm-mastery', priority: 0.8, changeFrequency: 'monthly' as const },
     { path: '/courses/realtime-chat', priority: 0.7, changeFrequency: 'monthly' as const },
     { path: '/courses/stripe-payments', priority: 0.8, changeFrequency: 'monthly' as const },
-    { path: '/courses/blog-cms', priority: 0.8, changeFrequency: 'monthly' as const },
     { path: '/courses/cicd-github', priority: 0.7, changeFrequency: 'monthly' as const },
-    { path: '/courses/custom-middleware', priority: 0.7, changeFrequency: 'monthly' as const },
 
     // Course (legacy single course page)
     { path: '/course', priority: 0.5, changeFrequency: 'monthly' as const },

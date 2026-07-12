@@ -93,22 +93,18 @@ const standaloneCourses = [
   { title: "Batteries Included", subtitle: "Every feature that ships with Grit", href: "/courses/batteries", icon: Zap, duration: "30 min" },
   { title: "API-Only Masterclass", subtitle: "Build & deploy a REST API with Go", href: "/courses/api-masterclass", icon: Server, duration: "30 min" },
   { title: "Build a Fitness App", subtitle: "Go API + Expo React Native", href: "/courses/mobile-fitness-app", icon: Dumbbell, duration: "30 min" },
-  { title: "E-commerce Store", subtitle: "Single app architecture with Vite", href: "/courses/ecommerce-spa", icon: ShoppingCart, duration: "30 min" },
   { title: "API Docs: Scalar & Swagger", subtitle: "Auto-generated API documentation", href: "/courses/api-docs-scalar", icon: FileText, duration: "30 min" },
   { title: "Security Deep Dive", subtitle: "Auth, 2FA, WAF & rate limiting", href: "/courses/security-deep-dive", icon: Shield, duration: "30 min" },
   { title: "Pulse Analytics", subtitle: "Tracing, metrics & monitoring", href: "/courses/pulse-analytics", icon: Activity, duration: "30 min" },
   { title: "GORM Studio", subtitle: "The visual database browser", href: "/courses/gorm-studio", icon: Database, duration: "30 min" },
   { title: "React + Vite + Go", subtitle: "Building with TanStack Router", href: "/courses/react-vite-go", icon: Code2, duration: "30 min" },
   { title: "Deployment Guide", subtitle: "Dokploy, Orbita, VPS & Vercel", href: "/courses/deployment-guide", icon: Rocket, duration: "30 min" },
-  { title: "SaaS with Claude Code", subtitle: "AI-assisted SaaS development", href: "/courses/saas-with-ai", icon: Bot, duration: "30 min" },
   { title: "Invoice Generator", subtitle: "Desktop app with Wails + PDF export", href: "/courses/invoice-desktop", icon: Receipt, duration: "30 min" },
   { title: "Testing Your Grit App", subtitle: "Go, Vitest & Playwright", href: "/courses/testing", icon: TestTube2, duration: "30 min" },
   { title: "Database Mastery", subtitle: "GORM models, migrations & queries", href: "/courses/gorm-mastery", icon: HardDrive, duration: "30 min" },
   { title: "Real-Time Chat", subtitle: "WebSockets with grit-websockets", href: "/courses/realtime-chat", icon: MessageSquare, duration: "30 min" },
   { title: "Stripe Payments", subtitle: "Subscriptions & billing for SaaS", href: "/courses/stripe-payments", icon: CreditCard, duration: "30 min" },
-  { title: "Blog & CMS", subtitle: "Complete content management system", href: "/courses/blog-cms", icon: Newspaper, duration: "30 min" },
   { title: "CI/CD with GitHub Actions", subtitle: "Automated testing & deployment", href: "/courses/cicd-github", icon: GitBranch, duration: "30 min" },
-  { title: "Custom Middleware", subtitle: "Extending Grit with hooks", href: "/courses/custom-middleware", icon: Wrench, duration: "30 min" },
 ]
 
 /* -- Page component ------------------------------------------------------- */
