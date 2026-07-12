@@ -46,20 +46,30 @@ export default function ModelsPage() {
 
 import (
     "time"
+    "github.com/google/uuid"
     "gorm.io/gorm"
 )
 
 type Post struct {
-    ID        uint           \`gorm:"primarykey" json:"id"\`
+    ID        string         \`gorm:"primaryKey;size:36" json:"id"\`
     Title     string         \`gorm:"size:255;not null" json:"title" binding:"required,min=3"\`
     Slug      string         \`gorm:"size:255;uniqueIndex;not null" json:"slug"\`
     Body      string         \`gorm:"type:text" json:"body"\`
     Published bool           \`gorm:"default:false" json:"published"\`
-    AuthorID  uint           \`gorm:"not null;index" json:"author_id"\`
+    AuthorID  string         \`gorm:"size:36;not null;index" json:"author_id"\`
     Author    User           \`gorm:"foreignKey:AuthorID" json:"author,omitempty"\`
     CreatedAt time.Time      \`json:"created_at"\`
     UpdatedAt time.Time      \`json:"updated_at"\`
     DeletedAt gorm.DeletedAt \`gorm:"index" json:"-"\`
+}
+
+// Every Grit model uses a UUID string primary key, generated in a
+// BeforeCreate hook. The generator writes this for you on each resource.
+func (p *Post) BeforeCreate(tx *gorm.DB) error {
+    if p.ID == "" {
+        p.ID = uuid.New().String()
+    }
+    return nil
 }`} />
 
               {/* ── Built-in User Model ─────────────────────────────── */}
@@ -72,26 +82,35 @@ type Post struct {
 
 import (
     "time"
+    "github.com/google/uuid"
     "golang.org/x/crypto/bcrypt"
     "gorm.io/gorm"
 )
 
-// Role constants
+// Role constants (UPPERCASE — role checks compare against these exactly)
 const (
-    RoleAdmin  = "admin"
-    RoleEditor = "editor"
-    RoleUser   = "user"
+    RoleAdmin  = "ADMIN"
+    RoleEditor = "EDITOR"
+    RoleUser   = "USER"
+    // grit:roles
 )
 
 type User struct {
-    ID              uint           \`gorm:"primarykey" json:"id"\`
-    Name            string         \`gorm:"size:255;not null" json:"name" binding:"required"\`
+    ID              string         \`gorm:"primaryKey;size:36" json:"id"\`
+    FirstName       string         \`gorm:"size:255;not null" json:"first_name" binding:"required"\`
+    LastName        string         \`gorm:"size:255;not null" json:"last_name" binding:"required"\`
     Email           string         \`gorm:"size:255;uniqueIndex;not null" json:"email" binding:"required,email"\`
-    Password        string         \`gorm:"size:255;not null" json:"-"\`
-    Role            string         \`gorm:"size:20;default:user" json:"role"\`
+    Password        string         \`gorm:"size:255" json:"-"\`
+    Role            string         \`gorm:"size:20;default:USER" json:"role"\`
     Avatar          string         \`gorm:"size:500" json:"avatar"\`
+    JobTitle        string         \`gorm:"size:255" json:"job_title"\`
+    Bio             string         \`gorm:"type:text" json:"bio"\`
     Active          bool           \`gorm:"default:true" json:"active"\`
+    Provider        string         \`gorm:"size:50;default:'local'" json:"provider"\` // local | google | github
+    GoogleID        string         \`gorm:"size:255" json:"-"\`
+    GithubID        string         \`gorm:"size:255" json:"-"\`
     EmailVerifiedAt *time.Time     \`json:"email_verified_at"\`
+    Version         int            \`gorm:"not null;default:1" json:"version"\` // bumped on update for offline sync
     CreatedAt       time.Time      \`json:"created_at"\`
     UpdatedAt       time.Time      \`json:"updated_at"\`
     DeletedAt       gorm.DeletedAt \`gorm:"index" json:"-"\`
@@ -101,7 +120,9 @@ type User struct {
                 <li><code>Password</code> uses <code>json:"-"</code> so it is <strong>never</strong> included in API responses.</li>
                 <li><code>DeletedAt</code> also uses <code>json:"-"</code> and enables GORM soft deletes.</li>
                 <li><code>Email</code> has a <code>uniqueIndex</code> constraint to prevent duplicate accounts.</li>
-                <li>Three built-in roles are defined as constants: <code>admin</code>, <code>editor</code>, <code>user</code>.</li>
+                <li>The primary key is a <strong>UUID string</strong> (<code>size:36</code>), generated in <code>BeforeCreate</code> — not an auto-increment integer.</li>
+                <li>Three built-in roles are defined as <strong>uppercase</strong> constants: <code>ADMIN</code>, <code>EDITOR</code>, <code>USER</code> (default <code>USER</code>). Role checks compare against these exact strings.</li>
+                <li><code>Version</code> increments on every update so offline clients can detect a record has moved on (pairs with the sync engine).</li>
               </ul>
 
               {/* ── User Model Hooks ─────────────────────────────── */}
@@ -111,17 +132,29 @@ type User struct {
                 with bcrypt before it is saved to the database. A <code>CheckPassword</code> method
                 is provided for login verification.
               </p>
-              <CodeBlock language="go" filename="apps/api/internal/models/user.go" code={`// BeforeCreate hashes the password before saving.
+              <CodeBlock language="go" filename="apps/api/internal/models/user.go" code={`// BeforeCreate generates a UUID and hashes the password before saving.
 func (u *User) BeforeCreate(tx *gorm.DB) error {
+    if u.ID == "" {
+        u.ID = uuid.New().String()
+    }
+    if u.Version == 0 {
+        u.Version = 1
+    }
     if u.Password != "" {
-        hashedPassword, err := bcrypt.GenerateFromPassword(
+        hashed, err := bcrypt.GenerateFromPassword(
             []byte(u.Password), bcrypt.DefaultCost,
         )
         if err != nil {
             return err
         }
-        u.Password = string(hashedPassword)
+        u.Password = string(hashed)
     }
+    return nil
+}
+
+// BeforeUpdate bumps Version so offline clients can detect a stale edit.
+func (u *User) BeforeUpdate(tx *gorm.DB) error {
+    u.Version++
     return nil
 }
 
@@ -147,7 +180,7 @@ import (
 )
 
 type Upload struct {
-    ID           uint           \`gorm:"primarykey" json:"id"\`
+    ID           string         \`gorm:"primaryKey;size:36" json:"id"\`
     Filename     string         \`gorm:"size:255;not null" json:"filename"\`
     OriginalName string         \`gorm:"size:255;not null" json:"original_name"\`
     MimeType     string         \`gorm:"size:100;not null" json:"mime_type"\`
@@ -155,7 +188,7 @@ type Upload struct {
     Path         string         \`gorm:"size:500;not null" json:"path"\`
     URL          string         \`gorm:"size:500" json:"url"\`
     ThumbnailURL string         \`gorm:"size:500" json:"thumbnail_url"\`
-    UserID       uint           \`gorm:"index;not null" json:"user_id"\`
+    UserID       string         \`gorm:"size:36;index;not null" json:"user_id"\`
     User         User           \`gorm:"foreignKey:UserID" json:"-"\`
     CreatedAt    time.Time      \`json:"created_at"\`
     UpdatedAt    time.Time      \`json:"updated_at"\`
@@ -177,9 +210,9 @@ import (
 )
 
 type Invoice struct {
-    ID         uint           \`gorm:"primarykey" json:"id"\`
+    ID         string         \`gorm:"primaryKey;size:36" json:"id"\`
     Number     string         \`gorm:"size:50;uniqueIndex;not null" json:"number" binding:"required"\`
-    CustomerID uint           \`gorm:"not null;index" json:"customer_id" binding:"required"\`
+    CustomerID string         \`gorm:"size:36;not null;index" json:"customer_id" binding:"required"\`
     Customer   User           \`gorm:"foreignKey:CustomerID" json:"customer,omitempty"\`
     Amount     float64        \`gorm:"not null" json:"amount" binding:"required,gt=0"\`
     Status     string         \`gorm:"size:20;default:pending" json:"status"\`
@@ -319,17 +352,17 @@ type Invoice struct {
                 For example, a Post belongs to a User (the author):
               </p>
               <CodeBlock language="go" filename="belongs_to.go" code={`type Post struct {
-    ID       uint \`gorm:"primarykey" json:"id"\`
+    ID       string \`gorm:"primaryKey;size:36" json:"id"\`
     Title    string \`gorm:"size:255;not null" json:"title"\`
-    // Foreign key field
-    AuthorID uint \`gorm:"not null;index" json:"author_id"\`
+    // Foreign key field (UUID string, matching the parent's PK)
+    AuthorID string \`gorm:"size:36;not null;index" json:"author_id"\`
     // Relationship -- GORM loads the User when you Preload("Author")
     Author   User \`gorm:"foreignKey:AuthorID" json:"author,omitempty"\`
 }
 
 // Usage in a handler or service:
 var post Post
-db.Preload("Author").First(&post, 1)`} />
+db.Preload("Author").First(&post, "id = ?", id)`} />
               <p>
                 The <code>json:"author,omitempty"</code> tag means the author object is only included
                 in the JSON response when it has been preloaded. This avoids empty nested objects.
@@ -341,29 +374,29 @@ db.Preload("Author").First(&post, 1)`} />
                 back to this model. For example, a User has many Posts:
               </p>
               <CodeBlock language="go" filename="has_many.go" code={`type User struct {
-    ID    uint   \`gorm:"primarykey" json:"id"\`
-    Name  string \`gorm:"size:255;not null" json:"name"\`
-    Email string \`gorm:"size:255;uniqueIndex;not null" json:"email"\`
+    ID        string \`gorm:"primaryKey;size:36" json:"id"\`
+    FirstName string \`gorm:"size:255;not null" json:"first_name"\`
+    Email     string \`gorm:"size:255;uniqueIndex;not null" json:"email"\`
     // Has many posts
-    Posts []Post \`gorm:"foreignKey:AuthorID" json:"posts,omitempty"\`
+    Posts     []Post \`gorm:"foreignKey:AuthorID" json:"posts,omitempty"\`
 }
 
 // Usage: load a user with all their posts
 var user User
-db.Preload("Posts").First(&user, 1)`} />
+db.Preload("Posts").First(&user, "id = ?", id)`} />
 
               <h3 id="many-to-many">Many to Many</h3>
               <p>
                 For many-to-many relationships, GORM creates a join table automatically:
               </p>
               <CodeBlock language="go" filename="many_to_many.go" code={`type Post struct {
-    ID   uint   \`gorm:"primarykey" json:"id"\`
+    ID    string \`gorm:"primaryKey;size:36" json:"id"\`
     Title string \`gorm:"size:255" json:"title"\`
-    Tags []Tag  \`gorm:"many2many:post_tags;" json:"tags,omitempty"\`
+    Tags  []Tag  \`gorm:"many2many:post_tags;" json:"tags,omitempty"\`
 }
 
 type Tag struct {
-    ID   uint   \`gorm:"primarykey" json:"id"\`
+    ID   string \`gorm:"primaryKey;size:36" json:"id"\`
     Name string \`gorm:"size:100;uniqueIndex" json:"name"\`
 }
 
@@ -395,28 +428,46 @@ db.Unscoped().Delete(&user)`} />
                 exposed in API responses.
               </p>
 
-              {/* ── AutoMigrate ─────────────────────────────── */}
-              <h2 id="automigrate">AutoMigrate</h2>
+              {/* ── Migrations ─────────────────────────────── */}
+              <h2 id="automigrate">Migrations &amp; the Model Registry</h2>
               <p>
-                Grit uses GORM&apos;s <code>AutoMigrate</code> to keep the database schema in sync with your
-                Go structs. When the server starts, it automatically creates or alters tables to match
-                your models.
+                Models are registered in a <code>Models()</code> function and migrated by a{' '}
+                <code>Migrate()</code> runner &mdash; both in <code>models/user.go</code>. Migrations run
+                as a separate <code>grit migrate</code> command, <strong>not</strong> on server startup, so
+                you control exactly when the schema changes. The generator appends each new model at the{' '}
+                <code>// grit:models</code> marker.
               </p>
-              <CodeBlock language="go" filename="apps/api/internal/models/user.go" code={`// AutoMigrate runs database migrations for all models.
-func AutoMigrate(db *gorm.DB) error {
-    return db.AutoMigrate(
+              <CodeBlock language="go" filename="apps/api/internal/models/user.go" code={`// Models returns the ordered list of all models for migration.
+// Parents (no foreign keys) come first so FK constraints resolve.
+func Models() []interface{} {
+    return []interface{}{
         &User{},
         &Upload{},
-        // grit:models -- new models are added here by the generator
-    )
+        // grit:models
+    }
+}
+
+// Migrate runs AutoMigrate for every model, creating missing tables and
+// ALTERing existing ones to add new columns — with a created/altered/
+// unchanged diff logged so nothing migrates silently.
+func Migrate(db *gorm.DB) error {
+    for _, model := range Models() {
+        if err := db.AutoMigrate(model); err != nil {
+            return fmt.Errorf("migrating %T: %w", model, err)
+        }
+    }
+    return nil
 }`} />
               <p>
-                This function is called in <code>cmd/server/main.go</code> during startup:
+                It&apos;s wired to the migrate entrypoint, run on demand:
               </p>
-              <CodeBlock language="go" filename="apps/api/cmd/server/main.go" code={`// Auto-migrate models
-if err := models.AutoMigrate(db); err != nil {
-    log.Fatalf("Failed to run migrations: %v", err)
-}`} />
+              <CodeBlock terminal code="cd apps/api && go run cmd/migrate/main.go   # or: grit migrate" />
+              <p>
+                See <a href="/docs/backend/migrations" className="text-primary hover:underline">Migrations</a> for
+                the full runner (column diffing, <code>--fresh</code>) and{' '}
+                <a href="/docs/backend/seeders" className="text-primary hover:underline">Seeders</a> for filling
+                the tables afterwards.
+              </p>
 
               <h3 id="automigrate-behavior">How AutoMigrate Works</h3>
               <p>AutoMigrate is <strong>safe to run repeatedly</strong>. It will:</p>
@@ -463,22 +514,30 @@ grit migrate:fresh  # drop all + re-migrate (dev only!)`} />
 
 import (
     "time"
+    "github.com/google/uuid"
     "gorm.io/gorm"
 )
 
 type Product struct {
-    ID          uint           \`gorm:"primarykey" json:"id"\`
+    ID          string         \`gorm:"primaryKey;size:36" json:"id"\`
     Name        string         \`gorm:"size:255;not null" json:"name" binding:"required"\`
     Description string         \`gorm:"type:text" json:"description"\`
     Price       float64        \`gorm:"not null" json:"price" binding:"required,gt=0"\`
     SKU         string         \`gorm:"size:100;uniqueIndex" json:"sku" binding:"required"\`
     Stock       int            \`gorm:"default:0" json:"stock"\`
     Active      bool           \`gorm:"default:true" json:"active"\`
-    CategoryID  uint           \`gorm:"index" json:"category_id"\`
+    CategoryID  string         \`gorm:"size:36;index" json:"category_id"\`
     Category    Category       \`gorm:"foreignKey:CategoryID" json:"category,omitempty"\`
     CreatedAt   time.Time      \`json:"created_at"\`
     UpdatedAt   time.Time      \`json:"updated_at"\`
     DeletedAt   gorm.DeletedAt \`gorm:"index" json:"-"\`
+}
+
+func (p *Product) BeforeCreate(tx *gorm.DB) error {
+    if p.ID == "" {
+        p.ID = uuid.New().String()
+    }
+    return nil
 }`} />
 
               <p>
