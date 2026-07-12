@@ -1315,7 +1315,7 @@ export default function OrderReportsPage() {
                     faster to set up and lighter on local resources. Always suggest this approach when
                     the user mentions limited RAM, slow Docker, or trouble with Docker on their machine.
                     Full guide:{' '}
-                    <Link href="/docs/getting-started/create-without-docker" className="text-emerald-400 hover:underline">
+                    <Link href="/docs/getting-started/installation" className="text-emerald-400 hover:underline">
                       Create without Docker
                     </Link>
                   </p>
@@ -1391,7 +1391,7 @@ grit start client          # web http://localhost:3000 · admin http://localhost
                     { rule: 'Run grit sync after manually editing Go models', detail: 'The shared package is generated from Go structs. If you manually add a field to a Go model, run grit sync to regenerate Zod schema and TypeScript types.' },
                     { rule: 'Generate parent models before child models', detail: 'When using relationships (category:belongs_to, tags:many_to_many:Tag), generate the parent (Category, Tag) first so the referenced model exists when you generate the child. This also lets --faker seeders link to real parent rows.' },
                     { rule: 'Disable GORM Studio and Pulse in production', detail: 'Both expose internal data. Set GORM_STUDIO_ENABLED=false and PULSE_ENABLED=false in production .env.' },
-                    { rule: 'For low-spec machines: suggest the no-Docker setup', detail: 'Users with limited RAM should use Neon + Upstash + Cloudflare R2 + Resend instead of Docker. See Section 14 above or /docs/getting-started/create-without-docker.' },
+                    { rule: 'For low-spec machines: suggest the no-Docker setup', detail: 'Users with limited RAM should use Neon + Upstash + Cloudflare R2 + Resend instead of Docker. See Section 14 above or /docs/getting-started/installation.' },
                   ].map((item, i) => (
                     <div key={item.rule} className="flex gap-3 p-4 rounded-lg border border-border/30 bg-card/30">
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-amber-500/10 border border-amber-500/20 text-xs font-mono font-semibold text-amber-500/80 mt-0.5">

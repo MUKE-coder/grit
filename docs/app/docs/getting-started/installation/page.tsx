@@ -198,6 +198,74 @@ grit new-desktop my-app`} />
             </div>
           </div>
 
+          {/* Running without Docker */}
+          <div className="mb-14">
+            <h2 className="text-xl font-semibold text-foreground mb-4">Running without Docker</h2>
+            <p className="text-muted-foreground mb-6 max-w-2xl">
+              Docker is the default, but it is entirely optional. On low-spec machines, or when
+              you just want the leanest possible setup, you can run Grit without any containers.
+            </p>
+
+            <h3 className="text-lg font-semibold text-foreground mb-3">Option A — SQLite, no services</h3>
+            <p className="text-muted-foreground mb-4 max-w-2xl">
+              Point the API at a local SQLite file instead of PostgreSQL and skip{' '}
+              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">docker compose</code> entirely.
+              GORM auto-migrates the SQLite file on first run, so there is nothing else to provision.
+              Redis and MinIO are optional — the cache falls back to in-memory and file storage falls
+              back to the local disk when their env vars are unset.
+            </p>
+            <CodeBlock language="bash" filename=".env" code={`# Use a local SQLite file instead of PostgreSQL
+DATABASE_URL=sqlite:./app.db
+
+# Leave REDIS_URL / storage vars unset to run without Redis and MinIO`} />
+            <CodeBlock language="bash" filename="Terminal" code={`# No 'docker compose up' needed
+cd my-app/apps/api
+go run cmd/server/main.go   # auto-migrates app.db on first run
+
+# In another terminal, start the frontend(s)
+pnpm install
+pnpm dev`} />
+
+            <h3 className="text-lg font-semibold text-foreground mt-8 mb-3">Option B — managed cloud services</h3>
+            <p className="text-muted-foreground mb-4 max-w-2xl">
+              Prefer PostgreSQL, Redis, and object storage without running them locally? Point the same
+              env vars at managed services — all have generous free tiers. Set them in{' '}
+              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">.env</code> and
+              run the API and frontends directly (no <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">docker compose</code>).
+            </p>
+            <div className="overflow-x-auto rounded-lg border border-border/40 mb-4">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/40 bg-accent/20">
+                    <th className="px-4 py-3 text-left font-medium text-foreground/80">Service</th>
+                    <th className="px-4 py-3 text-left font-medium text-foreground/80">Provider</th>
+                    <th className="px-4 py-3 text-left font-medium text-foreground/80">Env var</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/30">
+                  {[
+                    { svc: 'PostgreSQL', provider: 'Neon', env: 'DATABASE_URL=postgres://…?sslmode=require' },
+                    { svc: 'Redis', provider: 'Upstash', env: 'REDIS_URL=rediss://…upstash.io:6379' },
+                    { svc: 'File storage', provider: 'Cloudflare R2 / Backblaze B2', env: 'STORAGE_DRIVER=r2 (+ R2_* keys)' },
+                    { svc: 'Email', provider: 'Resend', env: 'RESEND_API_KEY / MAIL_FROM' },
+                  ].map((row) => (
+                    <tr key={row.svc} className="hover:bg-accent/20 transition-colors">
+                      <td className="px-4 py-2.5 font-medium text-foreground">{row.svc}</td>
+                      <td className="px-4 py-2.5 text-muted-foreground">{row.provider}</td>
+                      <td className="px-4 py-2.5 font-mono text-[12px] text-primary/80">{row.env}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-sm text-muted-foreground/70 max-w-2xl">
+              Grit scaffolds a <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[12px]">.env.cloud.example</code> file
+              with these variables pre-filled as placeholders — copy it to{' '}
+              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[12px]">.env</code> and drop in your keys.
+              The same setup doubles as your production infrastructure.
+            </p>
+          </div>
+
           {/* Nav */}
           <div className="flex items-center justify-between pt-8 border-t border-border/40">
             <Button variant="ghost" size="sm" asChild className="text-muted-foreground/70 hover:text-foreground">

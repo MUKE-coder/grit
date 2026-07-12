@@ -89,7 +89,6 @@ const searchIndex: SearchItem[] = [
   { title: 'Project Structure', href: '/docs/getting-started/project-structure', section: 'Getting Started', keywords: 'folders files directory layout monorepo apps tree organization' },
   { title: 'Configuration', href: '/docs/getting-started/configuration', section: 'Getting Started', keywords: 'env config environment variables settings dotenv' },
   { title: 'Troubleshooting', href: '/docs/getting-started/troubleshooting', section: 'Getting Started', keywords: 'errors fix debug issues problems help broken stuck' },
-  { title: 'Create without Docker', href: '/docs/getting-started/create-without-docker', section: 'Getting Started', keywords: 'no docker without docker sqlite minimal setup local' },
   { title: 'CLI Cheatsheet', href: '/docs/getting-started/cli-cheatsheet', section: 'Getting Started', keywords: 'cli commands cheatsheet reference grit new generate sync migrate seed' },
 
   // Core Concepts

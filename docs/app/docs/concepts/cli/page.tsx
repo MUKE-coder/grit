@@ -399,6 +399,126 @@ grit rm resource <Name>`} />
                 </div>
               </div>
 
+              {/* Operational Commands */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Operational Commands
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-6">
+                  Grit ships a set of operational commands inspired by Laravel/Goravel for
+                  day-to-day workflows: route inspection, maintenance mode, and one-command
+                  deployment.
+                </p>
+
+                {/* grit routes */}
+                <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
+                  grit routes
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  List all registered API routes in a formatted table. Parses your{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">routes.go</code> file
+                  and shows the HTTP method, path, handler function, and middleware group.
+                </p>
+                <CodeBlock language="bash" filename="Terminal" code={`$ grit routes
+
+  METHOD  PATH                              HANDLER                GROUP
+  ──────  ────                              ───────                ─────
+  GET     /api/health                       func1                  public
+  POST    /api/auth/register                authHandler.Register   public
+  POST    /api/auth/login                   authHandler.Login      public
+  POST    /api/auth/refresh                 authHandler.Refresh    public
+  GET     /api/auth/me                      authHandler.Me         protected
+  POST    /api/auth/logout                  authHandler.Logout     protected
+  POST    /api/auth/totp/setup              totpHandler.Setup      protected
+  GET     /api/auth/totp/status             totpHandler.Status     protected
+  GET     /api/users/:id                    userHandler.GetByID    protected
+  POST    /api/uploads                      uploadHandler.Create   protected
+  POST    /api/ai/chat                      aiHandler.Chat         protected
+  DELETE  /api/admin/users/:id              userHandler.Delete     admin
+
+  16 routes total`} />
+                <p className="text-sm text-muted-foreground/60 mt-3">
+                  Works for both monorepo (<code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">apps/api/internal/routes/</code>) and
+                  single app (<code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">internal/routes/</code>) projects.
+                </p>
+
+                {/* grit down / grit up */}
+                <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
+                  grit down / grit up
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Toggle maintenance mode. When enabled, all API requests receive a{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">503 Service Unavailable</code> response.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <CodeBlock language="bash" filename="Enable maintenance" code={`$ grit down
+
+  Application is now in maintenance mode.
+  All requests will receive 503.
+  Run 'grit up' to bring it back online.`} />
+                  <CodeBlock language="bash" filename="Disable maintenance" code={`$ grit up
+
+  Application is back online!
+  Normal request handling has resumed.`} />
+                </div>
+
+                <div className="rounded-lg border border-border/40 bg-accent/20 p-5 mb-6">
+                  <h4 className="text-sm font-semibold text-foreground mb-2">How it works</h4>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-0.5">1.</span>
+                      <span><code className="text-foreground/80">grit down</code> creates a <code className="text-foreground/80">.maintenance</code> file in the project root</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-0.5">2.</span>
+                      <span>The scaffolded <code className="text-foreground/80">Maintenance()</code> middleware checks for this file on every request</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-0.5">3.</span>
+                      <span><code className="text-foreground/80">grit up</code> removes the file, resuming normal operation</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <CodeBlock language="go" filename="middleware/maintenance.go" code={`func Maintenance() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        if _, err := os.Stat(".maintenance"); err == nil {
+            c.JSON(http.StatusServiceUnavailable, gin.H{
+                "error": gin.H{
+                    "code":    "MAINTENANCE",
+                    "message": "Application is in maintenance mode.",
+                },
+            })
+            c.Abort()
+            return
+        }
+        c.Next()
+    }
+}`} highlightLines={[3, 4, 5, 6, 7, 8, 9]} />
+
+                {/* grit deploy */}
+                <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
+                  grit deploy
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  One-command production deployment. See the dedicated{' '}
+                  <Link href="/docs/infrastructure/deploy-command" className="text-primary hover:underline">
+                    Deploy Command
+                  </Link>{' '}
+                  guide for full details.
+                </p>
+                <CodeBlock language="bash" filename="Terminal" code={`# Deploy with flags
+grit deploy --host user@server.com --domain myapp.com
+
+# Or set env vars in .env
+DEPLOY_HOST=user@server.com
+DEPLOY_DOMAIN=myapp.com
+DEPLOY_KEY_FILE=~/.ssh/id_rsa
+
+grit deploy`} />
+              </div>
+
               {/* Command Reference Table */}
               <div className="mb-10">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">

@@ -52,11 +52,6 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Common issues and solutions when working with Grit projects, including Docker, database, and build errors.',
   },
-  '/docs/getting-started/create-without-docker': {
-    title: 'Create without Docker',
-    description:
-      'Set up a Grit project using cloud services (Neon, Upstash, Cloudflare R2, Resend) instead of Docker. No Docker required.',
-  },
   '/docs/getting-started/cli-cheatsheet': {
     title: 'CLI Cheatsheet',
     description:

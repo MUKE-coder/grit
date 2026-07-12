@@ -9909,7 +9909,7 @@ grit new myapp --api --desktop
                 <ul>
                   <li>
                     New{' '}
-                    <Link href="/docs/getting-started/create-without-docker" className="text-primary hover:underline">Create without Docker</Link>{' '}
+                    <Link href="/docs/getting-started/installation" className="text-primary hover:underline">Create without Docker</Link>{' '}
                     guide &mdash; set up a Grit project using Neon, Upstash, Cloudflare R2, and Resend instead of Docker.
                   </li>
                 </ul>
