@@ -104,11 +104,15 @@ export default function PulsePage() {
                   code={`# Observability — Pulse
 PULSE_ENABLED=true
 PULSE_USERNAME=admin
-PULSE_PASSWORD=pulse`}
+PULSE_PASSWORD=pulse
+PULSE_STORAGE=memory                 # "memory" (default) | "sqlite"
+PULSE_STORAGE_DSN=pulse.db           # path used when PULSE_STORAGE=sqlite`}
                 />
 
                 <p className="text-muted-foreground leading-relaxed mt-6 mb-4">
-                  The mount call in routes.go:
+                  Pulse v1.0 is mounted with <strong>functional options</strong> and a{' '}
+                  <code>context.Context</code> (the context drives clean shutdown of the
+                  dashboard WebSocket and background samplers). The scaffolded mount call:
                 </p>
 
                 <CodeBlock
@@ -116,20 +120,24 @@ PULSE_PASSWORD=pulse`}
                   filename="internal/routes/routes.go"
                   code={`// Mount Pulse observability
 if cfg.PulseEnabled {
-    p := pulse.Mount(r, db, pulse.Config{
-        AppName: cfg.AppName,
-        DevMode: cfg.IsDevelopment(),
-        Dashboard: pulse.DashboardConfig{
-            Username: cfg.PulseUsername,
-            Password: cfg.PulsePassword,
-        },
-        Tracing: pulse.TracingConfig{
-            ExcludePaths: []string{"/studio/*", "/sentinel/*", "/docs/*", "/pulse/*"},
-        },
-        Prometheus: pulse.PrometheusConfig{
-            Enabled: true,
-        },
-    })
+    pulseOpts := []pulse.Option{
+        pulse.WithAppName(cfg.AppName),
+        pulse.WithCredentials(cfg.PulseUsername, cfg.PulsePassword),
+        pulse.WithExcludePaths("/studio/*", "/sentinel/*", "/docs/*", "/pulse/*"),
+        pulse.WithPrometheus(),
+        // Pulse's error middleware snapshots a request-body snippet for context,
+        // but restores ONLY the first 4096 bytes — silently truncating larger
+        // uploads/JSON. Disable capture so the full body reaches the handler.
+        pulse.WithRequestBodyCaptureDisabled(),
+    }
+    if cfg.IsDevelopment() {
+        pulseOpts = append(pulseOpts, pulse.WithDevMode())
+    }
+    if cfg.PulseStorage == "sqlite" && cfg.PulseStorageDSN != "" {
+        pulseOpts = append(pulseOpts, pulse.WithSQLite(cfg.PulseStorageDSN))
+    }
+
+    p := pulse.Mount(context.Background(), r, db, pulseOpts...)
 
     // Register health checks for connected services
     if svc.Cache != nil {
@@ -144,6 +152,26 @@ if cfg.PulseEnabled {
     }
 }`}
                 />
+
+                <div className="overflow-x-auto my-6">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/30">
+                        <th className="text-left py-2 pr-4 text-foreground/80 font-medium">Option</th>
+                        <th className="text-left py-2 text-foreground/80 font-medium">Effect</th>
+                      </tr>
+                    </thead>
+                    <tbody className="font-mono text-[13px]">
+                      <tr className="border-b border-border/20"><td className="py-2 pr-4">WithAppName(name)</td><td className="py-2 text-muted-foreground font-sans">Labels the dashboard</td></tr>
+                      <tr className="border-b border-border/20"><td className="py-2 pr-4">WithCredentials(user, pass)</td><td className="py-2 text-muted-foreground font-sans">Dashboard basic-auth login</td></tr>
+                      <tr className="border-b border-border/20"><td className="py-2 pr-4">WithExcludePaths(globs…)</td><td className="py-2 text-muted-foreground font-sans">Skip tracing for these routes</td></tr>
+                      <tr className="border-b border-border/20"><td className="py-2 pr-4">WithPrometheus()</td><td className="py-2 text-muted-foreground font-sans">Expose /pulse/metrics</td></tr>
+                      <tr className="border-b border-border/20"><td className="py-2 pr-4">WithDevMode()</td><td className="py-2 text-muted-foreground font-sans">Verbose, dev-only behaviour</td></tr>
+                      <tr className="border-b border-border/20"><td className="py-2 pr-4">WithSQLite(dsn)</td><td className="py-2 text-muted-foreground font-sans">Persist data across restarts</td></tr>
+                      <tr><td className="py-2 pr-4">WithRequestBodyCaptureDisabled()</td><td className="py-2 text-muted-foreground font-sans">Stop the 4096-byte body truncation</td></tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               {/* Endpoints */}
@@ -210,7 +238,7 @@ if cfg.PulseEnabled {
 
                 <CodeBlock
                   language="go"
-                  code={`p := pulse.Mount(r, db, cfg)
+                  code={`p := pulse.Mount(context.Background(), r, db, pulseOpts...)
 
 // Redis health check
 p.AddHealthCheck(pulse.HealthCheck{
@@ -253,41 +281,22 @@ p.AddHealthCheck(pulse.HealthCheck{
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Pulse ships with 5 default alert rules (high latency, high error rate, high memory,
-                  goroutine leak, health check failure). You can add custom rules and notification channels:
+                  goroutine leak, health check failure) that run out of the box &mdash; no
+                  configuration needed. They fire against the metrics Pulse already collects and
+                  surface in the dashboard.
                 </p>
 
-                <CodeBlock
-                  language="go"
-                  code={`pulse.Config{
-    Alerts: pulse.AlertConfig{
-        Rules: []pulse.AlertRule{
-            {
-                Name:      "api_slow",
-                Metric:    "p95_latency",
-                Operator:  ">",
-                Threshold: 1000,  // ms
-                Duration:  3 * time.Minute,
-                Severity:  "warning",
-            },
-        },
-
-        // Notification channels
-        Slack: &pulse.SlackConfig{
-            WebhookURL: "https://hooks.slack.com/services/...",
-            Channel:    "#alerts",
-        },
-        Discord: &pulse.DiscordConfig{
-            WebhookURL: "https://discord.com/api/webhooks/...",
-        },
-        Webhooks: []pulse.WebhookConfig{
-            {
-                URL:    "https://api.example.com/webhook",
-                Secret: "hmac-secret",  // HMAC-SHA256 signature
-            },
-        },
-    },
-}`}
-                />
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-6">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    <strong className="text-foreground">Custom rules &amp; channels.</strong> The
+                    scaffold enables the built-in rules and doesn&apos;t wire any notification
+                    channel by default. To add your own rules or a Slack/Discord/webhook channel,
+                    pass the matching Pulse option when you build <code>pulseOpts</code> in
+                    routes.go &mdash; see the{' '}
+                    <a href="https://github.com/MUKE-coder" className="text-primary hover:underline">Pulse package docs</a>{' '}
+                    for the current option set, since these evolve with the library.
+                  </p>
+                </div>
 
                 <h3 className="text-lg font-semibold mt-6 mb-3">Built-in Default Rules</h3>
 
@@ -343,18 +352,24 @@ p.AddHealthCheck(pulse.HealthCheck{
                   Data Storage
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  By default, Pulse uses in-memory ring buffers (~100K request capacity). For persistence
-                  across restarts, switch to SQLite:
+                  By default, Pulse uses in-memory ring buffers &mdash; fastest, but data resets on
+                  restart. For persistence across restarts, set <code>PULSE_STORAGE=sqlite</code> in
+                  your <code>.env</code>; the mount call then adds the{' '}
+                  <code>pulse.WithSQLite()</code> option automatically:
                 </p>
 
                 <CodeBlock
+                  language="bash"
+                  filename=".env"
+                  code={`PULSE_STORAGE=sqlite       # switch from in-memory to persistent
+PULSE_STORAGE_DSN=pulse.db # SQLite file (or ":memory:")`}
+                />
+
+                <CodeBlock
                   language="go"
-                  code={`pulse.Config{
-    Storage: pulse.StorageConfig{
-        Driver:         pulse.SQLite,
-        DSN:            "pulse.db",
-        RetentionHours: 24,
-    },
+                  filename="internal/routes/routes.go"
+                  code={`if cfg.PulseStorage == "sqlite" && cfg.PulseStorageDSN != "" {
+    pulseOpts = append(pulseOpts, pulse.WithSQLite(cfg.PulseStorageDSN))
 }`}
                 />
               </div>
