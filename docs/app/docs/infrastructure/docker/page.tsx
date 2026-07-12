@@ -89,15 +89,17 @@ export default function DockerSetupPage() {
     container_name: myapp-postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      # Host 5434 (not 5432) avoids collisions; container still listens on 5432.
+      - "127.0.0.1:5434:5432"
+    # Credentials come from .env — the :- syntax provides a fallback default.
     environment:
-      POSTGRES_USER: grit
-      POSTGRES_PASSWORD: grit
-      POSTGRES_DB: myapp
+      POSTGRES_USER: \${POSTGRES_USER:-grit}
+      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD:-grit}
+      POSTGRES_DB: \${POSTGRES_DB:-myapp}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U grit"]
+      test: ["CMD-SHELL", "pg_isready -U \${POSTGRES_USER:-grit}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -107,7 +109,8 @@ export default function DockerSetupPage() {
     container_name: myapp-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      # Host 6380 (not 6379); container still listens on 6379.
+      - "127.0.0.1:6380:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -121,8 +124,9 @@ export default function DockerSetupPage() {
     container_name: myapp-minio
     restart: unless-stopped
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      # Host 9002/9003 (not 9000/9001); container still listens on 9000/9001.
+      - "9002:9000"
+      - "9003:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
@@ -162,19 +166,19 @@ volumes:
                     <tbody className="text-muted-foreground">
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-medium text-foreground/90">PostgreSQL</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">5432</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">5434</td>
                         <td className="px-4 py-2.5 font-mono text-xs">grit / grit</td>
                         <td className="px-4 py-2.5">Primary database</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-medium text-foreground/90">Redis</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">6379</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">6380</td>
                         <td className="px-4 py-2.5 font-mono text-xs">No auth</td>
                         <td className="px-4 py-2.5">Cache, sessions, job queues</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-medium text-foreground/90">MinIO</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">9000 / 9001</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">9002 / 9003</td>
                         <td className="px-4 py-2.5 font-mono text-xs">minioadmin / minioadmin</td>
                         <td className="px-4 py-2.5">S3-compatible file storage</td>
                       </tr>
@@ -198,7 +202,7 @@ volumes:
                   {[
                     {
                       title: 'MinIO Console',
-                      url: 'http://localhost:9001',
+                      url: 'http://localhost:9003',
                       desc: 'Web-based file browser for your S3-compatible storage. Create buckets, upload files, manage access policies. Login with minioadmin / minioadmin.',
                     },
                     {
@@ -208,12 +212,12 @@ volumes:
                     },
                     {
                       title: 'PostgreSQL',
-                      url: 'localhost:5432',
-                      desc: 'Connect using any database client (pgAdmin, TablePlus, DBeaver). Connection string: postgres://grit:grit@localhost:5432/myapp?sslmode=disable',
+                      url: 'localhost:5434',
+                      desc: 'Connect using any database client (pgAdmin, TablePlus, DBeaver). Connection string: postgres://grit:grit@localhost:5434/myapp?sslmode=disable',
                     },
                     {
                       title: 'Redis',
-                      url: 'localhost:6379',
+                      url: 'localhost:6380',
                       desc: 'Connect with redis-cli or any Redis GUI client (RedisInsight, Medis). No authentication required in development.',
                     },
                   ].map((service) => (
@@ -241,63 +245,82 @@ volumes:
                   alongside PostgreSQL and Redis.
                 </p>
 
-                <CodeBlock language="yaml" filename="docker-compose.prod.yml" code={`services:
+                <CodeBlock language="yaml" filename="docker-compose.prod.yml" code={`# Nothing here uses "ports:" — only "expose:". Services are reachable
+# ONLY through your reverse proxy (Traefik, Caddy, nginx, Dokploy) on the
+# shared "myapp" network, never bound to the public host interface.
+services:
   api:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
     container_name: myapp-api
     restart: unless-stopped
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
+    env_file:
+      - .env
+    # Override POSTGRES_HOST to the container name and POSTGRES_PORT back to
+    # 5432 (the container's internal port). The Go config builds DATABASE_URL
+    # from these parts at startup.
     environment:
       APP_ENV: production
-      DATABASE_URL: postgres://grit:grit@postgres:5432/myapp?sslmode=disable
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: \${JWT_SECRET}
+      MINIO_ENDPOINT: http://minio:9000
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - myapp
 
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: \${API_URL:-http://localhost:8080}
     container_name: myapp-web
     restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      NEXT_PUBLIC_API_URL: http://api:8080
+    expose:
+      - "3000"
+    networks:
+      - myapp
 
   admin:
     build:
       context: .
       dockerfile: apps/admin/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: \${API_URL:-http://localhost:8080}
     container_name: myapp-admin
     restart: unless-stopped
-    ports:
-      - "3001:3000"
-    environment:
-      NEXT_PUBLIC_API_URL: http://api:8080
+    expose:
+      - "3000"
+    networks:
+      - myapp
 
   postgres:
     image: postgres:16-alpine
     container_name: myapp-postgres
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: grit
-      POSTGRES_PASSWORD: grit
-      POSTGRES_DB: myapp
+      POSTGRES_USER: \${POSTGRES_USER:-grit}
+      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD:-grit}
+      POSTGRES_DB: \${POSTGRES_DB:-myapp}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U grit"]
+      test: ["CMD-SHELL", "pg_isready -U \${POSTGRES_USER:-grit} -d \${POSTGRES_DB:-myapp}"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - myapp
 
   redis:
     image: redis:7-alpine
@@ -310,10 +333,32 @@ volumes:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - myapp
+
+  minio:
+    image: minio/minio
+    container_name: myapp-minio
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MINIO_ROOT_USER: \${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: \${MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - minio-data:/data
+    networks:
+      - myapp
+    command: server /data --console-address ":9001"
+
+networks:
+  myapp:
+    driver: bridge
 
 volumes:
   postgres-data:
-  redis-data:`} />
+  redis-data:
+  minio-data:`} />
 
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   Deploy to production with:
@@ -349,7 +394,7 @@ volumes:
                   Alpine image. The final image is typically under 20MB.
                 </p>
                 <CodeBlock filename="apps/api/Dockerfile" code={`# Build stage
-FROM golang:1.21-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
@@ -368,9 +413,17 @@ FROM alpine:3.19
 
 RUN apk --no-cache add ca-certificates tzdata
 
+# Non-root runtime user — chown before USER so Sentinel/Pulse can open
+# their embedded SQLite stores under /app.
+RUN addgroup -S app && adduser -S -G app app
+
 WORKDIR /app
 
 COPY --from=builder /app/server .
+
+RUN chown -R app:app /app
+
+USER app
 
 EXPOSE 8080
 
@@ -385,9 +438,11 @@ CMD ["./server"]`} />
                   Both the web and admin apps share this same Dockerfile pattern.
                 </p>
                 <CodeBlock filename="apps/web/Dockerfile" code={`# Build stage
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 
-RUN corepack enable
+# Pin pnpm — pnpm@latest resolves to pnpm 11 which needs Node 22's node:sqlite
+# builtin. Pinning here avoids surprise breakage on rebuilds.
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 # Install dependencies
 FROM base AS deps
@@ -523,7 +578,7 @@ CMD ["node", "apps/web/server.js"]`} />
                   {[
                     {
                       q: 'Port already in use',
-                      a: 'Another process is using port 5432, 6379, etc. Stop the conflicting process or change the port mapping in docker-compose.yml. For example, change "5432:5432" to "5433:5432" and update your .env DATABASE_URL accordingly.',
+                      a: 'Another process is using port 5434, 6380, etc. Stop the conflicting process or change the port mapping in docker-compose.yml. For example, change "5434:5432" to "5435:5432" and update your .env POSTGRES_PORT accordingly.',
                     },
                     {
                       q: 'Container keeps restarting',
@@ -531,11 +586,11 @@ CMD ["node", "apps/web/server.js"]`} />
                     },
                     {
                       q: 'Cannot connect from API to PostgreSQL',
-                      a: 'Ensure the API uses "localhost" (not the container name) when running outside Docker. The connection string in .env should be: postgres://grit:grit@localhost:5432/myapp?sslmode=disable',
+                      a: 'Ensure the API uses "localhost" (not the container name) when running outside Docker. The connection string in .env should be: postgres://grit:grit@localhost:5434/myapp?sslmode=disable',
                     },
                     {
                       q: 'MinIO bucket not found',
-                      a: 'MinIO starts with no buckets. Open the MinIO console at http://localhost:9001, login with minioadmin/minioadmin, and create your bucket. Or set MINIO_DEFAULT_BUCKETS in the compose file.',
+                      a: 'MinIO starts with no buckets. Open the MinIO console at http://localhost:9003, login with minioadmin/minioadmin, and create your bucket. Or set MINIO_DEFAULT_BUCKETS in the compose file.',
                     },
                     {
                       q: 'Docker Compose V1 vs V2',

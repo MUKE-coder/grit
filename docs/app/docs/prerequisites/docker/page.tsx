@@ -70,7 +70,7 @@ const gritComposeExample = `services:
     container_name: myapp-postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5434:5432"
     environment:
       POSTGRES_USER: grit
       POSTGRES_PASSWORD: grit
@@ -89,7 +89,7 @@ const gritComposeExample = `services:
     container_name: myapp-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -104,8 +104,8 @@ const gritComposeExample = `services:
     container_name: myapp-minio
     restart: unless-stopped
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9002:9000"
+      - "9003:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
@@ -133,13 +133,13 @@ const volumeExample = `volumes:
   minio-data:       # Uploaded files`;
 
 const portMappingExample = `ports:
-  - "5432:5432"   # HOST:CONTAINER
+  - "5434:5432"   # HOST:CONTAINER
   #    ^     ^
   #    |     |
   #    |     +-- Port inside the container
   #    +-------- Port on your machine (localhost)
 
-# Your Go API connects to localhost:5432
+# Your Go API connects to localhost:5434
 # which Docker routes to the container's port 5432`;
 
 export default function DockerForGritPage() {
@@ -390,16 +390,16 @@ Docker Compose version v2.x.x`} />
             <div className="space-y-4 mb-6">
               {[
                 {
-                  title: 'PostgreSQL (port 5432)',
+                  title: 'PostgreSQL (port 5434)',
                   desc: 'Your primary relational database. Stores users, resources, and all application data. Grit uses GORM to auto-migrate your Go models into PostgreSQL tables. Default credentials: grit / grit.',
                 },
                 {
-                  title: 'Redis (port 6379)',
+                  title: 'Redis (port 6380)',
                   desc: 'An in-memory data store used for two things: caching API responses (via the cache middleware) and processing background jobs (via the asynq job queue). No authentication required in development.',
                 },
                 {
-                  title: 'MinIO (ports 9000 / 9001)',
-                  desc: 'An S3-compatible object storage server. Handles file uploads like user avatars, documents, and images. Port 9000 is the API endpoint your Go code talks to. Port 9001 is a web console where you can browse files, create buckets, and manage storage. Login: minioadmin / minioadmin.',
+                  title: 'MinIO (ports 9002 / 9003)',
+                  desc: 'An S3-compatible object storage server. Handles file uploads like user avatars, documents, and images. Port 9002 is the API endpoint your Go code talks to. Port 9003 is a web console where you can browse files, create buckets, and manage storage. Login: minioadmin / minioadmin.',
                 },
                 {
                   title: 'Mailhog (ports 1025 / 8025)',
@@ -553,9 +553,9 @@ $ docker compose down`} />
                 container. The syntax is <code>HOST:CONTAINER</code>.
               </p>
               <p>
-                For example, <code>&quot;5432:5432&quot;</code> means &quot;when something connects to port 5432 on my
+                For example, <code>&quot;5434:5432&quot;</code> means &quot;when something connects to port 5434 on my
                 machine, route it to port 5432 inside the container.&quot; Your Go API code
-                uses <code>localhost:5432</code> to talk to PostgreSQL, and Docker transparently routes the traffic
+                uses <code>localhost:5434</code> to talk to PostgreSQL, and Docker transparently routes the traffic
                 to the container.
               </p>
             </div>
@@ -574,23 +574,23 @@ $ docker compose down`} />
                 <tbody className="text-muted-foreground">
                   <tr className="border-b border-border/20">
                     <td className="px-4 py-2.5 font-medium text-foreground/90">PostgreSQL</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">5432:5432</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">localhost:5432</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">5434:5432</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">localhost:5434</td>
                   </tr>
                   <tr className="border-b border-border/20">
                     <td className="px-4 py-2.5 font-medium text-foreground/90">Redis</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">6379:6379</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">localhost:6379</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">6380:6379</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">localhost:6380</td>
                   </tr>
                   <tr className="border-b border-border/20">
                     <td className="px-4 py-2.5 font-medium text-foreground/90">MinIO API</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">9000:9000</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">localhost:9000</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">9002:9000</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">localhost:9002</td>
                   </tr>
                   <tr className="border-b border-border/20">
                     <td className="px-4 py-2.5 font-medium text-foreground/90">MinIO Console</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">9001:9001</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">localhost:9001 (browser)</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">9003:9001</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">localhost:9003 (browser)</td>
                   </tr>
                   <tr className="border-b border-border/20">
                     <td className="px-4 py-2.5 font-medium text-foreground/90">Mailhog SMTP</td>
@@ -609,8 +609,8 @@ $ docker compose down`} />
             <div className="prose-grit mb-4">
               <p>
                 <strong>Port busy?</strong> If a port is already in use, change the host side of the mapping.
-                For example, change <code>&quot;5432:5432&quot;</code> to <code>&quot;5433:5432&quot;</code> and
-                update the <code>DATABASE_URL</code> in your <code>.env</code> file to use port 5433.
+                For example, change <code>&quot;5434:5432&quot;</code> to <code>&quot;5435:5432&quot;</code> and
+                update the <code>POSTGRES_PORT</code> in your <code>.env</code> file to use port 5435.
               </p>
             </div>
 

@@ -271,8 +271,8 @@ export default function DokployPage() {
     build:
       context: ./apps/api
       dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     env_file:
       - .env
     depends_on:
@@ -287,8 +287,8 @@ export default function DokployPage() {
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       - NEXT_PUBLIC_API_URL=\${API_URL}
     restart: unless-stopped
@@ -298,8 +298,8 @@ export default function DokployPage() {
     build:
       context: .
       dockerfile: apps/admin/Dockerfile
-    ports:
-      - "3001:3000"
+    expose:
+      - "3000"
     environment:
       - NEXT_PUBLIC_API_URL=\${API_URL}
     restart: unless-stopped
@@ -342,9 +342,9 @@ export default function DokployPage() {
       MINIO_ROOT_USER: \${STORAGE_ACCESS_KEY:-minioadmin}
       MINIO_ROOT_PASSWORD: \${STORAGE_SECRET_KEY:-minioadmin}
     command: server /data --console-address ":9001"
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+    expose:
+      - "9000"
+      - "9001"
     restart: unless-stopped
 
 volumes:
@@ -356,8 +356,10 @@ volumes:
                   <p className="text-sm text-foreground/80 leading-relaxed">
                     <span className="font-semibold text-primary/90">Note:</span>{' '}
                     Dokploy uses Traefik as a reverse proxy. You do <strong>not</strong> need Caddy or
-                    Nginx &mdash; Dokploy handles routing and SSL automatically. The ports are exposed
-                    so Dokploy can route traffic to each service.
+                    Nginx &mdash; Dokploy handles routing and SSL automatically. Services use{' '}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">expose</code> (not
+                    host <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">ports</code>) so
+                    Traefik can reach each service on the Docker network without publishing it to the host.
                   </p>
                 </div>
 
@@ -386,7 +388,7 @@ volumes:
                   Multi-stage build &mdash; compiles a static Go binary, then copies it into a minimal Alpine image (~15 MB final):
                 </p>
                 <CodeBlock language="dockerfile" filename="apps/api/Dockerfile" code={`# Build stage
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
@@ -421,9 +423,11 @@ CMD ["./server"]`} />
                   The same pattern is used for both <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">apps/web</code> and <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">apps/admin</code>:
                 </p>
                 <CodeBlock language="dockerfile" filename="apps/web/Dockerfile" code={`# Build stage
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 
-RUN corepack enable
+# Pin pnpm — pnpm@latest resolves to pnpm 11 which needs Node 22's node:sqlite
+# builtin. Pinning here avoids surprise breakage on rebuilds.
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 # Install dependencies
 FROM base AS deps
@@ -562,10 +566,11 @@ MAIL_FROM=noreply@yourdomain.com
 # ─── CORS (all frontend origins) ─────────────────────────────
 CORS_ORIGINS=https://yourdomain.com,https://cloud.yourdomain.com,https://ai.yourdomain.com
 
-# ─── AI Provider ─────────────────────────────────────────────
-AI_PROVIDER=claude
-AI_API_KEY=sk-ant-YOUR_CLAUDE_API_KEY
-AI_MODEL=claude-sonnet-4-5-20250929
+# ─── AI (Vercel AI Gateway) ──────────────────────────────────
+# One key, hundreds of models. Get it from vercel.com/ai-gateway
+AI_GATEWAY_API_KEY=YOUR_AI_GATEWAY_KEY
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6
+AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
 
 # ─── Stripe Billing ──────────────────────────────────────────
 STRIPE_SECRET_KEY=sk_live_YOUR_STRIPE_SECRET_KEY

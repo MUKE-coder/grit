@@ -37,7 +37,7 @@ export default function DatabasePage() {
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   PostgreSQL runs via Docker Compose. After starting the containers, your database
-                  is ready at <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">localhost:5432</code>.
+                  is ready at <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">localhost:5434</code>.
                 </p>
                 <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm mb-6">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
@@ -61,10 +61,19 @@ export default function DatabasePage() {
                   Connection String
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  The database connection is configured via the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">DATABASE_URL</code> environment
-                  variable in your <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.env</code> file. The format follows the standard PostgreSQL connection string:
+                  By default the Go API assembles the connection string from the individual{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">POSTGRES_*</code> parts
+                  in your <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">.env</code> file
+                  (<code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">POSTGRES_USER</code>,{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">POSTGRES_PASSWORD</code>,{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">POSTGRES_HOST</code>,{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">POSTGRES_PORT</code>,{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">POSTGRES_DB</code>). Set the
+                  optional <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">DATABASE_URL</code> to
+                  override those parts (e.g. for an external Neon/Supabase/RDS Postgres or SQLite) — when set, it wins.
+                  The resulting connection string follows the standard PostgreSQL format:
                 </p>
-                <CodeBlock language="bash" filename=".env" code={`DATABASE_URL=postgres://grit:grit@localhost:5432/myapp?sslmode=disable`} />
+                <CodeBlock language="bash" filename=".env" code={`DATABASE_URL=postgres://grit:grit@localhost:5434/myapp?sslmode=disable`} />
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   The URL format breakdown:
                 </p>
@@ -90,7 +99,7 @@ export default function DatabasePage() {
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">host:port</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">localhost:5432</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">localhost:5434</td>
                         <td className="px-4 py-2.5">Database server address</td>
                       </tr>
                       <tr className="border-b border-border/20">

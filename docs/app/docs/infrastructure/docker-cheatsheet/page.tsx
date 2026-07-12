@@ -62,7 +62,7 @@ export default function DockerCheatSheetPage() {
                         <td className="px-4 py-2.5 font-medium text-foreground/90">
                           PostgreSQL
                         </td>
-                        <td className="px-4 py-2.5 font-mono text-xs">5432</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">5434</td>
                         <td className="px-4 py-2.5 text-muted-foreground/50">
                           &mdash;
                         </td>
@@ -71,7 +71,7 @@ export default function DockerCheatSheetPage() {
                         <td className="px-4 py-2.5 font-medium text-foreground/90">
                           Redis
                         </td>
-                        <td className="px-4 py-2.5 font-mono text-xs">6379</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">6380</td>
                         <td className="px-4 py-2.5 text-muted-foreground/50">
                           &mdash;
                         </td>
@@ -81,11 +81,11 @@ export default function DockerCheatSheetPage() {
                           MinIO
                         </td>
                         <td className="px-4 py-2.5 font-mono text-xs">
-                          9000 (API), 9001 (Console)
+                          9002 (API), 9003 (Console)
                         </td>
                         <td className="px-4 py-2.5">
                           <code className="text-xs font-mono text-primary/70 bg-primary/5 px-1.5 py-0.5 rounded-md border border-primary/10">
-                            http://localhost:9001
+                            http://localhost:9003
                           </code>
                         </td>
                       </tr>
@@ -419,7 +419,7 @@ export default function DockerCheatSheetPage() {
                     <div className="flex items-center justify-between mb-1.5">
                       <h3 className="text-sm font-semibold">MinIO Console</h3>
                       <code className="text-xs font-mono text-primary/70 bg-primary/5 px-2 py-0.5 rounded-md border border-primary/10">
-                        http://localhost:9001
+                        http://localhost:9003
                       </code>
                     </div>
                     <p className="text-xs text-muted-foreground/70 leading-relaxed">

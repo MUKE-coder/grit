@@ -220,15 +220,15 @@ docker compose up -d`} className="mb-0 glow-purple-sm" />
                 <p>This starts the following services in the background:</p>
                 <ul>
                   <li>
-                    <strong>PostgreSQL 16</strong> on port 5432 -- your primary
+                    <strong>PostgreSQL 16</strong> on port 5434 -- your primary
                     database
                   </li>
                   <li>
-                    <strong>Redis 7</strong> on port 6379 -- caching and job
+                    <strong>Redis 7</strong> on port 6380 -- caching and job
                     queues
                   </li>
                   <li>
-                    <strong>MinIO</strong> on port 9000 (console: 9001) -- local
+                    <strong>MinIO</strong> on port 9002 (console: 9003) -- local
                     S3-compatible file storage
                   </li>
                   <li>
@@ -315,12 +315,12 @@ cd apps/web && pnpm dev`} className="mb-0 glow-purple-sm" />
               <CodeBlock terminal filename="terminal (another tab)" code="cd myapp/apps/admin && pnpm dev" className="mt-4 mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>
-                  Alternatively, you can run everything at once with Turborepo
-                  from the project root:
+                  Alternatively, you can run everything at once from the project
+                  root:
                 </p>
               </div>
               <CodeBlock terminal code={`# From the project root (myapp/)
-turbo dev`} className="mt-4 mb-0 glow-purple-sm" />
+pnpm dev`} className="mt-4 mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>Once started, you can access:</p>
               </div>
@@ -435,7 +435,7 @@ turbo dev`} className="mt-4 mb-0 glow-purple-sm" />
                   It also automatically registers the routes in{" "}
                   <code>routes.go</code>, adds the model to auto-migrations, and
                   injects the resource into the admin sidebar. Restart{" "}
-                  <code>turbo dev</code> and visit the admin panel to see your
+                  <code>pnpm dev</code> and visit the admin panel to see your
                   new Posts resource with a fully functional data table and
                   create form.
                 </p>
@@ -446,7 +446,7 @@ turbo dev`} className="mt-4 mb-0 glow-purple-sm" />
             <div className="mb-10 rounded-xl border border-primary/20 bg-primary/5 p-5">
               <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                 <span className="text-primary">Upgrading?</span>
-                <span className="text-xs font-mono text-primary/60 bg-primary/10 rounded-full px-2 py-0.5">v0.16.0</span>
+                <span className="text-xs font-mono text-primary/60 bg-primary/10 rounded-full px-2 py-0.5">v3.55.0</span>
               </h3>
               <p className="text-[15px] text-muted-foreground mb-3">
                 If you have an existing Grit project and want to update the framework

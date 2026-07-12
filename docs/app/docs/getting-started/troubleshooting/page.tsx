@@ -43,13 +43,13 @@ export default function TroubleshootingPage() {
               <div className="rounded-xl border border-destructive/30 bg-destructive/5 overflow-hidden">
                 <div className="px-5 py-3 border-b border-destructive/20 bg-destructive/10">
                   <code className="text-sm font-mono text-destructive">
-                    Bind for 0.0.0.0:5432 failed: port is already allocated
+                    Bind for 0.0.0.0:5434 failed: port is already allocated
                   </code>
                 </div>
                 <div className="p-5 space-y-4">
                   <div className="prose-grit">
                     <p>
-                      <strong>Cause:</strong> Another PostgreSQL instance or Docker container is using port 5432.
+                      <strong>Cause:</strong> Another PostgreSQL instance or Docker container is using port 5434.
                     </p>
                     <p><strong>Solutions:</strong></p>
                   </div>
@@ -57,7 +57,7 @@ export default function TroubleshootingPage() {
                     <div className="rounded-lg border border-border/30 bg-card/30 p-4">
                       <h4 className="text-sm font-semibold mb-2">Option 1: Stop the conflicting container</h4>
                       <CodeBlock terminal code={`# Find what's using the port
-docker ps --format "table {{.Names}}\\t{{.Ports}}" | grep 5432
+docker ps --format "table {{.Names}}\\t{{.Ports}}" | grep 5434
 
 # Stop the conflicting container
 docker stop <container-name>`} className="mb-0" />
@@ -80,12 +80,12 @@ net stop postgresql-x64-16`} className="mb-0" />
                           Edit <code>docker-compose.yml</code> and change the host port (left side):
                         </p>
                       </div>
-                      <CodeBlock language="yaml" filename="docker-compose.yml" code={`# Change "5432:5432" to "5433:5432"
+                      <CodeBlock language="yaml" filename="docker-compose.yml" code={`# Change "5434:5432" to "5435:5432"
 ports:
-  - "5433:5432"`} className="mt-2 mb-0" />
+  - "5435:5432"`} className="mt-2 mb-0" />
                       <div className="prose-grit mt-2">
                         <p>
-                          Then update <code>.env</code> to match: <code>DB_PORT=5433</code>
+                          Then update <code>.env</code> to match: <code>POSTGRES_PORT=5435</code>
                         </p>
                       </div>
                     </div>
@@ -99,18 +99,18 @@ ports:
               <div className="rounded-xl border border-destructive/30 bg-destructive/5 overflow-hidden">
                 <div className="px-5 py-3 border-b border-destructive/20 bg-destructive/10">
                   <code className="text-sm font-mono text-destructive">
-                    Bind for 0.0.0.0:6379 failed: port is already allocated
+                    Bind for 0.0.0.0:6380 failed: port is already allocated
                   </code>
                 </div>
                 <div className="p-5 space-y-4">
                   <div className="prose-grit">
                     <p>
-                      <strong>Cause:</strong> Another Redis instance or Docker container is using port 6379.
+                      <strong>Cause:</strong> Another Redis instance or Docker container is using port 6380.
                     </p>
                     <p><strong>Fix:</strong> Same approach as PostgreSQL -- find and stop the conflicting
                     container, stop the local Redis service, or remap the port.</p>
                   </div>
-                  <CodeBlock terminal code={`docker ps --format "table {{.Names}}\\t{{.Ports}}" | grep 6379
+                  <CodeBlock terminal code={`docker ps --format "table {{.Names}}\\t{{.Ports}}" | grep 6380
 docker stop <container-name>`} className="mb-0" />
                   <div className="prose-grit">
                     <p>
@@ -176,7 +176,7 @@ lsof -i :8080
 kill -9 <PID>
 
 # Or change the port in .env
-PORT=8081`} className="mb-0" />
+APP_PORT=8081`} className="mb-0" />
                 </div>
               </div>
             </div>
@@ -263,7 +263,7 @@ go mod download`} className="mb-0" />
                       Also verify your <code>.env</code> has the correct database URL:
                     </p>
                   </div>
-                  <CodeBlock language="bash" filename=".env" code="DATABASE_URL=postgres://grit:grit@localhost:5432/grit_dev?sslmode=disable" className="mb-0" />
+                  <CodeBlock language="bash" filename=".env" code="DATABASE_URL=postgres://grit:grit@localhost:5434/myapp?sslmode=disable" className="mb-0" />
                 </div>
               </div>
             </div>
@@ -273,7 +273,7 @@ go mod download`} className="mb-0" />
               <div className="rounded-xl border border-destructive/30 bg-destructive/5 overflow-hidden">
                 <div className="px-5 py-3 border-b border-destructive/20 bg-destructive/10">
                   <code className="text-sm font-mono text-destructive">
-                    redis: dial tcp localhost:6379: connection refused
+                    redis: dial tcp localhost:6380: connection refused
                   </code>
                 </div>
                 <div className="p-5 space-y-4">

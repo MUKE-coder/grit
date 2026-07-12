@@ -70,7 +70,7 @@ export default function StoragePage() {
                       <tr>
                         <td className="px-4 py-2.5 font-medium">MinIO</td>
                         <td className="px-4 py-2.5">Local development</td>
-                        <td className="px-4 py-2.5 font-mono text-xs">http://localhost:9000</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">http://localhost:9002</td>
                       </tr>
                     </tbody>
                   </table>
@@ -98,7 +98,7 @@ export default function StoragePage() {
 STORAGE_DRIVER=minio
 
 # MinIO — local dev (default)
-MINIO_ENDPOINT=http://localhost:9000
+MINIO_ENDPOINT=http://localhost:9002
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
 MINIO_BUCKET=myapp-uploads
@@ -166,7 +166,7 @@ err := store.Upload(ctx, "uploads/2026/01/avatar.jpg", fileReader, "image/jpeg")
 
 // Get the public URL
 url := store.GetURL("uploads/2026/01/avatar.jpg")
-// -> http://localhost:9000/myapp-uploads/uploads/2026/01/avatar.jpg
+// -> http://localhost:9002/myapp-uploads/uploads/2026/01/avatar.jpg
 
 // Generate a signed URL (expires in 1 hour)
 signedURL, err := store.GetSignedURL(ctx, "uploads/2026/01/avatar.jpg", time.Hour)

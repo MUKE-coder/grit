@@ -374,10 +374,10 @@ R2_BUCKET=myapp-uploads
 RESEND_API_KEY=re_your_api_key
 MAIL_FROM=noreply@yourdomain.com
 
-# AI (optional)
-AI_PROVIDER=claude
-AI_API_KEY=sk-ant-xxxxx
-AI_MODEL=claude-sonnet-4-5-20250929
+# AI (optional — Vercel AI Gateway)
+AI_GATEWAY_API_KEY=your-gateway-key
+AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6
+AI_GATEWAY_URL=https://ai-gateway.vercel.sh/v1
 
 # Disable GORM Studio in production
 GORM_STUDIO_ENABLED=false`} />
@@ -474,6 +474,20 @@ GORM_STUDIO_ENABLED=false`} />
                   The first build may take a few minutes as Docker builds the Go binary and Next.js apps.
                 </p>
 
+                <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 mb-6">
+                  <p className="text-sm text-foreground/80 leading-relaxed">
+                    <span className="font-semibold text-primary/90">Expose-only, no host ports:</span>{' '}
+                    The scaffolded <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">docker-compose.prod.yml</code> uses{' '}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">expose</code> (not host{' '}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">ports</code>) &mdash; the API listens on{' '}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">8080</code> and both the web and admin
+                    containers listen on <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">3000</code> internally,
+                    with nothing published to the host. Traffic reaches them only through a reverse proxy on the same Docker
+                    network. If you run Caddy natively on the host (as below), either run it inside the compose network or add
+                    host <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">ports</code> for the services you proxy to.
+                  </p>
+                </div>
+
                 <h3 className="text-lg font-semibold tracking-tight mb-3">
                   What the production build does
                 </h3>
@@ -481,7 +495,7 @@ GORM_STUDIO_ENABLED=false`} />
                   {[
                     { label: 'Go API', desc: 'Multi-stage build: compiles to a single static binary (~15MB), runs in a minimal distroless container' },
                     { label: 'Next.js Web', desc: 'Builds with standalone output mode, creating a minimal Node.js server' },
-                    { label: 'Next.js Admin', desc: 'Same as web, built as a separate service on port 3001' },
+                    { label: 'Next.js Admin', desc: 'Same as web, built as a separate service (listens on port 3000 inside its container)' },
                     { label: 'PostgreSQL', desc: 'Persistent volume for data, configured with production settings' },
                     { label: 'Redis', desc: 'In-memory cache and job queue, configured with maxmemory and eviction policy' },
                   ].map((item) => (
