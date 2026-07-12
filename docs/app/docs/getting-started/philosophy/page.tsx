@@ -246,9 +246,9 @@ export default function PhilosophyPage() {
                   rendering, static generation, and streaming -- all built on React.
                 </li>
                 <li>
-                  <strong>React Native:</strong> With Grit&apos;s <code>--full</code> flag, you can add
-                  an Expo mobile app that shares types and validation with the web frontend. Same
-                  language, same patterns, mobile and web.
+                  <strong>React Native:</strong> With Grit&apos;s <code>--mobile</code> (or{' '}
+                  <code>--expo</code>) flag, you can add an Expo mobile app that shares types and
+                  validation with the web frontend. Same language, same patterns, mobile and web.
                 </li>
               </ul>
 

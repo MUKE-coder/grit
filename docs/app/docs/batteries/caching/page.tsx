@@ -86,15 +86,15 @@ func (c *Cache) Close() error`} />
                   You can cache any Go struct, slice, map, or primitive type.
                 </p>
 
-                <CodeBlock filename="cache-examples.go" code={`// Cache a single struct
-user := models.User{ID: 1, Name: "John", Email: "john@example.com"}
-err := cache.Set(ctx, "user:1", user, 10*time.Minute)
+                <CodeBlock filename="cache-examples.go" code={`// Cache a single struct (User IDs are UUID strings)
+user := models.User{ID: "9b1deb4d-...", FirstName: "John", Email: "john@example.com"}
+err := cache.Set(ctx, "user:"+user.ID, user, 10*time.Minute)
 
 // Retrieve it
 var cachedUser models.User
-found, err := cache.Get(ctx, "user:1", &cachedUser)
+found, err := cache.Get(ctx, "user:"+user.ID, &cachedUser)
 if found {
-    fmt.Println(cachedUser.Name) // "John"
+    fmt.Println(cachedUser.FirstName) // "John"
 }
 
 // Cache a slice
