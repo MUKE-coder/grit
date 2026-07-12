@@ -24,6 +24,21 @@ function isImage(f: FileRef): boolean {
   return !!f.thumbnail_url || (f.mime ?? "").startsWith("image/");
 }
 
+// A ref whose url is an inline data: URL hasn't been uploaded yet — it was
+// picked offline and is waiting for the reconnect reconciler.
+function isPending(f: FileRef): boolean {
+  return typeof f.url === "string" && f.url.startsWith("data:");
+}
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
 export function FileDropzone({ value, onChange, multiple, accept, label }: FileDropzoneProps) {
   const { status } = useSyncStatus();
   const online = status.reachable && !status.force_offline;
@@ -41,21 +56,25 @@ export function FileDropzone({ value, onChange, multiple, accept, label }: FileD
 
   const handleFiles = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
-    if (!online) {
-      setError("You're offline — reconnect to upload files.");
-      return;
-    }
     setError(null);
     setBusy(true);
     try {
       const picked = multiple ? Array.from(fileList) : [fileList[0]];
-      const uploaded: FileRef[] = [];
+      const refs: FileRef[] = [];
       for (const file of picked) {
-        uploaded.push(await uploadFile(file));
+        if (online) {
+          refs.push(await uploadFile(file));
+        } else {
+          // Offline: keep the file inline as a data: URL so it saves and
+          // renders now. usePendingUploads() uploads it and swaps in the real
+          // FileRef once the connection is back.
+          const dataUrl = await readAsDataUrl(file);
+          refs.push({ url: dataUrl, name: file.name, mime: file.type, size: file.size });
+        }
       }
-      emit(multiple ? [...items, ...uploaded] : uploaded);
+      emit(multiple ? [...items, ...refs] : refs);
     } catch {
-      setError("Upload failed. Check your connection and try again.");
+      setError(online ? "Upload failed. Check your connection and try again." : "Could not read that file.");
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -69,13 +88,12 @@ export function FileDropzone({ value, onChange, multiple, accept, label }: FileD
       {label && <label className="mb-1.5 block text-[13px] font-medium text-foreground">{label}</label>}
 
       <div
-        onClick={() => online && inputRef.current?.click()}
-        onDragOver={(e) => { e.preventDefault(); if (online) setDragging(true); }}
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
         className={cn(
-          "flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors",
-          online ? "cursor-pointer" : "cursor-not-allowed opacity-60",
+          "flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors",
           dragging ? "border-accent bg-accent/5" : "border-border hover:border-accent/50 hover:bg-surface-hover/30",
         )}
       >
@@ -95,7 +113,7 @@ export function FileDropzone({ value, onChange, multiple, accept, label }: FileD
           </span>
         )}
         <p className="mt-2 text-[12px] text-foreground-secondary">
-          {online ? "Click or drag to upload" : "Offline — reconnect to upload"}
+          {online ? "Click or drag to upload" : "Click or drag — uploads when you reconnect"}
         </p>
       </div>
 
@@ -113,6 +131,9 @@ export function FileDropzone({ value, onChange, multiple, accept, label }: FileD
                 </span>
               )}
               <span className="min-w-0 flex-1 truncate text-[13px] text-foreground">{f.name}</span>
+              {isPending(f) && (
+                <span className="shrink-0 rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning">Pending</span>
+              )}
               <button
                 type="button"
                 onClick={() => removeAt(i)}

@@ -28,6 +28,40 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.51.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.51.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The desktop app now accepts file uploads while
+                  offline.</strong> Previously the dropzone disabled itself with a
+                  &quot;reconnect to upload&quot; hint; now you can add images and
+                  files any time.
+                </p>
+                <p>
+                  Offline, a picked file is kept inline as a data URL — so it saves
+                  with the record and its thumbnail shows immediately, tagged{' '}
+                  <strong>Pending</strong>. When the connection returns, a background
+                  reconciler (<code>usePendingUploads</code>) scans the local mirror
+                  for those pending files, uploads each to <code>/uploads</code>, and
+                  swaps in the real file reference — then the normal sync pushes the
+                  corrected record. No lost uploads, no blocked workflow.
+                </p>
+                <p>
+                  Existing projects: <code>grit update</code> and re-generate.
+                  Verified on a fresh scaffold: the dropzone is interactive with zero
+                  console errors and builds clean; the offline round-trip runs in the
+                  live desktop app.
+                </p>
+              </div>
+            </div>
+
             {/* v3.50.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
