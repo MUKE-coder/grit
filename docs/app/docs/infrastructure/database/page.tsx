@@ -29,6 +29,16 @@ export default function DatabasePage() {
               </p>
             </div>
 
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                <strong className="text-foreground">Go deeper:</strong>{' '}
+                <Link href="/courses/gorm-mastery" className="text-primary hover:underline">Database Mastery</Link>{' '}
+                covers GORM models, migrations and queries in depth, and{' '}
+                <Link href="/courses/gorm-studio" className="text-primary hover:underline">GORM Studio</Link>{' '}
+                is a full tour of the visual database browser at <code>/studio</code>.
+              </p>
+            </div>
+
             <div className="prose-grit">
               {/* PostgreSQL Setup */}
               <div className="mb-12">

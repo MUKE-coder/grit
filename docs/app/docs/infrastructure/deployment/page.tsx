@@ -30,6 +30,16 @@ export default function DeploymentPage() {
               </p>
             </div>
 
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                <strong className="text-foreground">Go deeper:</strong> the{' '}
+                <Link href="/courses/deployment-guide" className="text-primary hover:underline">Deployment Guide</Link>{' '}
+                course covers Dokploy, VPS and Vercel targets, and{' '}
+                <Link href="/courses/cicd-github" className="text-primary hover:underline">CI/CD with GitHub Actions</Link>{' '}
+                automates the whole pipeline.
+              </p>
+            </div>
+
             <div className="prose-grit">
 
               {/* Table of Contents */}

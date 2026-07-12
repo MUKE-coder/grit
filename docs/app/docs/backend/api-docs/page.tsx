@@ -31,6 +31,16 @@ export default function APIDocsPage() {
               </p>
             </div>
 
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                <strong className="text-foreground">Go deeper:</strong> the{' '}
+                <Link href="/courses/api-docs-scalar" className="text-primary hover:underline">API Docs: Scalar &amp; Swagger</Link>{' '}
+                course covers the doc UI end to end, and{' '}
+                <Link href="/courses/api-masterclass" className="text-primary hover:underline">API-Only Masterclass</Link>{' '}
+                builds a full REST API from scratch.
+              </p>
+            </div>
+
             <div className="prose-grit">
               {/* How It Works */}
               <div className="mb-12">
