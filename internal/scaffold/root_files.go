@@ -46,6 +46,7 @@ func writeRootFiles(root string, opts Options) error {
 		files[filepath.Join(root, "package.json")] = rootPackageJSON(opts)
 		files[filepath.Join(root, "grit.config.ts")] = gritConfig(opts)
 		files[filepath.Join(root, "postcss.config.mjs")] = rootPostCSSConfig()
+		files[filepath.Join(root, ".npmrc")] = rootNpmrc()
 	}
 
 	for path, content := range files {
@@ -544,7 +545,30 @@ func pnpmWorkspace(includeDesktop bool) string {
 		ws += `  - "apps/desktop/frontend"
 `
 	}
+	// pnpm 10 reads dependency overrides from here (the package.json "pnpm"
+	// field is ignored). Pin a single React so every workspace package shares
+	// one copy — multiple React instances break hooks.
+	ws += `
+overrides:
+  react: 19.1.0
+  react-dom: 19.1.0
+`
 	return ws
+}
+
+// rootNpmrc pins pnpm to a flat (hoisted) node_modules. Next.js Turbopack
+// can't resolve packages that live only in a nested pnpm dependency — most
+// visibly @tiptap/starter-kit's transitive extension packages (the rich-text
+// editor), which makes `next build` fail with "Can't resolve
+// '@tiptap/extension-horizontal-rule'". A hoisted layout puts every dependency
+// where Turbopack (and any other tool that assumes an npm-style tree) can find
+// it. Vite and the Go tooling are unaffected.
+func rootNpmrc() string {
+	return `# Flat node_modules so Next.js Turbopack can resolve every dependency,
+# including transitive ones (e.g. tiptap starter-kit's extension packages).
+# pnpm's default nested layout hides transitive deps from Turbopack's resolver.
+node-linker=hoisted
+`
 }
 
 func turboJSON() string {
@@ -628,17 +652,9 @@ func rootPackageJSON(opts Options) string {
 	// otherwise, and the app renders a blank screen with no other clue.
 	//
 	// apps/expo pins react to 19.1.0 (React Native requires an exact match), so
-	// pnpm dedupes every "^19.0.0" down to 19.1.0 — but nothing constrains
-	// react-dom, which floats to the latest 19.x. That mismatch silently breaks
-	// web, admin and the desktop client. Pin both here, workspace-wide.
-	overrides := `,
-  "pnpm": {
-    "overrides": {
-      "react": "19.1.0",
-      "react-dom": "19.1.0"
-    }
-  }`
-
+	// React version pinning lives in pnpm-workspace.yaml (see pnpmWorkspace):
+	// pnpm 10 ignores the package.json "pnpm.overrides" field, so keeping it
+	// here would only print a deprecation warning on every install.
 	return fmt.Sprintf(`{
   "name": "%s",
   "private": true,
@@ -649,9 +665,9 @@ func rootPackageJSON(opts Options) string {
     "@playwright/test": "^1.48.0",
     "turbo": "^2.0.0"
   },
-  "packageManager": "pnpm@10.0.0"%s
+  "packageManager": "pnpm@10.0.0"
 }
-`, opts.ProjectName, scripts, overrides)
+`, opts.ProjectName, scripts)
 }
 
 func gritConfig(opts Options) string {

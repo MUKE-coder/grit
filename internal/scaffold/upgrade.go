@@ -54,6 +54,7 @@ func Upgrade(uOpts UpgradeOptions) error {
 	rootFiles := map[string]string{
 		filepath.Join(root, "turbo.json"):          turboJSON(),
 		filepath.Join(root, "pnpm-workspace.yaml"): pnpmWorkspace(dirExists(filepath.Join(root, "apps", "desktop", "frontend"))),
+		filepath.Join(root, ".npmrc"):              rootNpmrc(),
 	}
 	n, err := writeUpgradeFiles(rootFiles, uOpts.Force)
 	if err != nil {

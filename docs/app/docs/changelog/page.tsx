@@ -28,6 +28,62 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.52.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.52.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The admin panel builds for production again, and installs
+                  are quieter.</strong> Three infrastructure fixes so{' '}
+                  <code>next build</code> (and <code>grit build</code>) succeed on a
+                  fresh app.
+                </p>
+                <ul>
+                  <li>
+                    <strong>Tiptap / Turbopack resolution.</strong> A new root{' '}
+                    <code>.npmrc</code> sets <code>node-linker=hoisted</code>.
+                    Next.js Turbopack couldn&apos;t resolve packages that live only
+                    in a nested pnpm dependency — most visibly{' '}
+                    <code>@tiptap/starter-kit</code>&apos;s transitive extension
+                    packages (the rich-text editor), which failed the build with
+                    &quot;Can&apos;t resolve
+                    &lsquo;@tiptap/extension-horizontal-rule&rsquo;&quot;. A flat
+                    layout puts every dependency where Turbopack can find it.
+                  </li>
+                  <li>
+                    <strong>Test configs excluded from the build type-check.</strong>{' '}
+                    The admin/web <code>tsconfig</code> now excludes{' '}
+                    <code>vitest.config.ts</code>, Playwright config and test files,
+                    so a Vitest-vs-app Vite version mismatch can&apos;t fail the
+                    production type-check.
+                  </li>
+                  <li>
+                    <strong>pnpm 10 overrides.</strong> The React version pin moved
+                    from the (now-ignored) package.json <code>pnpm.overrides</code>{' '}
+                    field to <code>pnpm-workspace.yaml</code>, so it actually applies
+                    and the deprecation warning is gone.
+                  </li>
+                </ul>
+                <p>
+                  Verified end to end on a fresh <code>--full</code> scaffold: the
+                  admin <code>next build</code> compiles and generates all pages, and
+                  the desktop Vite build passes.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Updating an existing app? <code>grit update</code> writes the new{' '}
+                  <code>.npmrc</code>, workspace overrides and tsconfig — then run{' '}
+                  <code>rm -rf node_modules &amp;&amp; pnpm install</code> once so the
+                  hoisted layout takes effect.
+                </p>
+              </div>
+            </div>
+
             {/* v3.51.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
