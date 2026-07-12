@@ -24,9 +24,11 @@ export default function MigrationsPage() {
                 Migrations
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Grit uses GORM&apos;s migration system with a smart wrapper that only creates tables
-                that don&apos;t exist yet. Migrations run as a separate command &mdash; not on server startup &mdash; giving
-                you full control over when your database schema changes.
+                Grit wraps GORM&apos;s <code>AutoMigrate</code> with a diff-logging runner:
+                it creates any missing tables <em>and</em> adds new columns to tables that
+                already exist, then prints exactly what changed &mdash; created, altered, or
+                unchanged. Migrations run as a separate command, never on server startup, so
+                you stay in control of when your schema changes.
               </p>
             </div>
 
@@ -47,13 +49,13 @@ export default function MigrationsPage() {
                   language="text"
                   filename="first run"
                   code={`  models.Models()          grit migrate            grit seed
-   (the registry)     →     creates missing   →     fills tables
-                            tables only              (idempotent)
+   (the registry)     →   create tables +    →     fills tables
+                          add new columns          (idempotent)
         │                        │                        │
-   &User{}, &Upload{},     ✓ User    (skip)        SeedUsers  → admin + demo
-   &Category{},            ✓ Upload  (skip)        SeedBlogs  → sample posts
-   &Product{}, …           ✓ Category (created)    SeedCategories / SeedProducts
-   // grit:models          ✓ Product  (created)    // grit:seeders
+   &User{}, &Upload{},     + created User          SeedUsers  → admin + demo
+   &Category{},            ~ Blog +2 columns       SeedBlogs  → sample posts
+   &Product{}, …           + created Category      SeedCategories / SeedProducts
+   // grit:models          unchanged: Upload …     // grit:seeders
         │                        │                        │
         └──── generate resource adds an entry to BOTH lists automatically ────┘`}
                 />
@@ -82,20 +84,23 @@ export default function MigrationsPage() {
                 />
 
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  The migrate command connects to your database, checks which tables already exist,
-                  and only creates the ones that are missing. You&apos;ll see output like:
+                  The migrate command connects to your database and runs{' '}
+                  <code>AutoMigrate</code> for every registered model &mdash; creating
+                  missing tables and adding any new columns to existing ones. It snapshots
+                  the columns before and after, so the log tells you exactly what changed:
                 </p>
 
                 <CodeBlock
                   language="bash"
                   filename="output"
-                  code={`Database connected successfully
-Running migrations...
-  ✓ models.User — already exists, skipping
-  ✓ models.Upload — already exists, skipping
-  ✓ models.Category — created
-Migrated 1 table(s).
-Migrations completed successfully.`}
+                  code={`================================================================
+DATABASE MIGRATION — 8 model(s) registered
+================================================================
+  + created models.Category
+  ~ models.User — added 2 column(s): job_title, bio
+----------------------------------------------------------------
+Migration done — 1 table(s) created, 1 altered (+2 column(s)), 6 unchanged.
+================================================================`}
                 />
               </div>
 
@@ -124,39 +129,67 @@ func Models() []interface{} {
     }
 }
 
-// Migrate runs database migrations only for tables that don't exist yet.
+// Migrate runs AutoMigrate for every registered model. For tables that
+// already exist, GORM ALTERs them to add missing columns — we snapshot
+// the column set before and after so the log surfaces exactly what changed.
 func Migrate(db *gorm.DB) error {
     models := Models()
-    migrated := 0
+    created, altered, columnsAdded, unchanged := 0, 0, 0, 0
 
     for _, model := range models {
-        if db.Migrator().HasTable(model) {
-            log.Printf("  ✓ %T — already exists, skipping", model)
-            continue
+        existed := db.Migrator().HasTable(model)
+
+        // Snapshot columns before, so we can diff what AutoMigrate adds.
+        before := map[string]bool{}
+        if existed {
+            cols, _ := db.Migrator().ColumnTypes(model)
+            for _, c := range cols {
+                before[c.Name()] = true
+            }
         }
 
         if err := db.AutoMigrate(model); err != nil {
             return fmt.Errorf("migrating %T: %w", model, err)
         }
-        log.Printf("  ✓ %T — created", model)
-        migrated++
+
+        if !existed {
+            log.Printf("  + created %T", model)
+            created++
+            continue
+        }
+
+        // Diff columns to surface anything AutoMigrate added.
+        after, _ := db.Migrator().ColumnTypes(model)
+        var added []string
+        for _, c := range after {
+            if !before[c.Name()] {
+                added = append(added, c.Name())
+            }
+        }
+        if len(added) == 0 {
+            unchanged++
+            continue
+        }
+        log.Printf("  ~ %T — added %d column(s): %s", model, len(added), strings.Join(added, ", "))
+        altered++
+        columnsAdded += len(added)
     }
 
-    if migrated == 0 {
-        log.Println("All tables are up to date — nothing to migrate.")
-    } else {
-        log.Printf("Migrated %d table(s).", migrated)
-    }
-
+    log.Printf("Migration done — %d created, %d altered (+%d column(s)), %d unchanged.",
+        created, altered, columnsAdded, unchanged)
     return nil
 }`}
                 />
 
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  For each model, <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Migrate()</code> calls{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">db.Migrator().HasTable()</code> first.
-                  If the table already exists, it skips it entirely. Only new tables get created via{' '}
+                  Every model is passed through{' '}
                   <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">AutoMigrate</code>.
+                  A brand-new table is <strong>created</strong>; an existing table is{' '}
+                  <strong>altered</strong> to add any new columns your struct gained (GORM
+                  never drops columns or changes existing types). By snapshotting the columns
+                  before and after, the runner can print a precise{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">created / altered / unchanged</code>{' '}
+                  summary instead of migrating silently.
                 </p>
               </div>
 
@@ -342,11 +375,9 @@ func DropAll(db *gorm.DB) error {
                 <CodeBlock
                   language="bash"
                   filename="output"
-                  code={`Running migrations...
-  ✓ models.User — already exists, skipping
-  ✓ models.Upload — already exists, skipping
-  ✓ models.Category — created
-Migrated 1 table(s).`}
+                  code={`DATABASE MIGRATION — 3 model(s) registered
+  + created models.Category
+Migration done — 1 created, 0 altered (+0 column(s)), 2 unchanged.`}
                 />
               </div>
 
