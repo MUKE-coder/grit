@@ -28,6 +28,43 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.49.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.49.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Desktop sidebar cleanup + a bottom user menu, and a
+                  console-warning fix in the admin.</strong>
+                </p>
+                <p>
+                  The desktop <strong>System</strong> section was overloaded; it now
+                  shows just System Health, Security and System Hub — Performance,
+                  File Storage, Background Jobs, Cron and Dashboard settings are one
+                  click away from the Hub. The <strong>Blogs</strong> resource was
+                  removed from the desktop. And the sidebar now has a proper{' '}
+                  <strong>bottom-left user menu</strong> (avatar + name/email →
+                  Profile, Settings, Log out), matching the admin.
+                </p>
+                <p>
+                  Admin: the table&apos;s image/video cells rendered{' '}
+                  <code>&lt;img src=&quot;&quot;&gt;</code> for records with no image,
+                  which makes the browser re-request the page and logs a warning.
+                  Those cells now show a dash for empty values.
+                </p>
+                <p>
+                  Existing projects: <code>grit update</code>. Verified: the desktop
+                  nav is trimmed, the user menu opens with Profile/Settings/Log out,
+                  zero console errors.
+                </p>
+              </div>
+            </div>
+
             {/* v3.48.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

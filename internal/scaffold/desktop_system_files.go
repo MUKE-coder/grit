@@ -94,7 +94,7 @@ func desktopClientSystemHubPage() string {
 	return `import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Activity, TrendingUp, Shield, Bell, MessageSquare, Settings,
-  Users, FileText, HardDrive, Boxes, CalendarClock, type LucideIcon,
+  Users, HardDrive, Boxes, CalendarClock, type LucideIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 
@@ -113,7 +113,6 @@ const TILES: { to: string; title: string; description: string; icon: LucideIcon 
   { to: "/app/system/support", title: "Support", description: "Tickets & conversations", icon: MessageSquare },
   { to: "/app/system/notifications", title: "Notifications", description: "System & security alerts", icon: Bell },
   { to: "/app/system/users", title: "Users", description: "Manage accounts & roles", icon: Users },
-  { to: "/app/system/blogs", title: "Blogs", description: "Write & publish posts", icon: FileText },
   { to: "/app/system/dashboard-settings", title: "Dashboard settings", description: "Customize your dashboard widgets", icon: Settings },
 ];
 

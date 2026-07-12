@@ -69,8 +69,6 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.health.tsx"):             desktopClientSystemHealthPage(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.performance.tsx"):        desktopClientSystemPerformancePage(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.security.tsx"):           desktopClientSystemSecurityPage(),
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.blogs.tsx"):              desktopClientSystemBlogsPage(),
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.blogs.$id.tsx"):          desktopClientSystemBlogDetailPage(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.support.tsx"):            desktopClientSystemSupportPage(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.support.$id.tsx"):        desktopClientSystemSupportThreadPage(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.dashboard-settings.tsx"): desktopClientSystemDashboardSettingsPage(),

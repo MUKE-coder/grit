@@ -908,21 +908,14 @@ export function StatusBadge({ status, variant, label, className }: StatusBadgePr
 func desktopClientNavConfig() string {
 	return `import {
   Home,
-  User,
-  Settings,
   Box,
   RefreshCw,
   Users,
-  FileText,
   Activity,
   MessageSquare,
   Bell,
-  TrendingUp,
   Shield,
   LayoutGrid,
-  HardDrive,
-  Boxes,
-  CalendarClock,
   type LucideIcon,
 } from "lucide-react";
 
@@ -969,16 +962,13 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    // Only a few high-signal links live in the sidebar; the rest
+    // (Performance, File Storage, Background Jobs, Cron, Dashboard settings)
+    // are one click away from the System Hub.
     title: "System",
     items: [
-      { to: "/app/system/blogs", label: "Blogs", icon: FileText },
-      { to: "/app/system/dashboard-settings", label: "Dashboard settings", icon: Settings },
       { to: "/app/system/health", label: "System Health", icon: Activity },
-      { to: "/app/system/performance", label: "Performance", icon: TrendingUp },
       { to: "/app/system/security", label: "Security", icon: Shield },
-      { to: "/app/system/files", label: "File Storage", icon: HardDrive },
-      { to: "/app/system/jobs", label: "Background Jobs", icon: Boxes },
-      { to: "/app/system/cron", label: "Cron Schedules", icon: CalendarClock },
       { to: "/app/system", label: "System Hub", icon: LayoutGrid },
     ],
   },
@@ -986,8 +976,6 @@ export const NAV_SECTIONS: NavSection[] = [
     title: "Account",
     items: [
       { to: "/app/sync", label: "Sync", icon: RefreshCw },
-      { to: "/app/profile", label: "Profile", icon: User },
-      { to: "/app/settings", label: "Settings", icon: Settings },
     ],
   },
 ];
@@ -1003,11 +991,12 @@ void Box;
 // from nav-config.ts so `grit generate resource` only edits one file.
 func desktopClientSidebarV2() string {
 	return `import { useEffect, useState } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { ChevronLeft, ChevronRight, ChevronsUpDown, User, Settings, LogOut } from "lucide-react";
 import { brand } from "@repo/shared/brand.config";
 import { cn } from "@/lib/utils";
 import { NAV_SECTIONS } from "@/lib/nav-config";
+import { useMe, useLogout } from "@/hooks/use-auth";
 
 export function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -1100,12 +1089,65 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {!collapsed && (
-        <div className="border-t border-border-subtle px-4 py-3 text-[11px] text-foreground-muted">
-          Built with Grit
-        </div>
-      )}
+      <SidebarUserMenu collapsed={collapsed} />
     </aside>
+  );
+}
+
+// SidebarUserMenu is the bottom-left account menu (mirrors the admin sidebar):
+// avatar + name/email with a popover for Profile, Settings and Log out.
+function SidebarUserMenu({ collapsed }: { collapsed: boolean }) {
+  const { data: user } = useMe();
+  const { mutate: logout } = useLogout();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+
+  const initial = user?.first_name?.charAt(0)?.toUpperCase() || "?";
+
+  return (
+    <div className="relative border-t border-border-subtle p-2">
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute bottom-full left-2 right-2 z-40 mb-1 overflow-hidden rounded-xl border border-border bg-surface-3 shadow-xl">
+            <div className="border-b border-border-subtle px-3 py-2.5">
+              <p className="truncate text-[13px] font-semibold text-foreground">{user?.first_name} {user?.last_name}</p>
+              <p className="truncate text-[12px] text-foreground-muted">{user?.email}</p>
+            </div>
+            <div className="p-1">
+              <button onClick={() => { setOpen(false); navigate({ to: "/app/profile" }); }} className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] text-foreground-secondary hover:bg-surface-hover hover:text-foreground">
+                <User className="h-4 w-4" /> Profile
+              </button>
+              <button onClick={() => { setOpen(false); navigate({ to: "/app/settings" }); }} className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] text-foreground-secondary hover:bg-surface-hover hover:text-foreground">
+                <Settings className="h-4 w-4" /> Settings
+              </button>
+              <button onClick={() => { setOpen(false); logout(undefined, { onSuccess: () => navigate({ to: "/auth/login" }) }); }} className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-[13px] text-danger hover:bg-danger/10">
+                <LogOut className="h-4 w-4" /> Log out
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+      <button
+        onClick={() => setOpen((o) => !o)}
+        title={collapsed ? (user?.email ?? "Account") : undefined}
+        className={cn(
+          "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-surface-hover",
+          collapsed && "justify-center px-0",
+        )}
+      >
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/20 text-[13px] font-semibold text-accent">{initial}</span>
+        {!collapsed && (
+          <>
+            <span className="min-w-0 flex-1 text-left">
+              <span className="block truncate text-[13px] font-medium text-foreground">{user?.first_name} {user?.last_name}</span>
+              <span className="block truncate text-[11px] text-foreground-muted">{user?.email}</span>
+            </span>
+            <ChevronsUpDown className="h-4 w-4 shrink-0 text-foreground-muted" />
+          </>
+        )}
+      </button>
+    </div>
   );
 }
 `

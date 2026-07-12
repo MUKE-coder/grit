@@ -443,6 +443,11 @@ function RelativeCell({ value }: { value: string }) {
 }
 
 function ImageCell({ value }: { value: string }) {
+  // Guard empty/invalid values — rendering <img src=""> makes the browser
+  // re-request the whole page and logs a console warning.
+  if (!value || value === "null" || value === "undefined") {
+    return <span className="text-text-muted">—</span>;
+  }
   return (
     <img
       src={value}
@@ -453,6 +458,9 @@ function ImageCell({ value }: { value: string }) {
 }
 
 function VideoCell({ value }: { value: string }) {
+  if (!value || value === "null" || value === "undefined") {
+    return <span className="text-text-muted">—</span>;
+  }
   return (
     <div className="relative h-10 w-16 rounded overflow-hidden bg-bg-tertiary">
       <video src={value} className="h-full w-full object-cover" muted />
