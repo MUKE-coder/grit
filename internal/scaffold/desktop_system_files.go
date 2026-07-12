@@ -151,6 +151,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/layout/page-header";
 import { DataTable, type DataColumn } from "@/components/tables/data-table";
 import { ResourceDrawer } from "@/components/resource-drawer";
+import { useConfirm } from "@/components/confirm-dialog";
 import { apiClient } from "@/lib/api-client";
 
 export const Route = createFileRoute("/app/system/users")({
@@ -172,6 +173,7 @@ const inputCls =
 
 function SystemUsersPage() {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const [drawer, setDrawer] = useState<{ open: boolean; record: UserRow | null }>({ open: false, record: null });
 
   const { data = [], isLoading } = useQuery<UserRow[]>({
@@ -216,8 +218,8 @@ function SystemUsersPage() {
           searchKeys={["name", "email", "role"]}
           onNew={() => setDrawer({ open: true, record: null })}
           onEdit={(row) => setDrawer({ open: true, record: row })}
-          onDelete={(row) => { if (confirm("Delete this user?")) del.mutate(String(row.id)); }}
-          onBulkDelete={(rows) => { if (confirm("Delete " + rows.length + " users?")) rows.forEach((r) => del.mutate(String(r.id))); }}
+          onDelete={async (row) => { if (await confirm({ title: "Delete user", message: "This will permanently delete this account.", danger: true, confirmLabel: "Delete" })) del.mutate(String(row.id)); }}
+          onBulkDelete={async (rows) => { if (await confirm({ title: "Delete users", message: "Delete " + rows.length + " user(s)? This cannot be undone.", danger: true, confirmLabel: "Delete" })) rows.forEach((r) => del.mutate(String(r.id))); }}
         />
       </div>
 

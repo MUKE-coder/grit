@@ -28,6 +28,62 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.50.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.50.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Desktop form polish: real confirm dialogs, searchable
+                  relationship pickers, comma-formatted numbers, relationship
+                  columns show names, and offline rows fill in their slug/created
+                  date.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>Confirm dialogs</strong> — deletes used the native{' '}
+                    <code>window.confirm</code>, which in Wails shows an ugly
+                    &quot;wails.localhost says&quot; box. They now use a styled,
+                    promise-based confirm modal (matching the admin), wired into
+                    resource deletes, bulk delete, Users, and account deletion.
+                  </li>
+                  <li>
+                    <strong>Searchable selects</strong> — relationship
+                    (belongs-to) pickers, like a product&apos;s Category, are now a
+                    typeahead combobox instead of a native dropdown.
+                  </li>
+                  <li>
+                    <strong>Number formatting</strong> — int/float inputs group with
+                    thousands separators as you type (1000000 → 1,000,000), while
+                    still storing a clean number.
+                  </li>
+                  <li>
+                    <strong>Relationship columns</strong> — a table&apos;s belongs-to
+                    column now shows the related record&apos;s name instead of the raw
+                    id (resolved client-side from the offline mirror).
+                  </li>
+                  <li>
+                    <strong>Offline rows</strong> — a record created offline now gets
+                    a client-side <code>created_at</code> and a slug immediately
+                    (from its name/title) instead of blank cells; the server&apos;s
+                    authoritative values sync in afterward. Offline creates also log
+                    to the activity feed once they sync (they push through the same
+                    endpoint the online path does).
+                  </li>
+                </ul>
+                <p>
+                  Existing projects: <code>grit update</code> and re-generate.
+                  Verified on a fresh scaffold: a price field renders 1,000,000, the
+                  category picker is a searchable combobox, zero console errors.
+                </p>
+              </div>
+            </div>
+
             {/* v3.49.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

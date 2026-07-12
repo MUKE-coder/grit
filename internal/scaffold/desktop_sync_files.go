@@ -732,11 +732,22 @@ func desktopSyncLocalGo() string {
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
+
+var slugNonWord = regexp.MustCompile("[^a-z0-9]+")
+
+// clientSlug builds a slug from a source string so a freshly-created row shows
+// a slug immediately, before the authoritative server value syncs back.
+func clientSlug(s string) string {
+	out := slugNonWord.ReplaceAllString(strings.ToLower(strings.TrimSpace(s)), "-")
+	return strings.Trim(out, "-")
+}
 
 // LocalCreate persists data locally and queues a "create" entry in the
 // outbox. id is required (UUID); pass uuid.New().String() if you don't
@@ -748,6 +759,24 @@ func (e *Engine) LocalCreate(tableName, id string, data map[string]interface{}) 
 	data["id"] = id
 	if data["version"] == nil {
 		data["version"] = 0
+	}
+	// Populate server-computed fields optimistically so the table doesn't show
+	// blanks until the first pull. The server remains authoritative: its real
+	// created_at / slug overwrite these on the next sync.
+	now := time.Now().UTC().Format(time.RFC3339)
+	if v, ok := data["created_at"].(string); !ok || v == "" {
+		data["created_at"] = now
+	}
+	if v, ok := data["updated_at"].(string); !ok || v == "" {
+		data["updated_at"] = now
+	}
+	if v, ok := data["slug"].(string); !ok || v == "" {
+		for _, src := range []string{"name", "title"} {
+			if s, ok := data[src].(string); ok && s != "" {
+				data["slug"] = clientSlug(s)
+				break
+			}
+		}
 	}
 	raw, err := json.Marshal(data)
 	if err != nil {

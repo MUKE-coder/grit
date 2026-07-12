@@ -116,6 +116,8 @@ func (g *Generator) buildDesktopClientForm(names Names) desktopClientFieldParts 
 	var imp, st, pf, jsx, pay, opt strings.Builder
 	seenRelImport := map[string]bool{}
 	seenFileImport := false
+	seenNumberImport := false
+	seenSelectImport := false
 
 	for _, f := range g.Definition.Fields {
 		if f.IsSlug() || f.IsManyToMany() || f.IsStringArray() {
@@ -162,28 +164,36 @@ func (g *Generator) buildDesktopClientForm(names Names) desktopClientFieldParts 
 				imp.WriteString("import { " + hook + " } from \"@/hooks/use-" + rel.PluralKebab + "\";\n")
 				seenRelImport[hook] = true
 			}
+			if !seenSelectImport {
+				imp.WriteString("import { SearchableSelect } from \"@/components/searchable-select\";\n")
+				seenSelectImport = true
+			}
 			st.WriteString("  const [" + fkCamel + ", " + fkSetter + "] = useState<string>(\"\");\n")
 			opt.WriteString("  const " + optsVar + " = " + hook + "().data ?? [];\n")
 			pf.WriteString("      " + fkSetter + "(String(record." + fk + " ?? \"\"));\n")
 			jsx.WriteString("        <div>\n")
 			jsx.WriteString("          <label className=\"block text-[13px] font-medium text-foreground mb-1.5\">" + label + "</label>\n")
-			jsx.WriteString("          <select value={" + fkCamel + "} onChange={(e) => " + fkSetter + "(e.target.value)} className={inputCls}>\n")
-			jsx.WriteString("            <option value=\"\">Select " + strings.ToLower(label) + "…</option>\n")
-			jsx.WriteString("            {" + optsVar + ".map((o: any) => (<option key={o.id} value={o.id}>{o.name || o.title || o.id}</option>))}\n")
-			jsx.WriteString("          </select>\n")
+			jsx.WriteString("          <SearchableSelect value={" + fkCamel + "} onChange={(v) => " + fkSetter + "(v ?? \"\")} placeholder=\"Select " + strings.ToLower(label) + "…\"\n")
+			jsx.WriteString("            options={" + optsVar + ".map((o: any) => ({ value: String(o.id), label: String(o.name ?? o.title ?? o.id) }))} />\n")
 			jsx.WriteString("        </div>\n")
 			pay.WriteString("      " + fk + ": " + fkCamel + ",\n")
 
 		case ft == FieldInt || ft == FieldUint || ft == FieldFloat:
-			step := ""
-			if ft == FieldFloat {
-				step = " step=\"any\""
+			kind := "float"
+			if ft == FieldInt {
+				kind = "int"
+			} else if ft == FieldUint {
+				kind = "uint"
+			}
+			if !seenNumberImport {
+				imp.WriteString("import { NumberInput } from \"@/components/number-input\";\n")
+				seenNumberImport = true
 			}
 			st.WriteString("  const [" + camel + ", " + setter + "] = useState<number>(0);\n")
 			pf.WriteString("      " + setter + "(Number(record." + json + " ?? 0));\n")
 			jsx.WriteString("        <div>\n")
 			jsx.WriteString("          <label className=\"block text-[13px] font-medium text-foreground mb-1.5\">" + label + "</label>\n")
-			jsx.WriteString("          <input type=\"number\"" + step + " value={" + camel + "} onChange={(e) => " + setter + "(Number(e.target.value))} className={inputCls} />\n")
+			jsx.WriteString("          <NumberInput value={" + camel + "} onChange={" + setter + "} kind=\"" + kind + "\" className={inputCls} />\n")
 			jsx.WriteString("        </div>\n")
 			pay.WriteString("      " + json + ": " + camel + ",\n")
 
@@ -342,9 +352,15 @@ func (g *Generator) desktopClientListRoute(names Names) string {
 	lower := strings.ToLower(names.Lower)
 
 	// Build table columns from the fields (skip auto/file/relation-array
-	// fields the offline form doesn't render). belongs_to shows the FK value.
+	// fields the offline form doesn't render). belongs_to resolves the FK to
+	// the related record's name client-side (the offline mirror only stores the
+	// id), rendered under a derived key so the original id stays for editing.
 	var colLines []string
 	var searchKeys []string
+	var relImports []string
+	var relMaps []string    // e.g. const categoryMap = new Map(...)
+	var relRowFields []string // e.g. category: categoryMap.get(String((r as any).category_id)) ?? ""
+	seenRelHook := map[string]bool{}
 	for _, f := range g.Definition.Fields {
 		// m2m / string arrays are too noisy for a table cell; everything else
 		// (incl. slug and file/image fields) gets a column.
@@ -354,9 +370,20 @@ func (g *Generator) desktopClientListRoute(names Names) string {
 		var key, label, format string
 		switch {
 		case f.IsBelongsTo():
-			key = f.FKColumnName()
+			base := toSnakeCase(strings.TrimSuffix(f.Name, "_id"))
+			fk := f.FKColumnName()
+			rel := MakeNames(f.RelatedModelName())
+			hook := "use" + rel.PluralPascal
+			mapVar := lowerCamel(base) + "Map"
+			key = base
 			label = humanizeLabel(strings.TrimSuffix(f.Name, "_id"))
 			format = "text"
+			if !seenRelHook[hook] {
+				relImports = append(relImports, "import { "+hook+" } from \"@/hooks/use-"+rel.PluralKebab+"\";")
+				seenRelHook[hook] = true
+			}
+			relMaps = append(relMaps, "  const "+mapVar+" = new Map(("+hook+"().data ?? []).map((o: any) => [String(o.id), String(o.name ?? o.title ?? o.id)]));")
+			relRowFields = append(relRowFields, base+": "+mapVar+".get(String((r as any)."+fk+")) ?? \"\"")
 		case f.IsFile() || f.IsFiles():
 			key = toSnakeCase(f.Name)
 			label = humanizeLabel(f.Name)
@@ -386,11 +413,25 @@ func (g *Generator) desktopClientListRoute(names Names) string {
 		quotedKeys = append(quotedKeys, "\""+k+"\"")
 	}
 
+	// Relation resolution injected into the component: hook imports, id→name
+	// maps, and a rows transform that adds the resolved names.
+	relImportsStr := ""
+	if len(relImports) > 0 {
+		relImportsStr = "\n" + strings.Join(relImports, "\n")
+	}
+	relMapsStr := ""
+	rowsExpr := "  const rows = items;\n"
+	if len(relRowFields) > 0 {
+		relMapsStr = strings.Join(relMaps, "\n") + "\n"
+		rowsExpr = "  const rows = items.map((r) => ({ ...r, " + strings.Join(relRowFields, ", ") + " }));\n"
+	}
+
 	return `import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { DataTable, type DataColumn } from "@/components/tables/data-table";
 import { ResourceDrawer } from "@/components/resource-drawer";
+import { useConfirm } from "@/components/confirm-dialog";
 import { ` + Pascal + `Form } from "@/components/resource-forms/` + kebab + `-form";
 import {
   use` + Plural + `,
@@ -398,7 +439,7 @@ import {
   useUpdate` + Pascal + `,
   useDelete` + Pascal + `,
   type ` + Pascal + `,
-} from "@/hooks/use-` + kebab + `";
+} from "@/hooks/use-` + kebab + `";` + relImportsStr + `
 
 export const Route = createFileRoute("/app/` + p + `/")({
   component: ` + Plural + `Page,
@@ -415,6 +456,7 @@ function ` + Plural + `Page() {
   const create = useCreate` + Pascal + `();
   const update = useUpdate` + Pascal + `();
   const del = useDelete` + Pascal + `();
+  const confirm = useConfirm();
   const [drawer, setDrawer] = useState<{ open: boolean; record: ` + Pascal + ` | null }>({
     open: false,
     record: null,
@@ -422,6 +464,8 @@ function ` + Plural + `Page() {
 
   const closeDrawer = () => setDrawer({ open: false, record: null });
 
+  // Resolve belongs_to ids to the related record's name for the table.
+` + relMapsStr + rowsExpr + `
   return (
     <div>
       <PageHeader title="` + title + `" description="Manage your ` + strings.ToLower(title) + `" />
@@ -431,16 +475,16 @@ function ` + Plural + `Page() {
           title="` + title + `"
           singular="` + Pascal + `"
           columns={COLUMNS}
-          rows={items}
+          rows={rows}
           loading={isLoading}
           searchKeys={SEARCH_KEYS}
           onNew={() => setDrawer({ open: true, record: null })}
           onEdit={(row) => setDrawer({ open: true, record: row })}
-          onDelete={(row) => {
-            if (confirm("Delete this ` + lower + `?")) del.mutate(String(row.id));
+          onDelete={async (row) => {
+            if (await confirm({ title: "Delete ` + lower + `", message: "This will delete this ` + lower + `. This action cannot be undone.", danger: true, confirmLabel: "Delete" })) del.mutate(String(row.id));
           }}
-          onBulkDelete={(rows) => {
-            if (confirm("Delete " + rows.length + " ` + lower + `(s)?")) rows.forEach((r) => del.mutate(String(r.id)));
+          onBulkDelete={async (rows) => {
+            if (await confirm({ title: "Delete ` + lower + `s", message: "Delete " + rows.length + " ` + lower + `(s)? This cannot be undone.", danger: true, confirmLabel: "Delete" })) rows.forEach((r) => del.mutate(String(r.id)));
           }}
           onImport={(records) => records.forEach((rec) => create.mutate(rec))}
         />

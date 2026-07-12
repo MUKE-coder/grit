@@ -136,6 +136,8 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "components", "resource-drawer.tsx"):       desktopClientResourceDrawer(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "quick-access.tsx"):          desktopClientQuickAccess(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "file-dropzone.tsx"):         desktopClientFileDropzone(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "confirm-dialog.tsx"):        desktopClientConfirmDialog(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "number-input.tsx"):          desktopClientNumberInput(),
 
 		// Theming — shares packages/shared/themes.ts with the admin panel so
 		// --theme=atlas|aurora|pulse styles both apps identically.
@@ -936,6 +938,7 @@ import { routeTree } from "./routeTree.gen";
 import { queryClient } from "./lib/query-client";
 import { AuthProvider } from "./lib/auth-provider";
 import { ThemeProvider } from "./lib/theme-provider";
+import { ConfirmProvider } from "./components/confirm-dialog";
 import "./lib/fonts";
 import "./globals.css";
 
@@ -957,7 +960,9 @@ ReactDOM.createRoot(document.getElementById("app")!).render(
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <RouterProvider router={router} />
+          <ConfirmProvider>
+            <RouterProvider router={router} />
+          </ConfirmProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
@@ -1879,6 +1884,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { User as UserIcon, Briefcase, Lock, Upload, Loader2, Save, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { useConfirm } from "@/components/confirm-dialog";
 import { useMe, useLogout } from "@/hooks/use-auth";
 import { apiClient, uploadFile } from "@/lib/api-client";
 
@@ -1910,6 +1916,7 @@ function ProfilePage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { mutate: logout } = useLogout();
+  const askConfirm = useConfirm();
   const avatarRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -2056,7 +2063,7 @@ function ProfilePage() {
               <h3 className="text-[14px] font-semibold text-foreground">Delete account</h3>
               <p className="text-[12px] text-foreground-muted">Permanently remove your account and all associated data. This action cannot be undone.</p>
             </div>
-            <button onClick={() => { if (window.confirm("Permanently delete your account? This cannot be undone.")) del.mutate(); }} className="flex shrink-0 items-center gap-2 rounded-lg border border-danger/40 px-4 py-2 text-[13px] font-semibold text-danger hover:bg-danger/10">
+            <button onClick={async () => { if (await askConfirm({ title: "Delete account", message: "Permanently remove your account and all associated data. This action cannot be undone.", danger: true, confirmLabel: "Delete account" })) del.mutate(); }} className="flex shrink-0 items-center gap-2 rounded-lg border border-danger/40 px-4 py-2 text-[13px] font-semibold text-danger hover:bg-danger/10">
               <Trash2 className="h-4 w-4" /> Delete account
             </button>
           </div>
