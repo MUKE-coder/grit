@@ -5,12 +5,13 @@ import { CheckCircle2, AlertCircle, Lightbulb, ArrowLeft, ArrowRight, Github, Yo
 
 /* ═══ Code Block ═══ */
 
-export function CodeBlock({ filename, children }: { filename?: string; children: string }) {
+export function CodeBlock({ filename, language, children }: { filename?: string; language?: string; children: string }) {
   return (
     <div className="my-4 rounded-lg border border-border/40 overflow-hidden">
-      {filename && (
-        <div className="px-4 py-2 bg-muted/30 border-b border-border/40 text-xs font-mono text-muted-foreground">
-          {filename}
+      {(filename || language) && (
+        <div className="flex items-center justify-between px-4 py-2 bg-muted/30 border-b border-border/40 text-xs font-mono text-muted-foreground">
+          <span>{filename}</span>
+          {language && <span className="uppercase tracking-wider text-muted-foreground/60">{language}</span>}
         </div>
       )}
       <pre className="p-4 overflow-x-auto bg-[#0d1117] text-sm font-mono leading-relaxed">
