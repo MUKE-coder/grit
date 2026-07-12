@@ -153,8 +153,12 @@ export default defineResource({
   key: 'status',
   label: 'Status',
   type: 'select',
-  options: ['draft', 'published', 'archived'],
-  default: 'draft',
+  options: [
+    { label: 'Draft', value: 'draft' },
+    { label: 'Published', value: 'published' },
+    { label: 'Archived', value: 'archived' },
+  ],
+  defaultValue: 'draft',
 }
 
 // Object options with custom labels
@@ -203,7 +207,7 @@ export default defineResource({
   key: 'featured',
   label: 'Featured Post',
   type: 'toggle',
-  default: false,
+  defaultValue: false,
 }`} />
             </div>
 
@@ -221,7 +225,7 @@ export default defineResource({
   key: 'active',
   label: 'Active',
   type: 'checkbox',
-  default: true,
+  defaultValue: true,
 }`} />
             </div>
 
@@ -244,7 +248,7 @@ export default defineResource({
     { label: 'Private',  value: 'private' },
     { label: 'Unlisted', value: 'unlisted' },
   ],
-  default: 'public',
+  defaultValue: 'public',
 }`} />
             </div>
 
@@ -269,8 +273,8 @@ export default defineResource({
               <h3>Multiple Images</h3>
               <p>
                 An image gallery upload that stores an array of URL strings. Uses the Dropzone
-                with multiple file support. Use the <code>max</code> property to limit the
-                number of images (default: 10).
+                with multiple file support. Use <code>maxSizeMB</code> to cap the size of each
+                uploaded image (default: 5MB).
               </p>
             </div>
 
@@ -279,7 +283,7 @@ export default defineResource({
   key: 'gallery',
   label: 'Product Gallery',
   type: 'images',
-  max: 8,
+  maxSizeMB: 5,
 }`} />
             </div>
 
@@ -302,8 +306,8 @@ export default defineResource({
             <div className="prose-grit">
               <h3>Multiple Videos</h3>
               <p>
-                A multi-video upload that stores an array of URL strings. Use the <code>max</code> property
-                to limit the number of videos (default: 5).
+                A multi-video upload that stores an array of URL strings. Use <code>maxSizeMB</code> to
+                cap the size of each uploaded video (default: 300MB).
               </p>
             </div>
 
@@ -312,7 +316,7 @@ export default defineResource({
   key: 'media',
   label: 'Course Videos',
   type: 'videos',
-  max: 10,
+  maxSizeMB: 300,
 }`} />
             </div>
 
@@ -337,7 +341,8 @@ export default defineResource({
               <h3>Multiple Files</h3>
               <p>
                 A multi-file upload for document collections. Stores an array of URL strings.
-                Use the <code>max</code> property to limit the number of files (default: 10).
+                Use <code>maxSizeMB</code> to cap the size of each uploaded file, and
+                <code>accepts</code> to restrict file types (default: 5MB).
               </p>
             </div>
 
@@ -346,18 +351,19 @@ export default defineResource({
   key: 'attachments',
   label: 'Attachments',
   type: 'files',
-  max: 5,
+  maxSizeMB: 5,
+  accepts: ['pdf', 'doc'],
 }`} />
             </div>
 
             <div className="prose-grit">
               {/* Upload Variants */}
-              <h2>Upload Variants</h2>
+              <h2>Dropzone Variants</h2>
               <p>
                 All upload field types (<code>image</code>, <code>images</code>, <code>file</code>,
                 <code>files</code>, <code>video</code>, <code>videos</code>) use the Dropzone
                 component under the hood. By default, uploads render as a large dashed drop zone,
-                but you can customize the appearance with the <code>variant</code> property.
+                but you can customize the appearance with the <code>dropzone</code> property.
                 Five variants are available:
               </p>
 
@@ -375,8 +381,8 @@ export default defineResource({
   key: 'gallery',
   label: 'Product Gallery',
   type: 'images',
-  max: 8,
-  // variant: 'default'  (implied)
+  maxSizeMB: 5,
+  // dropzone: 'default'  (implied)
 }`} />
             </div>
 
@@ -394,7 +400,7 @@ export default defineResource({
   key: 'document',
   label: 'Document',
   type: 'file',
-  variant: 'compact',
+  dropzone: 'compact',
 }`} />
             </div>
 
@@ -412,7 +418,7 @@ export default defineResource({
   key: 'receipt',
   label: 'Receipt',
   type: 'file',
-  variant: 'minimal',
+  dropzone: 'minimal',
 }`} />
             </div>
 
@@ -430,7 +436,7 @@ export default defineResource({
   key: 'avatar',
   label: 'Profile Picture',
   type: 'image',
-  variant: 'avatar',
+  dropzone: 'avatar',
 }`} />
             </div>
 
@@ -448,7 +454,7 @@ export default defineResource({
   key: 'thumbnail',
   label: 'Thumbnail',
   type: 'image',
-  variant: 'inline',
+  dropzone: 'inline',
 }`} />
             </div>
 
@@ -460,27 +466,27 @@ export default defineResource({
             </div>
 
             <div className="mt-4 mb-8">
-              <CodeBlock filename="Mixing upload variants in a form" code={`form: {
+              <CodeBlock filename="Mixing dropzone variants in a form" code={`form: {
   layout: 'two-column',
   fields: [
     { key: 'name', label: 'Name', type: 'text',
-      required: true, span: 'full' },
+      required: true, colSpan: 2 },
 
     // Circular avatar preview for the profile picture
     { key: 'avatar', label: 'Avatar', type: 'image',
-      variant: 'avatar', span: 'half' },
+      dropzone: 'avatar', colSpan: 1 },
 
     // Compact single-file upload for a cover image
     { key: 'cover', label: 'Cover Image', type: 'image',
-      variant: 'compact', span: 'half' },
+      dropzone: 'compact', colSpan: 1 },
 
     // Default large drop zone for a gallery
     { key: 'gallery', label: 'Gallery', type: 'images',
-      max: 12, span: 'full' },
+      maxSizeMB: 5, colSpan: 2 },
 
     // Inline file upload for a document
     { key: 'resume', label: 'Resume', type: 'file',
-      variant: 'inline', span: 'half' },
+      dropzone: 'inline', colSpan: 1 },
   ],
 }`} />
             </div>
@@ -512,7 +518,7 @@ export default defineResource({
               <p>
                 Add a <code>richtext</code> field to your form definition. The field stores
                 its content as an HTML string (e.g., <code>&lt;p&gt;Hello &lt;strong&gt;world&lt;/strong&gt;&lt;/p&gt;</code>).
-                In two-column layouts, rich text fields typically use <code>span: &apos;full&apos;</code> to
+                In two-column layouts, rich text fields typically use <code>colSpan: 2</code> to
                 give the editor enough horizontal space.
               </p>
             </div>
@@ -522,17 +528,20 @@ export default defineResource({
   layout: 'two-column',
   fields: [
     { key: 'title', label: 'Title', type: 'text',
-      required: true, span: 'full' },
+      required: true, colSpan: 2 },
     { key: 'status', label: 'Status', type: 'select',
-      options: ['draft', 'published'], span: 'half' },
+      options: [
+        { label: 'Draft', value: 'draft' },
+        { label: 'Published', value: 'published' },
+      ], colSpan: 1 },
     { key: 'category_id', label: 'Category',
       type: 'relationship-select',
       relatedEndpoint: '/api/categories',
-      displayField: 'name', span: 'half' },
+      displayField: 'name', colSpan: 1 },
 
     // Rich text editor — full width for maximum editing space
     { key: 'content', label: 'Content', type: 'richtext',
-      span: 'full' },
+      colSpan: 2 },
   ],
 }`} />
             </div>
@@ -717,12 +726,12 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`} />
 
               <h3>Two-Column Layout</h3>
               <p>
-                Fields are arranged in a two-column grid. Use the <code>span</code> property
-                on individual fields to control whether they take half or full width:
+                Fields are arranged in a two-column grid. Use the <code>colSpan</code> property
+                on individual fields to control whether they take one or both columns:
               </p>
               <ul>
-                <li><code>span: &apos;half&apos;</code> &mdash; field takes one column (default in two-column mode).</li>
-                <li><code>span: &apos;full&apos;</code> &mdash; field spans both columns.</li>
+                <li><code>colSpan: 1</code> &mdash; field takes one column (default in two-column mode).</li>
+                <li><code>colSpan: 2</code> &mdash; field spans both columns.</li>
               </ul>
             </div>
 
@@ -732,19 +741,26 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`} />
   fields: [
     // Full width — spans both columns
     { key: 'title', label: 'Title', type: 'text',
-      required: true, span: 'full' },
+      required: true, colSpan: 2 },
 
-    // Half width — each takes one column, side by side
+    // Single column — each takes one column, side by side
     { key: 'category', label: 'Category', type: 'select',
-      options: ['tech', 'design', 'business'] },
+      options: [
+        { label: 'Tech', value: 'tech' },
+        { label: 'Design', value: 'design' },
+        { label: 'Business', value: 'business' },
+      ] },
     { key: 'status', label: 'Status', type: 'select',
-      options: ['draft', 'published'] },
+      options: [
+        { label: 'Draft', value: 'draft' },
+        { label: 'Published', value: 'published' },
+      ] },
 
     // Full width again
     { key: 'content', label: 'Content', type: 'richtext',
-      span: 'full' },
+      colSpan: 2 },
 
-    // Two half-width fields on the same row
+    // Two single-column fields on the same row
     { key: 'published_at', label: 'Publish Date', type: 'date' },
     { key: 'featured', label: 'Featured', type: 'toggle' },
   ],
@@ -760,7 +776,7 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`} />
                 is passed:
               </p>
               <ul>
-                <li><strong>Create mode</strong> &mdash; form fields start empty (or with <code>default</code> values). The submit button says &quot;Create [Resource]&quot;. On submit, a <code>POST</code> request is sent to the API endpoint.</li>
+                <li><strong>Create mode</strong> &mdash; form fields start empty (or with <code>defaultValue</code> values). The submit button says &quot;Create [Resource]&quot;. On submit, a <code>POST</code> request is sent to the API endpoint.</li>
                 <li><strong>Edit mode</strong> &mdash; form fields are pre-populated with the existing record data. The submit button says &quot;Update [Resource]&quot;. On submit, a <code>PUT</code> request is sent to <code>[endpoint]/[id]</code>.</li>
               </ul>
               <p>
@@ -772,7 +788,7 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`} />
               {/* Default Values */}
               <h2>Default Values</h2>
               <p>
-                Use the <code>default</code> property on any field to set an initial value
+                Use the <code>defaultValue</code> property on any field to set an initial value
                 in create mode. Default values are ignored in edit mode where the existing
                 record data takes precedence.
               </p>
@@ -781,13 +797,19 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`} />
             <div className="mt-4 mb-8">
               <CodeBlock filename="Default values" code={`fields: [
   { key: 'status', label: 'Status', type: 'select',
-    options: ['draft', 'published'], default: 'draft' },
+    options: [
+      { label: 'Draft', value: 'draft' },
+      { label: 'Published', value: 'published' },
+    ], defaultValue: 'draft' },
   { key: 'priority', label: 'Priority', type: 'number',
-    default: 1, min: 1, max: 5 },
+    defaultValue: 1, min: 1, max: 5 },
   { key: 'active', label: 'Active', type: 'toggle',
-    default: true },
+    defaultValue: true },
   { key: 'visibility', label: 'Visibility', type: 'radio',
-    options: ['public', 'private'], default: 'public' },
+    options: [
+      { label: 'Public', value: 'public' },
+      { label: 'Private', value: 'private' },
+    ], defaultValue: 'public' },
 ]`} />
             </div>
 
@@ -796,42 +818,41 @@ export type UpdatePostInput = z.infer<typeof UpdatePostSchema>`} />
               <h2>Complete Form Example</h2>
               <p>
                 Here is a full form configuration for an Invoice resource that demonstrates
-                multiple field types, two-column layout, validation, and default values:
+                multiple field types, two-column layout, and default values:
               </p>
             </div>
 
             <div className="mt-4 mb-8">
               <CodeBlock filename="apps/admin/resources/invoices.ts (form section)" code={`form: {
   layout: 'two-column',
-  validation: 'InvoiceSchema',   // References packages/shared/schemas
   fields: [
     { key: 'number', label: 'Invoice Number', type: 'text',
-      required: true, placeholder: 'INV-001', span: 'half' },
-    { key: 'customer_id', label: 'Customer', type: 'relation',
-      resource: 'customers', displayKey: 'name', span: 'half' },
+      required: true, placeholder: 'INV-001', colSpan: 1 },
+    { key: 'customer_id', label: 'Customer', type: 'relationship-select',
+      relatedEndpoint: '/api/customers', displayField: 'name', colSpan: 1 },
 
     { key: 'amount', label: 'Amount ($)', type: 'number',
-      required: true, min: 0, step: 0.01, span: 'half' },
+      required: true, min: 0, step: 0.01, colSpan: 1 },
     { key: 'status', label: 'Status', type: 'select',
       options: [
         { label: 'Pending', value: 'pending' },
         { label: 'Paid',    value: 'paid' },
         { label: 'Overdue', value: 'overdue' },
-      ], default: 'pending', span: 'half' },
+      ], defaultValue: 'pending', colSpan: 1 },
 
     { key: 'due_date', label: 'Due Date', type: 'date',
-      required: true, span: 'half' },
+      required: true, colSpan: 1 },
     { key: 'issued_at', label: 'Issue Date', type: 'date',
-      span: 'half' },
+      colSpan: 1 },
 
     { key: 'notes', label: 'Notes', type: 'textarea',
-      rows: 4, placeholder: 'Internal notes...', span: 'full' },
+      rows: 4, placeholder: 'Internal notes...', colSpan: 2 },
 
     { key: 'send_notification', label: 'Send email notification',
-      type: 'checkbox', default: true, span: 'full' },
+      type: 'checkbox', defaultValue: true, colSpan: 2 },
 
-    { key: 'attachments', label: 'Attachments', type: 'file',
-      multiple: true, span: 'full' },
+    { key: 'attachments', label: 'Attachments', type: 'files',
+      colSpan: 2 },
   ],
 }`} />
             </div>

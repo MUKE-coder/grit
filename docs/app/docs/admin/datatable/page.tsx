@@ -36,7 +36,8 @@ export default function DataTablePage() {
               <h2>Server-Side Pagination</h2>
               <p>
                 The DataTable never loads the entire dataset into memory. It communicates with
-                your Go API using query parameters for page, page size, sort, and filter values.
+                your Go API using query parameters for <code>page</code>, <code>page_size</code>,
+                <code>sort_by</code>, <code>sort_order</code>, <code>search</code>, and filter values.
                 The API returns a paginated response with a <code>meta</code> object containing
                 total count, current page, page size, and total pages.
               </p>
@@ -49,7 +50,7 @@ export default function DataTablePage() {
 
             {/* API request example */}
             <div className="mt-4 mb-8">
-              <CodeBlock filename="HTTP request" code={`GET /api/posts?page=1&page_size=20&sort=created_at&order=desc&search=hello
+              <CodeBlock filename="HTTP request" code={`GET /api/posts?page=1&page_size=20&sort_by=created_at&sort_order=desc&search=hello
 
 Response:
 {
@@ -82,7 +83,7 @@ Response:
                 <li><strong>No sort</strong> &mdash; returns to the default sort order.</li>
               </ol>
               <p>
-                Sorting sends <code>sort</code> and <code>order</code> query parameters to the
+                Sorting sends <code>sort_by</code> and <code>sort_order</code> query parameters to the
                 API. Only single-column sorting is supported (clicking a new column clears the
                 previous sort). You can set a default sort in the resource definition:
               </p>
@@ -203,11 +204,8 @@ Response:
   // Image — 32x32 rounded thumbnail
   { key: 'avatar', label: 'Avatar', format: 'image' },
 
-  // Number — formatted with thousand separators
-  { key: 'views', label: 'Views', format: 'number' },
-
-  // Relation — displays a field from a related object
-  { key: 'customer.name', label: 'Customer', relation: 'customer' },
+  // Relation — dot-notation key reads the Preloaded related object
+  { key: 'customer.name', label: 'Customer' },
 
   // Video — thumbnail with play overlay
   { key: 'preview', label: 'Preview', format: 'video' },
@@ -250,6 +248,34 @@ Response:
             </div>
 
             <div className="prose-grit">
+              <h2>Custom Cell Function</h2>
+              <p>
+                When <code>format</code> and <code>badge</code> are not enough, pass a
+                <code>cell</code> function. It receives the full row object and returns any
+                React node, so you can pack multiple fields into one column (name + email
+                stacked, a price with a currency badge, a status pill next to a relative date).
+                When defined, <code>cell</code> takes precedence over <code>format</code> and
+                <code>badge</code>.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="Custom cell renderer" code={`columns: [
+  {
+    key: 'first_name',
+    label: 'User',
+    // row is the whole record, so dotted keys aren't necessary
+    cell: (row) => (
+      <div className="flex flex-col">
+        <span className="font-medium">{row.first_name} {row.last_name}</span>
+        <span className="text-xs text-text-muted">{row.email}</span>
+      </div>
+    ),
+  },
+]`} />
+            </div>
+
+            <div className="prose-grit">
               {/* Row Actions */}
               <h2>Row Actions</h2>
               <p>
@@ -284,7 +310,8 @@ Response:
               <p>
                 When <code>bulkActions</code> are defined, each row gets a checkbox on the
                 left side. Selecting one or more rows reveals a floating action bar at the
-                bottom of the table with the configured bulk actions. For example, selecting
+                bottom of the table with the configured bulk actions. The <code>BulkAction</code> union
+                is <code>&apos;delete&apos; | &apos;export&apos;</code>. For example, selecting
                 5 rows and clicking &quot;Delete&quot; sends 5 DELETE requests in parallel.
               </p>
 
@@ -319,20 +346,75 @@ Response:
               </p>
 
               {/* Export */}
-              <h2>Export to CSV / JSON</h2>
+              <h2>Export to CSV / JSON / Excel</h2>
               <p>
-                When <code>&apos;export&apos;</code> is included in <code>table.actions</code>,
-                export buttons appear in the table toolbar. Users can export the current
-                filtered and sorted view as CSV or JSON. The export fetches all matching
-                records from the API (not just the current page) and triggers a browser
-                download.
+                The toolbar&apos;s download menu offers <strong>CSV</strong>, <strong>JSON</strong>,
+                and <strong>Excel (.xlsx)</strong> export. Users can export the current
+                filtered and sorted view; the menu fetches all matching records from the API
+                (not just the current page) before building the file and triggering a browser
+                download. Configure it with the <code>table.export</code> object &mdash; set it to
+                <code>false</code> to hide the menu entirely, or flip individual
+                <code>csv</code> / <code>json</code> / <code>excel</code> flags:
               </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="Export menu configuration" code={`table: {
+  // All three formats on by default; this hides JSON.
+  export: { csv: true, json: false, excel: true },
+  columns: [ ... ],
+}`} />
+            </div>
+
+            <div className="prose-grit">
               <p>
                 Column labels are used as CSV headers. Hidden columns are excluded from the
                 export unless explicitly shown. Badge values export as their raw value (e.g.
                 <code>&quot;paid&quot;</code>) rather than the display label.
               </p>
 
+              {/* Excel Import */}
+              <h2>Excel Import</h2>
+              <p>
+                An <strong>Import</strong> button in the toolbar opens an Excel upload modal
+                (lazy-loaded so the xlsx parser only joins the bundle when needed). Rows from
+                the uploaded spreadsheet are mapped onto the resource&apos;s form fields and
+                created through the API. Import is on by default; configure it with
+                <code>table.import</code> &mdash; set it to <code>false</code> to hide the button,
+                or pass <code>fields</code> to restrict which columns are accepted (useful for
+                excluding computed columns):
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="Import configuration" code={`table: {
+  import: { excel: true, fields: ['name', 'email', 'role'] },
+  columns: [ ... ],
+}`} />
+            </div>
+
+            <div className="prose-grit">
+              {/* Date Filter */}
+              <h2>Date Filter</h2>
+              <p>
+                Every list page ships with a date-window filter in the toolbar (Today, Last 7
+                days, Last 30 days, This month, or a custom range). It defaults to filtering on
+                <code>created_at</code> with the label &quot;Created&quot;, and its state is
+                persisted to the URL so a refresh or shared link rehydrates the same view.
+                Configure it with <code>table.dateFilter</code> &mdash; set
+                <code>enabled: false</code> to hide it, or point <code>field</code> at a domain
+                column (e.g. <code>scheduled_for</code> on a Booking resource):
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="Date filter configuration" code={`table: {
+  dateFilter: { field: 'scheduled_for', label: 'Scheduled' },
+  columns: [ ... ],
+}`} />
+            </div>
+
+            <div className="prose-grit">
               {/* Responsive Behavior */}
               <h2>Responsive Behavior</h2>
               <p>
@@ -352,8 +434,7 @@ Response:
   columns: [
     { key: 'id', label: 'ID', sortable: true, hidden: true },
     { key: 'number', label: 'Invoice #', sortable: true, searchable: true },
-    { key: 'customer.name', label: 'Customer', relation: 'customer',
-      searchable: true },
+    { key: 'customer.name', label: 'Customer' },
     { key: 'amount', label: 'Amount', format: 'currency', sortable: true },
     { key: 'status', label: 'Status', badge: {
       paid:    { color: 'green',  label: 'Paid' },
@@ -373,7 +454,7 @@ Response:
   defaultSort: { key: 'created_at', direction: 'desc' },
   searchable: true,
   actions: ['create', 'edit', 'delete', 'view', 'export'],
-  bulkActions: ['delete', 'export', 'mark-paid'],
+  bulkActions: ['delete', 'export'],
 }`} />
             </div>
 

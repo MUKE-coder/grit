@@ -354,12 +354,14 @@ type Category struct {
               <CodeBlock language="typescript" filename="apps/admin/resources/products.ts" code={`export default defineResource({
   name: "Product",
   endpoint: "/api/products",
-  columns: [
-    { key: "name", label: "Name", sortable: true, searchable: true },
-    { key: "category.name", label: "Category", sortable: false },
-    { key: "price", label: "Price", format: "number", sortable: true },
-    { key: "published", label: "Published", format: "boolean" },
-  ],
+  table: {
+    columns: [
+      { key: "name", label: "Name", sortable: true, searchable: true },
+      { key: "category.name", label: "Category", sortable: false },
+      { key: "price", label: "Price", format: "currency", sortable: true },
+      { key: "published", label: "Published", format: "boolean" },
+    ],
+  },
   form: {
     fields: [
       { key: "name", label: "Name", type: "text", required: true },

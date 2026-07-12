@@ -53,6 +53,9 @@ export default function ResourceDefinitionsPage() {
     plural: string          // "Invoices"
   }
 
+  // How the create/edit form is presented (optional)
+  formView?: 'sheet' | 'modal' | 'page' | 'modal-steps' | 'page-steps'
+
   // Table configuration
   table: TableConfig
 
@@ -62,10 +65,14 @@ export default function ResourceDefinitionsPage() {
   // Dashboard widgets (optional)
   dashboard?: DashboardConfig
 
+  // Stats cards above the table (optional; omit for 4 auto defaults, false to disable)
+  stats?: StatsConfig | boolean
+
+  // Sidebar nav grouping — resources sharing a key collapse under one header
+  group?: string
+
   // Access control (optional)
-  permissions?: {
-    roles: string[]         // Roles that can access this resource
-  }
+  adminOnly?: boolean       // Hide from the sidebar for non-ADMIN/EDITOR users
 }`} />
             </div>
 
@@ -114,7 +121,21 @@ export default function ResourceDefinitionsPage() {
   }
   searchable?: boolean         // Enable global search (default: true)
   actions?: Action[]           // 'create' | 'edit' | 'delete' | 'view' | 'export'
-  bulkActions?: BulkAction[]   // 'delete' | 'export' | custom string
+  bulkActions?: BulkAction[]   // 'delete' | 'export'
+  dateFilter?: {               // Date-window filter on the list page (default on)
+    enabled?: boolean
+    field?: string             // Column to filter (default: 'created_at')
+    label?: string
+  }
+  export?: false | {           // Toolbar download menu (CSV / JSON / Excel, default all on)
+    csv?: boolean
+    json?: boolean
+    excel?: boolean
+  }
+  import?: false | {           // Excel import button + modal (default on)
+    excel?: boolean
+    fields?: string[]
+  }
 }`} />
             </div>
 
@@ -136,19 +157,24 @@ export default function ResourceDefinitionsPage() {
   searchable?: boolean         // Include in global search
   format?: ColumnFormat        // Display format
   badge?: BadgeConfig          // Badge-style rendering for status fields
-  relation?: string            // Load from a related resource
   hidden?: boolean             // Hidden by default (show/hide toggle)
+  width?: string               // Fixed column width
+  className?: string           // Tailwind classes applied to every cell
+  cell?: (row) => ReactNode    // Custom renderer (overrides format/badge)
 }
 
 type ColumnFormat =
   | 'text'                     // Plain text (default)
-  | 'number'                   // Formatted number (1,234)
   | 'currency'                 // Currency ($1,234.00)
   | 'boolean'                  // Check/X icon
   | 'date'                     // Formatted date (Jan 15, 2026)
   | 'relative'                 // Relative time (3 hours ago)
   | 'badge'                    // Colored badge
   | 'image'                    // Thumbnail image
+  | 'video' | 'file' | 'files' // Media / attachment previews
+  | 'link' | 'email' | 'color' // URL, mailto, and color swatch
+  | 'richtext'                 // HTML stripped to a plain-text preview
+  | 'user'                     // Avatar + name + email stacked
 
 interface BadgeConfig {
   [value: string]: {
@@ -179,7 +205,6 @@ interface BadgeConfig {
                   <tbody className="text-muted-foreground">
                     {[
                       ['text', '"Hello World"', 'Hello World'],
-                      ['number', '1234567', '1,234,567'],
                       ['currency', '99.5', '$99.50'],
                       ['boolean', 'true / false', 'Green check / Red X icon'],
                       ['date', '"2026-01-15T..."', 'Jan 15, 2026'],
@@ -257,7 +282,6 @@ filters: [
               <CodeBlock filename="FormConfig type" code={`interface FormConfig {
   fields: FieldDef[]
   layout?: 'single' | 'two-column'  // Default: 'single'
-  validation?: string               // Zod schema name from shared package
 }
 
 interface FieldDef {
@@ -266,13 +290,13 @@ interface FieldDef {
   type: FieldType              // Input type
   required?: boolean           // Required field (default: false)
   placeholder?: string         // Placeholder text
-  default?: any                // Default value for create mode
-  options?: string[] | { label: string; value: string }[]
+  defaultValue?: unknown       // Default value for create mode
+  options?: { label: string; value: string }[]
   min?: number                 // For number type
   max?: number                 // For number type
   step?: number                // For number type
   rows?: number                // For textarea type
-  span?: 'full' | 'half'      // Column span in two-column layout
+  colSpan?: 1 | 2              // Column span in two-column layout
 }
 
 type FieldType =
@@ -331,8 +355,8 @@ type FieldType =
                       ['file', 'Single file upload', 'accept'],
                       ['files', 'Multiple file upload', 'accept'],
                       ['richtext', 'Rich text editor', '--'],
-                      ['relationship-select', 'Resource select', 'resource, displayKey'],
-                      ['multi-relationship-select', 'Resource multi-select', 'resource, displayKey'],
+                      ['relationship-select', 'Resource select', 'relatedEndpoint, displayField'],
+                      ['multi-relationship-select', 'Resource multi-select', 'relatedEndpoint, displayField, relationshipKey'],
                     ].map(([type, component, props]) => (
                       <tr key={type} className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs text-primary">{type}</td>
@@ -357,17 +381,19 @@ type FieldType =
 
             <div className="mt-4 mb-8">
               <CodeBlock filename="DashboardConfig type" code={`interface DashboardConfig {
-  widgets: WidgetDef[]
+  enabled?: boolean            // false hides this resource's preset widgets
+  widgets?: WidgetDef[]
 }
 
 interface WidgetDef {
   type: 'stat' | 'chart' | 'activity'
   label: string
-  query: string                // Server-side query (e.g. "sum:amount")
-  format?: 'number' | 'currency' | 'percent'
+  endpoint?: string            // Go API URL the widget reads (e.g. "/api/orders?page_size=1")
+  icon?: string                // Lucide icon name
   color?: string               // Accent color for the widget
-  // Chart-specific
-  chartType?: 'line' | 'bar'   // For type: 'chart'
+  format?: 'number' | 'currency' | 'percentage'
+  chartType?: 'line' | 'bar' | 'pie'   // For type: 'chart'
+  colSpan?: 1 | 2 | 3 | 4
 }`} />
             </div>
 
@@ -382,29 +408,30 @@ interface WidgetDef {
 
             {/* Full example */}
             <div className="mt-4 mb-8">
-              <CodeBlock language="typescript" filename="apps/admin/resources/posts.ts" code={`import { defineResource } from '@grit/admin'
+              <CodeBlock language="typescript" filename="apps/admin/resources/posts.ts" code={`import { defineResource } from '@/lib/resource'
 
-export default defineResource({
+export const postsResource = defineResource({
   name: 'Post',
+  slug: 'posts',
   endpoint: '/api/posts',
   icon: 'FileText',
   label: {
     singular: 'Blog Post',
     plural: 'Blog Posts',
   },
+  adminOnly: true,
 
   table: {
     columns: [
-      { key: 'id', label: 'ID', sortable: true, hidden: true },
       { key: 'title', label: 'Title', sortable: true, searchable: true },
-      { key: 'author.name', label: 'Author', relation: 'author' },
+      { key: 'author.name', label: 'Author' },
       { key: 'category', label: 'Category', sortable: true },
       { key: 'status', label: 'Status', badge: {
         published: { color: 'green', label: 'Published' },
         draft:     { color: 'yellow', label: 'Draft' },
         archived:  { color: 'gray', label: 'Archived' },
       }},
-      { key: 'views', label: 'Views', format: 'number', sortable: true },
+      { key: 'views', label: 'Views', sortable: true },
       { key: 'published_at', label: 'Published', format: 'date' },
       { key: 'created_at', label: 'Created', format: 'relative' },
     ],
@@ -417,41 +444,43 @@ export default defineResource({
     defaultSort: { key: 'created_at', direction: 'desc' },
     actions: ['create', 'edit', 'delete', 'export'],
     bulkActions: ['delete', 'export'],
+    // Toolbar download menu (CSV / JSON / Excel) + Excel import are on by default.
   },
 
   form: {
     layout: 'two-column',
     fields: [
       { key: 'title', label: 'Title', type: 'text', required: true,
-        placeholder: 'Enter post title', span: 'full' },
+        placeholder: 'Enter post title', colSpan: 2 },
       { key: 'slug', label: 'Slug', type: 'text',
         placeholder: 'auto-generated-from-title' },
       { key: 'category', label: 'Category', type: 'select',
-        options: ['tech', 'design', 'business'] },
-      { key: 'content', label: 'Content', type: 'richtext', span: 'full' },
+        options: [
+          { label: 'Tech', value: 'tech' },
+          { label: 'Design', value: 'design' },
+          { label: 'Business', value: 'business' },
+        ] },
+      { key: 'content', label: 'Content', type: 'richtext', colSpan: 2 },
       { key: 'excerpt', label: 'Excerpt', type: 'textarea', rows: 3,
-        span: 'full' },
+        colSpan: 2 },
       { key: 'status', label: 'Status', type: 'select',
-        options: ['published', 'draft', 'archived'], default: 'draft' },
+        options: [
+          { label: 'Published', value: 'published' },
+          { label: 'Draft', value: 'draft' },
+          { label: 'Archived', value: 'archived' },
+        ], defaultValue: 'draft' },
       { key: 'featured', label: 'Featured Post', type: 'toggle' },
-      { key: 'cover_image', label: 'Cover Image', type: 'file', span: 'full' },
+      { key: 'cover_image', label: 'Cover Image', type: 'file', colSpan: 2 },
     ],
   },
 
   dashboard: {
     widgets: [
-      { type: 'stat', label: 'Total Posts', query: 'count', color: 'purple' },
-      { type: 'stat', label: 'Published', query: 'count:status=published',
-        color: 'green' },
-      { type: 'stat', label: 'Total Views', query: 'sum:views',
-        format: 'number' },
-      { type: 'chart', label: 'Posts Over Time', chartType: 'line',
-        query: 'count:by:month' },
+      { type: 'stat', label: 'Total Posts', icon: 'FileText', color: 'accent',
+        endpoint: '/api/posts?page_size=1', format: 'number' },
+      { type: 'stat', label: 'Published', icon: 'CheckCircle', color: 'success',
+        endpoint: '/api/posts?status=published&page_size=1', format: 'number' },
     ],
-  },
-
-  permissions: {
-    roles: ['admin', 'editor'],
   },
 })`} />
             </div>

@@ -66,16 +66,16 @@ export default function AdminOverviewPage() {
 
             {/* Resource definition example */}
             <div className="mt-8 mb-8">
-              <CodeBlock language="typescript" filename="apps/admin/resources/posts.ts" code={`import { defineResource } from '@grit/admin'
+              <CodeBlock language="typescript" filename="apps/admin/resources/posts.ts" code={`import { defineResource } from '@/lib/resource'
 
-export default defineResource({
+export const postsResource = defineResource({
   name: 'Post',
+  slug: 'posts',
   endpoint: '/api/posts',
   icon: 'FileText',
 
   table: {
     columns: [
-      { key: 'id', label: 'ID', sortable: true },
       { key: 'title', label: 'Title', searchable: true },
       { key: 'status', label: 'Status', badge: {
         published: { color: 'green', label: 'Published' },
@@ -91,7 +91,10 @@ export default defineResource({
       { key: 'title', label: 'Title', type: 'text', required: true },
       { key: 'content', label: 'Content', type: 'textarea' },
       { key: 'status', label: 'Status', type: 'select',
-        options: ['published', 'draft'], default: 'draft' },
+        options: [
+          { label: 'Published', value: 'published' },
+          { label: 'Draft', value: 'draft' },
+        ], defaultValue: 'draft' },
     ],
   },
 })`} />
@@ -188,9 +191,9 @@ export default defineResource({
               <p>
                 The admin layout wraps all routes in an authentication guard. Unauthenticated
                 users are redirected to the login page. Role-based access is enforced &mdash;
-                only users with the <code>admin</code> role can access the admin panel by default.
-                This is configurable per-resource via the <code>permissions</code> option in the
-                resource definition.
+                only users with the <code>ADMIN</code> role can access the admin panel by default.
+                Individual resources can be hidden from non-ADMIN/EDITOR users via the
+                <code>adminOnly</code> option in the resource definition.
               </p>
 
               <h2>System Pages</h2>
