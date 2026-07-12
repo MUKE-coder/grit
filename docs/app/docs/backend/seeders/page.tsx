@@ -24,387 +24,270 @@ export default function SeedersPage() {
                 Seeders
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Seeders populate your database with initial data &mdash; admin accounts, demo users,
-                default categories, or any test data you need during development. Grit scaffolds a
-                ready-to-use seed system with a dedicated command and extensible seeder functions.
+                Seeders fill your database with starter data &mdash; the admin account,
+                demo users, sample catalogue rows, anything you want on a fresh
+                install. In Grit, <strong>every resource gets its own seeder file</strong>,
+                you can generate one in a single command, and <code>--faker</code> fills
+                it with realistic rows (relationships included).
               </p>
             </div>
 
             <div className="prose-grit">
-              {/* Running Seeders */}
+              {/* Mental model / diagram */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
-                  Running Seeders
+                  How it fits together
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  After running migrations, seed your database with initial data:
+                  There is one thin <code>Seed()</code> runner that calls a{' '}
+                  <code>Seed&lt;Resource&gt;</code> function per resource. Each of those
+                  lives in its own file under <code>internal/database/</code>, so a
+                  seeder is always easy to find and edit &mdash; including the built-in
+                  users and blogs.
                 </p>
 
                 <CodeBlock
-                  terminal
-                  code="cd apps/api && go run cmd/seed/main.go"
+                  language="text"
+                  filename="apps/api/internal/database/"
+                  code={`  seed.go                 ← Seed(db): the runner
+   │
+   ├─ SeedUsers(db)        → users_seeder.go     (admin + demo users)
+   ├─ SeedBlogs(db)        → blogs_seeder.go     (sample posts)
+   ├─ SeedCategories(db)   → categories_seeder.go
+   └─ SeedProducts(db)     → products_seeder.go
+                              ▲
+                              └─ grit generate seeder / --seed adds these
+   seed_helpers.go         ← pickID / firstID (relationship helpers)`}
                 />
 
+                <p className="text-muted-foreground leading-relaxed mt-4">
+                  When you generate a seeder, Grit writes the{' '}
+                  <code>&lt;resource&gt;_seeder.go</code> file <em>and</em> registers
+                  its call in <code>seed.go</code> at the <code>// grit:seeders</code>{' '}
+                  marker. You never wire anything by hand.
+                </p>
+              </div>
+
+              {/* Running */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Running seeders
+                </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  The seed command first ensures all tables exist (by running migrations), then
-                  executes each seeder. Seeders are idempotent &mdash; running them multiple times
-                  won&apos;t create duplicate records:
+                  After migrating, run every seeder with one command from anywhere in
+                  the project:
+                </p>
+
+                <CodeBlock terminal code="grit seed" />
+
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Seeders are <strong>idempotent</strong> &mdash; each checks whether its
+                  table already has rows and skips if so, so re-running never
+                  duplicates data.
                 </p>
 
                 <CodeBlock
                   language="bash"
                   filename="output"
-                  code={`Database connected successfully
-Running migrations...
-All tables are up to date — nothing to migrate.
-Seeding database...
+                  code={`Seeding database...
 Created admin user: admin@example.com / admin123
 Created user: jane@example.com / admin123
-Created user: robert@example.com / admin123
-Created user: emily@example.com / admin123
-Created user: michael@example.com / admin123
+Created blog: "Getting Started with Grit" (published)
+Seeded 8 category
+Seeded 60 product
 Database seeded successfully.`}
                 />
               </div>
 
-              {/* Default Seeders */}
+              {/* Generating */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
-                  Default Seeders
+                  Generating a seeder
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Every Grit project ships with two seeders: an admin account and a set of demo users.
-                  These are defined in{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">internal/database/seed.go</code>.
+                  Add a seeder to a resource you already generated &mdash; it reads the
+                  model to pre-fill one example record with the right field types:
                 </p>
 
-                <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">Admin User</h3>
+                <CodeBlock terminal code="grit generate seeder Customer" />
+
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Creates the default admin account for accessing the admin panel:
+                  Pass more than one, or emit the seeder at the same time you scaffold
+                  the resource with <code>--seed</code>:
                 </p>
 
                 <CodeBlock
-                  language="go"
-                  filename="apps/api/internal/database/seed.go"
-                  code={`func seedAdminUser(db *gorm.DB) error {
-    var count int64
-    db.Model(&models.User{}).Where("email = ?", "admin@example.com").Count(&count)
-    if count > 0 {
-        log.Println("Admin user already exists, skipping...")
-        return nil
-    }
+                  terminal
+                  code={`grit generate seeder Customer Order Product
 
-    admin := models.User{
-        Name:     "Admin",
-        Email:    "admin@example.com",
-        Password: "admin123",
-        Role:     "admin",
-        Active:   true,
-    }
-
-    if err := db.Create(&admin).Error; err != nil {
-        return fmt.Errorf("creating admin user: %w", err)
-    }
-
-    log.Println("Created admin user: admin@example.com / admin123")
-    return nil
-}`}
-                />
-
-                <div className="p-4 rounded-lg border border-yellow-500/20 bg-yellow-500/5 mb-6">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    <strong className="text-yellow-500/90">Important:</strong> Change the default admin
-                    password immediately in production. The password is hashed via bcrypt in the{' '}
-                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">BeforeCreate</code> hook.
-                  </p>
-                </div>
-
-                <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">Demo Users</h3>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  Creates sample user accounts with different roles for testing:
-                </p>
-
-                <CodeBlock
-                  language="go"
-                  filename="apps/api/internal/database/seed.go"
-                  code={`func seedDemoUsers(db *gorm.DB) error {
-    users := []models.User{
-        {Name: "Jane Cooper", Email: "jane@example.com", Password: "admin123", Role: "editor", Active: true},
-        {Name: "Robert Fox", Email: "robert@example.com", Password: "admin123", Role: "user", Active: true},
-        {Name: "Emily Davis", Email: "emily@example.com", Password: "admin123", Role: "user", Active: true},
-        {Name: "Michael Chen", Email: "michael@example.com", Password: "admin123", Role: "user", Active: false},
-    }
-
-    for _, u := range users {
-        var count int64
-        db.Model(&models.User{}).Where("email = ?", u.Email).Count(&count)
-        if count > 0 {
-            continue
-        }
-
-        if err := db.Create(&u).Error; err != nil {
-            log.Printf("Warning: failed to create user %s: %v", u.Email, err)
-            continue
-        }
-        log.Printf("Created user: %s / admin123", u.Email)
-    }
-
-    return nil
-}`}
+grit generate resource Tag --fields "name:string" --seed`}
                 />
               </div>
 
-              {/* Blog Seed Data */}
-              <div className="mb-12">
-                <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">Blog Posts</h3>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  Every Grit project includes built-in blog seed data via the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">seedBlogs()</code> function.
-                  This creates 4 sample blog posts (3 published, 1 draft) to demonstrate the blog feature
-                  out of the box. Like all seeders, it is idempotent and safe to run multiple times.
-                </p>
-
-                <CodeBlock
-                  language="go"
-                  filename="apps/api/internal/database/seed.go"
-                  code={`func seedBlogs(db *gorm.DB) error {
-    blogs := []models.Blog{
-        {Title: "Getting Started with Grit", Slug: "getting-started-with-grit", Status: "published", ...},
-        {Title: "Building APIs with Go & Gin", Slug: "building-apis-with-go-gin", Status: "published", ...},
-        {Title: "Admin Panels Made Easy", Slug: "admin-panels-made-easy", Status: "published", ...},
-        {Title: "Advanced Grit Patterns", Slug: "advanced-grit-patterns", Status: "draft", ...},
-    }
-
-    for _, blog := range blogs {
-        var count int64
-        db.Model(&models.Blog{}).Where("slug = ?", blog.Slug).Count(&count)
-        if count > 0 {
-            continue
-        }
-
-        if err := db.Create(&blog).Error; err != nil {
-            log.Printf("Warning: failed to create blog %s: %v", blog.Title, err)
-            continue
-        }
-        log.Printf("Created blog: %s", blog.Title)
-    }
-
-    return nil
-}`}
-                />
-
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  The blog seeder is automatically called by the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Seed()</code> function
-                  alongside the admin and demo user seeders. After running{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">go run cmd/seed/main.go</code>, you
-                  can immediately visit the blog pages in the web app to see the sample content.
-                </p>
-              </div>
-
-              {/* Seed Entrypoint */}
+              {/* Faker */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
-                  The Seed Entrypoint
+                  Filling rows with faker
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  The seed command lives at{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">cmd/seed/main.go</code>.
-                  It runs migrations first to ensure all tables exist, then executes the{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Seed()</code> function:
+                  Without a flag you get <strong>one editable example row</strong>. Add{' '}
+                  <code>--faker</code> (and <code>--count N</code>, default 10) to instead
+                  generate a loop that fills many rows with{' '}
+                  <a href="https://github.com/brianvoe/gofakeit" className="text-primary hover:underline">gofakeit</a>.
+                  It ships inside the API, so this works offline.
                 </p>
 
-                <CodeBlock
-                  language="go"
-                  filename="apps/api/cmd/seed/main.go"
-                  code={`package main
+                <CodeBlock terminal code="grit generate seeder Product --faker --count 60" />
 
-import (
-    "fmt"
-    "log"
-    "os"
-
-    "myapp/apps/api/internal/config"
-    "myapp/apps/api/internal/database"
-    "myapp/apps/api/internal/models"
-)
-
-func main() {
-    cfg, err := config.Load()
-    if err != nil {
-        log.Fatalf("Failed to load config: %v", err)
-    }
-
-    db, err := database.Connect(cfg.DatabaseURL)
-    if err != nil {
-        log.Fatalf("Failed to connect to database: %v", err)
-    }
-
-    // Ensure tables exist before seeding
-    fmt.Println("Running migrations...")
-    if err := models.Migrate(db); err != nil {
-        log.Fatalf("Migration failed: %v", err)
-    }
-
-    fmt.Println("Seeding database...")
-    if err := database.Seed(db); err != nil {
-        log.Fatalf("Seeding failed: %v", err)
-    }
-
-    fmt.Println("Database seeded successfully.")
-    os.Exit(0)
-}`}
-                />
-              </div>
-
-              {/* Creating Custom Seeders */}
-              <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">
-                  Creating Custom Seeders
-                </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Add your own seeders by creating new functions and registering them in the{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Seed()</code> function.
-                  Each seeder should be idempotent &mdash; safe to run multiple times without creating duplicates.
+                  Values are chosen from each field&apos;s <strong>name and type</strong>:
                 </p>
 
-                <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">Step 1: Write the seeder function</h3>
-
-                <CodeBlock
-                  language="go"
-                  filename="apps/api/internal/database/seed.go"
-                  code={`func seedCategories(db *gorm.DB) error {
-    categories := []models.Category{
-        {Name: "Electronics", Slug: "electronics"},
-        {Name: "Clothing", Slug: "clothing"},
-        {Name: "Books", Slug: "books"},
-        {Name: "Home & Garden", Slug: "home-garden"},
-    }
-
-    for _, cat := range categories {
-        var count int64
-        db.Model(&models.Category{}).Where("slug = ?", cat.Slug).Count(&count)
-        if count > 0 {
-            continue
-        }
-
-        if err := db.Create(&cat).Error; err != nil {
-            log.Printf("Warning: failed to create category %s: %v", cat.Name, err)
-            continue
-        }
-        log.Printf("Created category: %s", cat.Name)
-    }
-
-    return nil
-}`}
-                />
-
-                <h3 className="text-lg font-semibold tracking-tight mb-3 mt-6">Step 2: Register it in Seed()</h3>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  Add your seeder call to the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Seed()</code> function.
-                  If you used <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit generate resource</code>,
-                  the generator automatically adds it via the{' '}
-                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">// grit:seeders</code> marker:
-                </p>
-
-                <CodeBlock
-                  language="go"
-                  filename="apps/api/internal/database/seed.go"
-                  code={`func Seed(db *gorm.DB) error {
-    if err := seedAdminUser(db); err != nil {
-        return fmt.Errorf("seeding admin user: %w", err)
-    }
-
-    if err := seedDemoUsers(db); err != nil {
-        return fmt.Errorf("seeding demo users: %w", err)
-    }
-
-    if err := seedCategories(db); err != nil {
-        return fmt.Errorf("seeding categories: %w", err)
-    }
-
-    // grit:seeders
-
-    return nil
-}`}
-                />
-              </div>
-
-              {/* Seeder Pattern */}
-              <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">
-                  Best Practices
-                </h2>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  Follow these patterns when writing seeders:
-                </p>
-
-                <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden mb-4">
-                  <table className="w-full text-sm">
+                <div className="overflow-x-auto mb-4">
+                  <table className="w-full text-sm border border-border rounded-lg">
                     <thead>
-                      <tr className="border-b border-border/30 bg-accent/20">
-                        <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Pattern</th>
-                        <th className="text-left px-4 py-2.5 font-medium text-foreground/80">Why</th>
+                      <tr className="border-b border-border bg-muted/30 text-left">
+                        <th className="px-4 py-2 font-medium">Field</th>
+                        <th className="px-4 py-2 font-medium">Faker value</th>
                       </tr>
                     </thead>
-                    <tbody className="text-muted-foreground">
-                      <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-medium">Check before creating</td>
-                        <td className="px-4 py-2.5">Prevents duplicate records when running seeders multiple times</td>
+                    <tbody className="font-mono text-[13px]">
+                      <tr className="border-b border-border/50"><td className="px-4 py-2">name</td><td className="px-4 py-2">gofakeit.Name()</td></tr>
+                      <tr className="border-b border-border/50"><td className="px-4 py-2">email</td><td className="px-4 py-2">gofakeit.Email()</td></tr>
+                      <tr className="border-b border-border/50"><td className="px-4 py-2">phone / city / company</td><td className="px-4 py-2">gofakeit.Phone() / City() / Company()</td></tr>
+                      <tr className="border-b border-border/50"><td className="px-4 py-2">float (price)</td><td className="px-4 py-2">gofakeit.Price(1, 1000)</td></tr>
+                      <tr className="border-b border-border/50"><td className="px-4 py-2">int / uint</td><td className="px-4 py-2">gofakeit.Number(1, 100)</td></tr>
+                      <tr className="border-b border-border/50"><td className="px-4 py-2">bool</td><td className="px-4 py-2">gofakeit.Bool()</td></tr>
+                      <tr className="border-b border-border/50"><td className="px-4 py-2">date / datetime</td><td className="px-4 py-2">gofakeit.Date()</td></tr>
+                      <tr><td className="px-4 py-2">file:image / files:image</td><td className="px-4 py-2">a sample picsum image URL</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  Anything the guesser doesn&apos;t recognise falls back to{' '}
+                  <code>gofakeit.Word()</code>. It&apos;s just Go &mdash; open the file
+                  and swap in your own calls.
+                </p>
+              </div>
+
+              {/* Relationships */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Relationships
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  This is the part most seeders get wrong. A{' '}
+                  <code>belongs_to</code> field (a Product&apos;s Category, say) needs a{' '}
+                  <em>real</em> parent id, not a random string. Grit handles it: the
+                  seeder loads the parent ids once and links each row to one of them
+                  &mdash; a random parent for faker, the first parent for the static
+                  example.
+                </p>
+
+                <CodeBlock
+                  language="go"
+                  filename="products_seeder.go (faker)"
+                  code={`func SeedProducts(db *gorm.DB) error {
+    // ... skip if already seeded ...
+
+    // Link each row to an existing parent (loaded once).
+    var categoryIDs []string
+    db.Model(&models.Category{}).Pluck("id", &categoryIDs)
+
+    const n = 60
+    for i := 0; i < n; i++ {
+        r := models.Product{
+            Name:       gofakeit.Name(),
+            Price:      gofakeit.Price(1, 1000),
+            CategoryID: pickID(categoryIDs), // ← a real, existing category
+        }
+        db.Create(&r)
+    }
+    return nil
+}`}
+                />
+
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mt-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    <strong className="text-foreground">Seed order matters.</strong> A
+                    child can only link to a parent that already exists, so seed{' '}
+                    <strong>parents first</strong>. The runner calls seeders in the order
+                    you generated the resources &mdash; generate <code>Category</code>{' '}
+                    before <code>Product</code> and you&apos;re set. Need a different
+                    order? Reorder the calls in <code>seed.go</code>.
+                  </p>
+                </div>
+              </div>
+
+              {/* Editing */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Editing a seeder
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  A static seeder is a plain slice of model structs &mdash; edit the
+                  values, add rows, done:
+                </p>
+
+                <CodeBlock
+                  language="go"
+                  filename="categories_seeder.go"
+                  code={`func SeedCategories(db *gorm.DB) error {
+    var count int64
+    db.Model(&models.Category{}).Count(&count)
+    if count > 0 {
+        return nil // already seeded
+    }
+
+    records := []models.Category{
+        {Name: "Sample Name"},          // ← edit these
+        // {Name: "Phones"},            // ← or add your own
+        // {Name: "Accessories"},
+    }
+
+    for _, r := range records {
+        db.Create(&r)
+    }
+    return nil
+}`}
+                />
+              </div>
+
+              {/* Commands recap */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Command reference
+                </h2>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border border-border rounded-lg">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/30 text-left">
+                        <th className="px-4 py-2 font-medium">Command</th>
+                        <th className="px-4 py-2 font-medium">Does</th>
                       </tr>
-                      <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-medium">Use unique fields for lookups</td>
-                        <td className="px-4 py-2.5">Check by email, slug, or other unique identifiers &mdash; not by name</td>
-                      </tr>
-                      <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-medium">Log what you create</td>
-                        <td className="px-4 py-2.5">Makes it easy to verify seeding worked correctly</td>
-                      </tr>
-                      <tr className="border-b border-border/20">
-                        <td className="px-4 py-2.5 font-medium">Wrap errors with context</td>
-                        <td className="px-4 py-2.5">Use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">fmt.Errorf(&quot;seeding X: %w&quot;, err)</code> for clear error messages</td>
-                      </tr>
-                      <tr>
-                        <td className="px-4 py-2.5 font-medium">Seed parent records first</td>
-                        <td className="px-4 py-2.5">If Products need Categories, seed categories before products</td>
-                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-border/50"><td className="px-4 py-2 font-mono text-[13px]">grit seed</td><td className="px-4 py-2 text-muted-foreground">Run every seeder</td></tr>
+                      <tr className="border-b border-border/50"><td className="px-4 py-2 font-mono text-[13px]">grit generate seeder X [Y…]</td><td className="px-4 py-2 text-muted-foreground">Add a seeder to existing resource(s)</td></tr>
+                      <tr className="border-b border-border/50"><td className="px-4 py-2 font-mono text-[13px]">grit generate resource X … --seed</td><td className="px-4 py-2 text-muted-foreground">Emit the seeder while scaffolding</td></tr>
+                      <tr><td className="px-4 py-2 font-mono text-[13px]">… --faker --count N</td><td className="px-4 py-2 text-muted-foreground">Fill N rows with gofakeit instead of one example</td></tr>
                     </tbody>
                   </table>
                 </div>
               </div>
 
-              {/* Fresh + Seed Workflow */}
-              <div className="mb-12">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">
-                  Reset &amp; Reseed
-                </h2>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  A common development workflow is to drop everything and start fresh with seed data.
-                  Combine the fresh migration with seeding:
-                </p>
-
-                <CodeBlock
-                  terminal
-                  code={`go run cmd/migrate/main.go --fresh
-go run cmd/seed/main.go`}
-                />
-
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  This drops all tables, recreates them from your models, and populates them with seed data.
-                  Perfect for resetting your local development environment.
-                </p>
-              </div>
-
-              {/* Nav */}
-              <div className="flex items-center justify-between pt-6 border-t border-border/30">
-                <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">
-                  <Link href="/docs/backend/migrations" className="gap-1.5">
-                    <ArrowLeft className="h-3.5 w-3.5" />
+              {/* Prev / Next */}
+              <div className="flex items-center justify-between border-t border-border pt-8 mt-12">
+                <Button variant="ghost" asChild>
+                  <Link href="/docs/backend/migrations" className="gap-2">
+                    <ArrowLeft className="h-4 w-4" />
                     Migrations
                   </Link>
                 </Button>
-                <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">
-                  <Link href="/docs/admin/overview" className="gap-1.5">
-                    Admin Overview
-                    <ArrowRight className="h-3.5 w-3.5" />
+                <Button variant="ghost" asChild>
+                  <Link href="/docs/backend/models" className="gap-2">
+                    Models
+                    <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
               </div>

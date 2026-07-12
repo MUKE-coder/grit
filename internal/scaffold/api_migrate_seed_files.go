@@ -16,7 +16,7 @@ func writeMigrateSeedFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "database", "seed.go"):           apiSeedGo(),
 		filepath.Join(apiRoot, "internal", "database", "users_seeder.go"):   apiUsersSeederGo(),
 		filepath.Join(apiRoot, "internal", "database", "blogs_seeder.go"):   apiBlogsSeederGo(),
-		filepath.Join(apiRoot, "internal", "database", "faker.go"):          apiSeedFakerGo(),
+		filepath.Join(apiRoot, "internal", "database", "seed_helpers.go"):   apiSeedHelpersGo(),
 		filepath.Join(apiRoot, "internal", "database", "migrate.go"):        apiMigrateGo(),
 	}
 
@@ -292,18 +292,33 @@ func seedDemoUsers(db *gorm.DB) error {
 `
 }
 
-// apiSeedFakerGo keeps gofakeit in go.mod even before any faker seeder exists,
-// so "grit generate seeder --faker" (and --faker on generate resource) works
-// offline without a network fetch. Faker seeders import gofakeit directly.
-func apiSeedFakerGo() string {
+// apiSeedHelpersGo returns internal/database/seed_helpers.go — shared helpers
+// seeders use to link belongs_to fields to real parents, and (via pickID) the
+// gofakeit reference that keeps it in go.mod so "grit generate seeder --faker"
+// works offline without a network fetch.
+func apiSeedHelpersGo() string {
 	return `package database
 
-// gofakeit powers the optional faker seeders (grit generate seeder --faker).
-// This reference keeps it in go.mod so ` + "`go mod tidy`" + ` won't drop it before
-// your first faker seeder is generated.
 import "github.com/brianvoe/gofakeit/v7"
 
-var _ = gofakeit.Name
+// pickID returns a random id from ids, or "" if empty. Faker seeders use it to
+// link a belongs_to field to a real existing parent (load the parent ids with
+// db.Model(&models.Parent{}).Pluck("id", &ids) first).
+func pickID(ids []string) string {
+	if len(ids) == 0 {
+		return ""
+	}
+	return ids[gofakeit.Number(0, len(ids)-1)]
+}
+
+// firstID returns the first id, or "" if empty — the static example seeders
+// use it to link to a parent deterministically.
+func firstID(ids []string) string {
+	if len(ids) == 0 {
+		return ""
+	}
+	return ids[0]
+}
 `
 }
 

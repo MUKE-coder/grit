@@ -28,6 +28,38 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.55.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.55.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 12, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Seeders now understand relationships</strong> — and the
+                  Seeders docs page is rewritten to match.
+                </p>
+                <p>
+                  A generated seeder used to skip <code>belongs_to</code> fields, so a
+                  faker Product had no Category. Now the seeder loads the parent ids
+                  once (<code>Pluck</code>) and links every row to a{' '}
+                  <strong>real existing parent</strong> — a random one for{' '}
+                  <code>--faker</code>, the first one for the static example (via new{' '}
+                  <code>pickID</code> / <code>firstID</code> helpers). Seed parents
+                  before children (the runner calls seeders in generation order) and
+                  the graph wires itself up. Verified: 12 faker products all linked to
+                  real categories.
+                </p>
+                <p>
+                  Existing projects: <code>grit update</code>, then re-generate any
+                  seeders you want relationship-aware.
+                </p>
+              </div>
+            </div>
+
             {/* v3.54.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

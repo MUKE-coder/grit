@@ -51,7 +51,10 @@ func (g *Generator) seederContent(names Names, opts SeederOptions) string {
 	if opts.Faker {
 		mode = "faker"
 	}
-	fieldLines, needsTime, needsFiles := g.seederFieldLines(mode)
+	fieldLines, relPreamble, needsTime, needsFiles := g.seederFieldLines(mode)
+	if relPreamble != "" {
+		relPreamble = "\t// Link each row to an existing parent (loaded once).\n" + relPreamble + "\n"
+	}
 
 	// Assemble imports — only what the record actually references.
 	var imports strings.Builder
@@ -83,6 +86,7 @@ func (g *Generator) seederContent(names Names, opts SeederOptions) string {
 			"\t\tlog.Println(\"" + names.PluralPascal + " already seeded, skipping...\")\n" +
 			"\t\treturn nil\n" +
 			"\t}\n\n" +
+			relPreamble +
 			"\tconst n = " + fmt.Sprintf("%d", count) + "\n" +
 			"\tfor i := 0; i < n; i++ {\n" +
 			"\t\tr := models." + names.Pascal + "{\n" +
@@ -109,6 +113,7 @@ func (g *Generator) seederContent(names Names, opts SeederOptions) string {
 		"\t\tlog.Println(\"" + names.PluralPascal + " already seeded, skipping...\")\n" +
 		"\t\treturn nil\n" +
 		"\t}\n\n" +
+		relPreamble +
 		"\trecords := []models." + names.Pascal + "{\n" +
 		"\t\t{\n" +
 		fieldLines +
@@ -203,14 +208,35 @@ func goTypeToFieldType(t string) string {
 	}
 }
 
-// seederFieldLines returns the "GoField: value," lines for one record, plus
-// whether the time and files packages are needed. Slug (auto), belongs_to
-// (needs a real FK), m2m and string-array fields are skipped — the user wires
-// those up by hand.
-func (g *Generator) seederFieldLines(mode string) (lines string, needsTime, needsFiles bool) {
-	var b strings.Builder
+// seederFieldLines returns the "GoField: value," lines for one record, a
+// preamble that resolves belongs_to relations (loads the related ids so each
+// row links to a real parent), and whether the time/files packages are needed.
+// Slug (auto), m2m and string-array fields are skipped — the user wires those
+// up by hand.
+func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needsTime, needsFiles bool) {
+	var b, pre strings.Builder
+	seenRel := map[string]bool{}
 	for _, f := range g.Definition.Fields {
-		if f.IsSlug() || f.IsBelongsTo() || f.IsManyToMany() || f.IsStringArray() {
+		if f.IsSlug() || f.IsManyToMany() || f.IsStringArray() {
+			continue
+		}
+		// belongs_to: link to a real existing parent. We load the parent ids
+		// once (Pluck) and pick one per row — random for faker, the first for
+		// the static example. If none exist yet the FK is left empty.
+		if f.IsBelongsTo() {
+			rel := MakeNames(f.RelatedModelName())
+			fkGo := toPascalCase(f.FKColumnName())
+			idsVar := lowerCamel(rel.Lower) + "IDs"
+			if !seenRel[idsVar] {
+				pre.WriteString("\tvar " + idsVar + " []string\n")
+				pre.WriteString("\tdb.Model(&models." + rel.Pascal + "{}).Pluck(\"id\", &" + idsVar + ")\n")
+				seenRel[idsVar] = true
+			}
+			if mode == "faker" {
+				b.WriteString("\t\t\t" + fkGo + ": pickID(" + idsVar + "),\n")
+			} else {
+				b.WriteString("\t\t\t" + fkGo + ": firstID(" + idsVar + "),\n")
+			}
 			continue
 		}
 		goField := toPascalCase(f.Name)
@@ -306,5 +332,5 @@ func (g *Generator) seederFieldLines(mode string) (lines string, needsTime, need
 		}
 		b.WriteString("\t\t\t" + goField + ": " + val + ",\n")
 	}
-	return b.String(), needsTime, needsFiles
+	return b.String(), pre.String(), needsTime, needsFiles
 }
