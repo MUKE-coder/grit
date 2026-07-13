@@ -161,7 +161,7 @@ export default function ApiOnlyArchitecturePage() {
                 <File name="docker-compose.yml" comment="PostgreSQL, Redis, MinIO, Mailhog" />
                 <File name="docker-compose.prod.yml" />
                 <File name="grit.json" comment={'architecture: "api"'} />
-                <Folder name=".claude/skills/grit" comment="Tailored \u2014 no frontend rules" defaultOpen>
+                <Folder name=".claude/skills/grit" comment="Tailored — no frontend rules" defaultOpen>
                   <File name="SKILL.md" />
                   <File name="reference.md" />
                 </Folder>
@@ -384,11 +384,11 @@ export default function ApiOnlyArchitecturePage() {
               </p>
               <CodeBlock language="bash" filename="data flow" code={`Client (curl / Postman / mobile app / external frontend)
     \u2502
-    \u251c\u2500\u2500 POST /api/auth/login      \u2192 Auth handler \u2192 JWT service
-    \u251c\u2500\u2500 GET  /api/posts            \u2192 Post handler \u2192 Post service \u2192 PostgreSQL
-    \u251c\u2500\u2500 POST /api/uploads          \u2192 Upload handler \u2192 S3/MinIO
-    \u251c\u2500\u2500 POST /api/ai/chat          \u2192 AI handler \u2192 Claude/OpenAI
-    \u2514\u2500\u2500 GET  /docs                 \u2192 Scalar/Swagger UI`} />
+    \u251c\u2500\u2500 POST /api/auth/login      → Auth handler → JWT service
+    \u251c\u2500\u2500 GET  /api/posts            → Post handler → Post service → PostgreSQL
+    \u251c\u2500\u2500 POST /api/uploads          → Upload handler → S3/MinIO
+    \u251c\u2500\u2500 POST /api/ai/chat          → AI handler → Claude/OpenAI
+    \u2514\u2500\u2500 GET  /docs                 → Scalar/Swagger UI`} />
             </div>
 
             {/* Development */}

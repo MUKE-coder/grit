@@ -350,27 +350,27 @@ export default function TutorialContactAppPage() {
                   {[
                     {
                       url: "http://localhost:8080/studio",
-                      desc: "GORM Studio \u2014 visual database browser to inspect tables, run queries, and see relationships",
+                      desc: "GORM Studio — visual database browser to inspect tables, run queries, and see relationships",
                     },
                     {
                       url: "http://localhost:8080/docs",
-                      desc: "API Documentation \u2014 auto-generated interactive docs for every endpoint",
+                      desc: "API Documentation — auto-generated interactive docs for every endpoint",
                     },
                     {
                       url: "http://localhost:8080/sentinel/ui",
-                      desc: "Sentinel \u2014 security dashboard with WAF, rate limiting, and threat monitoring",
+                      desc: "Sentinel — security dashboard with WAF, rate limiting, and threat monitoring",
                     },
                     {
                       url: "http://localhost:8080/pulse",
-                      desc: "Pulse \u2014 observability dashboard with request tracing, database monitoring, and runtime metrics",
+                      desc: "Pulse — observability dashboard with request tracing, database monitoring, and runtime metrics",
                     },
                     {
                       url: "http://localhost:8025",
-                      desc: "Mailhog \u2014 catches all emails sent during development",
+                      desc: "Mailhog — catches all emails sent during development",
                     },
                     {
                       url: "http://localhost:9001",
-                      desc: "MinIO Console \u2014 browse uploaded files (login: minioadmin / minioadmin)",
+                      desc: "MinIO Console — browse uploaded files (login: minioadmin / minioadmin)",
                     },
                   ].map((item) => (
                     <li

@@ -154,7 +154,7 @@ export default function SingleArchitecturePage() {
                 </Folder>
                 <Folder name="frontend" comment="React + Vite + TanStack Router" defaultOpen>
                   <File name="package.json" />
-                  <File name="vite.config.ts" comment="Proxy /api \u2192 localhost:8080" />
+                  <File name="vite.config.ts" comment="Proxy /api → localhost:8080" />
                   <File name="tailwind.config.ts" />
                   <File name="tsconfig.json" />
                   <File name="index.html" />
@@ -300,16 +300,16 @@ func main() {
               <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
                 Production
               </h3>
-              <CodeBlock language="bash" filename="production data flow" code={`Browser \u2192 Go binary (:8080)
-               \u251c\u2500\u2500 /api/*        \u2192 Gin router \u2192 handlers \u2192 services \u2192 database
-               \u2514\u2500\u2500 everything else \u2192 serves frontend/dist/ (HTML, JS, CSS)`} />
+              <CodeBlock language="bash" filename="production data flow" code={`Browser → Go binary (:8080)
+               \u251c\u2500\u2500 /api/*        → Gin router → handlers → services → database
+               \u2514\u2500\u2500 everything else → serves frontend/dist/ (HTML, JS, CSS)`} />
 
               <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
                 Development
               </h3>
-              <CodeBlock language="bash" filename="development data flow" code={`Browser \u2192 Vite dev server (:5173)
-               \u251c\u2500\u2500 /api/*  \u2192 proxied to Go (:8080) \u2192 handlers \u2192 services \u2192 database
-               \u2514\u2500\u2500 other   \u2192 Vite HMR (instant refresh)`} />
+              <CodeBlock language="bash" filename="development data flow" code={`Browser → Vite dev server (:5173)
+               \u251c\u2500\u2500 /api/*  → proxied to Go (:8080) → handlers → services → database
+               \u2514\u2500\u2500 other   → Vite HMR (instant refresh)`} />
               <p className="text-sm text-muted-foreground/60 mt-3">
                 The Vite proxy is configured in{' '}
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">vite.config.ts</code>{' '}

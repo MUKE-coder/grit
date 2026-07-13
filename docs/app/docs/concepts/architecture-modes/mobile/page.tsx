@@ -384,11 +384,11 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
               </h2>
               <CodeBlock language="bash" filename="data flow" code={`Mobile App (Expo)
     \u2502
-    \u251c\u2500\u2500 SecureStore \u2192 reads JWT token
+    \u251c\u2500\u2500 SecureStore → reads JWT token
     \u2502
     \u251c\u2500\u2500 fetch('https://api.yourapp.com/api/posts')
     \u2502       \u2502
-    \u2502       \u2514\u2500\u2500 Go API \u2192 JWT middleware \u2192 handler \u2192 service \u2192 PostgreSQL
+    \u2502       \u2514\u2500\u2500 Go API → JWT middleware → handler → service → PostgreSQL
     \u2502
     \u251c\u2500\u2500 FlatList renders data (not HTML tables)
     \u251c\u2500\u2500 Pull-to-refresh triggers refetch

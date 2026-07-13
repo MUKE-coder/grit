@@ -44,16 +44,16 @@ export default function TypeSystemPage() {
                   automatically generating all downstream types.
                 </p>
                 <Diagram>
-                  <DiagramBox tone="primary" title="Go Struct" sub="apps/api/internal/models/post.go \u2014 source of truth" />
+                  <DiagramBox tone="primary" title="Go Struct" sub="apps/api/internal/models/post.go — source of truth" />
                   <DiagramArrow label="grit generate \u00b7 grit sync" />
                   <DiagramRow>
-                    <DiagramBox tone="green" title="PostgreSQL Table" sub="GORM tags \u2192 auto-migrate" />
-                    <DiagramBox tone="cyan" title="JSON over HTTP" sub="json tags \u2192 serialization" />
+                    <DiagramBox tone="green" title="PostgreSQL Table" sub="GORM tags → auto-migrate" />
+                    <DiagramBox tone="cyan" title="JSON over HTTP" sub="json tags → serialization" />
                     <DiagramBox tone="blue" title="TypeScript Interface" sub="packages/shared/types/post.ts" />
                   </DiagramRow>
                   <DiagramArrow label="inferred from the same source" />
                   <DiagramRow>
-                    <DiagramBox tone="violet" title="Zod Schema" sub="schemas/post.ts \u2014 form + API validation" />
+                    <DiagramBox tone="violet" title="Zod Schema" sub="schemas/post.ts — form + API validation" />
                     <DiagramBox tone="blue" title="React Query Hooks" sub="typed data fetching + cache invalidation" />
                   </DiagramRow>
                   <DiagramLegend
@@ -376,7 +376,7 @@ import { API_ROUTES, ROLES } from "@shared/constants";`} />
 
                 <CodeBlock language="bash" code={`$ grit sync
 
-  Syncing Go types \u2192 TypeScript...
+  Syncing Go types → TypeScript...
 
   \u2713 packages/shared/types/post.ts
   \u2713 packages/shared/schemas/post.ts

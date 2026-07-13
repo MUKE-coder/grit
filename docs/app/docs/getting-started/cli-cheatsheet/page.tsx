@@ -163,7 +163,7 @@ export default function CLICheatsheetPage() {
                       {
                         cmd: "grit sync",
                         alias: "",
-                        desc: "Sync Go types \u2192 TypeScript",
+                        desc: "Sync Go types → TypeScript",
                       },
                       {
                         cmd: "grit migrate",
@@ -226,7 +226,7 @@ export default function CLICheatsheetPage() {
                           {row.cmd}
                         </td>
                         <td className="px-4 py-2.5 font-mono text-xs text-primary/60">
-                          {row.alias || "\u2014"}
+                          {row.alias || "—"}
                         </td>
                         <td className="px-4 py-2.5 text-muted-foreground/70">
                           {row.desc}

@@ -86,11 +86,11 @@ export default function ArchitecturePage() {
                   <DiagramArrow label="REST + JWT" />
 
                   {/* API */}
-                  <DiagramBox tone="primary" title="Go API \u2014 :8080" sub="Gin Router \u2192 Middleware \u2192 Handlers \u2192 Services" />
+                  <DiagramBox tone="primary" title="Go API — :8080" sub="Gin Router → Middleware → Handlers → Services" />
                   <div className="mt-2 grid gap-2 sm:grid-cols-3 text-[11px] text-muted-foreground/80">
-                    <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2"><span className="font-semibold text-foreground/80">Middleware</span> \u2014 CORS, Auth (JWT), Logger, Recovery</div>
-                    <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2"><span className="font-semibold text-foreground/80">Handlers</span> \u2014 thin HTTP layer, request/response only</div>
-                    <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2"><span className="font-semibold text-foreground/80">Services</span> \u2014 business logic, DB queries, validation</div>
+                    <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2"><span className="font-semibold text-foreground/80">Middleware</span> — CORS, Auth (JWT), Logger, Recovery</div>
+                    <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2"><span className="font-semibold text-foreground/80">Handlers</span> — thin HTTP layer, request/response only</div>
+                    <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2"><span className="font-semibold text-foreground/80">Services</span> — business logic, DB queries, validation</div>
                   </div>
 
                   <DiagramArrow />
@@ -130,7 +130,7 @@ export default function ArchitecturePage() {
                   nodes={[
                     { name: 'cmd/server/main.go', type: 'file', depth: 0, comment: 'Entry point: config, DB, routes, Gin' },
                     { name: 'internal/', type: 'folder', depth: 0 },
-                    { name: 'config/config.go', type: 'file', depth: 1, comment: 'Reads .env \u2192 typed config' },
+                    { name: 'config/config.go', type: 'file', depth: 1, comment: 'Reads .env → typed config' },
                     { name: 'database/database.go', type: 'file', depth: 1, comment: 'GORM connection' },
                     { name: 'models/', type: 'folder', depth: 1, comment: 'GORM structs (User, Post, \u2026)' },
                     { name: 'handlers/', type: 'folder', depth: 1, comment: 'Gin handlers (HTTP request/response)' },
