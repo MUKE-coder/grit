@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/infrastructure/database')
@@ -27,6 +28,24 @@ export default function DatabasePage() {
                 Grit uses GORM as its ORM and PostgreSQL as the primary database.
                 Define your models as Go structs and run migrations with a dedicated command.
               </p>
+              <LaneFlow
+                id="infra-db"
+                lanes={['Go models', 'grit migrate', 'PostgreSQL']}
+                nodes={[
+                  { id: 'models', lane: 0, row: 1, title: 'models.Models()', sub: 'GORM structs', tone: 'cyan' },
+                  { id: 'migrate', lane: 1, row: 1, title: 'grit migrate', sub: 'AutoMigrate', tone: 'primary' },
+                  { id: 'tables', lane: 2, row: 1, title: 'Tables', sub: 'columns + indexes', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'models', to: 'migrate', label: 'register', tone: 'cyan' },
+                  { from: 'migrate', to: 'tables', label: 'create / alter', tone: 'green' },
+                ]}
+                legend={[
+                  { tone: 'cyan', label: 'Go structs (schema)' },
+                  { tone: 'green', label: 'Database tables' },
+                ]}
+                caption="Your Go structs are the schema — grit migrate syncs them into PostgreSQL"
+              />
             </div>
 
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">

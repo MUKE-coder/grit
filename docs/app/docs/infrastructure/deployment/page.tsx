@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/infrastructure/deployment')
@@ -28,6 +29,26 @@ export default function DeploymentPage() {
                 managed cloud platforms. This guide walks you through a complete production
                 deployment on a VPS, step by step.
               </p>
+              <LaneFlow
+                id="infra-deploy"
+                lanes={['Build', 'Ship', 'VPS']}
+                nodes={[
+                  { id: 'build', lane: 0, row: 0, title: 'docker build', sub: 'production image', tone: 'cyan', badge: 1 },
+                  { id: 'ship', lane: 1, row: 0, title: 'Push / pull', sub: 'registry or git', tone: 'blue', badge: 2 },
+                  { id: 'compose', lane: 2, row: 0, title: 'compose up', sub: 'on the server', tone: 'primary', badge: 3 },
+                  { id: 'run', lane: 2, row: 1, title: 'Running app', sub: ':443 + SSL', tone: 'green', badge: 4 },
+                ]}
+                edges={[
+                  { from: 'build', to: 'ship', label: 'image', tone: 'blue' },
+                  { from: 'ship', to: 'compose', label: 'deploy', tone: 'primary' },
+                  { from: 'compose', to: 'run', tone: 'green' },
+                ]}
+                legend={[
+                  { tone: 'cyan', label: 'Build' },
+                  { tone: 'primary', label: 'Run on VPS' },
+                ]}
+                caption="Build an image, ship it to your VPS, and bring it up with Docker Compose"
+              />
             </div>
 
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">

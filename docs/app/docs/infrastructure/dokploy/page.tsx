@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/infrastructure/dokploy')
@@ -28,6 +29,27 @@ export default function DokployPage() {
                 the convenience of Vercel or Railway on your own VPS. Web dashboard, auto-SSL, GitHub
                 integration, and Docker Compose support &mdash; all for free.
               </p>
+              <LaneFlow
+                id="infra-dokploy"
+                lanes={['GitHub', 'Dokploy (your VPS)', 'Live']}
+                nodes={[
+                  { id: 'repo', lane: 0, row: 0, title: 'git push', sub: 'your repo', tone: 'blue' },
+                  { id: 'dokploy', lane: 1, row: 0, title: 'Dokploy', sub: 'builds image', tone: 'primary' },
+                  { id: 'ssl', lane: 1, row: 1, title: 'Auto-SSL', sub: "Let's Encrypt", tone: 'cyan' },
+                  { id: 'live', lane: 2, row: 0, title: 'Live app', sub: 'your domain', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'repo', to: 'dokploy', label: 'webhook', tone: 'blue' },
+                  { from: 'dokploy', to: 'ssl', tone: 'cyan' },
+                  { from: 'dokploy', to: 'live', label: 'deploy', tone: 'green' },
+                  { from: 'ssl', to: 'live', dashed: true, tone: 'cyan' },
+                ]}
+                legend={[
+                  { tone: 'primary', label: 'Dokploy PaaS' },
+                  { tone: 'green', label: 'Live on your domain' },
+                ]}
+                caption="Push to GitHub; Dokploy builds, provisions SSL, and deploys — Vercel-style on your own VPS"
+              />
             </div>
 
             <div className="prose-grit">

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock, StepWithCode } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/infrastructure/deploy-command')
@@ -27,6 +28,28 @@ export default function DeployCommandPage() {
               One-command production deployment. Build, upload, and configure your server with{' '}
               <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[15px]">grit deploy</code>.
             </p>
+            <LaneFlow
+              id="infra-deploycmd"
+              lanes={['grit deploy', 'On your server']}
+              nodes={[
+                { id: 'cmd', lane: 0, row: 1, title: 'grit deploy', sub: 'one command', tone: 'primary' },
+                { id: 'build', lane: 1, row: 0, title: 'Build', sub: 'binary + assets', tone: 'cyan', badge: 1 },
+                { id: 'upload', lane: 1, row: 1, title: 'Upload', sub: 'to the server', tone: 'blue', badge: 2 },
+                { id: 'configure', lane: 1, row: 2, title: 'Configure', sub: 'systemd · nginx', tone: 'amber', badge: 3 },
+                { id: 'live', lane: 1, row: 3, title: 'Live', sub: 'running + SSL', tone: 'green', badge: 4 },
+              ]}
+              edges={[
+                { from: 'cmd', to: 'build', label: 'runs', tone: 'cyan' },
+                { from: 'build', to: 'upload', tone: 'blue' },
+                { from: 'upload', to: 'configure', tone: 'amber' },
+                { from: 'configure', to: 'live', tone: 'green' },
+              ]}
+              legend={[
+                { tone: 'primary', label: 'One command' },
+                { tone: 'green', label: 'Live server' },
+              ]}
+              caption="grit deploy builds, uploads, and configures your server — one command to production"
+            />
           </div>
 
           <div className="mb-14">

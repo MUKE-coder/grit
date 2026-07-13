@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/infrastructure/docker')
@@ -27,6 +28,28 @@ export default function DockerSetupPage() {
                 Grit uses Docker Compose to run all infrastructure services locally.
                 One command gives you PostgreSQL, Redis, MinIO, and Mailhog &mdash; ready to go.
               </p>
+              <LaneFlow
+                id="infra-docker"
+                lanes={['docker compose up', 'Local services']}
+                nodes={[
+                  { id: 'cmd', lane: 0, row: 1, title: 'docker compose up', sub: 'one command', tone: 'primary' },
+                  { id: 'pg', lane: 1, row: 0, title: 'PostgreSQL', sub: ':5434', tone: 'green' },
+                  { id: 'redis', lane: 1, row: 1, title: 'Redis', sub: ':6380', tone: 'rose' },
+                  { id: 'minio', lane: 1, row: 2, title: 'MinIO', sub: ':9002', tone: 'amber' },
+                  { id: 'mail', lane: 1, row: 3, title: 'Mailhog', sub: ':8025', tone: 'cyan' },
+                ]}
+                edges={[
+                  { from: 'cmd', to: 'pg', tone: 'green' },
+                  { from: 'cmd', to: 'redis', label: 'starts', tone: 'rose' },
+                  { from: 'cmd', to: 'minio', tone: 'amber' },
+                  { from: 'cmd', to: 'mail', tone: 'cyan' },
+                ]}
+                legend={[
+                  { tone: 'primary', label: 'One command' },
+                  { tone: 'green', label: 'Your local stack' },
+                ]}
+                caption="One command brings up Postgres, Redis, MinIO, and Mailhog — your whole local stack"
+              />
             </div>
 
             {/* Overview */}
