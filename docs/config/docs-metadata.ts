@@ -32,6 +32,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Create your first Grit project in under 5 minutes. Scaffold a full-stack app with Go API, Next.js frontend, and admin panel.',
   },
+  '/docs/getting-started/coming-from': {
+    title: 'Coming from Laravel, Django, or Next.js',
+    description:
+      'A translation guide for Laravel, Django, and Next.js developers: how models, migrations, seeders, the admin panel, and CLI commands map to Grit, and the one real mindset shift (shared Go↔TypeScript types).',
+  },
   '/docs/getting-started/configuration': {
     title: 'Configuration',
     description:

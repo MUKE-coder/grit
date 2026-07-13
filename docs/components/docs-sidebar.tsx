@@ -49,10 +49,11 @@ const navItems: NavItem[] = [
     items: [
       { title: 'Introduction', href: '/docs' },
       { title: 'Stack Selector — Pick a Combo', href: '/docs/stack-selector' },
-      { title: 'Philosophy & Inspiration', href: '/docs/getting-started/philosophy' },
+      { title: 'Installation', href: '/docs/getting-started/installation' },
       { title: 'Quick Start', href: '/docs/getting-started/quick-start' },
       { title: 'Your First App', href: '/docs/tutorials/contact-app' },
-      { title: 'Installation', href: '/docs/getting-started/installation' },
+      { title: 'Coming from Laravel / Django / Next', href: '/docs/getting-started/coming-from' },
+      { title: 'Philosophy & Inspiration', href: '/docs/getting-started/philosophy' },
       { title: 'Project Structure', href: '/docs/getting-started/project-structure' },
       { title: 'Configuration', href: '/docs/getting-started/configuration' },
       { title: 'Troubleshooting', href: '/docs/getting-started/troubleshooting' },
