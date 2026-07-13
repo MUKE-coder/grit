@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/models')
@@ -39,6 +40,27 @@ export default function ModelsPage() {
                 <li><strong><code>json:"..."</code></strong> -- controls how the field is serialized in API responses.</li>
                 <li><strong><code>binding:"..."</code></strong> -- controls request validation when Gin binds JSON input.</li>
               </ul>
+              <LaneFlow
+                id="model-tags"
+                lanes={['One struct field', 'Its three tag categories drive']}
+                nodes={[
+                  { id: 'field', lane: 0, row: 1, title: 'Name string', sub: 'gorm · json · binding', tone: 'primary' },
+                  { id: 'db', lane: 1, row: 0, title: 'DB column', sub: 'gorm: size, index', tone: 'green' },
+                  { id: 'api', lane: 1, row: 1, title: 'API field', sub: 'json: serialization', tone: 'cyan' },
+                  { id: 'valid', lane: 1, row: 2, title: 'Validation', sub: 'binding: required', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'field', to: 'db', label: 'gorm', tone: 'green' },
+                  { from: 'field', to: 'api', label: 'json', tone: 'cyan' },
+                  { from: 'field', to: 'valid', label: 'binding', tone: 'amber' },
+                ]}
+                legend={[
+                  { tone: 'green', label: 'Database schema' },
+                  { tone: 'cyan', label: 'API serialization' },
+                  { tone: 'amber', label: 'Request validation' },
+                ]}
+                caption="One struct field, three tag categories — schema, serialization, and validation from one place"
+              />
               <p>
                 Here is a minimal model that demonstrates all three:
               </p>

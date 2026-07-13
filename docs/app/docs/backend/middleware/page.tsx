@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/middleware')
@@ -36,6 +37,31 @@ export default function MiddlewarePage() {
                 Middleware is registered in <code>routes/routes.go</code>. The order matters --
                 middleware executes in the order it is registered.
               </p>
+              <LaneFlow
+                id="mw-order"
+                lanes={['Request → Handler']}
+                nodes={[
+                  { id: 'log', lane: 0, row: 0, title: 'Logger', sub: 'every request', tone: 'primary', badge: 1 },
+                  { id: 'rec', lane: 0, row: 1, title: 'Recovery', sub: 'catch panics', tone: 'primary', badge: 2 },
+                  { id: 'cors', lane: 0, row: 2, title: 'CORS', sub: 'allowed origins', tone: 'primary', badge: 3 },
+                  { id: 'auth', lane: 0, row: 3, title: 'Auth (JWT)', sub: 'protected + admin only', tone: 'amber', badge: 4 },
+                  { id: 'role', lane: 0, row: 4, title: 'RequireRole', sub: 'admin only', tone: 'rose', badge: 5 },
+                  { id: 'handler', lane: 0, row: 5, title: 'Handler', sub: 'your code', tone: 'green', badge: 6 },
+                ]}
+                edges={[
+                  { from: 'log', to: 'rec', tone: 'primary' },
+                  { from: 'rec', to: 'cors', tone: 'primary' },
+                  { from: 'cors', to: 'auth', dashed: true, tone: 'amber' },
+                  { from: 'auth', to: 'role', dashed: true, tone: 'rose' },
+                  { from: 'role', to: 'handler', tone: 'green' },
+                ]}
+                legend={[
+                  { tone: 'primary', label: 'Global (all routes)' },
+                  { tone: 'amber', label: 'Protected group' },
+                  { tone: 'rose', label: 'Admin group' },
+                ]}
+                caption="1–3 run on every route; 4 is added on protected groups, 5 on admin groups (dashed = conditional)"
+              />
               <CodeBlock filename="apps/api/internal/routes/routes.go" code={`func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
     r := gin.New()
 

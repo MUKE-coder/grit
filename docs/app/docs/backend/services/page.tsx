@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/services')
@@ -77,6 +78,30 @@ export default function ServicesPage() {
                 Grit ships with two built-in services: <code>AuthService</code> (JWT token operations)
                 and a pattern you can follow for any new service.
               </p>
+
+              <LaneFlow
+                id="svc-layers"
+                lanes={['HTTP layer', 'Business layer', 'Data & external']}
+                nodes={[
+                  { id: 'handler', lane: 0, row: 1, title: 'Handler', sub: 'parse · respond', tone: 'cyan' },
+                  { id: 'service', lane: 1, row: 1, title: 'Service', sub: 'logic · transactions', tone: 'primary' },
+                  { id: 'gorm', lane: 2, row: 0, title: 'GORM', sub: 'queries', tone: 'green' },
+                  { id: 'ext', lane: 2, row: 1, title: 'Email · Storage', sub: 'external APIs', tone: 'violet' },
+                  { id: 'jobs', lane: 2, row: 2, title: 'AI · Jobs', sub: 'async work', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'handler', to: 'service', label: 'delegates', tone: 'primary' },
+                  { from: 'service', to: 'gorm', label: 'query', tone: 'green' },
+                  { from: 'service', to: 'ext', label: 'call', tone: 'violet' },
+                  { from: 'service', to: 'jobs', label: 'enqueue', tone: 'amber' },
+                ]}
+                legend={[
+                  { tone: 'cyan', label: 'Thin HTTP handler' },
+                  { tone: 'primary', label: 'Service (logic)' },
+                  { tone: 'green', label: 'Data & external' },
+                ]}
+                caption="Handlers stay thin; services own transactions, business rules, and every external call"
+              />
 
               {/* ── Service Pattern ─────────────────────────────── */}
               <h2 id="service-pattern">Service Pattern</h2>

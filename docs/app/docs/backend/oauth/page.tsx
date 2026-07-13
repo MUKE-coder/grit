@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/oauth')
@@ -41,32 +42,33 @@ export default function OAuthPage() {
                 redirects back to your API, which creates or links the user account and issues JWT tokens.
               </p>
 
-              <CodeBlock filename="OAuth2 flow" code={`User clicks "Sign in with Google"
-    |
-    v
-Browser navigates to /api/auth/oauth/google
-    |
-    v
-Go API (Gothic) redirects to Google consent screen
-    |
-    v
-User grants access on Google
-    |
-    v
-Google redirects to /api/auth/oauth/google/callback
-    |
-    v
-Go API receives profile (name, email, avatar)
-  - Finds existing user by email → links GoogleID
-  - OR creates new user (provider="google", no password)
-  - Generates JWT access + refresh tokens
-    |
-    v
-Redirects to OAUTH_FRONTEND_URL/auth/callback?access_token=...&refresh_token=...
-    |
-    v
-Frontend callback page stores tokens in cookies
-Fetches /api/auth/me → redirects to dashboard`} />
+              <LaneFlow
+                id="oauth"
+                lanes={['User / Browser', 'Go API', 'Provider']}
+                nodes={[
+                  { id: 'click', lane: 0, row: 0, title: 'Sign in with Google', sub: 'OAuth button', tone: 'blue', badge: 1 },
+                  { id: 'redirect', lane: 1, row: 0, title: 'Gothic redirect', sub: '/oauth/google', tone: 'primary', badge: 2 },
+                  { id: 'consent', lane: 2, row: 0, title: 'Consent screen', sub: 'user grants access', tone: 'amber', badge: 3 },
+                  { id: 'callback', lane: 1, row: 1, title: 'Callback', sub: 'receives profile', tone: 'primary', badge: 4 },
+                  { id: 'link', lane: 1, row: 2, title: 'Find or create user', sub: 'link provider ID', tone: 'primary', badge: 5 },
+                  { id: 'tokens', lane: 1, row: 3, title: 'Issue JWT', sub: 'access + refresh', tone: 'cyan', badge: 6 },
+                  { id: 'front', lane: 0, row: 4, title: 'Frontend callback', sub: 'stores tokens → dashboard', tone: 'blue', badge: 7 },
+                ]}
+                edges={[
+                  { from: 'click', to: 'redirect', label: 'GET /oauth/google', tone: 'blue' },
+                  { from: 'redirect', to: 'consent', label: 'redirect', tone: 'amber' },
+                  { from: 'consent', to: 'callback', label: 'code', tone: 'amber' },
+                  { from: 'callback', to: 'link', tone: 'primary' },
+                  { from: 'link', to: 'tokens', tone: 'primary' },
+                  { from: 'tokens', to: 'front', label: 'redirect + tokens', dashed: true, tone: 'cyan' },
+                ]}
+                legend={[
+                  { tone: 'blue', label: 'User / Browser' },
+                  { tone: 'primary', label: 'Go API' },
+                  { tone: 'amber', label: 'OAuth provider' },
+                ]}
+                caption="Provider handles consent; Grit links or creates the user and issues its own JWTs"
+              />
 
               <h2 id="routes">OAuth Routes</h2>
               <p>These routes are automatically registered in your API:</p>
