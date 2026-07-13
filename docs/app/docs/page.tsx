@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CodeBlock } from '@/components/code-block'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs')
@@ -49,6 +50,34 @@ export default function DocsIntroductionPage() {
                   {pill.label}
                 </span>
               ))}
+            </div>
+
+            {/* Start here — the first action, above the fold (Expo-style) */}
+            <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-5 mb-10">
+              <div className="flex items-center gap-2 mb-3">
+                <Terminal className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">Start here</span>
+              </div>
+              <CodeBlock
+                terminal
+                className="mb-4"
+                code={`# Scaffold a full-stack app
+grit new myapp
+
+# Generate a full CRUD resource — model, API, admin, types & hooks
+grit generate resource Post --fields "title:string,body:text,published:bool"`}
+              />
+              <div className="flex flex-wrap gap-3">
+                <Button asChild size="sm" className="gap-1.5">
+                  <Link href="/docs/getting-started/quick-start">
+                    Quick Start — 5 min
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+                <Button asChild size="sm" variant="outline" className="gap-1.5">
+                  <Link href="/docs/tutorials/contact-app">Build your first app</Link>
+                </Button>
+              </div>
             </div>
 
             {/* YouTube intro video */}
