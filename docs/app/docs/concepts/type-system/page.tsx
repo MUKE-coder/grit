@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
-import { Diagram, DiagramBox, DiagramRow, DiagramArrow, DiagramLegend, FileTree } from '@/components/diagram'
+import { FileTree } from '@/components/diagram'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/type-system')
@@ -43,28 +44,32 @@ export default function TypeSystemPage() {
                   burden. Grit solves this by making the Go model the single source of truth and
                   automatically generating all downstream types.
                 </p>
-                <Diagram>
-                  <DiagramBox tone="primary" title="Go Struct" sub="apps/api/internal/models/post.go — source of truth" />
-                  <DiagramArrow label="grit generate · grit sync" />
-                  <DiagramRow>
-                    <DiagramBox tone="green" title="PostgreSQL Table" sub="GORM tags → auto-migrate" />
-                    <DiagramBox tone="cyan" title="JSON over HTTP" sub="json tags → serialization" />
-                    <DiagramBox tone="blue" title="TypeScript Interface" sub="packages/shared/types/post.ts" />
-                  </DiagramRow>
-                  <DiagramArrow label="inferred from the same source" />
-                  <DiagramRow>
-                    <DiagramBox tone="violet" title="Zod Schema" sub="schemas/post.ts — form + API validation" />
-                    <DiagramBox tone="blue" title="React Query Hooks" sub="typed data fetching + cache invalidation" />
-                  </DiagramRow>
-                  <DiagramLegend
-                    items={[
-                      { tone: 'primary', label: 'Source of truth (Go)' },
-                      { tone: 'green', label: 'Database' },
-                      { tone: 'blue', label: 'TypeScript' },
-                      { tone: 'violet', label: 'Validation' },
-                    ]}
-                  />
-                </Diagram>
+                <LaneFlow
+                  id="types"
+                  lanes={['Source of truth', 'Generated from it']}
+                  nodes={[
+                    { id: 'struct', lane: 0, row: 2, title: 'Go Struct', sub: 'models/post.go', tone: 'primary' },
+                    { id: 'pg', lane: 1, row: 0, title: 'PostgreSQL Table', sub: 'GORM tags', tone: 'green' },
+                    { id: 'json', lane: 1, row: 1, title: 'JSON / HTTP', sub: 'json tags', tone: 'cyan' },
+                    { id: 'ts', lane: 1, row: 2, title: 'TS Interface', sub: 'shared/types', tone: 'blue' },
+                    { id: 'zod', lane: 1, row: 3, title: 'Zod Schema', sub: 'form + API', tone: 'violet' },
+                    { id: 'hooks', lane: 1, row: 4, title: 'React Query', sub: 'typed fetching', tone: 'blue' },
+                  ]}
+                  edges={[
+                    { from: 'struct', to: 'pg', tone: 'green' },
+                    { from: 'struct', to: 'json', tone: 'cyan' },
+                    { from: 'struct', to: 'ts', label: 'grit sync', tone: 'blue' },
+                    { from: 'struct', to: 'zod', tone: 'violet' },
+                    { from: 'struct', to: 'hooks', tone: 'blue' },
+                  ]}
+                  legend={[
+                    { tone: 'primary', label: 'Source of truth (Go)' },
+                    { tone: 'green', label: 'Database' },
+                    { tone: 'blue', label: 'TypeScript' },
+                    { tone: 'violet', label: 'Validation' },
+                  ]}
+                  caption="One Go struct drives the table, the API shape, the types, and validation"
+                />
               </div>
 
               {/* The Chain */}

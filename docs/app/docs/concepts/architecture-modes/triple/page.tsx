@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
-import { Diagram, DiagramBox, DiagramRow, DiagramArrow, DiagramLegend, FileTree } from '@/components/diagram'
+import { FileTree } from '@/components/diagram'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/architecture-modes/triple')
@@ -356,44 +357,40 @@ grit new myapp --triple --vite`} />
               The following diagram shows how a typical request flows through the triple architecture,
               from the user&apos;s browser all the way to the database and back.
             </p>
-            <Diagram>
-              <div className="mb-1 text-center text-[11px] font-mono uppercase tracking-wider text-muted-foreground/50">Browser</div>
-              <DiagramRow>
-                <DiagramBox tone="blue" title="Web App" sub=":3000" />
-                <DiagramBox tone="blue" title="Admin Panel" sub=":3001" />
-              </DiagramRow>
-
-              <DiagramArrow label="REST + JWT" />
-
-              <DiagramBox tone="primary" title="Go API — :8080" sub="Gin Router → Middleware → Handler → Service → GORM" />
-              <div className="mt-2 grid gap-2 sm:grid-cols-5 text-[11px] text-muted-foreground/80">
-                <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2 text-center">CORS</div>
-                <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2 text-center">Logger</div>
-                <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2 text-center">Rate Limiter</div>
-                <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2 text-center">Auth (JWT)</div>
-                <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2 text-center">Cache</div>
-              </div>
-              <div className="mt-2 rounded-md border border-border/40 bg-card/20 px-3 py-2 text-[11px] text-muted-foreground/70">
-                <span className="font-semibold text-foreground/70">Background</span> — asynq workers (email, image, cleanup) · cron scheduler · GORM Studio (/studio)
-              </div>
-
-              <DiagramArrow />
-
-              <DiagramRow>
-                <DiagramBox tone="green" title="PostgreSQL" sub=":5434 · data" />
-                <DiagramBox tone="rose" title="Redis" sub=":6380 · cache + jobs" />
-                <DiagramBox tone="amber" title="MinIO" sub=":9002 · files" />
-                <DiagramBox tone="violet" title="Resend" sub="email" />
-              </DiagramRow>
-
-              <DiagramLegend
-                items={[
-                  { tone: 'blue', label: 'Frontend (React)' },
-                  { tone: 'primary', label: 'Go API' },
-                  { tone: 'green', label: 'Data & services' },
-                ]}
-              />
-            </Diagram>
+            <LaneFlow
+              id="triple"
+              lanes={['Browser', 'Go API — :8080', 'Data & Services']}
+              groups={[{ lane: 1, rows: [0, 2], label: 'Request pipeline', tone: 'primary' }]}
+              nodes={[
+                { id: 'web', lane: 0, row: 0, title: 'Web App', sub: ':3000', tone: 'blue' },
+                { id: 'admin', lane: 0, row: 1, title: 'Admin Panel', sub: ':3001', tone: 'blue' },
+                { id: 'router', lane: 1, row: 0, title: 'Gin Router', sub: 'REST + JWT', tone: 'primary' },
+                { id: 'mw', lane: 1, row: 1, title: 'Middleware', sub: 'CORS · Auth · Rate · Cache', tone: 'primary' },
+                { id: 'svc', lane: 1, row: 2, title: 'Handler → Service', sub: 'GORM', tone: 'primary' },
+                { id: 'pg', lane: 2, row: 0, title: 'PostgreSQL', sub: ':5434 · data', tone: 'green' },
+                { id: 'redis', lane: 2, row: 1, title: 'Redis', sub: ':6380 · cache + jobs', tone: 'rose' },
+                { id: 'minio', lane: 2, row: 2, title: 'MinIO', sub: ':9002 · files', tone: 'amber' },
+                { id: 'resend', lane: 2, row: 3, title: 'Resend', sub: 'email', tone: 'violet' },
+              ]}
+              edges={[
+                { from: 'web', to: 'router', label: 'REST + JWT', tone: 'blue' },
+                { from: 'admin', to: 'router', tone: 'blue' },
+                { from: 'router', to: 'mw', tone: 'primary' },
+                { from: 'mw', to: 'svc', tone: 'primary' },
+                { from: 'svc', to: 'pg', label: 'query', tone: 'green' },
+                { from: 'svc', to: 'redis', label: 'cache', tone: 'rose' },
+                { from: 'svc', to: 'minio', label: 'files', tone: 'amber' },
+                { from: 'svc', to: 'resend', label: 'mail', tone: 'violet' },
+              ]}
+              legend={[
+                { tone: 'blue', label: 'Frontend (React)' },
+                { tone: 'primary', label: 'Go API' },
+                { tone: 'green', label: 'Data & services' },
+              ]}
+            />
+            <div className="mt-3 rounded-md border border-border/40 bg-card/20 px-3 py-2 text-[12px] text-muted-foreground/80">
+              <span className="font-semibold text-foreground/70">Background</span> — asynq workers (email, image, cleanup) · cron scheduler · GORM Studio (<code>/studio</code>)
+            </div>
 
             <div className="mt-6 space-y-4">
               <div className="rounded-lg border border-border/40 bg-accent/20 p-4">
