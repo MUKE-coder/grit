@@ -292,13 +292,13 @@ POST /api/exercises  {"name": "Overhead Press", "muscle_group": "Shoulders", "de
           <CodeBlock filename="Terminal 1 — Start Infrastructure + API">
 {`cd fitness
 docker compose up -d
-cd apps/api && go run cmd/server/main.go`}
+grit start server`}
           </CodeBlock>
 
           <CodeBlock filename="Terminal 2 — Start Expo">
-{`cd fitness/apps/expo
+{`cd fitness
 pnpm install
-pnpm start`}
+grit start expo`}
           </CodeBlock>
 
           <p className="text-muted-foreground leading-relaxed mb-4">

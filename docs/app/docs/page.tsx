@@ -465,7 +465,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                   {
                     step: '2',
                     title: 'Start the dev environment',
-                    description: 'Run docker compose up -d to start PostgreSQL, Redis, MinIO, and Mailhog. Then run turbo dev to start the Go API and Next.js apps with hot reload.',
+                    description: 'Run docker compose up -d to start PostgreSQL, Redis, MinIO, and Mailhog. Then run grit start to start the Go API and Next.js apps with hot reload.',
                   },
                   {
                     step: '3',
@@ -529,7 +529,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                   </div>
                   <div>
                     <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">turbo dev</span>
+                    <span className="text-foreground/80">grit start</span>
                   </div>
                 </div>
               </div>

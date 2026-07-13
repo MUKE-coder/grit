@@ -1780,7 +1780,7 @@ grit generate resource Product --fields "name:string,sku:string,price:float,stoc
 grit generate resource Supplier --fields "name:string,email:string,phone:string,address:text,notes:text"
 
 # Start development
-wails dev`}
+grit start`}
                   />
                 </div>
 
@@ -2049,7 +2049,7 @@ wails build -nsis`}
                     filename="Scaffold a new desktop project"
                     code={`grit new-desktop myapp
 cd myapp
-wails dev`}
+grit start`}
                   />
 
                   <CodeBlock
@@ -2151,7 +2151,7 @@ wails build -nsis  # Windows installer`}
                         ],
                         [
                           "Using pnpm dev or turbo dev for desktop",
-                          "Use wails dev — no Turborepo in desktop projects",
+                          "Use grit start — no Turborepo in desktop projects",
                         ],
                         [
                           "Creating apps/ or packages/ directories",

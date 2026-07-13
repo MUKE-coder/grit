@@ -140,14 +140,17 @@ docker compose up -d`}
               title="Install dependencies & start"
               description={
                 <p>
-                  Install frontend dependencies and start all development servers.
+                  Install frontend dependencies, apply migrations, seed the database, then start
+                  every development server with a single command.
                   The Go API runs on <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">:8080</code>,
                   web app on <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">:3000</code>,
                   and admin on <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">:3001</code>.
                 </p>
               }
               code={`pnpm install
-pnpm dev`}
+grit migrate
+grit seed
+grit start`}
               filename="Terminal"
               language="bash"
             />
@@ -219,12 +222,11 @@ DATABASE_URL=sqlite:./app.db
 
 # Leave REDIS_URL / storage vars unset to run without Redis and MinIO`} />
             <CodeBlock language="bash" filename="Terminal" code={`# No 'docker compose up' needed
-cd my-app/apps/api
-go run cmd/server/main.go   # auto-migrates app.db on first run
+grit start server   # auto-migrates app.db on first run
 
 # In another terminal, start the frontend(s)
 pnpm install
-pnpm dev`} />
+grit start client`} />
 
             <h3 className="text-lg font-semibold text-foreground mt-8 mb-3">Option B — managed cloud services</h3>
             <p className="text-muted-foreground mb-4 max-w-2xl">

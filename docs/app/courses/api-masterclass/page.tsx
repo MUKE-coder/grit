@@ -224,8 +224,7 @@ cd taskapi
 docker compose up -d
 
 # Step 2: Start the Go API
-cd apps/api
-go run cmd/server/main.go`}
+grit start server`}
           </CodeBlock>
 
           <p className="text-muted-foreground leading-relaxed mb-4">

@@ -223,15 +223,13 @@ PULSE_ENABLED=false`}
               />
 
               <p className="text-[14px] text-muted-foreground leading-relaxed mb-3">
-                Now run the server. The Go module lives at{' '}
-                <code>apps/api/go.mod</code>, so <code>go run</code> needs to start there.
-                <strong> Crucially</strong>: don&apos;t <code>cd</code> all the way into{' '}
-                <code>cmd/server</code> — the config loader expects the working directory
-                to be <code>apps/api/</code> so it can find <code>../../.env</code>.
+                Now run the server with <code>grit start server</code>. It launches the Go API from{' '}
+                <code>apps/api/</code> (where <code>go.mod</code> lives) with the working directory set
+                correctly, so the config loader finds <code>../../.env</code> — and it hot-reloads on
+                changes.
               </p>
 
-              <CodeBlock terminal code={`cd apps/api
-go run ./cmd/server`} className="mb-4" />
+              <CodeBlock terminal code={`grit start server`} className="mb-4" />
 
               <p className="text-[14px] text-muted-foreground leading-relaxed mb-3">
                 You should see Grit&apos;s startup banner,{' '}

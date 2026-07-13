@@ -392,10 +392,7 @@ export default function ApiOnlyArchitecturePage() {
 docker compose up -d
 
 # Run the API with hot reload
-cd apps/api && air
-
-# Or without air:
-cd apps/api && go run cmd/server/main.go
+grit start server
 
 # Test with curl
 curl http://localhost:8080/api/health

@@ -3102,10 +3102,10 @@ func Migrate(db *gorm.DB) error {
             </div>
 
             <CodeBlock terminal code={`# Run migrations (create missing tables)
-go run cmd/migrate/main.go
+grit migrate
 
 # Fresh migration (drop all tables + recreate)
-go run cmd/migrate/main.go --fresh`} />
+grit migrate --fresh`} />
 
             <div className="prose-grit mb-10">
               <h3>Seeding</h3>
@@ -3162,7 +3162,7 @@ func seedAdminUser(db *gorm.DB) error {
 }`} />
 
             <CodeBlock terminal code={`# Run the seeder
-go run cmd/seed/main.go`} />
+grit seed`} />
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>

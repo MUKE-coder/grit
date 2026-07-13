@@ -206,7 +206,7 @@ export default function FirstMobileAppCourse() {
 docker compose up -d
 
 # Run the Go API
-cd apps/api && go run cmd/server/main.go`}</CodeBlock>
+grit start server`}</CodeBlock>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
             The API will start on <Code>http://localhost:8080</Code>. You can verify it{"'"}s running by
@@ -231,7 +231,7 @@ cd apps/api && go run cmd/server/main.go`}</CodeBlock>
             With the API running, open a new terminal and start the Expo dev server:
           </p>
 
-          <CodeBlock language="bash">{`cd apps/expo && npx expo start`}</CodeBlock>
+          <CodeBlock language="bash">{`grit start expo`}</CodeBlock>
 
           <p className="text-muted-foreground leading-relaxed mb-4">
             Expo will display a QR code in the terminal. You have three options:
@@ -353,7 +353,7 @@ export async function login(email: string, password: string) {
             On a physical device, <Code>localhost</Code> won{"'"}t work — your phone can{"'"}t reach
             your computer{"'"}s localhost. You need to use your computer{"'"}s local IP address instead
             (e.g., <Code>http://192.168.1.42:8080</Code>). Expo shows your local IP in the terminal
-            output when you run <Code>npx expo start</Code>.
+            output when you run <Code>grit start expo</Code>.
           </Note>
 
           <Tip>

@@ -155,7 +155,7 @@ export default function ApiDocsScalarCourse() {
 
           <CodeBlock filename="What You Get — Zero Configuration">
 {`# Start your Grit API
-cd apps/api && go run cmd/server/main.go
+grit start server
 
 # Open your browser
 http://localhost:8080/docs

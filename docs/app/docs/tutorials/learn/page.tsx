@@ -188,7 +188,7 @@ export default function TutorialLearnPage() {
                   Now install dependencies and start the servers:
                 </p>
 
-                <CodeBlock terminal code={`pnpm install\ncd apps/api && go run cmd/server/main.go &\ncd apps/admin && pnpm dev &`} className="glow-purple-sm mb-4" />
+                <CodeBlock terminal code={`pnpm install\ngrit start`} className="glow-purple-sm mb-4" />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
                   Your API is running at{" "}
@@ -1482,7 +1482,7 @@ export default function NewTaskPage() {
                   Start the web frontend and test the full flow:
                 </p>
 
-                <CodeBlock terminal code="cd apps/web && pnpm dev" className="glow-purple-sm mb-4" />
+                <CodeBlock terminal code="grit start web" className="glow-purple-sm mb-4" />
 
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4">
                   Now open{" "}

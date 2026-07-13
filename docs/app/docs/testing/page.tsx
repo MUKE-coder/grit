@@ -114,8 +114,7 @@ winget install k6`} />
 
               <h3 id="run-tests" className="mt-6">Run a test</h3>
               <CodeBlock language="bash" code={`# 1. Start the API (in another terminal)
-go run .                              # single-app
-# or: cd apps/api && go run cmd/server/main.go
+grit start server
 
 # 2. Run any test
 export BASE_URL=http://localhost:8080

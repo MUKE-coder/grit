@@ -318,28 +318,18 @@ func main() {
                 Development Workflow
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                During development, you run two processes in separate terminals. The Makefile
-                provides a convenience command that runs both at once.
+                One command runs the whole single app &mdash; the Go API (with hot reload) and the
+                Vite frontend together. Press <code>Ctrl+C</code> to stop both.
               </p>
 
-              <h3 className="text-xl font-semibold tracking-tight mt-6 mb-3">
-                Terminal 1: Go API
-              </h3>
-              <CodeBlock language="bash" code={`# Start the Go API with hot reload
-air
-# or without air:
-go run main.go`} />
+              <CodeBlock language="bash" code={`grit start`} />
 
-              <h3 className="text-xl font-semibold tracking-tight mt-6 mb-3">
-                Terminal 2: Vite Frontend
-              </h3>
-              <CodeBlock language="bash" code={`cd frontend && pnpm dev`} />
-
-              <h3 className="text-xl font-semibold tracking-tight mt-6 mb-3">
-                Or use the Makefile
-              </h3>
-              <CodeBlock language="bash" code={`# Runs both Go and Vite concurrently
-make dev`} />
+              <p className="text-muted-foreground leading-relaxed mt-4 mb-3">
+                Need just the Go API? Use <code>grit start server</code>. The generated Makefile also
+                exposes the same workflow if you prefer <code>make</code>:
+              </p>
+              <CodeBlock language="bash" code={`grit start server   # API only
+make dev            # equivalent: runs Go + Vite concurrently`} />
 
               <div className="rounded-lg border border-border/40 bg-accent/20 p-5 mt-6">
                 <h4 className="text-sm font-semibold text-foreground mb-2">Vite Proxy Config</h4>

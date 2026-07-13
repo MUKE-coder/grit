@@ -231,7 +231,7 @@ func Connect(dsn string) (*gorm.DB, error) {
                   </div>
                   <div className="p-5 font-mono text-sm">
                     <span className="text-primary/50 select-none">$ </span>
-                    <span className="text-foreground/80">cd apps/api &amp;&amp; go run cmd/migrate/main.go</span>
+                    <span className="text-foreground/80">grit migrate</span>
                   </div>
                 </div>
                 <p className="text-muted-foreground leading-relaxed mb-4">

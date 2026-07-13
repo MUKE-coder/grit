@@ -499,9 +499,9 @@ grit generate resource Post --fields "title:string"`} className="mb-0" />
                   starting the Go API. The API needs PostgreSQL and Redis to be available.
                 </li>
                 <li>
-                  <strong>Run <code>go mod tidy</code> after scaffolding.</strong> The first time you
-                  scaffold a project, run <code>go mod tidy</code> in <code>apps/api</code> to download
-                  all Go dependencies.
+                  <strong>Let <code>grit</code> handle Go dependencies.</strong> Running{' '}
+                  <code>grit start</code> (or <code>grit start server</code>) downloads and tidies Go
+                  modules for you — no manual <code>go mod tidy</code> step is needed.
                 </li>
                 <li>
                   <strong>Check the <code>.env</code> file.</strong> Most connection errors are caused by

@@ -461,7 +461,7 @@ func Migrate(db *gorm.DB) error {
               <p>
                 It&apos;s wired to the migrate entrypoint, run on demand:
               </p>
-              <CodeBlock terminal code="cd apps/api && go run cmd/migrate/main.go   # or: grit migrate" />
+              <CodeBlock terminal code="grit migrate" />
               <p>
                 See <a href="/docs/backend/migrations" className="text-primary hover:underline">Migrations</a> for
                 the full runner (column diffing, <code>--fresh</code>) and{' '}

@@ -1363,7 +1363,6 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001`} />
 
                 <CodeBlock language="bash" filename="Starting without Docker" code={`# Install dependencies
 pnpm install
-cd apps/api && go mod tidy && cd ../..
 
 # Terminal 1 — Go API (auto-migrates on first run)
 grit start server
@@ -1430,7 +1429,7 @@ grit start client`} />
                   <CodeBlock language="bash" filename="Start a new project (without Docker)" code={`# Set up Neon, Upstash, Cloudflare R2, Resend — fill in .env.cloud.example
 grit new myapp && cd myapp
 cp .env.cloud.example .env
-pnpm install && cd apps/api && go mod tidy && cd ../..
+pnpm install
 grit migrate && grit seed
 # Terminal 1 — Go API:
 grit start server

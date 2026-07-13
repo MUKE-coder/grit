@@ -80,7 +80,7 @@ export default function MigrationsPage() {
 
                 <CodeBlock
                   terminal
-                  code="cd apps/api && go run cmd/migrate/main.go"
+                  code="grit migrate"
                 />
 
                 <p className="text-muted-foreground leading-relaxed mb-4">
@@ -266,7 +266,7 @@ func main() {
 
                 <CodeBlock
                   terminal
-                  code="go run cmd/migrate/main.go --fresh"
+                  code="grit migrate --fresh"
                 />
 
                 <div className="p-4 rounded-lg border border-red-500/20 bg-red-500/5 mb-4">
@@ -365,7 +365,7 @@ func DropAll(db *gorm.DB) error {
 
                 <CodeBlock
                   terminal
-                  code="go run cmd/migrate/main.go"
+                  code="grit migrate"
                 />
 
                 <p className="text-muted-foreground leading-relaxed mb-4">
@@ -438,9 +438,9 @@ Migration done — 1 created, 0 altered (+0 column(s)), 2 unchanged.`}
                 <div className="space-y-4 mb-4">
                   {[
                     { step: '1', title: 'Start infrastructure', cmd: 'docker compose up -d' },
-                    { step: '2', title: 'Run migrations', cmd: 'cd apps/api && go run cmd/migrate/main.go' },
-                    { step: '3', title: 'Seed the database (optional)', cmd: 'go run cmd/seed/main.go' },
-                    { step: '4', title: 'Start the server', cmd: 'go run cmd/server/main.go' },
+                    { step: '2', title: 'Run migrations', cmd: 'grit migrate' },
+                    { step: '3', title: 'Seed the database (optional)', cmd: 'grit seed' },
+                    { step: '4', title: 'Start the server', cmd: 'grit start server' },
                   ].map((item) => (
                     <div key={item.step} className="flex gap-4 items-start">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xs font-medium text-primary">

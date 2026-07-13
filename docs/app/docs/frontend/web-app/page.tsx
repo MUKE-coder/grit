@@ -544,7 +544,7 @@ export default config;`} />
                   <div className="p-5 font-mono text-sm space-y-2">
                     <div>
                       <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">cd apps/web && pnpm dev</span>
+                      <span className="text-foreground/80">grit start web</span>
                     </div>
                   </div>
                 </div>
@@ -565,7 +565,7 @@ export default config;`} />
                   <div className="p-5 font-mono text-sm">
                     <div>
                       <span className="text-primary/50 select-none">$ </span>
-                      <span className="text-foreground/80">turbo dev</span>
+                      <span className="text-foreground/80">grit start</span>
                     </div>
                   </div>
                 </div>

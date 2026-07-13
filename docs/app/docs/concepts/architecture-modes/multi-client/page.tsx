@@ -305,8 +305,9 @@ grit new myapp --single --desktop
                 Development Workflow
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                With all apps running, you get live hot-reload across everything. Open
-                four terminals (or use <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">turbo dev</code>):
+                With all apps running, you get live hot-reload across everything. One
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit start</code> runs
+                them all, or start each app on its own:
               </p>
 
               <CodeBlock
@@ -314,33 +315,31 @@ grit new myapp --single --desktop
                 code={`# Terminal 1: Start infrastructure (Postgres, Redis, MinIO, Mailhog)
 docker compose up -d
 
-# Terminal 2: Go API (hot reload via air)
-cd apps/api && air
+# Terminal 2: Go API (hot reload)
+grit start server
 
 # Terminal 3: Mobile app (Expo)
-cd apps/expo && npx expo start
+grit start expo
 
 # Terminal 4: Desktop app (Wails)
-cd apps/desktop && wails dev
+grit start desktop
 
 # All of these can be run together with:
-pnpm dev`}
+grit start`}
               />
 
               <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
-                Or use the convenience scripts Grit adds to your root{' '}
-                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">package.json</code>:
+                Or start a single app from anywhere in the project:
               </p>
 
               <CodeBlock
                 language="bash"
-                code={`pnpm dev              # All apps via Turborepo
-pnpm dev:api          # Just the Go API
-pnpm dev:web          # Just the web frontend
-pnpm dev:admin        # Just the admin panel
-pnpm dev:expo         # Just the Expo app
-pnpm dev:desktop      # Just the desktop app (wails dev)
-pnpm build:desktop    # Build desktop app for production (wails build)`}
+                code={`grit start            # All apps
+grit start server     # Just the Go API
+grit start web        # Just the web frontend
+grit start admin      # Just the admin panel
+grit start expo       # Just the Expo app
+grit start desktop    # Just the desktop app`}
               />
             </div>
 

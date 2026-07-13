@@ -612,7 +612,7 @@ AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6`}
 
           <CodeBlock filename="Accessing GORM Studio">
 {`# Start your API
-cd apps/api && go run cmd/server/main.go
+grit start server
 
 # Open GORM Studio in your browser
 http://localhost:8080/studio`}
@@ -655,7 +655,7 @@ http://localhost:8080/studio`}
 
           <CodeBlock filename="Accessing API Docs">
 {`# Start your API
-cd apps/api && go run cmd/server/main.go
+grit start server
 
 # Interactive docs
 http://localhost:8080/docs
