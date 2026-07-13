@@ -50,9 +50,9 @@ export default function QuickStartPage() {
 
             <div className="grid gap-3 sm:grid-cols-2 mb-10">
               {[
-                { name: "Go", version: "1.21+", check: "go version" },
-                { name: "Node.js", version: "18+", check: "node --version" },
-                { name: "pnpm", version: "8+", check: "pnpm --version" },
+                { name: "Go", version: "1.24+", check: "go version" },
+                { name: "Node.js", version: "22+", check: "node --version" },
+                { name: "pnpm", version: "9+", check: "pnpm --version" },
                 {
                   name: "Docker",
                   version: "Latest",
@@ -116,8 +116,8 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                 </h3>
                 <p className="text-[15px] text-muted-foreground">
                   Already have Grit installed? Update the CLI to the latest version
-                  with a single command. This removes the old binary and installs the
-                  newest release:
+                  with a single command. It checks for a newer release and, if there is
+                  one, swaps in the new binary:
                 </p>
                 <CodeBlock terminal code="grit update" className="mb-0" />
                 <p className="text-[15px] text-muted-foreground">
@@ -257,31 +257,31 @@ docker compose up -d`} className="mb-0 glow-purple-sm" />
                   4
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
-                  Start the Go API
+                  Install Deps & Set Up the Database
                 </h2>
               </div>
               <div className="prose-grit mb-4">
                 <p>
-                  Navigate into the Go API directory, install dependencies with{" "}
-                  <code>go mod tidy</code>, then start the server. This runs the
-                  Go backend on port 8080 with auto-migration enabled.
+                  Install the frontend dependencies once, then create your database
+                  tables and load some sample data &mdash; all from the project root.
+                  You never <code>cd</code> into a sub-folder or touch <code>go</code> by hand.
                 </p>
               </div>
-              <CodeBlock terminal code={`cd apps/api
-go mod tidy
-go run cmd/server/main.go`} className="mb-0 glow-purple-sm" />
+              <CodeBlock terminal code={`pnpm install      # install frontend deps (one-time)
+grit migrate      # create database tables from your models
+grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>
-                  You should see the Gin router start up and log all registered
-                  routes. The API is now running at{" "}
-                  <code>http://localhost:8080</code>. Interactive API docs (Scalar) are at{" "}
-                  <code>http://localhost:8080/docs</code> and GORM Studio is
-                  available at <code>http://localhost:8080/studio</code>.
+                  <code>grit migrate</code> runs GORM AutoMigrate for every registered
+                  model and prints a created / altered / unchanged summary.{" "}
+                  <code>grit seed</code> fills the tables with starter data, including a
+                  demo admin you can log in with.
                 </p>
                 <blockquote>
-                  The first run of <code>go mod tidy</code> may take a minute as
-                  Go downloads all dependencies. Subsequent runs will be
-                  instant.
+                  Migrations are an <strong>explicit command</strong>, not something that
+                  runs on server start &mdash; so you always control when your schema
+                  changes. Run <code>grit migrate</code> again any time you add or change a
+                  model.
                 </blockquote>
               </div>
             </div>
@@ -293,35 +293,24 @@ go run cmd/server/main.go`} className="mb-0 glow-purple-sm" />
                   5
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
-                  Start the Frontend
+                  Run Your App
                 </h2>
               </div>
               <div className="prose-grit mb-4">
                 <p>
-                  Open a <strong>new terminal</strong> (keep the API running),
-                  navigate back to the project root, install Node.js
-                  dependencies, then start the Next.js web app.
+                  One command starts the whole stack &mdash; the Go API, the web app,
+                  and the admin panel &mdash; from the project root. No juggling
+                  terminals, no <code>cd</code>-ing into folders. Press <code>Ctrl+C</code>{" "}
+                  to stop everything.
                 </p>
               </div>
-              <CodeBlock terminal filename="terminal (new tab)" code={`cd myapp
-pnpm install
-cd apps/web && pnpm dev`} className="mb-0 glow-purple-sm" />
+              <CodeBlock terminal code="grit start" className="mb-0 glow-purple-sm" />
               <div className="prose-grit mt-4">
                 <p>
-                  To also run the admin panel, open{" "}
-                  <strong>another terminal</strong> and run:
+                  Need just one app? Use a subcommand: <code>grit start server</code>{" "}
+                  (Go API only), <code>grit start web</code>, <code>grit start admin</code>,{" "}
+                  <code>grit start expo</code>, or <code>grit start desktop</code>.
                 </p>
-              </div>
-              <CodeBlock terminal filename="terminal (another tab)" code="cd myapp/apps/admin && pnpm dev" className="mt-4 mb-0 glow-purple-sm" />
-              <div className="prose-grit mt-4">
-                <p>
-                  Alternatively, you can run everything at once from the project
-                  root:
-                </p>
-              </div>
-              <CodeBlock terminal code={`# From the project root (myapp/)
-pnpm dev`} className="mt-4 mb-0 glow-purple-sm" />
-              <div className="prose-grit mt-4">
                 <p>Once started, you can access:</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 mt-4">
@@ -423,21 +412,29 @@ pnpm dev`} className="mt-4 mb-0 glow-purple-sm" />
                     types
                   </li>
                   <li>
-                    <code>apps/admin/hooks/use-posts.ts</code> -- React Query
+                    <code>apps/api/internal/handlers/post_import.go</code> -- CSV/Excel
+                    bulk-import handler
+                  </li>
+                  <li>
+                    <code>apps/web/hooks/use-posts.ts</code> -- React Query
                     hooks
                   </li>
                   <li>
-                    <code>apps/admin/app/resources/posts/page.tsx</code> --
+                    <code>apps/admin/app/(dashboard)/resources/posts/page.tsx</code> --
                     Admin page with data table
                   </li>
                 </ul>
                 <p>
-                  It also automatically registers the routes in{" "}
-                  <code>routes.go</code>, adds the model to auto-migrations, and
-                  injects the resource into the admin sidebar. Restart{" "}
-                  <code>pnpm dev</code> and visit the admin panel to see your
-                  new Posts resource with a fully functional data table and
-                  create form.
+                  It also registers the routes in <code>routes.go</code>, adds the model
+                  to the migration registry, and injects the resource into the admin
+                  sidebar. To finish, create the new table and refresh:
+                </p>
+                <CodeBlock terminal code="grit migrate" className="mb-0" />
+                <p className="mt-4">
+                  Then reload the admin panel &mdash; your <strong>Posts</strong> resource
+                  is there with a working data table and create form. (Full breakdown of
+                  every generated file:{" "}
+                  <Link href="/docs/concepts/generated-files" className="text-primary hover:underline">Generated File Map</Link>.)
                 </p>
               </div>
             </div>
@@ -468,14 +465,19 @@ pnpm dev`} className="mt-4 mb-0 glow-purple-sm" />
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
                   {
-                    title: "Project Structure",
-                    desc: "Understand the monorepo layout and where things live",
-                    href: "/docs/getting-started/project-structure",
+                    title: "Add Authentication",
+                    desc: "Register, login, JWT, OAuth & 2FA — built in",
+                    href: "/docs/backend/authentication",
                   },
                   {
-                    title: "Configuration",
-                    desc: "All .env variables explained",
-                    href: "/docs/getting-started/configuration",
+                    title: "Seed Sample Data",
+                    desc: "grit seed, faker, and per-resource seeders",
+                    href: "/docs/backend/seeders",
+                  },
+                  {
+                    title: "Build a Real App",
+                    desc: "Step-by-step: your first Grit app end to end",
+                    href: "/docs/tutorials/contact-app",
                   },
                   {
                     title: "CLI Commands",
@@ -488,9 +490,9 @@ pnpm dev`} className="mt-4 mb-0 glow-purple-sm" />
                     href: "/docs/concepts/code-generation",
                   },
                   {
-                    title: "Troubleshooting",
-                    desc: "Common errors and how to fix them",
-                    href: "/docs/getting-started/troubleshooting",
+                    title: "Project Structure",
+                    desc: "The monorepo layout and where things live",
+                    href: "/docs/getting-started/project-structure",
                   },
                 ].map((item) => (
                   <Link key={item.href} href={item.href}>
