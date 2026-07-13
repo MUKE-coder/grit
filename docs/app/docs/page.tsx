@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, Rocket, Terminal, Layers, Zap, Shield, Code2, Database, Server, Gauge, CheckCircle2, X, Minus, Download, BookOpen } from 'lucide-react'
+import { ArrowRight, Rocket, Terminal, Layers, Zap, Shield, Code2, Database, Server, Gauge, CheckCircle2, X, Minus, Download, BookOpen, Globe, LayoutDashboard, Smartphone, Monitor, Newspaper } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SiteHeader } from '@/components/site-header'
@@ -77,6 +77,213 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                 <Button asChild size="sm" variant="outline" className="gap-1.5">
                   <Link href="/docs/tutorials/contact-app">Build your first app</Link>
                 </Button>
+              </div>
+            </div>
+
+            {/* Pick your stack — Tech Kits bento grid */}
+            <div className="mb-12">
+              <h2 className="text-2xl font-semibold tracking-tight mb-2">
+                Pick your stack
+              </h2>
+              <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-6">
+                Every Grit project starts from a tech kit. Choose the shape that fits what
+                you&apos;re building &mdash; the CLI scaffolds it in seconds.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Triple — featured, spans 2 columns */}
+                <Link
+                  href="/docs/tech-kits/triple"
+                  className="group sm:col-span-2 rounded-xl border border-primary/25 bg-primary/[0.05] p-5 hover:border-primary/40 hover:bg-primary/[0.07] transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 border border-primary/20">
+                      <LayoutDashboard className="h-5 w-5 text-primary" />
+                    </div>
+                    <span className="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[10px] font-medium text-primary uppercase tracking-wide">
+                      Recommended
+                    </span>
+                  </div>
+                  <h3 className="text-base font-semibold mb-1 group-hover:text-primary transition-colors flex items-center gap-1.5">
+                    Triple &mdash; Web + Admin + API
+                    <ArrowRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                  </h3>
+                  <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
+                    The full monorepo: a Next.js web app, a Filament-like admin panel, and a Go
+                    API with shared types. The default for CRMs and SaaS products.
+                  </p>
+                </Link>
+
+                {/* Single (Next.js) */}
+                <Link
+                  href="/docs/tech-kits/single"
+                  className="group rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 transition-colors"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-500/10 border border-sky-500/10 mb-3">
+                    <Globe className="h-4.5 w-4.5 text-sky-400" />
+                  </div>
+                  <h3 className="text-sm font-semibold mb-1 group-hover:text-primary transition-colors">Single (Next.js)</h3>
+                  <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
+                    One Next.js app with API routes &mdash; a fast, self-contained full-stack app.
+                  </p>
+                </Link>
+
+                {/* Single + Vite */}
+                <Link
+                  href="/docs/tech-kits/single-vite"
+                  className="group rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 transition-colors"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/10 mb-3">
+                    <Zap className="h-4.5 w-4.5 text-amber-400" />
+                  </div>
+                  <h3 className="text-sm font-semibold mb-1 group-hover:text-primary transition-colors">Single + Vite</h3>
+                  <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
+                    A single-page app on Vite + TanStack Router, backed by its own lightweight API.
+                  </p>
+                </Link>
+
+                {/* Double — Web + API */}
+                <Link
+                  href="/docs/tech-kits/double"
+                  className="group rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 transition-colors"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/10 mb-3">
+                    <Layers className="h-4.5 w-4.5 text-emerald-400" />
+                  </div>
+                  <h3 className="text-sm font-semibold mb-1 group-hover:text-primary transition-colors">Double &mdash; Web + API</h3>
+                  <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
+                    A Next.js frontend and a standalone Go API with shared TypeScript types.
+                  </p>
+                </Link>
+
+                {/* API only */}
+                <Link
+                  href="/docs/tech-kits/api"
+                  className="group rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 transition-colors"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 border border-primary/10 mb-3">
+                    <Server className="h-4.5 w-4.5 text-primary" />
+                  </div>
+                  <h3 className="text-sm font-semibold mb-1 group-hover:text-primary transition-colors">API only</h3>
+                  <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
+                    Just the Go API &mdash; Gin, GORM, auth, and GORM Studio, no frontend.
+                  </p>
+                </Link>
+
+                {/* Mobile (Expo) */}
+                <Link
+                  href="/docs/tech-kits/mobile"
+                  className="group rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 transition-colors"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/10 border border-violet-500/10 mb-3">
+                    <Smartphone className="h-4.5 w-4.5 text-violet-400" />
+                  </div>
+                  <h3 className="text-sm font-semibold mb-1 group-hover:text-primary transition-colors">Mobile (Expo)</h3>
+                  <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
+                    A React Native app on Expo wired to a Go API &mdash; iOS and Android from one codebase.
+                  </p>
+                </Link>
+
+                {/* Desktop (Wails) */}
+                <Link
+                  href="/docs/tech-kits/desktop"
+                  className="group rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 transition-colors"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-500/10 border border-rose-500/10 mb-3">
+                    <Monitor className="h-4.5 w-4.5 text-rose-400" />
+                  </div>
+                  <h3 className="text-sm font-semibold mb-1 group-hover:text-primary transition-colors">Desktop (Wails)</h3>
+                  <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
+                    A native, offline-first desktop app built with Wails and a bundled Go backend.
+                  </p>
+                </Link>
+              </div>
+            </div>
+
+            {/* From the blog — featured posts */}
+            <div className="mb-12">
+              <h2 className="text-2xl font-semibold tracking-tight mb-2">
+                From the blog
+              </h2>
+              <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-6">
+                Stories, walkthroughs, and the thinking behind Grit.
+              </p>
+              <div className="grid gap-4 sm:grid-cols-3">
+                {[
+                  {
+                    href: '/blog/why-i-built-grit',
+                    title: 'Why I built Grit',
+                    desc: 'The founder story and the problem Grit sets out to solve.',
+                  },
+                  {
+                    href: '/blog/build-your-first-grit-app',
+                    title: 'Build your first Grit app',
+                    desc: 'A web store, built start to finish.',
+                  },
+                  {
+                    href: '/blog/build-desktop-app-with-grit',
+                    title: 'Build a desktop app with Grit',
+                    desc: 'An offline-first POS you can run anywhere.',
+                  },
+                ].map((post) => (
+                  <Link
+                    key={post.href}
+                    href={post.href}
+                    className="group flex flex-col rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 hover:bg-card/80 transition-all"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 border border-primary/10 mb-3">
+                      <Newspaper className="h-4 w-4 text-primary" />
+                    </div>
+                    <h3 className="text-sm font-semibold mb-1.5 group-hover:text-primary transition-colors">{post.title}</h3>
+                    <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-4 flex-1">{post.desc}</p>
+                    <span className="text-xs font-medium text-primary inline-flex items-center gap-1">
+                      Read
+                      <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* The commands you'll use */}
+            <div className="mb-12">
+              <h2 className="text-2xl font-semibold tracking-tight mb-2">
+                The commands you&apos;ll use
+              </h2>
+              <p className="text-[13px] text-muted-foreground/70 leading-relaxed mb-6">
+                The core of the Grit CLI &mdash; the handful of commands behind every project.
+              </p>
+              <div className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/40 bg-accent/20">
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground/70 w-[320px]">Command</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground/70">What it does</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/30">
+                      {[
+                        { cmd: 'grit new <name>', desc: 'Scaffold a new project from a tech kit' },
+                        { cmd: 'grit generate resource <Name>', desc: 'Generate a full-stack CRUD resource — model, API, admin, types & hooks' },
+                        { cmd: 'grit generate seeder <Name>', desc: 'Add a seeder for a resource' },
+                        { cmd: 'grit migrate', desc: 'Create or update database tables from your models' },
+                        { cmd: 'grit seed', desc: 'Fill the database with sample data' },
+                        { cmd: 'grit start', desc: 'Run the whole app — API and all frontends' },
+                        { cmd: 'grit start server|web|admin|expo|desktop', desc: 'Run a single app on its own' },
+                        { cmd: 'grit sync', desc: 'Sync Go types → TypeScript types & Zod schemas' },
+                        { cmd: 'grit studio', desc: 'Open GORM Studio, the visual database browser' },
+                        { cmd: 'grit deploy', desc: 'Deploy your app to a VPS' },
+                      ].map((row) => (
+                        <tr key={row.cmd} className="hover:bg-accent/10 transition-colors">
+                          <td className="px-4 py-2.5 align-top">
+                            <code className="text-xs font-mono text-primary/80">{row.cmd}</code>
+                          </td>
+                          <td className="px-4 py-2.5 text-xs text-muted-foreground/70 leading-relaxed">{row.desc}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
 

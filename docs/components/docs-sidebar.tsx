@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   ChevronRight,
+  Home,
+  Megaphone,
   Rocket,
   Box,
   Server,
@@ -43,31 +45,18 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  // Top-level entry points (Expo-style), rendered as prominent iconed links.
+  { title: 'Home', href: '/docs', icon: <Home className="h-3.5 w-3.5" /> },
+  { title: 'Pitch', href: '/pitch', icon: <Megaphone className="h-3.5 w-3.5" /> },
+  { title: 'Tutorials', href: '/docs/tutorials', icon: <GraduationCap className="h-3.5 w-3.5" /> },
   {
     title: 'Getting Started',
     icon: <Rocket className="h-3.5 w-3.5" />,
     items: [
-      { title: 'Introduction', href: '/docs' },
-      { title: 'Stack Selector — Pick a Combo', href: '/docs/stack-selector' },
-      { title: 'Installation', href: '/docs/getting-started/installation' },
-      { title: 'Quick Start', href: '/docs/getting-started/quick-start' },
-      { title: 'Your First App', href: '/docs/tutorials/contact-app' },
-      { title: 'Coming from Laravel / Django / Next', href: '/docs/getting-started/coming-from' },
-      { title: 'Philosophy & Inspiration', href: '/docs/getting-started/philosophy' },
-      { title: 'Project Structure', href: '/docs/getting-started/project-structure' },
-      { title: 'Configuration', href: '/docs/getting-started/configuration' },
-      { title: 'Troubleshooting', href: '/docs/getting-started/troubleshooting' },
-      { title: 'CLI Cheatsheet', href: '/docs/getting-started/cli-cheatsheet' },
-    ],
-  },
-  {
-    title: 'Prerequisites',
-    icon: <GraduationCap className="h-3.5 w-3.5" />,
-    items: [
-      { title: 'Go for Grit Developers', href: '/docs/prerequisites/golang' },
-      { title: 'Go Playground', href: '/playground' },
-      { title: 'Next.js & React', href: '/docs/prerequisites/nextjs' },
-      { title: 'Docker', href: '/docs/prerequisites/docker' },
+      { title: 'Create a project', href: '/docs/getting-started/create-a-project' },
+      { title: 'Coming from Laravel', href: '/docs/getting-started/coming-from' },
+      { title: 'Performance & Benchmarks', href: '/docs/getting-started/performance' },
+      { title: 'Prerequisites', href: '/docs/getting-started/prerequisites' },
     ],
   },
   {
@@ -276,20 +265,22 @@ function NavSection({ item }: { item: NavItem }) {
     return (
       <Link
         href={item.href || '#'}
+        data-active={pathname === item.href ? 'true' : undefined}
         className={cn(
-          'block px-3 py-1 text-sm transition-colors',
+          'flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-md transition-colors',
           pathname === item.href
-            ? 'text-primary font-medium'
-            : 'text-muted-foreground hover:text-foreground'
+            ? 'text-primary bg-primary/[0.07]'
+            : 'text-foreground/80 hover:text-foreground hover:bg-accent/25'
         )}
       >
+        <span className="text-muted-foreground/70">{item.icon}</span>
         {item.title}
       </Link>
     )
   }
 
   return (
-    <div className="mb-5">
+    <div>
       <h5 className="px-3 mb-2 text-[11px] font-semibold tracking-wider text-foreground/50 uppercase">
         {item.title}
       </h5>
@@ -300,7 +291,7 @@ function NavSection({ item }: { item: NavItem }) {
             href={subItem.href || '#'}
             data-active={pathname === subItem.href ? 'true' : undefined}
             className={cn(
-              'block px-3 py-1 text-sm transition-colors border-l-2',
+              'block px-3 py-1.5 text-sm transition-colors border-l-2',
               pathname === subItem.href
                 ? 'text-primary font-medium border-primary bg-primary/[0.06] rounded-r-md'
                 : 'text-muted-foreground hover:text-foreground border-transparent hover:border-muted-foreground/30 hover:bg-accent/20 rounded-r-md'
@@ -342,9 +333,16 @@ export function DocsSidebar() {
         <div className="absolute inset-y-0 right-[15.5rem] w-px bg-foreground/10 hidden min-[1340px]:block" />
       </div>
       <aside ref={sidebarRef} className="fixed top-16 z-30 hidden h-[calc(100vh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-border/40 bg-sidebar-background py-8 lg:block">
-        <nav className="px-2">
-          {navItems.map((item) => (
-            <NavSection key={item.title} item={item} />
+        <nav className="px-2 space-y-0.5">
+          {navItems.map((item, i) => (
+            <div key={item.title}>
+              {/* Horizontal divider before each grouped section (not the
+                  top-level entry links, not the very first item). */}
+              {item.items && i > 0 && (
+                <div className="my-3.5 border-t border-border/50" />
+              )}
+              <NavSection item={item} />
+            </div>
           ))}
         </nav>
       </aside>

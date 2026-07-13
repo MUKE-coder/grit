@@ -72,6 +72,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Complete Grit CLI reference: every command, flag, and field type. Quick-copy recipes for scaffolding, code generation, migrations, seeding, and more.',
   },
+  '/docs/getting-started/performance': {
+    title: 'Performance & Benchmarks',
+    description:
+      'Why Grit is fast (compiled Go binary, gzip, connection pooling, Redis cache, presigned uploads, async jobs, ISR, Turbo), the full batteries-included list you get out of the box (auth, storage, email, jobs, cron, AI, Sentinel, Pulse, feature flags, webhooks, realtime), and an honest capability comparison against Laravel, Django, Next.js, Rails, and T3 — including when not to use Grit.',
+  },
 
   // Prerequisites
   '/docs/prerequisites/golang': {
@@ -477,6 +482,11 @@ export const docsMetadata: Record<string, DocPage> = {
   },
 
   // Tutorials
+  '/docs/tutorials': {
+    title: 'Tutorials',
+    description:
+      'Learn Grit through guided courses. Follow a multi-lesson track for web, desktop, or mobile, or pick a focused 30-minute tutorial on a specific topic — auth, realtime, payments, offline-first, and more.',
+  },
   '/docs/tutorials/contact-app': {
     title: 'Your First App',
     description:
