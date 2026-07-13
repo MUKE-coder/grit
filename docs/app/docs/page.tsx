@@ -22,7 +22,7 @@ export default function DocsIntroductionPage() {
             <div className="mb-10">
               <span className="tag-mono text-primary/80 mb-3 block">Introduction</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
-                The CRM Framework for Builders Who Ship
+                The Full-Stack Framework for Builders Who Ship
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 Grit is a full-stack meta-framework purpose-built for CRMs, admin dashboards, SaaS
@@ -89,113 +89,54 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                 Every Grit project starts from a tech kit. Choose the shape that fits what
                 you&apos;re building &mdash; the CLI scaffolds it in seconds.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Triple — featured, spans 2 columns */}
-                <Link
-                  href="/docs/tech-kits/triple"
-                  className="group sm:col-span-2 rounded-xl border border-primary/25 bg-primary/[0.05] p-5 hover:border-primary/40 hover:bg-primary/[0.07] transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 border border-primary/20">
-                      <LayoutDashboard className="h-5 w-5 text-primary" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  { name: 'Triple — Web + Admin + API', href: '/docs/tech-kits/triple', cmd: 'grit new myapp --triple', icon: <LayoutDashboard className="h-5 w-5 text-primary" />, tint: 'bg-primary/15 border-primary/20', desc: 'The full monorepo: a Next.js web app, a Filament-like admin panel, and a Go API with shared types. The default for SaaS and internal tools.', featured: true },
+                  { name: 'Single (Next.js)', href: '/docs/tech-kits/single', cmd: 'grit new myapp --single', icon: <Globe className="h-4.5 w-4.5 text-sky-400" />, tint: 'bg-sky-500/10 border-sky-500/10', desc: 'One Next.js app with API routes — a fast, self-contained full-stack app.' },
+                  { name: 'Single + Vite', href: '/docs/tech-kits/single-vite', cmd: 'grit new myapp --single --vite', icon: <Zap className="h-4.5 w-4.5 text-amber-400" />, tint: 'bg-amber-500/10 border-amber-500/10', desc: 'A single-page app on Vite + TanStack Router, backed by its own lightweight API.' },
+                  { name: 'Double — Web + API', href: '/docs/tech-kits/double', cmd: 'grit new myapp --double', icon: <Layers className="h-4.5 w-4.5 text-emerald-400" />, tint: 'bg-emerald-500/10 border-emerald-500/10', desc: 'A Next.js frontend and a standalone Go API with shared TypeScript types.' },
+                  { name: 'API only', href: '/docs/tech-kits/api', cmd: 'grit new myapp --api', icon: <Server className="h-4.5 w-4.5 text-primary" />, tint: 'bg-primary/10 border-primary/10', desc: 'Just the Go API — Gin, GORM, auth, and GORM Studio, no frontend.' },
+                  { name: 'Mobile (Expo)', href: '/docs/tech-kits/mobile', cmd: 'grit new myapp --mobile', icon: <Smartphone className="h-4.5 w-4.5 text-violet-400" />, tint: 'bg-violet-500/10 border-violet-500/10', desc: 'A React Native app on Expo wired to a Go API — iOS and Android from one codebase.' },
+                  { name: 'Desktop (Wails)', href: '/docs/tech-kits/desktop', cmd: 'grit new-desktop myapp', icon: <Monitor className="h-4.5 w-4.5 text-rose-400" />, tint: 'bg-rose-500/10 border-rose-500/10', desc: 'A native, offline-first desktop app built with Wails and a bundled Go backend.' },
+                ].map((s) => (
+                  <Link
+                    key={s.href}
+                    href={s.href}
+                    className={`group flex flex-col rounded-xl border transition-colors ${
+                      s.featured
+                        ? 'sm:col-span-2 border-primary/25 bg-primary/[0.05] hover:border-primary/40'
+                        : 'border-border/40 bg-card/50 hover:border-primary/25'
+                    }`}
+                  >
+                    <div className="p-5 pb-3">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-lg border ${s.tint}`}>
+                          {s.icon}
+                        </div>
+                        {s.featured && (
+                          <span className="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[10px] font-medium text-primary uppercase tracking-wide">
+                            Recommended
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-sm font-semibold mb-1 group-hover:text-primary transition-colors">{s.name}</h3>
+                      <p className="text-[13px] text-muted-foreground/70 leading-relaxed">{s.desc}</p>
                     </div>
-                    <span className="inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[10px] font-medium text-primary uppercase tracking-wide">
-                      Recommended
-                    </span>
-                  </div>
-                  <h3 className="text-base font-semibold mb-1 group-hover:text-primary transition-colors flex items-center gap-1.5">
-                    Triple &mdash; Web + Admin + API
-                    <ArrowRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                  </h3>
-                  <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
-                    The full monorepo: a Next.js web app, a Filament-like admin panel, and a Go
-                    API with shared types. The default for CRMs and SaaS products.
-                  </p>
-                </Link>
-
-                {/* Single (Next.js) */}
-                <Link
-                  href="/docs/tech-kits/single"
-                  className="group rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 transition-colors"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-500/10 border border-sky-500/10 mb-3">
-                    <Globe className="h-4.5 w-4.5 text-sky-400" />
-                  </div>
-                  <h3 className="text-sm font-semibold mb-1 group-hover:text-primary transition-colors">Single (Next.js)</h3>
-                  <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
-                    One Next.js app with API routes &mdash; a fast, self-contained full-stack app.
-                  </p>
-                </Link>
-
-                {/* Single + Vite */}
-                <Link
-                  href="/docs/tech-kits/single-vite"
-                  className="group rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 transition-colors"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/10 mb-3">
-                    <Zap className="h-4.5 w-4.5 text-amber-400" />
-                  </div>
-                  <h3 className="text-sm font-semibold mb-1 group-hover:text-primary transition-colors">Single + Vite</h3>
-                  <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
-                    A single-page app on Vite + TanStack Router, backed by its own lightweight API.
-                  </p>
-                </Link>
-
-                {/* Double — Web + API */}
-                <Link
-                  href="/docs/tech-kits/double"
-                  className="group rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 transition-colors"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/10 mb-3">
-                    <Layers className="h-4.5 w-4.5 text-emerald-400" />
-                  </div>
-                  <h3 className="text-sm font-semibold mb-1 group-hover:text-primary transition-colors">Double &mdash; Web + API</h3>
-                  <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
-                    A Next.js frontend and a standalone Go API with shared TypeScript types.
-                  </p>
-                </Link>
-
-                {/* API only */}
-                <Link
-                  href="/docs/tech-kits/api"
-                  className="group rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 transition-colors"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 border border-primary/10 mb-3">
-                    <Server className="h-4.5 w-4.5 text-primary" />
-                  </div>
-                  <h3 className="text-sm font-semibold mb-1 group-hover:text-primary transition-colors">API only</h3>
-                  <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
-                    Just the Go API &mdash; Gin, GORM, auth, and GORM Studio, no frontend.
-                  </p>
-                </Link>
-
-                {/* Mobile (Expo) */}
-                <Link
-                  href="/docs/tech-kits/mobile"
-                  className="group rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 transition-colors"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/10 border border-violet-500/10 mb-3">
-                    <Smartphone className="h-4.5 w-4.5 text-violet-400" />
-                  </div>
-                  <h3 className="text-sm font-semibold mb-1 group-hover:text-primary transition-colors">Mobile (Expo)</h3>
-                  <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
-                    A React Native app on Expo wired to a Go API &mdash; iOS and Android from one codebase.
-                  </p>
-                </Link>
-
-                {/* Desktop (Wails) */}
-                <Link
-                  href="/docs/tech-kits/desktop"
-                  className="group rounded-xl border border-border/40 bg-card/50 p-5 hover:border-primary/20 transition-colors"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-500/10 border border-rose-500/10 mb-3">
-                    <Monitor className="h-4.5 w-4.5 text-rose-400" />
-                  </div>
-                  <h3 className="text-sm font-semibold mb-1 group-hover:text-primary transition-colors">Desktop (Wails)</h3>
-                  <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
-                    A native, offline-first desktop app built with Wails and a bundled Go backend.
-                  </p>
-                </Link>
+                    {/* Code snippet */}
+                    <div className="mx-5 rounded-lg border border-white/[0.06] bg-[#0d1117] px-3 py-2 overflow-x-auto">
+                      <code className="text-[11px] font-mono whitespace-nowrap text-slate-300">
+                        <span className="text-sky-400/60 select-none">$ </span>{s.cmd}
+                      </code>
+                    </div>
+                    {/* CTA */}
+                    <div className="px-5 py-3.5 mt-auto">
+                      <span className="text-[13px] font-medium text-primary inline-flex items-center gap-1">
+                        Read the guide
+                        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                      </span>
+                    </div>
+                  </Link>
+                ))}
               </div>
             </div>
 
