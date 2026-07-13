@@ -50,6 +50,13 @@ export default function ExportCourse() {
           </p>
         </div>
 
+        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+          <p className="text-sm text-muted-foreground">
+            <strong className="text-foreground">Reference docs:</strong>{' '}
+            <a href="/docs/admin/datatable" className="text-primary hover:underline">DataTable & Export →</a>
+          </p>
+        </div>
+
         <div className="grid sm:grid-cols-2 rounded-xl border border-foreground/15 overflow-hidden mb-12">
           {learn.map(({ icon: Icon, title, body }) => (
             <div key={title} className="border-b border-r border-foreground/15 p-5">

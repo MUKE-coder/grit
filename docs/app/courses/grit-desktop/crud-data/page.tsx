@@ -43,6 +43,13 @@ export default function CrudDataCourse() {
           </p>
         </div>
 
+        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+          <p className="text-sm text-muted-foreground">
+            <strong className="text-foreground">Reference docs:</strong>{' '}
+            <a href="/docs/desktop/resource-generation" className="text-primary hover:underline">Desktop Resource Generation →</a>
+          </p>
+        </div>
+
         <hr className="border-border/40 mb-10" />
 
         {/* ═══ How Desktop CRUD Differs ═══ */}

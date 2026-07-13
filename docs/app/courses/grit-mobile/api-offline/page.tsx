@@ -44,6 +44,13 @@ export default function ApiOfflineCourse() {
           </p>
         </div>
 
+        <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+          <p className="text-sm text-muted-foreground">
+            <strong className="text-foreground">Reference docs:</strong>{' '}
+            <a href="/docs/mobile/offline" className="text-primary hover:underline">Mobile Offline & Sync →</a>
+          </p>
+        </div>
+
         <hr className="border-border/40 mb-10" />
 
         {/* ═══ TanStack Query in React Native ═══ */}
