@@ -1,5 +1,6 @@
-import { Folder, FileCode, ArrowDown, ArrowRight } from 'lucide-react'
+import { FileCode, ArrowDown, ArrowRight } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { fileColor, folderEmoji } from '@/lib/file-meta'
 
 /* ─────────────────────────────────────────────────────────────
    Visual diagram toolkit for the docs — styled boxes, flow
@@ -119,9 +120,9 @@ export function FileTree({ title, nodes }: { title?: string; nodes: TreeNode[] }
               style={{ paddingLeft: `${(n.depth ?? 0) * 18 + 8}px` }}
             >
               {isFolder ? (
-                <Folder className="h-3.5 w-3.5 shrink-0 text-sky-400/80" />
+                <span className="shrink-0 text-[13px] leading-none">{folderEmoji(true)}</span>
               ) : (
-                <FileCode className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+                <FileCode className={`h-3.5 w-3.5 shrink-0 ${fileColor(n.name)}`} />
               )}
               <span className={`font-mono ${isFolder ? 'font-medium text-foreground/90' : 'text-muted-foreground'}`}>
                 {n.name}
@@ -147,6 +148,34 @@ export function DiagramLegend({ items }: { items: { tone: Tone; label: string }[
           {it.label}
         </div>
       ))}
+    </div>
+  )
+}
+
+/**
+ * A tinted, labelled grouping box — for wrapping related nodes in a diagram
+ * (e.g. a "Session Management" or "Middleware stack" cluster). The label
+ * floats on the top border, Next.js-style.
+ */
+export function HighlightBox({
+  label,
+  tone = 'primary',
+  children,
+  className = '',
+}: {
+  label?: ReactNode
+  tone?: Tone
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <div className={`relative rounded-lg border-2 ${TONES[tone]} px-3 pb-3 pt-4 ${className}`}>
+      {label && (
+        <span className={`absolute -top-2.5 left-3 rounded bg-background px-1.5 text-[11px] font-semibold ${ACCENT[tone]}`}>
+          {label}
+        </span>
+      )}
+      <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   )
 }
