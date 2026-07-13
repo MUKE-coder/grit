@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { Diagram, DiagramBox, DiagramRow, DiagramArrow, DiagramLegend, FileTree } from '@/components/diagram'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/architecture-modes/double')
@@ -82,97 +83,95 @@ grit new myapp --double --next`} />
               Compare it with the triple structure — the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">apps/admin/</code> directory
               is absent, and the web app gains role-protected admin routes.
             </p>
-            <CodeBlock language="bash" filename="myapp/" code={`myapp/
-├── .env                              # Shared environment variables
-├── .env.example                      # Template for other developers
-├── .gitignore
-├── .prettierrc                       # Code formatting
-├── .prettierignore
-├── docker-compose.yml                # Dev: PostgreSQL, Redis, MinIO, Mailhog
-├── docker-compose.prod.yml           # Production deployment
-├── grit.json                         # Project manifest (architecture: "double")
-├── turbo.json                        # Turborepo pipeline config
-├── pnpm-workspace.yaml               # pnpm workspace definition
-├── package.json                      # Root scripts (dev, build, lint)
-├── .claude/
-│   └── skills/grit/
-│       ├── SKILL.md                  # AI assistant guide (tailored to double)
-│       └── reference.md              # Detailed API conventions
-├── packages/
-│   └── shared/                       # Shared between API and web
-│       ├── package.json
-│       ├── schemas/                  # Zod validation schemas
-│       │   ├── index.ts              # // grit:schemas marker
-│       │   └── user.ts              # User schema (register, login, update)
-│       ├── types/                    # TypeScript interfaces
-│       │   ├── index.ts              # // grit:types marker
-│       │   └── user.ts              # User type
-│       └── constants/                # Shared constants
-│           └── index.ts              # API_ROUTES, ROLES // grit:api-routes
-├── apps/
-│   ├── api/                          # Go backend (identical to triple)
-│   │   ├── Dockerfile                # Multi-stage build (golang → alpine)
-│   │   ├── go.mod                    # Go module: myapp/apps/api
-│   │   ├── go.sum
-│   │   ├── cmd/
-│   │   │   ├── server/main.go        # Entry point: config, db, services, router
-│   │   │   ├── migrate/main.go       # Migration runner
-│   │   │   └── seed/main.go          # Database seeder
-│   │   └── internal/
-│   │       ├── config/config.go      # Loads .env, all env vars
-│   │       ├── database/db.go        # GORM connection + AutoMigrate
-│   │       ├── models/               # GORM models
-│   │       │   ├── user.go           # User model // grit:models marker
-│   │       │   └── upload.go         # Upload model
-│   │       ├── handlers/             # HTTP handlers (thin — call services)
-│   │       │   ├── auth.go           # Register, login, refresh, me
-│   │       │   ├── user.go           # User CRUD
-│   │       │   ├── upload.go         # File upload (presigned URLs)
-│   │       │   └── ai.go             # AI completions + streaming
-│   │       ├── services/             # Business logic
-│   │       │   ├── auth_service.go   # JWT, bcrypt, token generation
-│   │       │   └── user_service.go   # User queries
-│   │       ├── middleware/           # Gin middleware
-│   │       │   ├── auth.go           # JWT verification
-│   │       │   ├── cors.go           # CORS configuration
-│   │       │   ├── logger.go         # Structured logging
-│   │       │   ├── cache.go          # Redis response caching
-│   │       │   ├── maintenance.go    # grit down/up support
-│   │       │   └── rate_limit.go     # Sentinel rate limiting
-│   │       ├── routes/
-│   │       │   └── routes.go         # Route registration // grit:handlers, grit:routes:*
-│   │       ├── mail/                 # Email service (Resend)
-│   │       │   ├── mailer.go         # Send function
-│   │       │   └── templates/        # HTML email templates
-│   │       ├── storage/              # S3-compatible file storage
-│   │       ├── jobs/                 # Background jobs (asynq)
-│   │       ├── cron/                 # Scheduled tasks
-│   │       ├── cache/                # Redis cache service
-│   │       ├── ai/                   # AI service (Vercel AI Gateway)
-│   │       └── auth/                 # TOTP 2FA service
-│   │           └── totp.go           # Setup, verify, backup codes, trusted devices
-│   └── web/                          # Frontend (public + admin routes)
-│       ├── Dockerfile                # Next.js standalone or Vite static build
-│       ├── package.json              # Dependencies + scripts
-│       ├── vite.config.ts            # (or next.config.js for --next)
-│       ├── tailwind.config.ts
-│       └── src/                      # TanStack Router (or app/ for Next.js)
-│           ├── routes/
-│           │   ├── __root.tsx        # Root layout
-│           │   ├── index.tsx         # Landing page
-│           │   ├── (auth)/           # Auth pages (login, register)
-│           │   ├── (app)/            # Protected user pages
-│           │   └── (admin)/          # Role-protected admin pages
-│           │       ├── _layout.tsx   # Admin layout (checks ADMIN role)
-│           │       ├── users/        # User management
-│           │       └── settings/     # System settings
-│           ├── hooks/                # React Query hooks
-│           ├── components/           # Shared components
-│           └── lib/                  # Utilities, API client
-└── packages/
-    └── grit-ui/                      # 100 shadcn-compatible components
-        ├── registry.json
-        └── registry/                 # Per-component JSON + TSX`} />
+            <FileTree
+              title="myapp/"
+              nodes={[
+                { name: '.env', type: 'file', depth: 0, comment: 'Shared environment variables' },
+                { name: '.env.example', type: 'file', depth: 0, comment: 'Template for other developers' },
+                { name: '.gitignore', type: 'file', depth: 0 },
+                { name: '.prettierrc', type: 'file', depth: 0, comment: 'Code formatting' },
+                { name: '.prettierignore', type: 'file', depth: 0 },
+                { name: 'docker-compose.yml', type: 'file', depth: 0, comment: 'Dev: PostgreSQL, Redis, MinIO, Mailhog' },
+                { name: 'docker-compose.prod.yml', type: 'file', depth: 0, comment: 'Production deployment' },
+                { name: 'grit.json', type: 'file', depth: 0, comment: 'Project manifest (architecture: "double")' },
+                { name: 'turbo.json', type: 'file', depth: 0, comment: 'Turborepo pipeline config' },
+                { name: 'pnpm-workspace.yaml', type: 'file', depth: 0, comment: 'pnpm workspace definition' },
+                { name: 'package.json', type: 'file', depth: 0, comment: 'Root scripts (dev, build, lint)' },
+                { name: '.claude/', type: 'folder', depth: 0 },
+                { name: 'skills/grit/', type: 'folder', depth: 1 },
+                { name: 'SKILL.md', type: 'file', depth: 2, comment: 'AI assistant guide (tailored to double)' },
+                { name: 'reference.md', type: 'file', depth: 2, comment: 'Detailed API conventions' },
+                { name: 'packages/', type: 'folder', depth: 0 },
+                { name: 'shared/', type: 'folder', depth: 1, comment: 'Shared between API and web' },
+                { name: 'schemas/', type: 'folder', depth: 2, comment: 'Zod validation schemas' },
+                { name: 'index.ts', type: 'file', depth: 3, comment: '// grit:schemas marker' },
+                { name: 'user.ts', type: 'file', depth: 3, comment: 'User schema (register, login, update)' },
+                { name: 'types/', type: 'folder', depth: 2, comment: 'TypeScript interfaces' },
+                { name: 'index.ts', type: 'file', depth: 3, comment: '// grit:types marker' },
+                { name: 'user.ts', type: 'file', depth: 3, comment: 'User type' },
+                { name: 'constants/', type: 'folder', depth: 2, comment: 'API_ROUTES, ROLES // grit:api-routes' },
+                { name: 'apps/', type: 'folder', depth: 0 },
+                { name: 'api/', type: 'folder', depth: 1, comment: 'Go backend (identical to triple)' },
+                { name: 'Dockerfile', type: 'file', depth: 2, comment: 'Multi-stage build (golang → alpine)' },
+                { name: 'go.mod', type: 'file', depth: 2, comment: 'Go module: myapp/apps/api' },
+                { name: 'go.sum', type: 'file', depth: 2 },
+                { name: 'cmd/', type: 'folder', depth: 2 },
+                { name: 'server/main.go', type: 'file', depth: 3, comment: 'Entry point: config, db, services, router' },
+                { name: 'migrate/main.go', type: 'file', depth: 3, comment: 'Migration runner' },
+                { name: 'seed/main.go', type: 'file', depth: 3, comment: 'Database seeder' },
+                { name: 'internal/', type: 'folder', depth: 2 },
+                { name: 'config/config.go', type: 'file', depth: 3, comment: 'Loads .env, all env vars' },
+                { name: 'database/db.go', type: 'file', depth: 3, comment: 'GORM connection + AutoMigrate' },
+                { name: 'models/', type: 'folder', depth: 3, comment: 'GORM models' },
+                { name: 'user.go', type: 'file', depth: 4, comment: 'User model // grit:models marker' },
+                { name: 'upload.go', type: 'file', depth: 4, comment: 'Upload model' },
+                { name: 'handlers/', type: 'folder', depth: 3, comment: 'HTTP handlers (thin — call services)' },
+                { name: 'auth.go', type: 'file', depth: 4, comment: 'Register, login, refresh, me' },
+                { name: 'user.go', type: 'file', depth: 4, comment: 'User CRUD' },
+                { name: 'upload.go', type: 'file', depth: 4, comment: 'File upload (presigned URLs)' },
+                { name: 'ai.go', type: 'file', depth: 4, comment: 'AI completions + streaming' },
+                { name: 'services/', type: 'folder', depth: 3, comment: 'Business logic' },
+                { name: 'auth_service.go', type: 'file', depth: 4, comment: 'JWT, bcrypt, token generation' },
+                { name: 'user_service.go', type: 'file', depth: 4, comment: 'User queries' },
+                { name: 'middleware/', type: 'folder', depth: 3, comment: 'Gin middleware' },
+                { name: 'auth.go', type: 'file', depth: 4, comment: 'JWT verification' },
+                { name: 'cors.go', type: 'file', depth: 4, comment: 'CORS configuration' },
+                { name: 'logger.go', type: 'file', depth: 4, comment: 'Structured logging' },
+                { name: 'cache.go', type: 'file', depth: 4, comment: 'Redis response caching' },
+                { name: 'maintenance.go', type: 'file', depth: 4, comment: 'grit down/up support' },
+                { name: 'rate_limit.go', type: 'file', depth: 4, comment: 'Sentinel rate limiting' },
+                { name: 'routes/', type: 'folder', depth: 3 },
+                { name: 'routes.go', type: 'file', depth: 4, comment: 'Route registration // grit:handlers, grit:routes:*' },
+                { name: 'mail/', type: 'folder', depth: 3, comment: 'Email service (Resend)' },
+                { name: 'mailer.go', type: 'file', depth: 4, comment: 'Send function' },
+                { name: 'templates/', type: 'folder', depth: 4, comment: 'HTML email templates' },
+                { name: 'storage/', type: 'folder', depth: 3, comment: 'S3-compatible file storage' },
+                { name: 'jobs/', type: 'folder', depth: 3, comment: 'Background jobs (asynq)' },
+                { name: 'cron/', type: 'folder', depth: 3, comment: 'Scheduled tasks' },
+                { name: 'cache/', type: 'folder', depth: 3, comment: 'Redis cache service' },
+                { name: 'ai/', type: 'folder', depth: 3, comment: 'AI service (Vercel AI Gateway)' },
+                { name: 'auth/', type: 'folder', depth: 3, comment: 'TOTP 2FA service' },
+                { name: 'totp.go', type: 'file', depth: 4, comment: 'Setup, verify, backup codes, trusted devices' },
+                { name: 'web/', type: 'folder', depth: 1, comment: 'Frontend (public + admin routes)' },
+                { name: 'Dockerfile', type: 'file', depth: 2, comment: 'Next.js standalone or Vite static build' },
+                { name: 'package.json', type: 'file', depth: 2, comment: 'Dependencies + scripts' },
+                { name: 'vite.config.ts', type: 'file', depth: 2, comment: '(or next.config.js for --next)' },
+                { name: 'tailwind.config.ts', type: 'file', depth: 2 },
+                { name: 'src/', type: 'folder', depth: 2, comment: 'TanStack Router (or app/ for Next.js)' },
+                { name: 'routes/', type: 'folder', depth: 3 },
+                { name: '__root.tsx', type: 'file', depth: 4, comment: 'Root layout' },
+                { name: 'index.tsx', type: 'file', depth: 4, comment: 'Landing page' },
+                { name: '(auth)/', type: 'folder', depth: 4, comment: 'Auth pages (login, register)' },
+                { name: '(app)/', type: 'folder', depth: 4, comment: 'Protected user pages' },
+                { name: '(admin)/', type: 'folder', depth: 4, comment: 'Role-protected admin pages' },
+                { name: '_layout.tsx', type: 'file', depth: 5, comment: 'Admin layout (checks ADMIN role)' },
+                { name: 'users/', type: 'folder', depth: 5, comment: 'User management' },
+                { name: 'settings/', type: 'folder', depth: 5, comment: 'System settings' },
+                { name: 'hooks/', type: 'folder', depth: 3, comment: 'React Query hooks' },
+                { name: 'components/', type: 'folder', depth: 3, comment: 'Shared components' },
+                { name: 'lib/', type: 'folder', depth: 3, comment: 'Utilities, API client' },
+              ]}
+            />
           </section>
 
           {/* ── Section 3: Directory Explanations ── */}
@@ -345,42 +344,43 @@ export default function AdminLayout() {
               Admin and user requests follow the same path — the only difference is the role attached to
               the JWT token.
             </p>
-            <CodeBlock language="bash" filename="request flow" code={`┌─────────────────────────────────────────────────────────┐
-│                       BROWSER                           │
-│                                                         │
-│  ┌────────────────────────────────────────────────────┐ │
-│  │              Web App (:3000)                        │ │
-│  │  ┌──────────────┐   ┌──────────────────────────┐   │ │
-│  │  │ Public Pages │   │ Admin Pages (role-gated) │   │ │
-│  │  │ /, /login,   │   │ /admin/users,            │   │ │
-│  │  │ /dashboard   │   │ /admin/settings           │   │ │
-│  │  └──────┬───────┘   └────────────┬─────────────┘   │ │
-│  └─────────┼────────────────────────┼─────────────────┘ │
-└────────────┼────────────────────────┼───────────────────┘
-             │                        │
-        REST + JWT               REST + JWT (ADMIN role)
-             │                        │
-             ▼                        ▼
-┌─────────────────────────────────────────────────────────┐
-│                    GO API (:8080)                        │
-│                                                         │
-│  Request → Gin Router                                   │
-│         → Middleware Stack                               │
-│           ├── CORS (allow web:3000)                     │
-│           ├── Logger                                    │
-│           ├── Rate Limiter (Sentinel)                   │
-│           ├── Auth (JWT verification)                   │
-│           ├── RequireRole("ADMIN")  ← admin routes only │
-│           └── Cache (Redis)                             │
-│         → Handler → Service → GORM → PostgreSQL         │
-│                                                         │
-│  Background: asynq workers, cron, GORM Studio           │
-└─────────────────────────────────────────────────────────┘
-          │         │         │         │
-          ▼         ▼         ▼         ▼
-     PostgreSQL   Redis     MinIO    Resend
-      (data)     (cache    (files)   (email)
-                  + jobs)`} />
+            <Diagram>
+              <div className="mb-1 text-center text-[11px] font-mono uppercase tracking-wider text-muted-foreground/50">Browser — Web App :3000</div>
+              <DiagramRow>
+                <DiagramBox tone="blue" title="Public Pages" sub="/ · /login · /dashboard" />
+                <DiagramBox tone="cyan" title="Admin Pages" sub="role-gated · /admin/*" />
+              </DiagramRow>
+
+              <DiagramArrow label="REST + JWT (ADMIN role on /admin/*)" />
+
+              <DiagramBox tone="primary" title="Go API — :8080" sub="Gin Router → Middleware → Handler → Service → GORM" />
+              <div className="mt-2 grid gap-2 sm:grid-cols-3 text-[11px] text-muted-foreground/80">
+                <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2 text-center">CORS · Logger</div>
+                <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2 text-center">Rate Limiter · Auth (JWT)</div>
+                <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2 text-center">RequireRole(&quot;ADMIN&quot;) · Cache</div>
+              </div>
+              <div className="mt-2 rounded-md border border-border/40 bg-card/20 px-3 py-2 text-[11px] text-muted-foreground/70">
+                <span className="font-semibold text-foreground/70">Background</span> — asynq workers · cron · GORM Studio (/studio)
+              </div>
+
+              <DiagramArrow />
+
+              <DiagramRow>
+                <DiagramBox tone="green" title="PostgreSQL" sub=":5434 · data" />
+                <DiagramBox tone="rose" title="Redis" sub=":6380 · cache + jobs" />
+                <DiagramBox tone="amber" title="MinIO" sub=":9002 · files" />
+                <DiagramBox tone="violet" title="Resend" sub="email" />
+              </DiagramRow>
+
+              <DiagramLegend
+                items={[
+                  { tone: 'blue', label: 'Public UI' },
+                  { tone: 'cyan', label: 'Admin UI (role-gated)' },
+                  { tone: 'primary', label: 'Go API' },
+                  { tone: 'green', label: 'Data & services' },
+                ]}
+              />
+            </Diagram>
 
             <div className="mt-6 rounded-lg border border-border/40 bg-accent/20 p-4">
               <h4 className="text-sm font-semibold text-foreground mb-2">Step-by-step: Admin managing users</h4>
@@ -496,10 +496,10 @@ export default function AdminLayout() {
                 <tbody className="text-muted-foreground">
                   <tr className="border-b border-border/20"><td className="p-3 font-semibold text-foreground">Go API</td><td className="p-3 font-mono text-xs">8080</td><td className="p-3 font-mono text-xs">http://localhost:8080</td><td className="p-3">REST endpoints + GORM Studio at /studio</td></tr>
                   <tr className="border-b border-border/20"><td className="p-3 font-semibold text-foreground">Web App</td><td className="p-3 font-mono text-xs">3000</td><td className="p-3 font-mono text-xs">http://localhost:3000</td><td className="p-3">Next.js or Vite (:5173) — serves both public and admin UI</td></tr>
-                  <tr className="border-b border-border/20"><td className="p-3 font-semibold text-foreground">PostgreSQL</td><td className="p-3 font-mono text-xs">5432</td><td className="p-3 font-mono text-xs">localhost:5432</td><td className="p-3">Docker container</td></tr>
-                  <tr className="border-b border-border/20"><td className="p-3 font-semibold text-foreground">Redis</td><td className="p-3 font-mono text-xs">6379</td><td className="p-3 font-mono text-xs">localhost:6379</td><td className="p-3">Cache + job queue</td></tr>
-                  <tr className="border-b border-border/20"><td className="p-3 font-semibold text-foreground">MinIO API</td><td className="p-3 font-mono text-xs">9000</td><td className="p-3 font-mono text-xs">http://localhost:9000</td><td className="p-3">S3-compatible API</td></tr>
-                  <tr className="border-b border-border/20"><td className="p-3 font-semibold text-foreground">MinIO Console</td><td className="p-3 font-mono text-xs">9001</td><td className="p-3 font-mono text-xs">http://localhost:9001</td><td className="p-3">Web UI for managing buckets</td></tr>
+                  <tr className="border-b border-border/20"><td className="p-3 font-semibold text-foreground">PostgreSQL</td><td className="p-3 font-mono text-xs">5434</td><td className="p-3 font-mono text-xs">localhost:5434</td><td className="p-3">Docker container (host port 5434 → 5432)</td></tr>
+                  <tr className="border-b border-border/20"><td className="p-3 font-semibold text-foreground">Redis</td><td className="p-3 font-mono text-xs">6380</td><td className="p-3 font-mono text-xs">localhost:6380</td><td className="p-3">Cache + job queue (host port 6380 → 6379)</td></tr>
+                  <tr className="border-b border-border/20"><td className="p-3 font-semibold text-foreground">MinIO API</td><td className="p-3 font-mono text-xs">9002</td><td className="p-3 font-mono text-xs">http://localhost:9002</td><td className="p-3">S3-compatible API</td></tr>
+                  <tr className="border-b border-border/20"><td className="p-3 font-semibold text-foreground">MinIO Console</td><td className="p-3 font-mono text-xs">9003</td><td className="p-3 font-mono text-xs">http://localhost:9003</td><td className="p-3">Web UI for managing buckets</td></tr>
                   <tr className="border-b border-border/20"><td className="p-3 font-semibold text-foreground">Mailhog SMTP</td><td className="p-3 font-mono text-xs">1025</td><td className="p-3 font-mono text-xs">localhost:1025</td><td className="p-3">Catches outgoing email</td></tr>
                   <tr><td className="p-3 font-semibold text-foreground">Mailhog UI</td><td className="p-3 font-mono text-xs">8025</td><td className="p-3 font-mono text-xs">http://localhost:8025</td><td className="p-3">View caught emails in browser</td></tr>
                 </tbody>

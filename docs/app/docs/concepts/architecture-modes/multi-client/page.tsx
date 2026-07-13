@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { FileTree } from '@/components/diagram'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/architecture-modes/multi-client')
@@ -254,42 +255,43 @@ grit new myapp --single --desktop
               <p className="text-muted-foreground leading-relaxed mb-4">
                 The shape of <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">grit new myapp --triple --next --desktop --mobile</code>:
               </p>
-              <CodeBlock
-                language="text"
-                code={`myapp/
-├── apps/
-│   ├── api/                    # Go backend (Gin + GORM + PostgreSQL)
-│   │   ├── cmd/server/main.go
-│   │   └── internal/
-│   │       ├── handlers/       # HTTP handlers
-│   │       ├── services/       # Business logic
-│   │       ├── models/         # GORM models
-│   │       └── routes/         # Route registration
-│   ├── web/                    # Next.js marketing/landing
-│   ├── admin/                  # Next.js admin dashboard
-│   ├── expo/                   # Expo mobile (iOS + Android)
-│   │   ├── app/                # Expo Router screens
-│   │   └── lib/                # API client, auth, SecureStore
-│   └── desktop/                # Wails desktop (macOS/Windows/Linux)
-│       ├── main.go             # Wails bootstrap, frameless window
-│       ├── app.go              # Native OS bindings only
-│       ├── internal/
-│       │   └── keychain.go     # OS keychain wrapper
-│       └── frontend/
-│           ├── src/
-│           │   ├── routes/     # TanStack Router file-based routes
-│           │   ├── components/ # Shared UI (layout, ui/, command-palette)
-│           │   ├── lib/        # API client, Wails bridge, shortcuts
-│           │   └── hooks/      # useAuth, useMe, useLogout
-│           └── vite.config.ts
-├── packages/
-│   └── shared/                 # 🔑 Shared across ALL clients
-│       ├── schemas/            # Zod schemas (login, register, user...)
-│       ├── types/              # TypeScript types
-│       └── constants/          # ROUTES, ROLES
-├── docker-compose.yml
-├── turbo.json
-└── pnpm-workspace.yaml`}
+              <FileTree
+                title="myapp/"
+                nodes={[
+                  { name: 'apps/', type: 'folder', depth: 0 },
+                  { name: 'api/', type: 'folder', depth: 1, comment: 'Go backend (Gin + GORM + PostgreSQL)' },
+                  { name: 'cmd/server/main.go', type: 'file', depth: 2 },
+                  { name: 'internal/', type: 'folder', depth: 2 },
+                  { name: 'handlers/', type: 'folder', depth: 3, comment: 'HTTP handlers' },
+                  { name: 'services/', type: 'folder', depth: 3, comment: 'Business logic' },
+                  { name: 'models/', type: 'folder', depth: 3, comment: 'GORM models' },
+                  { name: 'routes/', type: 'folder', depth: 3, comment: 'Route registration' },
+                  { name: 'web/', type: 'folder', depth: 1, comment: 'Next.js marketing/landing' },
+                  { name: 'admin/', type: 'folder', depth: 1, comment: 'Next.js admin dashboard' },
+                  { name: 'expo/', type: 'folder', depth: 1, comment: 'Expo mobile (iOS + Android)' },
+                  { name: 'app/', type: 'folder', depth: 2, comment: 'Expo Router screens' },
+                  { name: 'lib/', type: 'folder', depth: 2, comment: 'API client, auth, SecureStore' },
+                  { name: 'desktop/', type: 'folder', depth: 1, comment: 'Wails desktop (macOS/Windows/Linux)' },
+                  { name: 'main.go', type: 'file', depth: 2, comment: 'Wails bootstrap, frameless window' },
+                  { name: 'app.go', type: 'file', depth: 2, comment: 'Native OS bindings only' },
+                  { name: 'internal/', type: 'folder', depth: 2 },
+                  { name: 'keychain.go', type: 'file', depth: 3, comment: 'OS keychain wrapper' },
+                  { name: 'frontend/', type: 'folder', depth: 2 },
+                  { name: 'src/', type: 'folder', depth: 3 },
+                  { name: 'routes/', type: 'folder', depth: 4, comment: 'TanStack Router file-based routes' },
+                  { name: 'components/', type: 'folder', depth: 4, comment: 'Shared UI (layout, ui/, command-palette)' },
+                  { name: 'lib/', type: 'folder', depth: 4, comment: 'API client, Wails bridge, shortcuts' },
+                  { name: 'hooks/', type: 'folder', depth: 4, comment: 'useAuth, useMe, useLogout' },
+                  { name: 'vite.config.ts', type: 'file', depth: 3 },
+                  { name: 'packages/', type: 'folder', depth: 0 },
+                  { name: 'shared/', type: 'folder', depth: 1, comment: '🔑 Shared across ALL clients' },
+                  { name: 'schemas/', type: 'folder', depth: 2, comment: 'Zod schemas (login, register, user...)' },
+                  { name: 'types/', type: 'folder', depth: 2, comment: 'TypeScript types' },
+                  { name: 'constants/', type: 'folder', depth: 2, comment: 'ROUTES, ROLES' },
+                  { name: 'docker-compose.yml', type: 'file', depth: 0 },
+                  { name: 'turbo.json', type: 'file', depth: 0 },
+                  { name: 'pnpm-workspace.yaml', type: 'file', depth: 0 },
+                ]}
               />
               <p className="text-muted-foreground leading-relaxed mt-4">
                 The key insight: <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">packages/shared</code>{' '}

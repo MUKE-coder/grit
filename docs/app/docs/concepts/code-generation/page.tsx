@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { Diagram, DiagramBox, DiagramRow, DiagramArrow, DiagramLegend } from '@/components/diagram'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/code-generation')
@@ -69,6 +70,42 @@ export default function CodeGenerationPage() {
                   For a resource named &quot;Post&quot;, the generator creates the following 9 files.
                   Each file is complete, ready to use, and follows Grit&apos;s conventions.
                 </p>
+
+                <Diagram>
+                  <DiagramBox tone="primary" title="grit generate resource Post" sub={'--fields "title:string, content:text, published:bool"'} />
+                  <DiagramArrow label="fans out to 9 files" />
+
+                  <div className="mb-1.5 text-center text-[11px] font-mono uppercase tracking-wider text-muted-foreground/50">Go backend · apps/api/</div>
+                  <DiagramRow>
+                    <DiagramBox tone="green" title="models/post.go" sub="GORM struct" />
+                    <DiagramBox tone="green" title="services/post.go" sub="business logic" />
+                    <DiagramBox tone="green" title="handlers/post.go" sub="Gin CRUD" />
+                    <DiagramBox tone="green" title="handlers/post_import.go" sub="CSV import" />
+                  </DiagramRow>
+
+                  <div className="mt-4 mb-1.5 text-center text-[11px] font-mono uppercase tracking-wider text-muted-foreground/50">Shared · packages/shared/</div>
+                  <DiagramRow>
+                    <DiagramBox tone="amber" title="schemas/post.ts" sub="Zod Create/Update" />
+                    <DiagramBox tone="amber" title="types/post.ts" sub="TS interface" />
+                  </DiagramRow>
+
+                  <div className="mt-4 mb-1.5 text-center text-[11px] font-mono uppercase tracking-wider text-muted-foreground/50">Frontend · apps/web + apps/admin</div>
+                  <DiagramRow>
+                    <DiagramBox tone="blue" title="web/hooks/use-posts.ts" sub="React Query" />
+                    <DiagramBox tone="blue" title="admin/resources/posts.ts" sub="resource def" />
+                    <DiagramBox tone="blue" title="admin/…/posts/page.tsx" sub="CRUD page" />
+                  </DiagramRow>
+
+                  <DiagramLegend
+                    items={[
+                      { tone: 'primary', label: 'grit command' },
+                      { tone: 'green', label: 'Go backend' },
+                      { tone: 'amber', label: 'Shared package' },
+                      { tone: 'blue', label: 'Frontend' },
+                    ]}
+                  />
+                </Diagram>
+
                 <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>

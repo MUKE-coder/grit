@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { Diagram, DiagramBox, DiagramRow, DiagramArrow, DiagramLegend, FileTree } from '@/components/diagram'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/type-system')
@@ -42,29 +43,28 @@ export default function TypeSystemPage() {
                   burden. Grit solves this by making the Go model the single source of truth and
                   automatically generating all downstream types.
                 </p>
-                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden p-6">
-                  <pre className="text-sm font-mono text-foreground/70 overflow-x-auto leading-relaxed">{`
-   Go Struct          GORM Tags           JSON Tags
-      \u2502                    \u2502                  \u2502
-      \u2502    grit generate   \u2502   Auto-migrate    \u2502   Serialization
-      \u2502    grit sync       \u2502                  \u2502
-      \u25bc                    \u25bc                  \u25bc
-\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
-\u2502 TypeScript  \u2502  \u2502 PostgreSQL  \u2502  \u2502  JSON over   \u2502
-\u2502 Interface   \u2502  \u2502  Table      \u2502  \u2502   HTTP       \u2502
-\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
-       \u2502
-       \u25bc
-\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
-\u2502 Zod Schema  \u2502 \u2500\u2500\u2500\u2192 Form validation
-\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518       API input validation
-       \u2502              Type inference
-       \u25bc
-\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
-\u2502 React Query \u2502 \u2500\u2500\u2500\u2192 Typed data fetching
-\u2502   Hooks     \u2502       Cache invalidation
-\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`}</pre>
-                </div>
+                <Diagram>
+                  <DiagramBox tone="primary" title="Go Struct" sub="apps/api/internal/models/post.go \u2014 source of truth" />
+                  <DiagramArrow label="grit generate \u00b7 grit sync" />
+                  <DiagramRow>
+                    <DiagramBox tone="green" title="PostgreSQL Table" sub="GORM tags \u2192 auto-migrate" />
+                    <DiagramBox tone="cyan" title="JSON over HTTP" sub="json tags \u2192 serialization" />
+                    <DiagramBox tone="blue" title="TypeScript Interface" sub="packages/shared/types/post.ts" />
+                  </DiagramRow>
+                  <DiagramArrow label="inferred from the same source" />
+                  <DiagramRow>
+                    <DiagramBox tone="violet" title="Zod Schema" sub="schemas/post.ts \u2014 form + API validation" />
+                    <DiagramBox tone="blue" title="React Query Hooks" sub="typed data fetching + cache invalidation" />
+                  </DiagramRow>
+                  <DiagramLegend
+                    items={[
+                      { tone: 'primary', label: 'Source of truth (Go)' },
+                      { tone: 'green', label: 'Database' },
+                      { tone: 'blue', label: 'TypeScript' },
+                      { tone: 'violet', label: 'Validation' },
+                    ]}
+                  />
+                </Diagram>
               </div>
 
               {/* The Chain */}
@@ -314,20 +314,24 @@ function CreatePostForm() {
                   and validation logic.
                 </p>
 
-                <CodeBlock filename="shared package structure" code={`packages/shared/
-\u251c\u2500\u2500 schemas/
-\u2502   \u251c\u2500\u2500 index.ts            # Re-exports all schemas
-\u2502   \u251c\u2500\u2500 user.ts             # Hand-written (not overwritten by sync)
-\u2502   \u251c\u2500\u2500 post.ts             # Auto-generated: CreatePostSchema, UpdatePostSchema
-\u2502   \u2514\u2500\u2500 invoice.ts          # Auto-generated
-\u251c\u2500\u2500 types/
-\u2502   \u251c\u2500\u2500 index.ts            # Re-exports all types
-\u2502   \u251c\u2500\u2500 api.ts              # Hand-written: ApiResponse, PaginatedResponse, ApiError
-\u2502   \u251c\u2500\u2500 user.ts             # Hand-written (not overwritten by sync)
-\u2502   \u251c\u2500\u2500 post.ts             # Auto-generated: Post interface
-\u2502   \u2514\u2500\u2500 invoice.ts          # Auto-generated
-\u2514\u2500\u2500 constants/
-    \u2514\u2500\u2500 index.ts            # API_ROUTES, ROLES, APP_CONFIG`} />
+                <FileTree
+                  title="packages/shared/"
+                  nodes={[
+                    { name: 'schemas/', type: 'folder', depth: 0 },
+                    { name: 'index.ts', type: 'file', depth: 1, comment: 'Re-exports all schemas' },
+                    { name: 'user.ts', type: 'file', depth: 1, comment: 'Hand-written (not overwritten by sync)' },
+                    { name: 'post.ts', type: 'file', depth: 1, comment: 'Auto-generated: Create/Update schemas', highlight: true },
+                    { name: 'invoice.ts', type: 'file', depth: 1, comment: 'Auto-generated', highlight: true },
+                    { name: 'types/', type: 'folder', depth: 0 },
+                    { name: 'index.ts', type: 'file', depth: 1, comment: 'Re-exports all types' },
+                    { name: 'api.ts', type: 'file', depth: 1, comment: 'Hand-written: ApiResponse, PaginatedResponse, ApiError' },
+                    { name: 'user.ts', type: 'file', depth: 1, comment: 'Hand-written (not overwritten by sync)' },
+                    { name: 'post.ts', type: 'file', depth: 1, comment: 'Auto-generated: Post interface', highlight: true },
+                    { name: 'invoice.ts', type: 'file', depth: 1, comment: 'Auto-generated', highlight: true },
+                    { name: 'constants/', type: 'folder', depth: 0 },
+                    { name: 'index.ts', type: 'file', depth: 1, comment: 'API_ROUTES, ROLES, APP_CONFIG' },
+                  ]}
+                />
 
                 <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
                   The index files use barrel exports so the frontends can import cleanly:

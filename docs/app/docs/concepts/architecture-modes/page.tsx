@@ -3,10 +3,158 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
-import { CodeBlock } from '@/components/code-block'
+import { FileTree, type TreeNode } from '@/components/diagram'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/architecture-modes')
+
+interface ArchMode {
+  name: string
+  flag: string
+  tagline: string
+  color: string
+  ideal: string
+  example: string
+  tree: TreeNode[]
+  features: string[]
+}
+
+const architectures: ArchMode[] = [
+  {
+    name: 'Single',
+    flag: '--single',
+    tagline: 'Go API + embedded React SPA — one binary',
+    color: 'sky',
+    ideal: 'Laravel/Rails developers, solo devs, simple deploys',
+    example: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-single-vite',
+    tree: [
+      { name: 'cmd/server/main.go', type: 'file', depth: 0, comment: 'go:embed frontend/dist/*' },
+      { name: 'internal/', type: 'folder', depth: 0, comment: 'Go backend' },
+      { name: 'frontend/', type: 'folder', depth: 0, comment: 'React + Vite + TanStack Router' },
+      { name: 'go.mod', type: 'file', depth: 0 },
+      { name: 'Makefile', type: 'file', depth: 0, comment: 'make dev, make build' },
+    ],
+    features: [
+      'Single binary deployment via go:embed',
+      'Dev: Go on :8080, Vite on :5173 with proxy',
+      'make build produces one executable',
+      'No Node.js needed in production',
+    ],
+  },
+  {
+    name: 'Double',
+    flag: '--double',
+    tagline: 'Web + API Turborepo monorepo',
+    color: 'violet',
+    ideal: 'MERN stack developers, API + SPA projects',
+    example: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-double-vite',
+    tree: [
+      { name: 'apps/', type: 'folder', depth: 0 },
+      { name: 'api/', type: 'folder', depth: 1, comment: 'Go backend (Gin + GORM)' },
+      { name: 'web/', type: 'folder', depth: 1, comment: 'React frontend (Next.js or TanStack)' },
+      { name: 'packages/shared/', type: 'folder', depth: 0, comment: 'Types, schemas, constants' },
+      { name: 'turbo.json', type: 'file', depth: 0 },
+      { name: 'pnpm-workspace.yaml', type: 'file', depth: 0 },
+    ],
+    features: [
+      'Turborepo for parallel builds',
+      'Shared TypeScript types + Zod schemas',
+      'Independent deployment of API and web',
+      'pnpm workspaces for dependency management',
+    ],
+  },
+  {
+    name: 'Triple',
+    flag: '--triple (default)',
+    tagline: 'Web + Admin + API Turborepo monorepo',
+    color: 'emerald',
+    ideal: 'Full-stack teams, SaaS products, content platforms',
+    example: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-triple-next',
+    tree: [
+      { name: 'apps/', type: 'folder', depth: 0 },
+      { name: 'api/', type: 'folder', depth: 1, comment: 'Go backend (Gin + GORM)' },
+      { name: 'web/', type: 'folder', depth: 1, comment: 'Public-facing frontend' },
+      { name: 'admin/', type: 'folder', depth: 1, comment: 'Admin panel (DataTable, FormBuilder)' },
+      { name: 'packages/shared/', type: 'folder', depth: 0, comment: 'Types, schemas, constants' },
+      { name: 'turbo.json', type: 'file', depth: 0 },
+      { name: 'pnpm-workspace.yaml', type: 'file', depth: 0 },
+    ],
+    features: [
+      'Full admin panel with DataTable + FormBuilder',
+      'Resource definitions for zero-code CRUD',
+      'Dashboard widgets, system pages',
+      'grit generate creates Go + admin page',
+    ],
+  },
+  {
+    name: 'API Only',
+    flag: '--api',
+    tagline: 'Go API with no frontend',
+    color: 'amber',
+    ideal: 'Microservices, backend teams, mobile-first apps',
+    example: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-api-only',
+    tree: [
+      { name: 'apps/', type: 'folder', depth: 0 },
+      { name: 'api/', type: 'folder', depth: 1, comment: 'Go backend (Gin + GORM)' },
+      { name: 'cmd/server/', type: 'folder', depth: 2 },
+      { name: 'internal/', type: 'folder', depth: 2 },
+      { name: 'docker-compose.yml', type: 'file', depth: 0 },
+    ],
+    features: [
+      'Minimal footprint — Go only',
+      'All batteries included (auth, storage, jobs)',
+      'No Node.js, no frontend build step',
+      'Perfect for REST/gRPC APIs',
+    ],
+  },
+  {
+    name: 'Mobile',
+    flag: '--mobile',
+    tagline: 'API + Expo React Native',
+    color: 'rose',
+    ideal: 'Mobile-first products, cross-platform apps',
+    example: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-mobile-expo',
+    tree: [
+      { name: 'apps/', type: 'folder', depth: 0 },
+      { name: 'api/', type: 'folder', depth: 1, comment: 'Go backend' },
+      { name: 'expo/', type: 'folder', depth: 1, comment: 'React Native (Expo)' },
+      { name: 'packages/shared/', type: 'folder', depth: 0, comment: 'Shared types' },
+      { name: 'turbo.json', type: 'file', depth: 0 },
+    ],
+    features: [
+      'Expo managed workflow',
+      'Shared types between API and mobile',
+      'Same auth system (JWT)',
+      'File upload with presigned URLs',
+    ],
+  },
+  {
+    name: 'Multi-Client (combine flags)',
+    flag: '--desktop (combinable)',
+    tagline: 'Add a Wails desktop app to any architecture',
+    color: 'cyan',
+    ideal: 'SaaS products needing native + mobile + web clients — the Linear / Notion / Slack pattern',
+    example: '/docs/concepts/architecture-modes/multi-client',
+    tree: [
+      { name: 'apps/', type: 'folder', depth: 0 },
+      { name: 'api/', type: 'folder', depth: 1, comment: 'Shared Go backend' },
+      { name: 'web/', type: 'folder', depth: 1, comment: 'Next.js or TanStack (optional)' },
+      { name: 'admin/', type: 'folder', depth: 1, comment: 'Admin panel (optional)' },
+      { name: 'expo/', type: 'folder', depth: 1, comment: 'Mobile (optional)' },
+      { name: 'desktop/', type: 'folder', depth: 1, comment: 'Wails desktop (always)' },
+      { name: 'packages/shared/', type: 'folder', depth: 0, comment: 'Types shared across ALL clients' },
+      { name: 'turbo.json', type: 'file', depth: 0 },
+    ],
+    features: [
+      'Combine --desktop with --triple, --double, --mobile, or --api',
+      'Frameless Wails window (platform-aware window controls)',
+      'Command palette (⌘K) built in',
+      'OS keychain token storage (not localStorage)',
+      'Not compatible with --single (single apps bundle their own SPA)',
+      'Distinct from grit new-desktop (standalone offline-first)',
+    ],
+  },
+]
 
 export default function ArchitectureModesPage() {
   return (
@@ -32,136 +180,7 @@ export default function ArchitectureModesPage() {
 
           <div className="space-y-10">
             {/* Architecture cards */}
-            {[
-              {
-                name: 'Single',
-                flag: '--single',
-                tagline: 'Go API + embedded React SPA — one binary',
-                color: 'sky',
-                ideal: 'Laravel/Rails developers, solo devs, simple deploys',
-                example: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-single-vite',
-                structure: `my-app/
-├── cmd/server/main.go   # go:embed frontend/dist/*
-├── internal/            # Go backend
-├── frontend/            # React + Vite + TanStack Router
-├── go.mod
-└── Makefile             # make dev, make build`,
-                features: [
-                  'Single binary deployment via go:embed',
-                  'Dev: Go on :8080, Vite on :5173 with proxy',
-                  'make build produces one executable',
-                  'No Node.js needed in production',
-                ],
-              },
-              {
-                name: 'Double',
-                flag: '--double',
-                tagline: 'Web + API Turborepo monorepo',
-                color: 'violet',
-                ideal: 'MERN stack developers, API + SPA projects',
-                example: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-double-vite',
-                structure: `my-app/
-├── apps/
-│   ├── api/             # Go backend (Gin + GORM)
-│   └── web/             # React frontend (Next.js or TanStack)
-├── packages/shared/     # Types, schemas, constants
-├── turbo.json
-└── pnpm-workspace.yaml`,
-                features: [
-                  'Turborepo for parallel builds',
-                  'Shared TypeScript types + Zod schemas',
-                  'Independent deployment of API and web',
-                  'pnpm workspaces for dependency management',
-                ],
-              },
-              {
-                name: 'Triple',
-                flag: '--triple (default)',
-                tagline: 'Web + Admin + API Turborepo monorepo',
-                color: 'emerald',
-                ideal: 'Full-stack teams, SaaS products, content platforms',
-                example: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-triple-next',
-                structure: `my-app/
-├── apps/
-│   ├── api/             # Go backend (Gin + GORM)
-│   ├── web/             # Public-facing frontend
-│   └── admin/           # Admin panel (DataTable, FormBuilder)
-├── packages/shared/     # Types, schemas, constants
-├── turbo.json
-└── pnpm-workspace.yaml`,
-                features: [
-                  'Full admin panel with DataTable + FormBuilder',
-                  'Resource definitions for zero-code CRUD',
-                  'Dashboard widgets, system pages',
-                  'grit generate creates Go + admin page',
-                ],
-              },
-              {
-                name: 'API Only',
-                flag: '--api',
-                tagline: 'Go API with no frontend',
-                color: 'amber',
-                ideal: 'Microservices, backend teams, mobile-first apps',
-                example: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-api-only',
-                structure: `my-app/
-├── apps/
-│   └── api/             # Go backend (Gin + GORM)
-│       ├── cmd/server/
-│       └── internal/
-└── docker-compose.yml`,
-                features: [
-                  'Minimal footprint — Go only',
-                  'All batteries included (auth, storage, jobs)',
-                  'No Node.js, no frontend build step',
-                  'Perfect for REST/gRPC APIs',
-                ],
-              },
-              {
-                name: 'Mobile',
-                flag: '--mobile',
-                tagline: 'API + Expo React Native',
-                color: 'rose',
-                ideal: 'Mobile-first products, cross-platform apps',
-                example: 'https://github.com/MUKE-coder/grit/tree/main/examples/job-portal-mobile-expo',
-                structure: `my-app/
-├── apps/
-│   ├── api/             # Go backend
-│   └── expo/            # React Native (Expo)
-├── packages/shared/     # Shared types
-└── turbo.json`,
-                features: [
-                  'Expo managed workflow',
-                  'Shared types between API and mobile',
-                  'Same auth system (JWT)',
-                  'File upload with presigned URLs',
-                ],
-              },
-              {
-                name: 'Multi-Client (combine flags)',
-                flag: '--desktop (combinable)',
-                tagline: 'Add a Wails desktop app to any architecture',
-                color: 'cyan',
-                ideal: 'SaaS products needing native + mobile + web clients — the Linear / Notion / Slack pattern',
-                example: '/docs/concepts/architecture-modes/multi-client',
-                structure: `my-app/
-├── apps/
-│   ├── api/             # Shared Go backend
-│   ├── web/             # Next.js or TanStack (optional)
-│   ├── admin/           # Admin panel (optional)
-│   ├── expo/            # Mobile (optional)
-│   └── desktop/         # Wails desktop (always)
-├── packages/shared/     # Types shared across ALL clients
-└── turbo.json`,
-                features: [
-                  'Combine --desktop with --triple, --double, --mobile, or --api',
-                  'Frameless Wails window (platform-aware window controls)',
-                  'Command palette (⌘K) built in',
-                  'OS keychain token storage (not localStorage)',
-                  'Not compatible with --single (single apps bundle their own SPA)',
-                  'Distinct from grit new-desktop (standalone offline-first)',
-                ],
-              },
-            ].map((arch) => (
+            {architectures.map((arch) => (
               <div key={arch.name} className="rounded-xl border border-border/40 bg-accent/20 overflow-hidden">
                 <div className="p-6 border-b border-border/30">
                   <div className="flex items-center gap-3 mb-2">
@@ -187,8 +206,8 @@ export default function ArchitectureModesPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border/30">
                   <div className="p-6">
-                    <h4 className="text-xs font-mono text-muted-foreground/70 uppercase tracking-wider mb-3">Structure</h4>
-                    <pre className="text-[12px] font-mono text-muted-foreground leading-5 whitespace-pre">{arch.structure}</pre>
+                    <h4 className="text-xs font-mono text-muted-foreground/70 uppercase tracking-wider mb-1">Structure</h4>
+                    <FileTree title="my-app/" nodes={arch.tree} />
                   </div>
                   <div className="p-6">
                     <h4 className="text-xs font-mono text-muted-foreground/70 uppercase tracking-wider mb-3">Features</h4>
