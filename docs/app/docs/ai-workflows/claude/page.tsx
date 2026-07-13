@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/ai-workflows/claude')
@@ -27,6 +28,23 @@ export default function UsingGritWithClaudePage() {
                 Build entire full-stack applications using AI spec-driven development.
                 Plan with Claude Web, build with Claude Code &mdash; ship in hours, not weeks.
               </p>
+              <LaneFlow
+                id="aiw-claude"
+                lanes={['Plan', 'Build', 'Ship']}
+                nodes={[
+                  { id: 'plan', lane: 0, row: 0, title: 'Claude Web', sub: 'spec + docs', tone: 'primary' },
+                  { id: 'code', lane: 1, row: 0, title: 'Claude Code', sub: 'generates', tone: 'cyan' },
+                  { id: 'grit', lane: 1, row: 1, title: 'Grit CLI', sub: 'scaffold + generate', tone: 'blue' },
+                  { id: 'ship', lane: 2, row: 0, title: 'Working app', sub: 'hours, not weeks', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'plan', to: 'code', label: 'spec', tone: 'cyan' },
+                  { from: 'code', to: 'grit', label: 'runs', tone: 'blue' },
+                  { from: 'grit', to: 'ship', tone: 'green' },
+                ]}
+                legend={[{ tone: 'primary', label: 'Plan (Claude Web)' }, { tone: 'cyan', label: 'Build (Claude Code)' }]}
+                caption="Plan the spec with Claude Web, build it with Claude Code driving the Grit CLI — ship in hours"
+              />
             </div>
 
             <div className="prose-grit">

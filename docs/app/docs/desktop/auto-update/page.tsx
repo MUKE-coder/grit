@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/desktop/auto-update')
@@ -53,6 +54,23 @@ export default function DesktopAutoUpdatePage() {
                 </Link>
                 .
               </p>
+              <LaneFlow
+                id="desk-update"
+                lanes={['Running app', 'Update feed', 'Next launch']}
+                nodes={[
+                  { id: 'app', lane: 0, row: 0, title: 'App checks', sub: 'on launch', tone: 'primary' },
+                  { id: 'feed', lane: 1, row: 0, title: 'Update feed', sub: 'version manifest', tone: 'cyan' },
+                  { id: 'dl', lane: 1, row: 1, title: 'Download', sub: 'if newer', tone: 'blue' },
+                  { id: 'apply', lane: 2, row: 0, title: 'Apply + restart', sub: 'seamless', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'app', to: 'feed', label: 'check', tone: 'cyan' },
+                  { from: 'feed', to: 'dl', label: 'newer', tone: 'blue' },
+                  { from: 'dl', to: 'apply', tone: 'green' },
+                ]}
+                legend={[{ tone: 'cyan', label: 'Version check' }, { tone: 'green', label: 'Applied on restart' }]}
+                caption="On launch the app checks the feed; a newer build downloads and applies on the next restart"
+              />
             </div>
 
             {/* What ships */}

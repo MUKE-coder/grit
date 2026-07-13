@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/ai-workflows/antigravity')
@@ -28,6 +29,23 @@ export default function UsingGritWithAntigravityPage() {
                 build with Antigravity&apos;s AI-powered IDE &mdash; get visual editing, inline
                 suggestions, and multi-file generation.
               </p>
+              <LaneFlow
+                id="aiw-antigravity"
+                lanes={['Plan', 'Build in Antigravity', 'Ship']}
+                nodes={[
+                  { id: 'plan', lane: 0, row: 0, title: 'Claude Web', sub: 'spec', tone: 'primary' },
+                  { id: 'ide', lane: 1, row: 0, title: 'Antigravity IDE', sub: 'visual · multi-file', tone: 'cyan' },
+                  { id: 'grit', lane: 1, row: 1, title: 'Grit CLI', sub: 'scaffold', tone: 'blue' },
+                  { id: 'ship', lane: 2, row: 0, title: 'Working app', sub: 'shipped', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'plan', to: 'ide', label: 'spec', tone: 'cyan' },
+                  { from: 'ide', to: 'grit', label: 'drives', tone: 'blue' },
+                  { from: 'grit', to: 'ship', tone: 'green' },
+                ]}
+                legend={[{ tone: 'primary', label: 'Plan' }, { tone: 'cyan', label: 'Antigravity IDE' }]}
+                caption="Plan with Claude Web, build in Antigravity's AI IDE driving Grit — visual, multi-file, fast"
+              />
             </div>
 
             <div className="prose-grit">

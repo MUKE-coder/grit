@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from "@/components/code-block";
+import { LaneFlow } from "@/components/lane-flow";
 import { getDocMetadata } from "@/config/docs-metadata";
 
 export const metadata = getDocMetadata("/docs/desktop/pos-app");
@@ -32,6 +33,27 @@ export default function DesktopPosAppPage() {
                 inventory tracking, and daily reporting &mdash; all running as
                 a native desktop application.
               </p>
+              <LaneFlow
+                id="desk-pos"
+                lanes={['POS desktop app', 'Modules']}
+                nodes={[
+                  { id: 'app', lane: 0, row: 2, title: 'POS app', sub: 'native + offline', tone: 'primary' },
+                  { id: 'catalog', lane: 1, row: 0, title: 'Catalog', sub: 'products', tone: 'cyan' },
+                  { id: 'sales', lane: 1, row: 1, title: 'Sales', sub: 'transactions', tone: 'blue' },
+                  { id: 'customers', lane: 1, row: 2, title: 'Customers', sub: 'CRM', tone: 'green' },
+                  { id: 'receipts', lane: 1, row: 3, title: 'Receipts', sub: 'print', tone: 'amber' },
+                  { id: 'reports', lane: 1, row: 4, title: 'Reports', sub: 'daily', tone: 'violet' },
+                ]}
+                edges={[
+                  { from: 'app', to: 'catalog', tone: 'cyan' },
+                  { from: 'app', to: 'sales', tone: 'blue' },
+                  { from: 'app', to: 'customers', label: 'modules', tone: 'green' },
+                  { from: 'app', to: 'receipts', tone: 'amber' },
+                  { from: 'app', to: 'reports', tone: 'violet' },
+                ]}
+                legend={[{ tone: 'primary', label: 'One native app' }, { tone: 'cyan', label: 'Six modules' }]}
+                caption="A full point-of-sale — catalog, sales, customers, receipts, inventory, and daily reports — as a native app"
+              />
             </div>
 
             {/* What we're building */}

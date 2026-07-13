@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/learnings/stateless-service-load-test')
@@ -30,6 +31,21 @@ export default function StatelessServiceLoadTestPage() {
                 load-test the <code>/api/health</code> endpoint with k6, and
                 commit a latency chart showing p50 / p95 / p99 of the run.
               </p>
+              <LaneFlow
+                id="learn-loadtest"
+                lanes={['1 · Scaffold', '2 · Load test', '3 · Result']}
+                nodes={[
+                  { id: 'new', lane: 0, row: 0, title: 'grit new --api', sub: 'stateless API', tone: 'primary' },
+                  { id: 'k6', lane: 1, row: 0, title: 'k6 run', sub: '/api/health', tone: 'cyan' },
+                  { id: 'chart', lane: 2, row: 0, title: 'Latency chart', sub: 'p50 · p95 · p99', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'new', to: 'k6', label: 'hammer', tone: 'cyan' },
+                  { from: 'k6', to: 'chart', label: 'commit', tone: 'green' },
+                ]}
+                legend={[{ tone: 'primary', label: 'Stateless API' }, { tone: 'green', label: 'Measured result' }]}
+                caption="Scaffold a stateless API, hammer /api/health with k6, and commit the p50 / p95 / p99 chart"
+              />
             </div>
 
             {/* The brief */}
