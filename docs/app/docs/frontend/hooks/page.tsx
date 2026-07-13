@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/frontend/hooks')
@@ -28,6 +29,28 @@ export default function HooksPage() {
                 a complete set of React Query hooks for CRUD operations with pagination, search, sorting,
                 cache invalidation, and optimistic updates.
               </p>
+              <LaneFlow
+                id="fe-hooks"
+                lanes={['Component', 'React Query hooks', 'Go API']}
+                nodes={[
+                  { id: 'comp', lane: 0, row: 1, title: 'Component', sub: 'calls a hook', tone: 'primary' },
+                  { id: 'query', lane: 1, row: 0, title: 'useProducts()', sub: 'list + cache', tone: 'cyan' },
+                  { id: 'mutate', lane: 1, row: 1, title: 'useCreateProduct()', sub: 'mutation', tone: 'blue' },
+                  { id: 'api', lane: 2, row: 1, title: '/api/products', sub: 'typed JSON', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'comp', to: 'query', tone: 'cyan' },
+                  { from: 'comp', to: 'mutate', tone: 'blue' },
+                  { from: 'query', to: 'api', label: 'fetch', tone: 'green' },
+                  { from: 'mutate', to: 'api', label: 'write', tone: 'green' },
+                  { from: 'mutate', to: 'query', label: 'invalidate', dashed: true, tone: 'cyan' },
+                ]}
+                legend={[
+                  { tone: 'cyan', label: 'Query (cached)' },
+                  { tone: 'blue', label: 'Mutation' },
+                ]}
+                caption="Generated hooks wrap the API — queries cache, mutations invalidate, everything typed"
+              />
             </div>
 
             <div className="prose-grit">

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/frontend/web-app')
@@ -27,6 +28,27 @@ export default function WebAppPage() {
                 Grit scaffolds a full Next.js 16 frontend with App Router, Tailwind CSS, shadcn/ui,
                 React Query, and a pre-built authentication flow -- all wired to your Go API out of the box.
               </p>
+              <LaneFlow
+                id="fe-webapp"
+                lanes={['Next.js 16 app', 'Go API']}
+                nodes={[
+                  { id: 'page', lane: 0, row: 0, title: 'App Router', sub: 'RSC + pages', tone: 'blue' },
+                  { id: 'rq', lane: 0, row: 1, title: 'React Query', sub: 'data fetching', tone: 'cyan' },
+                  { id: 'auth', lane: 0, row: 2, title: 'Auth flow', sub: 'JWT cookies', tone: 'amber' },
+                  { id: 'api', lane: 1, row: 1, title: 'Go API', sub: 'REST /api/*', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'page', to: 'api', label: 'server fetch', tone: 'blue' },
+                  { from: 'rq', to: 'api', label: 'client fetch', tone: 'cyan' },
+                  { from: 'auth', to: 'api', label: 'login', tone: 'amber' },
+                ]}
+                legend={[
+                  { tone: 'blue', label: 'App Router (RSC)' },
+                  { tone: 'cyan', label: 'React Query' },
+                  { tone: 'green', label: 'Go API' },
+                ]}
+                caption="A full Next.js 16 app — App Router, Tailwind, shadcn/ui, React Query — wired to your Go API"
+              />
             </div>
 
             <div className="prose-grit">

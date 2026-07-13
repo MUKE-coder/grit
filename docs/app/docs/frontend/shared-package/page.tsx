@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/frontend/shared-package')
@@ -28,6 +29,26 @@ export default function SharedPackagePage() {
                 Zod validation schemas, TypeScript types, and constants shared between the web app, admin panel,
                 and any other frontend app in the monorepo.
               </p>
+              <LaneFlow
+                id="fe-shared"
+                lanes={['packages/shared', 'Imported by every app']}
+                nodes={[
+                  { id: 'shared', lane: 0, row: 1, title: 'shared/', sub: 'Zod · types · constants', tone: 'primary' },
+                  { id: 'web', lane: 1, row: 0, title: 'Web app', sub: 'import @shared', tone: 'blue' },
+                  { id: 'admin', lane: 1, row: 1, title: 'Admin panel', sub: 'import @shared', tone: 'cyan' },
+                  { id: 'mobile', lane: 1, row: 2, title: 'Mobile / other', sub: 'import @shared', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'shared', to: 'web', tone: 'blue' },
+                  { from: 'shared', to: 'admin', label: 'workspace import', tone: 'cyan' },
+                  { from: 'shared', to: 'mobile', tone: 'green' },
+                ]}
+                legend={[
+                  { tone: 'primary', label: 'Single source' },
+                  { tone: 'blue', label: 'Frontend apps' },
+                ]}
+                caption="One source of schemas and types — imported by every frontend, no npm publish needed"
+              />
             </div>
 
             <div className="prose-grit">

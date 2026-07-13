@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock, StepWithCode } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/frontend/tanstack-router')
@@ -28,6 +29,27 @@ export default function TanStackRouterPage() {
               Vite-powered React SPA with file-based routing, React Query, and Tailwind CSS.
               Fast builds, small bundles, no Node.js server needed.
             </p>
+            <LaneFlow
+              id="fe-tanstack"
+              lanes={['Vite React SPA', 'Go API']}
+              nodes={[
+                { id: 'routes', lane: 0, row: 0, title: 'File-based routes', sub: 'type-safe params', tone: 'blue' },
+                { id: 'rq', lane: 0, row: 1, title: 'React Query', sub: 'loaders + cache', tone: 'cyan' },
+                { id: 'build', lane: 0, row: 2, title: 'Vite build', sub: 'static HTML + JS', tone: 'violet' },
+                { id: 'api', lane: 1, row: 1, title: 'Go API', sub: 'REST /api/*', tone: 'green' },
+                { id: 'cdn', lane: 1, row: 2, title: 'Any CDN', sub: 'no Node server', tone: 'amber' },
+              ]}
+              edges={[
+                { from: 'rq', to: 'api', label: 'fetch', tone: 'green' },
+                { from: 'build', to: 'cdn', label: 'deploy', tone: 'amber' },
+              ]}
+              legend={[
+                { tone: 'blue', label: 'Type-safe routing' },
+                { tone: 'green', label: 'Go API' },
+                { tone: 'amber', label: 'Static hosting' },
+              ]}
+              caption="A static SPA — served from any CDN, talking to your Go API over REST"
+            />
           </div>
 
           {/* Why TanStack */}
