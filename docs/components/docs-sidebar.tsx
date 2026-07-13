@@ -215,7 +215,7 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    title: 'Tutorials',
+    title: 'Guides & Tutorials',
     icon: <BookOpen className="h-3.5 w-3.5" />,
     items: [
       { title: 'Your First App', href: '/docs/tutorials/contact-app' },
@@ -224,17 +224,11 @@ const navItems: NavItem[] = [
       { title: 'Build a SaaS', href: '/docs/tutorials/saas' },
       { title: 'Build an E-Commerce', href: '/docs/tutorials/ecommerce' },
       { title: 'Build a Product Catalog', href: '/docs/tutorials/product-catalog' },
+      { title: 'Live Demo App', href: '/docs/demo' },
     ],
   },
   {
-    title: 'Demo',
-    icon: <Rocket className="h-3.5 w-3.5" />,
-    items: [
-      { title: 'Demo Application', href: '/docs/demo' },
-    ],
-  },
-  {
-    title: 'Learnings',
+    title: 'Deep Dives',
     icon: <Lightbulb className="h-3.5 w-3.5" />,
     items: [
       { title: 'Overview', href: '/docs/learnings' },
@@ -256,17 +250,11 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    title: 'AI Workflows',
+    title: 'AI & Agents',
     icon: <Wand2 className="h-3.5 w-3.5" />,
     items: [
       { title: 'Using Grit with Claude', href: '/docs/ai-workflows/claude' },
       { title: 'Using Grit with Antigravity', href: '/docs/ai-workflows/antigravity' },
-    ],
-  },
-  {
-    title: 'For AI Assistants',
-    icon: <Lightbulb className="h-3.5 w-3.5" />,
-    items: [
       { title: 'LLM Skill Guide', href: '/docs/ai-skill' },
       { title: 'Complete LLM Reference', href: '/docs/ai-skill/llm-guide' },
     ],
