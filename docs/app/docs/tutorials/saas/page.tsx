@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/tutorials/saas')
@@ -32,6 +33,23 @@ export default function TutorialSaaSPage() {
                 covers relationships, background jobs, the mailer, middleware
                 customization, and admin panel badges.
               </p>
+              <LaneFlow
+                id="tut-saas"
+                lanes={['SaaS features', 'Powered by']}
+                nodes={[
+                  { id: 'tasks', lane: 0, row: 1, title: 'Tasks + teams', sub: 'relationships', tone: 'primary' },
+                  { id: 'jobs', lane: 1, row: 0, title: 'Background jobs', sub: 'async', tone: 'cyan' },
+                  { id: 'mail', lane: 1, row: 1, title: 'Mailer', sub: 'notifications', tone: 'violet' },
+                  { id: 'dash', lane: 1, row: 2, title: 'Dashboard stats', sub: 'live badges', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'tasks', to: 'jobs', tone: 'cyan' },
+                  { from: 'tasks', to: 'mail', label: 'triggers', tone: 'violet' },
+                  { from: 'tasks', to: 'dash', tone: 'green' },
+                ]}
+                legend={[{ tone: 'primary', label: 'Relationships' }, { tone: 'green', label: 'Live dashboard' }]}
+                caption="A tasks SaaS built on relationships, background jobs, the mailer, and live dashboard stats"
+              />
             </div>
 
             {/* Prerequisites */}

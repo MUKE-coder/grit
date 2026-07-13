@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/security/defenders-handbook')
@@ -879,6 +880,23 @@ export default function DefendersHandbookPage() {
                 out of the box?&quot;</em> One attack per section, with the actual
                 file path and code.
               </p>
+              <LaneFlow
+                id="sec-handbook"
+                lanes={['Attack vector', 'Grit defense', 'Result']}
+                nodes={[
+                  { id: 'attack', lane: 0, row: 1, title: 'Attack', sub: 'SQLi · XSS · brute-force', tone: 'rose' },
+                  { id: 'defense', lane: 1, row: 1, title: 'GORM · JWT · Sentinel', sub: 'layered defense', tone: 'primary' },
+                  { id: 'blocked', lane: 2, row: 0, title: 'Blocked', sub: 'at the edge', tone: 'green' },
+                  { id: 'logged', lane: 2, row: 1, title: 'Logged', sub: 'threat dashboard', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'attack', to: 'defense', label: 'hits', tone: 'rose' },
+                  { from: 'defense', to: 'blocked', label: 'stop', tone: 'green' },
+                  { from: 'defense', to: 'logged', tone: 'amber' },
+                ]}
+                legend={[{ tone: 'rose', label: 'Attack' }, { tone: 'green', label: 'Blocked by default' }]}
+                caption="Each common attack maps to a specific Grit defense — blocked at the edge and logged"
+              />
             </div>
 
             {/* Quick legend */}

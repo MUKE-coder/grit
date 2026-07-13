@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/tutorials/ecommerce')
@@ -33,6 +34,25 @@ export default function TutorialEcommercePage() {
                 comprehensive Grit tutorial and covers nearly every feature of
                 the framework.
               </p>
+              <LaneFlow
+                id="tut-ecom"
+                lanes={['Storefront', 'Go API', 'Data']}
+                nodes={[
+                  { id: 'ui', lane: 0, row: 1, title: 'Storefront + cart', sub: 'Next.js', tone: 'blue' },
+                  { id: 'api', lane: 1, row: 0, title: 'Products / Orders', sub: 'handlers', tone: 'primary' },
+                  { id: 'pay', lane: 1, row: 1, title: 'Payments', sub: 'checkout', tone: 'amber' },
+                  { id: 'pg', lane: 2, row: 0, title: 'PostgreSQL', sub: 'orders', tone: 'green' },
+                  { id: 'redis', lane: 2, row: 1, title: 'Redis', sub: 'hot products', tone: 'rose' },
+                ]}
+                edges={[
+                  { from: 'ui', to: 'api', label: 'REST', tone: 'blue' },
+                  { from: 'api', to: 'pay', tone: 'amber' },
+                  { from: 'api', to: 'pg', tone: 'green' },
+                  { from: 'api', to: 'redis', label: 'cache', tone: 'rose' },
+                ]}
+                legend={[{ tone: 'primary', label: 'Go API' }, { tone: 'rose', label: 'Redis cache' }]}
+                caption="A full storefront — products, cart, orders, payments — with Redis caching the hot products"
+              />
             </div>
 
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-10">

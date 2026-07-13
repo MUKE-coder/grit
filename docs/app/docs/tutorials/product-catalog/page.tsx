@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/tutorials/product-catalog')
@@ -31,6 +32,23 @@ export default function TutorialProductCatalogPage() {
                 form &mdash; all powered by Grit&apos;s code generator and
                 standalone components.
               </p>
+              <LaneFlow
+                id="tut-catalog"
+                lanes={['One generated resource', 'Powers three surfaces']}
+                nodes={[
+                  { id: 'res', lane: 0, row: 1, title: 'generate Product', sub: 'catalog', tone: 'primary' },
+                  { id: 'admin', lane: 1, row: 0, title: 'Admin table', sub: 'manage', tone: 'cyan' },
+                  { id: 'web', lane: 1, row: 1, title: 'Web catalog', sub: 'browse', tone: 'blue' },
+                  { id: 'form', lane: 1, row: 2, title: 'Inquiry form', sub: 'public', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'res', to: 'admin', tone: 'cyan' },
+                  { from: 'res', to: 'web', label: 'powers', tone: 'blue' },
+                  { from: 'res', to: 'form', tone: 'green' },
+                ]}
+                legend={[{ tone: 'primary', label: 'One resource' }, { tone: 'blue', label: 'Admin · web · form' }]}
+                caption="One resource powers the admin table, a public web catalog, and an inquiry form"
+              />
             </div>
 
             {/* What you'll learn */}

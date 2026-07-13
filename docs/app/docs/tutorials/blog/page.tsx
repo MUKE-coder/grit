@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/tutorials/blog')
@@ -32,6 +33,23 @@ export default function TutorialBlogPage() {
                 handlers, define admin resources, and wire up a Next.js page to
                 display published articles.
               </p>
+              <LaneFlow
+                id="tut-blog"
+                lanes={['1 · Generate', '2 · Customize', '3 · Admin', '4 · Display']}
+                nodes={[
+                  { id: 'gen', lane: 0, row: 0, title: 'generate Post', sub: 'CRUD', tone: 'primary' },
+                  { id: 'handler', lane: 1, row: 0, title: 'Customize handler', sub: 'published only', tone: 'cyan' },
+                  { id: 'admin', lane: 2, row: 0, title: 'Admin resource', sub: 'manage posts', tone: 'blue' },
+                  { id: 'page', lane: 3, row: 0, title: 'Next.js page', sub: 'render articles', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'gen', to: 'handler', tone: 'cyan' },
+                  { from: 'handler', to: 'admin', tone: 'blue' },
+                  { from: 'admin', to: 'page', tone: 'green' },
+                ]}
+                legend={[{ tone: 'primary', label: 'Generate' }, { tone: 'green', label: 'Ship the page' }]}
+                caption="Generate the resource, tweak the handler, manage it in admin, and render on a Next.js page"
+              />
             </div>
 
             {/* Prerequisites */}

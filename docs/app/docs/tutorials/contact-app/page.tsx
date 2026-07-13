@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from "@/components/code-block";
+import { LaneFlow } from "@/components/lane-flow";
 import { getDocMetadata } from "@/config/docs-metadata";
 
 export const metadata = getDocMetadata("/docs/tutorials/contact-app");
@@ -32,6 +33,23 @@ export default function TutorialContactAppPage() {
                 command each, and explore the admin panel, GORM Studio, and API
                 docs that Grit gives you for free.
               </p>
+              <LaneFlow
+                id="tut-contact"
+                lanes={['grit generate', 'You get for free']}
+                nodes={[
+                  { id: 'gen', lane: 0, row: 1, title: 'generate Company + Contact', sub: 'one CLI command', tone: 'primary' },
+                  { id: 'admin', lane: 1, row: 0, title: 'Admin panel', sub: 'CRUD', tone: 'cyan' },
+                  { id: 'studio', lane: 1, row: 1, title: 'GORM Studio', sub: 'browse the DB', tone: 'blue' },
+                  { id: 'docs', lane: 1, row: 2, title: 'API docs', sub: 'Scalar', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'gen', to: 'admin', tone: 'cyan' },
+                  { from: 'gen', to: 'studio', label: 'free', tone: 'blue' },
+                  { from: 'gen', to: 'docs', tone: 'green' },
+                ]}
+                legend={[{ tone: 'primary', label: 'Generate' }, { tone: 'cyan', label: 'Admin · Studio · docs' }]}
+                caption="Generate two resources and get an admin panel, GORM Studio, and API docs for free"
+              />
             </div>
 
             {/* Prerequisites */}

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/testing')
@@ -27,6 +28,22 @@ export default function TestingPage() {
                 graph, a list of closed vulnerabilities — that&apos;s exactly what serious
                 clients pay a premium for.
               </p>
+              <LaneFlow
+                id="testing-svc"
+                lanes={['Test a Grit app', 'Evidence clients pay for']}
+                nodes={[
+                  { id: 'load', lane: 0, row: 0, title: 'Load test', sub: 'latency under load', tone: 'cyan' },
+                  { id: 'sec', lane: 0, row: 1, title: 'Security scan', sub: 'vulnerabilities', tone: 'rose' },
+                  { id: 'graph', lane: 1, row: 0, title: 'Latency graph', sub: 'before / after', tone: 'blue' },
+                  { id: 'vulns', lane: 1, row: 1, title: 'Closed vulns', sub: 'report', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'load', to: 'graph', label: 'produces', tone: 'blue' },
+                  { from: 'sec', to: 'vulns', label: 'produces', tone: 'green' },
+                ]}
+                legend={[{ tone: 'cyan', label: 'Performance' }, { tone: 'rose', label: 'Security' }]}
+                caption="Load and security tests both produce hard evidence — the deliverables clients pay a premium for"
+              />
             </div>
 
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">

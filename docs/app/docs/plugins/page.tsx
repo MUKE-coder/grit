@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/plugins')
@@ -217,6 +218,23 @@ export default function PluginsPage() {
                 Each plugin is a drop-in module with Gin handlers, GORM models, and a Claude Code skill file
                 so AI assistants know how to use it.
               </p>
+              <LaneFlow
+                id="plugins"
+                lanes={['A Grit plugin', 'Drops into your project']}
+                nodes={[
+                  { id: 'plugin', lane: 0, row: 1, title: 'Plugin package', sub: 'standalone Go', tone: 'primary' },
+                  { id: 'handlers', lane: 1, row: 0, title: 'Gin handlers', sub: 'routes', tone: 'cyan' },
+                  { id: 'models', lane: 1, row: 1, title: 'GORM models', sub: 'tables', tone: 'green' },
+                  { id: 'skill', lane: 1, row: 2, title: 'Claude skill', sub: 'AI knows it', tone: 'violet' },
+                ]}
+                edges={[
+                  { from: 'plugin', to: 'handlers', tone: 'cyan' },
+                  { from: 'plugin', to: 'models', label: 'adds', tone: 'green' },
+                  { from: 'plugin', to: 'skill', tone: 'violet' },
+                ]}
+                legend={[{ tone: 'primary', label: 'One Go package' }, { tone: 'violet', label: 'AI-ready skill' }]}
+                caption="Each plugin drops in Gin handlers, GORM models, and a Claude skill file — AI-ready"
+              />
             </div>
 
             <div className="prose-grit">

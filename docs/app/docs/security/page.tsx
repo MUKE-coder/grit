@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/security')
@@ -309,6 +310,28 @@ export default function SecurityGuidePage() {
                 with the file path and code for each. Use this page as the audit checklist
                 when a client asks &quot;are we secure?&quot; — walk it with them line by line.
               </p>
+              <LaneFlow
+                id="sec-owasp"
+                lanes={['OWASP Top 10:2025', 'Grit defends by default']}
+                nodes={[
+                  { id: 'owasp', lane: 0, row: 2, title: 'OWASP Top 10', sub: 'each category', tone: 'rose' },
+                  { id: 'inj', lane: 1, row: 0, title: 'Injection', sub: 'GORM params', tone: 'green' },
+                  { id: 'auth', lane: 1, row: 1, title: 'Broken auth', sub: 'JWT + bcrypt', tone: 'cyan' },
+                  { id: 'access', lane: 1, row: 2, title: 'Access control', sub: 'RequireRole', tone: 'blue' },
+                  { id: 'headers', lane: 1, row: 3, title: 'Rate + headers', sub: 'Sentinel', tone: 'violet' },
+                ]}
+                edges={[
+                  { from: 'owasp', to: 'inj', tone: 'green' },
+                  { from: 'owasp', to: 'auth', label: 'covered by', tone: 'cyan' },
+                  { from: 'owasp', to: 'access', tone: 'blue' },
+                  { from: 'owasp', to: 'headers', tone: 'violet' },
+                ]}
+                legend={[
+                  { tone: 'rose', label: 'The risk' },
+                  { tone: 'green', label: 'Built-in defense' },
+                ]}
+                caption="Every OWASP Top 10 category maps to a specific Grit defense — on by default"
+              />
             </div>
 
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">
