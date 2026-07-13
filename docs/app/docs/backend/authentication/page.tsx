@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
-import { Diagram, DiagramBox, DiagramArrow, DiagramLegend, HighlightBox } from '@/components/diagram'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/authentication')
@@ -40,34 +40,35 @@ export default function AuthenticationPage() {
                 tokens without re-authenticating.
               </p>
 
-              <Diagram>
-                <div className="mb-1 text-center text-[11px] font-mono uppercase tracking-wider text-muted-foreground/50">Sign in</div>
-                <DiagramBox tone="blue" title="Login" sub="email + password" />
-                <DiagramArrow label="verify" />
-                <DiagramBox tone="primary" title="Verify with bcrypt" sub="user.CheckPassword()" />
-                <DiagramArrow label="issue token pair" />
-                <HighlightBox label="Tokens (HttpOnly cookies)" tone="amber">
-                  <DiagramBox tone="amber" title="grit_access" sub="15 min · Secure · SameSite=Lax" />
-                  <DiagramBox tone="amber" title="grit_refresh" sub="7 days · Path=/api/auth" />
-                </HighlightBox>
-
-                <DiagramArrow label="later — an authenticated request" />
-
-                <div className="mb-1 text-center text-[11px] font-mono uppercase tracking-wider text-muted-foreground/50">Protected request</div>
-                <DiagramBox tone="blue" title="Protected Request" sub="browser attaches grit_access cookie" />
-                <DiagramArrow label="validate cookie" />
-                <DiagramBox tone="primary" title="Auth Middleware" sub="reads grit_access → validates JWT" />
-                <DiagramArrow />
-                <DiagramBox tone="primary" title="Handler" sub="authenticated user in gin.Context" />
-
-                <DiagramLegend
-                  items={[
-                    { tone: 'blue', label: 'Client request' },
-                    { tone: 'primary', label: 'Go API' },
-                    { tone: 'amber', label: 'Tokens (cookies)' },
-                  ]}
-                />
-              </Diagram>
+              <LaneFlow
+                id="auth"
+                lanes={['Client', 'Go API', 'Cookies · JWT']}
+                groups={[{ lane: 2, rows: [1, 2], label: 'HttpOnly cookies', tone: 'amber' }]}
+                nodes={[
+                  { id: 'login', lane: 0, row: 0, title: 'Login', sub: 'email + password', tone: 'blue', badge: 1 },
+                  { id: 'verify', lane: 1, row: 0, title: 'Verify password', sub: 'bcrypt', tone: 'primary', badge: 2 },
+                  { id: 'issue', lane: 1, row: 1, title: 'Issue token pair', sub: 'signed JWT', tone: 'primary', badge: 3 },
+                  { id: 'access', lane: 2, row: 1, title: 'grit_access', sub: '15 min · Lax', tone: 'amber' },
+                  { id: 'refresh', lane: 2, row: 2, title: 'grit_refresh', sub: '7 days · /api/auth', tone: 'amber' },
+                  { id: 'req', lane: 0, row: 3, title: 'Protected request', sub: 'sends cookie', tone: 'blue', badge: 4 },
+                  { id: 'mw', lane: 1, row: 3, title: 'Auth Middleware', sub: 'validates JWT', tone: 'primary', badge: 5 },
+                  { id: 'handler', lane: 1, row: 4, title: 'Handler', sub: 'user in gin.Context', tone: 'primary', badge: 6 },
+                ]}
+                edges={[
+                  { from: 'login', to: 'verify', label: 'verify', tone: 'blue' },
+                  { from: 'verify', to: 'issue', tone: 'primary' },
+                  { from: 'issue', to: 'access', label: 'set', tone: 'amber' },
+                  { from: 'issue', to: 'refresh', label: 'set', tone: 'amber' },
+                  { from: 'req', to: 'mw', label: 'grit_access', tone: 'blue' },
+                  { from: 'mw', to: 'handler', tone: 'primary' },
+                ]}
+                legend={[
+                  { tone: 'blue', label: 'Client request' },
+                  { tone: 'primary', label: 'Go API' },
+                  { tone: 'amber', label: 'Tokens (cookies)' },
+                ]}
+                caption="1–3 sign in & issue tokens · 4–6 validate every later request"
+              />
 
               <CodeBlock filename="authentication flow" code={`
   Client                           Grit API

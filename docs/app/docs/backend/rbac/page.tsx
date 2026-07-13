@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
-import { Diagram, DiagramBox, DiagramRow, DiagramArrow, DiagramLegend } from '@/components/diagram'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/rbac')
@@ -71,28 +71,31 @@ export default function RBACPage() {
                   </table>
                 </div>
 
-                <Diagram>
-                  <div className="mb-1 text-center text-[11px] font-mono uppercase tracking-wider text-muted-foreground/50">Authenticated user role</div>
-                  <DiagramRow>
-                    <DiagramBox tone="rose" title="ADMIN" />
-                    <DiagramBox tone="amber" title="EDITOR" />
-                    <DiagramBox tone="blue" title="USER" />
-                  </DiagramRow>
-                  <DiagramArrow label={'RequireRole("ADMIN")'} />
-                  <DiagramBox tone="primary" title="RequireRole middleware" sub="matches user_role against the allow-list" />
-                  <DiagramArrow label="gates route groups" />
-                  <DiagramRow>
-                    <DiagramBox tone="green" title="public" sub="no auth" />
-                    <DiagramBox tone="green" title="protected" sub="any authenticated user" />
-                    <DiagramBox tone="green" title="admin" sub="ADMIN only" />
-                  </DiagramRow>
-                  <DiagramLegend
-                    items={[
-                      { tone: 'primary', label: 'Middleware' },
-                      { tone: 'green', label: 'Route groups' },
-                    ]}
-                  />
-                </Diagram>
+                <LaneFlow
+                  id="rbac"
+                  lanes={['User role', 'Guard', 'Route groups']}
+                  nodes={[
+                    { id: 'admin_r', lane: 0, row: 0, title: 'ADMIN', tone: 'rose' },
+                    { id: 'editor_r', lane: 0, row: 1, title: 'EDITOR', tone: 'amber' },
+                    { id: 'user_r', lane: 0, row: 2, title: 'USER', tone: 'blue' },
+                    { id: 'mw', lane: 1, row: 1, title: 'RequireRole', sub: 'checks user_role', tone: 'primary' },
+                    { id: 'public', lane: 2, row: 0, title: 'public', sub: 'no auth', tone: 'green' },
+                    { id: 'protected', lane: 2, row: 1, title: 'protected', sub: 'any user', tone: 'green' },
+                    { id: 'admin_g', lane: 2, row: 2, title: 'admin', sub: 'ADMIN only', tone: 'rose' },
+                  ]}
+                  edges={[
+                    { from: 'admin_r', to: 'mw', tone: 'rose' },
+                    { from: 'editor_r', to: 'mw', label: 'user_role', tone: 'amber' },
+                    { from: 'user_r', to: 'mw', tone: 'blue' },
+                    { from: 'mw', to: 'protected', label: 'authenticated', tone: 'green' },
+                    { from: 'mw', to: 'admin_g', label: 'role == ADMIN', tone: 'rose' },
+                  ]}
+                  legend={[
+                    { tone: 'primary', label: 'Guard middleware' },
+                    { tone: 'green', label: 'Route groups' },
+                  ]}
+                  caption="Public routes skip the guard; protected & admin routes pass through RequireRole"
+                />
               </div>
 
               {/* Role Constants */}

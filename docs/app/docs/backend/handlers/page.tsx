@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
-import { Diagram, DiagramBox, DiagramRow, DiagramArrow, FlowArrow, DiagramLegend } from '@/components/diagram'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/handlers')
@@ -36,38 +36,36 @@ export default function HandlersPage() {
                 Every request walks the same path down through the Go layers and returns back up as
                 a JSON response:
               </p>
-              <Diagram>
-                <DiagramBox tone="blue" title="HTTP Request" sub="GET /api/posts" />
-                <DiagramArrow label="routing" />
-                <DiagramRow>
-                  <DiagramBox tone="primary" title="Gin Router" sub="matches route" />
-                  <FlowArrow />
-                  <DiagramBox tone="primary" title="Middleware" sub="CORS, Auth, Logger" />
-                  <FlowArrow />
-                  <DiagramBox tone="primary" title="Handler" sub="thin HTTP layer" />
-                </DiagramRow>
-                <DiagramArrow label="calls" />
-                <DiagramRow>
-                  <DiagramBox tone="primary" title="Service" sub="business logic" />
-                  <FlowArrow />
-                  <DiagramBox tone="primary" title="GORM Model" sub="query builder" />
-                </DiagramRow>
-                <DiagramArrow label="SQL" />
-                <DiagramBox tone="green" title="PostgreSQL" sub=":5434" />
-                <DiagramArrow label="JSON response ←" />
-                <DiagramBox
-                  tone="blue"
-                  title="JSON response ←"
-                  sub="{ data, meta } bubbles back up: PostgreSQL → GORM → Service → Handler → client"
-                />
-                <DiagramLegend
-                  items={[
-                    { tone: 'blue', label: 'HTTP' },
-                    { tone: 'primary', label: 'Go layers' },
-                    { tone: 'green', label: 'Data' },
-                  ]}
-                />
-              </Diagram>
+              <LaneFlow
+                id="lifecycle"
+                lanes={['Client', 'Go API', 'Data']}
+                groups={[{ lane: 1, rows: [0, 4], label: 'Request pipeline', tone: 'primary' }]}
+                nodes={[
+                  { id: 'req', lane: 0, row: 0, title: 'HTTP Request', sub: 'GET /api/posts', tone: 'blue', badge: 1 },
+                  { id: 'router', lane: 1, row: 0, title: 'Gin Router', sub: 'matches route', tone: 'primary', badge: 2 },
+                  { id: 'mw', lane: 1, row: 1, title: 'Middleware', sub: 'CORS · Auth · Log', tone: 'primary', badge: 3 },
+                  { id: 'handler', lane: 1, row: 2, title: 'Handler', sub: 'thin HTTP layer', tone: 'primary', badge: 4 },
+                  { id: 'service', lane: 1, row: 3, title: 'Service', sub: 'business logic', tone: 'primary', badge: 5 },
+                  { id: 'gorm', lane: 1, row: 4, title: 'GORM Model', sub: 'query builder', tone: 'primary', badge: 6 },
+                  { id: 'pg', lane: 2, row: 4, title: 'PostgreSQL', sub: ':5434', tone: 'green' },
+                  { id: 'resp', lane: 0, row: 5, title: 'JSON response', sub: '{ data, meta }', tone: 'blue', badge: 7 },
+                ]}
+                edges={[
+                  { from: 'req', to: 'router', label: 'route', tone: 'blue' },
+                  { from: 'router', to: 'mw', tone: 'primary' },
+                  { from: 'mw', to: 'handler', tone: 'primary' },
+                  { from: 'handler', to: 'service', label: 'calls', tone: 'primary' },
+                  { from: 'service', to: 'gorm', tone: 'primary' },
+                  { from: 'gorm', to: 'pg', label: 'SQL', tone: 'green' },
+                  { from: 'pg', to: 'resp', label: 'JSON', dashed: true, tone: 'blue' },
+                ]}
+                legend={[
+                  { tone: 'blue', label: 'HTTP' },
+                  { tone: 'primary', label: 'Go layers' },
+                  { tone: 'green', label: 'Data' },
+                ]}
+                caption="Request flows down the Go layers; the JSON response bubbles back up"
+              />
 
               {/* ── Handler Pattern ─────────────────────────────── */}
               <h2 id="handler-pattern">Handler Pattern</h2>
