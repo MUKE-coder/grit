@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/batteries/security')
@@ -28,6 +29,29 @@ export default function SecurityPage() {
                 that provides a Web Application Firewall, rate limiting, brute-force protection, anomaly detection,
                 security headers, and a real-time threat dashboard. Security is not an afterthought.
               </p>
+              <LaneFlow
+                id="bat-security"
+                lanes={['Incoming request', 'Sentinel WAF', 'Outcome']}
+                nodes={[
+                  { id: 'req', lane: 0, row: 1, title: 'Request', sub: 'client / attacker', tone: 'blue' },
+                  { id: 'checks', lane: 1, row: 1, title: 'Sentinel WAF', sub: 'rate · brute · anomaly', tone: 'primary' },
+                  { id: 'allow', lane: 2, row: 0, title: 'Allow', sub: '→ handler', tone: 'green' },
+                  { id: 'block', lane: 2, row: 1, title: 'Block', sub: '429 / 403', tone: 'rose' },
+                  { id: 'dash', lane: 2, row: 2, title: 'Threat dashboard', sub: 'real-time', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'req', to: 'checks', label: 'inspect', tone: 'blue' },
+                  { from: 'checks', to: 'allow', label: 'clean', tone: 'green' },
+                  { from: 'checks', to: 'block', label: 'threat', tone: 'rose' },
+                  { from: 'block', to: 'dash', label: 'log', dashed: true, tone: 'amber' },
+                ]}
+                legend={[
+                  { tone: 'green', label: 'Allowed' },
+                  { tone: 'rose', label: 'Blocked' },
+                  { tone: 'amber', label: 'Streamed to dashboard' },
+                ]}
+                caption="Every request passes Sentinel's WAF; threats are blocked and streamed to the dashboard"
+              />
             </div>
 
             <div className="prose-grit">

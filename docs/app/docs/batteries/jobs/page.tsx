@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/batteries/jobs')
@@ -28,6 +29,27 @@ export default function JobsPage() {
                 queue library for Go -- to handle background processing. Send emails, generate thumbnails,
                 clean up expired tokens, or run any async task with automatic retries and priority queues.
               </p>
+              <LaneFlow
+                id="bat-jobs"
+                lanes={['Enqueue', 'Queue', 'Workers']}
+                nodes={[
+                  { id: 'enq', lane: 0, row: 1, title: 'jobs.Enqueue()', sub: 'from a handler', tone: 'cyan' },
+                  { id: 'queue', lane: 1, row: 1, title: 'Redis (asynq)', sub: 'priority queues', tone: 'primary' },
+                  { id: 'worker', lane: 2, row: 0, title: 'Worker', sub: 'processes task', tone: 'green' },
+                  { id: 'retry', lane: 2, row: 1, title: 'Retry', sub: 'on failure', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'enq', to: 'queue', label: 'push', tone: 'cyan' },
+                  { from: 'queue', to: 'worker', label: 'process', tone: 'green' },
+                  { from: 'worker', to: 'retry', label: 'fails', dashed: true, tone: 'amber' },
+                  { from: 'retry', to: 'queue', label: 're-queue', dashed: true, tone: 'amber' },
+                ]}
+                legend={[
+                  { tone: 'primary', label: 'Redis queue' },
+                  { tone: 'amber', label: 'Automatic retries' },
+                ]}
+                caption="Handlers return instantly; workers process tasks off Redis with automatic retries"
+              />
             </div>
 
             <div className="prose-grit">

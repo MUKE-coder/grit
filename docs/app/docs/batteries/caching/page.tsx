@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/batteries/caching')
@@ -28,6 +29,27 @@ export default function CachingPage() {
                 pattern-based deletion, and a Gin middleware for automatic HTTP response caching.
                 Speed up expensive queries and reduce database load with a few lines of code.
               </p>
+              <LaneFlow
+                id="bat-cache"
+                lanes={['Request', 'Cache middleware', 'Origin']}
+                nodes={[
+                  { id: 'req', lane: 0, row: 1, title: 'GET /api/…', sub: 'client', tone: 'blue' },
+                  { id: 'cache', lane: 1, row: 1, title: 'Redis cache', sub: 'key lookup', tone: 'primary' },
+                  { id: 'hit', lane: 2, row: 0, title: 'HIT', sub: 'sub-ms return', tone: 'green' },
+                  { id: 'db', lane: 2, row: 1, title: 'MISS → DB', sub: 'query, then store', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'req', to: 'cache', tone: 'blue' },
+                  { from: 'cache', to: 'hit', label: 'hit', tone: 'green' },
+                  { from: 'cache', to: 'db', label: 'miss', tone: 'amber' },
+                  { from: 'db', to: 'cache', label: 'store', dashed: true, tone: 'amber' },
+                ]}
+                legend={[
+                  { tone: 'green', label: 'Cache hit (fast path)' },
+                  { tone: 'amber', label: 'Miss → fill cache' },
+                ]}
+                caption="Hits return from Redis in sub-milliseconds; misses fill the cache on the way out"
+              />
             </div>
 
             <div className="prose-grit">

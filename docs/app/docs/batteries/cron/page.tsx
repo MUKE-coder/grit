@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/batteries/cron')
@@ -28,6 +29,26 @@ export default function CronPage() {
                 cleanup jobs, report generation, or any recurring work using standard cron expressions.
                 Tasks are enqueued into the same Redis-backed job queue used by background jobs.
               </p>
+              <LaneFlow
+                id="bat-cron"
+                lanes={['Cron schedule', 'Scheduler', 'Workers']}
+                nodes={[
+                  { id: 'spec', lane: 0, row: 1, title: '*/5 * * * *', sub: 'cron expression', tone: 'cyan' },
+                  { id: 'sched', lane: 1, row: 1, title: 'asynq Scheduler', sub: 'enqueues on time', tone: 'primary' },
+                  { id: 'queue', lane: 2, row: 0, title: 'Redis queue', sub: 'pending tasks', tone: 'amber' },
+                  { id: 'worker', lane: 2, row: 1, title: 'Worker', sub: 'runs handler', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'spec', to: 'sched', label: 'register', tone: 'cyan' },
+                  { from: 'sched', to: 'queue', label: 'enqueue', tone: 'amber' },
+                  { from: 'queue', to: 'worker', label: 'process', tone: 'green' },
+                ]}
+                legend={[
+                  { tone: 'primary', label: 'Scheduler' },
+                  { tone: 'green', label: 'Worker pool' },
+                ]}
+                caption="Each time the cron fires, the scheduler enqueues a task; a worker picks it up and runs it"
+              />
             </div>
 
             <div className="prose-grit">

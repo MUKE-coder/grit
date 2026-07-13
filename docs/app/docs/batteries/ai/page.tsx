@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/batteries/ai')
@@ -28,6 +29,28 @@ export default function AIPage() {
                 from all major providers (Anthropic, OpenAI, Google, and more) through a single OpenAI-compatible
                 endpoint. Generate completions, run multi-turn conversations, and stream responses via SSE.
               </p>
+              <LaneFlow
+                id="bat-ai"
+                lanes={['Your Go code', 'AI Gateway', 'Providers']}
+                nodes={[
+                  { id: 'app', lane: 0, row: 1, title: 'ai.Stream()', sub: 'one API key', tone: 'primary' },
+                  { id: 'gw', lane: 1, row: 1, title: 'Vercel AI Gateway', sub: 'OpenAI-compatible', tone: 'cyan' },
+                  { id: 'anthropic', lane: 2, row: 0, title: 'Anthropic', sub: 'Claude', tone: 'violet' },
+                  { id: 'openai', lane: 2, row: 1, title: 'OpenAI', sub: 'GPT', tone: 'green' },
+                  { id: 'google', lane: 2, row: 2, title: 'Google', sub: 'Gemini', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'app', to: 'gw', label: 'request', tone: 'primary' },
+                  { from: 'gw', to: 'anthropic', tone: 'violet' },
+                  { from: 'gw', to: 'openai', label: 'route', tone: 'green' },
+                  { from: 'gw', to: 'google', tone: 'amber' },
+                ]}
+                legend={[
+                  { tone: 'primary', label: 'Your code' },
+                  { tone: 'cyan', label: 'Gateway (one key)' },
+                ]}
+                caption="One key, one endpoint — switch between hundreds of models by changing a string"
+              />
             </div>
 
             <div className="prose-grit">

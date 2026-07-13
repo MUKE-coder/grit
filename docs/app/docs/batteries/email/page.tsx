@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from "@/components/code-block";
+import { LaneFlow } from "@/components/lane-flow";
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/batteries/email')
@@ -35,6 +36,26 @@ export default function EmailPage() {
                 template rendering, and four built-in email templates styled
                 with the Grit dark theme.
               </p>
+              <LaneFlow
+                id="bat-email"
+                lanes={['Your code', 'Mailer service', 'Delivery']}
+                nodes={[
+                  { id: 'app', lane: 0, row: 1, title: 'mail.Send()', sub: 'template + data', tone: 'primary' },
+                  { id: 'render', lane: 1, row: 0, title: 'Render template', sub: 'Go html/template', tone: 'cyan' },
+                  { id: 'resend', lane: 1, row: 1, title: 'Resend', sub: 'net/http, no SDK', tone: 'violet' },
+                  { id: 'inbox', lane: 2, row: 1, title: 'Inbox', sub: 'the user', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'app', to: 'render', label: 'data', tone: 'cyan' },
+                  { from: 'render', to: 'resend', label: 'HTML', tone: 'violet' },
+                  { from: 'resend', to: 'inbox', label: 'deliver', tone: 'green' },
+                ]}
+                legend={[
+                  { tone: 'cyan', label: 'Template render' },
+                  { tone: 'violet', label: 'Resend API' },
+                ]}
+                caption="Render an HTML template, hand it to Resend, and it lands in the user's inbox"
+              />
             </div>
 
             <div className="prose-grit">

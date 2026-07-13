@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/batteries/storage')
@@ -28,6 +29,27 @@ export default function StoragePage() {
                 Backblaze B2, and MinIO (for local development). Upload files, generate thumbnails, and
                 serve signed URLs -- all out of the box.
               </p>
+              <LaneFlow
+                id="bat-storage"
+                lanes={['Upload', 'Storage service', 'S3-compatible']}
+                nodes={[
+                  { id: 'up', lane: 0, row: 1, title: 'Upload file', sub: 'multipart / presigned', tone: 'blue' },
+                  { id: 'svc', lane: 1, row: 0, title: 'Storage service', sub: 'validate + key', tone: 'primary' },
+                  { id: 'thumb', lane: 1, row: 1, title: 'Thumbnails', sub: 'image resize', tone: 'cyan' },
+                  { id: 's3', lane: 2, row: 1, title: 'S3 · R2 · B2 · MinIO', sub: 'object store', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'up', to: 'svc', label: 'PUT', tone: 'blue' },
+                  { from: 'svc', to: 'thumb', label: 'if image', tone: 'cyan' },
+                  { from: 'svc', to: 's3', label: 'store', tone: 'green' },
+                  { from: 'thumb', to: 's3', tone: 'green' },
+                ]}
+                legend={[
+                  { tone: 'primary', label: 'Storage service' },
+                  { tone: 'green', label: 'Any S3 bucket' },
+                ]}
+                caption="Files go to any S3-compatible bucket; images get thumbnails on the way in"
+              />
             </div>
 
             <div className="prose-grit">
