@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { StatBars } from '@/components/bars'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/performance')
@@ -60,6 +61,14 @@ export default function PerformancePage() {
                       sweet spot between CPU cost and payload size. JSON payloads typically shrink by
                       60–80%, dramatically reducing bandwidth on paginated list endpoints.
                     </p>
+                    <StatBars
+                      title="Typical paginated JSON list — over the wire"
+                      items={[
+                        { label: 'Uncompressed', value: 100, display: '100 KB', tone: 'default' },
+                        { label: 'Gzip (BestSpeed)', value: 28, display: '~28 KB', tone: 'primary' },
+                      ]}
+                      caption="60–80% smaller responses, applied automatically to every route that sends JSON"
+                    />
                     <CodeBlock language="go" filename="apps/api/internal/middleware/middleware.go" code={`func Gzip() gin.HandlerFunc {
     return func(c *gin.Context) {
         if !strings.Contains(c.GetHeader("Accept-Encoding"), "gzip") {
