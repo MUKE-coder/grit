@@ -1,6 +1,7 @@
-import { FileCode, ArrowDown, ArrowRight } from 'lucide-react'
+import { ArrowDown, ArrowRight } from 'lucide-react'
+import { FileIcon } from '@/components/file-icons'
 import type { ReactNode } from 'react'
-import { fileColor, folderEmoji } from '@/lib/file-meta'
+import { folderEmoji } from '@/lib/file-meta'
 
 /* ─────────────────────────────────────────────────────────────
    Visual diagram toolkit for the docs — styled boxes, flow
@@ -122,7 +123,7 @@ export function FileTree({ title, nodes }: { title?: string; nodes: TreeNode[] }
               {isFolder ? (
                 <span className="shrink-0 text-[13px] leading-none">{folderEmoji(true)}</span>
               ) : (
-                <FileCode className={`h-3.5 w-3.5 shrink-0 ${fileColor(n.name)}`} />
+                <FileIcon name={n.name} className="h-4 w-4 shrink-0" />
               )}
               <span className={`font-mono ${isFolder ? 'font-medium text-foreground/90' : 'text-muted-foreground'}`}>
                 {n.name}

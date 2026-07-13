@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
-import { ChevronRight, FileCode } from 'lucide-react'
-import { fileColor, folderEmoji } from '@/lib/file-meta'
+import { ChevronRight } from 'lucide-react'
+import { folderEmoji } from '@/lib/file-meta'
+import { FileIcon } from '@/components/file-icons'
 
 /**
  * Composable file-tree, à la Fumadocs:
@@ -49,7 +50,7 @@ export function File({
         highlight ? 'bg-primary/[0.07]' : ''
       }`}
     >
-      {icon ?? <FileCode className={`h-3.5 w-3.5 shrink-0 ${fileColor(name)}`} />}
+      {icon ?? <FileIcon name={name} className="h-4 w-4 shrink-0" />}
       <span className="font-mono text-muted-foreground">{name}</span>
       {comment && <span className="ml-auto pl-3 text-[11px] text-muted-foreground/50">{comment}</span>}
     </div>
