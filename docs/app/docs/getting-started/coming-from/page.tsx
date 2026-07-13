@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { Callout } from '@/components/callout'
 import { PageHelp } from '@/components/page-help'
 import { getDocMetadata } from '@/config/docs-metadata'
@@ -64,6 +65,31 @@ export default function ComingFromPage() {
                 frontend, driven by one <code>grit</code> command. Here&apos;s the translation so
                 you feel at home in minutes.
               </p>
+              <LaneFlow
+                id="gs-comingfrom"
+                lanes={['You already know', 'The Grit equivalent']}
+                nodes={[
+                  { id: 'model', lane: 0, row: 0, title: 'Model', sub: 'Eloquent / ORM', tone: 'cyan' },
+                  { id: 'migrate', lane: 0, row: 1, title: 'Migration', sub: 'artisan / manage.py', tone: 'blue' },
+                  { id: 'admin', lane: 0, row: 2, title: 'Admin panel', sub: 'Filament / Django admin', tone: 'violet' },
+                  { id: 'cli', lane: 0, row: 3, title: 'CLI scaffolder', sub: 'make / startapp', tone: 'amber' },
+                  { id: 'gmodel', lane: 1, row: 0, title: 'GORM struct', sub: 'models/*.go', tone: 'cyan' },
+                  { id: 'gmigrate', lane: 1, row: 1, title: 'grit migrate', sub: 'AutoMigrate', tone: 'blue' },
+                  { id: 'gadmin', lane: 1, row: 2, title: 'defineResource', sub: 'admin panel', tone: 'violet' },
+                  { id: 'gcli', lane: 1, row: 3, title: 'grit generate', sub: 'full-stack resource', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'model', to: 'gmodel', tone: 'cyan' },
+                  { from: 'migrate', to: 'gmigrate', label: 'maps to', tone: 'blue' },
+                  { from: 'admin', to: 'gadmin', tone: 'violet' },
+                  { from: 'cli', to: 'gcli', tone: 'amber' },
+                ]}
+                legend={[
+                  { tone: 'cyan', label: 'Same concept' },
+                  { tone: 'amber', label: 'Same workflow' },
+                ]}
+                caption="The concepts you already use map one-to-one onto Grit's Go + React workflow"
+              />
             </div>
 
             <div className="prose-grit">

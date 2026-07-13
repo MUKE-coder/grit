@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { Files, Folder, File } from '@/components/files'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/getting-started/project-structure')
@@ -28,6 +29,29 @@ export default function ProjectStructurePage() {
                 exact structure, so any developer (or AI assistant) can jump in and know exactly
                 where everything lives.
               </p>
+              <LaneFlow
+                id="gs-structure"
+                lanes={['Source of truth', 'Shared', 'Consumers']}
+                nodes={[
+                  { id: 'api', lane: 0, row: 1, title: 'apps/api', sub: 'Go models', tone: 'cyan' },
+                  { id: 'shared', lane: 1, row: 1, title: 'packages/shared', sub: 'types · schemas', tone: 'primary' },
+                  { id: 'web', lane: 2, row: 0, title: 'apps/web', sub: 'Next.js', tone: 'blue' },
+                  { id: 'admin', lane: 2, row: 1, title: 'apps/admin', sub: 'admin panel', tone: 'green' },
+                  { id: 'mobile', lane: 2, row: 2, title: 'apps/mobile', sub: 'Expo', tone: 'violet' },
+                ]}
+                edges={[
+                  { from: 'api', to: 'shared', label: 'grit sync', tone: 'cyan' },
+                  { from: 'shared', to: 'web', tone: 'blue' },
+                  { from: 'shared', to: 'admin', label: 'import', tone: 'green' },
+                  { from: 'shared', to: 'mobile', tone: 'violet' },
+                ]}
+                legend={[
+                  { tone: 'cyan', label: 'Go API (types source)' },
+                  { tone: 'primary', label: 'Shared package' },
+                  { tone: 'blue', label: 'Frontend apps' },
+                ]}
+                caption="The Go API is the source of truth; grit sync feeds shared types to every frontend"
+              />
             </div>
 
             <div className="prose-grit">

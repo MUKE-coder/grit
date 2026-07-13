@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/getting-started/configuration')
@@ -28,6 +29,30 @@ export default function ConfigurationPage() {
                 configuration is done through the <code className="text-sm font-mono bg-accent/80 px-1.5 py-0.5 rounded text-primary">.env</code> file
                 at the project root.
               </p>
+              <LaneFlow
+                id="gs-config"
+                lanes={['.env', 'Typed Config', 'Wired into']}
+                nodes={[
+                  { id: 'env', lane: 0, row: 1, title: '.env', sub: 'key = value', tone: 'primary' },
+                  { id: 'cfg', lane: 1, row: 1, title: 'config.Config', sub: 'parsed + typed', tone: 'cyan' },
+                  { id: 'db', lane: 2, row: 0, title: 'Database', sub: 'DATABASE_URL', tone: 'green' },
+                  { id: 'redis', lane: 2, row: 1, title: 'Redis', sub: 'REDIS_URL', tone: 'rose' },
+                  { id: 's3', lane: 2, row: 2, title: 'Storage', sub: 'S3_*', tone: 'amber' },
+                  { id: 'mail', lane: 2, row: 3, title: 'Email', sub: 'RESEND_*', tone: 'violet' },
+                ]}
+                edges={[
+                  { from: 'env', to: 'cfg', label: 'parse', tone: 'cyan' },
+                  { from: 'cfg', to: 'db', tone: 'green' },
+                  { from: 'cfg', to: 'redis', tone: 'rose' },
+                  { from: 'cfg', to: 's3', tone: 'amber' },
+                  { from: 'cfg', to: 'mail', tone: 'violet' },
+                ]}
+                legend={[
+                  { tone: 'primary', label: 'One .env file' },
+                  { tone: 'cyan', label: 'Typed config struct' },
+                ]}
+                caption="Every setting lives in .env, parsed once into a typed Config that wires each service"
+              />
             </div>
 
             <div className="prose-grit">

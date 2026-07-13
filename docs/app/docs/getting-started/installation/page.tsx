@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { SiteHeader } from "@/components/site-header"
 import { DocsSidebar } from "@/components/docs-sidebar"
 import { CodeBlock, StepWithCode } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/getting-started/installation')
@@ -28,6 +29,26 @@ export default function InstallationPage() {
               Get up and running with Grit in minutes. Install the CLI, choose your architecture,
               and scaffold a production-ready full-stack application.
             </p>
+            <LaneFlow
+              id="gs-install"
+              lanes={['1 · Install', '2 · Choose', '3 · Scaffold', '4 · Run']}
+              nodes={[
+                { id: 'install', lane: 0, row: 0, title: 'go install', sub: 'grit CLI', tone: 'primary' },
+                { id: 'choose', lane: 1, row: 0, title: 'Pick a mode', sub: '--triple / --api …', tone: 'cyan' },
+                { id: 'scaffold', lane: 2, row: 0, title: 'grit new', sub: 'full project', tone: 'blue' },
+                { id: 'run', lane: 3, row: 0, title: 'grit start', sub: 'dev servers', tone: 'green' },
+              ]}
+              edges={[
+                { from: 'install', to: 'choose', tone: 'cyan' },
+                { from: 'choose', to: 'scaffold', tone: 'blue' },
+                { from: 'scaffold', to: 'run', tone: 'green' },
+              ]}
+              legend={[
+                { tone: 'primary', label: 'Install once' },
+                { tone: 'green', label: 'Running in minutes' },
+              ]}
+              caption="Install the CLI once, pick a mode, scaffold, and start — production-ready in minutes"
+            />
           </div>
 
           {/* Prerequisites */}

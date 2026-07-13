@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { Callout } from '@/components/callout'
 import { PageHelp } from '@/components/page-help'
 import { getDocMetadata } from '@/config/docs-metadata'
@@ -181,6 +182,30 @@ export default function PerformanceBenchmarksPage() {
                 This page covers <strong>why it&apos;s fast</strong>, <strong>what ships out of the
                 box</strong>, and <strong>how it compares</strong> to Laravel, Django, and Next.js.
               </p>
+              <LaneFlow
+                id="gs-perf"
+                lanes={['Fast by default', 'Wired from the first scaffold']}
+                nodes={[
+                  { id: 'core', lane: 0, row: 2, title: 'Grit defaults', sub: 'zero config', tone: 'primary' },
+                  { id: 'go', lane: 1, row: 0, title: 'Compiled Go', sub: 'no runtime', tone: 'cyan' },
+                  { id: 'gzip', lane: 1, row: 1, title: 'Gzip', sub: '60–80% smaller', tone: 'blue' },
+                  { id: 'pool', lane: 1, row: 2, title: 'Conn pool', sub: 'tuned', tone: 'green' },
+                  { id: 'cache', lane: 1, row: 3, title: 'Redis cache', sub: 'sub-ms reads', tone: 'rose' },
+                  { id: 'cdn', lane: 1, row: 4, title: 'ISR / CDN', sub: 'static pages', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'core', to: 'go', tone: 'cyan' },
+                  { from: 'core', to: 'gzip', tone: 'blue' },
+                  { from: 'core', to: 'pool', label: 'ships with', tone: 'green' },
+                  { from: 'core', to: 'cache', tone: 'rose' },
+                  { from: 'core', to: 'cdn', tone: 'amber' },
+                ]}
+                legend={[
+                  { tone: 'primary', label: 'Defaults' },
+                  { tone: 'cyan', label: 'Backend & frontend wins' },
+                ]}
+                caption="Production-grade performance defaults are wired in from the very first scaffold"
+              />
             </div>
 
             <div className="prose-grit">
