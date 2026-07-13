@@ -32,6 +32,16 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Create your first Grit project in under 5 minutes. Scaffold a full-stack app with Go API, Next.js frontend, and admin panel.',
   },
+  '/docs/getting-started/create-a-project': {
+    title: 'Create a project',
+    description:
+      'Scaffold and run your first Grit app. Install the CLI, then pick what you are building — API, Mobile (Expo), Desktop (Wails), or the full web + admin + API stack — with a complete copy-pasteable grit command sequence for each.',
+  },
+  '/docs/getting-started/prerequisites': {
+    title: 'Prerequisites',
+    description:
+      'What you need before building with Grit: Go, Next.js & React, Docker, and a Go Playground to experiment in. Short primers for each, or skip straight to creating a project.',
+  },
   '/docs/getting-started/coming-from': {
     title: 'Coming from Laravel, Django, or Next.js',
     description:
