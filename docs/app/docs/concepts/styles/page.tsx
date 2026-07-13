@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/styles')
@@ -59,6 +60,21 @@ export default function StyleVariantsPage() {
                   If you omit the flag, the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">default</code> style
                   is used.
                 </p>
+
+                <LaneFlow
+                  id="styles"
+                  lanes={['--style flag', 'Applied at scaffold time']}
+                  nodes={[
+                    { id: 'flag', lane: 0, row: 0, title: 'grit new --style', sub: 'modern', tone: 'primary' },
+                    { id: 'auth', lane: 1, row: 0, title: 'Auth screens', sub: 'login · sign-up · reset', tone: 'blue' },
+                    { id: 'dash', lane: 1, row: 1, title: 'Dashboard', sub: 'admin panel shell', tone: 'cyan' },
+                  ]}
+                  edges={[
+                    { from: 'flag', to: 'auth', label: 'themes', tone: 'blue' },
+                    { from: 'flag', to: 'dash', tone: 'cyan' },
+                  ]}
+                  caption="One flag themes both the auth pages and the dashboard — chosen once, at creation"
+                />
               </div>
 
               {/* Available Styles */}

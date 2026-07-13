@@ -6,6 +6,7 @@ import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
 import { CodeTabs } from '@/components/code-tabs'
 import { Callout } from '@/components/callout'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/generated-files')
@@ -61,6 +62,38 @@ export default function GeneratedFilesPage() {
                   the four files at the heart of it &mdash; switch tabs to see the same resource
                   across Go and TypeScript:
                 </p>
+                <LaneFlow
+                  id="genmap"
+                  lanes={['grit generate', 'Go backend', 'Shared', 'Frontend']}
+                  nodes={[
+                    { id: 'cmd', lane: 0, row: 2, title: 'resource Product', sub: '--fields …', tone: 'primary' },
+                    { id: 'model', lane: 1, row: 0, title: 'models/product.go', sub: 'GORM struct', tone: 'cyan' },
+                    { id: 'handler', lane: 1, row: 1, title: 'handlers/product.go', sub: 'CRUD + import', tone: 'cyan' },
+                    { id: 'service', lane: 1, row: 2, title: 'services/product.go', sub: 'business logic', tone: 'cyan' },
+                    { id: 'schema', lane: 2, row: 1, title: 'schemas/product.ts', sub: 'Zod', tone: 'violet' },
+                    { id: 'types', lane: 2, row: 2, title: 'types/product.ts', sub: 'TS interface', tone: 'blue' },
+                    { id: 'hook', lane: 3, row: 1, title: 'use-products.ts', sub: 'React Query', tone: 'amber' },
+                    { id: 'resource', lane: 3, row: 2, title: 'resources/products.ts', sub: 'admin def', tone: 'green' },
+                    { id: 'page', lane: 3, row: 3, title: 'products/page.tsx', sub: 'CRUD UI', tone: 'green' },
+                  ]}
+                  edges={[
+                    { from: 'cmd', to: 'model', tone: 'cyan' },
+                    { from: 'cmd', to: 'handler', tone: 'cyan' },
+                    { from: 'cmd', to: 'service', label: 'fans out', tone: 'cyan' },
+                    { from: 'cmd', to: 'schema', tone: 'violet' },
+                    { from: 'cmd', to: 'types', tone: 'blue' },
+                    { from: 'cmd', to: 'hook', tone: 'amber' },
+                    { from: 'cmd', to: 'resource', tone: 'green' },
+                    { from: 'cmd', to: 'page', tone: 'green' },
+                  ]}
+                  legend={[
+                    { tone: 'primary', label: 'One command' },
+                    { tone: 'cyan', label: 'Go backend' },
+                    { tone: 'violet', label: 'Shared (Zod/TS)' },
+                    { tone: 'green', label: 'Frontend + admin' },
+                  ]}
+                  caption="One command writes a working feature across every layer that exists in your project"
+                />
                 <CodeTabs
                   files={[
                     {

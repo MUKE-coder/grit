@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/cli')
@@ -33,6 +34,40 @@ export default function CLICommandsPage() {
             </div>
 
             <div className="prose-grit">
+              {/* Lifecycle */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  The CLI across a project&apos;s life
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Four commands carry a Grit project from empty folder to production. Everything
+                  else &mdash; <code>migrate</code>, <code>seed</code>, <code>sync</code>,{' '}
+                  <code>studio</code> &mdash; slots in between these stages.
+                </p>
+                <LaneFlow
+                  id="cli-life"
+                  lanes={['1 · Scaffold', '2 · Generate', '3 · Run', '4 · Ship']}
+                  nodes={[
+                    { id: 'new', lane: 0, row: 0, title: 'grit new', sub: 'scaffold project', tone: 'primary' },
+                    { id: 'gen', lane: 1, row: 0, title: 'grit generate', sub: 'full-stack resource', tone: 'cyan' },
+                    { id: 'run', lane: 2, row: 0, title: 'grit start', sub: 'dev servers', tone: 'blue' },
+                    { id: 'ship', lane: 3, row: 0, title: 'grit deploy', sub: 'to production', tone: 'green' },
+                  ]}
+                  edges={[
+                    { from: 'new', to: 'gen', label: 'add features', tone: 'cyan' },
+                    { from: 'gen', to: 'run', label: 'develop', tone: 'blue' },
+                    { from: 'run', to: 'ship', label: 'release', tone: 'green' },
+                  ]}
+                  legend={[
+                    { tone: 'primary', label: 'Scaffold' },
+                    { tone: 'cyan', label: 'Generate' },
+                    { tone: 'blue', label: 'Run' },
+                    { tone: 'green', label: 'Ship' },
+                  ]}
+                  caption="migrate · seed · sync · studio slot in between these four stages"
+                />
+              </div>
+
               {/* Installation */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
