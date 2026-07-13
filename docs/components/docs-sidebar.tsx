@@ -44,46 +44,6 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    title: 'Prerequisites',
-    icon: <GraduationCap className="h-3.5 w-3.5" />,
-    items: [
-      { title: 'Go for Grit Developers', href: '/docs/prerequisites/golang' },
-      { title: 'Go Playground', href: '/playground' },
-      { title: 'Next.js & React', href: '/docs/prerequisites/nextjs' },
-      { title: 'Docker', href: '/docs/prerequisites/docker' },
-    ],
-  },
-  {
-    title: 'Demo',
-    icon: <Rocket className="h-3.5 w-3.5" />,
-    items: [
-      { title: 'Demo Application', href: '/docs/demo' },
-    ],
-  },
-  {
-    title: 'Learnings',
-    icon: <Lightbulb className="h-3.5 w-3.5" />,
-    items: [
-      { title: 'Overview', href: '/docs/learnings' },
-      { title: 'Stateless Service + k6 Load Test', href: '/docs/learnings/stateless-service-load-test' },
-    ],
-  },
-  {
-    title: 'Tech Kits',
-    icon: <Box className="h-3.5 w-3.5" />,
-    items: [
-      { title: 'All Tech Kits', href: '/docs/tech-kits' },
-      { title: 'AI Integration Helper', href: '/docs/ai-integration' },
-      { title: 'Single (Next.js)', href: '/docs/tech-kits/single' },
-      { title: 'Single + Vite', href: '/docs/tech-kits/single-vite' },
-      { title: 'Double — Web + API', href: '/docs/tech-kits/double' },
-      { title: 'Triple — Web + Admin + API', href: '/docs/tech-kits/triple' },
-      { title: 'API only', href: '/docs/tech-kits/api' },
-      { title: 'Mobile (Expo)', href: '/docs/tech-kits/mobile' },
-      { title: 'Desktop (Wails)', href: '/docs/tech-kits/desktop' },
-    ],
-  },
-  {
     title: 'Getting Started',
     icon: <Rocket className="h-3.5 w-3.5" />,
     items: [
@@ -97,6 +57,16 @@ const navItems: NavItem[] = [
       { title: 'Configuration', href: '/docs/getting-started/configuration' },
       { title: 'Troubleshooting', href: '/docs/getting-started/troubleshooting' },
       { title: 'CLI Cheatsheet', href: '/docs/getting-started/cli-cheatsheet' },
+    ],
+  },
+  {
+    title: 'Prerequisites',
+    icon: <GraduationCap className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Go for Grit Developers', href: '/docs/prerequisites/golang' },
+      { title: 'Go Playground', href: '/playground' },
+      { title: 'Next.js & React', href: '/docs/prerequisites/nextjs' },
+      { title: 'Docker', href: '/docs/prerequisites/docker' },
     ],
   },
   {
@@ -120,6 +90,21 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    title: 'Tech Kits',
+    icon: <Box className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'All Tech Kits', href: '/docs/tech-kits' },
+      { title: 'AI Integration Helper', href: '/docs/ai-integration' },
+      { title: 'Single (Next.js)', href: '/docs/tech-kits/single' },
+      { title: 'Single + Vite', href: '/docs/tech-kits/single-vite' },
+      { title: 'Double — Web + API', href: '/docs/tech-kits/double' },
+      { title: 'Triple — Web + Admin + API', href: '/docs/tech-kits/triple' },
+      { title: 'API only', href: '/docs/tech-kits/api' },
+      { title: 'Mobile (Expo)', href: '/docs/tech-kits/mobile' },
+      { title: 'Desktop (Wails)', href: '/docs/tech-kits/desktop' },
+    ],
+  },
+  {
     title: 'Backend (Go API)',
     icon: <Server className="h-3.5 w-3.5" />,
     items: [
@@ -138,15 +123,6 @@ const navItems: NavItem[] = [
       { title: 'Feature Flags', href: '/docs/backend/feature-flags' },
       { title: 'Webhooks', href: '/docs/backend/webhooks' },
       { title: 'Realtime (WebSockets)', href: '/docs/backend/realtime' },
-    ],
-  },
-  {
-    title: 'Security & Testing',
-    icon: <Shield className="h-3.5 w-3.5" />,
-    items: [
-      { title: 'Security Guide (OWASP)', href: '/docs/security' },
-      { title: "Defender's Handbook ↔ Grit", href: '/docs/security/defenders-handbook' },
-      { title: 'Performance & Pentest Testing', href: '/docs/testing' },
     ],
   },
   {
@@ -187,6 +163,22 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    title: 'Desktop (Wails)',
+    icon: <Monitor className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Overview', href: '/docs/desktop' },
+      { title: 'Getting Started', href: '/docs/desktop/getting-started' },
+      { title: 'Your First Desktop App', href: '/docs/desktop/first-app' },
+      { title: 'Build a POS App', href: '/docs/desktop/pos-app' },
+      { title: 'Resource Generation', href: '/docs/desktop/resource-generation' },
+      { title: 'Offline-First Apps', href: '/docs/desktop/offline' },
+      { title: 'Building & Distribution', href: '/docs/desktop/building' },
+      { title: 'Auto-Update + Installers', href: '/docs/desktop/auto-update' },
+      { title: '20 Project Ideas', href: '/docs/desktop/project-ideas' },
+      { title: 'LLM Reference', href: '/docs/desktop/llm-reference' },
+    ],
+  },
+  {
     title: 'Batteries',
     icon: <Database className="h-3.5 w-3.5" />,
     items: [
@@ -200,10 +192,12 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    title: 'Plugins',
-    icon: <Layers className="h-3.5 w-3.5" />,
+    title: 'Security & Testing',
+    icon: <Shield className="h-3.5 w-3.5" />,
     items: [
-      { title: 'Overview', href: '/docs/plugins' },
+      { title: 'Security Guide (OWASP)', href: '/docs/security' },
+      { title: "Defender's Handbook ↔ Grit", href: '/docs/security/defenders-handbook' },
+      { title: 'Performance & Pentest Testing', href: '/docs/testing' },
     ],
   },
   {
@@ -219,13 +213,6 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    title: 'Design System',
-    icon: <Palette className="h-3.5 w-3.5" />,
-    items: [
-      { title: 'Theme & Colors', href: '/docs/design/theme' },
-    ],
-  },
-  {
     title: 'Tutorials',
     icon: <BookOpen className="h-3.5 w-3.5" />,
     items: [
@@ -238,19 +225,32 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    title: 'Desktop (Wails)',
-    icon: <Monitor className="h-3.5 w-3.5" />,
+    title: 'Demo',
+    icon: <Rocket className="h-3.5 w-3.5" />,
     items: [
-      { title: 'Overview', href: '/docs/desktop' },
-      { title: 'Getting Started', href: '/docs/desktop/getting-started' },
-      { title: 'Your First Desktop App', href: '/docs/desktop/first-app' },
-      { title: 'Build a POS App', href: '/docs/desktop/pos-app' },
-      { title: 'Resource Generation', href: '/docs/desktop/resource-generation' },
-      { title: 'Offline-First Apps', href: '/docs/desktop/offline' },
-      { title: 'Building & Distribution', href: '/docs/desktop/building' },
-      { title: 'Auto-Update + Installers', href: '/docs/desktop/auto-update' },
-      { title: '20 Project Ideas', href: '/docs/desktop/project-ideas' },
-      { title: 'LLM Reference', href: '/docs/desktop/llm-reference' },
+      { title: 'Demo Application', href: '/docs/demo' },
+    ],
+  },
+  {
+    title: 'Learnings',
+    icon: <Lightbulb className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Overview', href: '/docs/learnings' },
+      { title: 'Stateless Service + k6 Load Test', href: '/docs/learnings/stateless-service-load-test' },
+    ],
+  },
+  {
+    title: 'Plugins',
+    icon: <Layers className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Overview', href: '/docs/plugins' },
+    ],
+  },
+  {
+    title: 'Design System',
+    icon: <Palette className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Theme & Colors', href: '/docs/design/theme' },
     ],
   },
   {
