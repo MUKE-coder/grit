@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from "@/components/code-block";
+import { Steps, Step } from "@/components/steps";
 import { getDocMetadata } from "@/config/docs-metadata";
 
 export const metadata = getDocMetadata("/docs/desktop/first-app");
@@ -71,16 +72,9 @@ export default function DesktopFirstAppPage() {
               </ul>
             </div>
 
+            <Steps>
             {/* Step 1: Prerequisites */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  1
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Prerequisites
-                </h2>
-              </div>
+            <Step title="Prerequisites">
               <div className="prose-grit mb-4">
                 <p>
                   Make sure the following tools are installed on your system
@@ -144,18 +138,10 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                 </p>
               </div>
               <CodeBlock terminal code="wails doctor" className="mb-0" />
-            </div>
+            </Step>
 
             {/* Step 2: Scaffold the Project */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  2
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Scaffold the Project
-                </h2>
-              </div>
+            <Step title="Scaffold the Project">
               <div className="prose-grit mb-4">
                 <p>
                   Create a new desktop project called{" "}
@@ -265,18 +251,10 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                   </div>
                 ))}
               </div>
-            </div>
+            </Step>
 
             {/* Step 3: Start Development */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  3
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Start Development
-                </h2>
-              </div>
+            <Step title="Start Development">
               <div className="prose-grit mb-4">
                 <p>
                   Navigate into the project and start Wails in development mode:
@@ -328,18 +306,10 @@ wails dev`}
                   Subsequent starts are much faster.
                 </blockquote>
               </div>
-            </div>
+            </Step>
 
             {/* Step 4: Explore the Default App */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  4
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Explore the Default App
-                </h2>
-              </div>
+            <Step title="Explore the Default App">
               <div className="prose-grit mb-4">
                 <p>
                   Once the desktop window opens, log in with the default admin
@@ -405,18 +375,10 @@ wails dev`}
                   pagination, inline editing, bulk operations, and export.
                 </p>
               </div>
-            </div>
+            </Step>
 
             {/* Step 5: Generate the Task Resource */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  5
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Generate the Task Resource
-                </h2>
-              </div>
+            <Step title="Generate the Task Resource">
               <div className="prose-grit mb-4">
                 <p>
                   Now for the main event. Open a new terminal in the{" "}
@@ -530,11 +492,9 @@ wails dev`}
 }`}
                 className="mb-0"
               />
-            </div>
 
-            {/* Understanding the Generated Routes */}
-            <div className="mb-10">
-              <div className="prose-grit mb-4">
+              {/* Understanding the Generated Routes */}
+              <div className="prose-grit mb-4 mt-8">
                 <h3>Understanding the Generated Route Files</h3>
                 <p>
                   The three frontend files are{" "}
@@ -598,18 +558,10 @@ function EditTaskPage() {
                   navigation calls are validated by TypeScript at compile time.
                 </p>
               </div>
-            </div>
+            </Step>
 
             {/* Step 6: Test the Task Manager */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  6
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Test the Task Manager
-                </h2>
-              </div>
+            <Step title="Test the Task Manager">
               <div className="prose-grit mb-4">
                 <p>
                   Restart the development server to pick up the new Go code. If{" "}
@@ -686,18 +638,10 @@ function EditTaskPage() {
                   sidebar navigation are all wired up automatically.
                 </p>
               </div>
-            </div>
+            </Step>
 
             {/* Step 7: Generate Another Resource */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  7
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Generate Another Resource — Categories
-                </h2>
-              </div>
+            <Step title="Generate Another Resource — Categories">
               <div className="prose-grit mb-4">
                 <p>
                   To demonstrate how easy it is to add more resources, generate a
@@ -768,18 +712,10 @@ function EditTaskPage() {
                   resources as your app needs.
                 </p>
               </div>
-            </div>
+            </Step>
 
             {/* Step 8: Open GORM Studio */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  8
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Open GORM Studio
-                </h2>
-              </div>
+            <Step title="Open GORM Studio">
               <div className="prose-grit mb-4">
                 <p>
                   GORM Studio is a visual database browser bundled with every
@@ -830,18 +766,10 @@ function EditTaskPage() {
                   database schema during development.
                 </p>
               </div>
-            </div>
+            </Step>
 
             {/* Step 9: Build for Distribution */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  9
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Build for Distribution
-                </h2>
-              </div>
+            <Step title="Build for Distribution">
               <div className="prose-grit mb-4">
                 <p>
                   When you are ready to ship, compile the app into a native
@@ -944,18 +872,10 @@ function EditTaskPage() {
                   guide for cross-platform builds and distribution details.
                 </blockquote>
               </div>
-            </div>
+            </Step>
 
             {/* Step 10: What's Next */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  10
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  What&apos;s Next
-                </h2>
-              </div>
+            <Step title="What's Next">
               <div className="prose-grit mb-6">
                 <p>
                   You have built a fully functional Task Manager desktop
@@ -1002,7 +922,8 @@ function EditTaskPage() {
                   </Link>
                 ))}
               </div>
-            </div>
+            </Step>
+            </Steps>
 
             {/* Desktop Handbook */}
             <div className="mb-8">

@@ -6,6 +6,7 @@ import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
 import { Callout } from '@/components/callout'
 import { Tabs } from '@/components/tabs'
+import { Steps, Step } from '@/components/steps'
 import { PageHelp } from '@/components/page-help'
 import { getDocMetadata } from '@/config/docs-metadata'
 
@@ -165,72 +166,69 @@ grit start                 # launches the desktop window`}
             </div>
 
             <div className="prose-grit">
-              {/* Install */}
-              <div className="mb-10">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">1. Install the Grit CLI</h2>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  One line, every platform. The script installs the latest release (or updates an
-                  existing install):
-                </p>
-                <CodeBlock
-                  terminal
-                  code={`# macOS / Linux
+              <Steps>
+                {/* Install */}
+                <Step title="Install the Grit CLI">
+                  <p className="text-muted-foreground leading-relaxed mb-4">
+                    One line, every platform. The script installs the latest release (or updates an
+                    existing install):
+                  </p>
+                  <CodeBlock
+                    terminal
+                    code={`# macOS / Linux
 curl -fsSL https://gritframework.dev/install.sh | sh
 
 # Windows (PowerShell)
 iwr -useb https://gritframework.dev/install.ps1 | iex`}
-                />
-                <p className="text-muted-foreground leading-relaxed mt-4">
-                  Verify with <code>grit --help</code>. You&apos;ll also need a few tools installed
-                  &mdash; <strong>Go 1.24+</strong>, <strong>Node 22+</strong>,{' '}
-                  <strong>pnpm 9+</strong>, and <strong>Docker</strong> (skippable for desktop).
-                  New to any of them? The{' '}
-                  <Link href="/docs/getting-started/prerequisites">Prerequisites</Link> page has a
-                  short primer for each.
-                </p>
-              </div>
+                  />
+                  <p className="text-muted-foreground leading-relaxed mt-4">
+                    Verify with <code>grit --help</code>. You&apos;ll also need a few tools installed
+                    &mdash; <strong>Go 1.24+</strong>, <strong>Node 22+</strong>,{' '}
+                    <strong>pnpm 9+</strong>, and <strong>Docker</strong> (skippable for desktop).
+                    New to any of them? The{' '}
+                    <Link href="/docs/getting-started/prerequisites">Prerequisites</Link> page has a
+                    short primer for each.
+                  </p>
+                </Step>
 
-              {/* Scaffold — tabs */}
-              <div className="mb-10">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">2. Scaffold your app</h2>
-                <p className="text-muted-foreground leading-relaxed mb-2">
-                  Pick what you&apos;re building. Each tab is a complete, copy-pasteable sequence
-                  &mdash; scaffold, set up the database, and run, all with <code>grit</code>.
-                </p>
-                <Tabs items={tabs} defaultId="all" />
-              </div>
+                {/* Scaffold — tabs */}
+                <Step title="Scaffold your app">
+                  <p className="text-muted-foreground leading-relaxed mb-2">
+                    Pick what you&apos;re building. Each tab is a complete, copy-pasteable sequence
+                    &mdash; scaffold, set up the database, and run, all with <code>grit</code>.
+                  </p>
+                  <Tabs items={tabs} defaultId="all" />
+                  <Callout type="tip" title="Prefer to be asked?">
+                    Run <code>grit new myapp</code> with no flags and the CLI walks you through
+                    architecture and frontend choices interactively. Add <code>--vite</code> to use
+                    TanStack Router (Vite) instead of Next.js.
+                  </Callout>
+                </Step>
 
-              <Callout type="tip" title="Prefer to be asked?">
-                Run <code>grit new myapp</code> with no flags and the CLI walks you through
-                architecture and frontend choices interactively. Add <code>--vite</code> to use
-                TanStack Router (Vite) instead of Next.js.
-              </Callout>
-
-              {/* Next */}
-              <div className="mb-10 mt-10">
-                <h2 className="text-2xl font-semibold tracking-tight mb-4">3. You&apos;re running &mdash; now build</h2>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  Register a user, log into the admin panel, and browse your database in GORM Studio.
-                  Then generate your first full-stack resource &mdash; model, API, admin page, types
-                  and hooks &mdash; in one command:
-                </p>
-                <CodeBlock
-                  terminal
-                  code={`grit generate resource Post --fields "title:string,body:text,published:bool"
+                {/* Next */}
+                <Step title="You're running — now build">
+                  <p className="text-muted-foreground leading-relaxed mb-4">
+                    Register a user, log into the admin panel, and browse your database in GORM Studio.
+                    Then generate your first full-stack resource &mdash; model, API, admin page, types
+                    and hooks &mdash; in one command:
+                  </p>
+                  <CodeBlock
+                    terminal
+                    code={`grit generate resource Post --fields "title:string,body:text,published:bool"
 grit migrate    # create the new table`}
-                />
-                <p className="text-muted-foreground leading-relaxed mt-4">
-                  Refresh the admin panel and your <strong>Posts</strong> resource is there with a
-                  working table and form.
-                </p>
-              </div>
-
-              <Callout type="escape" title="Escape hatch">
-                Everything generated is <strong>your code</strong> &mdash; edit the model, tune the
-                admin resource, restyle the screens. Grit generates opinions, not a cage. See the{' '}
-                <Link href="/docs/concepts/generated-files">Generated File Map</Link> for exactly
-                what each command writes.
-              </Callout>
+                  />
+                  <p className="text-muted-foreground leading-relaxed mt-4">
+                    Refresh the admin panel and your <strong>Posts</strong> resource is there with a
+                    working table and form.
+                  </p>
+                  <Callout type="escape" title="Escape hatch">
+                    Everything generated is <strong>your code</strong> &mdash; edit the model, tune the
+                    admin resource, restyle the screens. Grit generates opinions, not a cage. See the{' '}
+                    <Link href="/docs/concepts/generated-files">Generated File Map</Link> for exactly
+                    what each command writes.
+                  </Callout>
+                </Step>
+              </Steps>
 
               <PageHelp
                 faqs={[

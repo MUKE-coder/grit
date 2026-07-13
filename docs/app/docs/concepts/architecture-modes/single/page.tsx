@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { Files, Folder, File } from '@/components/files'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/architecture-modes/single')
@@ -119,53 +120,59 @@ export default function SingleArchitecturePage() {
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">main.go</code>{' '}
                 sits at the root.
               </p>
-              <CodeBlock language="bash" filename="myapp/" code={`myapp/
-\u251c\u2500\u2500 main.go                           # Entry point with go:embed frontend/dist/*
-\u251c\u2500\u2500 go.mod                            # Module: myapp (not myapp/apps/api)
-\u251c\u2500\u2500 go.sum
-\u251c\u2500\u2500 .env
-\u251c\u2500\u2500 .env.example
-\u251c\u2500\u2500 .gitignore
-\u251c\u2500\u2500 .prettierrc
-\u251c\u2500\u2500 .prettierignore
-\u251c\u2500\u2500 docker-compose.yml                # PostgreSQL, Redis, MinIO, Mailhog
-\u251c\u2500\u2500 docker-compose.prod.yml
-\u251c\u2500\u2500 grit.json                         # architecture: "single", frontend: "tanstack"
-\u251c\u2500\u2500 Makefile                          # make dev, make build, make deploy
-\u251c\u2500\u2500 .claude/skills/grit/
-\u2502   \u251c\u2500\u2500 SKILL.md                      # Tailored to single architecture
-\u2502   \u2514\u2500\u2500 reference.md
-\u251c\u2500\u2500 internal/                         # ALL Go backend code
-\u2502   \u251c\u2500\u2500 config/config.go
-\u2502   \u251c\u2500\u2500 database/db.go
-\u2502   \u251c\u2500\u2500 models/                       # // grit:models
-\u2502   \u251c\u2500\u2500 handlers/
-\u2502   \u251c\u2500\u2500 services/
-\u2502   \u251c\u2500\u2500 middleware/
-\u2502   \u251c\u2500\u2500 routes/routes.go              # // grit:handlers, grit:routes:*
-\u2502   \u251c\u2500\u2500 mail/
-\u2502   \u251c\u2500\u2500 storage/
-\u2502   \u251c\u2500\u2500 jobs/
-\u2502   \u251c\u2500\u2500 cache/
-\u2502   \u251c\u2500\u2500 ai/
-\u2502   \u2514\u2500\u2500 auth/totp.go
-\u2514\u2500\u2500 frontend/                         # React + Vite + TanStack Router
-    \u251c\u2500\u2500 package.json
-    \u251c\u2500\u2500 vite.config.ts                # Proxy /api \u2192 localhost:8080
-    \u251c\u2500\u2500 tailwind.config.ts
-    \u251c\u2500\u2500 tsconfig.json
-    \u251c\u2500\u2500 index.html
-    \u2514\u2500\u2500 src/
-        \u251c\u2500\u2500 main.tsx
-        \u251c\u2500\u2500 routes/                   # TanStack Router file-based routes
-        \u2502   \u251c\u2500\u2500 __root.tsx
-        \u2502   \u251c\u2500\u2500 index.tsx
-        \u2502   \u2514\u2500\u2500 ...
-        \u251c\u2500\u2500 components/
-        \u251c\u2500\u2500 hooks/
-        \u251c\u2500\u2500 lib/
-        \u251c\u2500\u2500 schemas/                  # Zod schemas (inline, not shared package)
-        \u2514\u2500\u2500 types/                    # TypeScript types (inline)`} />
+              <Files title="myapp/">
+                <File name="main.go" comment="Entry point with go:embed frontend/dist/*" />
+                <File name="go.mod" comment="Module: myapp (not myapp/apps/api)" />
+                <File name="go.sum" />
+                <File name=".env" />
+                <File name=".env.example" />
+                <File name=".gitignore" />
+                <File name=".prettierrc" />
+                <File name=".prettierignore" />
+                <File name="docker-compose.yml" comment="PostgreSQL, Redis, MinIO, Mailhog" />
+                <File name="docker-compose.prod.yml" />
+                <File name="grit.json" comment={'architecture: "single", frontend: "tanstack"'} />
+                <File name="Makefile" comment="make dev, make build, make deploy" />
+                <Folder name=".claude/skills/grit" defaultOpen>
+                  <File name="SKILL.md" comment="Tailored to single architecture" />
+                  <File name="reference.md" />
+                </Folder>
+                <Folder name="internal" comment="ALL Go backend code" defaultOpen>
+                  <File name="config/config.go" />
+                  <File name="database/db.go" />
+                  <Folder name="models" comment="// grit:models" />
+                  <Folder name="handlers" />
+                  <Folder name="services" />
+                  <Folder name="middleware" />
+                  <File name="routes/routes.go" comment="// grit:handlers, grit:routes:*" />
+                  <Folder name="mail" />
+                  <Folder name="storage" />
+                  <Folder name="jobs" />
+                  <Folder name="cache" />
+                  <Folder name="ai" />
+                  <File name="auth/totp.go" />
+                </Folder>
+                <Folder name="frontend" comment="React + Vite + TanStack Router" defaultOpen>
+                  <File name="package.json" />
+                  <File name="vite.config.ts" comment="Proxy /api \u2192 localhost:8080" />
+                  <File name="tailwind.config.ts" />
+                  <File name="tsconfig.json" />
+                  <File name="index.html" />
+                  <Folder name="src" defaultOpen>
+                    <File name="main.tsx" />
+                    <Folder name="routes" comment="TanStack Router file-based routes" defaultOpen>
+                      <File name="__root.tsx" />
+                      <File name="index.tsx" />
+                      <File name="..." icon={<span className="inline-block h-3.5 w-3.5 shrink-0" />} />
+                    </Folder>
+                    <Folder name="components" />
+                    <Folder name="hooks" />
+                    <Folder name="lib" />
+                    <Folder name="schemas" comment="Zod schemas (inline, not shared package)" />
+                    <Folder name="types" comment="TypeScript types (inline)" />
+                  </Folder>
+                </Folder>
+              </Files>
             </div>
 
             {/* Directory Explanation */}

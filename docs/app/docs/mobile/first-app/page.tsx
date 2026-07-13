@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { Steps, Step } from '@/components/steps'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/mobile/first-app')
@@ -39,14 +40,9 @@ export default function MobileFirstAppPage() {
               </p>
             </div>
 
+            <Steps>
             {/* Step 1 */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  1
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">Scaffold the Project</h2>
-              </div>
+            <Step title="Scaffold the Project">
               <div className="prose-grit mb-4">
                 <p>
                   Create a mobile project. This gives you a Go API in <code>apps/api</code>, an
@@ -56,16 +52,10 @@ export default function MobileFirstAppPage() {
               </div>
               <CodeBlock terminal code={`grit new notes-app --mobile
 cd notes-app`} className="mb-0 glow-purple-sm" />
-            </div>
+            </Step>
 
             {/* Step 2 */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  2
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">Generate the Note Resource</h2>
-              </div>
+            <Step title="Generate the Note Resource">
               <div className="prose-grit mb-4">
                 <p>
                   One command generates the full stack for a resource — Go model, service,
@@ -92,16 +82,10 @@ apps/expo/app/notes/edit/[id].tsx             # edit screen
 apps/expo/components/resource-forms/notes-form.tsx   # shared form
 
 # and a "Notes" card is injected into app/(tabs)/explore.tsx (the More tab)`} className="mb-0" />
-            </div>
+            </Step>
 
             {/* Step 3 */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  3
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">Migrate and Seed</h2>
-              </div>
+            <Step title="Migrate and Seed">
               <div className="prose-grit mb-4">
                 <p>
                   Create the <code>notes</code> table and seed the built-in admin account so you
@@ -117,16 +101,10 @@ grit seed`} className="mb-0" />
                   <code>USER</code>) — the admin account is an <code>ADMIN</code>.
                 </p>
               </div>
-            </div>
+            </Step>
 
             {/* Step 4 */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  4
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">Run It</h2>
-              </div>
+            <Step title="Run It">
               <div className="prose-grit mb-4">
                 <p>
                   Start the API in one terminal and Expo in another, then scan the QR code with
@@ -145,16 +123,10 @@ grit start expo          # Metro + QR code`} className="mb-4" />
                   generator added. You are now on the generated list screen.
                 </p>
               </div>
-            </div>
+            </Step>
 
             {/* Step 5: Tour */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  5
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">Tour the Generated Screens</h2>
-              </div>
+            <Step title="Tour the Generated Screens">
               <div className="prose-grit mb-4">
                 <p>
                   Every screen is real and navigable — a complete create / read / update /
@@ -209,16 +181,10 @@ export function useCreateNote() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notes"] }),
   });
 }`} className="mb-0" />
-            </div>
+            </Step>
 
             {/* Step 6: Make it yours */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  6
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">Make It Yours</h2>
-              </div>
+            <Step title="Make It Yours">
               <div className="prose-grit mb-0">
                 <p>
                   The generated screens are a starting point, not a cage. Restyle the list rows,
@@ -230,7 +196,8 @@ export function useCreateNote() {
                   to update.
                 </p>
               </div>
-            </div>
+            </Step>
+            </Steps>
 
             {/* Nav */}
             <div className="flex items-center justify-between pt-6 border-t border-border/30">

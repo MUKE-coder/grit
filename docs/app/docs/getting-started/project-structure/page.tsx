@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
-import { CodeBlock } from '@/components/code-block'
+import { Files, Folder, File } from '@/components/files'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/getting-started/project-structure')
@@ -41,26 +41,27 @@ export default function ProjectStructurePage() {
 
             {/* Full Tree */}
             <div className="mb-10">
-              <CodeBlock filename="monorepo root" code={`myapp/
-├── .env                        # Environment variables
-├── .env.example                # Template with documentation
-├── .env.cloud.example          # Cloud-only setup (no Docker)
-├── .gitignore                  # Git ignore rules
-├── docker-compose.yml          # Dev: PostgreSQL, Redis, MinIO, Mailhog
-├── docker-compose.prod.yml     # Production: multi-stage builds
-├── grit.config.ts              # Grit framework configuration
-├── package.json                # Root package.json (workspace scripts)
-├── pnpm-workspace.yaml         # pnpm workspace definition
-├── turbo.json                  # Turborepo task configuration
-├── README.md                   # Project documentation
-│
-├── apps/
-│   ├── api/                    # Go backend (Gin + GORM)
-│   ├── web/                    # Next.js main frontend
-│   └── admin/                  # Next.js admin panel
-│
-└── packages/
-    └── shared/                 # Shared Zod schemas, TS types, constants`} />
+              <Files title="myapp/">
+                <File name=".env" comment="Environment variables" />
+                <File name=".env.example" comment="Template with documentation" />
+                <File name=".env.cloud.example" comment="Cloud-only setup (no Docker)" />
+                <File name=".gitignore" comment="Git ignore rules" />
+                <File name="docker-compose.yml" comment="Dev: PostgreSQL, Redis, MinIO, Mailhog" />
+                <File name="docker-compose.prod.yml" comment="Production: multi-stage builds" />
+                <File name="grit.config.ts" comment="Grit framework configuration" />
+                <File name="package.json" comment="Root package.json (workspace scripts)" />
+                <File name="pnpm-workspace.yaml" comment="pnpm workspace definition" />
+                <File name="turbo.json" comment="Turborepo task configuration" />
+                <File name="README.md" comment="Project documentation" />
+                <Folder name="apps" defaultOpen>
+                  <Folder name="api" comment="Go backend (Gin + GORM)" />
+                  <Folder name="web" comment="Next.js main frontend" />
+                  <Folder name="admin" comment="Next.js admin panel" />
+                </Folder>
+                <Folder name="packages" defaultOpen>
+                  <Folder name="shared" comment="Shared Zod schemas, TS types, constants" />
+                </Folder>
+              </Files>
             </div>
 
             <div className="prose-grit">
@@ -99,51 +100,66 @@ export default function ProjectStructurePage() {
             </div>
 
             <div className="mb-4">
-              <CodeBlock filename="apps/api/" code={`apps/api/
-├── go.mod                      # Go module definition
-├── go.sum                      # Dependency checksums
-├── Dockerfile                  # Multi-stage production build
-├── .air.toml                   # Hot reload configuration
-│
-├── cmd/
-│   └── server/
-│       └── main.go             # Entry point: init config, DB, router, start server
-│
-└── internal/
-    ├── config/
-    │   └── config.go           # Load .env, parse config struct
-    ├── database/
-    │   └── database.go         # GORM connection, auto-migration
-    ├── models/
-    │   ├── user.go             # User model (built-in)
-    │   └── post.go             # Generated models go here
-    ├── handlers/
-    │   ├── auth.go             # Auth endpoints (login, register, etc.)
-    │   ├── user.go             # User CRUD endpoints
-    │   └── post.go             # Generated handlers go here
-    ├── services/
-    │   ├── auth.go             # JWT generation, token validation
-    │   ├── user.go             # User business logic
-    │   └── post.go             # Generated services go here
-    ├── middleware/
-    │   ├── auth.go             # JWT validation, role-based access
-    │   ├── cors.go             # CORS configuration
-    │   └── logger.go           # Structured JSON logging
-    ├── routes/
-    │   └── routes.go           # Route registration (all endpoints)
-    ├── cache/
-    │   └── cache.go            # Redis caching service
-    ├── storage/
-    │   └── storage.go          # S3/R2/MinIO file storage
-    ├── mail/
-    │   ├── mailer.go           # Resend email service
-    │   └── templates/          # HTML email templates
-    ├── jobs/
-    │   └── jobs.go             # Asynq background job queue
-    ├── cron/
-    │   └── cron.go             # Asynq cron scheduler
-    └── ai/
-        └── ai.go               # AI integration (Vercel AI Gateway — one key, many models)`} />
+              <Files title="apps/api/">
+                <File name="go.mod" comment="Go module definition" />
+                <File name="go.sum" comment="Dependency checksums" />
+                <File name="Dockerfile" comment="Multi-stage production build" />
+                <File name=".air.toml" comment="Hot reload configuration" />
+                <Folder name="cmd" defaultOpen>
+                  <Folder name="server" defaultOpen>
+                    <File name="main.go" comment="Entry point: init config, DB, router, start server" />
+                  </Folder>
+                </Folder>
+                <Folder name="internal" defaultOpen>
+                  <Folder name="config" defaultOpen>
+                    <File name="config.go" comment="Load .env, parse config struct" />
+                  </Folder>
+                  <Folder name="database" defaultOpen>
+                    <File name="database.go" comment="GORM connection, auto-migration" />
+                  </Folder>
+                  <Folder name="models" defaultOpen>
+                    <File name="user.go" comment="User model (built-in)" />
+                    <File name="post.go" comment="Generated models go here" highlight />
+                  </Folder>
+                  <Folder name="handlers" defaultOpen>
+                    <File name="auth.go" comment="Auth endpoints (login, register, etc.)" />
+                    <File name="user.go" comment="User CRUD endpoints" />
+                    <File name="post.go" comment="Generated handlers go here" highlight />
+                  </Folder>
+                  <Folder name="services" defaultOpen>
+                    <File name="auth.go" comment="JWT generation, token validation" />
+                    <File name="user.go" comment="User business logic" />
+                    <File name="post.go" comment="Generated services go here" highlight />
+                  </Folder>
+                  <Folder name="middleware" defaultOpen>
+                    <File name="auth.go" comment="JWT validation, role-based access" />
+                    <File name="cors.go" comment="CORS configuration" />
+                    <File name="logger.go" comment="Structured JSON logging" />
+                  </Folder>
+                  <Folder name="routes" defaultOpen>
+                    <File name="routes.go" comment="Route registration (all endpoints)" />
+                  </Folder>
+                  <Folder name="cache" defaultOpen>
+                    <File name="cache.go" comment="Redis caching service" />
+                  </Folder>
+                  <Folder name="storage" defaultOpen>
+                    <File name="storage.go" comment="S3/R2/MinIO file storage" />
+                  </Folder>
+                  <Folder name="mail" defaultOpen>
+                    <File name="mailer.go" comment="Resend email service" />
+                    <Folder name="templates" comment="HTML email templates" />
+                  </Folder>
+                  <Folder name="jobs" defaultOpen>
+                    <File name="jobs.go" comment="Asynq background job queue" />
+                  </Folder>
+                  <Folder name="cron" defaultOpen>
+                    <File name="cron.go" comment="Asynq cron scheduler" />
+                  </Folder>
+                  <Folder name="ai" defaultOpen>
+                    <File name="ai.go" comment="AI integration (Vercel AI Gateway — one key, many models)" />
+                  </Folder>
+                </Folder>
+              </Files>
             </div>
 
             <div className="prose-grit mb-10">
@@ -167,35 +183,38 @@ export default function ProjectStructurePage() {
             </div>
 
             <div className="mb-4">
-              <CodeBlock filename="apps/web/" code={`apps/web/
-├── package.json
-├── next.config.ts
-├── tailwind.config.ts
-├── Dockerfile
-│
-├── app/
-│   ├── layout.tsx              # Root layout with providers
-│   ├── page.tsx                # Landing page
-│   ├── (auth)/                 # Auth route group (no layout)
-│   │   ├── login/page.tsx
-│   │   ├── register/page.tsx
-│   │   └── forgot-password/page.tsx
-│   └── (dashboard)/            # Protected routes
-│       ├── layout.tsx          # Dashboard layout (sidebar + navbar)
-│       └── dashboard/page.tsx  # Main dashboard
-│
-├── components/
-│   ├── ui/                     # shadcn/ui components
-│   └── shared/                 # App-specific components
-│
-├── hooks/
-│   ├── use-auth.ts             # Auth hooks (login, register, logout, me)
-│   └── use-posts.ts            # Generated resource hooks
-│
-└── lib/
-    ├── api-client.ts           # Axios instance with JWT interceptor
-    ├── auth.ts                 # Auth utilities (token storage)
-    └── utils.ts                # Utility functions`} />
+              <Files title="apps/web/">
+                <File name="package.json" />
+                <File name="next.config.ts" />
+                <File name="tailwind.config.ts" />
+                <File name="Dockerfile" />
+                <Folder name="app" defaultOpen>
+                  <File name="layout.tsx" comment="Root layout with providers" />
+                  <File name="page.tsx" comment="Landing page" />
+                  <Folder name="(auth)" comment="Auth route group (no layout)" defaultOpen>
+                    <File name="login/page.tsx" />
+                    <File name="register/page.tsx" />
+                    <File name="forgot-password/page.tsx" />
+                  </Folder>
+                  <Folder name="(dashboard)" comment="Protected routes" defaultOpen>
+                    <File name="layout.tsx" comment="Dashboard layout (sidebar + navbar)" />
+                    <File name="dashboard/page.tsx" comment="Main dashboard" />
+                  </Folder>
+                </Folder>
+                <Folder name="components" defaultOpen>
+                  <Folder name="ui" comment="shadcn/ui components" />
+                  <Folder name="shared" comment="App-specific components" />
+                </Folder>
+                <Folder name="hooks" defaultOpen>
+                  <File name="use-auth.ts" comment="Auth hooks (login, register, logout, me)" />
+                  <File name="use-posts.ts" comment="Generated resource hooks" highlight />
+                </Folder>
+                <Folder name="lib" defaultOpen>
+                  <File name="api-client.ts" comment="Axios instance with JWT interceptor" />
+                  <File name="auth.ts" comment="Auth utilities (token storage)" />
+                  <File name="utils.ts" comment="Utility functions" />
+                </Folder>
+              </Files>
             </div>
 
             <div className="prose-grit mb-10">
@@ -218,44 +237,50 @@ export default function ProjectStructurePage() {
             </div>
 
             <div className="mb-4">
-              <CodeBlock filename="apps/admin/" code={`apps/admin/
-├── package.json
-├── next.config.ts
-├── tailwind.config.ts
-│
-├── app/
-│   ├── layout.tsx              # Admin layout with sidebar
-│   ├── page.tsx                # Dashboard with widgets
-│   └── resources/
-│       ├── users/page.tsx      # User management page
-│       └── posts/page.tsx      # Generated resource pages
-│
-├── components/
-│   ├── layout/
-│   │   ├── admin-layout.tsx    # Admin shell
-│   │   ├── sidebar.tsx         # Collapsible sidebar
-│   │   └── navbar.tsx          # Top navigation bar
-│   ├── tables/
-│   │   ├── data-table.tsx      # Server-side paginated table
-│   │   ├── columns.tsx         # Column definitions
-│   │   └── filters.tsx         # Table filters
-│   ├── forms/
-│   │   ├── form-builder.tsx    # Dynamic form renderer
-│   │   ├── fields/             # Field type components
-│   │   └── form-modal.tsx      # Modal form wrapper
-│   └── widgets/
-│       ├── stats-card.tsx      # Stat number + trend
-│       ├── chart-widget.tsx    # Recharts wrapper
-│       └── recent-activity.tsx # Activity feed
-│
-├── hooks/
-│   ├── use-auth.ts             # Admin auth hooks
-│   └── use-posts.ts            # Generated resource hooks
-│
-└── resources/                  # Resource definitions (THE MAGIC)
-    ├── index.ts                # Resource registry
-    ├── users.ts                # User resource config
-    └── posts.ts                # Generated resource configs`} />
+              <Files title="apps/admin/">
+                <File name="package.json" />
+                <File name="next.config.ts" />
+                <File name="tailwind.config.ts" />
+                <Folder name="app" defaultOpen>
+                  <File name="layout.tsx" comment="Admin layout with sidebar" />
+                  <File name="page.tsx" comment="Dashboard with widgets" />
+                  <Folder name="resources" defaultOpen>
+                    <File name="users/page.tsx" comment="User management page" />
+                    <File name="posts/page.tsx" comment="Generated resource pages" highlight />
+                  </Folder>
+                </Folder>
+                <Folder name="components" defaultOpen>
+                  <Folder name="layout" defaultOpen>
+                    <File name="admin-layout.tsx" comment="Admin shell" />
+                    <File name="sidebar.tsx" comment="Collapsible sidebar" />
+                    <File name="navbar.tsx" comment="Top navigation bar" />
+                  </Folder>
+                  <Folder name="tables" defaultOpen>
+                    <File name="data-table.tsx" comment="Server-side paginated table" />
+                    <File name="columns.tsx" comment="Column definitions" />
+                    <File name="filters.tsx" comment="Table filters" />
+                  </Folder>
+                  <Folder name="forms" defaultOpen>
+                    <File name="form-builder.tsx" comment="Dynamic form renderer" />
+                    <Folder name="fields" comment="Field type components" />
+                    <File name="form-modal.tsx" comment="Modal form wrapper" />
+                  </Folder>
+                  <Folder name="widgets" defaultOpen>
+                    <File name="stats-card.tsx" comment="Stat number + trend" />
+                    <File name="chart-widget.tsx" comment="Recharts wrapper" />
+                    <File name="recent-activity.tsx" comment="Activity feed" />
+                  </Folder>
+                </Folder>
+                <Folder name="hooks" defaultOpen>
+                  <File name="use-auth.ts" comment="Admin auth hooks" />
+                  <File name="use-posts.ts" comment="Generated resource hooks" highlight />
+                </Folder>
+                <Folder name="resources" comment="Resource definitions (THE MAGIC)" defaultOpen>
+                  <File name="index.ts" comment="Resource registry" />
+                  <File name="users.ts" comment="User resource config" />
+                  <File name="posts.ts" comment="Generated resource configs" highlight />
+                </Folder>
+              </Files>
             </div>
 
             <div className="prose-grit mb-10">
@@ -279,22 +304,23 @@ export default function ProjectStructurePage() {
             </div>
 
             <div className="mb-4">
-              <CodeBlock filename="packages/shared/" code={`packages/shared/
-├── package.json
-│
-├── schemas/                    # Zod validation schemas
-│   ├── user.ts                 # User create/update schemas
-│   ├── post.ts                 # Generated schemas
-│   └── index.ts                # Re-exports all schemas
-│
-├── types/                      # TypeScript types
-│   ├── user.ts                 # User type + API response types
-│   ├── post.ts                 # Generated types
-│   ├── api.ts                  # Pagination, error, response types
-│   └── index.ts                # Re-exports all types
-│
-└── constants/
-    └── index.ts                # Roles, API routes, config constants`} />
+              <Files title="packages/shared/">
+                <File name="package.json" />
+                <Folder name="schemas" comment="Zod validation schemas" defaultOpen>
+                  <File name="user.ts" comment="User create/update schemas" />
+                  <File name="post.ts" comment="Generated schemas" highlight />
+                  <File name="index.ts" comment="Re-exports all schemas" />
+                </Folder>
+                <Folder name="types" comment="TypeScript types" defaultOpen>
+                  <File name="user.ts" comment="User type + API response types" />
+                  <File name="post.ts" comment="Generated types" highlight />
+                  <File name="api.ts" comment="Pagination, error, response types" />
+                  <File name="index.ts" comment="Re-exports all types" />
+                </Folder>
+                <Folder name="constants" defaultOpen>
+                  <File name="index.ts" comment="Roles, API routes, config constants" />
+                </Folder>
+              </Files>
             </div>
 
             <div className="prose-grit mb-10">

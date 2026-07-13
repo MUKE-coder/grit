@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { Files, Folder, File } from '@/components/files'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/architecture-modes/api-only')
@@ -110,51 +111,61 @@ export default function ApiOnlyArchitecturePage() {
                 plus root-level config files. No frontend directories, no packages directory,
                 no TypeScript configuration.
               </p>
-              <CodeBlock language="bash" filename="myapp/" code={`myapp/
-\u251c\u2500\u2500 apps/
-\u2502   \u2514\u2500\u2500 api/
-\u2502       \u251c\u2500\u2500 Dockerfile
-\u2502       \u251c\u2500\u2500 go.mod                    # Module: myapp/apps/api
-\u2502       \u251c\u2500\u2500 go.sum
-\u2502       \u251c\u2500\u2500 cmd/
-\u2502       \u2502   \u251c\u2500\u2500 server/main.go        # API entry point
-\u2502       \u2502   \u251c\u2500\u2500 migrate/main.go       # Run migrations
-\u2502       \u2502   \u2514\u2500\u2500 seed/main.go          # Seed database
-\u2502       \u2514\u2500\u2500 internal/                 # All Go backend code
-\u2502           \u251c\u2500\u2500 config/config.go
-\u2502           \u251c\u2500\u2500 database/db.go
-\u2502           \u251c\u2500\u2500 models/               # // grit:models
-\u2502           \u2502   \u251c\u2500\u2500 user.go
-\u2502           \u2502   \u2514\u2500\u2500 upload.go
-\u2502           \u251c\u2500\u2500 handlers/
-\u2502           \u2502   \u251c\u2500\u2500 auth_handler.go
-\u2502           \u2502   \u251c\u2500\u2500 upload_handler.go
-\u2502           \u2502   \u2514\u2500\u2500 user_handler.go
-\u2502           \u251c\u2500\u2500 services/
-\u2502           \u2502   \u251c\u2500\u2500 auth_service.go
-\u2502           \u2502   \u251c\u2500\u2500 upload_service.go
-\u2502           \u2502   \u2514\u2500\u2500 user_service.go
-\u2502           \u251c\u2500\u2500 middleware/
-\u2502           \u2502   \u251c\u2500\u2500 auth.go
-\u2502           \u2502   \u251c\u2500\u2500 cors.go
-\u2502           \u2502   \u251c\u2500\u2500 logger.go
-\u2502           \u2502   \u2514\u2500\u2500 cache.go
-\u2502           \u251c\u2500\u2500 routes/routes.go      # // grit:handlers, grit:routes:*
-\u2502           \u251c\u2500\u2500 mail/
-\u2502           \u251c\u2500\u2500 storage/
-\u2502           \u251c\u2500\u2500 jobs/
-\u2502           \u251c\u2500\u2500 cache/
-\u2502           \u251c\u2500\u2500 ai/
-\u2502           \u2514\u2500\u2500 auth/totp.go
-\u251c\u2500\u2500 .env
-\u251c\u2500\u2500 .env.example
-\u251c\u2500\u2500 .gitignore
-\u251c\u2500\u2500 docker-compose.yml                # PostgreSQL, Redis, MinIO, Mailhog
-\u251c\u2500\u2500 docker-compose.prod.yml
-\u251c\u2500\u2500 grit.json                         # architecture: "api"
-\u2514\u2500\u2500 .claude/skills/grit/              # Tailored \u2014 no frontend rules
-    \u251c\u2500\u2500 SKILL.md
-    \u2514\u2500\u2500 reference.md`} />
+              <Files title="myapp/">
+                <Folder name="apps" defaultOpen>
+                  <Folder name="api" defaultOpen>
+                    <File name="Dockerfile" />
+                    <File name="go.mod" comment="Module: myapp/apps/api" />
+                    <File name="go.sum" />
+                    <Folder name="cmd" defaultOpen>
+                      <File name="server/main.go" comment="API entry point" />
+                      <File name="migrate/main.go" comment="Run migrations" />
+                      <File name="seed/main.go" comment="Seed database" />
+                    </Folder>
+                    <Folder name="internal" comment="All Go backend code" defaultOpen>
+                      <File name="config/config.go" />
+                      <File name="database/db.go" />
+                      <Folder name="models" comment="// grit:models" defaultOpen>
+                        <File name="user.go" />
+                        <File name="upload.go" />
+                      </Folder>
+                      <Folder name="handlers" defaultOpen>
+                        <File name="auth_handler.go" />
+                        <File name="upload_handler.go" />
+                        <File name="user_handler.go" />
+                      </Folder>
+                      <Folder name="services" defaultOpen>
+                        <File name="auth_service.go" />
+                        <File name="upload_service.go" />
+                        <File name="user_service.go" />
+                      </Folder>
+                      <Folder name="middleware" defaultOpen>
+                        <File name="auth.go" />
+                        <File name="cors.go" />
+                        <File name="logger.go" />
+                        <File name="cache.go" />
+                      </Folder>
+                      <File name="routes/routes.go" comment="// grit:handlers, grit:routes:*" />
+                      <Folder name="mail" />
+                      <Folder name="storage" />
+                      <Folder name="jobs" />
+                      <Folder name="cache" />
+                      <Folder name="ai" />
+                      <File name="auth/totp.go" />
+                    </Folder>
+                  </Folder>
+                </Folder>
+                <File name=".env" />
+                <File name=".env.example" />
+                <File name=".gitignore" />
+                <File name="docker-compose.yml" comment="PostgreSQL, Redis, MinIO, Mailhog" />
+                <File name="docker-compose.prod.yml" />
+                <File name="grit.json" comment={'architecture: "api"'} />
+                <Folder name=".claude/skills/grit" comment="Tailored \u2014 no frontend rules" defaultOpen>
+                  <File name="SKILL.md" />
+                  <File name="reference.md" />
+                </Folder>
+              </Files>
             </div>
 
             {/* Directory Explanation */}

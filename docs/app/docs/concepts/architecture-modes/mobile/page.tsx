@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { Files, Folder, File } from '@/components/files'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/architecture-modes/mobile')
@@ -113,66 +114,77 @@ export default function MobileArchitecturePage() {
                 and shared types in{' '}
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">packages/shared/</code>.
               </p>
-              <CodeBlock language="bash" filename="myapp/" code={`myapp/
-\u251c\u2500\u2500 apps/
-\u2502   \u251c\u2500\u2500 api/                          # Go backend (same as other architectures)
-\u2502   \u2502   \u251c\u2500\u2500 go.mod                    # Module: myapp/apps/api
-\u2502   \u2502   \u251c\u2500\u2500 go.sum
-\u2502   \u2502   \u251c\u2500\u2500 Dockerfile
-\u2502   \u2502   \u251c\u2500\u2500 cmd/
-\u2502   \u2502   \u2502   \u251c\u2500\u2500 server/main.go
-\u2502   \u2502   \u2502   \u251c\u2500\u2500 migrate/main.go
-\u2502   \u2502   \u2502   \u2514\u2500\u2500 seed/main.go
-\u2502   \u2502   \u2514\u2500\u2500 internal/                 # Full Go backend
-\u2502   \u2502       \u251c\u2500\u2500 config/
-\u2502   \u2502       \u251c\u2500\u2500 database/
-\u2502   \u2502       \u251c\u2500\u2500 models/
-\u2502   \u2502       \u251c\u2500\u2500 handlers/
-\u2502   \u2502       \u251c\u2500\u2500 services/
-\u2502   \u2502       \u251c\u2500\u2500 middleware/
-\u2502   \u2502       \u251c\u2500\u2500 routes/
-\u2502   \u2502       \u251c\u2500\u2500 mail/
-\u2502   \u2502       \u251c\u2500\u2500 storage/
-\u2502   \u2502       \u251c\u2500\u2500 jobs/
-\u2502   \u2502       \u251c\u2500\u2500 cache/
-\u2502   \u2502       \u251c\u2500\u2500 ai/
-\u2502   \u2502       \u2514\u2500\u2500 auth/
-\u2502   \u2514\u2500\u2500 expo/                         # Expo React Native app
-\u2502       \u251c\u2500\u2500 package.json
-\u2502       \u251c\u2500\u2500 app.json                  # Expo configuration
-\u2502       \u251c\u2500\u2500 babel.config.js
-\u2502       \u251c\u2500\u2500 tsconfig.json
-\u2502       \u251c\u2500\u2500 app/                      # Expo Router screens
-\u2502       \u2502   \u251c\u2500\u2500 _layout.tsx           # Root layout
-\u2502       \u2502   \u251c\u2500\u2500 login.tsx             # Login screen
-\u2502       \u2502   \u251c\u2500\u2500 register.tsx          # Register screen
-\u2502       \u2502   \u2514\u2500\u2500 (tabs)/               # Tab navigation
-\u2502       \u2502       \u251c\u2500\u2500 _layout.tsx       # Tab bar layout
-\u2502       \u2502       \u251c\u2500\u2500 index.tsx         # Home tab
-\u2502       \u2502       \u251c\u2500\u2500 profile.tsx       # Profile tab
-\u2502       \u2502       \u2514\u2500\u2500 settings.tsx      # Settings tab
-\u2502       \u251c\u2500\u2500 components/               # React Native components
-\u2502       \u251c\u2500\u2500 hooks/                    # useAuth, useQuery hooks
-\u2502       \u251c\u2500\u2500 lib/                      # API client, SecureStore helpers
-\u2502       \u2514\u2500\u2500 assets/                   # Images, fonts
-\u251c\u2500\u2500 packages/
-\u2502   \u2514\u2500\u2500 shared/                       # Shared types + schemas
-\u2502       \u251c\u2500\u2500 package.json
-\u2502       \u251c\u2500\u2500 tsconfig.json
-\u2502       \u251c\u2500\u2500 schemas/                  # Zod validation schemas
-\u2502       \u251c\u2500\u2500 types/                    # TypeScript interfaces
-\u2502       \u2514\u2500\u2500 constants/                # API routes, config
-\u251c\u2500\u2500 .env
-\u251c\u2500\u2500 .env.example
-\u251c\u2500\u2500 .gitignore
-\u251c\u2500\u2500 docker-compose.yml                # PostgreSQL, Redis, MinIO, Mailhog
-\u251c\u2500\u2500 docker-compose.prod.yml
-\u251c\u2500\u2500 turbo.json
-\u251c\u2500\u2500 pnpm-workspace.yaml
-\u251c\u2500\u2500 grit.json                         # architecture: "mobile"
-\u2514\u2500\u2500 .claude/skills/grit/
-    \u251c\u2500\u2500 SKILL.md
-    \u2514\u2500\u2500 reference.md`} />
+              <Files title="myapp/">
+                <Folder name="apps" defaultOpen>
+                  <Folder name="api" comment="Go backend (same as other architectures)" defaultOpen>
+                    <File name="go.mod" comment="Module: myapp/apps/api" />
+                    <File name="go.sum" />
+                    <File name="Dockerfile" />
+                    <Folder name="cmd" defaultOpen>
+                      <File name="server/main.go" />
+                      <File name="migrate/main.go" />
+                      <File name="seed/main.go" />
+                    </Folder>
+                    <Folder name="internal" comment="Full Go backend" defaultOpen>
+                      <Folder name="config" />
+                      <Folder name="database" />
+                      <Folder name="models" />
+                      <Folder name="handlers" />
+                      <Folder name="services" />
+                      <Folder name="middleware" />
+                      <Folder name="routes" />
+                      <Folder name="mail" />
+                      <Folder name="storage" />
+                      <Folder name="jobs" />
+                      <Folder name="cache" />
+                      <Folder name="ai" />
+                      <Folder name="auth" />
+                    </Folder>
+                  </Folder>
+                  <Folder name="expo" comment="Expo React Native app" defaultOpen>
+                    <File name="package.json" />
+                    <File name="app.json" comment="Expo configuration" />
+                    <File name="babel.config.js" />
+                    <File name="tsconfig.json" />
+                    <Folder name="app" comment="Expo Router screens" defaultOpen>
+                      <File name="_layout.tsx" comment="Root layout" />
+                      <File name="login.tsx" comment="Login screen" />
+                      <File name="register.tsx" comment="Register screen" />
+                      <Folder name="(tabs)" comment="Tab navigation" defaultOpen>
+                        <File name="_layout.tsx" comment="Tab bar layout" />
+                        <File name="index.tsx" comment="Home tab" />
+                        <File name="profile.tsx" comment="Profile tab" />
+                        <File name="settings.tsx" comment="Settings tab" />
+                      </Folder>
+                    </Folder>
+                    <Folder name="components" comment="React Native components" />
+                    <Folder name="hooks" comment="useAuth, useQuery hooks" />
+                    <Folder name="lib" comment="API client, SecureStore helpers" />
+                    <Folder name="assets" comment="Images, fonts" />
+                  </Folder>
+                </Folder>
+                <Folder name="packages" defaultOpen>
+                  <Folder name="shared" comment="Shared types + schemas" defaultOpen>
+                    <File name="package.json" />
+                    <File name="tsconfig.json" />
+                    <Folder name="schemas" comment="Zod validation schemas" />
+                    <Folder name="types" comment="TypeScript interfaces" />
+                    <Folder name="constants" comment="API routes, config" />
+                  </Folder>
+                </Folder>
+                <File name=".env" />
+                <File name=".env.example" />
+                <File name=".gitignore" />
+                <File name="docker-compose.yml" comment="PostgreSQL, Redis, MinIO, Mailhog" />
+                <File name="docker-compose.prod.yml" />
+                <File name="turbo.json" />
+                <File name="pnpm-workspace.yaml" />
+                <File name="grit.json" comment={'architecture: "mobile"'} />
+                <Folder name=".claude/skills/grit" defaultOpen>
+                  <File name="SKILL.md" />
+                  <File name="reference.md" />
+                </Folder>
+              </Files>
             </div>
 
             {/* Directory Breakdown */}

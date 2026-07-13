@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from "@/components/code-block";
+import { Steps, Step } from "@/components/steps";
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/getting-started/quick-start')
@@ -76,16 +77,9 @@ export default function QuickStartPage() {
               ))}
             </div>
 
+            <Steps>
             {/* Step 1 */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  1
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Install the Grit CLI
-                </h2>
-              </div>
+            <Step title="Install the Grit CLI">
               <div className="prose-grit mb-4">
                 <p>
                   One line, works on every platform. The script detects an
@@ -125,18 +119,10 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                   to confirm you&apos;re on the latest release.
                 </p>
               </div>
-            </div>
+            </Step>
 
             {/* Step 2 */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  2
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Create a New Project
-                </h2>
-              </div>
+            <Step title="Create a New Project">
               <div className="prose-grit mb-4">
                 <p>
                   Scaffold a complete full-stack project with one command. This
@@ -195,18 +181,10 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                   scaffold into a non-empty directory.
                 </p>
               </div>
-            </div>
+            </Step>
 
             {/* Step 3 */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  3
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Start Infrastructure Services
-                </h2>
-              </div>
+            <Step title="Start Infrastructure Services">
               <div className="prose-grit mb-4">
                 <p>
                   Navigate into the project and start the Docker services. This
@@ -248,18 +226,10 @@ docker compose up -d`} className="mb-0 glow-purple-sm" />
                   (Redis) instead.
                 </blockquote>
               </div>
-            </div>
+            </Step>
 
             {/* Step 4 */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  4
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Install Deps & Set Up the Database
-                </h2>
-              </div>
+            <Step title="Install Deps & Set Up the Database">
               <div className="prose-grit mb-4">
                 <p>
                   Install the frontend dependencies once, then create your database
@@ -284,18 +254,10 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
                   model.
                 </blockquote>
               </div>
-            </div>
+            </Step>
 
             {/* Step 5 */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  5
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Run Your App
-                </h2>
-              </div>
+            <Step title="Run Your App">
               <div className="prose-grit mb-4">
                 <p>
                   One command starts the whole stack &mdash; the Go API, the web app,
@@ -367,18 +329,10 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
                   database visually with GORM Studio.
                 </p>
               </div>
-            </div>
+            </Step>
 
             {/* Step 6 */}
-            <div className="mb-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/15 text-sm font-mono font-semibold text-primary shrink-0">
-                  6
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  Generate a Resource
-                </h2>
-              </div>
+            <Step title="Generate a Resource">
               <div className="prose-grit mb-4">
                 <p>
                   Now for the magic. Generate a complete full-stack resource
@@ -437,7 +391,8 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
                   <Link href="/docs/concepts/generated-files" className="text-primary hover:underline">Generated File Map</Link>.)
                 </p>
               </div>
-            </div>
+            </Step>
+            </Steps>
 
             {/* Upgrade */}
             <div className="mb-10 rounded-xl border border-primary/20 bg-primary/5 p-5">
