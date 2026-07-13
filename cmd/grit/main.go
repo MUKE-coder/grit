@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.55.0"
+var version = "3.56.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -1037,7 +1037,10 @@ func findAPIDir() (string, error) {
 	}
 	apiDir := filepath.Join(root, "apps", "api")
 	if _, err := os.Stat(apiDir); os.IsNotExist(err) {
-		return "", fmt.Errorf("apps/api directory not found in %s", root)
+		// Single / api-only projects are flat: the Go API (and its cmd/migrate,
+		// cmd/seed entrypoints) lives at the project root. FindProjectRoot has
+		// already confirmed grit.json, so root is the API directory here.
+		return root, nil
 	}
 	return apiDir, nil
 }
@@ -1678,21 +1681,22 @@ func printSuccess(name string, opts scaffold.Options) {
 	if !opts.InPlace {
 		cyan.Printf("    cd %s\n", name)
 	}
-	cyan.Println("    docker compose up -d")
+	cyan.Println("    docker compose up -d      # Postgres, Redis, MinIO, Mailhog")
 
-	switch opts.Architecture {
-	case scaffold.ArchAPI:
-		cyan.Println("    cd apps/api && go run cmd/server/main.go")
-	case scaffold.ArchSingle:
-		cyan.Println("    cd frontend && pnpm install")
-		cyan.Println("    go run main.go")
-	default:
-		cyan.Println("    pnpm install")
-		cyan.Println("    pnpm dev")
+	if opts.Architecture != scaffold.ArchAPI {
+		cyan.Println("    pnpm install              # frontend deps (one-time)")
+	}
+	cyan.Println("    grit migrate              # create database tables")
+	cyan.Println("    grit seed                 # (optional) sample data")
+
+	if opts.Architecture == scaffold.ArchAPI {
+		cyan.Println("    grit start server         # run the API")
+	} else {
+		cyan.Println("    grit start                # run everything")
 	}
 
 	if opts.ShouldIncludeExpo() {
-		cyan.Println("    cd apps/expo && npx expo start")
+		cyan.Println("    grit start expo           # run the Expo app")
 	}
 
 	fmt.Println()

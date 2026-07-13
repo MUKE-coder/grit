@@ -28,6 +28,44 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.56.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.56.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Grit is the only CLI you need &mdash; in every architecture.</strong>{' '}
+                  <code>grit migrate</code>, <code>grit seed</code>, and{' '}
+                  <code>grit start server</code> now work in <strong>single</strong> and{' '}
+                  <strong>api-only</strong> projects too, not just the monorepo modes.
+                </p>
+                <p>
+                  Project detection now keys on <code>grit.json</code> (present in every mode)
+                  instead of requiring <code>turbo.json</code> + <code>apps/api</code>, and the
+                  API is located at the project root for flat layouts. No more{' '}
+                  <code>cd apps/api &amp;&amp; go run cmd/server/main.go</code>.
+                </p>
+                <p>
+                  The <code>grit new</code> success message now prints the real grit-first golden
+                  path &mdash; <code>docker compose up -d</code> &rarr; <code>pnpm install</code>{' '}
+                  &rarr; <code>grit migrate</code> &rarr; <code>grit seed</code> &rarr;{' '}
+                  <code>grit start</code> &mdash; and the docs &amp; courses were swept to match:
+                  no raw <code>go run</code> / <code>pnpm dev</code> / <code>cd apps/*</code> for
+                  running your app. A new{' '}
+                  <a href="/docs/getting-started/coming-from">Coming from Laravel / Django / Next</a>{' '}
+                  guide maps your muscle memory to Grit.
+                </p>
+                <p>
+                  Existing projects: <code>grit update</code> to pick up the CLI changes.
+                </p>
+              </div>
+            </div>
+
             {/* v3.55.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

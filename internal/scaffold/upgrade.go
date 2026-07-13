@@ -329,7 +329,12 @@ func FindProjectRoot() (string, error) {
 	}
 
 	for {
-		// A Grit project has turbo.json + apps/api directory
+		// grit.json is the universal project marker — present in every mode
+		// (single / api-only / monorepo). Monorepo modes also have turbo.json +
+		// apps/api, which we still accept as a fallback for older projects.
+		if fileExists(filepath.Join(dir, "grit.json")) {
+			return dir, nil
+		}
 		if fileExists(filepath.Join(dir, "turbo.json")) && dirExists(filepath.Join(dir, "apps", "api")) {
 			return dir, nil
 		}
@@ -341,7 +346,7 @@ func FindProjectRoot() (string, error) {
 		dir = parent
 	}
 
-	return "", fmt.Errorf("not inside a Grit project (no turbo.json + apps/api found)\n\nRun this command from your Grit project root or any subdirectory")
+	return "", fmt.Errorf("not inside a Grit project (no grit.json found)\n\nRun this command from your Grit project root or any subdirectory")
 }
 
 // readProjectName reads the project name from the root package.json.
