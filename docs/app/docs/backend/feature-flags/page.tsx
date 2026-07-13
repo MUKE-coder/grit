@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/feature-flags')
@@ -48,6 +49,29 @@ export default function FeatureFlagsPage() {
                   <code>flag.updated</code> realtime event so connected clients can
                   refetch.
                 </p>
+                <LaneFlow
+                  id="flags"
+                  lanes={['Your code', 'Flag Engine', 'Store & clients']}
+                  nodes={[
+                    { id: 'code', lane: 0, row: 1, title: 'engine.Enabled()', sub: 'your check', tone: 'cyan' },
+                    { id: 'engine', lane: 1, row: 1, title: 'Engine', sub: 'in-memory map', tone: 'primary' },
+                    { id: 'db', lane: 2, row: 0, title: 'flags table', sub: 'source of truth', tone: 'green' },
+                    { id: 'admin', lane: 2, row: 1, title: 'Admin write', sub: 'refresh now', tone: 'amber' },
+                    { id: 'clients', lane: 2, row: 2, title: 'Realtime', sub: 'flag.updated', tone: 'violet' },
+                  ]}
+                  edges={[
+                    { from: 'code', to: 'engine', label: 'read', tone: 'cyan' },
+                    { from: 'db', to: 'engine', label: 'load / 30s', tone: 'green' },
+                    { from: 'admin', to: 'engine', label: 'invalidate', tone: 'amber' },
+                    { from: 'engine', to: 'clients', label: 'broadcast', dashed: true, tone: 'violet' },
+                  ]}
+                  legend={[
+                    { tone: 'cyan', label: 'Read path (memory)' },
+                    { tone: 'amber', label: 'Admin write' },
+                    { tone: 'violet', label: 'Realtime push' },
+                  ]}
+                  caption="Reads hit an in-memory map; admin writes refresh instantly and broadcast to clients"
+                />
 
                 <CodeBlock
                   language="text"

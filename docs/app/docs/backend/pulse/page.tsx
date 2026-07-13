@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/pulse')
@@ -42,6 +43,26 @@ export default function PulsePage() {
                   After starting your API, the Pulse dashboard is available at{' '}
                   <code>/pulse/ui/</code> (default credentials: <code>admin</code> / <code>pulse</code>).
                 </p>
+                <LaneFlow
+                  id="pulse"
+                  lanes={['Every request', 'Pulse', 'You']}
+                  nodes={[
+                    { id: 'req', lane: 0, row: 0, title: 'HTTP request', sub: 'in / out', tone: 'blue' },
+                    { id: 'capture', lane: 1, row: 0, title: 'Pulse middleware', sub: 'timing · SQL · errors', tone: 'primary' },
+                    { id: 'buffer', lane: 1, row: 1, title: 'Ring buffer', sub: 'recent traffic', tone: 'cyan' },
+                    { id: 'ui', lane: 2, row: 0, title: 'Dashboard', sub: '/pulse/ui', tone: 'green' },
+                  ]}
+                  edges={[
+                    { from: 'req', to: 'capture', label: 'wraps', tone: 'blue' },
+                    { from: 'capture', to: 'buffer', tone: 'cyan' },
+                    { from: 'buffer', to: 'ui', label: 'view live', tone: 'green' },
+                  ]}
+                  legend={[
+                    { tone: 'primary', label: 'Capture middleware' },
+                    { tone: 'green', label: 'Live dashboard' },
+                  ]}
+                  caption="Drops into the router — every request is captured and shown live at /pulse/ui"
+                />
 
                 <div className="overflow-x-auto mb-6">
                   <table className="w-full text-sm">

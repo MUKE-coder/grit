@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/response-format')
@@ -30,6 +31,28 @@ export default function ResponseFormatPage() {
             </div>
 
             <div className="prose-grit">
+              <LaneFlow
+                id="envelope"
+                lanes={['Handler outcome', 'JSON envelope']}
+                nodes={[
+                  { id: 'ok', lane: 0, row: 0, title: 'Success', sub: '2xx', tone: 'green' },
+                  { id: 'fail', lane: 0, row: 2, title: 'Error', sub: '4xx / 5xx', tone: 'rose' },
+                  { id: 'single', lane: 1, row: 0, title: '{ data, message }', sub: 'single item', tone: 'cyan' },
+                  { id: 'list', lane: 1, row: 1, title: '{ data, meta }', sub: 'paginated list', tone: 'blue' },
+                  { id: 'err', lane: 1, row: 2, title: '{ error }', sub: 'code · message · details', tone: 'rose' },
+                ]}
+                edges={[
+                  { from: 'ok', to: 'single', tone: 'cyan' },
+                  { from: 'ok', to: 'list', label: 'returns', tone: 'blue' },
+                  { from: 'fail', to: 'err', tone: 'rose' },
+                ]}
+                legend={[
+                  { tone: 'green', label: 'Success' },
+                  { tone: 'rose', label: 'Error' },
+                ]}
+                caption="Every response is one of these three envelopes — predictable shapes for every client"
+              />
+
               {/* ── Success (Single Item) ─────────────────────────────── */}
               <h2 id="success-single">Success Response (Single Item)</h2>
               <p>

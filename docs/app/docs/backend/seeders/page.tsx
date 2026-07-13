@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/seeders')
@@ -45,6 +46,29 @@ export default function SeedersPage() {
                   seeder is always easy to find and edit &mdash; including the built-in
                   users and blogs.
                 </p>
+                <LaneFlow
+                  id="seeders"
+                  lanes={['Seed() runner', 'Per-resource seeders', 'Database']}
+                  nodes={[
+                    { id: 'runner', lane: 0, row: 1, title: 'Seed(db)', sub: 'the runner', tone: 'primary' },
+                    { id: 'users', lane: 1, row: 0, title: 'SeedUsers', sub: 'built-in', tone: 'cyan' },
+                    { id: 'blogs', lane: 1, row: 1, title: 'SeedBlogs', sub: 'built-in', tone: 'cyan' },
+                    { id: 'yours', lane: 1, row: 2, title: 'SeedProduct', sub: 'yours', tone: 'amber' },
+                    { id: 'db', lane: 2, row: 1, title: 'PostgreSQL', sub: 'idempotent upserts', tone: 'green' },
+                  ]}
+                  edges={[
+                    { from: 'runner', to: 'users', tone: 'cyan' },
+                    { from: 'runner', to: 'blogs', label: 'calls', tone: 'cyan' },
+                    { from: 'runner', to: 'yours', tone: 'amber' },
+                    { from: 'blogs', to: 'db', label: 'upsert', tone: 'green' },
+                  ]}
+                  legend={[
+                    { tone: 'primary', label: 'Runner' },
+                    { tone: 'cyan', label: 'Built-in seeders' },
+                    { tone: 'green', label: 'Database' },
+                  ]}
+                  caption="One runner calls a Seed<Resource> per file — safe to run repeatedly"
+                />
 
                 <CodeBlock
                   language="text"

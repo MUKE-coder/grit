@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/webhooks')
@@ -47,23 +48,32 @@ export default function WebhooksPage() {
                   runs the same seven steps for every source:
                 </p>
 
-                <CodeBlock
-                  language="text"
-                  filename="POST /webhooks/:provider"
-                  code={`  provider ping
-       │
-       ▼
-  1. LookupProvider(":provider")     → 404 if unregistered
-  2. read raw body + flatten headers
-  3. Provider.Verify(secret, body, headers)   → 401 on signature mismatch
-  4. Provider.Extract(body, headers)          → (eventType, externalID)
-  5. INSERT webhook_events                     ┐ unique(provider, external_id)
-       │  duplicate? → status=skipped, 200 ────┘ (retry becomes a no-op)
-  6. webhooks.Dispatch(ctx, event)   → your On() handler runs
-  7. UPDATE status = processed | failed (+ handler_error, processed_at)
-       │
-       ▼
-  always 200 to a verified+stored event (so the provider stops retrying)`}
+                <LaneFlow
+                  id="webhook-pipe"
+                  lanes={['POST /webhooks/:provider']}
+                  nodes={[
+                    { id: 'lookup', lane: 0, row: 0, title: 'LookupProvider', sub: '404 if unregistered', tone: 'primary', badge: 1 },
+                    { id: 'read', lane: 0, row: 1, title: 'Read body + headers', sub: 'flatten', tone: 'primary', badge: 2 },
+                    { id: 'verify', lane: 0, row: 2, title: 'Verify signature', sub: '401 on mismatch', tone: 'amber', badge: 3 },
+                    { id: 'extract', lane: 0, row: 3, title: 'Extract event', sub: 'type + externalID', tone: 'primary', badge: 4 },
+                    { id: 'insert', lane: 0, row: 4, title: 'INSERT event', sub: 'unique → skip dupes', tone: 'cyan', badge: 5 },
+                    { id: 'dispatch', lane: 0, row: 5, title: 'Dispatch', sub: 'your On() handler', tone: 'green', badge: 6 },
+                    { id: 'update', lane: 0, row: 6, title: 'Update status', sub: 'processed | failed', tone: 'primary', badge: 7 },
+                  ]}
+                  edges={[
+                    { from: 'lookup', to: 'read', tone: 'primary' },
+                    { from: 'read', to: 'verify', tone: 'amber' },
+                    { from: 'verify', to: 'extract', tone: 'primary' },
+                    { from: 'extract', to: 'insert', tone: 'cyan' },
+                    { from: 'insert', to: 'dispatch', tone: 'green' },
+                    { from: 'dispatch', to: 'update', tone: 'primary' },
+                  ]}
+                  legend={[
+                    { tone: 'amber', label: 'Signature / parse (4xx)' },
+                    { tone: 'cyan', label: 'Idempotent store' },
+                    { tone: 'green', label: 'Your handler' },
+                  ]}
+                  caption="Verified + stored → always 200 so the provider stops retrying; handler failures replay from admin"
                 />
 
                 <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mt-4">

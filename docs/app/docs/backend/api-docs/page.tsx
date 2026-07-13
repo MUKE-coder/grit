@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/api-docs')
@@ -52,6 +53,31 @@ export default function APIDocsPage() {
                   routes file with a single function call. It introspects your Gin router and GORM models
                   at startup to generate a complete OpenAPI 3.1 specification.
                 </p>
+                <LaneFlow
+                  id="apidocs"
+                  lanes={['Your code', 'gin-docs', 'Docs UI']}
+                  nodes={[
+                    { id: 'routes', lane: 0, row: 0, title: 'Gin routes', sub: 'handlers', tone: 'cyan' },
+                    { id: 'models', lane: 0, row: 1, title: 'GORM models', sub: 'struct tags', tone: 'green' },
+                    { id: 'introspect', lane: 1, row: 0, title: 'Introspect', sub: 'zero annotations', tone: 'primary' },
+                    { id: 'spec', lane: 1, row: 1, title: 'OpenAPI 3.1', sub: 'generated spec', tone: 'violet' },
+                    { id: 'scalar', lane: 2, row: 0, title: 'Scalar UI', sub: '/docs', tone: 'blue' },
+                    { id: 'swagger', lane: 2, row: 1, title: 'Swagger UI', sub: 'alternative', tone: 'amber' },
+                  ]}
+                  edges={[
+                    { from: 'routes', to: 'introspect', tone: 'cyan' },
+                    { from: 'models', to: 'introspect', label: 'reads', tone: 'green' },
+                    { from: 'introspect', to: 'spec', tone: 'violet' },
+                    { from: 'spec', to: 'scalar', label: 'renders', tone: 'blue' },
+                    { from: 'spec', to: 'swagger', tone: 'amber' },
+                  ]}
+                  legend={[
+                    { tone: 'cyan', label: 'Your routes & models' },
+                    { tone: 'violet', label: 'OpenAPI spec' },
+                    { tone: 'blue', label: 'Interactive docs' },
+                  ]}
+                  caption="No @Summary comments — the spec is built from your routes and struct tags at startup"
+                />
 
                 <div className="rounded-xl border border-border/40 bg-accent/5 p-4 mb-6">
                   <p className="text-sm text-muted-foreground mb-0">

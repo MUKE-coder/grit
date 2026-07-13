@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/realtime')
@@ -48,6 +49,28 @@ export default function RealtimePage() {
                   dropped for that connection only, and it resyncs on its next REST
                   refetch.
                 </p>
+                <LaneFlow
+                  id="realtime"
+                  lanes={['Source', 'Hub (1 / process)', 'Connections (per user)']}
+                  nodes={[
+                    { id: 'event', lane: 0, row: 1, title: 'Event', sub: 'e.g. flag.updated', tone: 'green' },
+                    { id: 'hub', lane: 1, row: 1, title: 'Hub', sub: 'registry by user id', tone: 'primary' },
+                    { id: 'web', lane: 2, row: 0, title: 'Web', sub: 'send channel', tone: 'blue' },
+                    { id: 'mobile', lane: 2, row: 1, title: 'Mobile', sub: 'send channel', tone: 'cyan' },
+                    { id: 'desktop', lane: 2, row: 2, title: 'Desktop', sub: 'send channel', tone: 'violet' },
+                  ]}
+                  edges={[
+                    { from: 'event', to: 'hub', label: 'publish', tone: 'green' },
+                    { from: 'hub', to: 'web', label: 'broadcast', dashed: true, tone: 'blue' },
+                    { from: 'hub', to: 'mobile', dashed: true, tone: 'cyan' },
+                    { from: 'hub', to: 'desktop', dashed: true, tone: 'violet' },
+                  ]}
+                  legend={[
+                    { tone: 'primary', label: 'Hub' },
+                    { tone: 'blue', label: 'One connection per device' },
+                  ]}
+                  caption="One Hub fans an event to every connection a user holds; a slow client is dropped, never blocking"
+                />
 
                 <CodeBlock
                   language="text"
