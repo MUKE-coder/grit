@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, Rocket, Terminal, Layers, Zap, Shield, Code2, Database, Server, Gauge, CheckCircle2, X, Minus, Download, BookOpen, Globe, LayoutDashboard, Smartphone, Monitor, Newspaper } from 'lucide-react'
+import { ArrowRight, Rocket, Terminal, Layers, Zap, Shield, Code2, Database, Server, Gauge, CheckCircle2, X, Minus, Download, BookOpen, Boxes, Globe, LayoutDashboard, Smartphone, Monitor, Newspaper } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SiteHeader } from '@/components/site-header'
@@ -93,6 +93,7 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
                   { name: 'Triple — Web + Admin + API', href: '/docs/tech-kits/triple', cmd: 'grit new myapp --triple', icon: <LayoutDashboard className="h-5 w-5 text-primary" />, tint: 'bg-primary/15 border-primary/20', desc: 'The full monorepo: a Next.js web app, a Filament-like admin panel, and a Go API with shared types. The default for SaaS and internal tools.', featured: true },
+                  { name: 'Multi-Client — Everything at once', href: '/docs/concepts/architecture-modes/multi-client', cmd: 'grit new myapp --triple --mobile --desktop', icon: <Boxes className="h-5 w-5 text-fuchsia-400" />, tint: 'bg-fuchsia-500/10 border-fuchsia-500/15', desc: 'Web, admin, API, mobile (Expo) and desktop (Wails) — one Go backend, every client, scaffolded together.', featured: true },
                   { name: 'Single (Next.js)', href: '/docs/tech-kits/single', cmd: 'grit new myapp --single', icon: <Globe className="h-4.5 w-4.5 text-sky-400" />, tint: 'bg-sky-500/10 border-sky-500/10', desc: 'One Next.js app with API routes — a fast, self-contained full-stack app.' },
                   { name: 'Single + Vite', href: '/docs/tech-kits/single-vite', cmd: 'grit new myapp --single --vite', icon: <Zap className="h-4.5 w-4.5 text-amber-400" />, tint: 'bg-amber-500/10 border-amber-500/10', desc: 'A single-page app on Vite + TanStack Router, backed by its own lightweight API.' },
                   { name: 'Double — Web + API', href: '/docs/tech-kits/double', cmd: 'grit new myapp --double', icon: <Layers className="h-4.5 w-4.5 text-emerald-400" />, tint: 'bg-emerald-500/10 border-emerald-500/10', desc: 'A Next.js frontend and a standalone Go API with shared TypeScript types.' },

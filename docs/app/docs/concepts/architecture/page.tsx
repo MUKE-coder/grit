@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { Diagram, DiagramBox, DiagramRow, DiagramArrow, DiagramLegend, FileTree } from '@/components/diagram'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/architecture')
@@ -41,17 +42,21 @@ export default function ArchitecturePage() {
                   alongside the Next.js frontends and a shared TypeScript package. This structure allows
                   all apps to share validation schemas, types, and constants from a single source of truth.
                 </p>
-                <CodeBlock language="bash" filename="project structure" code={`myapp/
-\u251c\u2500\u2500 apps/
-\u2502   \u251c\u2500\u2500 api/                  # Go backend (Gin + GORM)
-\u2502   \u251c\u2500\u2500 web/                  # Next.js main frontend
-\u2502   \u2514\u2500\u2500 admin/                # Next.js admin panel
-\u251c\u2500\u2500 packages/
-\u2502   \u2514\u2500\u2500 shared/               # Zod schemas, TS types, constants
-\u251c\u2500\u2500 docker-compose.yml        # PostgreSQL, Redis, MinIO, Mailhog
-\u251c\u2500\u2500 turbo.json                # Monorepo task orchestration
-\u251c\u2500\u2500 pnpm-workspace.yaml       # Workspace definition
-\u2514\u2500\u2500 .env                      # Environment variables`} />
+                <FileTree
+                  title="myapp/"
+                  nodes={[
+                    { name: 'apps/', type: 'folder', depth: 0 },
+                    { name: 'api/', type: 'folder', depth: 1, comment: 'Go backend (Gin + GORM)' },
+                    { name: 'web/', type: 'folder', depth: 1, comment: 'Next.js main frontend' },
+                    { name: 'admin/', type: 'folder', depth: 1, comment: 'Next.js admin panel' },
+                    { name: 'packages/', type: 'folder', depth: 0 },
+                    { name: 'shared/', type: 'folder', depth: 1, comment: 'Zod schemas, TS types, constants' },
+                    { name: 'docker-compose.yml', type: 'file', depth: 0, comment: 'PostgreSQL, Redis, MinIO, Mailhog' },
+                    { name: 'turbo.json', type: 'file', depth: 0, comment: 'Monorepo task orchestration' },
+                    { name: 'pnpm-workspace.yaml', type: 'file', depth: 0, comment: 'Workspace definition' },
+                    { name: '.env', type: 'file', depth: 0, comment: 'Environment variables' },
+                  ]}
+                />
                 <p className="text-sm text-muted-foreground/60 mt-3">
                   Turborepo handles parallel builds and caching across apps. The <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">pnpm-workspace.yaml</code> file
                   links the frontend apps to the shared package, so importing <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">@shared/schemas</code> works
@@ -69,31 +74,44 @@ export default function ArchitecturePage() {
                   Next.js frontends, which talk to the Go API over REST. The Go API manages the
                   database, cache, file storage, job queue, and email.
                 </p>
-                <CodeBlock language="bash" filename="architecture" code={`\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
-\u2502                       BROWSER                          \u2502
-\u2502  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510   \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510   \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510  \u2502
-\u2502  \u2502  Web App    \u2502   \u2502 Admin Panel \u2502   \u2502 GORM Studio \u2502  \u2502
-\u2502  \u2502  :3000      \u2502   \u2502 :3001      \u2502   \u2502 :8080/studio\u2502  \u2502
-\u2502  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518   \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518   \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518  \u2502
-\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
-              \u2502              \u2502              \u2502
-         REST + JWT      REST + JWT      Direct
-              \u2502              \u2502              \u2502
-\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
-\u2502                    GO API (:8080)                        \u2502
-\u2502                                                          \u2502
-\u2502   Gin Router \u2192 Middleware \u2192 Handlers \u2192 Services          \u2502
-\u2502                                                          \u2502
-\u2502   Middleware: CORS, Auth (JWT), Logger, Recovery          \u2502
-\u2502   Handlers:  Thin HTTP layer, request/response only      \u2502
-\u2502   Services:  Business logic, DB queries, validation      \u2502
-\u2514\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
-     \u2502             \u2502           \u2502          \u2502          \u2502
-     \u2502             \u2502           \u2502          \u2502          \u2502
-\u250c\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2510  \u250c\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2510  \u250c\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2510  \u250c\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2510  \u250c\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2510
-\u2502PostgreSQL\u2502  \u2502  Redis   \u2502  \u2502 MinIO \u2502  \u2502 Resend \u2502  \u2502  Jobs  \u2502
-\u2502  :5432   \u2502  \u2502  :6379  \u2502  \u2502  :9000\u2502  \u2502  API  \u2502  \u2502 (asynq)\u2502
-\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`} />
+                <Diagram>
+                  {/* Clients */}
+                  <div className="mb-1 text-center text-[11px] font-mono uppercase tracking-wider text-muted-foreground/50">Browser</div>
+                  <DiagramRow>
+                    <DiagramBox tone="blue" title="Web App" sub=":3000" />
+                    <DiagramBox tone="blue" title="Admin Panel" sub=":3001" />
+                    <DiagramBox tone="cyan" title="GORM Studio" sub=":8080/studio" />
+                  </DiagramRow>
+
+                  <DiagramArrow label="REST + JWT" />
+
+                  {/* API */}
+                  <DiagramBox tone="primary" title="Go API \u2014 :8080" sub="Gin Router \u2192 Middleware \u2192 Handlers \u2192 Services" />
+                  <div className="mt-2 grid gap-2 sm:grid-cols-3 text-[11px] text-muted-foreground/80">
+                    <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2"><span className="font-semibold text-foreground/80">Middleware</span> \u2014 CORS, Auth (JWT), Logger, Recovery</div>
+                    <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2"><span className="font-semibold text-foreground/80">Handlers</span> \u2014 thin HTTP layer, request/response only</div>
+                    <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2"><span className="font-semibold text-foreground/80">Services</span> \u2014 business logic, DB queries, validation</div>
+                  </div>
+
+                  <DiagramArrow />
+
+                  {/* Data & services */}
+                  <DiagramRow>
+                    <DiagramBox tone="green" title="PostgreSQL" sub=":5434" />
+                    <DiagramBox tone="rose" title="Redis" sub=":6380" />
+                    <DiagramBox tone="amber" title="MinIO" sub=":9002" />
+                    <DiagramBox tone="violet" title="Resend" sub="email" />
+                    <DiagramBox tone="default" title="Jobs" sub="asynq" />
+                  </DiagramRow>
+
+                  <DiagramLegend
+                    items={[
+                      { tone: 'blue', label: 'Frontend (React)' },
+                      { tone: 'primary', label: 'Go API' },
+                      { tone: 'green', label: 'Data & services' },
+                    ]}
+                  />
+                </Diagram>
               </div>
 
               {/* Go API Layer */}
@@ -107,23 +125,26 @@ export default function ArchitecturePage() {
                   and services interact with the database through GORM models.
                 </p>
 
-                <CodeBlock language="bash" filename="apps/api/ structure" code={`apps/api/
-\u251c\u2500\u2500 cmd/server/main.go          # Entry point: loads config, connects DB,
-\u2502                              # registers routes, starts Gin server
-\u2514\u2500\u2500 internal/
-    \u251c\u2500\u2500 config/config.go        # Reads .env, returns typed config struct
-    \u251c\u2500\u2500 database/database.go    # GORM connection, auto-migration
-    \u251c\u2500\u2500 models/                 # GORM structs (User, Post, etc.)
-    \u251c\u2500\u2500 handlers/               # Gin handlers (HTTP request/response)
-    \u251c\u2500\u2500 services/               # Business logic (queries, validation)
-    \u251c\u2500\u2500 middleware/              # Auth, CORS, logging, rate limiting
-    \u251c\u2500\u2500 routes/routes.go        # Route registration + GORM Studio mount
-    \u251c\u2500\u2500 mail/                   # Resend email client + HTML templates
-    \u251c\u2500\u2500 storage/                # S3-compatible file storage abstraction
-    \u251c\u2500\u2500 jobs/                   # Background job queue (asynq + Redis)
-    \u251c\u2500\u2500 cron/                   # Cron scheduler (asynq scheduler)
-    \u251c\u2500\u2500 cache/                  # Redis caching layer
-    \u2514\u2500\u2500 ai/                     # AI provider abstraction (Claude, OpenAI)`} />
+                <FileTree
+                  title="apps/api/"
+                  nodes={[
+                    { name: 'cmd/server/main.go', type: 'file', depth: 0, comment: 'Entry point: config, DB, routes, Gin' },
+                    { name: 'internal/', type: 'folder', depth: 0 },
+                    { name: 'config/config.go', type: 'file', depth: 1, comment: 'Reads .env \u2192 typed config' },
+                    { name: 'database/database.go', type: 'file', depth: 1, comment: 'GORM connection' },
+                    { name: 'models/', type: 'folder', depth: 1, comment: 'GORM structs (User, Post, \u2026)' },
+                    { name: 'handlers/', type: 'folder', depth: 1, comment: 'Gin handlers (HTTP request/response)' },
+                    { name: 'services/', type: 'folder', depth: 1, comment: 'Business logic (queries, validation)' },
+                    { name: 'middleware/', type: 'folder', depth: 1, comment: 'Auth, CORS, logging, rate limiting' },
+                    { name: 'routes/routes.go', type: 'file', depth: 1, comment: 'Route registration + GORM Studio mount' },
+                    { name: 'mail/', type: 'folder', depth: 1, comment: 'Resend email client + templates' },
+                    { name: 'storage/', type: 'folder', depth: 1, comment: 'S3-compatible file storage' },
+                    { name: 'jobs/', type: 'folder', depth: 1, comment: 'Background jobs (asynq + Redis)' },
+                    { name: 'cron/', type: 'folder', depth: 1, comment: 'Cron scheduler' },
+                    { name: 'cache/', type: 'folder', depth: 1, comment: 'Redis caching layer' },
+                    { name: 'ai/', type: 'folder', depth: 1, comment: 'AI (Vercel AI Gateway)' },
+                  ]}
+                />
 
                 <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">
                   Handler / Service Separation
