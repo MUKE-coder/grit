@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -42,6 +43,16 @@ export default function ApiOfflineCourse() {
             In this course, you will learn to use TanStack Query for data fetching, implement
             pull-to-refresh and infinite scroll, and add offline support with persistent caching.
           </p>
+          <LaneFlow id="c-gmoffline" lanes={['Screens', 'TanStack Query', 'Network']}
+            nodes={[
+              { id: 'ui', lane: 0, row: 1, title: 'Screens', sub: 'lists', tone: 'primary' },
+              { id: 'rq', lane: 1, row: 1, title: 'TanStack Query', sub: 'cache + refetch', tone: 'cyan' },
+              { id: 'api', lane: 2, row: 0, title: 'Go API', sub: 'online', tone: 'green' },
+              { id: 'cache', lane: 2, row: 1, title: 'Persistent cache', sub: 'offline', tone: 'amber' },
+            ]}
+            edges={[{ from: 'ui', to: 'rq', tone: 'cyan' }, { from: 'rq', to: 'api', label: 'online', tone: 'green' }, { from: 'rq', to: 'cache', label: 'offline', dashed: true, tone: 'amber' }]}
+            legend={[{ tone: 'green', label: 'Online fetch' }, { tone: 'amber', label: 'Offline cache' }]}
+            caption="TanStack Query drives fetching, pull-to-refresh, and infinite scroll — with a persistent offline cache" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

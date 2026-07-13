@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -43,6 +44,16 @@ export default function NotificationsCourse() {
             registering device tokens to sending notifications from your Go API and handling them
             in the app.
           </p>
+          <LaneFlow id="c-gmnotif" lanes={['Device', 'Your Go API', 'Delivery']}
+            nodes={[
+              { id: 'reg', lane: 0, row: 0, title: 'Register token', sub: 'on launch', tone: 'cyan' },
+              { id: 'api', lane: 1, row: 1, title: 'Go API', sub: 'sends push', tone: 'primary' },
+              { id: 'expo', lane: 2, row: 0, title: 'Expo Push', sub: 'service', tone: 'blue' },
+              { id: 'device', lane: 2, row: 1, title: 'Notification', sub: 'even when closed', tone: 'green' },
+            ]}
+            edges={[{ from: 'reg', to: 'api', label: 'store token', tone: 'primary' }, { from: 'api', to: 'expo', label: 'send', tone: 'blue' }, { from: 'expo', to: 'device', label: 'deliver', tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'Sent from your API' }, { tone: 'green', label: 'Delivered anytime' }]}
+            caption="Register the device token, send from your Go API, and Expo delivers — even when the app is closed" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

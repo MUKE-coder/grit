@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -42,6 +43,16 @@ export default function BuildStoreCourse() {
             to build production binaries with EAS, distribute through TestFlight and the Play Store,
             prepare your store listing, and push updates without going through app review.
           </p>
+          <LaneFlow id="c-gmbuild" lanes={['Your app', 'EAS Build', 'Ship']}
+            nodes={[
+              { id: 'code', lane: 0, row: 1, title: 'Expo app', sub: 'JS + native', tone: 'primary' },
+              { id: 'eas', lane: 1, row: 1, title: 'EAS Build', sub: 'cloud compile', tone: 'cyan' },
+              { id: 'stores', lane: 2, row: 0, title: 'TestFlight / Play', sub: 'stores', tone: 'blue' },
+              { id: 'ota', lane: 2, row: 1, title: 'OTA update', sub: 'skip review', tone: 'green' },
+            ]}
+            edges={[{ from: 'code', to: 'eas', label: 'build', tone: 'cyan' }, { from: 'eas', to: 'stores', tone: 'blue' }, { from: 'code', to: 'ota', label: 'push', dashed: true, tone: 'green' }]}
+            legend={[{ tone: 'cyan', label: 'Cloud build' }, { tone: 'green', label: 'OTA updates' }]}
+            caption="EAS builds production binaries; ship via TestFlight and Play, then push OTA updates without review" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

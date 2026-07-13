@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -41,6 +42,16 @@ export default function CrudDataCourse() {
             In this course, you will learn how CRUD operations work in desktop apps, generate resources
             with the Grit code generator, understand Wails bindings in depth, and work with SQLite through GORM.
           </p>
+          <LaneFlow id="c-gdcrud" lanes={['grit generate', 'Wails bindings', 'SQLite']}
+            nodes={[
+              { id: 'gen', lane: 0, row: 1, title: 'generate resource', sub: 'CRUD', tone: 'primary' },
+              { id: 'bind', lane: 1, row: 1, title: 'Wails bindings', sub: 'typed Go calls', tone: 'cyan' },
+              { id: 'gorm', lane: 2, row: 0, title: 'GORM', sub: 'queries', tone: 'blue' },
+              { id: 'sqlite', lane: 2, row: 1, title: 'SQLite', sub: 'local DB', tone: 'green' },
+            ]}
+            edges={[{ from: 'gen', to: 'bind', label: 'wires', tone: 'cyan' }, { from: 'bind', to: 'gorm', tone: 'blue' }, { from: 'gorm', to: 'sqlite', tone: 'green' }]}
+            legend={[{ tone: 'cyan', label: 'Wails bindings' }, { tone: 'green', label: 'Local SQLite' }]}
+            caption="Generated CRUD calls Go through Wails bindings, straight to SQLite via GORM" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

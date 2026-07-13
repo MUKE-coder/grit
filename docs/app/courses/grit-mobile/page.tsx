@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, BookOpen, Clock, Trophy, Rocket, ShieldCheck, Cloud, Bell, Store } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
+import { LaneFlow } from '@/components/lane-flow'
 import { GridFrame } from '@/components/grid-frame'
 import type { Metadata } from 'next'
 
@@ -83,6 +84,15 @@ export default function GritMobileCourses() {
             Build cross-platform mobile apps with Go API + Expo + React Native.
             Each course is ~30 minutes with hands-on challenges you complete yourself.
           </p>
+          <LaneFlow id="c-gmidx" lanes={['1 · Setup', '2 · Build', '3 · App Store']}
+            nodes={[
+              { id: 'setup', lane: 0, row: 0, title: 'First app', sub: 'Expo + Go', tone: 'primary' },
+              { id: 'build', lane: 1, row: 0, title: 'Auth · offline · notifications', sub: 'features', tone: 'cyan' },
+              { id: 'store', lane: 2, row: 0, title: 'EAS build → stores', sub: 'ship', tone: 'green' },
+            ]}
+            edges={[{ from: 'setup', to: 'build', tone: 'cyan' }, { from: 'build', to: 'store', tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'First app' }, { tone: 'green', label: 'On the stores' }]}
+            caption="Five courses from a first Expo app to TestFlight and the Play Store" />
 
           {/* Stats */}
           <div className="flex flex-wrap gap-6">

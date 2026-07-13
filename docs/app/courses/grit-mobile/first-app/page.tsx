@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -43,6 +44,15 @@ export default function FirstMobileAppCourse() {
             Expo app work together. By the end, you will have a working mobile app connected to
             a live backend.
           </p>
+          <LaneFlow id="c-gmfirst" lanes={['1 · Scaffold', '2 · Run', '3 · Device']}
+            nodes={[
+              { id: 'new', lane: 0, row: 0, title: 'grit new --mobile', sub: 'API + Expo', tone: 'primary' },
+              { id: 'dev', lane: 1, row: 0, title: 'Run both', sub: 'API + Metro', tone: 'cyan' },
+              { id: 'device', lane: 2, row: 0, title: 'Device / emulator', sub: 'connected app', tone: 'green' },
+            ]}
+            edges={[{ from: 'new', to: 'dev', tone: 'cyan' }, { from: 'dev', to: 'device', label: 'connect', tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'Scaffold' }, { tone: 'green', label: 'Running on device' }]}
+            caption="Scaffold the API and Expo app, run both, and connect a real device or emulator" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

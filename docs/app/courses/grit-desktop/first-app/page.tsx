@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -42,6 +43,15 @@ export default function FirstDesktopAppCourse() {
             understand how Go functions are called directly from React, and run your app in dev mode.
             By the end, you will have a working desktop app with authentication, blog CRUD, and a SQLite database.
           </p>
+          <LaneFlow id="c-gdfirst" lanes={['1 · Scaffold', '2 · Bindings', '3 · Run']}
+            nodes={[
+              { id: 'new', lane: 0, row: 0, title: 'grit new-desktop', sub: 'Wails + Go', tone: 'primary' },
+              { id: 'bind', lane: 1, row: 0, title: 'Wails bindings', sub: 'Go ↔ React', tone: 'cyan' },
+              { id: 'run', lane: 2, row: 0, title: 'Dev mode', sub: 'auth · CRUD · SQLite', tone: 'green' },
+            ]}
+            edges={[{ from: 'new', to: 'bind', tone: 'cyan' }, { from: 'bind', to: 'run', label: 'launch', tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'Scaffold' }, { tone: 'green', label: 'Working app' }]}
+            caption="Scaffold a Wails app where React calls Go functions directly — auth, CRUD, and SQLite included" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

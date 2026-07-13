@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -42,6 +43,16 @@ export default function BuildCourse() {
             learn about platform targets, customize the app icon, optimize the file size,
             and understand how to distribute your app to users.
           </p>
+          <LaneFlow id="c-gdbuild" lanes={['Your app', 'wails build', 'Distribute']}
+            nodes={[
+              { id: 'code', lane: 0, row: 1, title: 'Desktop app', sub: 'Go + React', tone: 'primary' },
+              { id: 'build', lane: 1, row: 1, title: 'wails build', sub: 'per platform', tone: 'cyan' },
+              { id: 'exe', lane: 2, row: 0, title: 'Native binary', sub: 'custom icon', tone: 'blue' },
+              { id: 'dist', lane: 2, row: 1, title: 'Installer', sub: 'to users', tone: 'green' },
+            ]}
+            edges={[{ from: 'code', to: 'build', label: 'compile', tone: 'cyan' }, { from: 'build', to: 'exe', tone: 'blue' }, { from: 'build', to: 'dist', tone: 'green' }]}
+            legend={[{ tone: 'cyan', label: 'Per-platform' }, { tone: 'green', label: 'Distributed' }]}
+            caption="Compile to a native binary per platform — custom icon, optimized size — and distribute to users" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

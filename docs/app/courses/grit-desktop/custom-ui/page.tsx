@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -42,6 +43,17 @@ export default function CustomUICourse() {
             Frameless windows, custom title bars, sidebar navigation, dark theme CSS variables,
             shadcn/ui components, and resizable panels.
           </p>
+          <LaneFlow id="c-gdui" lanes={['Desktop shell', 'Customize every part']}
+            nodes={[
+              { id: 'app', lane: 0, row: 2, title: 'Your app', sub: 'native shell', tone: 'primary' },
+              { id: 'frame', lane: 1, row: 0, title: 'Frameless window', sub: 'custom title bar', tone: 'cyan' },
+              { id: 'nav', lane: 1, row: 1, title: 'Sidebar nav', sub: 'layout', tone: 'blue' },
+              { id: 'theme', lane: 1, row: 2, title: 'Dark theme', sub: 'CSS vars', tone: 'violet' },
+              { id: 'ui', lane: 1, row: 3, title: 'shadcn/ui', sub: 'components', tone: 'green' },
+            ]}
+            edges={[{ from: 'app', to: 'frame', tone: 'cyan' }, { from: 'app', to: 'nav', label: 'style', tone: 'blue' }, { from: 'app', to: 'theme', tone: 'violet' }, { from: 'app', to: 'ui', tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'Native shell' }, { tone: 'green', label: 'Fully yours' }]}
+            caption="Frameless windows, custom title bars, sidebar navigation, dark theme, and shadcn/ui — fully yours" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

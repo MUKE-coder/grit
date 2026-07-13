@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -42,6 +43,17 @@ export default function ExportCourse() {
             Excel spreadsheets, and CSV files. You{"'"}ll understand the export service, the download flow,
             and how to customize report templates.
           </p>
+          <LaneFlow id="c-gdexport" lanes={['Your data', 'Export service', 'Formats']}
+            nodes={[
+              { id: 'data', lane: 0, row: 1, title: 'Data', sub: 'rows', tone: 'primary' },
+              { id: 'svc', lane: 1, row: 1, title: 'Export service', sub: 'templates', tone: 'cyan' },
+              { id: 'pdf', lane: 2, row: 0, title: 'PDF', sub: 'documents', tone: 'blue' },
+              { id: 'xlsx', lane: 2, row: 1, title: 'Excel', sub: 'spreadsheets', tone: 'green' },
+              { id: 'csv', lane: 2, row: 2, title: 'CSV', sub: 'raw', tone: 'amber' },
+            ]}
+            edges={[{ from: 'data', to: 'svc', label: 'render', tone: 'cyan' }, { from: 'svc', to: 'pdf', tone: 'blue' }, { from: 'svc', to: 'xlsx', tone: 'green' }, { from: 'svc', to: 'csv', tone: 'amber' }]}
+            legend={[{ tone: 'cyan', label: 'One service' }, { tone: 'blue', label: 'PDF · Excel · CSV' }]}
+            caption="One export service turns your data into PDF documents, Excel spreadsheets, or CSV files" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -42,6 +43,16 @@ export default function AuthNavigationCourse() {
             no localStorage. In this course, you will learn how to store tokens securely, build login
             and logout flows, protect routes, and create tab and stack navigation with Expo Router.
           </p>
+          <LaneFlow id="c-gmauth" lanes={['Mobile auth', 'Built with']}
+            nodes={[
+              { id: 'auth', lane: 0, row: 1, title: 'Auth flow', sub: 'no cookies', tone: 'primary' },
+              { id: 'store', lane: 1, row: 0, title: 'SecureStore', sub: 'encrypted tokens', tone: 'cyan' },
+              { id: 'routes', lane: 1, row: 1, title: 'Protected routes', sub: 'guard', tone: 'blue' },
+              { id: 'nav', lane: 1, row: 2, title: 'Expo Router', sub: 'tabs + stack', tone: 'green' },
+            ]}
+            edges={[{ from: 'auth', to: 'store', tone: 'cyan' }, { from: 'auth', to: 'routes', label: 'uses', tone: 'blue' }, { from: 'auth', to: 'nav', tone: 'green' }]}
+            legend={[{ tone: 'cyan', label: 'Secure tokens' }, { tone: 'green', label: 'Native navigation' }]}
+            caption="No cookies on mobile — store tokens in SecureStore, guard routes, and navigate with Expo Router" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, BookOpen, Clock, Trophy, Monitor, Database, Palette, FileDown, Package } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
+import { LaneFlow } from '@/components/lane-flow'
 import { GridFrame } from '@/components/grid-frame'
 import type { Metadata } from 'next'
 
@@ -83,6 +84,15 @@ export default function GritDesktopCourses() {
             Each course is ~30 minutes with hands-on challenges you complete yourself.
             No videos, no lectures — just concepts, examples, and practice.
           </p>
+          <LaneFlow id="c-gdidx" lanes={['1 · Setup', '2 · Build', '3 · Distribute']}
+            nodes={[
+              { id: 'setup', lane: 0, row: 0, title: 'First app', sub: 'Wails + Go', tone: 'primary' },
+              { id: 'build', lane: 1, row: 0, title: 'CRUD · custom UI · export', sub: 'features', tone: 'cyan' },
+              { id: 'dist', lane: 2, row: 0, title: 'Build → installer', sub: 'distribute', tone: 'green' },
+            ]}
+            edges={[{ from: 'setup', to: 'build', tone: 'cyan' }, { from: 'build', to: 'dist', tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'First app' }, { tone: 'green', label: 'Distributable binary' }]}
+            caption="Five courses from a first Wails app to a distributable native binary" />
 
           {/* Stats */}
           <div className="flex flex-wrap gap-6">

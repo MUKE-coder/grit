@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, BookOpen, Clock, Trophy, BookMarked, Terminal, Wand2, ShieldCheck, LayoutDashboard, HardDrive, Mail, Sparkles, Rocket } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
+import { LaneFlow } from '@/components/lane-flow'
 import { GridFrame } from '@/components/grid-frame'
 import type { Metadata } from 'next'
 
@@ -119,6 +120,15 @@ export default function GritWebCourses() {
             Each course is ~30 minutes with hands-on challenges you complete yourself.
             No videos, no lectures — just concepts, examples, and practice.
           </p>
+          <LaneFlow id="c-gwidx" lanes={['1 · Learn', '2 · Build', '3 · Ship']}
+            nodes={[
+              { id: 'learn', lane: 0, row: 0, title: 'Introduction', sub: 'what & why', tone: 'primary' },
+              { id: 'build', lane: 1, row: 0, title: 'First app → generator → batteries', sub: 'hands-on', tone: 'cyan' },
+              { id: 'ship', lane: 2, row: 0, title: 'Deploy', sub: 'production', tone: 'green' },
+            ]}
+            edges={[{ from: 'learn', to: 'build', tone: 'cyan' }, { from: 'build', to: 'ship', tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'Concepts' }, { tone: 'green', label: 'Deployed app' }]}
+            caption="Nine ~30-minute courses take you from concepts to a deployed, production app" />
 
           {/* Stats */}
           <div className="flex flex-wrap gap-6">
