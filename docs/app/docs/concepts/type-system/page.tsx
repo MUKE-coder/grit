@@ -45,7 +45,7 @@ export default function TypeSystemPage() {
                 </p>
                 <Diagram>
                   <DiagramBox tone="primary" title="Go Struct" sub="apps/api/internal/models/post.go — source of truth" />
-                  <DiagramArrow label="grit generate \u00b7 grit sync" />
+                  <DiagramArrow label="grit generate · grit sync" />
                   <DiagramRow>
                     <DiagramBox tone="green" title="PostgreSQL Table" sub="GORM tags → auto-migrate" />
                     <DiagramBox tone="cyan" title="JSON over HTTP" sub="json tags → serialization" />

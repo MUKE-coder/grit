@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
-import { Diagram, DiagramBox, DiagramRow, DiagramArrow, DiagramLegend, FileTree } from '@/components/diagram'
+import { FileTree } from '@/components/diagram'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/architecture')
@@ -74,44 +75,43 @@ export default function ArchitecturePage() {
                   Next.js frontends, which talk to the Go API over REST. The Go API manages the
                   database, cache, file storage, job queue, and email.
                 </p>
-                <Diagram>
-                  {/* Clients */}
-                  <div className="mb-1 text-center text-[11px] font-mono uppercase tracking-wider text-muted-foreground/50">Browser</div>
-                  <DiagramRow>
-                    <DiagramBox tone="blue" title="Web App" sub=":3000" />
-                    <DiagramBox tone="blue" title="Admin Panel" sub=":3001" />
-                    <DiagramBox tone="cyan" title="GORM Studio" sub=":8080/studio" />
-                  </DiagramRow>
-
-                  <DiagramArrow label="REST + JWT" />
-
-                  {/* API */}
-                  <DiagramBox tone="primary" title="Go API — :8080" sub="Gin Router → Middleware → Handlers → Services" />
-                  <div className="mt-2 grid gap-2 sm:grid-cols-3 text-[11px] text-muted-foreground/80">
-                    <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2"><span className="font-semibold text-foreground/80">Middleware</span> — CORS, Auth (JWT), Logger, Recovery</div>
-                    <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2"><span className="font-semibold text-foreground/80">Handlers</span> — thin HTTP layer, request/response only</div>
-                    <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2"><span className="font-semibold text-foreground/80">Services</span> — business logic, DB queries, validation</div>
-                  </div>
-
-                  <DiagramArrow />
-
-                  {/* Data & services */}
-                  <DiagramRow>
-                    <DiagramBox tone="green" title="PostgreSQL" sub=":5434" />
-                    <DiagramBox tone="rose" title="Redis" sub=":6380" />
-                    <DiagramBox tone="amber" title="MinIO" sub=":9002" />
-                    <DiagramBox tone="violet" title="Resend" sub="email" />
-                    <DiagramBox tone="default" title="Jobs" sub="asynq" />
-                  </DiagramRow>
-
-                  <DiagramLegend
-                    items={[
-                      { tone: 'blue', label: 'Frontend (React)' },
-                      { tone: 'primary', label: 'Go API' },
-                      { tone: 'green', label: 'Data & services' },
-                    ]}
-                  />
-                </Diagram>
+                <LaneFlow
+                  id="arch"
+                  lanes={['Clients', 'Go API — :8080', 'Data & Services']}
+                  groups={[{ lane: 1, rows: [0, 3], label: 'Request pipeline', tone: 'primary' }]}
+                  nodes={[
+                    { id: 'web', lane: 0, row: 0, title: 'Web App', sub: ':3000', tone: 'blue' },
+                    { id: 'admin', lane: 0, row: 1, title: 'Admin Panel', sub: ':3001', tone: 'blue' },
+                    { id: 'studio', lane: 0, row: 2, title: 'GORM Studio', sub: '/studio', tone: 'cyan' },
+                    { id: 'gin', lane: 1, row: 0, title: 'Gin Router', sub: 'REST + JWT', tone: 'primary' },
+                    { id: 'mw', lane: 1, row: 1, title: 'Middleware', sub: 'CORS · Auth · Log', tone: 'primary' },
+                    { id: 'handlers', lane: 1, row: 2, title: 'Handlers', sub: 'HTTP layer', tone: 'primary' },
+                    { id: 'services', lane: 1, row: 3, title: 'Services', sub: 'business logic', tone: 'primary' },
+                    { id: 'pg', lane: 2, row: 0, title: 'PostgreSQL', sub: ':5434', tone: 'green' },
+                    { id: 'redis', lane: 2, row: 1, title: 'Redis', sub: ':6380', tone: 'rose' },
+                    { id: 'minio', lane: 2, row: 2, title: 'MinIO', sub: ':9002', tone: 'amber' },
+                    { id: 'resend', lane: 2, row: 3, title: 'Resend', sub: 'email', tone: 'violet' },
+                    { id: 'jobs', lane: 2, row: 4, title: 'Jobs', sub: 'asynq', tone: 'default' },
+                  ]}
+                  edges={[
+                    { from: 'web', to: 'gin', label: 'REST + JWT', tone: 'blue' },
+                    { from: 'admin', to: 'gin', tone: 'blue' },
+                    { from: 'gin', to: 'mw', tone: 'primary' },
+                    { from: 'mw', to: 'handlers', tone: 'primary' },
+                    { from: 'handlers', to: 'services', tone: 'primary' },
+                    { from: 'services', to: 'pg', label: 'query', tone: 'green' },
+                    { from: 'services', to: 'redis', label: 'cache', tone: 'rose' },
+                    { from: 'services', to: 'minio', label: 'files', tone: 'amber' },
+                    { from: 'services', to: 'resend', label: 'mail', tone: 'violet' },
+                    { from: 'services', to: 'jobs', label: 'enqueue', tone: 'default' },
+                  ]}
+                  legend={[
+                    { tone: 'blue', label: 'Frontend (React)' },
+                    { tone: 'primary', label: 'Go API' },
+                    { tone: 'green', label: 'Data & services' },
+                  ]}
+                  caption="Browser → Next.js → Go API → data layer"
+                />
               </div>
 
               {/* Go API Layer */}
