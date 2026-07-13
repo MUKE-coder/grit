@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { FileTree, type TreeNode } from '@/components/diagram'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/architecture-modes')
@@ -176,6 +177,30 @@ export default function ArchitectureModesPage() {
               that combines with any of them (except <code className="text-base font-mono bg-accent/50 px-1.5 py-0.5 rounded">--single</code>).
               Choose the one that fits your team, your deployment target, and the frameworks you already know.
             </p>
+            <LaneFlow
+              id="modes-overview"
+              lanes={['Clients — vary by mode', 'The constant: one Go API']}
+              nodes={[
+                { id: 'web', lane: 0, row: 0, title: 'Web app', sub: 'Next.js / Vite', tone: 'blue' },
+                { id: 'admin', lane: 0, row: 1, title: 'Admin panel', sub: 'role-gated', tone: 'cyan' },
+                { id: 'mobile', lane: 0, row: 2, title: 'Mobile', sub: 'Expo', tone: 'green' },
+                { id: 'desktop', lane: 0, row: 3, title: 'Desktop', sub: 'Wails', tone: 'violet' },
+                { id: 'api', lane: 1, row: 1, title: 'Go API', sub: 'Gin · GORM · batteries', tone: 'primary' },
+                { id: 'data', lane: 1, row: 2, title: 'Data & services', sub: 'Postgres · Redis · S3', tone: 'amber' },
+              ]}
+              edges={[
+                { from: 'web', to: 'api', label: 'REST + JWT', tone: 'blue' },
+                { from: 'admin', to: 'api', tone: 'cyan' },
+                { from: 'mobile', to: 'api', tone: 'green' },
+                { from: 'desktop', to: 'api', tone: 'violet' },
+                { from: 'api', to: 'data', tone: 'amber' },
+              ]}
+              legend={[
+                { tone: 'primary', label: 'Same in every mode' },
+                { tone: 'blue', label: 'Clients the mode includes' },
+              ]}
+              caption="Every mode ships the same Go API core — the mode just decides which clients come with it"
+            />
           </div>
 
           <div className="space-y-10">

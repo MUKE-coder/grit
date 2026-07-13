@@ -5,6 +5,7 @@ import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
 import { FileTree } from '@/components/diagram'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/architecture-modes/multi-client')
@@ -30,6 +31,38 @@ export default function MultiClientArchitecturePage() {
               in a single monorepo with shared types. The pattern real SaaS products
               use (Linear, Notion, Slack).
             </p>
+            <LaneFlow
+              id="multi-client"
+              lanes={['Clients', 'Go API — :8080', 'Data & Services']}
+              groups={[{ lane: 1, rows: [0, 2], label: 'Request pipeline', tone: 'primary' }]}
+              nodes={[
+                { id: 'mobile', lane: 0, row: 0, title: 'Expo app', sub: 'iOS / Android', tone: 'blue' },
+                { id: 'desktop', lane: 0, row: 1, title: 'Wails desktop', sub: 'native window', tone: 'violet' },
+                { id: 'web', lane: 0, row: 2, title: 'Web (optional)', sub: 'Next.js / Vite', tone: 'cyan' },
+                { id: 'router', lane: 1, row: 0, title: 'Gin Router', sub: 'REST + JWT', tone: 'primary' },
+                { id: 'mw', lane: 1, row: 1, title: 'Middleware', sub: 'Auth · Cache', tone: 'primary' },
+                { id: 'svc', lane: 1, row: 2, title: 'Service + GORM', sub: 'business logic', tone: 'primary' },
+                { id: 'pg', lane: 2, row: 0, title: 'PostgreSQL', sub: 'data', tone: 'green' },
+                { id: 'redis', lane: 2, row: 1, title: 'Redis', sub: 'cache + jobs', tone: 'rose' },
+                { id: 's3', lane: 2, row: 2, title: 'S3 / MinIO', sub: 'files', tone: 'amber' },
+              ]}
+              edges={[
+                { from: 'mobile', to: 'router', label: 'REST + JWT', tone: 'blue' },
+                { from: 'desktop', to: 'router', tone: 'violet' },
+                { from: 'web', to: 'router', tone: 'cyan' },
+                { from: 'router', to: 'mw', tone: 'primary' },
+                { from: 'mw', to: 'svc', tone: 'primary' },
+                { from: 'svc', to: 'pg', label: 'query', tone: 'green' },
+                { from: 'svc', to: 'redis', label: 'cache', tone: 'rose' },
+                { from: 'svc', to: 's3', label: 'files', tone: 'amber' },
+              ]}
+              legend={[
+                { tone: 'blue', label: 'Native clients' },
+                { tone: 'primary', label: 'Shared Go API' },
+                { tone: 'green', label: 'Data & services' },
+              ]}
+              caption="One Go API and one shared-types package feed the mobile app, the desktop app, and an optional web client"
+            />
             <p className="text-sm text-muted-foreground/70 mt-3">
               Added in v3.9.0 via the <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--desktop</code> flag.
             </p>
