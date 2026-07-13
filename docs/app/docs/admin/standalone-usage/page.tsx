@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/admin/standalone-usage')
@@ -28,6 +29,26 @@ export default function StandaloneUsagePage() {
                 and admin apps. These components are fully prop-driven and work independently of
                 the resource system.
               </p>
+              <LaneFlow
+                id="admin-standalone"
+                lanes={['Any page (web or admin)', 'Prop-driven components']}
+                nodes={[
+                  { id: 'page', lane: 0, row: 1, title: 'Your page', sub: 'pass props', tone: 'primary' },
+                  { id: 'fb', lane: 1, row: 0, title: 'FormBuilder', sub: 'fields + onSubmit', tone: 'cyan' },
+                  { id: 'fs', lane: 1, row: 1, title: 'FormStepper', sub: 'steps', tone: 'blue' },
+                  { id: 'dt', lane: 1, row: 2, title: 'DataTable', sub: 'columns + data', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'page', to: 'fb', tone: 'cyan' },
+                  { from: 'page', to: 'fs', label: 'props', tone: 'blue' },
+                  { from: 'page', to: 'dt', tone: 'green' },
+                ]}
+                legend={[
+                  { tone: 'primary', label: 'Your page' },
+                  { tone: 'cyan', label: 'No resource system needed' },
+                ]}
+                caption="The same components work outside the resource system — just pass props"
+              />
             </div>
 
             <div className="prose-grit">

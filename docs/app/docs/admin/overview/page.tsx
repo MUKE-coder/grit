@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/admin/overview')
@@ -28,6 +29,28 @@ export default function AdminOverviewPage() {
                 back-office from simple TypeScript definitions. Define your resources once and
                 get data tables, forms, dashboards, and navigation automatically.
               </p>
+              <LaneFlow
+                id="admin-overview"
+                lanes={['You define', 'Grit assembles the UI']}
+                nodes={[
+                  { id: 'def', lane: 0, row: 1, title: 'defineResource()', sub: 'one TS file', tone: 'primary' },
+                  { id: 'table', lane: 1, row: 0, title: 'Data table', sub: 'list + filters', tone: 'cyan' },
+                  { id: 'forms', lane: 1, row: 1, title: 'Forms', sub: 'create / edit', tone: 'blue' },
+                  { id: 'dash', lane: 1, row: 2, title: 'Dashboard', sub: 'widgets', tone: 'green' },
+                  { id: 'nav', lane: 1, row: 3, title: 'Sidebar nav', sub: 'auto-registered', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'def', to: 'table', tone: 'cyan' },
+                  { from: 'def', to: 'forms', label: 'generates', tone: 'blue' },
+                  { from: 'def', to: 'dash', tone: 'green' },
+                  { from: 'def', to: 'nav', tone: 'amber' },
+                ]}
+                legend={[
+                  { tone: 'primary', label: 'Your definition' },
+                  { tone: 'cyan', label: 'Generated admin UI' },
+                ]}
+                caption="Define a resource once — the table, forms, dashboard, and navigation come for free"
+              />
             </div>
 
             <div className="prose-grit">

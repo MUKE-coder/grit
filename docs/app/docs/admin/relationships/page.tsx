@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/admin/relationships')
@@ -29,6 +30,30 @@ export default function RelationshipsPage() {
                 junction tables. The code generator handles the Go model, API handlers with eager
                 loading, Zod schemas, TypeScript types, and admin form components automatically.
               </p>
+              <LaneFlow
+                id="admin-rel"
+                lanes={['Relationship', 'Generated across the stack']}
+                nodes={[
+                  { id: 'bt', lane: 0, row: 0, title: 'belongs_to', sub: 'category:belongs_to', tone: 'cyan' },
+                  { id: 'mtm', lane: 0, row: 3, title: 'many_to_many', sub: 'tags:many_to_many', tone: 'violet' },
+                  { id: 'fk', lane: 1, row: 0, title: 'FK column', sub: '<name>_id', tone: 'green' },
+                  { id: 'eager', lane: 1, row: 1, title: 'Eager loading', sub: 'Preload', tone: 'blue' },
+                  { id: 'join', lane: 1, row: 2, title: 'Join table', sub: 'GORM', tone: 'green' },
+                  { id: 'picker', lane: 1, row: 3, title: 'Admin picker', sub: 'searchable select', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'bt', to: 'fk', tone: 'green' },
+                  { from: 'bt', to: 'eager', label: 'preload', tone: 'blue' },
+                  { from: 'mtm', to: 'join', tone: 'green' },
+                  { from: 'mtm', to: 'picker', label: 'picker', tone: 'amber' },
+                ]}
+                legend={[
+                  { tone: 'cyan', label: 'belongs_to' },
+                  { tone: 'violet', label: 'many_to_many' },
+                  { tone: 'amber', label: 'Admin UI picker' },
+                ]}
+                caption="Declare a relationship — Grit builds the columns, eager loading, and the searchable picker"
+              />
             </div>
 
             <div className="prose-grit">

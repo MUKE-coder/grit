@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/admin/widgets')
@@ -28,6 +29,28 @@ export default function DashboardWidgetsPage() {
                 collection of widgets &mdash; stats cards, charts, and activity feeds &mdash;
                 assembled from your resource definitions and custom API endpoints.
               </p>
+              <LaneFlow
+                id="admin-widgets"
+                lanes={['Data sources', 'Dashboard widgets']}
+                nodes={[
+                  { id: 'res', lane: 0, row: 0, title: 'Resources', sub: 'row counts', tone: 'cyan' },
+                  { id: 'api', lane: 0, row: 2, title: 'Custom endpoints', sub: 'metrics', tone: 'blue' },
+                  { id: 'stats', lane: 1, row: 0, title: 'Stats cards', sub: 'KPIs', tone: 'primary' },
+                  { id: 'charts', lane: 1, row: 1, title: 'Charts', sub: 'trends', tone: 'green' },
+                  { id: 'feed', lane: 1, row: 2, title: 'Activity feed', sub: 'recent events', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'res', to: 'stats', label: 'count', tone: 'cyan' },
+                  { from: 'res', to: 'charts', tone: 'green' },
+                  { from: 'api', to: 'charts', tone: 'green' },
+                  { from: 'api', to: 'feed', label: 'stream', tone: 'amber' },
+                ]}
+                legend={[
+                  { tone: 'cyan', label: 'Resource counts' },
+                  { tone: 'blue', label: 'Custom endpoints' },
+                ]}
+                caption="Widgets assemble from resource counts and custom endpoints — stats, charts, and activity"
+              />
             </div>
 
             <div className="prose-grit">

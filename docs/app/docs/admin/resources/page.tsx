@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/admin/resources')
@@ -28,6 +29,28 @@ export default function ResourceDefinitionsPage() {
                 model once in TypeScript and get a complete admin interface &mdash; data table,
                 forms, filters, sidebar navigation, and dashboard widgets.
               </p>
+              <LaneFlow
+                id="admin-resource"
+                lanes={['Resource definition', 'Powers']}
+                nodes={[
+                  { id: 'res', lane: 0, row: 1, title: 'defineResource', sub: 'columns · fields · filters', tone: 'primary' },
+                  { id: 'table', lane: 1, row: 0, title: 'DataTable', sub: 'from columns', tone: 'cyan' },
+                  { id: 'form', lane: 1, row: 1, title: 'FormBuilder', sub: 'from fields', tone: 'blue' },
+                  { id: 'filter', lane: 1, row: 2, title: 'Filter bar', sub: 'from filters', tone: 'amber' },
+                  { id: 'nav', lane: 1, row: 3, title: 'Sidebar', sub: 'from label + icon', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'res', to: 'table', tone: 'cyan' },
+                  { from: 'res', to: 'form', label: 'feeds', tone: 'blue' },
+                  { from: 'res', to: 'filter', tone: 'amber' },
+                  { from: 'res', to: 'nav', tone: 'green' },
+                ]}
+                legend={[
+                  { tone: 'primary', label: 'One definition object' },
+                  { tone: 'cyan', label: 'Every admin surface' },
+                ]}
+                caption="Each part of the definition object feeds a different admin surface"
+              />
             </div>
 
             <div className="prose-grit">

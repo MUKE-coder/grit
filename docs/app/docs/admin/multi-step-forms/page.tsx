@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/admin/multi-step-forms')
@@ -28,6 +29,26 @@ export default function MultiStepFormsPage() {
                 resources with many fields &mdash; like employee onboarding, product creation, or
                 lead capture &mdash; by grouping related fields together with per-step validation.
               </p>
+              <LaneFlow
+                id="admin-wizard"
+                lanes={['Step 1', 'Step 2', 'Step 3', 'Done']}
+                nodes={[
+                  { id: 's1', lane: 0, row: 0, title: 'Basic info', sub: 'validate', tone: 'primary', badge: 1 },
+                  { id: 's2', lane: 1, row: 0, title: 'Details', sub: 'validate', tone: 'cyan', badge: 2 },
+                  { id: 's3', lane: 2, row: 0, title: 'Review', sub: 'validate', tone: 'blue', badge: 3 },
+                  { id: 'done', lane: 3, row: 0, title: 'Submit', sub: 'one payload', tone: 'green', badge: 4 },
+                ]}
+                edges={[
+                  { from: 's1', to: 's2', label: 'next', tone: 'cyan' },
+                  { from: 's2', to: 's3', label: 'next', tone: 'blue' },
+                  { from: 's3', to: 'done', label: 'submit', tone: 'green' },
+                ]}
+                legend={[
+                  { tone: 'primary', label: 'Per-step validation' },
+                  { tone: 'green', label: 'Single submit' },
+                ]}
+                caption="Each step validates before advancing; the wizard submits every step as one payload"
+              />
             </div>
 
             <div className="prose-grit">

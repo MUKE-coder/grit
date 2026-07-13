@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/admin/datatable')
@@ -29,6 +30,28 @@ export default function DataTablePage() {
                 cell renderers, row actions, and data export &mdash; all driven by your resource
                 definition.
               </p>
+              <LaneFlow
+                id="admin-datatable"
+                lanes={['Go API', 'DataTable', 'User sees']}
+                nodes={[
+                  { id: 'api', lane: 0, row: 1, title: 'GET /api/posts', sub: 'paginated JSON', tone: 'cyan' },
+                  { id: 'table', lane: 1, row: 1, title: 'DataTable', sub: 'sort · filter · search', tone: 'primary' },
+                  { id: 'rows', lane: 2, row: 0, title: 'Rows', sub: 'cell renderers', tone: 'blue' },
+                  { id: 'actions', lane: 2, row: 1, title: 'Row actions', sub: 'edit · delete', tone: 'amber' },
+                  { id: 'export', lane: 2, row: 2, title: 'Export', sub: 'CSV', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'api', to: 'table', label: 'server-side', tone: 'cyan' },
+                  { from: 'table', to: 'rows', tone: 'blue' },
+                  { from: 'table', to: 'actions', tone: 'amber' },
+                  { from: 'table', to: 'export', tone: 'green' },
+                ]}
+                legend={[
+                  { tone: 'cyan', label: 'Server-side query' },
+                  { tone: 'primary', label: 'DataTable' },
+                ]}
+                caption="Sorting, filtering, and pagination run server-side — the table just renders the current page"
+              />
             </div>
 
             <div className="prose-grit">

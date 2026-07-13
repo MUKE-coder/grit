@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/admin/forms')
@@ -29,6 +30,29 @@ export default function FormBuilderPage() {
                 layouts, and seamless create/edit mode switching &mdash; all without writing any
                 form JSX.
               </p>
+              <LaneFlow
+                id="admin-forms"
+                lanes={['Definition', 'FormBuilder', 'On submit']}
+                nodes={[
+                  { id: 'fields', lane: 0, row: 0, title: 'fields[]', sub: 'types + labels', tone: 'cyan' },
+                  { id: 'zod', lane: 0, row: 1, title: 'Zod schema', sub: 'validation rules', tone: 'violet' },
+                  { id: 'builder', lane: 1, row: 1, title: 'FormBuilder', sub: 'renders inputs', tone: 'primary' },
+                  { id: 'validate', lane: 2, row: 0, title: 'Validate', sub: 'inline errors', tone: 'amber' },
+                  { id: 'submit', lane: 2, row: 1, title: 'Create / Edit', sub: 'API mutation', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'fields', to: 'builder', tone: 'cyan' },
+                  { from: 'zod', to: 'builder', label: 'binds', tone: 'violet' },
+                  { from: 'builder', to: 'validate', tone: 'amber' },
+                  { from: 'builder', to: 'submit', tone: 'green' },
+                ]}
+                legend={[
+                  { tone: 'cyan', label: 'Field config' },
+                  { tone: 'violet', label: 'Zod validation' },
+                  { tone: 'green', label: 'Typed mutation' },
+                ]}
+                caption="Fields plus a Zod schema render a validated create/edit form — zero form JSX"
+              />
             </div>
 
             <div className="prose-grit">
