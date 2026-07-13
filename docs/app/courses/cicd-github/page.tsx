@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -40,6 +41,16 @@ export default function CICDGitHubCourse() {
             workflows Grit scaffolds, extend them with frontend tests, configure automated deployments,
             and set up branch protection for a professional development workflow.
           </p>
+          <LaneFlow id="c-cicd" lanes={['git push', 'GitHub Actions', 'Result']}
+            nodes={[
+              { id: 'push', lane: 0, row: 1, title: 'git push', sub: 'PR / main', tone: 'primary' },
+              { id: 'test', lane: 1, row: 0, title: 'Test', sub: 'go + vitest', tone: 'cyan' },
+              { id: 'build', lane: 1, row: 1, title: 'Build', sub: 'cross-platform', tone: 'blue' },
+              { id: 'deploy', lane: 2, row: 1, title: 'Deploy', sub: 'on main', tone: 'green' },
+            ]}
+            edges={[{ from: 'push', to: 'test', tone: 'cyan' }, { from: 'push', to: 'build', label: 'runs', tone: 'blue' }, { from: 'build', to: 'deploy', tone: 'green' }]}
+            legend={[{ tone: 'cyan', label: 'Test + build' }, { tone: 'green', label: 'Auto-deploy' }]}
+            caption="Every push runs tests and builds; merges to main deploy automatically" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

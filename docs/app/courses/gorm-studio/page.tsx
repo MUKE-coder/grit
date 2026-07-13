@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -42,6 +43,16 @@ export default function GormStudioCourse() {
             project. Browse tables, edit records, run SQL, export data, and generate Go models —
             all from your browser at <Code>/studio</Code>.
           </p>
+          <LaneFlow id="c-studio" lanes={['Your database', 'GORM Studio', 'You']}
+            nodes={[
+              { id: 'db', lane: 0, row: 1, title: 'Database', sub: 'all tables', tone: 'green' },
+              { id: 'studio', lane: 1, row: 1, title: 'GORM Studio', sub: 'embedded browser', tone: 'primary' },
+              { id: 'browse', lane: 2, row: 0, title: 'Browse rows', sub: 'no SQL', tone: 'cyan' },
+              { id: 'edit', lane: 2, row: 1, title: 'Edit inline', sub: 'CRUD', tone: 'blue' },
+            ]}
+            edges={[{ from: 'db', to: 'studio', label: 'reads', tone: 'primary' }, { from: 'studio', to: 'browse', tone: 'cyan' }, { from: 'studio', to: 'edit', tone: 'blue' }]}
+            legend={[{ tone: 'primary', label: 'Visual browser' }, { tone: 'cyan', label: 'No SQL needed' }]}
+            caption="Studio turns your database from a black box into a visual browser you can read and edit" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

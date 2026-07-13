@@ -3,6 +3,7 @@ import { ShieldCheck, Link2, Search, FileCheck } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -49,6 +50,16 @@ export default function AuditLogCourse() {
             makes the log tamper-evident: change one row in the database and the chain no
             longer verifies. This is the audit trail auditors actually trust.
           </p>
+          <LaneFlow id="c-audit" lanes={['Authenticated action', 'Audit log', 'Verification']}
+            nodes={[
+              { id: 'act', lane: 0, row: 1, title: 'User action', sub: 'create · update · delete', tone: 'primary' },
+              { id: 'entry', lane: 1, row: 1, title: 'Log entry', sub: 'hash(prev + this)', tone: 'cyan' },
+              { id: 'chain', lane: 2, row: 0, title: 'Hash chain', sub: 'each links the last', tone: 'blue' },
+              { id: 'verify', lane: 2, row: 1, title: 'Tamper check', sub: 'edit one → breaks', tone: 'green' },
+            ]}
+            edges={[{ from: 'act', to: 'entry', label: 'append', tone: 'cyan' }, { from: 'entry', to: 'chain', tone: 'blue' }, { from: 'chain', to: 'verify', tone: 'green' }]}
+            legend={[{ tone: 'cyan', label: 'Hash-chained' }, { tone: 'green', label: 'Tamper-evident' }]}
+            caption="Every action is hash-chained to the previous one — change a row and the chain stops verifying" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

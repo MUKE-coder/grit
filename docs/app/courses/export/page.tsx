@@ -3,6 +3,7 @@ import { FileSpreadsheet, Download, Gauge, Wand2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -48,6 +49,15 @@ export default function ExportCourse() {
             chunked <strong className="text-foreground">XLSX</strong> export at <Code>/export</Code> —
             built for constant memory.
           </p>
+          <LaneFlow id="c-export" lanes={['Any resource', 'Streaming export', 'File']}
+            nodes={[
+              { id: 'res', lane: 0, row: 1, title: 'Resource', sub: 'many rows', tone: 'primary' },
+              { id: 'stream', lane: 1, row: 1, title: 'Streaming export', sub: 'constant memory', tone: 'cyan' },
+              { id: 'csv', lane: 2, row: 1, title: 'CSV file', sub: 'download', tone: 'green' },
+            ]}
+            edges={[{ from: 'res', to: 'stream', label: 'query', tone: 'cyan' }, { from: 'stream', to: 'csv', label: 'write', tone: 'green' }]}
+            legend={[{ tone: 'cyan', label: 'Constant memory' }, { tone: 'green', label: 'Download' }]}
+            caption="Every resource exports as a stream — constant memory even for millions of rows" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

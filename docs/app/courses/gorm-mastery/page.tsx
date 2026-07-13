@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -41,6 +42,17 @@ export default function GORMMasteryCourse() {
             models, migrations, relationships, advanced queries, scopes, hooks, and performance optimization —
             everything you need to build data-heavy applications with Grit.
           </p>
+          <LaneFlow id="c-gorm" lanes={['Go structs', 'GORM', 'Database']}
+            nodes={[
+              { id: 'model', lane: 0, row: 1, title: 'Go struct', sub: 'model + tags', tone: 'primary' },
+              { id: 'migrate', lane: 1, row: 0, title: 'AutoMigrate', sub: 'tables', tone: 'cyan' },
+              { id: 'query', lane: 1, row: 1, title: 'Queries · scopes', sub: 'type-safe', tone: 'blue' },
+              { id: 'hooks', lane: 1, row: 2, title: 'Hooks', sub: 'BeforeCreate…', tone: 'violet' },
+              { id: 'db', lane: 2, row: 1, title: 'PostgreSQL', sub: 'data', tone: 'green' },
+            ]}
+            edges={[{ from: 'model', to: 'migrate', tone: 'cyan' }, { from: 'model', to: 'query', label: 'build', tone: 'blue' }, { from: 'model', to: 'hooks', tone: 'violet' }, { from: 'query', to: 'db', tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'Structs, not SQL' }, { tone: 'green', label: 'Database' }]}
+            caption="Work with Go structs instead of SQL — migrations, queries, scopes, and hooks all flow from the model" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

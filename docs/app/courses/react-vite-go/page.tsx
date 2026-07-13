@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -40,6 +41,16 @@ export default function ReactViteGoCourse() {
             Router with Vite as your frontend instead of Next.js — perfect for dashboards, internal tools,
             and admin panels where SEO doesn{"'"}t matter and speed is everything.
           </p>
+          <LaneFlow id="c-vite" lanes={['Vite React SPA', 'Go API']}
+            nodes={[
+              { id: 'routes', lane: 0, row: 0, title: 'TanStack Router', sub: 'type-safe routes', tone: 'blue' },
+              { id: 'rq', lane: 0, row: 1, title: 'React Query', sub: 'loaders + cache', tone: 'cyan' },
+              { id: 'build', lane: 0, row: 2, title: 'Vite build', sub: 'static HTML + JS', tone: 'violet' },
+              { id: 'api', lane: 1, row: 1, title: 'Go API', sub: 'REST /api/*', tone: 'green' },
+            ]}
+            edges={[{ from: 'rq', to: 'api', label: 'fetch', tone: 'green' }]}
+            legend={[{ tone: 'blue', label: 'Type-safe routing' }, { tone: 'green', label: 'Go API' }]}
+            caption="A fast Vite SPA with type-safe routing — perfect for dashboards where SEO does not matter" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

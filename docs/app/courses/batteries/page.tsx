@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -40,6 +41,18 @@ export default function BatteriesIncludedCourse() {
             This course walks through every single one — what it is, why it matters, how it{"'"}s configured,
             and how to use it. By the end, you{"'"}ll know your project inside and out.
           </p>
+          <LaneFlow id="c-batteries" lanes={['Every Grit project', '17 batteries, pre-wired']}
+            nodes={[
+              { id: 'core', lane: 0, row: 2, title: 'Your app', sub: 'zero setup', tone: 'primary' },
+              { id: 'auth', lane: 1, row: 0, title: 'Auth + RBAC', sub: 'JWT · OAuth', tone: 'cyan' },
+              { id: 'store', lane: 1, row: 1, title: 'Storage · Email', sub: 'S3 · Resend', tone: 'blue' },
+              { id: 'jobs', lane: 1, row: 2, title: 'Jobs · Cron', sub: 'asynq', tone: 'green' },
+              { id: 'cache', lane: 1, row: 3, title: 'Cache · AI', sub: 'Redis · Gateway', tone: 'amber' },
+              { id: 'sec', lane: 1, row: 4, title: 'Security · Pulse', sub: 'Sentinel', tone: 'rose' },
+            ]}
+            edges={[{ from: 'core', to: 'auth', tone: 'cyan' }, { from: 'core', to: 'store', tone: 'blue' }, { from: 'core', to: 'jobs', label: 'wired', tone: 'green' }, { from: 'core', to: 'cache', tone: 'amber' }, { from: 'core', to: 'sec', tone: 'rose' }]}
+            legend={[{ tone: 'primary', label: 'One project' }, { tone: 'cyan', label: '17 features ready' }]}
+            caption="Seventeen production features come pre-configured and wired together in every project" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

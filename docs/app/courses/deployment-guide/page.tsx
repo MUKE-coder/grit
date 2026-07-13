@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -40,6 +41,17 @@ export default function DeploymentGuideCourse() {
             four deployment methods — from the simplest one-command deploy to full PaaS setups — so you
             can choose the right approach for your project.
           </p>
+          <LaneFlow id="c-deployguide" lanes={['Your app', 'Four ways to deploy']}
+            nodes={[
+              { id: 'app', lane: 0, row: 1, title: 'Your Grit app', sub: 'built', tone: 'primary' },
+              { id: 'cmd', lane: 1, row: 0, title: 'grit deploy', sub: 'one command', tone: 'cyan' },
+              { id: 'docker', lane: 1, row: 1, title: 'Docker Compose', sub: 'any host', tone: 'blue' },
+              { id: 'dokploy', lane: 1, row: 2, title: 'Dokploy', sub: 'self-host PaaS', tone: 'green' },
+              { id: 'vps', lane: 1, row: 3, title: 'Manual VPS', sub: 'full control', tone: 'amber' },
+            ]}
+            edges={[{ from: 'app', to: 'cmd', tone: 'cyan' }, { from: 'app', to: 'docker', label: 'pick one', tone: 'blue' }, { from: 'app', to: 'dokploy', tone: 'green' }, { from: 'app', to: 'vps', tone: 'amber' }]}
+            legend={[{ tone: 'cyan', label: 'Simplest' }, { tone: 'amber', label: 'Most control' }]}
+            caption="From a one-command deploy to a full PaaS — choose the method that fits your project" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

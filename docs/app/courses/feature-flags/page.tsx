@@ -3,6 +3,7 @@ import { Flag, Percent, Users, Radio } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -47,6 +48,17 @@ export default function FeatureFlagsCourse() {
             lets you <strong className="text-foreground">decouple deploy from release</strong> —
             merge code whenever, turn it on when you&apos;re ready.
           </p>
+          <LaneFlow id="c-flags" lanes={['Your code', 'Flag Engine', 'Store & clients']}
+            nodes={[
+              { id: 'code', lane: 0, row: 1, title: 'engine.Enabled()', sub: 'your check', tone: 'cyan' },
+              { id: 'engine', lane: 1, row: 1, title: 'Engine', sub: 'in-memory map', tone: 'primary' },
+              { id: 'db', lane: 2, row: 0, title: 'flags table', sub: 'source', tone: 'green' },
+              { id: 'admin', lane: 2, row: 1, title: 'Admin toggle', sub: 'refresh now', tone: 'amber' },
+              { id: 'clients', lane: 2, row: 2, title: 'Realtime', sub: 'flag.updated', tone: 'violet' },
+            ]}
+            edges={[{ from: 'code', to: 'engine', label: 'read', tone: 'cyan' }, { from: 'db', to: 'engine', label: 'load', tone: 'green' }, { from: 'admin', to: 'engine', tone: 'amber' }, { from: 'engine', to: 'clients', label: 'push', dashed: true, tone: 'violet' }]}
+            legend={[{ tone: 'cyan', label: 'Memory reads' }, { tone: 'violet', label: 'Realtime push' }]}
+            caption="Reads hit an in-memory map; admin toggles refresh instantly and push to clients" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

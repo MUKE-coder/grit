@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -40,6 +41,17 @@ export default function InvoiceDesktopCourse() {
             Create clients, generate invoices with line items, export professional PDF invoices, and
             track payment status. Everything runs offline with SQLite, no internet required.
           </p>
+          <LaneFlow id="c-invoice" lanes={['Invoice app', 'Modules', 'Offline']}
+            nodes={[
+              { id: 'app', lane: 0, row: 1, title: 'Invoice app', sub: 'native desktop', tone: 'primary' },
+              { id: 'clients', lane: 1, row: 0, title: 'Clients', sub: 'CRM', tone: 'cyan' },
+              { id: 'invoices', lane: 1, row: 1, title: 'Invoices', sub: 'line items', tone: 'blue' },
+              { id: 'pdf', lane: 1, row: 2, title: 'PDF export', sub: 'professional', tone: 'green' },
+              { id: 'sqlite', lane: 2, row: 1, title: 'SQLite', sub: 'offline, no internet', tone: 'amber' },
+            ]}
+            edges={[{ from: 'app', to: 'clients', tone: 'cyan' }, { from: 'app', to: 'invoices', label: 'build', tone: 'blue' }, { from: 'invoices', to: 'pdf', tone: 'green' }, { from: 'app', to: 'sqlite', label: 'stores', tone: 'amber' }]}
+            legend={[{ tone: 'primary', label: 'Native app' }, { tone: 'amber', label: 'Fully offline' }]}
+            caption="Clients, invoices with line items, and PDF export — all running offline on SQLite" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

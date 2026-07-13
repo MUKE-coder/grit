@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -41,6 +42,20 @@ export default function ApiDocsScalarCourse() {
             learn how Grit auto-generates interactive API documentation using gin-docs — no annotations
             required. You{"'"}ll explore the Scalar UI, test endpoints live, and export the OpenAPI spec.
           </p>
+          <LaneFlow id="c-apidocs" lanes={['Your code', 'gin-docs', 'Docs UI']}
+            nodes={[
+              { id: 'routes', lane: 0, row: 0, title: 'Gin routes', sub: 'handlers', tone: 'cyan' },
+              { id: 'models', lane: 0, row: 1, title: 'GORM models', sub: 'struct tags', tone: 'green' },
+              { id: 'gen', lane: 1, row: 0, title: 'Introspect', sub: 'zero annotations', tone: 'primary' },
+              { id: 'spec', lane: 1, row: 1, title: 'OpenAPI 3.1', sub: 'generated', tone: 'violet' },
+              { id: 'scalar', lane: 2, row: 0, title: 'Scalar UI', sub: '/docs', tone: 'blue' },
+            ]}
+            edges={[
+              { from: 'routes', to: 'gen', tone: 'cyan' }, { from: 'models', to: 'gen', label: 'reads', tone: 'green' },
+              { from: 'gen', to: 'spec', tone: 'violet' }, { from: 'spec', to: 'scalar', label: 'renders', tone: 'blue' },
+            ]}
+            legend={[{ tone: 'violet', label: 'OpenAPI spec' }, { tone: 'blue', label: 'Interactive docs' }]}
+            caption="Grit reads your routes and struct tags to generate interactive docs — no annotations" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

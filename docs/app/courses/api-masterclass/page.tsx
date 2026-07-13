@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -40,6 +41,16 @@ export default function APIMasterclassCourse() {
             no admin panel — pure Go API. You{"'"}ll scaffold, generate resources, test with API docs,
             add authentication and roles, and deploy to production.
           </p>
+          <LaneFlow id="c-apimc" lanes={['1 · Scaffold', '2 · Generate', '3 · Secure', '4 · Deploy']}
+            nodes={[
+              { id: 'new', lane: 0, row: 0, title: 'grit new --api', sub: 'Go-only', tone: 'primary' },
+              { id: 'gen', lane: 1, row: 0, title: 'generate resources', sub: 'CRUD + docs', tone: 'cyan' },
+              { id: 'auth', lane: 2, row: 0, title: 'Auth + roles', sub: 'JWT · RBAC', tone: 'amber' },
+              { id: 'deploy', lane: 3, row: 0, title: 'Deploy', sub: 'production', tone: 'green' },
+            ]}
+            edges={[{ from: 'new', to: 'gen', tone: 'cyan' }, { from: 'gen', to: 'auth', tone: 'amber' }, { from: 'auth', to: 'deploy', tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'Pure Go API' }, { tone: 'green', label: 'Shipped' }]}
+            caption="Scaffold a pure Go API, generate resources, secure it, and deploy — no frontend needed" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -41,6 +42,16 @@ export default function PulseAnalyticsCourse() {
             how do you find them? In this course, you will learn how Pulse — Grit{"'"}s built-in
             observability SDK — gives you complete visibility into your running application.
           </p>
+          <LaneFlow id="c-pulse" lanes={['Every request', 'Pulse', 'You']}
+            nodes={[
+              { id: 'req', lane: 0, row: 0, title: 'HTTP request', sub: 'in / out', tone: 'blue' },
+              { id: 'cap', lane: 1, row: 0, title: 'Pulse middleware', sub: 'timing · SQL · errors', tone: 'primary' },
+              { id: 'buf', lane: 1, row: 1, title: 'Ring buffer', sub: 'recent traffic', tone: 'cyan' },
+              { id: 'ui', lane: 2, row: 0, title: 'Dashboard', sub: '/pulse/ui', tone: 'green' },
+            ]}
+            edges={[{ from: 'req', to: 'cap', label: 'wraps', tone: 'blue' }, { from: 'cap', to: 'buf', tone: 'cyan' }, { from: 'buf', to: 'ui', label: 'live', tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'Capture' }, { tone: 'green', label: 'Find bottlenecks' }]}
+            caption="Pulse captures every request's timing, queries, and errors — so you can find the bottleneck fast" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

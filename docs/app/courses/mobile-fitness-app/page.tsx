@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -40,6 +41,15 @@ export default function MobileFitnessAppCourse() {
             design a data model for workouts and exercises, generate API resources, build mobile screens
             with React Native, and create a workout logger you can use on your actual phone.
           </p>
+          <LaneFlow id="c-fitness" lanes={['1 · Model', '2 · API', '3 · Mobile']}
+            nodes={[
+              { id: 'model', lane: 0, row: 0, title: 'Workouts + exercises', sub: 'data model', tone: 'primary' },
+              { id: 'api', lane: 1, row: 0, title: 'generate resources', sub: 'Go API', tone: 'cyan' },
+              { id: 'screens', lane: 2, row: 0, title: 'RN screens', sub: 'workout logger', tone: 'blue' },
+            ]}
+            edges={[{ from: 'model', to: 'api', label: 'generate', tone: 'cyan' }, { from: 'api', to: 'screens', label: 'consume', tone: 'blue' }]}
+            legend={[{ tone: 'primary', label: 'Design the model' }, { tone: 'blue', label: 'Ship to your phone' }]}
+            caption="Design the workout model, generate the API, and build React Native screens you can use on your phone" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
