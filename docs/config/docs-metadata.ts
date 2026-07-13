@@ -404,6 +404,11 @@ export const docsMetadata: Record<string, DocPage> = {
   },
 
   // Batteries
+  '/docs/batteries': {
+    title: 'Batteries Included',
+    description:
+      'Everything Grit ships out of the box, one card per battery: JWT authentication, RBAC & roles, S3/R2/MinIO file storage, Resend email, background jobs, cron scheduling, Redis caching, AI via the Vercel AI Gateway, the Sentinel WAF, Pulse observability, GORM Studio, feature flags, webhooks, and realtime WebSockets. No add-ons to install — it is all wired into every scaffolded project.',
+  },
   '/docs/batteries/ai': {
     title: 'AI Integration',
     description:

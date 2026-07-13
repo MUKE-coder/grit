@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { PageHelp } from '@/components/page-help'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/getting-started/prerequisites')
@@ -85,6 +86,21 @@ export default function PrerequisitesPage() {
                   </div>
                 </Link>
               ))}
+            </div>
+
+            <div className="max-w-3xl">
+              <PageHelp
+                faqs={[
+                  {
+                    q: 'Do I really need to know Go?',
+                    a: 'Enough to read and write handlers, services and GORM models. The primer covers exactly that slice — you do not need advanced Go.',
+                  },
+                  {
+                    q: 'Can I skip Docker?',
+                    a: 'Yes — use managed Neon (Postgres), Upstash (Redis) and Cloudflare R2 instead, or the Desktop kit which runs on local SQLite.',
+                  },
+                ]}
+              />
             </div>
 
             <div className="flex items-center justify-between border-t border-border pt-8 mt-12 max-w-3xl">

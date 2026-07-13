@@ -6,6 +6,7 @@ import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
 import { Callout } from '@/components/callout'
 import { Tabs } from '@/components/tabs'
+import { PageHelp } from '@/components/page-help'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/getting-started/create-a-project')
@@ -230,6 +231,53 @@ grit migrate    # create the new table`}
                 <Link href="/docs/concepts/generated-files">Generated File Map</Link> for exactly
                 what each command writes.
               </Callout>
+
+              <PageHelp
+                faqs={[
+                  {
+                    q: 'Do I need Docker?',
+                    a: (
+                      <>
+                        For the web/API/mobile kits, Docker runs Postgres, Redis, MinIO and Mailhog
+                        locally &mdash; or use cloud services (Neon, Upstash, R2) instead. The{' '}
+                        <strong>Desktop</strong> kit needs no Docker at all: it uses local SQLite.
+                      </>
+                    ),
+                  },
+                  {
+                    q: 'Which architecture should I pick?',
+                    a: (
+                      <>
+                        Start with <strong>Everything (Triple)</strong> unless you know you don&apos;t
+                        need a frontend. Pick <strong>API only</strong> for a headless backend,{' '}
+                        <strong>Mobile</strong> for Expo, <strong>Desktop</strong> for a native app.
+                        You can always add more later. See{' '}
+                        <Link href="/docs/concepts/architecture-modes">Architecture Modes</Link>.
+                      </>
+                    ),
+                  },
+                  {
+                    q: 'Next.js or Vite?',
+                    a: (
+                      <>
+                        Next.js is the default. Add <code>--vite</code> to scaffold a TanStack Router
+                        (Vite) frontend instead, e.g. <code>grit new myapp --triple --vite</code>.
+                      </>
+                    ),
+                  },
+                  {
+                    q: 'How do I add a database table?',
+                    a: (
+                      <>
+                        <code>grit generate resource &lt;Name&gt; --fields &quot;…&quot;</code> then{' '}
+                        <code>grit migrate</code>. It creates the model, API, admin page, types and
+                        hooks in one go &mdash; see{' '}
+                        <Link href="/docs/concepts/generated-files">the Generated File Map</Link>.
+                      </>
+                    ),
+                  },
+                ]}
+              />
 
               <div className="flex items-center justify-between border-t border-border pt-8 mt-12">
                 <Button variant="ghost" asChild>

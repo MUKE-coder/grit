@@ -5,6 +5,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/ca
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { PageHelp } from '@/components/page-help'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs')
@@ -772,6 +773,39 @@ grit generate resource Post --fields "title:string,body:text,published:bool"`}
                 </a>
               </Button>
             </div>
+
+            <PageHelp
+              faqs={[
+                {
+                  q: 'Is Grit free and open source?',
+                  a: 'Yes — MIT licensed. You own all the generated code, self-host anything, and there is no vendor lock-in.',
+                },
+                {
+                  q: 'Do I need to know Go?',
+                  a: (
+                    <>
+                      You should be comfortable with Go for the backend and able to read
+                      React/TypeScript for the frontend. Grit teaches its own conventions on top &mdash;
+                      see <Link href="/docs/getting-started/coming-from">Coming from Laravel / Django / Next</Link>.
+                    </>
+                  ),
+                },
+                {
+                  q: 'What can I build with it?',
+                  a: 'SaaS products, admin dashboards, internal tools, CRMs, plus mobile (Expo) and native desktop (Wails) apps — all from one Go + React codebase.',
+                },
+                {
+                  q: 'How is it different from Next.js or Laravel?',
+                  a: (
+                    <>
+                      A compiled Go backend, a React frontend, a generated admin panel, and shared
+                      end-to-end types &mdash; from one CLI. See the{' '}
+                      <Link href="/docs/getting-started/performance">comparison matrix</Link>.
+                    </>
+                  ),
+                },
+              ]}
+            />
           </div>
         </div>
       </main>

@@ -49,12 +49,13 @@ const navItems: NavItem[] = [
   { title: 'Home', href: '/docs', icon: <Home className="h-3.5 w-3.5" /> },
   { title: 'Pitch', href: '/pitch', icon: <Megaphone className="h-3.5 w-3.5" /> },
   { title: 'Tutorials', href: '/docs/tutorials', icon: <GraduationCap className="h-3.5 w-3.5" /> },
+  { title: 'Batteries Included', href: '/docs/batteries', icon: <Database className="h-3.5 w-3.5" /> },
   {
     title: 'Getting Started',
     icon: <Rocket className="h-3.5 w-3.5" />,
     items: [
       { title: 'Create a project', href: '/docs/getting-started/create-a-project' },
-      { title: 'Coming from Laravel', href: '/docs/getting-started/coming-from' },
+      { title: 'Coming from Laravel/Django/Next', href: '/docs/getting-started/coming-from' },
       { title: 'Performance & Benchmarks', href: '/docs/getting-started/performance' },
       { title: 'Prerequisites', href: '/docs/getting-started/prerequisites' },
     ],

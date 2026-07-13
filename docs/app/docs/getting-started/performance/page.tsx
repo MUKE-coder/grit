@@ -24,6 +24,7 @@ import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
 import { Callout } from '@/components/callout'
+import { PageHelp } from '@/components/page-help'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/getting-started/performance')
@@ -390,6 +391,28 @@ export default function PerformanceBenchmarksPage() {
               </div>
 
               {/* Prev / Next */}
+              <PageHelp
+                faqs={[
+                  {
+                    q: 'Are these benchmark numbers hardware-normalised?',
+                    a: 'No — the latency figures are illustrative local-machine results from the load-test walkthrough, not an independent benchmark. Run the k6 suite on your own hardware for real numbers.',
+                  },
+                  {
+                    q: 'Do I have to use every battery?',
+                    a: (
+                      <>
+                        No. They ship configured but are opt-in &mdash; use what you need, ignore the
+                        rest. See <Link href="/docs/batteries">Batteries Included</Link>.
+                      </>
+                    ),
+                  },
+                  {
+                    q: 'Is the comparison table fair?',
+                    a: 'It compares built-in capabilities, not raw performance. Every framework here can be extended to match — Grit just ships more of it by default. The "when not to use Grit" note above is deliberate.',
+                  },
+                ]}
+              />
+
               <div className="flex items-center justify-between border-t border-border pt-8 mt-12">
                 <Button variant="ghost" asChild>
                   <Link href="/docs/getting-started/philosophy" className="gap-2">

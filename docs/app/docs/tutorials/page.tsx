@@ -32,6 +32,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { PageHelp } from '@/components/page-help'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/tutorials')
@@ -226,6 +227,21 @@ export default function TutorialsPage() {
                   </Link>
                 ))}
               </div>
+            </div>
+
+            <div className="max-w-3xl">
+              <PageHelp
+                faqs={[
+                  {
+                    q: "Courses vs the docs — what's the difference?",
+                    a: 'Courses are guided, build-along walkthroughs; the docs are the reference you look things up in. Each course links back to the relevant docs, and vice-versa.',
+                  },
+                  {
+                    q: 'Do I need to do them in order?',
+                    a: 'Start with a guided track (Web, Desktop, or Mobile) if you are new. The focused tutorials are standalone — pick whichever topic you need.',
+                  },
+                ]}
+              />
             </div>
 
             <div className="flex items-center justify-between border-t border-border pt-8 mt-12 max-w-3xl">
