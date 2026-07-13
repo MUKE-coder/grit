@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
-import { Diagram, DiagramBox, DiagramRow, DiagramArrow, DiagramLegend, FileTree } from '@/components/diagram'
+import { FileTree } from '@/components/diagram'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/architecture-modes/double')
@@ -344,43 +345,41 @@ export default function AdminLayout() {
               Admin and user requests follow the same path — the only difference is the role attached to
               the JWT token.
             </p>
-            <Diagram>
-              <div className="mb-1 text-center text-[11px] font-mono uppercase tracking-wider text-muted-foreground/50">Browser — Web App :3000</div>
-              <DiagramRow>
-                <DiagramBox tone="blue" title="Public Pages" sub="/ · /login · /dashboard" />
-                <DiagramBox tone="cyan" title="Admin Pages" sub="role-gated · /admin/*" />
-              </DiagramRow>
-
-              <DiagramArrow label="REST + JWT (ADMIN role on /admin/*)" />
-
-              <DiagramBox tone="primary" title="Go API — :8080" sub="Gin Router → Middleware → Handler → Service → GORM" />
-              <div className="mt-2 grid gap-2 sm:grid-cols-3 text-[11px] text-muted-foreground/80">
-                <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2 text-center">CORS · Logger</div>
-                <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2 text-center">Rate Limiter · Auth (JWT)</div>
-                <div className="rounded-md border border-border/40 bg-card/30 px-3 py-2 text-center">RequireRole(&quot;ADMIN&quot;) · Cache</div>
-              </div>
-              <div className="mt-2 rounded-md border border-border/40 bg-card/20 px-3 py-2 text-[11px] text-muted-foreground/70">
-                <span className="font-semibold text-foreground/70">Background</span> — asynq workers · cron · GORM Studio (/studio)
-              </div>
-
-              <DiagramArrow />
-
-              <DiagramRow>
-                <DiagramBox tone="green" title="PostgreSQL" sub=":5434 · data" />
-                <DiagramBox tone="rose" title="Redis" sub=":6380 · cache + jobs" />
-                <DiagramBox tone="amber" title="MinIO" sub=":9002 · files" />
-                <DiagramBox tone="violet" title="Resend" sub="email" />
-              </DiagramRow>
-
-              <DiagramLegend
-                items={[
-                  { tone: 'blue', label: 'Public UI' },
-                  { tone: 'cyan', label: 'Admin UI (role-gated)' },
-                  { tone: 'primary', label: 'Go API' },
-                  { tone: 'green', label: 'Data & services' },
-                ]}
-              />
-            </Diagram>
+            <LaneFlow
+              id="double"
+              lanes={['Web App :3000', 'Go API — :8080', 'Data & Services']}
+              groups={[{ lane: 1, rows: [0, 2], label: 'Request pipeline', tone: 'primary' }]}
+              nodes={[
+                { id: 'public', lane: 0, row: 0, title: 'Public Pages', sub: '/ · /login', tone: 'blue' },
+                { id: 'admin', lane: 0, row: 1, title: 'Admin Pages', sub: 'role-gated /admin/*', tone: 'cyan' },
+                { id: 'router', lane: 1, row: 0, title: 'Gin Router', sub: 'REST + JWT', tone: 'primary' },
+                { id: 'mw', lane: 1, row: 1, title: 'Middleware', sub: 'Auth · RequireRole · Cache', tone: 'primary' },
+                { id: 'svc', lane: 1, row: 2, title: 'Handler → Service', sub: 'GORM', tone: 'primary' },
+                { id: 'pg', lane: 2, row: 0, title: 'PostgreSQL', sub: ':5434 · data', tone: 'green' },
+                { id: 'redis', lane: 2, row: 1, title: 'Redis', sub: ':6380 · cache + jobs', tone: 'rose' },
+                { id: 'minio', lane: 2, row: 2, title: 'MinIO', sub: ':9002 · files', tone: 'amber' },
+                { id: 'resend', lane: 2, row: 3, title: 'Resend', sub: 'email', tone: 'violet' },
+              ]}
+              edges={[
+                { from: 'public', to: 'router', label: 'REST + JWT', tone: 'blue' },
+                { from: 'admin', to: 'router', label: 'ADMIN role', tone: 'cyan' },
+                { from: 'router', to: 'mw', tone: 'primary' },
+                { from: 'mw', to: 'svc', tone: 'primary' },
+                { from: 'svc', to: 'pg', label: 'query', tone: 'green' },
+                { from: 'svc', to: 'redis', label: 'cache', tone: 'rose' },
+                { from: 'svc', to: 'minio', label: 'files', tone: 'amber' },
+                { from: 'svc', to: 'resend', label: 'mail', tone: 'violet' },
+              ]}
+              legend={[
+                { tone: 'blue', label: 'Public UI' },
+                { tone: 'cyan', label: 'Admin UI (role-gated)' },
+                { tone: 'primary', label: 'Go API' },
+                { tone: 'green', label: 'Data & services' },
+              ]}
+            />
+            <div className="mt-3 rounded-md border border-border/40 bg-card/20 px-3 py-2 text-[12px] text-muted-foreground/80">
+              <span className="font-semibold text-foreground/70">Background</span> — asynq workers · cron · GORM Studio (<code>/studio</code>)
+            </div>
 
             <div className="mt-6 rounded-lg border border-border/40 bg-accent/20 p-4">
               <h4 className="text-sm font-semibold text-foreground mb-2">Step-by-step: Admin managing users</h4>
