@@ -5,6 +5,7 @@ import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
 import { Files, Folder, File } from '@/components/files'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/architecture-modes/single')
@@ -61,6 +62,31 @@ export default function SingleArchitecturePage() {
                 <h4 className="text-sm font-semibold text-foreground mb-3">Scaffold command</h4>
                 <CodeBlock language="bash" code={`grit new myapp --single --vite`} />
               </div>
+
+              <LaneFlow
+                id="single-mode"
+                lanes={['Browser', 'myapp — one Go binary', 'Data']}
+                groups={[{ lane: 1, rows: [0, 2], label: 'Single deploy unit', tone: 'primary' }]}
+                nodes={[
+                  { id: 'browser', lane: 0, row: 1, title: 'Browser', sub: 'React SPA (Vite)', tone: 'blue' },
+                  { id: 'embed', lane: 1, row: 0, title: 'Static (go:embed)', sub: 'built React', tone: 'cyan' },
+                  { id: 'router', lane: 1, row: 1, title: 'Gin Router', sub: 'REST + static', tone: 'primary' },
+                  { id: 'svc', lane: 1, row: 2, title: 'Service + GORM', sub: 'business logic', tone: 'primary' },
+                  { id: 'db', lane: 2, row: 1, title: 'PostgreSQL', sub: 'or SQLite', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'browser', to: 'router', label: 'HTTP', tone: 'blue' },
+                  { from: 'router', to: 'embed', label: 'GET / → UI', dashed: true, tone: 'cyan' },
+                  { from: 'router', to: 'svc', label: 'GET /api/*', tone: 'primary' },
+                  { from: 'svc', to: 'db', label: 'query', tone: 'green' },
+                ]}
+                legend={[
+                  { tone: 'cyan', label: 'Embedded React build' },
+                  { tone: 'primary', label: 'Go binary' },
+                  { tone: 'green', label: 'Data' },
+                ]}
+                caption="One binary, one port — serves both the JSON API and the React build via go:embed"
+              />
             </div>
 
             {/* Key Characteristics */}

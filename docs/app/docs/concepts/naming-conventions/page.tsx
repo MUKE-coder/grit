@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/naming-conventions')
@@ -41,6 +42,32 @@ export default function NamingConventionsPage() {
                   This table shows the naming convention used for every context in a Grit project.
                   The code generator handles all conversions automatically.
                 </p>
+                <LaneFlow
+                  id="naming"
+                  lanes={['You type', 'Grit generates the right case']}
+                  nodes={[
+                    { id: 'name', lane: 0, row: 2, title: 'Post', sub: 'resource name', tone: 'primary' },
+                    { id: 'struct', lane: 1, row: 0, title: 'Post', sub: 'Go struct · PascalCase', tone: 'cyan' },
+                    { id: 'table', lane: 1, row: 1, title: 'posts', sub: 'DB table · snake, plural', tone: 'green' },
+                    { id: 'schema', lane: 1, row: 2, title: 'PostSchema', sub: 'Zod · Pascal + Schema', tone: 'violet' },
+                    { id: 'file', lane: 1, row: 3, title: 'use-posts.ts', sub: 'file · kebab-case', tone: 'blue' },
+                    { id: 'route', lane: 1, row: 4, title: '/api/posts', sub: 'route · plural', tone: 'amber' },
+                  ]}
+                  edges={[
+                    { from: 'name', to: 'struct', tone: 'cyan' },
+                    { from: 'name', to: 'table', tone: 'green' },
+                    { from: 'name', to: 'schema', label: 'converts to', tone: 'violet' },
+                    { from: 'name', to: 'file', tone: 'blue' },
+                    { from: 'name', to: 'route', tone: 'amber' },
+                  ]}
+                  legend={[
+                    { tone: 'primary', label: 'Resource name' },
+                    { tone: 'cyan', label: 'Go' },
+                    { tone: 'green', label: 'Database' },
+                    { tone: 'blue', label: 'TypeScript' },
+                  ]}
+                  caption="One resource name → the correct case in every context, automatically"
+                />
                 <div className="rounded-lg border border-border/30 bg-card/30 overflow-hidden overflow-x-auto">
                   <table className="w-full text-sm min-w-[600px]">
                     <thead>

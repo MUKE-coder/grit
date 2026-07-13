@@ -5,6 +5,7 @@ import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
 import { Files, Folder, File } from '@/components/files'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/architecture-modes/mobile')
@@ -56,6 +57,33 @@ export default function MobileArchitecturePage() {
                 <h4 className="text-sm font-semibold text-foreground mb-3">Scaffold command</h4>
                 <CodeBlock language="bash" code={`grit new myapp --mobile`} />
               </div>
+
+              <LaneFlow
+                id="mobile-mode"
+                lanes={['Expo app (iOS / Android)', 'Go API — :8080', 'Data']}
+                groups={[{ lane: 1, rows: [0, 2], label: 'Request pipeline', tone: 'primary' }]}
+                nodes={[
+                  { id: 'screens', lane: 0, row: 0, title: 'Expo Router', sub: 'native screens', tone: 'blue' },
+                  { id: 'store', lane: 0, row: 1, title: 'SecureStore', sub: 'encrypted tokens', tone: 'cyan' },
+                  { id: 'router', lane: 1, row: 0, title: 'Gin Router', sub: 'REST + JWT', tone: 'primary' },
+                  { id: 'mw', lane: 1, row: 1, title: 'Middleware', sub: 'Auth · Cache', tone: 'primary' },
+                  { id: 'svc', lane: 1, row: 2, title: 'Service + GORM', sub: 'business logic', tone: 'primary' },
+                  { id: 'db', lane: 2, row: 1, title: 'PostgreSQL', sub: 'data', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'screens', to: 'router', label: 'REST + JWT', tone: 'blue' },
+                  { from: 'store', to: 'router', label: 'Bearer token', dashed: true, tone: 'cyan' },
+                  { from: 'router', to: 'mw', tone: 'primary' },
+                  { from: 'mw', to: 'svc', tone: 'primary' },
+                  { from: 'svc', to: 'db', label: 'query', tone: 'green' },
+                ]}
+                legend={[
+                  { tone: 'blue', label: 'Native app (Expo)' },
+                  { tone: 'primary', label: 'Go API' },
+                  { tone: 'green', label: 'Data' },
+                ]}
+                caption="Native iOS/Android via Expo — same Go API, types shared through packages/shared"
+              />
             </div>
 
             {/* Key Characteristics */}

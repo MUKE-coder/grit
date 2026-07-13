@@ -5,6 +5,7 @@ import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
 import { Callout } from '@/components/callout'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/field-types')
@@ -107,6 +108,32 @@ export default function FieldTypesPage() {
                   How each field type resolves across the stack. Source of truth:{' '}
                   <code>internal/generate/field.go</code>.
                 </p>
+                <LaneFlow
+                  id="field-types"
+                  lanes={['One field declaration', 'Resolves across the stack']}
+                  nodes={[
+                    { id: 'decl', lane: 0, row: 2, title: 'price:float', sub: '--fields', tone: 'primary' },
+                    { id: 'go', lane: 1, row: 0, title: 'Go struct field', sub: 'float64', tone: 'cyan' },
+                    { id: 'ts', lane: 1, row: 1, title: 'TypeScript type', sub: 'number', tone: 'blue' },
+                    { id: 'zod', lane: 1, row: 2, title: 'Zod rule', sub: 'z.number()', tone: 'violet' },
+                    { id: 'form', lane: 1, row: 3, title: 'Admin form', sub: 'number input', tone: 'amber' },
+                    { id: 'col', lane: 1, row: 4, title: 'Table column', sub: 'right-aligned', tone: 'green' },
+                  ]}
+                  edges={[
+                    { from: 'decl', to: 'go', tone: 'cyan' },
+                    { from: 'decl', to: 'ts', label: 'maps to', tone: 'blue' },
+                    { from: 'decl', to: 'zod', tone: 'violet' },
+                    { from: 'decl', to: 'form', tone: 'amber' },
+                    { from: 'decl', to: 'col', tone: 'green' },
+                  ]}
+                  legend={[
+                    { tone: 'primary', label: 'Declaration' },
+                    { tone: 'cyan', label: 'Go' },
+                    { tone: 'blue', label: 'TypeScript' },
+                    { tone: 'amber', label: 'Admin UI' },
+                  ]}
+                  caption="Declare a field once — Grit resolves it into Go, TypeScript, Zod, and the admin UI"
+                />
                 <div className="overflow-x-auto mb-2">
                   <table className="w-full text-sm border border-border rounded-lg">
                     <thead>

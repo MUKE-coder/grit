@@ -5,6 +5,7 @@ import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
 import { Files, Folder, File } from '@/components/files'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/concepts/architecture-modes/api-only')
@@ -55,6 +56,41 @@ export default function ApiOnlyArchitecturePage() {
                 <h4 className="text-sm font-semibold text-foreground mb-3">Scaffold command</h4>
                 <CodeBlock language="bash" code={`grit new myapp --api`} />
               </div>
+
+              <LaneFlow
+                id="api-only-mode"
+                lanes={['Any client', 'Go API — :8080', 'Data & Services']}
+                groups={[{ lane: 1, rows: [0, 2], label: 'Request pipeline', tone: 'primary' }]}
+                nodes={[
+                  { id: 'curl', lane: 0, row: 0, title: 'curl / Postman', sub: 'raw REST', tone: 'blue' },
+                  { id: 'scalar', lane: 0, row: 1, title: 'Scalar UI', sub: '/docs', tone: 'cyan' },
+                  { id: 'yours', lane: 0, row: 2, title: 'Your frontend', sub: 'bring your own', tone: 'blue' },
+                  { id: 'router', lane: 1, row: 0, title: 'Gin Router', sub: 'JSON + JWT', tone: 'primary' },
+                  { id: 'mw', lane: 1, row: 1, title: 'Middleware', sub: 'Auth · Cache · Rate', tone: 'primary' },
+                  { id: 'svc', lane: 1, row: 2, title: 'Service + GORM', sub: 'business logic', tone: 'primary' },
+                  { id: 'pg', lane: 2, row: 0, title: 'PostgreSQL', sub: 'data', tone: 'green' },
+                  { id: 'redis', lane: 2, row: 1, title: 'Redis', sub: 'cache + jobs', tone: 'rose' },
+                  { id: 'minio', lane: 2, row: 2, title: 'MinIO', sub: 'files', tone: 'amber' },
+                  { id: 'resend', lane: 2, row: 3, title: 'Resend', sub: 'email', tone: 'violet' },
+                ]}
+                edges={[
+                  { from: 'curl', to: 'router', label: 'JSON', tone: 'blue' },
+                  { from: 'scalar', to: 'router', tone: 'cyan' },
+                  { from: 'yours', to: 'router', tone: 'blue' },
+                  { from: 'router', to: 'mw', tone: 'primary' },
+                  { from: 'mw', to: 'svc', tone: 'primary' },
+                  { from: 'svc', to: 'pg', label: 'query', tone: 'green' },
+                  { from: 'svc', to: 'redis', label: 'cache', tone: 'rose' },
+                  { from: 'svc', to: 'minio', label: 'files', tone: 'amber' },
+                  { from: 'svc', to: 'resend', label: 'mail', tone: 'violet' },
+                ]}
+                legend={[
+                  { tone: 'blue', label: 'Any client' },
+                  { tone: 'primary', label: 'Go API' },
+                  { tone: 'green', label: 'Data & services' },
+                ]}
+                caption="No bundled frontend — every client hits the same JSON API, batteries fully included"
+              />
             </div>
 
             {/* Key Characteristics */}
