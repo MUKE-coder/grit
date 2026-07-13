@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -41,6 +42,16 @@ export default function TestingCourse() {
             your React frontend, and end-to-end tests that simulate real users clicking through your app.
             Grit scaffolds test files for you. Your job is to understand them and write more.
           </p>
+          <LaneFlow id="c-testing" lanes={['Grit app', 'Test every layer']}
+            nodes={[
+              { id: 'app', lane: 0, row: 1, title: 'Your app', sub: 'full stack', tone: 'primary' },
+              { id: 'unit', lane: 1, row: 0, title: 'Go unit tests', sub: 'API + services', tone: 'cyan' },
+              { id: 'comp', lane: 1, row: 1, title: 'Component tests', sub: 'React', tone: 'blue' },
+              { id: 'e2e', lane: 1, row: 2, title: 'E2E tests', sub: 'Playwright', tone: 'green' },
+            ]}
+            edges={[{ from: 'app', to: 'unit', tone: 'cyan' }, { from: 'app', to: 'comp', label: 'cover', tone: 'blue' }, { from: 'app', to: 'e2e', tone: 'green' }]}
+            legend={[{ tone: 'cyan', label: 'Backend' }, { tone: 'green', label: 'Real user flows' }]}
+            caption="Test every layer — Go unit tests, React component tests, and end-to-end user flows" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

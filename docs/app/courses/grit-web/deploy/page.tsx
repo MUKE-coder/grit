@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -43,6 +44,16 @@ export default function DeployToProductionCourse() {
             your app running, how Caddy provides automatic HTTPS, and how Docker gives you an alternative
             deployment path. By the end, you will have a complete deployment playbook.
           </p>
+          <LaneFlow id="c-gwdeploy" lanes={['grit deploy', 'On the server', 'Live']}
+            nodes={[
+              { id: 'cmd', lane: 0, row: 1, title: 'grit deploy', sub: 'one command', tone: 'primary' },
+              { id: 'systemd', lane: 1, row: 0, title: 'systemd', sub: 'keeps it running', tone: 'cyan' },
+              { id: 'caddy', lane: 1, row: 1, title: 'Caddy', sub: 'automatic HTTPS', tone: 'blue' },
+              { id: 'live', lane: 2, row: 1, title: 'Live app', sub: 'real users', tone: 'green' },
+            ]}
+            edges={[{ from: 'cmd', to: 'systemd', tone: 'cyan' }, { from: 'cmd', to: 'caddy', tone: 'blue' }, { from: 'systemd', to: 'live', tone: 'green' }, { from: 'caddy', to: 'live', dashed: true, tone: 'blue' }]}
+            legend={[{ tone: 'primary', label: 'One command' }, { tone: 'green', label: 'Live with HTTPS' }]}
+            caption="grit deploy sets up systemd and Caddy — your app stays running with automatic HTTPS" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

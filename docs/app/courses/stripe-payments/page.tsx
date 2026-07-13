@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -41,6 +42,16 @@ export default function StripePaymentsCourse() {
             integrate Stripe into your Grit app: create checkout sessions, manage subscription plans,
             handle webhooks, and build a complete billing system with a customer portal.
           </p>
+          <LaneFlow id="c-stripe" lanes={['Your app', 'Stripe', 'On success']}
+            nodes={[
+              { id: 'app', lane: 0, row: 1, title: 'Create checkout', sub: 'session', tone: 'primary' },
+              { id: 'stripe', lane: 1, row: 1, title: 'Stripe Checkout', sub: 'card · subscription', tone: 'cyan' },
+              { id: 'webhook', lane: 2, row: 0, title: 'Webhook', sub: 'payment succeeded', tone: 'blue' },
+              { id: 'fulfill', lane: 2, row: 1, title: 'Fulfill', sub: 'grant access', tone: 'green' },
+            ]}
+            edges={[{ from: 'app', to: 'stripe', label: 'redirect', tone: 'cyan' }, { from: 'stripe', to: 'webhook', label: 'event', tone: 'blue' }, { from: 'webhook', to: 'fulfill', tone: 'green' }]}
+            legend={[{ tone: 'cyan', label: 'Stripe-hosted' }, { tone: 'green', label: 'Verified fulfillment' }]}
+            caption="Redirect to Stripe Checkout; a verified webhook tells your app to grant access" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -42,6 +43,17 @@ export default function AdminPanelCourse() {
             how the admin panel works — the dashboard, DataTable, FormBuilder, resource definitions, multi-step
             forms, style variants, and system pages — and how to customize every part of it.
           </p>
+          <LaneFlow id="c-gwadmin" lanes={['You define', 'Grit assembles the UI']}
+            nodes={[
+              { id: 'def', lane: 0, row: 1, title: 'defineResource()', sub: 'one TS file', tone: 'primary' },
+              { id: 'table', lane: 1, row: 0, title: 'Data table', sub: 'list + filters', tone: 'cyan' },
+              { id: 'forms', lane: 1, row: 1, title: 'Forms', sub: 'create / edit', tone: 'blue' },
+              { id: 'dash', lane: 1, row: 2, title: 'Dashboard', sub: 'widgets', tone: 'green' },
+              { id: 'nav', lane: 1, row: 3, title: 'Sidebar nav', sub: 'auto', tone: 'amber' },
+            ]}
+            edges={[{ from: 'def', to: 'table', tone: 'cyan' }, { from: 'def', to: 'forms', label: 'generates', tone: 'blue' }, { from: 'def', to: 'dash', tone: 'green' }, { from: 'def', to: 'nav', tone: 'amber' }]}
+            legend={[{ tone: 'primary', label: 'Your definition' }, { tone: 'cyan', label: 'Full admin UI' }]}
+            caption="Define a resource once — the table, forms, dashboard, and navigation come for free" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

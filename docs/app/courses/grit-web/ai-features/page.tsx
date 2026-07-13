@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -42,6 +43,17 @@ export default function AIFeaturesCourse() {
             course, you will learn how AI integration works — completions, streaming, multi-turn chat,
             model switching, and building a real chat UI — all without writing provider-specific code.
           </p>
+          <LaneFlow id="c-gwai" lanes={['Your app', 'AI Gateway', 'Providers']}
+            nodes={[
+              { id: 'app', lane: 0, row: 1, title: 'ai.Stream()', sub: 'one API key', tone: 'primary' },
+              { id: 'gw', lane: 1, row: 1, title: 'Vercel AI Gateway', sub: 'OpenAI-compatible', tone: 'cyan' },
+              { id: 'anthropic', lane: 2, row: 0, title: 'Anthropic', sub: 'Claude', tone: 'violet' },
+              { id: 'openai', lane: 2, row: 1, title: 'OpenAI', sub: 'GPT', tone: 'green' },
+              { id: 'google', lane: 2, row: 2, title: 'Google', sub: 'Gemini', tone: 'amber' },
+            ]}
+            edges={[{ from: 'app', to: 'gw', label: 'request', tone: 'primary' }, { from: 'gw', to: 'anthropic', tone: 'violet' }, { from: 'gw', to: 'openai', label: 'route', tone: 'green' }, { from: 'gw', to: 'google', tone: 'amber' }]}
+            legend={[{ tone: 'primary', label: 'Your code' }, { tone: 'cyan', label: 'One key, many models' }]}
+            caption="One key and one endpoint — switch models without writing provider-specific code" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

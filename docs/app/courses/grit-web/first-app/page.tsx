@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -42,6 +43,15 @@ export default function FirstAppCourse() {
             understand every folder and file it generates, and run all the development servers.
             By the end, you will have a working app with authentication, admin panel, and database.
           </p>
+          <LaneFlow id="c-gwfirst" lanes={['1 · Install', '2 · Create', '3 · Run']}
+            nodes={[
+              { id: 'install', lane: 0, row: 0, title: 'Install Grit', sub: 'CLI', tone: 'primary' },
+              { id: 'create', lane: 1, row: 0, title: 'grit new', sub: 'full project', tone: 'cyan' },
+              { id: 'run', lane: 2, row: 0, title: 'grit start', sub: 'auth + admin + DB', tone: 'green' },
+            ]}
+            edges={[{ from: 'install', to: 'create', tone: 'cyan' }, { from: 'create', to: 'run', label: 'launch', tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'Install once' }, { tone: 'green', label: 'Working app' }]}
+            caption="Install the CLI, scaffold your first project, and run it — auth, admin, and database included" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

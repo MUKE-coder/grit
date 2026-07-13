@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -43,6 +44,17 @@ export default function IntroductionToGritCourse() {
             understanding. By the end, you{"'"}ll know exactly what Grit gives you and whether it{"'"}s right for
             your project.
           </p>
+          <LaneFlow id="c-gwintro" lanes={['Grit', 'What you get']}
+            nodes={[
+              { id: 'grit', lane: 0, row: 1, title: 'Grit', sub: 'Go + React', tone: 'primary' },
+              { id: 'api', lane: 1, row: 0, title: 'Go API', sub: 'Gin + GORM', tone: 'cyan' },
+              { id: 'fe', lane: 1, row: 1, title: 'React frontend', sub: 'Next.js', tone: 'blue' },
+              { id: 'admin', lane: 1, row: 2, title: 'Admin panel', sub: 'automatic', tone: 'green' },
+              { id: 'cli', lane: 1, row: 3, title: 'CLI', sub: 'scaffold + generate', tone: 'amber' },
+            ]}
+            edges={[{ from: 'grit', to: 'api', tone: 'cyan' }, { from: 'grit', to: 'fe', label: 'gives you', tone: 'blue' }, { from: 'grit', to: 'admin', tone: 'green' }, { from: 'grit', to: 'cli', tone: 'amber' }]}
+            legend={[{ tone: 'primary', label: 'One framework' }, { tone: 'cyan', label: 'Full stack + tooling' }]}
+            caption="Grit gives you a Go API, a React frontend, an admin panel, and a CLI that generates it all" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

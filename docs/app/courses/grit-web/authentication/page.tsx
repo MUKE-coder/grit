@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -43,6 +44,18 @@ export default function AuthenticationCourse() {
             with TOTP, OAuth2 social login, and how the frontend manages auth state. By the end, you will
             understand every layer of Grit{"'"}s auth system.
           </p>
+          <LaneFlow id="c-gwauth" lanes={['Grit auth', 'What it covers']}
+            nodes={[
+              { id: 'core', lane: 0, row: 2, title: 'Grit auth', sub: 'built-in', tone: 'primary' },
+              { id: 'jwt', lane: 1, row: 0, title: 'JWT', sub: 'access + refresh', tone: 'cyan' },
+              { id: 'bcrypt', lane: 1, row: 1, title: 'bcrypt', sub: 'password hash', tone: 'blue' },
+              { id: 'rbac', lane: 1, row: 2, title: 'RBAC', sub: 'roles', tone: 'violet' },
+              { id: 'totp', lane: 1, row: 3, title: '2FA (TOTP)', sub: 'optional', tone: 'amber' },
+              { id: 'oauth', lane: 1, row: 4, title: 'OAuth2', sub: 'social login', tone: 'green' },
+            ]}
+            edges={[{ from: 'core', to: 'jwt', tone: 'cyan' }, { from: 'core', to: 'bcrypt', tone: 'blue' }, { from: 'core', to: 'rbac', label: 'includes', tone: 'violet' }, { from: 'core', to: 'totp', tone: 'amber' }, { from: 'core', to: 'oauth', tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'Built in' }, { tone: 'green', label: 'Complete stack' }]}
+            caption="JWT, bcrypt, RBAC, TOTP 2FA, and OAuth social login — a complete auth stack, built in" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

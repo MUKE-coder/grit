@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -43,6 +44,16 @@ export default function FileStorageCourse() {
             and presigned URLs. You{"'"}ll start with MinIO for local development, then learn how to switch
             to cloud providers like Cloudflare R2 and AWS S3 with zero code changes.
           </p>
+          <LaneFlow id="c-gwstorage" lanes={['Upload', 'Storage service', 'S3-compatible']}
+            nodes={[
+              { id: 'up', lane: 0, row: 1, title: 'Upload file', sub: 'presigned URL', tone: 'blue' },
+              { id: 'svc', lane: 1, row: 0, title: 'Storage service', sub: 'validate + key', tone: 'primary' },
+              { id: 'thumb', lane: 1, row: 1, title: 'Thumbnails', sub: 'image resize', tone: 'cyan' },
+              { id: 's3', lane: 2, row: 1, title: 'MinIO → S3 / R2', sub: 'object store', tone: 'green' },
+            ]}
+            edges={[{ from: 'up', to: 'svc', label: 'PUT', tone: 'blue' }, { from: 'svc', to: 'thumb', label: 'if image', tone: 'cyan' }, { from: 'svc', to: 's3', label: 'store', tone: 'green' }, { from: 'thumb', to: 's3', tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'Storage service' }, { tone: 'green', label: 'Any S3 bucket' }]}
+            caption="Start on MinIO locally, then switch to S3 or R2 — same code, presigned uploads" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

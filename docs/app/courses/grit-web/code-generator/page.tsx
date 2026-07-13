@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -43,6 +44,20 @@ export default function CodeGeneratorCourse() {
             from a single command, understand every field type, use modifiers and relationships,
             and keep your Go and TypeScript types perfectly in sync.
           </p>
+          <LaneFlow id="c-gwcodegen" lanes={['grit generate', 'Go backend', 'Shared', 'Frontend']}
+            nodes={[
+              { id: 'cmd', lane: 0, row: 2, title: 'resource Product', sub: '--fields …', tone: 'primary' },
+              { id: 'model', lane: 1, row: 0, title: 'model.go', sub: 'GORM', tone: 'cyan' },
+              { id: 'handler', lane: 1, row: 1, title: 'handler.go', sub: 'CRUD', tone: 'cyan' },
+              { id: 'service', lane: 1, row: 2, title: 'service.go', sub: 'logic', tone: 'cyan' },
+              { id: 'schema', lane: 2, row: 1, title: 'schema.ts', sub: 'Zod', tone: 'violet' },
+              { id: 'types', lane: 2, row: 2, title: 'types.ts', sub: 'TS', tone: 'blue' },
+              { id: 'hook', lane: 3, row: 1, title: 'use-products', sub: 'React Query', tone: 'amber' },
+              { id: 'page', lane: 3, row: 2, title: 'page.tsx', sub: 'CRUD UI', tone: 'green' },
+            ]}
+            edges={[{ from: 'cmd', to: 'model', tone: 'cyan' }, { from: 'cmd', to: 'handler', tone: 'cyan' }, { from: 'cmd', to: 'service', label: 'fans out', tone: 'cyan' }, { from: 'cmd', to: 'schema', tone: 'violet' }, { from: 'cmd', to: 'types', tone: 'blue' }, { from: 'cmd', to: 'hook', tone: 'amber' }, { from: 'cmd', to: 'page', tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'One command' }, { tone: 'green', label: 'Full-stack feature' }]}
+            caption="One command writes the model, service, handler, schemas, types, hooks, and UI" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

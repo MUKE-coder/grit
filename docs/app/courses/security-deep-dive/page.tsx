@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -42,6 +43,19 @@ export default function SecurityDeepDiveCourse() {
             hashing, JWT tokens, role-based access, two-factor authentication, backup codes, trusted
             devices, a web application firewall, rate limiting, security headers, and OAuth2.
           </p>
+          <LaneFlow id="c-secdeep" lanes={['Request', 'Defense in depth', 'Data']}
+            groups={[{ lane: 1, rows: [0, 3], label: 'Built in from day one', tone: 'primary' }]}
+            nodes={[
+              { id: 'req', lane: 0, row: 1, title: 'Request', sub: 'client / attacker', tone: 'blue' },
+              { id: 'rate', lane: 1, row: 0, title: 'Rate limit', sub: 'Sentinel', tone: 'cyan' },
+              { id: 'auth', lane: 1, row: 1, title: 'Auth', sub: 'JWT + bcrypt', tone: 'primary' },
+              { id: 'rbac', lane: 1, row: 2, title: 'RBAC', sub: 'RequireRole', tone: 'violet' },
+              { id: 'valid', lane: 1, row: 3, title: 'Validation', sub: 'binding tags', tone: 'amber' },
+              { id: 'data', lane: 2, row: 2, title: 'GORM', sub: 'parameterized', tone: 'green' },
+            ]}
+            edges={[{ from: 'req', to: 'rate', tone: 'cyan' }, { from: 'rate', to: 'auth', tone: 'primary' }, { from: 'auth', to: 'rbac', tone: 'violet' }, { from: 'rbac', to: 'valid', tone: 'amber' }, { from: 'valid', to: 'data', label: 'safe', tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'Layered by default' }, { tone: 'green', label: 'Safe data access' }]}
+            caption="Every request passes rate limiting, auth, RBAC, and validation before any data is touched" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

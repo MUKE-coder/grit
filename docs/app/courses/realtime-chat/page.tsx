@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -42,6 +43,16 @@ export default function RealtimeChatCourse() {
             a complete real-time chat application with rooms, authentication, typing indicators, and
             message persistence.
           </p>
+          <LaneFlow id="c-chat" lanes={['Sender', 'WebSocket Hub', 'Everyone else']}
+            nodes={[
+              { id: 'a', lane: 0, row: 1, title: 'Client A', sub: 'sends message', tone: 'blue' },
+              { id: 'hub', lane: 1, row: 1, title: 'WebSocket Hub', sub: 'broadcast', tone: 'primary' },
+              { id: 'b', lane: 2, row: 0, title: 'Client B', sub: 'receives instantly', tone: 'cyan' },
+              { id: 'c', lane: 2, row: 2, title: 'Client C', sub: 'receives instantly', tone: 'green' },
+            ]}
+            edges={[{ from: 'a', to: 'hub', label: 'send', tone: 'primary' }, { from: 'hub', to: 'b', label: 'push', dashed: true, tone: 'cyan' }, { from: 'hub', to: 'c', dashed: true, tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'Server push' }, { tone: 'cyan', label: 'No polling' }]}
+            caption="A message hits the hub and is pushed to every connected client the instant it arrives — no polling" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -42,6 +43,17 @@ export default function JobsEmailCourse() {
             you will learn how Grit uses Redis-backed job queues to process work in the background — sending emails,
             processing images, generating reports — and how to send beautiful transactional emails with templates.
           </p>
+          <LaneFlow id="c-gwjobs" lanes={['Enqueue', 'Redis queue', 'Workers']}
+            nodes={[
+              { id: 'enq', lane: 0, row: 1, title: 'jobs.Enqueue()', sub: 'from a handler', tone: 'cyan' },
+              { id: 'queue', lane: 1, row: 1, title: 'Redis (asynq)', sub: 'background', tone: 'primary' },
+              { id: 'email', lane: 2, row: 0, title: 'Send email', sub: 'templates', tone: 'violet' },
+              { id: 'image', lane: 2, row: 1, title: 'Process image', sub: 'thumbnails', tone: 'blue' },
+              { id: 'report', lane: 2, row: 2, title: 'Generate report', sub: 'async', tone: 'green' },
+            ]}
+            edges={[{ from: 'enq', to: 'queue', label: 'push', tone: 'primary' }, { from: 'queue', to: 'email', tone: 'violet' }, { from: 'queue', to: 'image', tone: 'blue' }, { from: 'queue', to: 'report', tone: 'green' }]}
+            legend={[{ tone: 'primary', label: 'Redis queue' }, { tone: 'violet', label: 'Background work' }]}
+            caption="Slow work runs in the background off Redis — emails, images, and reports, without blocking the request" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">

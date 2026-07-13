@@ -3,6 +3,7 @@ import { Cable, ShieldCheck, Repeat, Layers } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { GridFrame } from '@/components/grid-frame'
 import { CodeBlock, Challenge, Note, Tip, Definition, Code, CourseNav, CourseFooter } from '@/components/course-components'
+import { LaneFlow } from '@/components/lane-flow'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -47,6 +48,16 @@ export default function WebhookReceiverCourse() {
             <strong className="text-foreground"> deduplication</strong> on (provider, external_id),
             and a <strong className="text-foreground">replay</strong> path so retries are always safe.
           </p>
+          <LaneFlow id="c-whrecv" lanes={['Incoming webhook', 'Verify + dispatch', 'You']}
+            nodes={[
+              { id: 'hook', lane: 0, row: 1, title: 'POST /webhooks/:provider', sub: 'Stripe · GitHub · HMAC', tone: 'primary' },
+              { id: 'verify', lane: 1, row: 0, title: 'Verify signature', sub: 'HMAC', tone: 'amber' },
+              { id: 'store', lane: 1, row: 1, title: 'Store event', sub: 'idempotent', tone: 'cyan' },
+              { id: 'handler', lane: 2, row: 1, title: 'Your On() handler', sub: 'runs', tone: 'green' },
+            ]}
+            edges={[{ from: 'hook', to: 'verify', tone: 'amber' }, { from: 'verify', to: 'store', tone: 'cyan' }, { from: 'store', to: 'handler', label: 'dispatch', tone: 'green' }]}
+            legend={[{ tone: 'amber', label: 'Signature check' }, { tone: 'cyan', label: 'Idempotent' }]}
+            caption="Signatures verified, events stored idempotently, then your handler runs — replayable from admin" />
         </div>
 
         <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
