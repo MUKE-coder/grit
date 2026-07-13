@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { Diagram, DiagramBox, DiagramRow, FlowArrow, DiagramLegend } from '@/components/diagram'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/migrations')
@@ -45,20 +46,22 @@ export default function MigrationsPage() {
                   change. The usual first-run order is migrate, then seed, then serve.
                 </p>
 
-                <CodeBlock
-                  language="text"
-                  filename="first run"
-                  code={`  models.Models()          grit migrate            grit seed
-   (the registry)     →   create tables +    →     fills tables
-                          add new columns          (idempotent)
-        │                        │                        │
-   &User{}, &Upload{},     + created User          SeedUsers  → admin + demo
-   &Category{},            ~ Blog +2 columns       SeedBlogs  → sample posts
-   &Product{}, …           + created Category      SeedCategories / SeedProducts
-   // grit:models          unchanged: Upload …     // grit:seeders
-        │                        │                        │
-        └──── generate resource adds an entry to BOTH lists automatically ────┘`}
-                />
+                <Diagram>
+                  <DiagramRow>
+                    <DiagramBox tone="blue" title="models.Models()" sub="the model registry" />
+                    <FlowArrow />
+                    <DiagramBox tone="primary" title="grit migrate" sub="create tables + add columns" />
+                    <FlowArrow />
+                    <DiagramBox tone="green" title="grit seed" sub="fills tables (idempotent)" />
+                  </DiagramRow>
+                  <DiagramLegend
+                    items={[
+                      { tone: 'blue', label: 'Model registry' },
+                      { tone: 'primary', label: 'Schema — migrate' },
+                      { tone: 'green', label: 'Data — seed' },
+                    ]}
+                  />
+                </Diagram>
 
                 <p className="text-muted-foreground leading-relaxed mt-4">
                   This page covers the left two boxes &mdash; the model registry and the

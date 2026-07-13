@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { Diagram, DiagramBox, DiagramRow, DiagramArrow, DiagramLegend } from '@/components/diagram'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/rbac')
@@ -69,6 +70,29 @@ export default function RBACPage() {
                     </tbody>
                   </table>
                 </div>
+
+                <Diagram>
+                  <div className="mb-1 text-center text-[11px] font-mono uppercase tracking-wider text-muted-foreground/50">Authenticated user role</div>
+                  <DiagramRow>
+                    <DiagramBox tone="rose" title="ADMIN" />
+                    <DiagramBox tone="amber" title="EDITOR" />
+                    <DiagramBox tone="blue" title="USER" />
+                  </DiagramRow>
+                  <DiagramArrow label={'RequireRole("ADMIN")'} />
+                  <DiagramBox tone="primary" title="RequireRole middleware" sub="matches user_role against the allow-list" />
+                  <DiagramArrow label="gates route groups" />
+                  <DiagramRow>
+                    <DiagramBox tone="green" title="public" sub="no auth" />
+                    <DiagramBox tone="green" title="protected" sub="any authenticated user" />
+                    <DiagramBox tone="green" title="admin" sub="ADMIN only" />
+                  </DiagramRow>
+                  <DiagramLegend
+                    items={[
+                      { tone: 'primary', label: 'Middleware' },
+                      { tone: 'green', label: 'Route groups' },
+                    ]}
+                  />
+                </Diagram>
               </div>
 
               {/* Role Constants */}

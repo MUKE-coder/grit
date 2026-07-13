@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from "@/components/code-block";
+import { Files, Folder, File } from "@/components/files";
 import { Steps, Step } from "@/components/steps";
 import { getDocMetadata } from "@/config/docs-metadata";
 
@@ -160,53 +161,60 @@ iwr -useb https://gritframework.dev/install.ps1 | iex`}
                   Here is the project structure that gets created:
                 </p>
               </div>
-              <CodeBlock
-                language="bash"
-                filename="taskmanager/"
-                code={`taskmanager/
-├── main.go                  # Wails entry point
-├── app.go                   # App struct with bound methods
-├── wails.json               # Wails project configuration
-├── go.mod
-├── go.sum
-├── internal/
-│   ├── config/
-│   │   └── config.go        # App configuration
-│   ├── db/
-│   │   └── db.go            # GORM database setup (SQLite)
-│   ├── models/
-│   │   ├── user.go          # User model + AutoMigrate
-│   │   ├── blog.go          # Blog post model
-│   │   └── contact.go       # Contact model
-│   ├── service/
-│   │   ├── auth.go          # Authentication service
-│   │   ├── blog.go          # Blog CRUD service
-│   │   ├── contact.go       # Contact CRUD service
-│   │   └── export.go        # PDF / Excel export service
-│   ├── api/                 # Embedded Gin REST API (127.0.0.1:34999)
-│   ├── storage/             # Upload storage in the OS app-data dir
-│   ├── files/               # FileRef — stored upload JSON shape
-│   └── types/
-│       └── types.go         # Shared request/response types
-├── frontend/
-│   ├── src/
-│   │   ├── main.tsx          # React entry point (TanStack Router)
-│   │   ├── routes/           # File-based routes (TanStack Router)
-│   │   │   ├── __root.tsx    # Root route
-│   │   │   ├── _layout.tsx   # Auth guard + sidebar layout
-│   │   │   └── _layout/      # Protected page routes
-│   │   ├── components/       # Reusable UI components
-│   │   ├── hooks/            # TanStack Query hooks
-│   │   └── lib/              # Utilities
-│   ├── index.html
-│   ├── package.json
-│   ├── vite.config.ts
-│   └── tailwind.config.ts
-└── cmd/
-    └── studio/
-        └── main.go           # GORM Studio standalone server`}
-                className="mb-6"
-              />
+              <Files title="taskmanager/">
+                <File name="main.go" comment="Wails entry point" />
+                <File name="app.go" comment="App struct with bound methods" />
+                <File name="wails.json" comment="Wails project configuration" />
+                <File name="go.mod" />
+                <File name="go.sum" />
+                <Folder name="internal" defaultOpen>
+                  <Folder name="config" defaultOpen>
+                    <File name="config.go" comment="App configuration" />
+                  </Folder>
+                  <Folder name="db" defaultOpen>
+                    <File name="db.go" comment="GORM database setup (SQLite)" />
+                  </Folder>
+                  <Folder name="models" defaultOpen>
+                    <File name="user.go" comment="User model + AutoMigrate" />
+                    <File name="blog.go" comment="Blog post model" />
+                    <File name="contact.go" comment="Contact model" />
+                  </Folder>
+                  <Folder name="service" defaultOpen>
+                    <File name="auth.go" comment="Authentication service" />
+                    <File name="blog.go" comment="Blog CRUD service" />
+                    <File name="contact.go" comment="Contact CRUD service" />
+                    <File name="export.go" comment="PDF / Excel export service" />
+                  </Folder>
+                  <Folder name="api" comment="Embedded Gin REST API (127.0.0.1:34999)" />
+                  <Folder name="storage" comment="Upload storage in the OS app-data dir" />
+                  <Folder name="files" comment="FileRef — stored upload JSON shape" />
+                  <Folder name="types" defaultOpen>
+                    <File name="types.go" comment="Shared request/response types" />
+                  </Folder>
+                </Folder>
+                <Folder name="frontend" defaultOpen>
+                  <Folder name="src" defaultOpen>
+                    <File name="main.tsx" comment="React entry point (TanStack Router)" />
+                    <Folder name="routes" comment="File-based routes (TanStack Router)" defaultOpen>
+                      <File name="__root.tsx" comment="Root route" />
+                      <File name="_layout.tsx" comment="Auth guard + sidebar layout" />
+                      <Folder name="_layout" comment="Protected page routes" />
+                    </Folder>
+                    <Folder name="components" comment="Reusable UI components" />
+                    <Folder name="hooks" comment="TanStack Query hooks" />
+                    <Folder name="lib" comment="Utilities" />
+                  </Folder>
+                  <File name="index.html" />
+                  <File name="package.json" />
+                  <File name="vite.config.ts" />
+                  <File name="tailwind.config.ts" />
+                </Folder>
+                <Folder name="cmd" defaultOpen>
+                  <Folder name="studio" defaultOpen>
+                    <File name="main.go" comment="GORM Studio standalone server" />
+                  </Folder>
+                </Folder>
+              </Files>
 
               <div className="prose-grit mb-0">
                 <p>What gets created out of the box:</p>

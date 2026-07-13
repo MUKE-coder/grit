@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { Diagram, DiagramBox, DiagramRow, DiagramArrow, FlowArrow, DiagramLegend } from '@/components/diagram'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/handlers')
@@ -30,6 +31,44 @@ export default function HandlersPage() {
             </div>
 
             <div className="prose-grit">
+              {/* ── Request Lifecycle Diagram ─────────────────────── */}
+              <p>
+                Every request walks the same path down through the Go layers and returns back up as
+                a JSON response:
+              </p>
+              <Diagram>
+                <DiagramBox tone="blue" title="HTTP Request" sub="GET /api/posts" />
+                <DiagramArrow label="routing" />
+                <DiagramRow>
+                  <DiagramBox tone="primary" title="Gin Router" sub="matches route" />
+                  <FlowArrow />
+                  <DiagramBox tone="primary" title="Middleware" sub="CORS, Auth, Logger" />
+                  <FlowArrow />
+                  <DiagramBox tone="primary" title="Handler" sub="thin HTTP layer" />
+                </DiagramRow>
+                <DiagramArrow label="calls" />
+                <DiagramRow>
+                  <DiagramBox tone="primary" title="Service" sub="business logic" />
+                  <FlowArrow />
+                  <DiagramBox tone="primary" title="GORM Model" sub="query builder" />
+                </DiagramRow>
+                <DiagramArrow label="SQL" />
+                <DiagramBox tone="green" title="PostgreSQL" sub=":5434" />
+                <DiagramArrow label="JSON response ←" />
+                <DiagramBox
+                  tone="blue"
+                  title="JSON response ←"
+                  sub="{ data, meta } bubbles back up: PostgreSQL → GORM → Service → Handler → client"
+                />
+                <DiagramLegend
+                  items={[
+                    { tone: 'blue', label: 'HTTP' },
+                    { tone: 'primary', label: 'Go layers' },
+                    { tone: 'green', label: 'Data' },
+                  ]}
+                />
+              </Diagram>
+
               {/* ── Handler Pattern ─────────────────────────────── */}
               <h2 id="handler-pattern">Handler Pattern</h2>
               <p>

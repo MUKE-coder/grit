@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { Diagram, DiagramBox, DiagramArrow, DiagramLegend, HighlightBox } from '@/components/diagram'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/backend/authentication')
@@ -38,6 +39,35 @@ export default function AuthenticationPage() {
                 API requests and a long-lived <strong>refresh token</strong> for obtaining new access
                 tokens without re-authenticating.
               </p>
+
+              <Diagram>
+                <div className="mb-1 text-center text-[11px] font-mono uppercase tracking-wider text-muted-foreground/50">Sign in</div>
+                <DiagramBox tone="blue" title="Login" sub="email + password" />
+                <DiagramArrow label="verify" />
+                <DiagramBox tone="primary" title="Verify with bcrypt" sub="user.CheckPassword()" />
+                <DiagramArrow label="issue token pair" />
+                <HighlightBox label="Tokens (HttpOnly cookies)" tone="amber">
+                  <DiagramBox tone="amber" title="grit_access" sub="15 min · Secure · SameSite=Lax" />
+                  <DiagramBox tone="amber" title="grit_refresh" sub="7 days · Path=/api/auth" />
+                </HighlightBox>
+
+                <DiagramArrow label="later — an authenticated request" />
+
+                <div className="mb-1 text-center text-[11px] font-mono uppercase tracking-wider text-muted-foreground/50">Protected request</div>
+                <DiagramBox tone="blue" title="Protected Request" sub="browser attaches grit_access cookie" />
+                <DiagramArrow label="validate cookie" />
+                <DiagramBox tone="primary" title="Auth Middleware" sub="reads grit_access → validates JWT" />
+                <DiagramArrow />
+                <DiagramBox tone="primary" title="Handler" sub="authenticated user in gin.Context" />
+
+                <DiagramLegend
+                  items={[
+                    { tone: 'blue', label: 'Client request' },
+                    { tone: 'primary', label: 'Go API' },
+                    { tone: 'amber', label: 'Tokens (cookies)' },
+                  ]}
+                />
+              </Diagram>
 
               <CodeBlock filename="authentication flow" code={`
   Client                           Grit API
