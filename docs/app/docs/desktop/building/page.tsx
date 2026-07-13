@@ -1,6 +1,7 @@
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from "@/components/code-block";
+import { LaneFlow } from "@/components/lane-flow";
 import { getDocMetadata } from "@/config/docs-metadata";
 import { Download } from "lucide-react";
 
@@ -27,6 +28,23 @@ export default function DesktopBuildingPage() {
                 Compile your desktop app into a native executable and distribute
                 it to users.
               </p>
+              <LaneFlow
+                id="desk-build"
+                lanes={['Your app', 'Wails build', 'Distribute']}
+                nodes={[
+                  { id: 'code', lane: 0, row: 1, title: 'Desktop app', sub: 'Go + React', tone: 'primary' },
+                  { id: 'build', lane: 1, row: 1, title: 'wails build', sub: 'compile', tone: 'cyan' },
+                  { id: 'exe', lane: 2, row: 0, title: 'Executable', sub: '.exe / .app', tone: 'blue' },
+                  { id: 'installer', lane: 2, row: 1, title: 'Installer', sub: 'NSIS / dmg', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'code', to: 'build', label: 'compile', tone: 'cyan' },
+                  { from: 'build', to: 'exe', tone: 'blue' },
+                  { from: 'build', to: 'installer', tone: 'green' },
+                ]}
+                legend={[{ tone: 'cyan', label: 'Single binary' }, { tone: 'green', label: 'Platform installer' }]}
+                caption="Wails compiles a single native binary — ship the executable or a platform installer"
+              />
             </div>
 
             {/* Compile */}

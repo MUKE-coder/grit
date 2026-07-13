@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/mobile/resource-generation')
@@ -29,6 +30,27 @@ export default function MobileResourceGenerationPage() {
                 hook, four screens, and a shared form. This page is a deep dive into each one and
                 how field types shape what gets generated.
               </p>
+              <LaneFlow
+                id="mob-resgen"
+                lanes={['grit generate', 'Expo files per resource']}
+                nodes={[
+                  { id: 'cmd', lane: 0, row: 2, title: 'grit generate', sub: 'resource Product', tone: 'primary' },
+                  { id: 'hook', lane: 1, row: 0, title: 'use-products', sub: 'typed hook', tone: 'cyan' },
+                  { id: 'list', lane: 1, row: 1, title: 'List screen', sub: 'index', tone: 'blue' },
+                  { id: 'detail', lane: 1, row: 2, title: 'Detail screen', sub: '[id]', tone: 'blue' },
+                  { id: 'form', lane: 1, row: 3, title: 'Create / Edit', sub: 'shared form', tone: 'green' },
+                  { id: 'more', lane: 1, row: 4, title: '+ 2 screens', sub: 'edit · etc.', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'cmd', to: 'hook', tone: 'cyan' },
+                  { from: 'cmd', to: 'list', tone: 'blue' },
+                  { from: 'cmd', to: 'detail', label: 'writes', tone: 'blue' },
+                  { from: 'cmd', to: 'form', tone: 'green' },
+                  { from: 'cmd', to: 'more', tone: 'amber' },
+                ]}
+                legend={[{ tone: 'primary', label: 'One command' }, { tone: 'cyan', label: 'Six Expo files' }]}
+                caption="One command writes a typed hook, four screens, and a shared form — six Expo files per resource"
+              />
             </div>
 
             {/* Fan-out diagram */}

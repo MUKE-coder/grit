@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/mobile/offline')
@@ -29,6 +30,23 @@ export default function MobileOfflinePage() {
                 Query caching and persistent auth. It is not an offline-first sync engine, and
                 this page is precise about the difference.
               </p>
+              <LaneFlow
+                id="mob-offline"
+                lanes={['Expo app', 'When online', 'When offline']}
+                nodes={[
+                  { id: 'ui', lane: 0, row: 1, title: 'Screens', sub: 'React Query', tone: 'primary' },
+                  { id: 'api', lane: 1, row: 1, title: 'Go API', sub: 'fetch + mutate', tone: 'cyan' },
+                  { id: 'cache', lane: 2, row: 0, title: 'RQ cache', sub: 'last data shown', tone: 'green' },
+                  { id: 'auth', lane: 2, row: 1, title: 'SecureStore', sub: 'token persists', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'ui', to: 'api', label: 'online', tone: 'cyan' },
+                  { from: 'ui', to: 'cache', label: 'offline read', dashed: true, tone: 'green' },
+                  { from: 'ui', to: 'auth', tone: 'amber' },
+                ]}
+                legend={[{ tone: 'cyan', label: 'Online-first' }, { tone: 'green', label: 'Cached fallback' }]}
+                caption="Online-first: React Query serves the last cached data offline and auth persists — it is not a sync engine"
+              />
             </div>
 
             {/* Honest framing */}

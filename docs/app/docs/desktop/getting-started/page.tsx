@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/desktop/getting-started')
@@ -30,6 +31,23 @@ export default function DesktopGettingStartedPage() {
                 through prerequisites, project creation, development workflow, and running
                 GORM Studio.
               </p>
+              <LaneFlow
+                id="desk-gs"
+                lanes={['1 · Scaffold', '2 · Dev', '3 · Native window']}
+                nodes={[
+                  { id: 'new', lane: 0, row: 0, title: 'grit new-desktop', sub: 'Wails + Go', tone: 'primary' },
+                  { id: 'dev', lane: 1, row: 0, title: 'grit start desktop', sub: 'hot reload', tone: 'cyan' },
+                  { id: 'win', lane: 2, row: 0, title: 'Native window', sub: 'embedded API', tone: 'green' },
+                  { id: 'studio', lane: 2, row: 1, title: 'GORM Studio', sub: 'browse data', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'new', to: 'dev', tone: 'cyan' },
+                  { from: 'dev', to: 'win', label: 'launches', tone: 'green' },
+                  { from: 'dev', to: 'studio', tone: 'amber' },
+                ]}
+                legend={[{ tone: 'primary', label: 'One command' }, { tone: 'green', label: 'Native app' }]}
+                caption="One command scaffolds a native Wails app with an embedded Go API and GORM Studio"
+              />
             </div>
 
             {/* Prerequisites */}

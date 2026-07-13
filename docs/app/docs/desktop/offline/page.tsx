@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/desktop/offline')
@@ -30,6 +31,25 @@ export default function DesktopOfflinePage() {
                 tracks every change locally, and pushes to the server with explicit conflict
                 resolution — like Git, for your data.
               </p>
+              <LaneFlow
+                id="desk-offline"
+                lanes={['Desktop app', 'Local (offline)', 'Server (on sync)']}
+                nodes={[
+                  { id: 'ui', lane: 0, row: 1, title: 'App', sub: 'reads / writes', tone: 'primary' },
+                  { id: 'local', lane: 1, row: 0, title: 'Local SQLite', sub: 'works offline', tone: 'cyan' },
+                  { id: 'log', lane: 1, row: 1, title: 'Change log', sub: 'tracks every edit', tone: 'blue' },
+                  { id: 'push', lane: 2, row: 0, title: 'Push', sub: 'to server', tone: 'green' },
+                  { id: 'conflict', lane: 2, row: 1, title: 'Conflict resolution', sub: 'explicit', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'ui', to: 'local', label: 'instant', tone: 'cyan' },
+                  { from: 'local', to: 'log', tone: 'blue' },
+                  { from: 'log', to: 'push', label: 'when online', dashed: true, tone: 'green' },
+                  { from: 'push', to: 'conflict', tone: 'amber' },
+                ]}
+                legend={[{ tone: 'cyan', label: 'Offline-capable' }, { tone: 'amber', label: 'Git-like conflicts' }]}
+                caption="Every change is tracked locally and works offline; sync pushes to the server with explicit conflict resolution"
+              />
             </div>
 
             {/* Mental model */}

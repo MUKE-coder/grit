@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/mobile/building')
@@ -29,6 +30,25 @@ export default function MobileBuildingPage() {
                 binaries. This page covers configuring EAS, building, submitting to the stores,
                 and pushing JavaScript-only updates over the air.
               </p>
+              <LaneFlow
+                id="mob-build"
+                lanes={['Your app', 'EAS Build', 'Ship']}
+                nodes={[
+                  { id: 'code', lane: 0, row: 1, title: 'Expo app', sub: 'JS + native', tone: 'primary' },
+                  { id: 'eas', lane: 1, row: 1, title: 'EAS Build', sub: 'cloud compile', tone: 'cyan' },
+                  { id: 'ios', lane: 2, row: 0, title: 'App Store', sub: '.ipa', tone: 'blue' },
+                  { id: 'android', lane: 2, row: 1, title: 'Play Store', sub: '.aab', tone: 'green' },
+                  { id: 'ota', lane: 2, row: 2, title: 'OTA update', sub: 'JS-only', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'code', to: 'eas', label: 'build', tone: 'cyan' },
+                  { from: 'eas', to: 'ios', tone: 'blue' },
+                  { from: 'eas', to: 'android', tone: 'green' },
+                  { from: 'code', to: 'ota', label: 'push', dashed: true, tone: 'amber' },
+                ]}
+                legend={[{ tone: 'cyan', label: 'Cloud build' }, { tone: 'amber', label: 'Over-the-air' }]}
+                caption="EAS compiles native binaries in the cloud; ship to the stores or push JS-only OTA updates"
+              />
             </div>
 
             {/* Two kinds of change */}

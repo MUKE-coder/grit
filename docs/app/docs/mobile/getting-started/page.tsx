@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/mobile/getting-started')
@@ -28,6 +29,23 @@ export default function MobileGettingStartedPage() {
                 covers prerequisites, project creation, the development workflow, and the
                 device-vs-emulator API URL matrix so your phone can actually reach the backend.
               </p>
+              <LaneFlow
+                id="mob-gs"
+                lanes={['1 · Scaffold', '2 · API', '3 · Expo', '4 · Device']}
+                nodes={[
+                  { id: 'new', lane: 0, row: 0, title: 'grit new --mobile', sub: 'API + Expo', tone: 'primary' },
+                  { id: 'api', lane: 1, row: 0, title: 'grit start server', sub: ':8080', tone: 'cyan' },
+                  { id: 'expo', lane: 2, row: 0, title: 'expo start', sub: 'Metro', tone: 'blue' },
+                  { id: 'device', lane: 3, row: 0, title: 'Phone / emulator', sub: 'LAN URL', tone: 'green' },
+                ]}
+                edges={[
+                  { from: 'new', to: 'api', tone: 'cyan' },
+                  { from: 'api', to: 'expo', tone: 'blue' },
+                  { from: 'expo', to: 'device', label: 'reaches', tone: 'green' },
+                ]}
+                legend={[{ tone: 'primary', label: 'One command' }, { tone: 'green', label: 'Running on device' }]}
+                caption="One command scaffolds the API and Expo app; point the phone at your LAN URL and go"
+              />
             </div>
 
             {/* Prerequisites */}

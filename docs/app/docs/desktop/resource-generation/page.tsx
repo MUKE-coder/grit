@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from "@/components/code-block";
+import { LaneFlow } from "@/components/lane-flow";
 import { getDocMetadata } from "@/config/docs-metadata";
 import { Download } from "lucide-react";
 
@@ -29,6 +30,25 @@ export default function DesktopResourceGenerationPage() {
                 creates Go models, services, React pages, and injects code into
                 10 locations.
               </p>
+              <LaneFlow
+                id="desk-resgen"
+                lanes={['grit generate', 'Generated', 'Injected']}
+                nodes={[
+                  { id: 'cmd', lane: 0, row: 1, title: 'grit generate', sub: 'resource', tone: 'primary' },
+                  { id: 'model', lane: 1, row: 0, title: 'Go model', sub: 'GORM', tone: 'cyan' },
+                  { id: 'svc', lane: 1, row: 1, title: 'Service', sub: 'logic', tone: 'cyan' },
+                  { id: 'pages', lane: 1, row: 2, title: 'React pages', sub: 'CRUD', tone: 'blue' },
+                  { id: 'inject', lane: 2, row: 1, title: '10 injection sites', sub: 'routes · nav · registry', tone: 'amber' },
+                ]}
+                edges={[
+                  { from: 'cmd', to: 'model', tone: 'cyan' },
+                  { from: 'cmd', to: 'svc', tone: 'cyan' },
+                  { from: 'cmd', to: 'pages', tone: 'blue' },
+                  { from: 'cmd', to: 'inject', label: 'wires up', tone: 'amber' },
+                ]}
+                legend={[{ tone: 'cyan', label: 'Generated files' }, { tone: 'amber', label: 'Wired into 10 places' }]}
+                caption="One command generates the model, service, and React pages — and wires them into 10 places"
+              />
             </div>
 
             {/* Usage */}
