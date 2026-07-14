@@ -160,4 +160,3 @@ export function NumberInput({ value, onChange, kind = "float", className, placeh
 }
 `
 }
-

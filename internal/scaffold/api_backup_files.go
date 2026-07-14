@@ -84,6 +84,23 @@ func (m *Backup) BeforeCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
+
+// BackupSchedule is the single-row configuration for automatic backups. The
+// scheduler ticks frequently and consults this row to decide whether a backup
+// is due — so the period can be changed at runtime without re-registering cron.
+//
+//	Frequency: daily | weekly | monthly | yearly (default weekly)
+//	Time:      "HH:MM" server-local time-of-day the run should land at
+//	Enabled:   master switch for automatic backups (manual backups still work)
+type BackupSchedule struct {
+	ID        uint      ~gorm:"primarykey" json:"-"~ // singleton, id = 1
+	Frequency string    ~gorm:"size:20;default:weekly" json:"frequency"~
+	Time      string    ~gorm:"size:5;default:02:00" json:"time"~
+	Enabled   bool      ~gorm:"default:true" json:"enabled"~
+	UpdatedAt time.Time ~json:"updated_at"~
+}
+
+func (BackupSchedule) TableName() string { return "backup_schedules" }
 `
 }
 
@@ -541,6 +558,104 @@ func (s *Service) ManualRateLimited(window time.Duration) (bool, error) {
 		Count(&count).Error
 	return count > 0, err
 }
+
+// validFrequencies is the closed set of backup periods the UI offers.
+var validFrequencies = map[string]bool{"daily": true, "weekly": true, "monthly": true, "yearly": true}
+
+// GetSchedule returns the singleton backup-schedule row, seeding the default
+// (weekly at 02:00, enabled) on first read.
+func (s *Service) GetSchedule() (models.BackupSchedule, error) {
+	var sc models.BackupSchedule
+	err := s.DB.First(&sc, 1).Error
+	if err == gorm.ErrRecordNotFound {
+		sc = models.BackupSchedule{ID: 1, Frequency: "weekly", Time: "02:00", Enabled: true}
+		if cerr := s.DB.Create(&sc).Error; cerr != nil {
+			return sc, cerr
+		}
+		return sc, nil
+	}
+	return sc, err
+}
+
+// SaveSchedule validates and persists the backup schedule (upsert of the
+// singleton row).
+func (s *Service) SaveSchedule(frequency, tod string, enabled bool) (models.BackupSchedule, error) {
+	if !validFrequencies[frequency] {
+		return models.BackupSchedule{}, fmt.Errorf("invalid frequency %q", frequency)
+	}
+	if _, _, err := parseHHMM(tod); err != nil {
+		return models.BackupSchedule{}, fmt.Errorf("invalid time %q (want HH:MM)", tod)
+	}
+	sc := models.BackupSchedule{ID: 1, Frequency: frequency, Time: tod, Enabled: enabled}
+	if err := s.DB.Save(&sc).Error; err != nil {
+		return sc, err
+	}
+	return sc, nil
+}
+
+// DueNow reports whether an automatic backup should run at time ~now~. It's
+// called on every scheduler tick: a backup is due when the schedule is enabled,
+// the current period's scheduled time has passed, and no SCHEDULED backup has
+// been taken yet in this period (which also makes a missed run catch up on the
+// next tick).
+func (s *Service) DueNow(now time.Time) (bool, error) {
+	sc, err := s.GetSchedule()
+	if err != nil {
+		return false, err
+	}
+	if !sc.Enabled {
+		return false, nil
+	}
+	anchor := scheduleAnchor(now, sc.Frequency, sc.Time)
+	if now.Before(anchor) {
+		return false, nil
+	}
+	var last models.Backup
+	err = s.DB.Where("kind = ? AND status IN ? AND created_at >= ?",
+		"SCHEDULED", []string{"READY", "RUNNING"}, anchor).First(&last).Error
+	if err == nil {
+		return false, nil // already ran this period
+	}
+	if err != gorm.ErrRecordNotFound {
+		return false, err
+	}
+	return true, nil
+}
+
+// parseHHMM parses a "HH:MM" 24-hour time-of-day.
+func parseHHMM(s string) (int, int, error) {
+	var h, m int
+	if _, err := fmt.Sscanf(s, "%d:%d", &h, &m); err != nil {
+		return 0, 0, err
+	}
+	if h < 0 || h > 23 || m < 0 || m > 59 {
+		return 0, 0, fmt.Errorf("out of range")
+	}
+	return h, m, nil
+}
+
+// scheduleAnchor returns the most recent scheduled datetime for the current
+// period (server-local): today for daily, this week's Sunday for weekly, the
+// 1st for monthly, Jan 1 for yearly — each at the configured time-of-day.
+func scheduleAnchor(now time.Time, frequency, tod string) time.Time {
+	h, m, err := parseHHMM(tod)
+	if err != nil {
+		h, m = 2, 0
+	}
+	y, mon, d := now.Date()
+	loc := now.Location()
+	switch frequency {
+	case "daily":
+		return time.Date(y, mon, d, h, m, 0, 0, loc)
+	case "monthly":
+		return time.Date(y, mon, 1, h, m, 0, 0, loc)
+	case "yearly":
+		return time.Date(y, time.January, 1, h, m, 0, 0, loc)
+	default: // weekly — rewind to this week's Sunday
+		start := time.Date(y, mon, d, h, m, 0, 0, loc)
+		return start.AddDate(0, 0, -int(now.Weekday()))
+	}
+}
 `
 }
 
@@ -835,6 +950,38 @@ func (h *BackupHandler) Download(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{"url": url, "expires_in": int(downloadURLTTL.Seconds())},
 	})
+}
+
+// GetSettings returns the automatic-backup schedule (frequency, time, enabled).
+func (h *BackupHandler) GetSettings(c *gin.Context) {
+	sc, err := h.svc().GetSchedule()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to load backup schedule"},
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": sc})
+}
+
+// UpdateSettings changes the automatic-backup schedule. The scheduler picks up
+// the new period on its next tick — no restart needed.
+func (h *BackupHandler) UpdateSettings(c *gin.Context) {
+	var req struct {
+		Frequency string ~json:"frequency"~
+		Time      string ~json:"time"~
+		Enabled   bool   ~json:"enabled"~
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "INVALID_BODY", "message": err.Error()}})
+		return
+	}
+	sc, err := h.svc().SaveSchedule(req.Frequency, req.Time, req.Enabled)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "INVALID_SCHEDULE", "message": err.Error()}})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": sc, "message": "Backup schedule updated"})
 }
 `
 }

@@ -90,28 +90,30 @@ func New(redisURL string) (*Scheduler, error) {
 		Type:     "uploads:cleanup_orphans",
 	})
 
-	// v3.31.77 -- WEEKLY full-database backup. Sunday 02:00 UTC, the
-	// quietest window. Dumps every registered model to a ZIP (CSV per
-	// table + dump.sql + metadata.json), uploads it to object storage,
-	// and prunes to the newest few archives.
+	// Automatic full-database backup, settings-driven. Instead of a fixed
+	// weekly cron, a lightweight checker runs every 30 minutes and consults the
+	// BackupSchedule row (daily / weekly / monthly / yearly + time-of-day,
+	// default weekly). When the current period's run is due and hasn't happened
+	// yet, it dumps every registered model to a ZIP (CSV per table + dump.sql +
+	// metadata.json), uploads it, and prunes to the newest few archives. The
+	// period can be changed at runtime from the Data & Backup page — no restart.
 	//
-	// asynq.Unique bounds the task to one enqueue per 20h. Every replica
-	// runs its own scheduler, so without this a rolling deploy or a
-	// failover would enqueue the same weekly backup several times.
+	// asynq.Unique bounds it to one enqueue per tick window so overlapping
+	// scheduler replicas don't double-run the check.
 	_, err = scheduler.Register(
-		"0 2 * * 0",
-		asynq.NewTask("backup:weekly", nil),
-		asynq.Unique(20*time.Hour),
+		"*/30 * * * *",
+		asynq.NewTask("backup:scheduled", nil),
+		asynq.Unique(25*time.Minute),
 		asynq.Timeout(30*time.Minute),
-		asynq.MaxRetry(2),
+		asynq.MaxRetry(1),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("registering weekly backup: %w", err)
+		return nil, fmt.Errorf("registering scheduled backup: %w", err)
 	}
 	RegisteredTasks = append(RegisteredTasks, Task{
-		Name:     "Weekly database backup",
-		Schedule: "0 2 * * 0",
-		Type:     "backup:weekly",
+		Name:     "Automatic database backup",
+		Schedule: "every 30 min · honors your backup schedule",
+		Type:     "backup:scheduled",
 	})
 
 	// grit:cron-tasks

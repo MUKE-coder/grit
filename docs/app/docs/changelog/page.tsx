@@ -28,6 +28,43 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.58.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.58.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>A real Data &amp; Backup page, and a configurable backup schedule.</strong>{' '}
+                  Both the desktop app and the admin panel now have a prominent{' '}
+                  <strong>Data &amp; Backup</strong> entry in the sidebar. The page shows your latest
+                  snapshot, the recent history, one-click <strong>Generate now</strong> and{' '}
+                  <strong>Download</strong>, and &mdash; new &mdash; a schedule you control:{' '}
+                  <strong>daily, weekly, monthly, or yearly</strong> at a time of day you pick
+                  (default weekly). Instead of a fixed cron, a lightweight checker runs every 30
+                  minutes and consults the schedule, so the period changes at runtime with no
+                  restart. New endpoints: <code>GET/PUT /api/backup-settings</code>.
+                </p>
+                <p>
+                  <strong>The quick-access menu is now configurable from Settings.</strong> Pick the
+                  floating button&apos;s position &mdash; <strong>bottom-left, bottom-center, or
+                  bottom-right</strong> &mdash; and choose up to <strong>10 tiles</strong>: reorder
+                  by removing built-ins and adding your own custom links. On the desktop it lives in{' '}
+                  <strong>Settings → Quick access menu</strong>; the admin keeps its inline
+                  configurator. Changes reflect live in the floating menu.
+                </p>
+                <p>
+                  Existing projects: <code>grit update</code>, run <code>grit migrate</code> to add
+                  the <code>backup_schedules</code> table, then re-generate or copy the desktop/admin
+                  files to pick up the new pages.
+                </p>
+              </div>
+            </div>
+
             {/* v3.57.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
