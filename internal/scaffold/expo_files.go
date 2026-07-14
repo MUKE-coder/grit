@@ -250,9 +250,33 @@ func expoMetroConfig() string {
 	return `const { getDefaultConfig } = require("expo/metro-config");
 const { withNativeWind } = require("nativewind/metro");
 
-const config = getDefaultConfig(__dirname);
+const projectRoot = __dirname;
+const config = getDefaultConfig(projectRoot);
 
-module.exports = withNativeWind(config, { input: "./global.css" });
+const nwConfig = withNativeWind(config, { input: "./global.css" });
+
+// React de-duplication for the monorepo.
+//
+// This workspace also hosts Next.js apps (web, admin) that pin a DIFFERENT
+// React version than Expo does. With a hoisted node_modules the root ends up
+// holding the Next.js React, which react-native then resolves — clashing with
+// the Expo app's own React copy. Two React instances in one bundle throw
+// "Invalid hook call" / "Cannot read property 'useContext' of null".
+//
+// Force every "react" import (from app code, react-native,
+// react-native-css-interop, anywhere) to resolve to THIS app's copy, so the
+// Metro bundle contains exactly one React instance. We deliberately dedupe only
+// "react" — React Native ships its own renderer and doesn't use react-dom, so
+// touching react-dom here would just point at the (different) Next.js copy.
+const upstreamResolveRequest = nwConfig.resolver.resolveRequest;
+nwConfig.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName === "react" || moduleName.startsWith("react/")) {
+    return { type: "sourceFile", filePath: require.resolve(moduleName, { paths: [projectRoot] }) };
+  }
+  return (upstreamResolveRequest ?? context.resolveRequest)(context, moduleName, platform);
+};
+
+module.exports = nwConfig;
 `
 }
 
