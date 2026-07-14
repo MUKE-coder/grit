@@ -28,6 +28,50 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.57.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.57.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Offline sync is sharper &mdash; and it no longer gets stuck.</strong>{' '}
+                  A desktop app that created a record offline (with an image) could show
+                  &ldquo;pending changes&rdquo; forever after reconnecting: the row synced, but the
+                  follow-up image-URL update failed server-side. The root cause was the sync push
+                  handler calling <code>.Updates(rawMap)</code>, which hands nested JSON fields
+                  (a <code>FileRef</code> image, a <code>FileRefs</code> slice, a belongs-to
+                  relation) straight to the driver &mdash; Postgres can&apos;t encode a Go map into a
+                  json column. The update now decodes into the typed model first (like create does),
+                  so <code>driver.Valuer</code> fields round-trip correctly and the outbox clears.
+                </p>
+                <p>
+                  The <strong>Sync</strong> page in the desktop app got a real upgrade: a live{' '}
+                  <strong>syncing spinner</strong>, a <strong>Settings tab</strong> with an{' '}
+                  <strong>auto-sync</strong> toggle (on by default; turn it off to confirm changes
+                  by hand), and a richer <strong>Pending changes</strong> tab &mdash; colored
+                  create/update/delete badges, the record&apos;s real name, an expandable details
+                  view of exactly what will push, and per-row <strong>Confirm</strong> /{' '}
+                  <strong>Revert</strong> plus <strong>Confirm all</strong> / <strong>Discard all</strong>.
+                </p>
+                <p>
+                  Under the hood the sync engine gained <code>SetAutoSync</code>,{' '}
+                  <code>PushOne</code> (confirm a single change), and{' '}
+                  <code>RevertChange</code>/<code>RevertAll</code> (discard a queued change and pull
+                  server truth back). When auto-sync is off the background loop still pulls fresh
+                  data &mdash; it just never pushes without your say-so.
+                </p>
+                <p>
+                  Existing projects: <code>grit update</code>, then re-generate or copy the desktop
+                  sync files to pick up the fix.
+                </p>
+              </div>
+            </div>
+
             {/* v3.56.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

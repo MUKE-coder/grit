@@ -66,6 +66,7 @@ type Engine struct {
 	lastErr    string
 	online     bool
 	deviceID   string
+	syncingN   int // >0 while a pull/push is in flight (drives the UI spinner)
 }
 
 // Open initializes a sync engine. dbPath is the absolute path to the
@@ -121,6 +122,8 @@ type SyncResult struct {
 // freshest server state and conflict surface area is minimized. Models
 // is the list of table names to pull; pass empty to skip pull.
 func (e *Engine) Sync(models []string) (*SyncResult, error) {
+	e.setSyncing(true)
+	defer e.setSyncing(false)
 	res := &SyncResult{StartedAt: time.Now().Format(time.RFC3339)}
 
 	for _, m := range models {
@@ -140,6 +143,21 @@ func (e *Engine) Sync(models []string) (*SyncResult, error) {
 	res.Conflicts = conflicts
 	res.FinishedAt = time.Now().Format(time.RFC3339)
 	return res, nil
+}
+
+// PullAll refreshes the local mirror for every model without pushing. Used by
+// the background loop (and the go-online transition) when auto-sync is off:
+// server data stays fresh, but queued local changes wait for manual confirm.
+func (e *Engine) PullAll(models []string) error {
+	e.setSyncing(true)
+	defer e.setSyncing(false)
+	var firstErr error
+	for _, m := range models {
+		if _, err := e.Pull(m); err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+	return firstErr
 }
 
 // Setting is a tiny key/value table for engine flags that must survive an app
@@ -176,6 +194,35 @@ func (e *Engine) SetForceOffline(v bool) error {
 
 // IsForceOffline reports the persisted manual-offline toggle.
 func (e *Engine) IsForceOffline() bool { return e.getSetting("force_offline") == "1" }
+
+// SetAutoSync persists the "auto-sync when online" preference. When ON (the
+// default) the background loop pushes queued changes automatically the moment
+// the server is reachable. When OFF, the loop still pulls fresh server data but
+// leaves local changes in the outbox for the user to confirm manually.
+func (e *Engine) SetAutoSync(v bool) error {
+	val := "0"
+	if v {
+		val = "1"
+	}
+	return e.setSetting("auto_sync", val)
+}
+
+// IsAutoSyncEnabled reports the auto-sync preference. Defaults to ON when the
+// setting has never been written (empty string) so a fresh install keeps the
+// familiar "just works" behaviour.
+func (e *Engine) IsAutoSyncEnabled() bool { return e.getSetting("auto_sync") != "0" }
+
+// setSyncing bumps/decrements the in-flight counter that drives the UI spinner.
+// A counter (not a bool) keeps it correct when a manual Sync overlaps a tick.
+func (e *Engine) setSyncing(on bool) {
+	e.autoMu.Lock()
+	if on {
+		e.syncingN++
+	} else if e.syncingN > 0 {
+		e.syncingN--
+	}
+	e.autoMu.Unlock()
+}
 
 // Reachable pings /api/health to tell "the server is down / no network" apart
 // from "the user chose offline". Short timeout so the UI stays responsive.
@@ -245,7 +292,17 @@ func (e *Engine) tick() {
 	if e.IsForceOffline() || !reachable {
 		return
 	}
-	_, err := e.Sync(models)
+
+	var err error
+	if e.IsAutoSyncEnabled() {
+		// Full reconcile: pull fresh data and push queued local changes.
+		_, err = e.Sync(models)
+	} else {
+		// Auto-sync off: keep the mirror fresh but never push automatically —
+		// the user confirms queued changes by hand from the Pending tab.
+		err = e.PullAll(models)
+	}
+
 	e.autoMu.Lock()
 	if err != nil {
 		e.lastErr = err.Error()
@@ -276,12 +333,14 @@ func (e *Engine) SyncNow() (*SyncResult, error) {
 
 // SyncStatus is the snapshot the dashboard/title-bar shows.
 type SyncStatus struct {
-	Reachable    bool   ` + "`" + `json:"reachable"` + "`" + `
-	ForceOffline bool   ` + "`" + `json:"force_offline"` + "`" + `
-	Pending      int64  ` + "`" + `json:"pending"` + "`" + `
-	LastSync     string ` + "`" + `json:"last_sync,omitempty"` + "`" + `
-	LastError    string ` + "`" + `json:"last_error,omitempty"` + "`" + `
-	DeviceID     string ` + "`" + `json:"device_id,omitempty"` + "`" + `
+	Reachable    bool     ` + "`" + `json:"reachable"` + "`" + `
+	ForceOffline bool     ` + "`" + `json:"force_offline"` + "`" + `
+	AutoSync     bool     ` + "`" + `json:"auto_sync"` + "`" + `
+	Syncing      bool     ` + "`" + `json:"syncing"` + "`" + `
+	Pending      int64    ` + "`" + `json:"pending"` + "`" + `
+	LastSync     string   ` + "`" + `json:"last_sync,omitempty"` + "`" + `
+	LastError    string   ` + "`" + `json:"last_error,omitempty"` + "`" + `
+	DeviceID     string   ` + "`" + `json:"device_id,omitempty"` + "`" + `
 	Tables       []string ` + "`" + `json:"tables,omitempty"` + "`" + `
 }
 
@@ -297,6 +356,8 @@ func (e *Engine) Status() SyncStatus {
 	st := SyncStatus{
 		Reachable:    e.online,
 		ForceOffline: e.IsForceOffline(),
+		AutoSync:     e.IsAutoSyncEnabled(),
+		Syncing:      e.syncingN > 0,
 		Pending:      pending,
 		LastSync:     ls,
 		LastError:    e.lastErr,
@@ -407,6 +468,30 @@ func (e *Engine) Push() (int, int, error) {
 	if err := e.DB.Where("has_conflict = 0").Order("created_at asc").Find(&entries).Error; err != nil {
 		return 0, 0, err
 	}
+	return e.pushEntries(entries)
+}
+
+// PushOne pushes a single queued change immediately. Used by the "Confirm"
+// action on the Pending tab when auto-sync is off, so the user can approve
+// changes one at a time. Returns (pushed, conflicts, err).
+func (e *Engine) PushOne(table, entityID string) (int, int, error) {
+	var entry Outbox
+	if err := e.DB.Where("model = ? AND entity_id = ? AND has_conflict = 0", table, entityID).First(&entry).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return 0, 0, fmt.Errorf("no pending change for %s/%s", table, entityID)
+		}
+		return 0, 0, err
+	}
+	e.setSyncing(true)
+	defer e.setSyncing(false)
+	return e.pushEntries([]Outbox{entry})
+}
+
+// pushEntries posts a specific set of outbox rows to /api/sync/push and applies
+// each per-entry result. Shared by Push (drain the whole outbox) and PushOne
+// (confirm a single change). Successful entries are removed; conflicts are kept
+// with the server state attached for the merge dialog.
+func (e *Engine) pushEntries(entries []Outbox) (int, int, error) {
 	if len(entries) == 0 {
 		return 0, 0, nil
 	}
@@ -511,6 +596,69 @@ func (e *Engine) ResolveConflict(tableName, entityID string, mergedData map[stri
 		Updates(map[string]interface{}{"data": dataJSON, "version": serverVersion}).Error
 }
 
+// RevertChange discards one queued local change and realigns the local mirror
+// with the server:
+//
+//   - create: the row never reached the server, so drop the outbox entry AND
+//     the local-only mirror row — the item disappears (which is correct: the
+//     user is undoing a creation that was never persisted anywhere else).
+//   - update / delete: drop the outbox entry and rewind the model's pull cursor
+//     so the authoritative server row is re-fetched. If we're online, pull now
+//     so the UI reflects server truth immediately; otherwise it reconciles on
+//     the next successful pull.
+func (e *Engine) RevertChange(table, entityID string) error {
+	var entry Outbox
+	if err := e.DB.Where("model = ? AND entity_id = ?", table, entityID).First(&entry).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil // already gone — nothing to revert
+		}
+		return err
+	}
+	if err := e.DB.Delete(&entry).Error; err != nil {
+		return err
+	}
+	if entry.Op == "create" {
+		return e.DB.Where("model = ? AND id = ?", table, entityID).Delete(&Record{}).Error
+	}
+	e.resetCursor(table)
+	if !e.IsForceOffline() && e.Reachable() {
+		e.setSyncing(true)
+		_, _ = e.Pull(table)
+		e.setSyncing(false)
+	}
+	return nil
+}
+
+// RevertAll discards every queued change and realigns the mirror with the
+// server. Used by "Discard all" on the Pending tab.
+func (e *Engine) RevertAll() error {
+	var entries []Outbox
+	if err := e.DB.Find(&entries).Error; err != nil {
+		return err
+	}
+	models := map[string]bool{}
+	for _, en := range entries {
+		if en.Op == "create" {
+			e.DB.Where("model = ? AND id = ?", en.Model, en.EntityID).Delete(&Record{})
+		}
+		models[en.Model] = true
+	}
+	if err := e.DB.Where("1 = 1").Delete(&Outbox{}).Error; err != nil {
+		return err
+	}
+	for m := range models {
+		e.resetCursor(m)
+	}
+	if !e.IsForceOffline() && e.Reachable() {
+		e.setSyncing(true)
+		for m := range models {
+			_, _ = e.Pull(m)
+		}
+		e.setSyncing(false)
+	}
+	return nil
+}
+
 // PendingCount returns how many outbox entries are waiting (used to
 // drive the title-bar badge).
 func (e *Engine) PendingCount() (int64, error) {
@@ -606,6 +754,16 @@ func (e *Engine) setCursor(model, value string) {
 	e.cursors[model] = value
 	e.cursorsMu.Unlock()
 	e.DB.Save(&Cursor{Model: model, Value: value})
+}
+
+// resetCursor forgets the pull cursor for a model so the next Pull re-fetches
+// it from the beginning — used by RevertChange/RevertAll to pull authoritative
+// server state back over a discarded local edit.
+func (e *Engine) resetCursor(model string) {
+	e.cursorsMu.Lock()
+	delete(e.cursors, model)
+	e.cursorsMu.Unlock()
+	e.DB.Where("model = ?", model).Delete(&Cursor{})
 }
 
 func toInt(v interface{}) (int, bool) {
@@ -976,6 +1134,25 @@ export async function resolveConflict(
 ): Promise<void> {
   if (!isWails) notWailsError();
   return window.go!.main.App.ResolveConflict(table, entityID, mergedData, serverVersion);
+}
+
+// confirmChange pushes a single queued change now (the per-row "Confirm" action
+// used when auto-sync is off).
+export async function confirmChange(table: string, entityID: string): Promise<void> {
+  if (!isWails) notWailsError();
+  return window.go!.main.App.ConfirmChange(table, entityID);
+}
+
+// revertChange discards a single queued change and restores server state for it.
+export async function revertChange(table: string, entityID: string): Promise<void> {
+  if (!isWails) notWailsError();
+  return window.go!.main.App.RevertChange(table, entityID);
+}
+
+// revertAll discards every queued change and restores server state.
+export async function revertAll(): Promise<void> {
+  if (!isWails) notWailsError();
+  return window.go!.main.App.RevertAll();
 }
 
 // Helper: parse the JSON-encoded byte slices Go sends through Wails.

@@ -36,21 +36,21 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "README.md"):   desktopClientReadme(opts),
 
 		// Frontend config
-		filepath.Join(desktopRoot, "frontend", "package.json"):         desktopClientPackageJSON(opts),
-		filepath.Join(desktopRoot, "frontend", "tsconfig.json"):        desktopClientTSConfig(),
-		filepath.Join(desktopRoot, "frontend", "tsconfig.node.json"):   desktopClientTSConfigNode(),
-		filepath.Join(desktopRoot, "frontend", "vite.config.ts"):       desktopClientViteConfig(),
-		filepath.Join(desktopRoot, "frontend", "tailwind.config.ts"):   desktopClientTailwindConfig(),
-		filepath.Join(desktopRoot, "frontend", "postcss.config.js"):    desktopClientPostCSSConfig(),
-		filepath.Join(desktopRoot, "frontend", "index.html"):           desktopClientIndexHTML(opts),
-		filepath.Join(desktopRoot, "frontend", "src", "main.tsx"):      desktopClientMainTSX(),
+		filepath.Join(desktopRoot, "frontend", "package.json"):           desktopClientPackageJSON(opts),
+		filepath.Join(desktopRoot, "frontend", "tsconfig.json"):          desktopClientTSConfig(),
+		filepath.Join(desktopRoot, "frontend", "tsconfig.node.json"):     desktopClientTSConfigNode(),
+		filepath.Join(desktopRoot, "frontend", "vite.config.ts"):         desktopClientViteConfig(),
+		filepath.Join(desktopRoot, "frontend", "tailwind.config.ts"):     desktopClientTailwindConfig(),
+		filepath.Join(desktopRoot, "frontend", "postcss.config.js"):      desktopClientPostCSSConfig(),
+		filepath.Join(desktopRoot, "frontend", "index.html"):             desktopClientIndexHTML(opts),
+		filepath.Join(desktopRoot, "frontend", "src", "main.tsx"):        desktopClientMainTSX(),
 		filepath.Join(desktopRoot, "frontend", "src", "lib", "fonts.ts"): desktopClientFontsTS(),
-		filepath.Join(desktopRoot, "frontend", "src", "globals.css"):   desktopClientGlobalsCSS(),
-		filepath.Join(desktopRoot, "frontend", "src", "vite-env.d.ts"): desktopClientViteEnvDTS(),
+		filepath.Join(desktopRoot, "frontend", "src", "globals.css"):     desktopClientGlobalsCSS(),
+		filepath.Join(desktopRoot, "frontend", "src", "vite-env.d.ts"):   desktopClientViteEnvDTS(),
 
 		// Routes (TanStack Router file-based)
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "__root.tsx"):            desktopClientRootRoute(),
-		filepath.Join(desktopRoot, "frontend", "src", "routes", "index.tsx"):             desktopClientIndexRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "__root.tsx"):           desktopClientRootRoute(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "index.tsx"):            desktopClientIndexRoute(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "auth.tsx"):             desktopClientAuthLayoutRoute(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "auth", "login.tsx"):    desktopClientLoginRoute(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "auth", "register.tsx"): desktopClientRegisterRoute(),
@@ -61,7 +61,7 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "sync.tsx"):      desktopClientSyncPage(),
 
 		// System / admin pages — full parity with the admin Internal + System nav.
-		filepath.Join(desktopRoot, "frontend", "src", "components", "system-ui.tsx"):                     desktopClientSystemUI(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "system-ui.tsx"):                    desktopClientSystemUI(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.index.tsx"):              desktopClientSystemHubPage(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.users.tsx"):              desktopClientSystemUsersPage(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.activity.tsx"):           desktopClientSystemActivityPage(),
@@ -123,13 +123,13 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-sync.ts"):          desktopClientUseSync(),
 
 		// Sync client wrappers + UI
-		filepath.Join(desktopRoot, "frontend", "src", "lib", "sync-client.ts"):             desktopClientSyncClientTS(),
-		filepath.Join(desktopRoot, "frontend", "src", "components", "sync-button.tsx"):     desktopClientSyncButton(),
-		filepath.Join(desktopRoot, "frontend", "src", "components", "pending-changes.tsx"): desktopClientPendingChanges(),
-		filepath.Join(desktopRoot, "frontend", "src", "components", "conflict-dialog.tsx"): desktopClientConflictDialog(),
+		filepath.Join(desktopRoot, "frontend", "src", "lib", "sync-client.ts"):                 desktopClientSyncClientTS(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "sync-button.tsx"):         desktopClientSyncButton(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "pending-changes.tsx"):     desktopClientPendingChanges(),
+		filepath.Join(desktopRoot, "frontend", "src", "components", "conflict-dialog.tsx"):     desktopClientConflictDialog(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "offline-mode-toggle.tsx"): desktopClientOfflineToggle(),
-		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-sync-status.ts"):          desktopClientUseSyncStatus(),
-		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-pending-uploads.ts"):      desktopClientUsePendingUploads(),
+		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-sync-status.ts"):           desktopClientUseSyncStatus(),
+		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-pending-uploads.ts"):       desktopClientUsePendingUploads(),
 
 		// Shared resource-table components (list DataTable, date filter, form drawer)
 		filepath.Join(desktopRoot, "frontend", "src", "components", "tables", "data-table.tsx"):  desktopClientDataTable(),
@@ -142,7 +142,7 @@ func writeDesktopClientFiles(root string, opts Options) error {
 
 		// Theming — shares packages/shared/themes.ts with the admin panel so
 		// --theme=atlas|aurora|pulse styles both apps identically.
-		filepath.Join(desktopRoot, "frontend", "src", "lib", "theme-tokens.ts"):             desktopClientThemeTokens(opts),
+		filepath.Join(desktopRoot, "frontend", "src", "lib", "theme-tokens.ts"):                    desktopClientThemeTokens(opts),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "auth", "AuthShell.tsx"):       desktopClientAuthShell(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "auth", "AuthField.tsx"):       desktopClientAuthField(),
 		filepath.Join(desktopRoot, "frontend", "src", "components", "auth", "BrandMark.tsx"):       desktopClientBrandMark(),
@@ -450,9 +450,53 @@ func (a *App) SetOfflineMode(offline bool) error {
 		return err
 	}
 	if !offline {
-		go func() { _, _ = a.sync.SyncNow() }()
+		// Back online. If auto-sync is on, reconcile fully (pull + push queued
+		// changes). If the user turned auto-sync off, only pull fresh data —
+		// their queued changes wait for a manual confirm on the Pending tab.
+		go func() {
+			if a.sync.IsAutoSyncEnabled() {
+				_, _ = a.sync.SyncNow()
+			} else {
+				_ = a.sync.PullAll(syncTables)
+			}
+		}()
 	}
 	return nil
+}
+
+// SetAutoSync toggles whether the app pushes queued changes automatically when
+// it comes online (default) or waits for the user to confirm them manually.
+func (a *App) SetAutoSync(enabled bool) error {
+	if a.sync == nil {
+		return fmt.Errorf("sync engine not initialized")
+	}
+	return a.sync.SetAutoSync(enabled)
+}
+
+// ConfirmChange pushes a single queued change now — the per-row "Confirm"
+// action used when auto-sync is off.
+func (a *App) ConfirmChange(table, entityID string) error {
+	if a.sync == nil {
+		return fmt.Errorf("sync engine not initialized")
+	}
+	_, _, err := a.sync.PushOne(table, entityID)
+	return err
+}
+
+// RevertChange discards one queued change and restores server state for it.
+func (a *App) RevertChange(table, entityID string) error {
+	if a.sync == nil {
+		return fmt.Errorf("sync engine not initialized")
+	}
+	return a.sync.RevertChange(table, entityID)
+}
+
+// RevertAll discards every queued change and restores server state.
+func (a *App) RevertAll() error {
+	if a.sync == nil {
+		return fmt.Errorf("sync engine not initialized")
+	}
+	return a.sync.RevertAll()
 }
 
 // GetSyncStatus returns the reachable/offline/pending snapshot for the
@@ -1133,6 +1177,8 @@ type WailsOutboxEntry = {
 type WailsSyncStatus = {
   reachable: boolean;
   force_offline: boolean;
+  auto_sync: boolean;
+  syncing: boolean;
   pending: number;
   last_sync?: string;
   last_error?: string;
@@ -1184,6 +1230,12 @@ declare global {
           SetOfflineMode: (offline: boolean) => Promise<void>;
           GetSyncStatus: () => Promise<WailsSyncStatus>;
           SyncNow: () => Promise<WailsSyncResult>;
+
+          // Auto-sync preference + manual confirm / revert
+          SetAutoSync: (enabled: boolean) => Promise<void>;
+          ConfirmChange: (table: string, entityID: string) => Promise<void>;
+          RevertChange: (table: string, entityID: string) => Promise<void>;
+          RevertAll: () => Promise<void>;
         };
       };
     };
@@ -3084,6 +3136,8 @@ export async function saveFileDialog(title: string, defaultFilename: string): Pr
 export interface SyncStatus {
   reachable: boolean;
   force_offline: boolean;
+  auto_sync: boolean;
+  syncing: boolean;
   pending: number;
   last_sync?: string;
   last_error?: string;
@@ -3107,7 +3161,12 @@ export async function setOfflineMode(offline: boolean): Promise<void> {
 // getSyncStatus returns the reachable/offline/pending snapshot.
 export async function getSyncStatus(): Promise<SyncStatus> {
   if (isWails) return window.go!.main.App.GetSyncStatus();
-  return { reachable: true, force_offline: false, pending: 0 };
+  return { reachable: true, force_offline: false, auto_sync: true, syncing: false, pending: 0 };
+}
+
+// setAutoSync toggles whether queued changes push automatically on reconnect.
+export async function setAutoSync(enabled: boolean): Promise<void> {
+  if (isWails) return window.go!.main.App.SetAutoSync(enabled);
 }
 
 // syncNow forces an immediate Pull+Push.
@@ -3189,7 +3248,13 @@ export function usePendingUploads() {
 
 func desktopClientUseSyncStatus() string {
 	return `import { useCallback, useEffect, useState } from "react";
-import { getSyncStatus, setOfflineMode as setOfflineModeBridge, syncNow, type SyncStatus } from "@/lib/wails-bridge";
+import {
+  getSyncStatus,
+  setOfflineMode as setOfflineModeBridge,
+  setAutoSync as setAutoSyncBridge,
+  syncNow,
+  type SyncStatus,
+} from "@/lib/wails-bridge";
 
 // useSyncStatus polls the engine every 4s (and on demand) for the
 // reachable/offline/pending snapshot, and exposes actions to toggle offline
@@ -3198,6 +3263,8 @@ export function useSyncStatus() {
   const [status, setStatus] = useState<SyncStatus>({
     reachable: true,
     force_offline: false,
+    auto_sync: true,
+    syncing: false,
     pending: 0,
   });
   const [busy, setBusy] = useState(false);
@@ -3239,7 +3306,20 @@ export function useSyncStatus() {
     }
   }, [refresh]);
 
-  return { status, busy, setOffline, forceSync, refresh };
+  const setAutoSync = useCallback(
+    async (enabled: boolean) => {
+      setBusy(true);
+      try {
+        await setAutoSyncBridge(enabled);
+        await refresh();
+      } finally {
+        setBusy(false);
+      }
+    },
+    [refresh],
+  );
+
+  return { status, busy, setOffline, setAutoSync, forceSync, refresh };
 }
 `
 }
@@ -3322,21 +3402,52 @@ export function OfflineModeToggle() {
 // production offline app's sync page.
 func desktopClientSyncPage() string {
 	return `import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { RefreshCw, Cloud, CloudOff, Database, ListChecks } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import {
+  RefreshCw,
+  Cloud,
+  CloudOff,
+  Database,
+  ListChecks,
+  Plus,
+  Pencil,
+  Trash2,
+  ChevronRight,
+  RotateCcw,
+  Check,
+  Loader2,
+  AlertTriangle,
+} from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { useSyncStatus } from "@/hooks/use-sync-status";
-import { getPendingChanges, type OutboxEntry } from "@/lib/sync-client";
+import {
+  getPendingChanges,
+  confirmChange,
+  revertChange,
+  revertAll,
+  parseGoBytes,
+  type OutboxEntry,
+} from "@/lib/sync-client";
 
 export const Route = createFileRoute("/app/sync")({ component: SyncPage });
 
-type Tab = "overview" | "modules" | "pending";
+type Tab = "overview" | "modules" | "pending" | "settings";
 
 function relTime(iso?: string): string {
   if (!iso) return "never";
   const t = new Date(iso).getTime();
   if (Number.isNaN(t)) return "never";
-  const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+  return relFromMs(t);
+}
+
+// Outbox CreatedAt is unix seconds (Go nowUnix()).
+function relTimeUnix(secs?: number): string {
+  if (!secs) return "";
+  return relFromMs(secs * 1000);
+}
+
+function relFromMs(ms: number): string {
+  const s = Math.max(0, Math.round((Date.now() - ms) / 1000));
   if (s < 60) return s + "s ago";
   const m = Math.round(s / 60);
   if (m < 60) return m + "m ago";
@@ -3355,37 +3466,115 @@ function StatCard({ label, value, hint }: { label: string; value: React.ReactNod
   );
 }
 
+// A human label for a queued record, pulled from its payload.
+function entityLabel(data: Record<string, unknown> | null, fallbackId: string): string {
+  if (data) {
+    for (const k of ["name", "title", "sku", "slug", "email"]) {
+      const v = data[k];
+      if (typeof v === "string" && v.trim()) return v;
+    }
+  }
+  return fallbackId.slice(0, 8) + "…";
+}
+
+// A short, readable summary of what a change carries — the meaningful scalar
+// fields, so the user can see *what* is about to sync, not just that something is.
+function fieldSummary(data: Record<string, unknown> | null): { key: string; value: string }[] {
+  if (!data) return [];
+  const skip = new Set(["id", "_deleted", "version", "created_at", "updated_at", "deleted_at"]);
+  const out: { key: string; value: string }[] = [];
+  for (const [k, v] of Object.entries(data)) {
+    if (skip.has(k)) continue;
+    let value: string;
+    if (v == null) value = "—";
+    else if (Array.isArray(v)) value = ` + "`" + `${v.length} item${v.length === 1 ? "" : "s"}` + "`" + `;
+    else if (typeof v === "object") {
+      const o = v as Record<string, unknown>;
+      value = typeof o.name === "string" ? String(o.name) : "attached";
+    } else value = String(v);
+    if (value.length > 60) value = value.slice(0, 57) + "…";
+    out.push({ key: k, value });
+  }
+  return out;
+}
+
+const OP_META: Record<OutboxEntry["Op"], { label: string; icon: React.ElementType; cls: string }> = {
+  create: { label: "Created", icon: Plus, cls: "bg-success/10 text-success" },
+  update: { label: "Updated", icon: Pencil, cls: "bg-warning/10 text-warning" },
+  delete: { label: "Deleted", icon: Trash2, cls: "bg-danger/10 text-danger" },
+};
+
+function OpBadge({ op }: { op: OutboxEntry["Op"] }) {
+  const m = OP_META[op] ?? OP_META.update;
+  const Icon = m.icon;
+  return (
+    <span className={"inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold " + m.cls}>
+      <Icon className="h-3 w-3" /> {m.label}
+    </span>
+  );
+}
+
 function SyncPage() {
-  const { status, busy, setOffline, forceSync } = useSyncStatus();
+  const { status, busy, setOffline, setAutoSync, forceSync } = useSyncStatus();
   const [tab, setTab] = useState<Tab>("overview");
   const [pending, setPending] = useState<OutboxEntry[]>([]);
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const [acting, setActing] = useState<number | null>(null);
+  const [confirmDiscardAll, setConfirmDiscardAll] = useState(false);
+
+  const load = () => getPendingChanges().then(setPending).catch(() => {});
 
   useEffect(() => {
     let alive = true;
-    const load = () =>
-      getPendingChanges()
-        .then((p) => { if (alive) setPending(p); })
-        .catch(() => {});
-    load();
-    const id = setInterval(load, 3000);
+    const tick = () => getPendingChanges().then((p) => { if (alive) setPending(p); }).catch(() => {});
+    tick();
+    const id = setInterval(tick, 3000);
     return () => { alive = false; clearInterval(id); };
   }, []);
 
   const offline = status.force_offline;
+  const autoSync = status.auto_sync;
+  const syncing = status.syncing || busy;
   const tables = status.tables ?? [];
   const perModel: Record<string, number> = {};
   for (const p of pending) perModel[p.Model] = (perModel[p.Model] || 0) + 1;
 
-  const statusText = offline
-    ? "Working offline"
-    : status.reachable
-      ? "Online"
-      : "Server unreachable";
+  const statusText = offline ? "Working offline" : status.reachable ? "Online" : "Server unreachable";
 
-  const tabs: { key: Tab; label: string }[] = [
+  const doConfirm = async (p: OutboxEntry) => {
+    setActing(p.ID);
+    try {
+      await confirmChange(p.Model, p.EntityID);
+      await load();
+    } finally {
+      setActing(null);
+    }
+  };
+  const doRevert = async (p: OutboxEntry) => {
+    setActing(p.ID);
+    try {
+      await revertChange(p.Model, p.EntityID);
+      await load();
+    } finally {
+      setActing(null);
+    }
+  };
+  const doRevertAll = async () => {
+    setActing(-1);
+    try {
+      await revertAll();
+      await load();
+      setConfirmDiscardAll(false);
+    } finally {
+      setActing(null);
+    }
+  };
+
+  const tabs: { key: Tab; label: string; badge?: number }[] = [
     { key: "overview", label: "Overview" },
     { key: "modules", label: "Modules" },
-    { key: "pending", label: "Pending changes" },
+    { key: "pending", label: "Pending changes", badge: pending.length },
+    { key: "settings", label: "Settings" },
   ];
 
   return (
@@ -3407,21 +3596,28 @@ function SyncPage() {
               }
             >
               {t.label}
-              {t.key === "pending" && pending.length > 0 && (
+              {t.badge ? (
                 <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent/15 px-1.5 text-[10px] font-semibold text-accent">
-                  {pending.length}
+                  {t.badge}
                 </span>
-              )}
+              ) : null}
             </button>
           ))}
         </div>
-        <button
-          onClick={forceSync}
-          disabled={busy || offline}
-          className="mb-2 flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
-        >
-          <RefreshCw className={"h-4 w-4 " + (busy ? "animate-spin" : "")} /> Sync now
-        </button>
+        <div className="mb-2 flex items-center gap-2">
+          {syncing && (
+            <span className="flex items-center gap-1.5 text-[12px] font-medium text-accent">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Syncing…
+            </span>
+          )}
+          <button
+            onClick={forceSync}
+            disabled={busy || offline}
+            className="flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
+          >
+            <RefreshCw className={"h-4 w-4 " + (syncing ? "animate-spin" : "")} /> Sync now
+          </button>
+        </div>
       </div>
 
       {tab === "overview" && (
@@ -3435,8 +3631,12 @@ function SyncPage() {
                   {statusText}
                 </span>
               }
+              hint={autoSync ? "auto-sync on" : "auto-sync off — confirm manually"}
             />
-            <StatCard label="Last sync" value={relTime(status.last_sync)} />
+            <StatCard
+              label="Last sync"
+              value={syncing ? <span className="flex items-center gap-2 text-accent"><Loader2 className="h-4 w-4 animate-spin" />Syncing…</span> : relTime(status.last_sync)}
+            />
             <StatCard label="Pending changes" value={String(status.pending)} hint={status.pending === 0 ? "all synced" : "waiting to push"} />
             <StatCard label="Device ID" value={<span className="font-mono text-[13px]">{(status.device_id || "—").slice(0, 8)}…</span>} />
           </div>
@@ -3494,11 +3694,7 @@ function SyncPage() {
                     </td>
                     <td className="px-4 py-2.5 text-right">{perModel[m] || 0}</td>
                     <td className="px-4 py-2.5 text-right">
-                      {perModel[m] ? (
-                        <span className="text-warning">queued</span>
-                      ) : (
-                        <span className="text-success">synced</span>
-                      )}
+                      {perModel[m] ? <span className="text-warning">queued</span> : <span className="text-success">synced</span>}
                     </td>
                   </tr>
                 ))
@@ -3509,37 +3705,181 @@ function SyncPage() {
       )}
 
       {tab === "pending" && (
-        <div className="mt-6 rounded-xl border border-border bg-surface overflow-hidden">
-          {pending.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <ListChecks className="h-8 w-8 text-foreground-muted" />
-              <p className="mt-3 text-[14px] font-medium text-foreground">Nothing pending</p>
-              <p className="text-[13px] text-foreground-secondary">Every local change has been pushed to the server.</p>
+        <div className="mt-6 space-y-3">
+          {/* Manual-confirm banner when auto-sync is off */}
+          {!autoSync && pending.length > 0 && (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning/5 px-4 py-3">
+              <p className="text-[13px] text-foreground-secondary">
+                <span className="font-semibold text-foreground">Auto-sync is off.</span> Review each change and confirm to push it.
+              </p>
+              <button
+                onClick={forceSync}
+                disabled={busy || offline}
+                className="rounded-lg bg-accent px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
+              >
+                Confirm all
+              </button>
             </div>
-          ) : (
-            <table className="w-full text-[13px]">
-              <thead className="border-b border-border-subtle text-foreground-secondary">
-                <tr>
-                  <th className="px-4 py-2 text-left font-medium">Module</th>
-                  <th className="px-4 py-2 text-left font-medium">Change</th>
-                  <th className="px-4 py-2 text-left font-medium">Record</th>
-                  <th className="px-4 py-2 text-right font-medium">State</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pending.map((p) => (
-                  <tr key={p.ID} className="border-b border-border-subtle last:border-0">
-                    <td className="px-4 py-2.5 text-foreground">{p.Model}</td>
-                    <td className="px-4 py-2.5"><span className="uppercase text-[11px] font-semibold text-foreground-secondary">{p.Op}</span></td>
-                    <td className="px-4 py-2.5 font-mono text-[12px] text-foreground-secondary">{String(p.EntityID).slice(0, 8)}…</td>
-                    <td className="px-4 py-2.5 text-right">
-                      {p.HasConflict ? <span className="text-danger">conflict</span> : <span className="text-warning">queued</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           )}
+
+          <div className="rounded-xl border border-border bg-surface overflow-hidden">
+            {pending.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <ListChecks className="h-8 w-8 text-foreground-muted" />
+                <p className="mt-3 text-[14px] font-medium text-foreground">Nothing pending</p>
+                <p className="text-[13px] text-foreground-secondary">Every local change has been pushed to the server.</p>
+              </div>
+            ) : (
+              <table className="w-full text-[13px]">
+                <thead className="border-b border-border-subtle text-foreground-secondary">
+                  <tr>
+                    <th className="w-8 px-2 py-2" />
+                    <th className="px-2 py-2 text-left font-medium">Change</th>
+                    <th className="px-4 py-2 text-left font-medium">Record</th>
+                    <th className="px-4 py-2 text-left font-medium">Module</th>
+                    <th className="px-4 py-2 text-left font-medium">When</th>
+                    <th className="px-4 py-2 text-right font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pending.map((p) => {
+                    const data = parseGoBytes(p.Data);
+                    const label = entityLabel(data, p.EntityID);
+                    const isOpen = expanded === p.ID;
+                    const rowBusy = acting === p.ID;
+                    return (
+                      <React.Fragment key={p.ID}>
+                        <tr className="border-b border-border-subtle last:border-0 hover:bg-surface-hover/40">
+                          <td className="px-2 py-2.5 align-top">
+                            <button
+                              onClick={() => setExpanded(isOpen ? null : p.ID)}
+                              className="rounded p-0.5 text-foreground-muted hover:text-foreground"
+                              title="Details"
+                            >
+                              <ChevronRight className={"h-4 w-4 transition-transform " + (isOpen ? "rotate-90" : "")} />
+                            </button>
+                          </td>
+                          <td className="px-2 py-2.5"><OpBadge op={p.Op} /></td>
+                          <td className="px-4 py-2.5">
+                            <div className="font-medium text-foreground">{label}</div>
+                            <div className="font-mono text-[11px] text-foreground-muted">{String(p.EntityID).slice(0, 8)}…</div>
+                          </td>
+                          <td className="px-4 py-2.5 text-foreground-secondary">{p.Model}</td>
+                          <td className="px-4 py-2.5 text-foreground-muted">{relTimeUnix(p.CreatedAt)}</td>
+                          <td className="px-4 py-2.5">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {p.HasConflict ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-danger/10 px-2 py-0.5 text-[11px] font-medium text-danger">
+                                  <AlertTriangle className="h-3 w-3" /> conflict
+                                </span>
+                              ) : (
+                                !autoSync && (
+                                  <button
+                                    onClick={() => doConfirm(p)}
+                                    disabled={rowBusy || offline}
+                                    className="inline-flex items-center gap-1 rounded-md bg-accent/10 px-2 py-1 text-[12px] font-medium text-accent hover:bg-accent/20 disabled:opacity-50"
+                                    title="Push this change now"
+                                  >
+                                    {rowBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Confirm
+                                  </button>
+                                )
+                              )}
+                              <button
+                                onClick={() => doRevert(p)}
+                                disabled={rowBusy}
+                                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] font-medium text-foreground-secondary hover:bg-danger/10 hover:text-danger disabled:opacity-50"
+                                title="Discard this change"
+                              >
+                                {rowBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />} Revert
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        {isOpen && (
+                          <tr className="border-b border-border-subtle bg-surface-2/40 last:border-0">
+                            <td />
+                            <td colSpan={5} className="px-4 py-3">
+                              {p.HasConflict && p.ConflictMsg && (
+                                <p className="mb-2 rounded-md bg-danger/10 px-3 py-1.5 text-[12px] text-danger">{p.ConflictMsg}</p>
+                              )}
+                              <div className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+                                {fieldSummary(data).map((f) => (
+                                  <div key={f.key} className="flex items-baseline gap-2 text-[12px]">
+                                    <span className="w-28 shrink-0 truncate font-mono text-foreground-muted">{f.key}</span>
+                                    <span className="truncate text-foreground">{f.value}</span>
+                                  </div>
+                                ))}
+                                {fieldSummary(data).length === 0 && (
+                                  <span className="text-[12px] text-foreground-muted">No field data (e.g. a delete).</span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Discard-all control */}
+          {pending.length > 0 && (
+            <div className="flex justify-end">
+              {confirmDiscardAll ? (
+                <div className="flex items-center gap-2 text-[13px]">
+                  <span className="text-foreground-secondary">Discard all {pending.length} pending changes?</span>
+                  <button onClick={doRevertAll} disabled={acting === -1} className="inline-flex items-center gap-1 rounded-md bg-danger px-3 py-1.5 text-[12px] font-semibold text-white hover:opacity-90 disabled:opacity-50">
+                    {acting === -1 ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />} Yes, discard all
+                  </button>
+                  <button onClick={() => setConfirmDiscardAll(false)} className="rounded-md px-3 py-1.5 text-[12px] font-medium text-foreground-secondary hover:text-foreground">Cancel</button>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmDiscardAll(true)} className="inline-flex items-center gap-1.5 text-[12px] font-medium text-foreground-secondary hover:text-danger">
+                  <Trash2 className="h-3.5 w-3.5" /> Discard all
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === "settings" && (
+        <div className="mt-6 space-y-4">
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-[15px] font-semibold text-foreground">Auto-sync when online</h3>
+                <p className="mt-1 max-w-2xl text-[13px] text-foreground-secondary">
+                  On by default: the moment this device is back online, queued changes push automatically. Turn it
+                  off to review and confirm each change yourself — your edits stay queued on the{" "}
+                  <span className="font-medium text-foreground">Pending changes</span> tab until you confirm them
+                  (all at once, or one by one). Fresh server data still pulls in either way.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAutoSync(!autoSync)}
+                disabled={busy}
+                role="switch"
+                aria-checked={autoSync}
+                className={
+                  "relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors " +
+                  (autoSync ? "bg-accent" : "bg-foreground-muted/40")
+                }
+              >
+                <span className={"inline-block h-4 w-4 rounded-full bg-white transition-transform " + (autoSync ? "translate-x-6" : "translate-x-1")} />
+              </button>
+            </div>
+            <div className="mt-4 flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-[12px] text-foreground-secondary">
+              {autoSync ? (
+                <><Cloud className="h-4 w-4 text-success" /> Changes push automatically when you reconnect.</>
+              ) : (
+                <><CloudOff className="h-4 w-4 text-warning" /> Manual mode — confirm changes on the Pending tab to push them.</>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
