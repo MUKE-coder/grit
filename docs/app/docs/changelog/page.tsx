@@ -28,6 +28,39 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.59.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.59.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 14, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fix: the Expo app no longer crashes with &ldquo;Invalid hook call&rdquo;.</strong>{' '}
+                  In a full monorepo, the web and admin apps pin a newer React than Expo does. With a
+                  hoisted <code>node_modules</code>, React Native ended up resolving the Next.js React
+                  while the app used its own copy &mdash; two React instances in one Metro bundle,
+                  which throws <em>Invalid hook call</em> / <em>Cannot read property
+                  &apos;useContext&apos; of null</em>.
+                </p>
+                <p>
+                  The generated <code>apps/expo/metro.config.js</code> now de-duplicates React: every{' '}
+                  <code>react</code> import in the Metro bundle resolves to the Expo app&apos;s own
+                  copy, so there is exactly one React instance. (Only <code>react</code> is
+                  deduped &mdash; React Native ships its own renderer and doesn&apos;t use
+                  <code>react-dom</code>.)
+                </p>
+                <p>
+                  Existing projects: <code>grit update</code>, copy the new{' '}
+                  <code>apps/expo/metro.config.js</code>, then restart Metro with the cache cleared
+                  &mdash; <code>npx expo start -c</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.58.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
