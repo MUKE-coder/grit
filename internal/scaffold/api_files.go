@@ -3494,6 +3494,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"` + "{{MODULE}}" + `/internal/services"
 	"` + "{{MODULE}}" + `/internal/sync"
@@ -3613,13 +3614,32 @@ func (h *SyncHandler) applyChange(c *gin.Context, ch PushChange) PushResult {
 				ServerData:    current,
 			}
 		}
-		// Versions match — apply the update. The BeforeUpdate hook will
-		// bump Version on save so the client knows what to remember.
-		if err := h.DB.Model(current).Updates(ch.Data).Error; err != nil {
+		// Versions match — apply the update.
+		//
+		// Decode the client payload into a fresh, typed model struct rather than
+		// calling .Updates(ch.Data) directly. A raw map[string]interface{} hands
+		// nested values (a FileRef image, a FileRefs slice, a belongs-to relation
+		// object) straight to the DB driver, which cannot encode a Go map into a
+		// json column ("cannot find encode plan for OID 0") — the update fails and
+		// the offline outbox entry gets stuck forever. Decoding first routes those
+		// fields through their driver.Valuer implementations, exactly like create.
+		obj := proto
+		if err := decodeInto(obj, ch.Data); err != nil {
+			return PushResult{OK: false, Code: "DECODE_ERROR", Message: err.Error()}
+		}
+		setField(obj, "ID", ch.ID)
+		// Seed Version with the server's value so the BeforeUpdate hook bumps it to
+		// serverVersion+1 regardless of what the client sent in the payload.
+		setIntField(obj, "Version", serverVersion)
+		// Save writes every column (so cleared/zeroed fields persist) and runs the
+		// BeforeUpdate hook. Omit associations so the nested relation object is not
+		// upserted, and CreatedAt so the client can't rewind the original timestamp.
+		if err := h.DB.Omit(clause.Associations, "CreatedAt").Save(obj).Error; err != nil {
 			return PushResult{OK: false, Code: "UPDATE_FAILED", Message: err.Error()}
 		}
+		newVersion := getIntField(obj, "Version")
 		services.LogUpdate(h.DB, c, entityType, syncIdentifier(ch.Data, ch.ID), ch.ID, services.DiffSummary(ch.Data))
-		return PushResult{OK: true, NewVersion: serverVersion + 1}
+		return PushResult{OK: true, NewVersion: newVersion}
 
 	case "delete":
 		current := proto
@@ -3798,6 +3818,17 @@ func getIntField(obj interface{}, name string) int {
 		return 0
 	}
 	return int(f.Int())
+}
+
+// setIntField sets an int field on a struct via reflection. Used to seed
+// Version before an update save so the BeforeUpdate hook bumps from the
+// server's value rather than whatever the client happened to send.
+func setIntField(obj interface{}, name string, value int) {
+	v := reflect.ValueOf(obj).Elem()
+	f := v.FieldByName(name)
+	if f.IsValid() && f.CanSet() && f.CanInt() {
+		f.SetInt(int64(value))
+	}
 }
 
 func getTimeField(obj interface{}, name string) (time.Time, bool) {
