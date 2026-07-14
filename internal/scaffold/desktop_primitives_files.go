@@ -916,6 +916,7 @@ func desktopClientNavConfig() string {
   Bell,
   Shield,
   LayoutGrid,
+  DatabaseBackup,
   type LucideIcon,
 } from "lucide-react";
 
@@ -976,6 +977,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: "Account",
     items: [
       { to: "/app/sync", label: "Sync", icon: RefreshCw },
+      { to: "/app/data-backup", label: "Data & Backup", icon: DatabaseBackup },
     ],
   },
 ];

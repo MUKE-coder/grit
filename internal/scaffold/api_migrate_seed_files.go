@@ -11,13 +11,13 @@ func writeMigrateSeedFiles(root string, opts Options) error {
 	module := opts.Module()
 
 	files := map[string]string{
-		filepath.Join(apiRoot, "cmd", "migrate", "main.go"):                 apiMigrateMainGo(),
-		filepath.Join(apiRoot, "cmd", "seed", "main.go"):                    apiSeedMainGo(),
-		filepath.Join(apiRoot, "internal", "database", "seed.go"):           apiSeedGo(),
-		filepath.Join(apiRoot, "internal", "database", "users_seeder.go"):   apiUsersSeederGo(),
-		filepath.Join(apiRoot, "internal", "database", "blogs_seeder.go"):   apiBlogsSeederGo(),
-		filepath.Join(apiRoot, "internal", "database", "seed_helpers.go"):   apiSeedHelpersGo(),
-		filepath.Join(apiRoot, "internal", "database", "migrate.go"):        apiMigrateGo(),
+		filepath.Join(apiRoot, "cmd", "migrate", "main.go"):               apiMigrateMainGo(),
+		filepath.Join(apiRoot, "cmd", "seed", "main.go"):                  apiSeedMainGo(),
+		filepath.Join(apiRoot, "internal", "database", "seed.go"):         apiSeedGo(),
+		filepath.Join(apiRoot, "internal", "database", "users_seeder.go"): apiUsersSeederGo(),
+		filepath.Join(apiRoot, "internal", "database", "blogs_seeder.go"): apiBlogsSeederGo(),
+		filepath.Join(apiRoot, "internal", "database", "seed_helpers.go"): apiSeedHelpersGo(),
+		filepath.Join(apiRoot, "internal", "database", "migrate.go"):      apiMigrateGo(),
 	}
 
 	for path, content := range files {

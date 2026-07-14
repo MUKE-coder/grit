@@ -18,20 +18,21 @@ import {
 import { resources } from "@/resources";
 import type { LucideIcon } from "lucide-react";
 
-type Corner = "bottom-left" | "bottom-right" | "top-left" | "top-right";
+type Corner = "bottom-left" | "bottom-center" | "bottom-right";
 
 interface QuickAction { key: string; label: string; description: string; icon: LucideIcon; to: string }
 interface QuickConfig { position: Corner; hidden: string[]; custom: { label: string; to: string }[] }
 
 const STORAGE_KEY = "grit-quick-access";
+const MAX_TILES = 10;
 const DEFAULT_CONFIG: QuickConfig = { position: "bottom-left", hidden: [], custom: [] };
 
 const CORNERS: { key: Corner; label: string; cls: string }[] = [
   { key: "bottom-left", label: "Bottom left", cls: "bottom-6 left-6" },
+  { key: "bottom-center", label: "Bottom center", cls: "bottom-6 left-1/2 -translate-x-1/2" },
   { key: "bottom-right", label: "Bottom right", cls: "bottom-6 right-6" },
-  { key: "top-left", label: "Top left", cls: "top-6 left-6" },
-  { key: "top-right", label: "Top right", cls: "top-6 right-6" },
 ];
+const POSITIONS = CORNERS.map((c) => c.key);
 
 const NAV_ACTIONS: QuickAction[] = [
   { key: "nav:dashboard", label: "Dashboard", description: "Overview & metrics", icon: Home, to: "/dashboard" },
@@ -46,7 +47,11 @@ function cx(...c: (string | false | undefined)[]) { return c.filter(Boolean).joi
 function loadConfig(): QuickConfig {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { ...DEFAULT_CONFIG, ...JSON.parse(raw) };
+    if (raw) {
+      const c = { ...DEFAULT_CONFIG, ...JSON.parse(raw) } as QuickConfig;
+      if (!POSITIONS.includes(c.position)) c.position = "bottom-left"; // migrate old top-* corners
+      return c;
+    }
   } catch { /* ignore */ }
   return DEFAULT_CONFIG;
 }
@@ -89,7 +94,7 @@ export function QuickAccess() {
       ...config.custom.map((c, i) => ({
         key: "custom:" + i, label: c.label, description: c.to, icon: LinkIcon, to: c.to,
       })),
-    ],
+    ].slice(0, MAX_TILES),
     [allDefaults, config],
   );
 
@@ -165,12 +170,17 @@ function QuickAccessConfig({
   const [label, setLabel] = useState("");
   const [to, setTo] = useState("");
 
+  const visibleCount = defaults.filter((a) => !config.hidden.includes(a.key)).length + config.custom.length;
+  const canAdd = visibleCount < MAX_TILES;
+
   const toggle = (key: string) => {
-    const hidden = config.hidden.includes(key) ? config.hidden.filter((k) => k !== key) : [...config.hidden, key];
+    const enabling = config.hidden.includes(key);
+    if (enabling && !canAdd) return; // at the tile cap — can't enable another
+    const hidden = enabling ? config.hidden.filter((k) => k !== key) : [...config.hidden, key];
     onChange({ ...config, hidden });
   };
   const addCustom = () => {
-    if (!label.trim() || !to.trim()) return;
+    if (!label.trim() || !to.trim() || !canAdd) return;
     onChange({ ...config, custom: [...config.custom, { label: label.trim(), to: to.trim() }] });
     setLabel(""); setTo("");
   };
@@ -187,7 +197,7 @@ function QuickAccessConfig({
         </header>
         <div className="max-h-[70vh] overflow-y-auto p-5">
           <p className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-text-muted">Button position</p>
-          <div className="mb-5 grid grid-cols-2 gap-2">
+          <div className="mb-5 grid grid-cols-3 gap-2">
             {CORNERS.map((c) => (
               <button
                 key={c.key}
@@ -199,14 +209,20 @@ function QuickAccessConfig({
             ))}
           </div>
 
-          <p className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-text-muted">Cards</p>
+          <p className="mb-2 flex items-center justify-between text-[12px] font-semibold uppercase tracking-wider text-text-muted">
+            <span>Cards</span>
+            <span className={cx("normal-case", canAdd ? "text-text-muted" : "text-warning")}>{visibleCount}/{MAX_TILES}</span>
+          </p>
           <div className="mb-5 space-y-1">
-            {defaults.map((a) => (
-              <label key={a.key} className="flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-[13px] text-foreground hover:bg-bg-hover">
-                {a.label}
-                <input type="checkbox" checked={!config.hidden.includes(a.key)} onChange={() => toggle(a.key)} className="h-4 w-4 accent-accent" />
-              </label>
-            ))}
+            {defaults.map((a) => {
+              const on = !config.hidden.includes(a.key);
+              return (
+                <label key={a.key} className={cx("flex items-center justify-between rounded-lg px-3 py-2 text-[13px] text-foreground hover:bg-bg-hover", !on && !canAdd ? "cursor-not-allowed opacity-50" : "cursor-pointer")}>
+                  {a.label}
+                  <input type="checkbox" checked={on} disabled={!on && !canAdd} onChange={() => toggle(a.key)} className="h-4 w-4 accent-accent" />
+                </label>
+              );
+            })}
           </div>
 
           <p className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-text-muted">Custom links</p>
@@ -223,8 +239,9 @@ function QuickAccessConfig({
           <div className="mt-2 flex items-center gap-2">
             <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label" className="w-1/2 rounded-lg border border-border bg-bg-tertiary px-3 py-2 text-[13px] text-foreground outline-none focus:border-accent" />
             <input value={to} onChange={(e) => setTo(e.target.value)} placeholder="/resources/…" className="w-1/2 rounded-lg border border-border bg-bg-tertiary px-3 py-2 text-[13px] text-foreground outline-none focus:border-accent" />
-            <button onClick={addCustom} className="shrink-0 rounded-lg bg-accent px-3 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover">Add</button>
+            <button onClick={addCustom} disabled={!canAdd} className="shrink-0 rounded-lg bg-accent px-3 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50">Add</button>
           </div>
+          {!canAdd && <p className="mt-2 text-[12px] text-warning">Tile limit reached ({MAX_TILES}).</p>}
         </div>
       </div>
     </div>

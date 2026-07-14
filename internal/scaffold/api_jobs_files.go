@@ -45,7 +45,8 @@ const (
 	TypeImageProcess          = "image:process"
 	TypeTokensCleanup         = "tokens:cleanup"
 	TypeUploadsOrphanCleanup  = "uploads:cleanup_orphans" // v3.31.33
-	TypeBackupWeekly          = "backup:weekly"           // v3.31.77
+	TypeBackupWeekly          = "backup:weekly"           // v3.31.77 (legacy)
+	TypeBackupScheduled       = "backup:scheduled"        // settings-driven auto backup
 )
 
 // Default per-task settings used when a caller doesn't override via
@@ -342,6 +343,7 @@ func StartWorker(redisURL string, deps WorkerDeps) (func(), error) {
 	mux.HandleFunc(TypeTokensCleanup, handleTokensCleanup(deps))
 	mux.HandleFunc(TypeUploadsOrphanCleanup, handleUploadsOrphanCleanup(deps))
 	mux.HandleFunc(TypeBackupWeekly, handleBackupWeekly(deps))
+	mux.HandleFunc(TypeBackupScheduled, handleBackupScheduled(deps))
 
 	go func() {
 		if err := srv.Run(mux); err != nil {
@@ -485,6 +487,38 @@ func handleBackupWeekly(deps WorkerDeps) func(ctx context.Context, task *asynq.T
 			return fmt.Errorf("weekly backup: %w", err)
 		}
 		log.Printf("Weekly backup %s complete — %d tables, %d rows, %.1f KB",
+			rec.ID, rec.TableCount, rec.RowCount, float64(rec.SizeBytes)/1024)
+		return nil
+	}
+}
+
+// handleBackupScheduled is the settings-driven auto-backup checker. It runs on a
+// frequent cron tick and consults the BackupSchedule row: if a backup is due for
+// the current period (daily/weekly/monthly/yearly at the configured time) and
+// none has run yet, it takes one. This lets the period change at runtime without
+// touching the cron registration.
+func handleBackupScheduled(deps WorkerDeps) func(ctx context.Context, task *asynq.Task) error {
+	return func(ctx context.Context, task *asynq.Task) error {
+		if deps.DB == nil {
+			return fmt.Errorf("database not configured")
+		}
+		if deps.Storage == nil {
+			return nil // no storage in local dev — silently skip
+		}
+		svc := &backup.Service{DB: deps.DB, Storage: deps.Storage}
+		due, err := svc.DueNow(time.Now())
+		if err != nil {
+			return fmt.Errorf("backup due check: %w", err)
+		}
+		if !due {
+			return nil
+		}
+		log.Println("Scheduled backup is due — running full-database backup...")
+		rec, err := svc.Generate(ctx, "SCHEDULED")
+		if err != nil {
+			return fmt.Errorf("scheduled backup: %w", err)
+		}
+		log.Printf("Scheduled backup %s complete — %d tables, %d rows, %.1f KB",
 			rec.ID, rec.TableCount, rec.RowCount, float64(rec.SizeBytes)/1024)
 		return nil
 	}

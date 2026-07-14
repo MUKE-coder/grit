@@ -63,6 +63,32 @@ export function useDownloadBackup() {
     },
   });
 }
+
+export type BackupFrequency = "daily" | "weekly" | "monthly" | "yearly";
+
+export interface BackupSchedule {
+  frequency: BackupFrequency;
+  time: string; // "HH:MM"
+  enabled: boolean;
+}
+
+// The automatic-backup schedule (period + time-of-day). Changing it takes effect
+// on the scheduler's next tick — no restart needed.
+export function useBackupSchedule() {
+  return useQuery<BackupSchedule>({
+    queryKey: ["backup-schedule"],
+    queryFn: async () => (await apiClient.get("/api/backup-settings")).data.data,
+    staleTime: 15_000,
+  });
+}
+
+export function useUpdateBackupSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (s: BackupSchedule) => (await apiClient.put("/api/backup-settings", s)).data.data as BackupSchedule,
+    onSuccess: (data) => qc.setQueryData(["backup-schedule"], data),
+  });
+}
 `
 }
 
@@ -70,8 +96,93 @@ export function useDownloadBackup() {
 func adminBackupsPage() string {
 	return `"use client";
 
-import { useBackups, useGenerateBackup, useDownloadBackup, type Backup } from "@/hooks/use-backups";
-import { Database, Download, RefreshCw, Loader2, AlertCircle } from "@/lib/icons";
+import { useEffect, useState } from "react";
+import {
+  useBackups, useGenerateBackup, useDownloadBackup, useBackupSchedule, useUpdateBackupSchedule,
+  type Backup, type BackupFrequency,
+} from "@/hooks/use-backups";
+import { Database, Download, RefreshCw, Loader2, AlertCircle, Clock, Save } from "@/lib/icons";
+
+const FREQUENCIES: { key: BackupFrequency; label: string; hint: string }[] = [
+  { key: "daily", label: "Daily", hint: "every day" },
+  { key: "weekly", label: "Weekly", hint: "every Sunday" },
+  { key: "monthly", label: "Monthly", hint: "1st of month" },
+  { key: "yearly", label: "Yearly", hint: "Jan 1" },
+];
+
+function ScheduleCard() {
+  const { data: schedule, isLoading } = useBackupSchedule();
+  const update = useUpdateBackupSchedule();
+  const [freq, setFreq] = useState<BackupFrequency>("weekly");
+  const [time, setTime] = useState("02:00");
+  const [enabled, setEnabled] = useState(true);
+
+  useEffect(() => {
+    if (schedule) { setFreq(schedule.frequency); setTime(schedule.time); setEnabled(schedule.enabled); }
+  }, [schedule]);
+
+  const dirty = schedule && (schedule.frequency !== freq || schedule.time !== time || schedule.enabled !== enabled);
+
+  return (
+    <div className="rounded-xl border border-border bg-bg-secondary p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10 text-accent"><Clock className="h-5 w-5" /></span>
+          <div>
+            <h3 className="text-[15px] font-semibold text-foreground">Automatic backups</h3>
+            <p className="text-sm text-text-secondary">A full backup runs on this schedule. Default is weekly.</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setEnabled((v) => !v)}
+          role="switch"
+          aria-checked={enabled}
+          className={"relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors " + (enabled ? "bg-accent" : "bg-text-muted/40")}
+        >
+          <span className={"inline-block h-4 w-4 rounded-full bg-white transition-transform " + (enabled ? "translate-x-6" : "translate-x-1")} />
+        </button>
+      </div>
+
+      <div className={"mt-4 transition-opacity " + (enabled ? "" : "pointer-events-none opacity-50")}>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">Frequency</p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {FREQUENCIES.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFreq(f.key)}
+              className={
+                "rounded-lg border px-3 py-2.5 text-center transition-colors " +
+                (freq === f.key ? "border-accent bg-accent/5 text-accent" : "border-border text-text-secondary hover:bg-bg-hover")
+              }
+            >
+              <div className="text-sm font-medium text-foreground">{f.label}</div>
+              <div className="text-xs text-text-muted">{f.hint}</div>
+            </button>
+          ))}
+        </div>
+        <div className="mt-4 flex items-end gap-3">
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-text-muted">Time of day</label>
+            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="rounded-lg border border-border bg-bg-tertiary px-3 py-2 text-sm text-foreground outline-none focus:border-accent" />
+          </div>
+          <span className="pb-2 text-xs text-text-muted">server local time</span>
+        </div>
+      </div>
+
+      <div className="mt-5 flex items-center justify-end gap-3">
+        {update.isSuccess && !dirty ? <span className="text-xs text-success">Saved</span> : null}
+        <button
+          onClick={() => update.mutate({ frequency: freq, time, enabled })}
+          disabled={isLoading || update.isPending || !dirty}
+          className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        >
+          {update.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save schedule
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function formatBytes(n: number): string {
   if (!n) return "—";
@@ -106,9 +217,9 @@ export default function BackupsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Database Backups</h1>
+          <h1 className="text-2xl font-bold text-foreground">Data &amp; Backup</h1>
           <p className="text-sm text-text-secondary mt-1">
-            A full backup runs automatically every Sunday at 02:00 UTC. The four most recent are kept.
+            Full-database snapshots on a schedule you control, or on demand. The four most recent are kept.
           </p>
         </div>
         <button
@@ -124,6 +235,8 @@ export default function BackupsPage() {
           Back up now
         </button>
       </div>
+
+      <ScheduleCard />
 
       {generate.isError ? (
         <div className="flex items-center gap-2 rounded-lg border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-danger">

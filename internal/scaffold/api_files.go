@@ -1048,6 +1048,8 @@ func Models() []interface{} {
 		&ImportJob{},
 		// v3.31.77 — full-database backup index
 		&Backup{},
+		// backup schedule (period + time-of-day for automatic backups)
+		&BackupSchedule{},
 		// grit:models
 	}
 }
@@ -7186,6 +7188,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		admin.GET("/backups", backupHandler.List)
 		admin.POST("/backups/generate", backupHandler.Generate)
 		admin.GET("/backups/:id/download", backupHandler.Download)
+		// Separate path (not /backups/settings) so it doesn't collide with the
+		// /backups/:id wildcard segment in Gin's router.
+		admin.GET("/backup-settings", backupHandler.GetSettings)
+		admin.PUT("/backup-settings", backupHandler.UpdateSettings)
 
 		// grit:routes:admin
 	}
