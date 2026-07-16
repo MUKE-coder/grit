@@ -1319,7 +1319,15 @@ func (g *Generator) buildTSInterfaceFields() string {
 }
 
 // writeResourceDefinition creates the resource definition file (resources/<plural>.ts).
-func (g *Generator) writeResourceDefinition(names Names) error {
+// resourceDefinitionFileContent builds the admin resource definition file.
+//
+// Both admins consume the SAME apps/admin/**/lib/resource.ts defineResource(),
+// so both must get byte-identical content — only the destination path differs
+// (Next.js: apps/admin/resources, TanStack: apps/admin/src/resources). Keeping
+// one builder is deliberate: a TanStack-specific copy previously drifted and
+// emitted a flat {plural, apiEndpoint, columns, fields} shape that defineResource
+// could not read, blanking the whole admin at import time.
+func (g *Generator) resourceDefinitionFileContent(names Names) string {
 	icon := guessLucideIcon(names.Pascal)
 
 	// v3.31.19: column-pack heuristic. When a resource has both `name`
@@ -1536,8 +1544,13 @@ export const %sResource = defineResource({
 		icon,
 	)
 
+	return content
+}
+
+// writeResourceDefinition writes the resource definition for the Next.js admin.
+func (g *Generator) writeResourceDefinition(names Names) error {
 	path := filepath.Join(g.Root, "apps", "admin", "resources", names.PluralKebab+".ts")
-	return writeFileWithDirs(path, content)
+	return writeFileWithDirs(path, g.resourceDefinitionFileContent(names))
 }
 
 // writeResourcePage creates a thin admin page wrapper for the resource.

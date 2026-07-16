@@ -28,6 +28,46 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.61.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.61.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    Fix: generating a resource no longer blanks the TanStack (Vite) admin.
+                  </strong>{' '}
+                  After <code>grit generate resource</code>, the admin rendered a blank page and
+                  threw <code>Cannot read properties of undefined (reading &apos;charAt&apos;)</code>{' '}
+                  from <code>defineResource</code>. The resource definition is imported by the
+                  registry at startup, so the failure took down every route &mdash; including Login.
+                </p>
+                <p>
+                  Cause: the TanStack generator had its own copy of the resource-definition
+                  template, and it had drifted from the shared{' '}
+                  <code>lib/resource.ts</code> contract &mdash; emitting a flat{' '}
+                  <code>{'{ plural, apiEndpoint, columns, fields }'}</code> shape where{' '}
+                  <code>defineResource</code> expects <code>slug</code>, <code>endpoint</code>,{' '}
+                  <code>icon</code>, <code>table</code> and <code>form</code>. Both admins consume
+                  the identical <code>defineResource</code>, so they now share a single content
+                  builder and cannot diverge again; only the destination path differs. The
+                  previously-missing <code>stacked-cell</code> component (imported when the
+                  name/email column-pack heuristic fires) is now generated for the Vite admin too.
+                </p>
+                <p>
+                  Existing projects: <code>grit update</code>, then re-run{' '}
+                  <code>grit generate resource</code> for any resource generated on v3.60.0 or
+                  earlier under <code>--vite</code> (or fix{' '}
+                  <code>apps/admin/src/resources/&lt;name&gt;.ts</code> by hand to the shape above).
+                </p>
+              </div>
+            </div>
+
             {/* v3.60.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

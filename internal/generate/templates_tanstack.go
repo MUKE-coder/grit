@@ -102,8 +102,11 @@ func (g *Generator) buildTSFields(names Names) string {
 }
 
 // writeResourceDefinitionTanStack writes a resource definition to apps/admin/src/resources/.
+//
+// Uses the same builder as the Next.js admin — both consume the identical
+// lib/resource.ts defineResource(), so the content must not diverge.
 func (g *Generator) writeResourceDefinitionTanStack(names Names) error {
-	content := g.resourceDefinitionContent(names)
+	content := g.resourceDefinitionFileContent(names)
 	dir := filepath.Join(g.Root, "apps", "admin", "src", "resources")
 	os.MkdirAll(dir, 0755)
 	return os.WriteFile(filepath.Join(dir, names.PluralKebab+".ts"), []byte(content), 0644)
@@ -125,40 +128,3 @@ export const Route = createFileRoute('/_dashboard/resources/%s')({
 	return os.WriteFile(filepath.Join(dir, names.PluralKebab+".tsx"), []byte(content), 0644)
 }
 
-// resourceDefinitionContent generates the resource definition (shared between Next.js and TanStack).
-func (g *Generator) resourceDefinitionContent(names Names) string {
-	// Build column definitions
-	var columns strings.Builder
-	for _, f := range g.Definition.Fields {
-		jsonName := toSnakeCase(f.Name)
-		label := toPascalCase(f.Name)
-		columns.WriteString(fmt.Sprintf(`    { key: '%s', label: '%s', sortable: true },
-`, jsonName, label))
-	}
-
-	// Build form field definitions
-	var fields strings.Builder
-	for _, f := range g.Definition.Fields {
-		jsonName := toSnakeCase(f.Name)
-		if f.IsSlug() {
-			continue
-		}
-		label := toPascalCase(f.Name)
-		fieldType := f.FormFieldType()
-		fields.WriteString(fmt.Sprintf(`    { name: '%s', label: '%s', type: '%s' },
-`, jsonName, label, fieldType))
-	}
-
-	return fmt.Sprintf(`import { defineResource } from '@/lib/resource'
-
-export const %sResource = defineResource({
-  name: '%s',
-  plural: '%s',
-  apiEndpoint: '/api/%s',
-  columns: [
-%s  ],
-  fields: [
-%s  ],
-})
-`, names.Camel, names.Pascal, names.PluralPascal, names.Plural, columns.String(), fields.String())
-}
