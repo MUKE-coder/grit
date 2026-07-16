@@ -310,6 +310,9 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "components", "tables", "table-empty-state.tsx"): nextToTanStack(adminTableEmptyState()),
 		filepath.Join(adminRoot, "src", "components", "tables", "import-modal.tsx"):      nextToTanStack(adminImportModal()),
 		filepath.Join(adminRoot, "src", "components", "tables", "export-menu.tsx"):       nextToTanStack(adminExportMenu()),
+		// Imported by generated resource definitions when the name/email
+		// column-pack heuristic fires.
+		filepath.Join(adminRoot, "src", "components", "tables", "stacked-cell.tsx"): nextToTanStack(adminStackedCell()),
 
 		// Form components (pure React — strip "use client")
 		filepath.Join(adminRoot, "src", "components", "forms", "form-builder.tsx"):                              nextToTanStack(adminFormBuilder()),
