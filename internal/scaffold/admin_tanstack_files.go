@@ -64,6 +64,24 @@ func adminTanStackAPIClient() string {
 	return code
 }
 
+// adminTanStackPageRoute returns a thin TanStack route that renders a page
+// component reused verbatim from the Next.js admin.
+//
+// The Vite admin previously hand-wrote each route as a placeholder ("System
+// page content will be loaded here", dashboards with "--" stats), so it drifted
+// far from the Next.js admin. Routing is the ONLY thing that should differ
+// between the two admins — the pages themselves are shared, transformed by
+// nextToTanStack. Keep new routes thin like this.
+func adminTanStackPageRoute(routeID, importPath string) string {
+	return fmt.Sprintf(`import { createFileRoute } from '@tanstack/react-router'
+import Page from '%s'
+
+export const Route = createFileRoute('%s')({
+  component: Page,
+})
+`, importPath, routeID)
+}
+
 // adminTanStackGlobalCSS adapts the shared admin globals.css for Tailwind v4 +
 // the @tailwindcss/vite plugin (the Vite admin uses v4; the Next.js admin stays
 // on v3). It swaps the v3 @tailwind directives for the v4 @import, registers the
@@ -149,6 +167,7 @@ import {
   Link as RouterLink,
   useNavigate,
   useRouterState,
+  useParams as useRouterParams,
 } from "@tanstack/react-router";
 
 // RouterLink is heavily generic over the typed route tree; the shared components
@@ -207,6 +226,14 @@ export function usePathname(): string {
   return useRouterState({ select: (s: any) => s.location.pathname as string });
 }
 
+// next/navigation: useParams(). Non-strict so it resolves against whatever
+// route is active, matching Next.js's untyped-by-default behaviour. Detail
+// pages read params.id — TanStack names the segment $id, which yields the
+// same { id } shape.
+export function useParams<T = Record<string, string>>(): T {
+  return useRouterParams({ strict: false }) as T;
+}
+
 export type ReadonlyURLSearchParams = URLSearchParams;
 
 // next/navigation: useSearchParams() -> a URLSearchParams over the current query
@@ -240,27 +267,72 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "index.html"):     adminTanStackIndexHTML(opts),
 		// Tailwind v4: styling is driven by the @tailwindcss/vite plugin +
 		// @theme/@import in globals.css — no tailwind.config or postcss.config.
-		filepath.Join(adminRoot, "tsconfig.json"): adminTanStackTSConfig(),
+		filepath.Join(adminRoot, "tsconfig.json"):      adminTanStackTSConfig(),
 		filepath.Join(adminRoot, "src", "main.tsx"):    adminTanStackMain(),
 		filepath.Join(adminRoot, "src", "globals.css"): adminTanStackGlobalCSS(),
 
-		// Routes
-		filepath.Join(adminRoot, "src", "routes", "__root.tsx"):                           adminTanStackRootRoute(),
-		filepath.Join(adminRoot, "src", "routes", "index.tsx"):                            adminTanStackRedirectRoute(),
-		filepath.Join(adminRoot, "src", "routes", "_auth.tsx"):                            adminTanStackAuthLayout(),
-		filepath.Join(adminRoot, "src", "routes", "_auth", "login.tsx"):                   adminTanStackLoginRoute(opts.Style),
-		filepath.Join(adminRoot, "src", "routes", "_auth", "sign-up.tsx"):                 adminTanStackSignUpRoute(opts.Style),
-		filepath.Join(adminRoot, "src", "routes", "_auth", "forgot-password.tsx"):         adminTanStackForgotPasswordRoute(opts.Style),
-		filepath.Join(adminRoot, "src", "routes", "_dashboard.tsx"):                       adminTanStackDashboardLayout(),
-		filepath.Join(adminRoot, "src", "routes", "_dashboard", "dashboard.tsx"):          adminTanStackDashboardRoute(opts.Style),
-		filepath.Join(adminRoot, "src", "routes", "_dashboard", "profile.tsx"):            adminTanStackProfileRoute(),
-		filepath.Join(adminRoot, "src", "routes", "_dashboard", "resources", "users.tsx"): adminTanStackUsersRoute(),
-		filepath.Join(adminRoot, "src", "routes", "_dashboard", "resources", "blogs.tsx"): adminTanStackBlogsRoute(),
-		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "jobs.tsx"):     adminTanStackSystemRoute("jobs"),
-		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "files.tsx"):    adminTanStackSystemRoute("files"),
-		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "cron.tsx"):     adminTanStackSystemRoute("cron"),
-		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "mail.tsx"):     adminTanStackSystemRoute("mail"),
-		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "security.tsx"): adminTanStackSystemRoute("security"),
+		// Pages — reused verbatim from the Next.js admin (transformed by
+		// nextToTanStack). These are the real dashboards/forms/tables; the
+		// routes below are thin wrappers that render them. Adding a page here
+		// plus a route below is how you surface a new admin screen.
+		filepath.Join(adminRoot, "src", "pages", "login.tsx"):                    nextToTanStack(adminThemedLoginPage()),
+		filepath.Join(adminRoot, "src", "pages", "sign-up.tsx"):                  nextToTanStack(adminThemedSignUpPage()),
+		filepath.Join(adminRoot, "src", "pages", "forgot-password.tsx"):          nextToTanStack(adminThemedForgotPasswordPage()),
+		filepath.Join(adminRoot, "src", "pages", "callback.tsx"):                 nextToTanStack(adminAuthCallbackPage()),
+		filepath.Join(adminRoot, "src", "pages", "not-found.tsx"):                nextToTanStack(adminNotFoundPage()),
+		filepath.Join(adminRoot, "src", "pages", "dashboard.tsx"):                nextToTanStack(adminDashboardPageForStyle(opts.Style)),
+		filepath.Join(adminRoot, "src", "pages", "profile.tsx"):                  nextToTanStack(adminCaptivatingProfile()),
+		filepath.Join(adminRoot, "src", "pages", "settings", "dashboard.tsx"):    nextToTanStack(adminDashboardSettingsPageTS()),
+		filepath.Join(adminRoot, "src", "pages", "resources", "users.tsx"):       nextToTanStack(adminUsersPage()),
+		filepath.Join(adminRoot, "src", "pages", "resources", "blogs.tsx"):       nextToTanStack(adminBlogsListPage()),
+		filepath.Join(adminRoot, "src", "pages", "resources", "blog-detail.tsx"): nextToTanStack(adminBlogDetailPage()),
+		filepath.Join(adminRoot, "src", "pages", "system", "index.tsx"):          nextToTanStack(adminSystemHubPageV2()),
+		filepath.Join(adminRoot, "src", "pages", "system", "activity.tsx"):       nextToTanStack(adminWalkieActivityPage()),
+		filepath.Join(adminRoot, "src", "pages", "system", "health.tsx"):         nextToTanStack(adminSystemHealthPage()),
+		filepath.Join(adminRoot, "src", "pages", "system", "notifications.tsx"):  nextToTanStack(adminNotificationsPage()),
+		filepath.Join(adminRoot, "src", "pages", "system", "performance.tsx"):    nextToTanStack(adminPerformancePageV2()),
+		filepath.Join(adminRoot, "src", "pages", "system", "security.tsx"):       nextToTanStack(adminSecurityPageV2()),
+		filepath.Join(adminRoot, "src", "pages", "system", "support.tsx"):        nextToTanStack(adminSupportListPage()),
+		filepath.Join(adminRoot, "src", "pages", "system", "ticket.tsx"):         nextToTanStack(adminTicketThreadPage()),
+		filepath.Join(adminRoot, "src", "pages", "system", "jobs.tsx"):           nextToTanStack(adminJobsPage()),
+		filepath.Join(adminRoot, "src", "pages", "system", "files.tsx"):          nextToTanStack(adminFilesPage()),
+		filepath.Join(adminRoot, "src", "pages", "system", "cron.tsx"):           nextToTanStack(adminCronPage()),
+		filepath.Join(adminRoot, "src", "pages", "system", "mail.tsx"):           nextToTanStack(adminMailPage()),
+		filepath.Join(adminRoot, "src", "pages", "system", "backups.tsx"):        nextToTanStack(adminBackupsPage()),
+		filepath.Join(adminRoot, "src", "pages", "system", "observability.tsx"):  nextToTanStack(adminObservabilityPage()),
+		filepath.Join(adminRoot, "src", "pages", "system", "form-shares.tsx"):    nextToTanStack(adminFormSharesPage()),
+
+		// Routes — thin wrappers around the pages above. Route ids mirror the
+		// Next.js admin's URLs exactly so the shared sidebar's links resolve.
+		filepath.Join(adminRoot, "src", "routes", "__root.tsx"):                                    adminTanStackRootRoute(),
+		filepath.Join(adminRoot, "src", "routes", "index.tsx"):                                     adminTanStackRedirectRoute(),
+		filepath.Join(adminRoot, "src", "routes", "_auth.tsx"):                                     adminTanStackAuthLayout(),
+		filepath.Join(adminRoot, "src", "routes", "_auth", "login.tsx"):                            adminTanStackPageRoute("/_auth/login", "@/pages/login"),
+		filepath.Join(adminRoot, "src", "routes", "_auth", "sign-up.tsx"):                          adminTanStackPageRoute("/_auth/sign-up", "@/pages/sign-up"),
+		filepath.Join(adminRoot, "src", "routes", "_auth", "forgot-password.tsx"):                  adminTanStackPageRoute("/_auth/forgot-password", "@/pages/forgot-password"),
+		filepath.Join(adminRoot, "src", "routes", "_auth", "callback.tsx"):                         adminTanStackPageRoute("/_auth/callback", "@/pages/callback"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard.tsx"):                                adminTanStackDashboardLayout(),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "dashboard.tsx"):                   adminTanStackPageRoute("/_dashboard/dashboard", "@/pages/dashboard"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "profile.tsx"):                     adminTanStackPageRoute("/_dashboard/profile", "@/pages/profile"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "settings", "dashboard.tsx"):       adminTanStackPageRoute("/_dashboard/settings/dashboard", "@/pages/settings/dashboard"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "resources", "users.tsx"):          adminTanStackPageRoute("/_dashboard/resources/users", "@/pages/resources/users"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "resources", "blogs", "index.tsx"): adminTanStackPageRoute("/_dashboard/resources/blogs/", "@/pages/resources/blogs"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "resources", "blogs", "$id.tsx"):   adminTanStackPageRoute("/_dashboard/resources/blogs/$id", "@/pages/resources/blog-detail"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "index.tsx"):             adminTanStackPageRoute("/_dashboard/system/", "@/pages/system"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "activity.tsx"):          adminTanStackPageRoute("/_dashboard/system/activity", "@/pages/system/activity"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "health.tsx"):            adminTanStackPageRoute("/_dashboard/system/health", "@/pages/system/health"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "notifications.tsx"):     adminTanStackPageRoute("/_dashboard/system/notifications", "@/pages/system/notifications"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "performance.tsx"):       adminTanStackPageRoute("/_dashboard/system/performance", "@/pages/system/performance"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "security.tsx"):          adminTanStackPageRoute("/_dashboard/system/security", "@/pages/system/security"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "support", "index.tsx"):  adminTanStackPageRoute("/_dashboard/system/support/", "@/pages/system/support"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "support", "$id.tsx"):    adminTanStackPageRoute("/_dashboard/system/support/$id", "@/pages/system/ticket"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "jobs.tsx"):              adminTanStackPageRoute("/_dashboard/system/jobs", "@/pages/system/jobs"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "files.tsx"):             adminTanStackPageRoute("/_dashboard/system/files", "@/pages/system/files"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "cron.tsx"):              adminTanStackPageRoute("/_dashboard/system/cron", "@/pages/system/cron"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "mail.tsx"):              adminTanStackPageRoute("/_dashboard/system/mail", "@/pages/system/mail"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "backups.tsx"):           adminTanStackPageRoute("/_dashboard/system/backups", "@/pages/system/backups"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "observability.tsx"):     adminTanStackPageRoute("/_dashboard/system/observability", "@/pages/system/observability"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "form-shares.tsx"):       adminTanStackPageRoute("/_dashboard/system/form-shares", "@/pages/system/form-shares"),
 
 		// Lib (same as Next.js versions)
 		filepath.Join(adminRoot, "src", "lib", "api-client.ts"):   adminTanStackAPIClient(),
@@ -277,10 +349,44 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "lib", "file-accepts.ts"): adminFileAcceptsLib(),
 
 		// Hooks (same as Next.js versions)
-		filepath.Join(adminRoot, "src", "hooks", "use-auth.ts"):     adminTanStackUseAuth(),
-		filepath.Join(adminRoot, "src", "hooks", "use-resource.ts"): nextToTanStack(adminUseResource()),
-		filepath.Join(adminRoot, "src", "hooks", "use-system.ts"):   nextToTanStack(adminUseSystem()),
-		filepath.Join(adminRoot, "src", "hooks", "use-profile.ts"):  nextToTanStack(adminUseProfile()),
+		filepath.Join(adminRoot, "src", "hooks", "use-auth.ts"):             adminTanStackUseAuth(),
+		filepath.Join(adminRoot, "src", "hooks", "use-resource.ts"):         nextToTanStack(adminUseResource()),
+		filepath.Join(adminRoot, "src", "hooks", "use-system.ts"):           nextToTanStack(adminUseSystem()),
+		filepath.Join(adminRoot, "src", "hooks", "use-profile.ts"):          nextToTanStack(adminUseProfile()),
+		filepath.Join(adminRoot, "src", "hooks", "use-backups.ts"):          nextToTanStack(adminUseBackups()),
+		filepath.Join(adminRoot, "src", "hooks", "use-dashboard-layout.ts"): nextToTanStack(adminUseDashboardLayoutTS()),
+		filepath.Join(adminRoot, "src", "hooks", "use-toasted-mutation.ts"): nextToTanStack(adminToastHook()),
+
+		// Lib modules the reused pages import.
+		filepath.Join(adminRoot, "src", "lib", "dashboard-catalog.ts"): nextToTanStack(adminDashboardCatalogTS()),
+		filepath.Join(adminRoot, "src", "lib", "export.ts"):            nextToTanStack(adminExportLib()),
+
+		// Dashboard widgets. The Next.js admin gets these from
+		// writeAdminResourceDashboardWidgets + writeAdminCustomChartFiles, which
+		// write to a non-src root — so they're mirrored here instead of calling
+		// those writers.
+		filepath.Join(adminRoot, "src", "components", "dashboard", "ResourceStatCard.tsx"):    nextToTanStack(adminResourceStatCardTSX()),
+		filepath.Join(adminRoot, "src", "components", "dashboard", "ResourceLatestTable.tsx"): nextToTanStack(adminResourceLatestTableTSX()),
+		filepath.Join(adminRoot, "src", "components", "dashboard", "ResourceWidgetsRow.tsx"):  nextToTanStack(adminResourceWidgetsRowTSX()),
+		filepath.Join(adminRoot, "src", "components", "dashboard", "CustomChartCard.tsx"):     nextToTanStack(adminCustomChartCardTSX()),
+		filepath.Join(adminRoot, "src", "components", "dashboard", "ChartBuilderForm.tsx"):    nextToTanStack(adminChartBuilderFormTSX()),
+
+		// Auth shells — the themed login/sign-up/forgot chrome. Without these the
+		// Vite admin's auth pages looked nothing like the Next.js admin's.
+		filepath.Join(adminRoot, "src", "components", "auth", "AuthShell.tsx"):         nextToTanStack(adminAuthShellDispatcher()),
+		filepath.Join(adminRoot, "src", "components", "auth", "AtlasAuthShell.tsx"):    nextToTanStack(adminAtlasAuthShell()),
+		filepath.Join(adminRoot, "src", "components", "auth", "AuroraAuthShell.tsx"):   nextToTanStack(adminAuroraAuthShell()),
+		filepath.Join(adminRoot, "src", "components", "auth", "PulseAuthShell.tsx"):    nextToTanStack(adminPulseAuthShell()),
+		filepath.Join(adminRoot, "src", "components", "auth", "SocialAuthButtons.tsx"): nextToTanStack(adminAuthSocialButtons()),
+
+		// UI primitives the reused pages import.
+		filepath.Join(adminRoot, "src", "components", "ui", "Skeleton.tsx"):        nextToTanStack(adminSkeletonComponent()),
+		filepath.Join(adminRoot, "src", "components", "ui", "IconButton.tsx"):      nextToTanStack(adminIconButtonComponent()),
+		filepath.Join(adminRoot, "src", "components", "ui", "UserCell.tsx"):        nextToTanStack(adminUserCellComponent()),
+		filepath.Join(adminRoot, "src", "components", "ui", "CurrencyInput.tsx"):   nextToTanStack(adminCurrencyInputComponent()),
+		filepath.Join(adminRoot, "src", "components", "ui", "ResponsiveSheet.tsx"): nextToTanStack(adminResponsiveSheetComponent()),
+		filepath.Join(adminRoot, "src", "components", "ui", "ResponsiveTable.tsx"): nextToTanStack(adminResponsiveTableComponent()),
+		filepath.Join(adminRoot, "src", "components", "forms", "word-editor.tsx"):  nextToTanStack(adminWordEditor()),
 
 		// Shared components
 		filepath.Join(adminRoot, "src", "components", "shared", "providers.tsx"):      nextToTanStack(adminProviders()),
@@ -297,6 +403,13 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "components", "chrome", "CollapsibleSidebar.tsx"): nextToTanStack(adminCollapsibleSidebarComponent(opts)),
 		filepath.Join(adminRoot, "src", "components", "chrome", "QuickAccess.tsx"):        nextToTanStack(adminQuickAccessComponent()),
 		filepath.Join(adminRoot, "src", "components", "chrome", "SessionWatchdog.tsx"):    nextToTanStack(adminSessionWatchdogComponent()),
+		// UserMenu owns the sign-out action; PageHeader is imported by every
+		// system page. Both were missing, so logout did nothing and the system
+		// pages could not render.
+		filepath.Join(adminRoot, "src", "components", "chrome", "UserMenu.tsx"):         nextToTanStack(adminUserMenuComponent()),
+		filepath.Join(adminRoot, "src", "components", "chrome", "PageHeader.tsx"):       nextToTanStack(adminPageHeaderComponent()),
+		filepath.Join(adminRoot, "src", "components", "chrome", "NotificationBell.tsx"): nextToTanStack(adminNotificationBellComponent()),
+		filepath.Join(adminRoot, "src", "components", "chrome", "DarkModeToggle.tsx"):   nextToTanStack(adminDarkModeToggleComponent()),
 
 		// Table components (pure React — strip "use client")
 		filepath.Join(adminRoot, "src", "components", "tables", "data-table.tsx"):        nextToTanStack(adminDataTable()),
@@ -392,10 +505,23 @@ func adminTanStackPackageJSON(opts Options) string {
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
+    "@react-pdf/renderer": "^4.1.5",
     "@tanstack/react-query": "^5.62.0",
     "@tanstack/react-router": "^1.93.0",
     "@tanstack/react-table": "^8.20.6",
     "@tiptap/extension-link": "^2.1.0",
+    "@tiptap/extension-text-align": "^2.1.0",
+    "@tiptap/extension-text-style": "^2.1.0",
+    "@tiptap/extension-color": "^2.1.0",
+    "@tiptap/extension-highlight": "^2.1.0",
+    "@tiptap/extension-underline": "^2.1.0",
+    "@tiptap/extension-image": "^2.1.0",
+    "@tiptap/extension-table": "^2.1.0",
+    "@tiptap/extension-table-row": "^2.1.0",
+    "@tiptap/extension-table-cell": "^2.1.0",
+    "@tiptap/extension-table-header": "^2.1.0",
+    "@tiptap/extension-placeholder": "^2.1.0",
+    "@tiptap/pm": "^2.1.0",
     "@tiptap/react": "^2.1.0",
     "@tiptap/starter-kit": "^2.1.0",
     "axios": "^1.7.9",
@@ -467,21 +593,60 @@ export default defineConfig({
 `
 }
 
+// adminTanStackIndexHTML mirrors the Next.js admin's root layout so both admins
+// render identically for a given theme.
+//
+// Two things must match, and previously neither did:
+//   - data-theme on <html> selects the palette in globals.css. The Vite admin
+//     used to hard-code class="dark" and set no data-theme, which pinned it to
+//     the .dark override forever — so an atlas project (a LIGHT theme) rendered
+//     dark and looked nothing like the Next.js admin. .dark is applied at
+//     runtime by DarkModeToggle, never baked in.
+//   - the theme's fonts populate --font-display / --font-mono / --font-serif,
+//     which globals.css uses for body text. The Next.js admin loads them with
+//     next/font; Vite has no equivalent, so we link Google Fonts and set the
+//     same variables. Without this the admin silently fell back to system-ui.
 func adminTanStackIndexHTML(opts Options) string {
+	theme := opts.Theme
+	if theme == "" {
+		theme = "atlas"
+	}
+
+	var fontLink, fontVars string
+	switch theme {
+	case "aurora":
+		fontLink = `<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />`
+		fontVars = "--font-display: 'Geist', system-ui, sans-serif;\n      --font-mono: 'Geist Mono', ui-monospace, monospace;"
+	case "pulse":
+		fontLink = `<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />`
+		fontVars = "--font-display: 'Onest', system-ui, sans-serif;\n      --font-serif: 'DM Serif Display', Georgia, serif;\n      --font-mono: 'JetBrains Mono', ui-monospace, monospace;"
+	default: // atlas
+		fontLink = `<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />`
+		fontVars = "--font-display: 'Inter', system-ui, sans-serif;\n      --font-mono: 'JetBrains Mono', ui-monospace, monospace;"
+	}
+
 	return fmt.Sprintf(`<!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" data-theme="%s">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    %s
+    <style>
+      :root {
+      %s
+      }
+    </style>
     <title>%s — Admin</title>
   </head>
-  <body class="min-h-screen bg-background text-foreground antialiased">
+  <body class="min-h-screen font-sans antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-`, opts.ProjectName)
+`, theme, fontLink, fontVars, opts.ProjectName)
 }
 
 func adminTanStackTSConfig() string {
@@ -495,6 +660,14 @@ import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { routeTree } from './routeTree.gen'
 import './globals.css'
+
+// Mirrors the Next.js admin's NEXT_PUBLIC_THEME: index.html bakes in the theme
+// picked at scaffold time, and VITE_THEME overrides it at runtime, so changing
+// the theme in .env repaints the dashboard without re-scaffolding.
+const envTheme = (import.meta as any).env?.VITE_THEME
+if (envTheme) {
+  document.documentElement.setAttribute('data-theme', envTheme)
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -525,9 +698,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
 func adminTanStackRootRoute() string {
 	return `import { createRootRoute, Outlet } from '@tanstack/react-router'
+import NotFound from '@/pages/not-found'
 
 export const Route = createRootRoute({
   component: () => <Outlet />,
+  // Unmatched URLs render the same branded 404 the Next.js admin ships,
+  // instead of TanStack's bare "Not Found" text.
+  notFoundComponent: NotFound,
 })
 `
 }
@@ -562,245 +739,6 @@ export const Route = createFileRoute('/_auth')({
 `
 }
 
-func adminTanStackLoginRoute(style string) string {
-	// Reuse the style-specific login page but wrap in TanStack route
-	return `import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { api } from '@/lib/api-client'
-
-export const Route = createFileRoute('/_auth/login')({
-  component: LoginPage,
-})
-
-function LoginPage() {
-  const navigate = useNavigate()
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const { register, handleSubmit, formState: { errors } } = useForm()
-
-  const onSubmit = async (data: any) => {
-    setLoading(true)
-    setError('')
-    try {
-      const res = await api.post('/api/auth/login', data)
-      if (res.data.data?.totp_required) {
-        // 2FA required — redirect to TOTP page (store pending token)
-        localStorage.setItem('totp_pending', res.data.data.pending_token)
-        // TODO: navigate to TOTP verification page
-        return
-      }
-      localStorage.setItem('access_token', res.data.data.tokens.access_token)
-      localStorage.setItem('refresh_token', res.data.data.tokens.refresh_token)
-      navigate({ to: '/dashboard' })
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Login failed')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="w-full max-w-md mx-auto p-8">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold">Welcome back</h1>
-        <p className="text-muted-foreground mt-2">Sign in to your account</p>
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {error && (
-          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Email</label>
-          <input
-            type="email"
-            {...register('email', { required: 'Email is required' })}
-            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
-            placeholder="you@example.com"
-          />
-          {errors.email && <p className="text-xs text-destructive mt-1">{String(errors.email.message)}</p>}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Password</label>
-          <input
-            type="password"
-            {...register('password', { required: 'Password is required' })}
-            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
-            placeholder="••••••••"
-          />
-          {errors.password && <p className="text-xs text-destructive mt-1">{String(errors.password.message)}</p>}
-        </div>
-
-        <div className="flex items-center justify-between">
-          <Link to="/forgot-password" className="text-sm text-accent hover:underline">
-            Forgot password?
-          </Link>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-2.5 rounded-lg bg-accent text-white font-medium hover:bg-accent-hover transition-colors disabled:opacity-50"
-        >
-          {loading ? 'Signing in...' : 'Sign in'}
-        </button>
-
-        <p className="text-center text-sm text-muted-foreground">
-          Don{"'"}t have an account?{' '}
-          <Link to="/sign-up" className="text-accent hover:underline">Sign up</Link>
-        </p>
-      </form>
-    </div>
-  )
-}
-`
-}
-
-func adminTanStackSignUpRoute(style string) string {
-	return `import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { api } from '@/lib/api-client'
-
-export const Route = createFileRoute('/_auth/sign-up')({
-  component: SignUpPage,
-})
-
-function SignUpPage() {
-  const navigate = useNavigate()
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const { register, handleSubmit, formState: { errors } } = useForm()
-
-  const onSubmit = async (data: any) => {
-    setLoading(true)
-    setError('')
-    try {
-      const res = await api.post('/api/auth/register', data)
-      localStorage.setItem('access_token', res.data.data.tokens.access_token)
-      localStorage.setItem('refresh_token', res.data.data.tokens.refresh_token)
-      navigate({ to: '/dashboard' })
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Registration failed')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="w-full max-w-md mx-auto p-8">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold">Create account</h1>
-        <p className="text-muted-foreground mt-2">Get started with your new account</p>
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {error && (
-          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">First Name</label>
-            <input type="text" {...register('first_name', { required: 'Required' })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-accent" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Last Name</label>
-            <input type="text" {...register('last_name', { required: 'Required' })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-accent" />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Email</label>
-          <input type="email" {...register('email', { required: 'Email is required' })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-accent" placeholder="you@example.com" />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Password</label>
-          <input type="password" {...register('password', { required: 'Password is required', minLength: { value: 8, message: 'Min 8 characters' } })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-accent" placeholder="••••••••" />
-          {errors.password && <p className="text-xs text-destructive mt-1">{String(errors.password.message)}</p>}
-        </div>
-
-        <button type="submit" disabled={loading} className="w-full py-2.5 rounded-lg bg-accent text-white font-medium hover:bg-accent-hover transition-colors disabled:opacity-50">
-          {loading ? 'Creating account...' : 'Create account'}
-        </button>
-
-        <p className="text-center text-sm text-muted-foreground">
-          Already have an account? <Link to="/login" className="text-accent hover:underline">Sign in</Link>
-        </p>
-      </form>
-    </div>
-  )
-}
-`
-}
-
-func adminTanStackForgotPasswordRoute(style string) string {
-	return `import { createFileRoute, Link } from '@tanstack/react-router'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { api } from '@/lib/api-client'
-
-export const Route = createFileRoute('/_auth/forgot-password')({
-  component: ForgotPasswordPage,
-})
-
-function ForgotPasswordPage() {
-  const [sent, setSent] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const { register, handleSubmit } = useForm()
-
-  const onSubmit = async (data: any) => {
-    setLoading(true)
-    try {
-      await api.post('/api/auth/forgot-password', data)
-      setSent(true)
-    } catch {} finally {
-      setLoading(false)
-    }
-  }
-
-  if (sent) {
-    return (
-      <div className="w-full max-w-md mx-auto p-8 text-center">
-        <h1 className="text-3xl font-bold mb-4">Check your email</h1>
-        <p className="text-muted-foreground mb-6">We sent a password reset link to your email address.</p>
-        <Link to="/login" className="text-accent hover:underline">Back to login</Link>
-      </div>
-    )
-  }
-
-  return (
-    <div className="w-full max-w-md mx-auto p-8">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold">Reset password</h1>
-        <p className="text-muted-foreground mt-2">Enter your email to receive a reset link</p>
-      </div>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Email</label>
-          <input type="email" {...register('email', { required: true })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-accent" placeholder="you@example.com" />
-        </div>
-        <button type="submit" disabled={loading} className="w-full py-2.5 rounded-lg bg-accent text-white font-medium hover:bg-accent-hover transition-colors disabled:opacity-50">
-          {loading ? 'Sending...' : 'Send reset link'}
-        </button>
-        <p className="text-center text-sm text-muted-foreground">
-          <Link to="/login" className="text-accent hover:underline">Back to login</Link>
-        </p>
-      </form>
-    </div>
-  )
-}
-`
-}
-
 func adminTanStackDashboardLayout() string {
 	return `import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { AdminLayout } from '@/components/layout/admin-layout'
@@ -819,124 +757,4 @@ export const Route = createFileRoute('/_dashboard')({
   ),
 })
 `
-}
-
-func adminTanStackDashboardRoute(style string) string {
-	return `import { createFileRoute } from '@tanstack/react-router'
-import { StatsCard } from '@/components/widgets/stats-card'
-import { useAuth } from '@/hooks/use-auth'
-import { Users, FileText, Upload, Activity } from 'lucide-react'
-
-export const Route = createFileRoute('/_dashboard/dashboard')({
-  component: DashboardPage,
-})
-
-function DashboardPage() {
-  const { user } = useAuth()
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back, {user?.first_name || 'Admin'}</p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard title="Total Users" value="--" icon={<Users className="h-5 w-5" />} />
-        <StatsCard title="Blog Posts" value="--" icon={<FileText className="h-5 w-5" />} />
-        <StatsCard title="Uploads" value="--" icon={<Upload className="h-5 w-5" />} />
-        <StatsCard title="Active Sessions" value="--" icon={<Activity className="h-5 w-5" />} />
-      </div>
-    </div>
-  )
-}
-`
-}
-
-func adminTanStackProfileRoute() string {
-	return `import { createFileRoute } from '@tanstack/react-router'
-import { useAuth } from '@/hooks/use-auth'
-
-export const Route = createFileRoute('/_dashboard/profile')({
-  component: ProfilePage,
-})
-
-function ProfilePage() {
-  const { user } = useAuth()
-
-  return (
-    <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold mb-6">Profile</h1>
-      <div className="rounded-xl border border-border/40 bg-card/50 p-6 space-y-4">
-        <div>
-          <label className="text-sm text-muted-foreground">Name</label>
-          <p className="font-medium">{user?.first_name} {user?.last_name}</p>
-        </div>
-        <div>
-          <label className="text-sm text-muted-foreground">Email</label>
-          <p className="font-medium">{user?.email}</p>
-        </div>
-        <div>
-          <label className="text-sm text-muted-foreground">Role</label>
-          <p className="font-medium">{user?.role}</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-`
-}
-
-func adminTanStackUsersRoute() string {
-	return `import { createFileRoute } from '@tanstack/react-router'
-import { ResourcePage } from '@/components/resource/resource-page'
-import { usersResource } from '@/resources/users'
-
-export const Route = createFileRoute('/_dashboard/resources/users')({
-  component: () => <ResourcePage resource={usersResource} />,
-})
-`
-}
-
-func adminTanStackBlogsRoute() string {
-	return `import { createFileRoute } from '@tanstack/react-router'
-import { ResourcePage } from '@/components/resource/resource-page'
-import { blogsResource } from '@/resources/blogs'
-
-export const Route = createFileRoute('/_dashboard/resources/blogs')({
-  component: () => <ResourcePage resource={blogsResource} />,
-})
-`
-}
-
-func adminTanStackSystemRoute(page string) string {
-	titles := map[string]string{
-		"jobs":     "Background Jobs",
-		"files":    "File Manager",
-		"cron":     "Cron Scheduler",
-		"mail":     "Mail Preview",
-		"security": "Security",
-	}
-	title := titles[page]
-	if title == "" {
-		title = page
-	}
-
-	return fmt.Sprintf(`import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/_dashboard/system/%s')({
-  component: %sPage,
-})
-
-function %sPage() {
-  return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">%s</h1>
-      <div className="rounded-xl border border-border/40 bg-card/50 p-6">
-        <p className="text-muted-foreground">System page content will be loaded here.</p>
-      </div>
-    </div>
-  )
-}
-`, page, strings.Title(page), strings.Title(page), title)
 }
