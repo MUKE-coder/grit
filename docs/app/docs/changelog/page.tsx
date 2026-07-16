@@ -28,6 +28,62 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.62.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.62.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 17, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    The TanStack (Vite) admin is now the real admin, not a shell of stubs.
+                  </strong>{' '}
+                  Every route in the <code>--vite</code> admin was a hand-written placeholder: the
+                  dashboard showed four <code>--</code> cards, the system pages rendered
+                  &ldquo;System page content will be loaded here&rdquo;, the profile and auth pages
+                  were bare, most sidebar links 404&apos;d, and the 404 itself was TanStack&apos;s
+                  bare text. Meanwhile the real pages existed &mdash; they were only wired into the
+                  Next.js admin.
+                </p>
+                <p>
+                  Routing is now the <em>only</em> thing that differs between the two admins. Each
+                  route is a thin wrapper that renders the same page component the Next.js admin
+                  uses, transformed by the <code>next-compat</code> layer. 26 real pages and 27
+                  routes are generated, including every sidebar destination (
+                  <code>/system</code>, <code>/system/activity</code>, <code>/system/health</code>,{' '}
+                  <code>/system/notifications</code>, <code>/system/performance</code>,{' '}
+                  <code>/system/support</code>, <code>/settings/dashboard</code>) plus{' '}
+                  <code>backups</code>, <code>observability</code>, <code>form-shares</code> and the{' '}
+                  detail routes. Unmatched URLs render the branded 404.
+                </p>
+                <p>
+                  <strong>Theme parity.</strong> The Vite admin hard-coded{' '}
+                  <code>class=&quot;dark&quot;</code> on <code>&lt;html&gt;</code> and set no{' '}
+                  <code>data-theme</code>, pinning it to the dark override forever &mdash; so an{' '}
+                  <code>atlas</code> project (a light theme) rendered dark and looked nothing like
+                  the Next.js admin. It now sets <code>data-theme</code> from the scaffold theme
+                  (overridable at runtime via <code>VITE_THEME</code>, mirroring{' '}
+                  <code>NEXT_PUBLIC_THEME</code>) and loads that theme&apos;s fonts, which
+                  previously fell back to system-ui.
+                </p>
+                <p>
+                  Also fixed: 21 components the pages depend on were never generated for the Vite
+                  admin &mdash; including <code>AuthShell</code> (the themed login chrome),{' '}
+                  <code>UserMenu</code> (which owns sign-out, so <strong>logout did nothing</strong>
+                  ), <code>PageHeader</code>, the dashboard widgets, and their deps (
+                  <code>@react-pdf/renderer</code>, the full TipTap set).
+                </p>
+                <p>
+                  Existing <code>--vite</code> projects: <code>grit update</code> and regenerate{' '}
+                  <code>apps/admin</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.61.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
