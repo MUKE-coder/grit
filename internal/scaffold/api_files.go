@@ -224,7 +224,7 @@ require (
 	// session in ten 403'd at random). v2.2.0 adds ValidateConfig, which
 	// Mount runs at startup so dead config shows up in the boot log rather
 	// than as a 403 weeks later. Do not downgrade below v2.1.1.
-	github.com/MUKE-coder/sentinel/v2 v2.2.0
+	github.com/MUKE-coder/sentinel/v2 v2.2.1
 	gorm.io/datatypes v1.2.7
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.25.12

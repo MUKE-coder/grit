@@ -28,6 +28,49 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.60.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.60.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 16, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fix: the TanStack (Vite) admin now builds and runs.</strong>{' '}
+                  Projects generated with <code>--vite</code> shipped an admin that failed to start
+                  &mdash; the reused dashboard components still imported Next.js APIs, several
+                  components and dependencies were missing, and the build config had a
+                  chicken-and-egg with the route tree. <code>grit start admin</code> now boots
+                  cleanly and <code>pnpm build</code> produces a bundle.
+                </p>
+                <p>
+                  What changed under the hood: a <code>next-compat</code> shim maps{' '}
+                  <code>next/link</code>, <code>next/image</code>, <code>next/navigation</code> and{' '}
+                  <code>next/dynamic</code> onto TanStack Router + the DOM; the api-client exposes
+                  the <code>api</code> alias and reads <code>import.meta.env</code> instead of{' '}
+                  <code>process.env</code>; a <code>useAuth()</code> hook is provided; and the
+                  previously-missing <code>form-sheet</code>, <code>update-groups</code>,{' '}
+                  <code>import-modal</code> and <code>export-menu</code> components plus their
+                  dependencies (<code>xlsx</code>, <code>react-dropzone</code>, <code>sonner</code>,{' '}
+                  TipTap, <code>@repo/shared</code>) are now generated and declared.
+                </p>
+                <p>
+                  <strong>The Vite admin now uses Tailwind CSS v4</strong> via{' '}
+                  <code>@tailwindcss/vite</code> &mdash; no <code>postcss.config</code> or{' '}
+                  <code>tailwind.config</code> file, with the design tokens moved into{' '}
+                  <code>@theme</code> so <code>[data-theme]</code> switching still repaints at
+                  runtime. (The Next.js web/admin apps remain on Tailwind v3.)
+                </p>
+                <p>
+                  <strong>Bumped Sentinel to v2.2.1</strong> in scaffolded APIs, picking up the
+                  GORM has-many / batch-create panic fix.
+                </p>
+              </div>
+            </div>
+
             {/* v3.59.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

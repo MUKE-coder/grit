@@ -18,19 +18,231 @@ func stripUseClient(code string) string {
 	return code
 }
 
+// nextToTanStack adapts a component originally written for the Next.js admin so
+// it runs unchanged under Vite + TanStack Router. The shared admin component
+// templates (sidebar, navbar, tables, forms, ...) are reused by BOTH admins, so
+// we can't edit their source — instead we rewrite their Next.js imports to a
+// small compat shim (@/lib/next-compat, see adminNextCompatShim) that maps
+// next/link, next/image, next/navigation and next/dynamic onto TanStack Router
+// equivalents. Without this, the Vite admin ships components that import
+// `usePathname`/`next/link`/`next/image` and fail to build (grit issue #69).
+func nextToTanStack(code string) string {
+	code = stripUseClient(code)
+
+	// Default imports → named imports from the compat shim.
+	replacements := []struct{ from, to string }{
+		{`import Link from "next/link";`, `import { Link } from "@/lib/next-compat";`},
+		{`import Link from 'next/link';`, `import { Link } from "@/lib/next-compat";`},
+		{`import Image from "next/image";`, `import { Image } from "@/lib/next-compat";`},
+		{`import Image from 'next/image';`, `import { Image } from "@/lib/next-compat";`},
+		{`import dynamic from "next/dynamic";`, `import { dynamic } from "@/lib/next-compat";`},
+		{`import dynamic from 'next/dynamic';`, `import { dynamic } from "@/lib/next-compat";`},
+	}
+	for _, r := range replacements {
+		code = strings.ReplaceAll(code, r.from, r.to)
+	}
+
+	// next/navigation named imports (useRouter, usePathname, useSearchParams,
+	// ReadonlyURLSearchParams) → the shim, which re-exports compatible versions.
+	code = strings.ReplaceAll(code, `from "next/navigation"`, `from "@/lib/next-compat"`)
+	code = strings.ReplaceAll(code, `from 'next/navigation'`, `from "@/lib/next-compat"`)
+
+	return code
+}
+
+// adminTanStackAPIClient adapts the shared Next.js admin api-client for Vite:
+//   - process.env.NEXT_PUBLIC_API_URL → import.meta.env.VITE_API_URL (Vite has no
+//     process.env at build or runtime).
+//   - adds an `api` alias that the TanStack route templates import (the Next.js
+//     admin refers to it as `apiClient`).
+func adminTanStackAPIClient() string {
+	code := adminAPIClient()
+	code = strings.ReplaceAll(code,
+		`process.env.NEXT_PUBLIC_API_URL`,
+		`(import.meta as any).env?.VITE_API_URL`)
+	code += "\n// TanStack route templates import { api }; alias it to the configured instance.\nexport const api = apiClient;\n"
+	return code
+}
+
+// adminTanStackGlobalCSS adapts the shared admin globals.css for Tailwind v4 +
+// the @tailwindcss/vite plugin (the Vite admin uses v4; the Next.js admin stays
+// on v3). It swaps the v3 @tailwind directives for the v4 @import, registers the
+// design-token CSS variables as @theme colors/fonts, and keeps every
+// [data-theme] block below unchanged so runtime theme switching still works.
+//
+// Regular @theme (NOT @theme inline) is deliberate: the utilities compile to
+// var(--color-*), whose values are var(--bg-*) indirections that re-resolve per
+// element — so overriding --bg-* under [data-theme="…"] repaints the whole UI.
+func adminTanStackGlobalCSS() string {
+	v4Header := `@import "tailwindcss";
+/* Successor to tailwindcss-animate for v4: provides animate-in / fade-in /
+ * zoom-in used by the dialog, sheet and dropdown components. */
+@import "tw-animate-css";
+
+/* Map the design-token CSS variables (defined per [data-theme] below) onto
+ * Tailwind utility colors + fonts. Regular @theme so the var() indirection
+ * re-resolves per element and [data-theme] switching repaints at runtime. */
+@theme {
+  --color-background: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-hover: var(--bg-hover);
+  --color-border: var(--border);
+  --color-foreground: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+
+  --font-sans: var(--font-display), system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+  --font-serif: var(--font-serif), Georgia, serif;
+}
+
+/* v3 parity: v4's default border color is currentColor, but the admin relies
+ * on the themed border. Point bare borders at --border. */
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--border);
+  }
+}`
+	css := adminGlobalCSS()
+	css = strings.Replace(css,
+		"@tailwind base;\n@tailwind components;\n@tailwind utilities;",
+		v4Header, 1)
+	return css
+}
+
+// adminTanStackUseAuth reuses the shared auth hooks and adds the useAuth() hook
+// the TanStack route templates expect ({ user }), backed by the shared useMe().
+func adminTanStackUseAuth() string {
+	code := nextToTanStack(adminUseAuth())
+	code += "\n// next-style hook the TanStack route templates consume: { user }.\n" +
+		"export function useAuth() {\n" +
+		"  const { data: user } = useMe();\n" +
+		"  return { user: user ?? null };\n" +
+		"}\n"
+	return code
+}
+
+// adminNextCompatShim is the small module the Vite admin's rewritten imports
+// point at. It re-implements the handful of Next.js APIs the shared admin
+// components use (next/link, next/image, next/navigation, next/dynamic) on top
+// of TanStack Router + plain DOM, so those components compile and run unchanged.
+func adminNextCompatShim() string {
+	return `// next/* compatibility shim for the Vite + TanStack Router admin.
+//
+// The admin's shared components were authored for the Next.js admin and import
+// from next/link, next/image, next/navigation and next/dynamic. The Vite build
+// rewrites those imports to this module (see nextToTanStack in the Grit
+// scaffold) so the same components run under TanStack Router with no source
+// changes. The Next.js admin keeps using the real next/* modules.
+import * as React from "react";
+import {
+  Link as RouterLink,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
+
+// RouterLink is heavily generic over the typed route tree; the shared components
+// pass dynamic string hrefs, so we present a loosely-typed Link.
+const AnyLink = RouterLink as unknown as React.ComponentType<any>;
+
+// next/link: <Link href="..."> -> TanStack <Link to="...">.
+export function Link({
+  href,
+  children,
+  ...props
+}: { href: string; children?: React.ReactNode } & Record<string, unknown>) {
+  return (
+    <AnyLink to={href} {...props}>
+      {children}
+    </AnyLink>
+  );
+}
+
+// next/image: <Image src alt width height .../> -> a plain <img>. Next-only
+// props (width/height/priority/fill/quality/placeholder/loader/sizes) are
+// dropped; src may be a string or a static-import object ({ src }).
+export function Image({
+  src,
+  alt,
+  width,
+  height,
+  priority,
+  fill,
+  quality,
+  placeholder,
+  loader,
+  sizes,
+  unoptimized,
+  ...rest
+}: any) {
+  const resolved = typeof src === "string" ? src : src?.src;
+  return <img src={resolved} alt={alt ?? ""} {...rest} />;
+}
+
+// next/navigation: useRouter().push/replace -> TanStack navigate.
+export function useRouter() {
+  const navigate = useNavigate();
+  return {
+    push: (to: string) => navigate({ to: to as string }),
+    replace: (to: string) => navigate({ to: to as string, replace: true }),
+    back: () => window.history.back(),
+    forward: () => window.history.forward(),
+    refresh: () => {},
+    prefetch: () => {},
+  };
+}
+
+// next/navigation: usePathname().
+export function usePathname(): string {
+  return useRouterState({ select: (s: any) => s.location.pathname as string });
+}
+
+export type ReadonlyURLSearchParams = URLSearchParams;
+
+// next/navigation: useSearchParams() -> a URLSearchParams over the current query
+// string. Read-only usage (.get/.has/.getAll) works exactly as on the web.
+export function useSearchParams(): ReadonlyURLSearchParams {
+  const searchStr = useRouterState({ select: (s: any) => (s.location.searchStr as string) ?? "" });
+  return new URLSearchParams(searchStr);
+}
+
+// next/dynamic(loader, { ssr:false }) -> React.lazy (Vite has no SSR, so the
+// ssr flag is a no-op). Supports both { default: C } and bare-component loaders.
+export function dynamic<T extends React.ComponentType<any>>(
+  loader: () => Promise<{ default: T } | T>,
+  _options?: { ssr?: boolean; loading?: React.ComponentType },
+): React.LazyExoticComponent<T> {
+  return React.lazy(async () => {
+    const mod = (await loader()) as any;
+    return mod && mod.default ? { default: mod.default as T } : { default: mod as T };
+  });
+}
+`
+}
+
 func writeAdminTanStackFiles(root string, opts Options) error {
 	adminRoot := filepath.Join(root, "apps", "admin")
 
 	files := map[string]string{
 		// Config files
-		filepath.Join(adminRoot, "package.json"):       adminTanStackPackageJSON(opts),
-		filepath.Join(adminRoot, "vite.config.ts"):     adminTanStackViteConfig(),
-		filepath.Join(adminRoot, "index.html"):         adminTanStackIndexHTML(opts),
-		filepath.Join(adminRoot, "tailwind.config.ts"): adminTailwindConfig(),
-		filepath.Join(adminRoot, "postcss.config.js"):  adminPostCSSConfig(),
-		filepath.Join(adminRoot, "tsconfig.json"):      adminTanStackTSConfig(),
+		filepath.Join(adminRoot, "package.json"):   adminTanStackPackageJSON(opts),
+		filepath.Join(adminRoot, "vite.config.ts"): adminTanStackViteConfig(),
+		filepath.Join(adminRoot, "index.html"):     adminTanStackIndexHTML(opts),
+		// Tailwind v4: styling is driven by the @tailwindcss/vite plugin +
+		// @theme/@import in globals.css — no tailwind.config or postcss.config.
+		filepath.Join(adminRoot, "tsconfig.json"): adminTanStackTSConfig(),
 		filepath.Join(adminRoot, "src", "main.tsx"):    adminTanStackMain(),
-		filepath.Join(adminRoot, "src", "globals.css"): adminGlobalCSS(),
+		filepath.Join(adminRoot, "src", "globals.css"): adminTanStackGlobalCSS(),
 
 		// Routes
 		filepath.Join(adminRoot, "src", "routes", "__root.tsx"):                           adminTanStackRootRoute(),
@@ -51,77 +263,94 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "security.tsx"): adminTanStackSystemRoute("security"),
 
 		// Lib (same as Next.js versions)
-		filepath.Join(adminRoot, "src", "lib", "api-client.ts"):   adminAPIClient(),
+		filepath.Join(adminRoot, "src", "lib", "api-client.ts"):   adminTanStackAPIClient(),
 		filepath.Join(adminRoot, "src", "lib", "query-client.ts"): adminQueryClient(),
 		filepath.Join(adminRoot, "src", "lib", "utils.ts"):        adminUtils(),
 		filepath.Join(adminRoot, "src", "lib", "resource.ts"):     adminResourceTypes(),
 		filepath.Join(adminRoot, "src", "lib", "icons.ts"):        adminIconMap(),
 		filepath.Join(adminRoot, "src", "lib", "formatters.ts"):   adminFormatters(),
+		// Compat shim: maps next/link, next/image, next/navigation, next/dynamic
+		// onto TanStack Router so the shared admin components run under Vite (#69).
+		filepath.Join(adminRoot, "src", "lib", "next-compat.tsx"): adminNextCompatShim(),
+		// Lib modules imported by reused table/form components.
+		filepath.Join(adminRoot, "src", "lib", "excel-utils.ts"):  adminExcelUtils(),
+		filepath.Join(adminRoot, "src", "lib", "file-accepts.ts"): adminFileAcceptsLib(),
 
 		// Hooks (same as Next.js versions)
-		filepath.Join(adminRoot, "src", "hooks", "use-auth.ts"):     adminUseAuth(),
-		filepath.Join(adminRoot, "src", "hooks", "use-resource.ts"): adminUseResource(),
-		filepath.Join(adminRoot, "src", "hooks", "use-system.ts"):   adminUseSystem(),
-		filepath.Join(adminRoot, "src", "hooks", "use-profile.ts"):  adminUseProfile(),
+		filepath.Join(adminRoot, "src", "hooks", "use-auth.ts"):     adminTanStackUseAuth(),
+		filepath.Join(adminRoot, "src", "hooks", "use-resource.ts"): nextToTanStack(adminUseResource()),
+		filepath.Join(adminRoot, "src", "hooks", "use-system.ts"):   nextToTanStack(adminUseSystem()),
+		filepath.Join(adminRoot, "src", "hooks", "use-profile.ts"):  nextToTanStack(adminUseProfile()),
 
 		// Shared components
-		filepath.Join(adminRoot, "src", "components", "shared", "providers.tsx"):      stripUseClient(adminProviders()),
-		filepath.Join(adminRoot, "src", "components", "shared", "theme-provider.tsx"): stripUseClient(adminThemeProvider()),
+		filepath.Join(adminRoot, "src", "components", "shared", "providers.tsx"):      nextToTanStack(adminProviders()),
+		filepath.Join(adminRoot, "src", "components", "shared", "theme-provider.tsx"): nextToTanStack(adminThemeProvider()),
 
 		// Layout components (reuse with stripped "use client")
-		filepath.Join(adminRoot, "src", "components", "layout", "admin-layout.tsx"): stripUseClient(adminLayoutComponent()),
-		filepath.Join(adminRoot, "src", "components", "layout", "sidebar.tsx"):      stripUseClient(adminSidebar()),
-		filepath.Join(adminRoot, "src", "components", "layout", "navbar.tsx"):       stripUseClient(adminNavbar()),
-		filepath.Join(adminRoot, "src", "components", "layout", "page-header.tsx"):  stripUseClient(adminPageHeader()),
+		filepath.Join(adminRoot, "src", "components", "layout", "admin-layout.tsx"): nextToTanStack(adminLayoutComponent()),
+		filepath.Join(adminRoot, "src", "components", "layout", "sidebar.tsx"):      nextToTanStack(adminSidebar()),
+		filepath.Join(adminRoot, "src", "components", "layout", "navbar.tsx"):       nextToTanStack(adminNavbar()),
+		filepath.Join(adminRoot, "src", "components", "layout", "page-header.tsx"):  nextToTanStack(adminPageHeader()),
+
+		// Chrome components imported by the admin layout (collapsible sidebar,
+		// quick-access menu, session watchdog) — reused from the Next.js admin.
+		filepath.Join(adminRoot, "src", "components", "chrome", "CollapsibleSidebar.tsx"): nextToTanStack(adminCollapsibleSidebarComponent(opts)),
+		filepath.Join(adminRoot, "src", "components", "chrome", "QuickAccess.tsx"):        nextToTanStack(adminQuickAccessComponent()),
+		filepath.Join(adminRoot, "src", "components", "chrome", "SessionWatchdog.tsx"):    nextToTanStack(adminSessionWatchdogComponent()),
 
 		// Table components (pure React — strip "use client")
-		filepath.Join(adminRoot, "src", "components", "tables", "data-table.tsx"):        stripUseClient(adminDataTable()),
-		filepath.Join(adminRoot, "src", "components", "tables", "column-header.tsx"):     stripUseClient(adminColumnHeader()),
-		filepath.Join(adminRoot, "src", "components", "tables", "cell-renderers.tsx"):    stripUseClient(adminCellRenderers()),
-		filepath.Join(adminRoot, "src", "components", "tables", "table-filters.tsx"):     stripUseClient(adminTableFilters()),
-		filepath.Join(adminRoot, "src", "components", "tables", "table-toolbar.tsx"):     stripUseClient(adminTableToolbar()),
-		filepath.Join(adminRoot, "src", "components", "tables", "table-pagination.tsx"):  stripUseClient(adminTablePagination()),
-		filepath.Join(adminRoot, "src", "components", "tables", "table-skeleton.tsx"):    stripUseClient(adminTableSkeleton()),
-		filepath.Join(adminRoot, "src", "components", "tables", "table-empty-state.tsx"): stripUseClient(adminTableEmptyState()),
+		filepath.Join(adminRoot, "src", "components", "tables", "data-table.tsx"):        nextToTanStack(adminDataTable()),
+		filepath.Join(adminRoot, "src", "components", "tables", "column-header.tsx"):     nextToTanStack(adminColumnHeader()),
+		filepath.Join(adminRoot, "src", "components", "tables", "cell-renderers.tsx"):    nextToTanStack(adminCellRenderers()),
+		filepath.Join(adminRoot, "src", "components", "tables", "table-filters.tsx"):     nextToTanStack(adminTableFilters()),
+		filepath.Join(adminRoot, "src", "components", "tables", "table-toolbar.tsx"):     nextToTanStack(adminTableToolbar()),
+		filepath.Join(adminRoot, "src", "components", "tables", "table-pagination.tsx"):  nextToTanStack(adminTablePagination()),
+		filepath.Join(adminRoot, "src", "components", "tables", "date-filter.tsx"):       nextToTanStack(adminDateFilter()),
+		filepath.Join(adminRoot, "src", "components", "tables", "table-skeleton.tsx"):    nextToTanStack(adminTableSkeleton()),
+		filepath.Join(adminRoot, "src", "components", "tables", "table-empty-state.tsx"): nextToTanStack(adminTableEmptyState()),
+		filepath.Join(adminRoot, "src", "components", "tables", "import-modal.tsx"):      nextToTanStack(adminImportModal()),
+		filepath.Join(adminRoot, "src", "components", "tables", "export-menu.tsx"):       nextToTanStack(adminExportMenu()),
 
 		// Form components (pure React — strip "use client")
-		filepath.Join(adminRoot, "src", "components", "forms", "form-builder.tsx"):                              stripUseClient(adminFormBuilder()),
-		filepath.Join(adminRoot, "src", "components", "forms", "form-modal.tsx"):                                stripUseClient(adminFormModal()),
-		filepath.Join(adminRoot, "src", "components", "forms", "form-page.tsx"):                                 stripUseClient(adminFormPage()),
-		filepath.Join(adminRoot, "src", "components", "forms", "form-stepper.tsx"):                              stripUseClient(adminFormStepper()),
-		filepath.Join(adminRoot, "src", "components", "forms", "form-modal-steps.tsx"):                          stripUseClient(adminFormModalSteps()),
-		filepath.Join(adminRoot, "src", "components", "forms", "form-page-steps.tsx"):                           stripUseClient(adminFormPageSteps()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "text-field.tsx"):                      stripUseClient(adminTextField()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "textarea-field.tsx"):                  stripUseClient(adminTextareaField()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "number-field.tsx"):                    stripUseClient(adminNumberField()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "select-field.tsx"):                    stripUseClient(adminSelectField()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "date-field.tsx"):                      stripUseClient(adminDateField()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "toggle-field.tsx"):                    stripUseClient(adminToggleField()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "checkbox-field.tsx"):                  stripUseClient(adminCheckboxField()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "radio-field.tsx"):                     stripUseClient(adminRadioField()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "image-field.tsx"):                     stripUseClient(adminImageField()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "images-field.tsx"):                    stripUseClient(adminImagesField()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "video-field.tsx"):                     stripUseClient(adminVideoField()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "videos-field.tsx"):                    stripUseClient(adminVideosField()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "file-field.tsx"):                      stripUseClient(adminFileField()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "files-field.tsx"):                     stripUseClient(adminFilesField()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "relationship-select-field.tsx"):       stripUseClient(adminRelationshipSelectField()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "multi-relationship-select-field.tsx"): stripUseClient(adminMultiRelationshipSelectField()),
-		filepath.Join(adminRoot, "src", "components", "forms", "fields", "rich-text-field.tsx"):                 stripUseClient(adminRichTextField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "form-builder.tsx"):                              nextToTanStack(adminFormBuilder()),
+		filepath.Join(adminRoot, "src", "components", "forms", "form-modal.tsx"):                                nextToTanStack(adminFormModal()),
+		filepath.Join(adminRoot, "src", "components", "forms", "form-page.tsx"):                                 nextToTanStack(adminFormPage()),
+		filepath.Join(adminRoot, "src", "components", "forms", "form-stepper.tsx"):                              nextToTanStack(adminFormStepper()),
+		filepath.Join(adminRoot, "src", "components", "forms", "form-modal-steps.tsx"):                          nextToTanStack(adminFormModalSteps()),
+		filepath.Join(adminRoot, "src", "components", "forms", "form-page-steps.tsx"):                           nextToTanStack(adminFormPageSteps()),
+		filepath.Join(adminRoot, "src", "components", "forms", "form-sheet.tsx"):                                nextToTanStack(adminFormSheet()),
+		filepath.Join(adminRoot, "src", "components", "forms", "update-groups.tsx"):                             nextToTanStack(adminUpdateGroups()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "text-field.tsx"):                      nextToTanStack(adminTextField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "textarea-field.tsx"):                  nextToTanStack(adminTextareaField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "number-field.tsx"):                    nextToTanStack(adminNumberField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "select-field.tsx"):                    nextToTanStack(adminSelectField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "date-field.tsx"):                      nextToTanStack(adminDateField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "toggle-field.tsx"):                    nextToTanStack(adminToggleField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "checkbox-field.tsx"):                  nextToTanStack(adminCheckboxField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "radio-field.tsx"):                     nextToTanStack(adminRadioField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "image-field.tsx"):                     nextToTanStack(adminImageField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "images-field.tsx"):                    nextToTanStack(adminImagesField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "video-field.tsx"):                     nextToTanStack(adminVideoField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "videos-field.tsx"):                    nextToTanStack(adminVideosField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "file-field.tsx"):                      nextToTanStack(adminFileField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "files-field.tsx"):                     nextToTanStack(adminFilesField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "relationship-select-field.tsx"):       nextToTanStack(adminRelationshipSelectField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "multi-relationship-select-field.tsx"): nextToTanStack(adminMultiRelationshipSelectField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "rich-text-field.tsx"):                 nextToTanStack(adminRichTextField()),
 
 		// UI components
-		filepath.Join(adminRoot, "src", "components", "ui", "dropzone.tsx"):      stripUseClient(adminDropzone()),
-		filepath.Join(adminRoot, "src", "components", "ui", "confirm-modal.tsx"): stripUseClient(adminConfirmModal()),
+		filepath.Join(adminRoot, "src", "components", "ui", "dropzone.tsx"):      nextToTanStack(adminDropzone()),
+		filepath.Join(adminRoot, "src", "components", "ui", "confirm-modal.tsx"): nextToTanStack(adminConfirmModal()),
 
 		// Widget components
-		filepath.Join(adminRoot, "src", "components", "widgets", "stats-card.tsx"):      stripUseClient(adminStatsCard()),
-		filepath.Join(adminRoot, "src", "components", "widgets", "chart-widget.tsx"):    stripUseClient(adminChartWidget()),
-		filepath.Join(adminRoot, "src", "components", "widgets", "activity-widget.tsx"): stripUseClient(adminActivityWidget()),
-		filepath.Join(adminRoot, "src", "components", "widgets", "widget-grid.tsx"):     stripUseClient(adminWidgetGrid()),
+		filepath.Join(adminRoot, "src", "components", "widgets", "stats-card.tsx"):      nextToTanStack(adminStatsCard()),
+		filepath.Join(adminRoot, "src", "components", "widgets", "chart-widget.tsx"):    nextToTanStack(adminChartWidget()),
+		filepath.Join(adminRoot, "src", "components", "widgets", "activity-widget.tsx"): nextToTanStack(adminActivityWidget()),
+		filepath.Join(adminRoot, "src", "components", "widgets", "widget-grid.tsx"):     nextToTanStack(adminWidgetGrid()),
 
 		// Resource components
-		filepath.Join(adminRoot, "src", "components", "resource", "resource-page.tsx"): stripUseClient(adminResourcePage()),
-		filepath.Join(adminRoot, "src", "components", "resource", "view-modal.tsx"):    stripUseClient(adminViewModal()),
+		filepath.Join(adminRoot, "src", "components", "resource", "resource-page.tsx"): nextToTanStack(adminResourcePage()),
+		filepath.Join(adminRoot, "src", "components", "resource", "view-modal.tsx"):    nextToTanStack(adminViewModal()),
 
 		// Resource definitions (same as Next.js)
 		filepath.Join(adminRoot, "src", "resources", "index.ts"): adminResourceRegistry(),
@@ -129,7 +358,7 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "resources", "blogs.ts"): adminBlogsResource(),
 
 		// Profile
-		filepath.Join(adminRoot, "src", "components", "profile", "delete-account-dialog.tsx"): stripUseClient(adminDeleteAccountDialog()),
+		filepath.Join(adminRoot, "src", "components", "profile", "delete-account-dialog.tsx"): nextToTanStack(adminDeleteAccountDialog()),
 
 		filepath.Join(adminRoot, "public", ".gitkeep"): "",
 	}
@@ -151,7 +380,8 @@ func adminTanStackPackageJSON(opts Options) string {
   "type": "module",
   "scripts": {
     "dev": "vite --port 3001",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
+    "typecheck": "tsc -b",
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "vitest run",
@@ -162,24 +392,31 @@ func adminTanStackPackageJSON(opts Options) string {
     "@tanstack/react-query": "^5.62.0",
     "@tanstack/react-router": "^1.93.0",
     "@tanstack/react-table": "^8.20.6",
+    "@tiptap/extension-link": "^2.1.0",
+    "@tiptap/react": "^2.1.0",
+    "@tiptap/starter-kit": "^2.1.0",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
+    "react-dropzone": "^14.2.0",
     "react-hook-form": "^7.54.1",
     "recharts": "^2.15.0",
+    "sonner": "^1.3.0",
     "tailwind-merge": "^2.6.0",
-    "zod": "^3.24.1"
+    "xlsx": "^0.18.5",
+    "zod": "^3.24.1",
+    "@repo/shared": "workspace:*"
   },
   "devDependencies": {
     "@tanstack/react-router-devtools": "^1.93.0",
     "@tanstack/router-vite-plugin": "^1.93.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17",
+    "tailwindcss": "^4.1.13",
+    "@tailwindcss/vite": "^4.1.13",
+    "tw-animate-css": "^1.4.0",
     "typescript": "~5.7.0",
     "vite": "^6.0.0",
     "@vitejs/plugin-react": "^4.3.4",
@@ -193,17 +430,26 @@ func adminTanStackViteConfig() string {
 	return `import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
+import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 export default defineConfig({
   plugins: [
     TanStackRouterVite(),
     react(),
+    tailwindcss(),
   ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+  },
+  // Tailwind v4 is handled by @tailwindcss/vite above. Pin an empty inline
+  // PostCSS config so Vite does NOT walk up and pick up the monorepo-root
+  // postcss.config.mjs (v3-style, meant for the Next.js apps), which would
+  // try to load tailwindcss as a PostCSS plugin and fail under v4.
+  css: {
+    postcss: {},
   },
   server: {
     port: 3001,
