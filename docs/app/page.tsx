@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { ArrowRight, Github, Terminal, Layers, Zap, Shield, Database, Bot, Server, Smartphone, ChevronDown, Check, AlertCircle, Upload, TrendingUp } from 'lucide-react'
+import { ArrowRight, Github, Terminal, Layers, Zap, Shield, Database, Bot, Server, Smartphone, ChevronDown, Check, AlertCircle, Upload, TrendingUp, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { CodeBlock } from '@/components/code-block'
@@ -14,6 +14,7 @@ import { ThreePlatforms } from '@/components/three-platforms'
 import { WhatIsGrit } from '@/components/what-is-grit'
 import { GRIT_VERSION } from '@/config/site'
 import { GridFrame } from '@/components/grid-frame'
+import { HomeSponsors } from '@/components/sponsors'
 
 export const metadata: Metadata = {
   title: 'Grit — Go + React Full-Stack Framework',
@@ -1486,6 +1487,40 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
           <div>
             <div className="font-semibold text-foreground">Muke JohnBaptist</div>
             <div className="text-sm text-muted-foreground">Creator of Grit Framework</div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ SPONSORS ═══ */}
+      <section className="relative py-24 px-6 border-t border-border/40 overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute left-1/2 top-1/2 h-[320px] w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/[0.05] blur-[120px]" />
+        </div>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">Sponsors</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Backed by developers like you</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Grit is free and MIT licensed. Sponsors fund the features, docs and
+              releases &mdash; and get their name in front of everyone who builds with it.
+            </p>
+          </div>
+
+          <HomeSponsors />
+
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button asChild size="lg" className="rounded-full">
+              <Link href="/sponsor">
+                <Heart className="mr-2 h-4 w-4" />
+                Become a sponsor
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="lg" className="rounded-full">
+              <Link href="/sponsors">
+                See all sponsors
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>

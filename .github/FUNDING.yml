@@ -1,0 +1,7 @@
+# Adds the "Sponsor" button to the repo header.
+#
+# `custom` points at our own tiered sponsor page (Stripe: monthly + one-time).
+# GitHub Sponsors is not enabled on this account yet — when it is, add:
+#   github: MUKE-coder
+# and the button will offer both.
+custom: ["https://gritframework.dev/sponsor"]
