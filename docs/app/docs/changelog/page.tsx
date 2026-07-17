@@ -28,6 +28,52 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.64.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.64.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 17, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fix: a <code>--vite</code> app can now be containerised.</strong> The
+                  Docker generator handed every frontend the Next.js Dockerfile regardless of the
+                  chosen frontend, so a Vite (TanStack) app&apos;s image build failed outright —
+                  the runner stage copied <code>.next/standalone</code> and ran{' '}
+                  <code>node server.js</code>, but a Vite build emits a static{' '}
+                  <code>dist/</code> and has no server. <code>grit new --vite</code> produced an app
+                  that could not be built into an image at all.
+                </p>
+                <p>
+                  Vite apps now get a Dockerfile that builds the static bundle and serves it with
+                  nginx, plus an <code>nginx.conf</code> with a SPA history fallback (deep links
+                  like <code>/system/health</code> return <code>index.html</code> instead of 404)
+                  and the same security headers as everything else. The production{' '}
+                  <code>script-src</code> is stricter than dev&apos;s — a Vite production build has
+                  no inline scripts — while <code>style-src</code>/<code>font-src</code> allow
+                  Google Fonts so the theme fonts still load.
+                </p>
+                <p>
+                  The prod compose file now passes <code>VITE_API_URL</code> and{' '}
+                  <code>VITE_THEME</code> as build args for Vite apps instead of{' '}
+                  <code>NEXT_PUBLIC_API_URL</code>. This matters: Vite inlines env at{' '}
+                  <em>build</em> time, so setting it on the running container does nothing — a Vite
+                  app given the Next.js var silently built against <code>localhost:8080</code> and
+                  every API call failed in production.
+                </p>
+                <p>
+                  Also: the Vite web app now sends security headers from its dev/preview servers
+                  (previously only the admin did), via one shared source so web and admin can&apos;t
+                  drift. Verified by building and running the image — the SPA serves, all headers
+                  are present, the deep-link fallback works, and the API URL is baked into the
+                  bundle.
+                </p>
+              </div>
+            </div>
+
             {/* v3.63.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

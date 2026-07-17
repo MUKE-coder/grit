@@ -83,7 +83,7 @@ func webTanStackViteConfig() string {
 import react from '@vitejs/plugin-react'
 import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
 import path from 'path'
-
+` + viteSecurityHeaders() + `
 export default defineConfig({
   plugins: [
     TanStackRouterVite(),
@@ -94,7 +94,11 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  preview: {
+    headers: securityHeaders,
+  },
   server: {
+    headers: securityHeaders,
     port: 3000,
     proxy: {
       '/api': {
