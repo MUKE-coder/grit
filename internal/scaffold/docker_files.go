@@ -21,11 +21,26 @@ func writeDockerFiles(root string, opts Options) error {
 	} else {
 		files[filepath.Join(root, "docker-compose.prod.yml")] = dockerComposeProd(opts)
 		files[filepath.Join(root, "apps", "api", "Dockerfile")] = dockerfileAPI()
+		// Frontend choice decides the image: a Vite app builds to a static
+		// dist/ served by nginx, whereas Next.js builds a standalone Node
+		// server. Handing a Vite app the Next.js Dockerfile fails the build —
+		// it copies .next/standalone and runs `node server.js`, neither of
+		// which a Vite build produces.
 		if opts.ShouldIncludeWeb() {
-			files[filepath.Join(root, "apps", "web", "Dockerfile")] = dockerfileNextJS("web")
+			if opts.UseTanStack() {
+				files[filepath.Join(root, "apps", "web", "Dockerfile")] = dockerfileVite("web")
+				files[filepath.Join(root, "apps", "web", "nginx.conf")] = viteNginxConf("web")
+			} else {
+				files[filepath.Join(root, "apps", "web", "Dockerfile")] = dockerfileNextJS("web")
+			}
 		}
 		if opts.ShouldIncludeAdmin() {
-			files[filepath.Join(root, "apps", "admin", "Dockerfile")] = dockerfileNextJS("admin")
+			if opts.UseTanStack() {
+				files[filepath.Join(root, "apps", "admin", "Dockerfile")] = dockerfileVite("admin")
+				files[filepath.Join(root, "apps", "admin", "nginx.conf")] = viteNginxConf("admin")
+			} else {
+				files[filepath.Join(root, "apps", "admin", "Dockerfile")] = dockerfileNextJS("admin")
+			}
 		}
 		if opts.ShouldIncludeDocs() {
 			files[filepath.Join(root, "apps", "docs", "Dockerfile")] = dockerfileNextJS("docs")
@@ -140,6 +155,18 @@ volumes:
 `, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName, opts.ProjectName)
 }
 
+// frontendBuildArgs returns the build args for a frontend image. Vite inlines
+// env at build time and only exposes VITE_*-prefixed vars, so a Vite app given
+// NEXT_PUBLIC_API_URL silently builds against the localhost default and every
+// API call fails in production.
+func frontendBuildArgs(opts Options) string {
+	if opts.UseTanStack() {
+		return `        VITE_API_URL: ${API_URL:-http://localhost:8080}
+        VITE_THEME: ${THEME:-atlas}`
+	}
+	return `        NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost:8080}`
+}
+
 func dockerComposeProd(opts Options) string {
 	name := opts.ProjectName
 
@@ -207,14 +234,14 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost:8080}
+%s
     container_name: %s-web
     restart: unless-stopped
     expose:
       - "3000"
     networks:
       - %s
-`, name, name)
+`, frontendBuildArgs(opts), name, name)
 	}
 
 	if opts.ShouldIncludeAdmin() {
@@ -224,14 +251,14 @@ services:
       context: .
       dockerfile: apps/admin/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost:8080}
+%s
     container_name: %s-admin
     restart: unless-stopped
     expose:
       - "3000"
     networks:
       - %s
-`, name, name)
+`, frontendBuildArgs(opts), name, name)
 	}
 
 	if opts.ShouldIncludeDocs() {
