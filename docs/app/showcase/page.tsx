@@ -146,7 +146,7 @@ export default function ShowcasePage() {
               </span>
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              <span className="gradient-text">Showcase</span>
+              <span className="text-foreground">Showcase</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 max-w-2xl mx-auto">
               Real-world applications built with the Grit framework.
@@ -371,7 +371,7 @@ export default function ShowcasePage() {
       <section className="max-w-6xl mx-auto px-6 pb-24">
         <div className="rounded-2xl border border-border/60 bg-accent/20 p-8 md:p-12 text-center">
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">
-            <span className="gradient-text">Built something with Grit?</span>
+            <span className="text-foreground">Built something with Grit?</span>
           </h2>
           <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
             We&apos;d love to feature your project. Open an issue on GitHub or

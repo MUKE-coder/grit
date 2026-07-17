@@ -518,6 +518,7 @@ if (existsSync(rootEnv)) {
   }
 }
 
+` + nextSecurityHeaders() + `
 const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
@@ -530,7 +531,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_THEME: process.env.THEME || "atlas",
     NEXT_PUBLIC_SOCIAL_AUTH_ENABLED: process.env.SOCIAL_AUTH_ENABLED || "true",
   },
-  // Uncomment and run "ANALYZE=true pnpm build" to inspect the bundle
+` + nextSecurityHeadersConfig() + `  // Uncomment and run "ANALYZE=true pnpm build" to inspect the bundle
   // ...(process.env.ANALYZE === "true"
   //   ? { ...require("@next/bundle-analyzer")({ enabled: true })(nextConfig) }
   //   : {}),

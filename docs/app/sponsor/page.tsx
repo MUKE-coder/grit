@@ -91,7 +91,7 @@ export default function SponsorPage() {
               </span>
             </div>
             <h1 className="mb-6 font-display text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
-              <span className="gradient-text">Sponsor Grit</span>
+              <span className="text-foreground">Sponsor Grit</span>
             </h1>
             <p className="mx-auto max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl">
               Grit is free, open source, and built in the open. Sponsorship pays for

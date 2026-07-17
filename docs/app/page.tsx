@@ -1640,7 +1640,10 @@ grit new my-app`} />
                 <li><Link href="/docs/security" className="text-muted-foreground hover:text-foreground transition-colors">Security Guide</Link></li>
                 <li><Link href="/docs/testing" className="text-muted-foreground hover:text-foreground transition-colors">Testing</Link></li>
                 <li><Link href="/docs/changelog" className="text-muted-foreground hover:text-foreground transition-colors">Changelog</Link></li>
+                <li><Link href="/docs/tech-kits" className="text-muted-foreground hover:text-foreground transition-colors">Tech Kits</Link></li>
                 <li><Link href="/courses" className="text-muted-foreground hover:text-foreground transition-colors">Courses</Link></li>
+                <li><Link href="/sponsors" className="text-muted-foreground hover:text-foreground transition-colors">Sponsors</Link></li>
+                <li><Link href="/pitch" className="text-muted-foreground hover:text-foreground transition-colors">Pitch</Link></li>
                 <li><Link href="/hire" className="text-muted-foreground hover:text-foreground transition-colors">Hire Us</Link></li>
               </ul>
             </div>

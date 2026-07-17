@@ -50,14 +50,17 @@ export function SiteHeader() {
 
         {/* Navigation */}
         <nav className="hidden md:flex items-center gap-1">
+          {/* The nav was overflowing into the search box at 9 items, so it's
+              trimmed to top-level destinations. Tech Kits + Changelog live under
+              /docs and are already reachable from the docs sidebar; Pitch is a
+              niche marketing page and is still linked from the footer. AI
+              Integration stays despite being a docs page — it's deliberately
+              highlighted. */}
           {[
             { label: 'Docs', href: '/docs' },
-            { label: 'Tech Kits', href: '/docs/tech-kits' },
             { label: 'AI Integration', href: '/docs/ai-integration', highlight: true },
             { label: 'Courses', href: '/courses' },
             { label: 'Blog', href: '/blog' },
-            { label: 'Pitch', href: '/pitch' },
-            { label: 'Changelog', href: '/docs/changelog' },
             { label: 'Showcase', href: '/showcase' },
             { label: 'Sponsors', href: '/sponsors' },
           ].map((item) => {

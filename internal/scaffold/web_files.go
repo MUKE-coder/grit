@@ -127,6 +127,7 @@ if (existsSync(rootEnv)) {
   }
 }
 
+` + nextSecurityHeaders() + `
 const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
@@ -141,7 +142,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_THEME: process.env.THEME || "atlas",
     NEXT_PUBLIC_SOCIAL_AUTH_ENABLED: process.env.SOCIAL_AUTH_ENABLED || "true",
   },
-};
+` + nextSecurityHeadersConfig() + `};
 
 export default nextConfig;
 `

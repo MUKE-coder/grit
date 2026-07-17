@@ -124,11 +124,11 @@ func docsNextConfig() string {
 	return `import { createMDX } from "fumadocs-mdx/next";
 
 const withMDX = createMDX();
-
+` + nextSecurityHeaders() + `
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
-};
+` + nextSecurityHeadersConfig() + `};
 
 export default withMDX(config);
 `
