@@ -562,6 +562,33 @@ import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
+// Mirrors the Next.js admin + the Go API's middleware.SecurityHeaders.
+// 'unsafe-inline' on script-src is required by the Vite client in dev;
+// connect-src must include the API origin or every fetch is blocked by CSP.
+const API_ORIGIN = process.env.VITE_API_URL || 'http://localhost:8080'
+const csp = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "connect-src 'self' ws: wss: " + API_ORIGIN,
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'",
+].join('; ')
+
+const securityHeaders = {
+  'Content-Security-Policy': csp,
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+  'Cross-Origin-Opener-Policy': 'same-origin',
+}
+
 export default defineConfig({
   plugins: [
     TanStackRouterVite(),
@@ -580,7 +607,15 @@ export default defineConfig({
   css: {
     postcss: {},
   },
+  // Security headers, mirroring the Next.js admin + the Go API's
+  // middleware.SecurityHeaders. Vite only applies these when IT serves the
+  // files (dev + preview) — a production deploy serves dist/ from a reverse
+  // proxy or CDN, so set the same headers there too.
+  preview: {
+    headers: securityHeaders,
+  },
   server: {
+    headers: securityHeaders,
     port: 3001,
     proxy: {
       '/api': {

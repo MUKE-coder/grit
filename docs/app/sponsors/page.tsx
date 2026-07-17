@@ -64,7 +64,7 @@ export default function SponsorsPage() {
                 </span>
               </div>
               <h1 className="font-display text-4xl font-bold tracking-tight md:text-5xl">
-                <span className="gradient-text">Who funds Grit</span>
+                <span className="text-foreground">Who funds Grit</span>
               </h1>
               <p className="mt-4 max-w-xl text-lg text-muted-foreground">
                 The companies and developers paying for the features, docs and

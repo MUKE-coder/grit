@@ -98,20 +98,11 @@
   }
 }
 
-/* Grit gradient text (purple) */
-.gradient-text {
-  background: linear-gradient(135deg, #6c5ce7 0%, #a855f7 40%, #7c6cf7 60%, #818cf8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.gradient-text-purple {
-  background: linear-gradient(135deg, #6c5ce7 0%, #a855f7 50%, #c084fc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
+/* Hero headings use solid `text-foreground` rather than a gradient: the old
+ * purple gradient (#6c5ce7 -> #a855f7) predates the sky-blue brand primary, and
+ * solid foreground measures 15.5:1 (dark) / 17.1:1 (light) against the
+ * background — AAA in both themes, where the primary blue only reaches 3.8:1 in
+ * light mode (large-text only). */
 
 /* Glow effects */
 .glow-purple {

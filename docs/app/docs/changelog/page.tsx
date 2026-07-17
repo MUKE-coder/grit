@@ -28,6 +28,62 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.63.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.63.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 17, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Security headers on every scaffolded frontend.</strong> The Go API has
+                  always sent security headers via{' '}
+                  <code>middleware.SecurityHeaders</code>, but the Next.js apps sent none &mdash;
+                  Next.js has no defaults, you have to opt in. So a scaffolded app&apos;s public
+                  face scored an <strong>F</strong> on{' '}
+                  <a href="https://securityheaders.com" target="_blank" rel="noreferrer">
+                    securityheaders.com
+                  </a>{' '}
+                  with all six headers missing:{' '}
+                  <code>Strict-Transport-Security</code>, <code>Content-Security-Policy</code>,{' '}
+                  <code>X-Frame-Options</code>, <code>X-Content-Type-Options</code>,{' '}
+                  <code>Referrer-Policy</code> and <code>Permissions-Policy</code>.
+                </p>
+                <p>
+                  <code>grit new</code> now ships all six (plus{' '}
+                  <code>Cross-Origin-Opener-Policy</code>) on the web, admin and docs apps, with{' '}
+                  <code>poweredByHeader: false</code> so the framework and version aren&apos;t
+                  advertised. The policy mirrors the Go API&apos;s, and the Vite/TanStack admin
+                  sends the same set from its dev and preview servers. One shared source in the
+                  scaffold, so the two halves of an app can&apos;t drift apart.
+                </p>
+                <p>
+                  Two CSP details are deliberate and documented in the generated config:{' '}
+                  <code>script-src</code> allows <code>&apos;unsafe-inline&apos;</code> because
+                  Next.js inlines its bootstrap and streams the RSC payload through inline{' '}
+                  <code>&lt;script&gt;</code> tags &mdash; <code>&apos;self&apos;</code> alone
+                  white-screens the app; and <code>connect-src</code> includes the API origin,
+                  because in double/triple mode the browser calls the Go API cross-origin and a
+                  missing entry breaks every fetch with a silent CSP violation.
+                </p>
+                <p>
+                  Existing projects: <code>grit update</code>, then copy the{' '}
+                  <code>securityHeaders</code> block and the <code>headers()</code> +{' '}
+                  <code>poweredByHeader</code> fields from a freshly generated{' '}
+                  <code>next.config.ts</code>.
+                </p>
+                <p>
+                  Also on the docs site: hero headings drop the old purple gradient for solid
+                  foreground (15.5:1 contrast in dark, 17.1:1 in light &mdash; AAA in both, where
+                  the brand blue only reaches 3.8:1 in light mode), and the header nav is trimmed
+                  from nine links to six, with the rest moved into the footer.
+                </p>
+              </div>
+            </div>
+
             {/* v3.62.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

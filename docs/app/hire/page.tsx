@@ -45,7 +45,7 @@ export default function HirePage() {
               </span>
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              <span className="gradient-text">Hire Grit Developers</span>
+              <span className="text-foreground">Hire Grit Developers</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 max-w-2xl mx-auto">
               Need a production-ready application built with Go + React? Our

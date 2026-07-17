@@ -24,7 +24,7 @@ export default function DonateSuccessPage() {
               <CheckCircle2 className="h-8 w-8 text-emerald-500" />
             </div>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-              <span className="gradient-text">Thank You!</span>
+              <span className="text-foreground">Thank You!</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-4 max-w-xl mx-auto">
               Your support means the world. Every contribution helps keep Grit
