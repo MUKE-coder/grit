@@ -12,6 +12,7 @@
   <a href="https://github.com/MUKE-coder/grit/releases"><img src="https://img.shields.io/github/v/release/MUKE-coder/grit?style=flat-square&color=38bdf8" alt="Release" /></a>
   <a href="https://github.com/MUKE-coder/grit/blob/main/LICENSE"><img src="https://img.shields.io/github/license/MUKE-coder/grit?style=flat-square&color=38bdf8" alt="License" /></a>
   <a href="https://gritframework.dev"><img src="https://img.shields.io/badge/docs-gritframework.dev-38bdf8?style=flat-square" alt="Docs" /></a>
+  <a href="https://gritframework.dev/sponsor"><img src="https://img.shields.io/badge/sponsor-%E2%99%A5-ec4899?style=flat-square" alt="Sponsor" /></a>
 </p>
 
 <p align="center">
@@ -240,6 +241,27 @@ grit upgrade                           # Upgrade project templates
 ## Documentation
 
 Full docs at **[gritframework.dev](https://gritframework.dev)** — architecture guides, tutorials, the 10-course free curriculum at [/courses](https://gritframework.dev/courses), API reference, deployment, and plugin documentation.
+
+## Sponsors
+
+Grit is free and MIT licensed. Sponsorship pays for the features, docs and releases everyone
+else gets for free — and puts your name in front of every developer who builds with Grit.
+
+<!-- sponsors:start -->
+<p align="center">
+  <em>Grit has no sponsors yet. Be the first — your logo goes here, on the home page, and inside the CLI.</em>
+</p>
+<!-- sponsors:end -->
+
+<p align="center">
+  <a href="https://gritframework.dev/sponsor"><strong>Become a sponsor →</strong></a>
+</p>
+
+Building with Grit? Add the badge to your README:
+
+```markdown
+[![Built with Grit](https://gritframework.dev/badge/built-with-grit.svg)](https://gritframework.dev)
+```
 
 ## License
 

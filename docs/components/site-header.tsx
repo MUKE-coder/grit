@@ -59,6 +59,7 @@ export function SiteHeader() {
             { label: 'Pitch', href: '/pitch' },
             { label: 'Changelog', href: '/docs/changelog' },
             { label: 'Showcase', href: '/showcase' },
+            { label: 'Sponsors', href: '/sponsors' },
           ].map((item) => {
             const active = isActive(item.href)
             return (
@@ -109,7 +110,7 @@ export function SiteHeader() {
           </Button>
 
           <Button variant="ghost" size="icon" className="hidden sm:inline-flex h-8 w-8 text-pink-500/70 hover:text-pink-500 hover:bg-pink-500/10" asChild>
-            <Link href="/donate">
+            <Link href="/sponsor">
               <Heart className="h-4 w-4" />
               <span className="sr-only">Sponsor</span>
             </Link>

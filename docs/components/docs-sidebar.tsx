@@ -25,6 +25,8 @@ import {
   Monitor,
   Smartphone,
   Menu,
+  Heart,
+  ArrowRight,
 } from 'lucide-react'
 import { useState } from 'react'
 // Banners removed for cleaner Tailwind-style sidebar
@@ -346,8 +348,40 @@ export function DocsSidebar() {
             </div>
           ))}
         </nav>
+
+        {/* Sponsor CTA. Lives here rather than in a docs layout because there
+            isn't one — <DocsSidebar /> is the only component on every /docs
+            page, so this single block reaches all of them. */}
+        <SponsorNudge />
       </aside>
     </>
+  )
+}
+
+function SponsorNudge() {
+  return (
+    <div className="mt-6 px-4">
+      <div className="border-t border-border/50 pt-5">
+        <Link
+          href="/sponsor"
+          className="group block rounded-xl border border-primary/25 bg-primary/[0.04] p-3.5 transition-colors hover:border-primary/40 hover:bg-primary/[0.08]"
+        >
+          <div className="flex items-center gap-2">
+            <Heart className="h-3.5 w-3.5 shrink-0 text-primary" />
+            <span className="text-[13px] font-semibold text-foreground">
+              Sponsor Grit
+            </span>
+          </div>
+          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+            These docs are free and MIT licensed. Sponsors keep them that way.
+          </p>
+          <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
+            See the tiers
+            <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+          </span>
+        </Link>
+      </div>
+    </div>
   )
 }
 
