@@ -576,14 +576,17 @@ func webLandingPage(opts Options) string {
 
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+// grit:home:blog-import
 import { usePublicBlogs } from "@/hooks/use-blogs";
 import { DevLinks } from "@/components/dev-links";
 
 const DOCS_URL = "https://grit-vert.vercel.app/docs";
 
 export default function HomePage() {
+  // grit:home:blog-hook-start
   const { data, isLoading } = usePublicBlogs(1, 3);
   const blogs = data?.blogs || [];
+  // grit:home:blog-hook-end
 
   return (
     <div className="flex flex-col">
@@ -642,6 +645,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* grit:home:blog-start */}
       {/* Recent Posts */}
       <section className="border-t border-border/50 bg-bg-secondary/30">
         <div className="mx-auto max-w-5xl px-6 py-20">
@@ -717,6 +721,7 @@ export default function HomePage() {
           )}
         </div>
       </section>
+      {/* grit:home:blog-end */}
 
       {/* v3.31.49 -- DevLinks renders in development only. Surfaces
           every URL the ` + "`grit new`" + ` welcome banner prints (API, GORM

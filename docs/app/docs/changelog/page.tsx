@@ -28,6 +28,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.65.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.65.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 18, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    Fix: <code>grit remove resource</code> now actually removes a resource.
+                  </strong>{' '}
+                  It deleted the model but left the handler, service and seeder behind, so the
+                  project stopped compiling with <code>undefined: models.&lt;Name&gt;</code>. This
+                  affected both generated resources and the demo <code>Blog</code> that ships with
+                  every project &mdash; so &ldquo;don&apos;t want the blog? remove it&rdquo;
+                  didn&apos;t work.
+                </p>
+                <p>
+                  Removal now covers every artefact and injection: the import handler, the
+                  scaffold&apos;s differently-named files (<code>blog_handler.go</code>,{' '}
+                  <code>blog_service.go</code>, <code>blogs_seeder.go</code>), the seeder
+                  registration, the sync registry, all three switch-dispatch files
+                  (form-share, resource-stats, chart), both handler-init shapes, public route
+                  groups, TanStack/Vite admin routes, and nested{' '}
+                  <code>[id]</code>/<code>[slug]</code> page directories. Imports orphaned by the
+                  removal are pruned, so you don&apos;t trade{' '}
+                  <code>undefined: models.X</code> for <code>imported and not used</code>.
+                </p>
+                <p>
+                  The web home page&apos;s &ldquo;Recent Posts&rdquo; section is now wrapped in{' '}
+                  <code>grit:home:blog-*</code> markers so removing <code>Blog</code> cuts it out
+                  cleanly &mdash; previously the page kept importing the deleted hook and the web
+                  app failed to build.
+                </p>
+                <p>
+                  Verified end to end: <code>grit new --triple</code> →{' '}
+                  <code>grit remove resource Blog</code> leaves <strong>zero</strong> references,
+                  and both the Go API and the Next.js web app build. Same for a generated
+                  resource. Regression tests added for the case-arm removal, the import pruning
+                  (which previously matched a code comment) and the marked-region cut.
+                </p>
+              </div>
+            </div>
+
             {/* v3.64.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
