@@ -356,3 +356,135 @@ func TestGenerateAndRemove_RoundTrip(t *testing.T) {
 		t.Error("// grit:models marker missing after round-trip")
 	}
 }
+
+// TestRemoveCaseBlocks covers the switch-dispatch arms that `generate resource`
+// injects. Missing these was why a removed resource still failed to compile:
+// the arm kept referencing models.<Name> after the model file was deleted.
+func TestRemoveCaseBlocks(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "dispatch.go")
+
+	src := `package services
+
+func dispatch(name string) error {
+	switch name {
+	case "users":
+		return handle(&models.User{})
+	case "gadgets":
+		return handle(&models.Gadget{})
+
+	// grit:resource-stats:dispatch
+	default:
+		return nil
+	}
+}
+`
+	if err := os.WriteFile(path, []byte(src), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if n := removeCaseBlocks(path, `case "gadgets":`); n != 1 {
+		t.Fatalf("removeCaseBlocks = %d, want 1", n)
+	}
+
+	got := readTestFile(t, path)
+	if strings.Contains(got, "Gadget") {
+		t.Errorf("gadgets arm still present:\n%s", got)
+	}
+	// The neighbouring arm, the marker and the default must survive.
+	for _, keep := range []string{`case "users":`, "models.User{}", "// grit:resource-stats:dispatch", "default:"} {
+		if !strings.Contains(got, keep) {
+			t.Errorf("removal ate %q:\n%s", keep, got)
+		}
+	}
+
+	// Removing an absent arm must be a no-op, not a mangle.
+	if n := removeCaseBlocks(path, `case "absent":`); n != 0 {
+		t.Errorf("removing an absent case reported %d removals", n)
+	}
+}
+
+// TestPruneUnusedImports guards the specific trap that made the first fix fail:
+// these dispatch files describe the codegen contract in prose ("via
+// json.Marshal(fields)"), so a naive usage check matches the COMMENT and keeps
+// an import that is genuinely unused — trading one compile error for another.
+func TestPruneUnusedImports(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "svc.go")
+
+	src := `package services
+
+import (
+	"fmt"
+
+	"encoding/json"
+
+	"example.com/app/internal/models"
+)
+
+// Each case re-marshals fields via json.Marshal(fields) — prose only.
+func run() error {
+	return fmt.Errorf("nothing uses json or models now")
+}
+`
+	if err := os.WriteFile(path, []byte(src), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	pruneUnusedImports(path)
+	got := readTestFile(t, path)
+
+	if strings.Contains(got, `"encoding/json"`) {
+		t.Errorf("encoding/json kept despite only appearing in a comment:\n%s", got)
+	}
+	if strings.Contains(got, `"example.com/app/internal/models"`) {
+		t.Errorf("unused models import kept:\n%s", got)
+	}
+	if !strings.Contains(got, `"fmt"`) {
+		t.Errorf("fmt is used and must be kept:\n%s", got)
+	}
+}
+
+// TestRemoveMarkedRegion covers demo content embedded in a hand-designed file
+// (the web home page's blog section), which has no standalone file to delete.
+func TestRemoveMarkedRegion(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "page.tsx")
+
+	src := `<div>
+  <Hero />
+  {/* grit:home:blog-start */}
+  <BlogSection />
+  {/* grit:home:blog-end */}
+  <Footer />
+</div>
+`
+	if err := os.WriteFile(path, []byte(src), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if !removeMarkedRegion(path, "grit:home:blog-start", "grit:home:blog-end") {
+		t.Fatal("removeMarkedRegion reported no cut")
+	}
+	got := readTestFile(t, path)
+	if strings.Contains(got, "BlogSection") {
+		t.Errorf("marked region survived:\n%s", got)
+	}
+	for _, keep := range []string{"<Hero />", "<Footer />"} {
+		if !strings.Contains(got, keep) {
+			t.Errorf("removal ate %q:\n%s", keep, got)
+		}
+	}
+
+	// An unmatched start marker must NOT truncate to end-of-file.
+	partial := filepath.Join(dir, "partial.tsx")
+	if err := os.WriteFile(partial, []byte("a\n{/* grit:x-start */}\nb\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if removeMarkedRegion(partial, "grit:x-start", "grit:x-end") {
+		t.Error("unmatched markers should be left alone")
+	}
+	if !strings.Contains(readTestFile(t, partial), "b") {
+		t.Error("unmatched markers truncated the file")
+	}
+}
