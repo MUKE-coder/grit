@@ -1024,6 +1024,9 @@ func (u *User) CheckPassword(password string) bool {
 func Models() []interface{} {
 	return []interface{}{
 		&User{},
+		// Role/UserRole must migrate before anything authorises a request.
+		&Role{},
+		&UserRole{},
 		&Upload{},
 		&Blog{},
 		&TwoFactorConfig{},
@@ -1134,6 +1137,15 @@ func Migrate(db *gorm.DB) error {
 	log.Println(thinSep)
 	log.Printf("Migration done — %d table(s) created, %d altered (+%d column(s)), %d unchanged.",
 		created, altered, columnsAdded, unchanged)
+
+	// Seed the default roles here rather than in database.Seed(): authorization
+	// must work on a freshly migrated database, without anyone remembering to
+	// run "grit seed". SeedRoles is idempotent and never overwrites an existing
+	// role's grants.
+	if err := SeedRoles(db); err != nil {
+		return fmt.Errorf("seeding default roles: %w", err)
+	}
+
 	log.Println(separator)
 	return nil
 }
@@ -2385,6 +2397,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"` + "{{MODULE}}" + `/internal/authz"
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/services"
 )
@@ -2468,13 +2481,70 @@ func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 		c.Set("user", user)
 		c.Set("user_id", user.ID)
 		c.Set("user_role", user.Role)
+
+		// Resolve the caller's permission grants once per request so route
+		// guards and handlers don't each hit the database. authz.GrantsFor is
+		// cached and invalidated on role changes, so this is usually free.
+		// A failure here is not fatal: the request continues with no grants and
+		// role-name checks still apply, which fails closed rather than 500ing
+		// every route the moment the roles table has a problem.
+		if grants, err := authz.GrantsFor(db, user.ID); err == nil {
+			c.Set("user_grants", grants)
+		}
+
 		c.Next()
 	}
 }
 
-// RequireRole creates a middleware that checks if the user has one of the required roles.
-func RequireRole(roles ...string) gin.HandlerFunc {
+// RequireRole guards a route by role name, permission, or both.
+//
+// Each argument is either a legacy role name ("ADMIN") or a permission key
+// prefixed with "perm:" ("perm:users.delete"). Access is granted if ANY
+// argument matches — so the two styles can be mixed during a migration:
+//
+//	protected.Use(middleware.RequireRole("ADMIN", "perm:users.delete"))
+//
+// The signature is unchanged on purpose: every existing RequireRole("ADMIN")
+// call site keeps working untouched, and permissions can be adopted route by
+// route instead of in one breaking sweep.
+func RequireRole(rolesOrPerms ...string) gin.HandlerFunc {
+	// Split once at construction rather than per request.
+	var roles, perms []string
+	for _, arg := range rolesOrPerms {
+		if strings.HasPrefix(arg, "perm:") {
+			perms = append(perms, strings.TrimPrefix(arg, "perm:"))
+			continue
+		}
+		roles = append(roles, arg)
+	}
+
 	return func(c *gin.Context) {
+		// Permission check first — it's the model we want callers to move to.
+		if len(perms) > 0 {
+			if grants, ok := c.Get("user_grants"); ok {
+				if list, ok := grants.([]string); ok {
+					for _, p := range perms {
+						if authz.Granted(list, p) {
+							c.Next()
+							return
+						}
+					}
+				}
+			}
+		}
+
+		// No permission matched; fall back to the legacy role names.
+		if len(roles) == 0 {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": gin.H{
+					"code":    "FORBIDDEN",
+					"message": "You do not have permission to perform this action",
+				},
+			})
+			c.Abort()
+			return
+		}
+
 		userRole, exists := c.Get("user_role")
 		if !exists {
 			c.JSON(http.StatusUnauthorized, gin.H{

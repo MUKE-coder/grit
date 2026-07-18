@@ -27,8 +27,17 @@ func writeSecurityFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "safefetch", "safefetch_test.go"): safefetchTestGo(),
 		filepath.Join(apiRoot, "internal", "authz", "authz.go"):              authzGo(),
 		filepath.Join(apiRoot, "internal", "authz", "authz_test.go"):         authzTestGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "csrf.go"):          csrfMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "security_log.go"):  securityLogGo(),
+		// Permission catalog + matcher. Roles are bags of these keys; routes
+		// check a key rather than a role name, so adding a role no longer means
+		// editing every route.
+		filepath.Join(apiRoot, "internal", "authz", "permissions.go"):      authzPermissionsGo(),
+		filepath.Join(apiRoot, "internal", "authz", "permissions_test.go"): authzPermissionsTestGo(),
+		// Role model + the single user->grants resolution seam.
+		filepath.Join(apiRoot, "internal", "models", "role.go"):             roleModelGo(),
+		filepath.Join(apiRoot, "internal", "authz", "grants.go"):            authzGrantsGo(),
+		filepath.Join(apiRoot, "internal", "authz", "grants_test.go"):       authzGrantsTestGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "csrf.go"):         csrfMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "security_log.go"): securityLogGo(),
 	}
 
 	for path, content := range files {
