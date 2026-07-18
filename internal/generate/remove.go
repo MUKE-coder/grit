@@ -192,16 +192,32 @@ func RemoveResource(name string) error {
 		}
 	}
 
-	// 10. Remove resource import from registry
-	if fileExists(registryFile) {
-		if removeLinesContaining(registryFile, fmt.Sprintf(`from "./%s"`, names.PluralKebab)) == nil {
+	// 10. Remove the resource import from the registry (Next.js and Vite admins).
+	for _, reg := range []string{registryFile, filepath.Join(adminRoot, "src", "resources", "index.ts")} {
+		if !fileExists(reg) {
+			continue
+		}
+		if removeLinesContaining(reg, fmt.Sprintf(`from "./%s"`, names.PluralKebab)) == nil {
 			fmt.Println("  ✗ Removed resource import")
 		}
 	}
 
-	// 11. Remove resource from registry list
-	if fileExists(registryFile) {
-		if removeLinesContaining(registryFile, fmt.Sprintf("%sResource,", names.Camel)) == nil {
+	// 11. Remove the resource from the registry list.
+	//
+	// Both spellings must be tried: `generate resource` exports the singular
+	// (categoryResource) while the scaffold's demo resources use the plural
+	// (blogsResource, usersResource). Handling only the singular left
+	// "blogsResource," in the array with its import gone, which compiled but
+	// failed type-check with "Cannot find name 'blogsResource'".
+	for _, reg := range []string{registryFile, filepath.Join(adminRoot, "src", "resources", "index.ts")} {
+		if !fileExists(reg) {
+			continue
+		}
+		removed := removeLinesContaining(reg, fmt.Sprintf("%sResource,", names.Camel)) == nil
+		if removeLinesContaining(reg, fmt.Sprintf("%sResource,", names.Plural)) == nil {
+			removed = true
+		}
+		if removed {
 			fmt.Println("  ✗ Removed resource from registry")
 		}
 	}
