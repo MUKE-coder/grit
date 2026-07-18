@@ -6957,6 +6957,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	importJobHandler := &handlers.ImportJobHandler{DB: db}
 	// v3.31.77 — full-database backups (weekly cron + manual + download)
 	backupHandler := &handlers.BackupHandler{DB: db, Storage: svc.Storage}
+	roleHandler := handlers.NewRoleHandler(db)
 	// grit:handlers
 
 	// Health check
@@ -7108,6 +7109,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	protected.Use(middleware.ActivityLogger(db))
 	{
 		protected.GET("/auth/me", authHandler.Me)
+		// The caller's own permissions, for the frontend can() helper and nav
+		// gating. Any authenticated user may read their own — it tells them
+		// nothing they can't already discover by clicking.
+		protected.GET("/auth/permissions", roleHandler.MyPermissions)
 		protected.POST("/auth/logout", authHandler.Logout)
 
 		// Two-Factor Authentication (TOTP)
@@ -7262,6 +7267,17 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// /backups/:id wildcard segment in Gin's router.
 		admin.GET("/backup-settings", backupHandler.GetSettings)
 		admin.PUT("/backup-settings", backupHandler.UpdateSettings)
+
+		// Roles & permissions. Guarded by permission as well as the group's
+		// ADMIN role, so a custom role can be given role-management rights
+		// without being made a full admin.
+		admin.GET("/permissions", roleHandler.Catalog)
+		admin.GET("/roles", middleware.RequireRole("ADMIN", "perm:roles.view"), roleHandler.List)
+		admin.POST("/roles", middleware.RequireRole("ADMIN", "perm:roles.create"), roleHandler.Create)
+		admin.GET("/roles/:id", middleware.RequireRole("ADMIN", "perm:roles.view"), roleHandler.Get)
+		admin.PUT("/roles/:id", middleware.RequireRole("ADMIN", "perm:roles.edit"), roleHandler.Update)
+		admin.DELETE("/roles/:id", middleware.RequireRole("ADMIN", "perm:roles.delete"), roleHandler.Delete)
+		admin.PUT("/users/:id/roles", middleware.RequireRole("ADMIN", "perm:users.edit"), roleHandler.AssignUserRoles)
 
 		// grit:routes:admin
 	}

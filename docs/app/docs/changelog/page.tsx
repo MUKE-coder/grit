@@ -28,6 +28,51 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.68.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.68.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 18, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Roles &amp; permissions API.</strong> Scaffolded projects now expose the
+                  endpoints the admin UI (shipping next) is built on:
+                </p>
+                <ul>
+                  <li>
+                    <code>GET /api/permissions</code> — the catalog tree
+                  </li>
+                  <li>
+                    <code>GET|POST /api/roles</code>, <code>GET|PUT|DELETE /api/roles/:id</code>
+                  </li>
+                  <li>
+                    <code>PUT /api/users/:id/roles</code> — assign roles to a user
+                  </li>
+                  <li>
+                    <code>GET /api/auth/permissions</code> — the caller&apos;s own permissions
+                  </li>
+                </ul>
+                <p>
+                  Grants are <em>stored</em> unexpanded so wildcards keep inheriting, but{' '}
+                  <em>served</em> expanded so the frontend never reimplements wildcard matching
+                  &mdash; a duplicated matcher is how the system this was modelled on ended up
+                  with Go and TypeScript rules that disagreed.
+                </p>
+                <p>
+                  Built-in roles are protected <strong>server-side</strong>: renaming or deleting
+                  ADMIN is refused by the API, not merely greyed out in the UI. Their permissions
+                  stay editable. Unknown permission keys are rejected on write, so a typo
+                  can&apos;t be stored and then silently never match. Assigning roles keeps the
+                  legacy <code>users.role</code> string in step, so routes still guarded by role
+                  name don&apos;t start returning spurious 403s.
+                </p>
+              </div>
+            </div>
+
             {/* v3.67.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
