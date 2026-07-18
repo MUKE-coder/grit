@@ -28,6 +28,37 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.67.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.67.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 18, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Generated resources register their own permissions.</strong>{' '}
+                  <code>grit generate resource Product</code> now adds{' '}
+                  <code>products.create</code>, <code>products.view</code>,{' '}
+                  <code>products.edit</code> and <code>products.delete</code> to the authz
+                  catalog, so a new resource is grantable straight away instead of needing a
+                  hand-edit. <code>grit remove resource</code> takes them back out.
+                </p>
+                <p>
+                  Roles holding a wildcard pick the new keys up automatically &mdash; a role
+                  granted <code>products.*</code> (or <code>*</code>) covers actions added later,
+                  because grants are stored unexpanded.
+                </p>
+                <p>
+                  Machine-written entries live in <code>generatedModules()</code> between{' '}
+                  <code>grit:perms:auto-*</code> markers; hand-written permissions belong in{' '}
+                  <code>coreModules()</code>, where removal will never touch them.
+                </p>
+              </div>
+            </div>
+
             {/* v3.66.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

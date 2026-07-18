@@ -280,6 +280,19 @@ func RemoveResource(name string) error {
 		}
 	}
 
+	// 15b. Remove the resource's permissions from the authz catalog.
+	//
+	// Uses the module Key line as the anchor and cuts to the closing brace of
+	// that literal. Leaving it behind would keep a deleted resource showing up
+	// in the roles UI as a grantable permission — the same generate/remove drift
+	// that made removal leave broken code in the first place.
+	permsFile := filepath.Join(apiRoot, "internal", "authz", "permissions.go")
+	if fileExists(permsFile) {
+		if removeStructBlock(permsFile, fmt.Sprintf("Key:  %q,", names.Plural)) {
+			fmt.Println("  ✗ Removed permissions from the authz catalog")
+		}
+	}
+
 	// 16. Blog only: strip the "Recent Posts" section from the web home page.
 	//
 	// This is the one piece of demo content that lives inside a hand-designed
@@ -308,6 +321,65 @@ func RemoveResource(name string) error {
 	fmt.Printf("  ✅ Resource %s removed successfully!\n\n", names.Pascal)
 
 	return nil
+}
+
+// removeStructBlock deletes a composite-literal element identified by a line it
+// contains, e.g. the permission-catalog entry anchored on `Key:  "products",`.
+//
+// Brace-counting rather than indentation-matching: the catalog literal nests
+// three levels (Module > Group > Feature), so scanning for "a line at the same
+// indent" would stop at the first inner closing brace and leave a fragment
+// behind. Starts from the anchor's opening "{" line and consumes until the brace
+// depth returns to zero.
+//
+// Braces inside string literals would confuse the counter, but catalog entries
+// hold identifiers and display names, so this stays honest for its one caller.
+func removeStructBlock(filePath, anchor string) bool {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return false
+	}
+	lines := strings.Split(string(data), "\n")
+
+	anchorIdx := -1
+	for i, l := range lines {
+		if strings.Contains(l, anchor) {
+			anchorIdx = i
+			break
+		}
+	}
+	if anchorIdx == -1 {
+		return false
+	}
+
+	// Walk back to the "{" that opens this element.
+	start := -1
+	for i := anchorIdx; i >= 0; i-- {
+		if strings.HasSuffix(strings.TrimSpace(lines[i]), "{") {
+			start = i
+			break
+		}
+	}
+	if start == -1 {
+		return false
+	}
+
+	depth := 0
+	end := -1
+	for i := start; i < len(lines); i++ {
+		depth += strings.Count(lines[i], "{") - strings.Count(lines[i], "}")
+		if depth <= 0 {
+			end = i
+			break
+		}
+	}
+	if end == -1 {
+		return false
+	}
+
+	out := append([]string{}, lines[:start]...)
+	out = append(out, lines[end+1:]...)
+	return os.WriteFile(filePath, []byte(strings.Join(out, "\n")), 0644) == nil
 }
 
 // removeMarkedRegion deletes the lines between two grit markers, inclusive,

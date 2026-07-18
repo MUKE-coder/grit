@@ -222,6 +222,47 @@ func (g *Generator) injectAll(names Names) error {
 		}
 	}
 
+	// 5d. Register the resource's permissions in the authz catalog, so a new
+	// resource is immediately grantable in the roles UI instead of needing a
+	// hand-edit. The block goes into generatedModules(), which exists purely to
+	// hold machine-written entries — hand-written permissions live in
+	// coreModules() where removal won't touch them.
+	//
+	// Roles that hold a wildcard ("*" or "<resource>.*") pick the new keys up
+	// automatically, because grants are stored unexpanded.
+	permsFile := filepath.Join(apiRoot, "internal", "authz", "permissions.go")
+	if fileExists(permsFile) {
+		permBlock := fmt.Sprintf(`		{
+			Key:  %q,
+			Name: %q,
+			Groups: []Group{
+				{
+					Key:  %q,
+					Name: %q,
+					Features: []Feature{
+						{Key: %q, Name: %q, Actions: AllActions},
+					},
+				},
+			},
+		},
+`,
+			names.Plural, names.PluralPascal,
+			names.Plural, names.PluralPascal,
+			names.Plural, names.PluralPascal,
+		)
+		// Anchored on the END marker: injectBefore inserts above its anchor, so
+		// using the start marker would place entries outside the machine-written
+		// region and removal would not find them.
+		if err := injectBefore(permsFile, "// grit:perms:auto-end", permBlock); err != nil {
+			// Projects scaffolded before permissions shipped have no marker.
+			// Don't fail the generate — the resource works, it just isn't
+			// grantable until the catalog is updated.
+			fmt.Println("  ⚠ perms:auto-start marker missing; " + names.Plural + " won't appear in the roles UI. Re-scaffold or add `// grit:perms:auto-start` to internal/authz/permissions.go inside generatedModules().")
+		} else {
+			fmt.Println("  ✓ Injected permissions into the authz catalog")
+		}
+	}
+
 	// 6. Inject schema export
 	schemaIndex := filepath.Join(sharedRoot, "schemas", "index.ts")
 	if fileExists(schemaIndex) {
