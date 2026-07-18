@@ -28,6 +28,60 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.66.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.66.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 18, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Permissions land — roles are now bags of permissions.</strong> Raised
+                  in #71: guarding endpoints by role name doesn&apos;t scale, because adding a
+                  role means editing every route. Routes can now check a <em>permission</em>
+                  instead.
+                </p>
+                <p>
+                  A permission key is <code>&lt;resource&gt;.&lt;action&gt;</code> &mdash;{' '}
+                  <code>products.create</code>, <code>users.delete</code>. Roles hold grants, and
+                  grants may use wildcards (<code>products.*</code>, <code>*</code>). Wildcards
+                  are stored <em>as authored</em>, so a role granted <code>products.*</code>
+                  automatically picks up actions added to the catalog later.
+                </p>
+                <p>
+                  <strong>Nothing breaks.</strong> <code>RequireRole</code> keeps its signature and
+                  now accepts either style, passing if any argument matches:{' '}
+                  <code>RequireRole(&quot;ADMIN&quot;, &quot;perm:users.delete&quot;)</code>. Every
+                  existing <code>RequireRole(&quot;ADMIN&quot;)</code> call site works untouched,
+                  so permissions can be adopted route by route. Apps upgrading from role-only auth
+                  keep working before anyone is assigned a role, because grant resolution falls
+                  back to the legacy <code>users.role</code> string.
+                </p>
+                <p>
+                  New in a scaffolded API: <code>internal/authz/permissions.go</code> (catalog +
+                  matcher), <code>internal/authz/grants.go</code> (the single{' '}
+                  <code>GrantsFor</code> seam, cached with immediate invalidation on revoke), and{' '}
+                  <code>models.Role</code> + a many-to-many <code>user_roles</code> join. Default
+                  roles seed automatically on migrate, and re-seeding never overwrites an
+                  operator&apos;s edits.
+                </p>
+                <p>
+                  Note ADMIN gets <code>*</code> while EDITOR and USER get scoped grants matching
+                  what the routes already enforced &mdash; giving every role every permission
+                  would have handed ordinary users the admin panel, since the guard is
+                  any-match.
+                </p>
+                <p>
+                  Still to come: permission codegen from{' '}
+                  <code>grit generate resource</code>, the roles admin UI, and the multi-tenant
+                  plugin.
+                </p>
+              </div>
+            </div>
+
             {/* v3.65.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

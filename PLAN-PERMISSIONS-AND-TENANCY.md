@@ -208,7 +208,38 @@ Doing **D before C** would mean building org-scoped role assignment twice. Do C 
 
 ---
 
-## Open questions for MUKE
+## Decisions taken (MUKE said "proceed" on the recommendations)
+
+1. **Key format** — `<resource>.<action>`, e.g. `products.create`. Two segments.
+   Module/group in the catalog is **display metadata for the UI only**, never part of
+   the key. Grit resources are flat; a 4-segment scheme would be noise for generated code.
+2. **Storage** — JSON grants column on `roles`, as Shoppleet — *but wildcards are
+   preserved as authored*. Ticking a whole resource stores `products.*`, so the role
+   inherits actions added later. (Shoppleet expands to leaves on save, which is why its
+   roles silently stop inheriting.)
+3. **User ↔ role** — **many-to-many** via a `user_roles` join table. Costs almost nothing
+   now; the multi-tenant plugin later just adds `org_id` to that same table instead of
+   forcing a breaking migration off a single `role_id` column.
+4. **Module toggles** — env-based (Workstream B), as agreed.
+5. **Catalog scope** — small core (users, roles, uploads, system/jobs/backups/audit);
+   generated resources grow it. Shoppleet's 175 are its own domain, not every Grit app's.
+
+### Progress
+
+- [x] **C1 Catalog + matcher** — `internal/authz/permissions.go` in the scaffold:
+      `Action`/`Feature`/`Group`/`Module`, action presets, `Catalog()` (core +
+      `generatedModules()` between `grit:perms:auto-*` markers), `Keys()`, `Granted()`,
+      `Expand()`, `HasAll()`. Shipped with tests that pin the semantics — including the
+      middle-wildcard case Shoppleet gets wrong (`products.*.view` must NOT grant delete).
+- [ ] C2 Role model + `user_roles` + `authz.GrantsFor()` + cache
+- [ ] C3 Dual-mode guard
+- [ ] C4 Codegen into the catalog markers
+- [ ] C5 API endpoints
+- [ ] C6 Admin UI (shared component across Next/TanStack/desktop)
+- [ ] C7 Frontend `can()` + nav gating
+- [ ] C8 Docs
+
+## Superseded questions (answered by the decisions above)
 
 1. **Key format** — `products.create` (proposed, short) or Shoppleet's full
    `module.submodule.feature.action`?
