@@ -114,6 +114,18 @@ func RemoveResource(name string) error {
 		}
 	}
 
+	// 1b. Remove the offline-sync registration.
+	//
+	// MUST run before the inline model-list surgery below. That step strips
+	// ", &models.X{}" wherever it appears, which also matches
+	//     syncRegistry.Register("xs", &models.X{})
+	// leaving `Register("xs")` — a call with too few arguments that the
+	// whole-line removal could no longer recognise.
+	if fileExists(routesFile) {
+		removeLinesContaining(routesFile,
+			fmt.Sprintf("syncRegistry.Register(%q, &models.%s{})", names.Plural, names.Pascal))
+	}
+
 	// 2. Remove the model from every inline []interface{} model list (GORM Studio
 	// mount, Pulse config, ...). Both separator positions are tried: the model
 	// may sit mid-slice ("&M{}, ") or last ( ", &M{}" ), and only handling the
@@ -220,12 +232,6 @@ func RemoveResource(name string) error {
 		if removed {
 			fmt.Println("  ✗ Removed resource from registry")
 		}
-	}
-
-	// 12. Remove the offline-sync registration.
-	if fileExists(routesFile) {
-		removeLinesContaining(routesFile,
-			fmt.Sprintf("syncRegistry.Register(%q, &models.%s{})", names.Plural, names.Pascal))
 	}
 
 	// 13+14. Reverse the two switch-dispatch injections. These were the reason a

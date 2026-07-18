@@ -488,3 +488,58 @@ func TestRemoveMarkedRegion(t *testing.T) {
 		t.Error("unmatched markers truncated the file")
 	}
 }
+
+// TestRemoveResource_SyncRegistryNotMangled pins the ordering trap found by
+// running a real release: stripping ", &models.X{}" from inline model lists also
+// matches
+//
+//	syncRegistry.Register("xs", &models.X{})
+//
+// turning it into Register("xs") — a call with too few arguments that the
+// whole-line removal then no longer recognised. The registration must be deleted
+// BEFORE the inline surgery runs.
+func TestRemoveResource_SyncRegistryNotMangled(t *testing.T) {
+	dir := t.TempDir()
+	routesDir := filepath.Join(dir, "apps", "api", "internal", "routes")
+	if err := os.MkdirAll(routesDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	routes := filepath.Join(routesDir, "routes.go")
+
+	src := `package routes
+
+func Setup() {
+	studio.Mount(r, db, []interface{}{&models.User{}, &models.Product{}, /* grit:studio */}, cfg)
+	pulseCfg.Models = []interface{}{&models.User{}, &models.Product{}}
+	syncRegistry.Register("users", &models.User{})
+	syncRegistry.Register("products", &models.Product{})
+}
+`
+	if err := os.WriteFile(routes, []byte(src), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Mirror RemoveResource's order: registration first, then inline lists.
+	removeLinesContaining(routes, `syncRegistry.Register("products", &models.Product{})`)
+	removeInlineText(routes, "&models.Product{}, ")
+	removeInlineText(routes, ", &models.Product{}")
+
+	got := readTestFile(t, routes)
+
+	if strings.Contains(got, "Product") {
+		t.Errorf("Product survived removal:\n%s", got)
+	}
+	// The surviving registration must keep BOTH arguments.
+	if !strings.Contains(got, `syncRegistry.Register("users", &models.User{})`) {
+		t.Errorf("user registration was mangled — this is the bug:\n%s", got)
+	}
+	if strings.Contains(got, `Register("users")`) {
+		t.Errorf("registration lost its model argument:\n%s", got)
+	}
+	// The studio marker and the remaining model must survive.
+	for _, keep := range []string{"grit:studio", "&models.User{}"} {
+		if !strings.Contains(got, keep) {
+			t.Errorf("removal ate %q:\n%s", keep, got)
+		}
+	}
+}
