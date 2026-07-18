@@ -543,3 +543,79 @@ func Setup() {
 		}
 	}
 }
+
+// TestRemoveStructBlock covers the permission-catalog entry that
+// `grit generate resource` injects. The literal nests three levels
+// (Module > Group > Feature), so an indentation-based scan would stop at the
+// first inner closing brace and leave a fragment that doesn't compile.
+func TestRemoveStructBlock(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "permissions.go")
+
+	src := `package authz
+
+func generatedModules() []Module {
+	return []Module{
+		// grit:perms:auto-start
+		{
+			Key:  "orders",
+			Name: "Orders",
+			Groups: []Group{
+				{
+					Key:  "orders",
+					Name: "Orders",
+					Features: []Feature{
+						{Key: "orders", Name: "Orders", Actions: AllActions},
+					},
+				},
+			},
+		},
+		{
+			Key:  "products",
+			Name: "Products",
+			Groups: []Group{
+				{
+					Key:  "products",
+					Name: "Products",
+					Features: []Feature{
+						{Key: "products", Name: "Products", Actions: AllActions},
+					},
+				},
+			},
+		},
+		// grit:perms:auto-end
+	}
+}
+`
+	if err := os.WriteFile(path, []byte(src), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if !removeStructBlock(path, `Key:  "products",`) {
+		t.Fatal("removeStructBlock reported no removal")
+	}
+	got := readTestFile(t, path)
+
+	if strings.Contains(got, "products") {
+		t.Errorf("products entry survived:\n%s", got)
+	}
+	// The sibling entry must be intact — this is what naive brace matching eats.
+	if !strings.Contains(got, `Key:  "orders",`) || !strings.Contains(got, `{Key: "orders", Name: "Orders", Actions: AllActions}`) {
+		t.Errorf("sibling entry was damaged:\n%s", got)
+	}
+	// Markers must survive so the next generate still has an anchor.
+	for _, m := range []string{"grit:perms:auto-start", "grit:perms:auto-end"} {
+		if !strings.Contains(got, m) {
+			t.Errorf("marker %q was removed:\n%s", m, got)
+		}
+	}
+	// Braces must still balance, or the file won't compile.
+	if strings.Count(got, "{") != strings.Count(got, "}") {
+		t.Errorf("unbalanced braces after removal:\n%s", got)
+	}
+
+	// Removing an absent entry is a no-op.
+	if removeStructBlock(path, `Key:  "absent",`) {
+		t.Error("removing an absent block reported success")
+	}
+}
