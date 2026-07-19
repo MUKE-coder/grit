@@ -1031,8 +1031,7 @@ export function Navbar() {
 }
 
 func webFooter(opts Options) string {
-	return `import Link from "next/link";
-
+	return `
 const DOCS_URL = "https://grit-vert.vercel.app/docs";
 
 export function Footer() {

@@ -28,6 +28,45 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.73.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.73.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fix: the Vite web app could not build.</strong> Found by a
+                  systematic pass over every kit &mdash; <code>--double --vite</code> and{' '}
+                  <code>--triple --vite</code> produced an <code>apps/web</code> that failed
+                  to compile.
+                </p>
+                <p>
+                  The Vite <em>admin</em> was fixed for this in v3.62.0, but the Vite{' '}
+                  <em>web</em> app never got the same treatment: its components still imported{' '}
+                  <code>next/link</code> and <code>next/navigation</code>, it shipped no
+                  compat shim, it was missing the <code>@repo/shared</code> dependency and{' '}
+                  <code>vite-env.d.ts</code>, and its build script ran <code>tsc -b</code>{' '}
+                  before the plugin had generated the route tree.
+                </p>
+                <p>
+                  <strong>And a latent runtime bug in both Vite apps:</strong> transformed
+                  components read <code>process.env.NEXT_PUBLIC_*</code>, which Vite does not
+                  polyfill &mdash; those components would have thrown{' '}
+                  <code>process is not defined</code> in the browser. The build never caught
+                  it, because <code>vite build</code> uses esbuild and does no type checking.
+                  The compat transform now rewrites them to{' '}
+                  <code>import.meta.env.VITE_*</code>.
+                </p>
+                <p>
+                  Both Vite apps now build <em>and</em> typecheck cleanly.
+                </p>
+              </div>
+            </div>
+
             {/* v3.72.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

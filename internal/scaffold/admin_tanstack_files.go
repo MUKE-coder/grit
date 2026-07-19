@@ -3,6 +3,7 @@ package scaffold
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -47,8 +48,23 @@ func nextToTanStack(code string) string {
 	code = strings.ReplaceAll(code, `from "next/navigation"`, `from "@/lib/next-compat"`)
 	code = strings.ReplaceAll(code, `from 'next/navigation'`, `from "@/lib/next-compat"`)
 
+	// process.env → import.meta.env.
+	//
+	// Vite does not polyfill `process`, so a transformed component reading
+	// process.env.NEXT_PUBLIC_X throws "process is not defined" in the browser.
+	// The build wouldn't catch it either — vite build uses esbuild and does no
+	// type checking, so this surfaced only as a typecheck failure and would
+	// otherwise have reached users as a blank screen.
+	code = nextPublicEnvPattern.ReplaceAllString(code, "import.meta.env.VITE_$1")
+	code = strings.ReplaceAll(code, "process.env.NODE_ENV", "import.meta.env.MODE")
+
 	return code
 }
+
+// nextPublicEnvPattern matches NEXT_PUBLIC_* env reads so they can be rewritten
+// to Vite's equivalent. Vite only exposes VITE_-prefixed vars to client code,
+// so the prefix has to change as well as the accessor.
+var nextPublicEnvPattern = regexp.MustCompile(`process\.env\.NEXT_PUBLIC_([A-Z0-9_]+)`)
 
 // adminTanStackAPIClient adapts the shared Next.js admin api-client for Vite:
 //   - process.env.NEXT_PUBLIC_API_URL → import.meta.env.VITE_API_URL (Vite has no
@@ -231,7 +247,9 @@ export function usePathname(): string {
 // pages read params.id — TanStack names the segment $id, which yields the
 // same { id } shape.
 export function useParams<T = Record<string, string>>(): T {
-  return useRouterParams({ strict: false }) as T;
+  // Cast through any: useParams is generic over the generated route tree, so a
+  // route-agnostic helper cannot satisfy its option type.
+  return (useRouterParams as any)({ strict: false }) as T;
 }
 
 export type ReadonlyURLSearchParams = URLSearchParams;
