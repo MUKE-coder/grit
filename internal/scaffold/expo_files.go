@@ -2254,6 +2254,9 @@ interface User {
   name?: string;
   email: string;
   role: string;
+  // Optional: the API always returns it, but a freshly registered user has no
+  // avatar yet. The profile screen reads this.
+  avatar?: string;
 }
 
 interface AuthContextType {

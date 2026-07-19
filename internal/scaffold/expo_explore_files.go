@@ -279,7 +279,7 @@ function BannerRow({ job }: { job: ImportProgress }) {
       </View>
       {!done && !failed ? (
         <View className="w-full h-1.5 rounded-full bg-[#E5E7EB] dark:bg-[#2a2a3a] overflow-hidden mt-2">
-          <View style={{ width: Math.round(job.fraction * 100) + "%" }} className="h-1.5 bg-[#6c5ce7]" />
+          <View style={{ width: ` + "`" + `${Math.round(job.fraction * 100)}%` + "`" + ` as const }} className="h-1.5 bg-[#6c5ce7]" />
         </View>
       ) : null}
       {failed && job.error ? (
@@ -414,7 +414,7 @@ export function ImportSheet({ plural, visible, onClose, onImported }: ImportShee
         <View className="py-8 items-center">
           <Text className="text-[15px] text-[#0F1018] dark:text-white mb-4">Importing {fileName}…</Text>
           <View className="w-full h-2.5 rounded-full bg-[#E5E7EB] dark:bg-[#2a2a3a] overflow-hidden">
-            <View style={{ width: Math.round(job.fraction * 100) + "%" }} className="h-2.5 bg-[#6c5ce7]" />
+            <View style={{ width: ` + "`" + `${Math.round(job.fraction * 100)}%` + "`" + ` as const }} className="h-2.5 bg-[#6c5ce7]" />
           </View>
           <Text className="text-[13px] text-[#6B7280] dark:text-[#9090a8] mt-2">{Math.round(job.fraction * 100)}%</Text>
           <Pressable onPress={close} className="rounded-full py-3 px-8 items-center mt-4">

@@ -117,6 +117,7 @@ const searchIndex: SearchItem[] = [
   { title: 'Form Builder', href: '/docs/admin/forms', section: 'Admin Panel', keywords: 'form create edit fields input select toggle checkbox' },
   { title: 'Relationships', href: '/docs/admin/relationships', section: 'Admin Panel', keywords: 'relationship belongs_to many_to_many foreign key association preload select' },
   { title: 'Dashboard & Widgets', href: '/docs/admin/widgets', section: 'Admin Panel', keywords: 'dashboard stats chart widget cards analytics' },
+  { title: 'Roles & Permissions UI', href: '/docs/admin/roles', section: 'Admin Panel', keywords: 'roles permissions rbac grants matrix usePermissions can gating authorization' },
 
   // Frontend
   { title: 'Web App', href: '/docs/frontend/web-app', section: 'Frontend (Next.js)', keywords: 'nextjs react web app pages routes components vite tanstack router' },

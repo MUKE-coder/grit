@@ -5,6 +5,7 @@ import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock, StepWithCode } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
+import { Callout } from '@/components/callout'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/frontend/tanstack-router')
@@ -181,7 +182,27 @@ function BlogDetailPage() {
             <p className="text-muted-foreground mb-6">
               When you choose TanStack Router, the admin panel also uses it. Auth and dashboard
               are handled via layout routes with <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">beforeLoad</code> guards.
+              It renders the same pages as the Next.js admin — resources, widgets, and the
+              System group — against the same theme tokens, so switching frontends does not
+              change what the admin looks like or what it can do.
             </p>
+            <Callout type="note" title="The Vite admin is on Tailwind v4">
+              Unlike the web app, the admin is styled by the{' '}
+              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">@tailwindcss/vite</code>{' '}
+              plugin with{' '}
+              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">@import &quot;tailwindcss&quot;</code>{' '}
+              and{' '}
+              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">@theme</code>{' '}
+              in <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">globals.css</code>.
+              There is no{' '}
+              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">tailwind.config.ts</code>{' '}
+              or{' '}
+              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">postcss.config</code>{' '}
+              in <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">apps/admin</code> —
+              customise the palette in the{' '}
+              <code className="text-primary bg-accent/30 px-1.5 py-0.5 rounded text-[13px]">@theme</code>{' '}
+              block instead. The web app shown above is still on Tailwind v3 and keeps its config files.
+            </Callout>
             <CodeBlock language="tsx" filename="src/routes/_dashboard.tsx" code={`import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { AdminLayout } from '@/components/layout/admin-layout'
 import { apiClient } from '@/lib/api-client'

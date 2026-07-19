@@ -49,6 +49,15 @@ func writeRootFiles(root string, opts Options) error {
 		files[filepath.Join(root, ".npmrc")] = rootNpmrc()
 	}
 
+	// Single-binary apps keep their SPA in frontend/ and have no workspace root,
+	// so they never received an .npmrc. Without it `pnpm install` exits non-zero
+	// with ERR_PNPM_IGNORED_BUILDS on esbuild — a failed install on a freshly
+	// generated project.
+	if opts.Architecture == ArchSingle {
+		files[filepath.Join(root, "frontend", ".npmrc")] = rootNpmrc()
+		files[filepath.Join(root, "frontend", "pnpm-workspace.yaml")] = pnpmAllowBuilds()
+	}
+
 	for path, content := range files {
 		if err := writeFile(path, content); err != nil {
 			return fmt.Errorf("writing %s: %w", path, err)
@@ -569,7 +578,24 @@ func pnpmWorkspace(includeDesktop bool) string {
 	// match — React 19 hard-errors on a version mismatch. Exact direct pins are
 	// more reliable than a pnpm override (pnpm 10 didn't consistently apply the
 	// react-dom override, leaving react and react-dom on different 19.x lines).
-	return ws
+	return ws + "\n" + pnpmAllowBuilds()
+}
+
+// pnpmAllowBuilds allows the dependency install scripts this stack needs.
+// pnpm 11 turned an ignored build script into a hard ERR_PNPM_IGNORED_BUILDS
+// failure, so esbuild — which fetches its platform binary in postinstall — has
+// to be listed or `pnpm install` exits non-zero on a freshly generated project.
+// pnpm 11 renamed the setting to allowBuilds and no longer reads the "pnpm"
+// field in package.json at all; the pnpm 10 spelling is kept alongside it so
+// the project installs on either major.
+func pnpmAllowBuilds() string {
+	return `allowBuilds:
+  esbuild: true
+
+# pnpm 10 spelling of the same setting.
+onlyBuiltDependencies:
+  - esbuild
+`
 }
 
 // rootNpmrc pins pnpm to a flat (hoisted) node_modules. Next.js Turbopack

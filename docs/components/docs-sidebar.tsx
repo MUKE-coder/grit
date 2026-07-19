@@ -132,6 +132,7 @@ const navItems: NavItem[] = [
       { title: 'Standalone Usage', href: '/docs/admin/standalone-usage' },
       { title: 'Relationships', href: '/docs/admin/relationships' },
       { title: 'Dashboard & Widgets', href: '/docs/admin/widgets' },
+      { title: 'Roles & Permissions UI', href: '/docs/admin/roles' },
     ],
   },
   {
@@ -185,7 +186,7 @@ const navItems: NavItem[] = [
       { title: 'AI Integration', href: '/docs/batteries/ai' },
       { title: 'Security (Sentinel)', href: '/docs/batteries/security' },
       { title: 'Turning modules off', href: '/docs/batteries/modules' },
-      { title: 'Plugins', href: '/docs/plugins/authoring' },
+      { title: 'Writing a plugin', href: '/docs/plugins/authoring' },
       { title: 'Multi-tenancy plugin', href: '/docs/plugins/multitenant' },
     ],
   },
@@ -233,10 +234,10 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    title: 'Plugins',
+    title: 'Go Packages',
     icon: <Layers className="h-3.5 w-3.5" />,
     items: [
-      { title: 'Overview', href: '/docs/plugins' },
+      { title: 'Optional Go modules', href: '/docs/plugins' },
     ],
   },
   {

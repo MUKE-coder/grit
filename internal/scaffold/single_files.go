@@ -63,15 +63,34 @@ func writeSingleFrontendFiles(root string, opts Options) error {
 
 	// Use TanStack Router by default for single app (Vite produces static dist/)
 	// Next.js can work via `next export` but TanStack/Vite is the natural fit
+	// The shared Zod schemas and TS types, mirrored locally. Every other
+	// architecture gets these as the packages/shared workspace package; a
+	// single-binary app has no workspace, so they live under src/shared and
+	// tsconfig aliases @repo/shared/* onto them (see singleFrontendTSConfig).
+	shared := filepath.Join(feRoot, "src", "shared")
+
 	files := map[string]string{
-		filepath.Join(feRoot, "package.json"):       singleFrontendPackageJSON(opts),
+		filepath.Join(shared, "schemas", "user.ts"):     sharedUserSchema(),
+		filepath.Join(shared, "schemas", "index.ts"):    sharedSchemasIndex(),
+		filepath.Join(shared, "schemas", "blog.ts"):     sharedBlogSchema(),
+		filepath.Join(shared, "schemas", "file-ref.ts"): sharedFileRefSchema(),
+		filepath.Join(shared, "types", "user.ts"):       sharedUserTypes(),
+		filepath.Join(shared, "types", "api.ts"):        sharedAPITypes(),
+		filepath.Join(shared, "types", "index.ts"):      sharedTypesIndex(),
+		filepath.Join(shared, "types", "upload.ts"):     sharedUploadTypes(),
+		filepath.Join(shared, "types", "blog.ts"):       sharedBlogTypes(),
+		filepath.Join(shared, "types", "file-ref.ts"):   sharedFileRefTypes(),
+		filepath.Join(shared, "brand.config.ts"):        sharedBrandConfig(opts),
+		filepath.Join(shared, "themes.ts"):              singleSharedThemes(opts),
+
+		filepath.Join(feRoot, "package.json"): singleFrontendPackageJSON(opts),
 		filepath.Join(feRoot, "vite.config.ts"):     singleFrontendViteConfig(),
 		filepath.Join(feRoot, "index.html"):         webTanStackIndexHTML(opts),
 		filepath.Join(feRoot, "tailwind.config.ts"): webTanStackTailwindConfig(),
 		// .cjs (not .js) because package.json sets "type": "module" and PostCSS
 		// config still uses CommonJS module.exports.
 		filepath.Join(feRoot, "postcss.config.cjs"):                 webPostCSSConfig(),
-		filepath.Join(feRoot, "tsconfig.json"):                      webTanStackTSConfig(),
+		filepath.Join(feRoot, "tsconfig.json"):                      singleFrontendTSConfig(),
 		filepath.Join(feRoot, "src", "main.tsx"):                    webTanStackMain(),
 		filepath.Join(feRoot, "src", "vite-env.d.ts"):               singleViteEnvTypes(),
 		filepath.Join(feRoot, "src", "globals.css"):                 webGlobalCSS(),
@@ -394,6 +413,57 @@ func main() {
 `
 }
 
+// singleSharedThemes is sharedThemes() with the two Next.js env reads swapped
+// for Vite's. process is a Node global: it doesn't typecheck in a Vite app and
+// is undefined in the browser, so the shipped source would silently fall back
+// to the default theme even when THEME was set at scaffold time. The chosen
+// theme is baked in as the fallback so the app renders correctly with no env
+// at all. Panics rather than emitting a subtly wrong file if sharedThemes()
+// ever drifts out from under these replacements.
+func singleSharedThemes(opts Options) string {
+	src := sharedThemes()
+
+	replacements := [][2]string{
+		{
+			`typeof process !== "undefined" ? process.env.NEXT_PUBLIC_THEME : undefined`,
+			fmt.Sprintf(`import.meta.env.VITE_THEME ?? %q`, opts.Theme),
+		},
+		{
+			`typeof process !== "undefined"
+    ? process.env.NEXT_PUBLIC_SOCIAL_AUTH_ENABLED
+    : undefined`,
+			`import.meta.env.VITE_SOCIAL_AUTH_ENABLED`,
+		},
+	}
+	for _, r := range replacements {
+		if !strings.Contains(src, r[0]) {
+			panic("singleSharedThemes: sharedThemes() no longer contains: " + r[0])
+		}
+		src = strings.Replace(src, r[0], r[1], 1)
+	}
+
+	// The doc comments still describe the Next.js env names.
+	src = strings.ReplaceAll(src, "process.env.NEXT_PUBLIC_THEME", "import.meta.env.VITE_THEME")
+	src = strings.ReplaceAll(src, "NEXT_PUBLIC_SOCIAL_AUTH_ENABLED", "VITE_SOCIAL_AUTH_ENABLED")
+	return src
+}
+
+// singleFrontendTSConfig is the Vite web tsconfig plus an alias for
+// @repo/shared. A single-binary app has no pnpm workspace, so there is no
+// packages/shared to resolve against; the shared types are mirrored into
+// frontend/src/shared instead. Keeping the import specifier identical means
+// the scaffolded hooks and anything `grit generate resource` emits work
+// unchanged across all architectures.
+func singleFrontendTSConfig() string {
+	return strings.Replace(
+		webTanStackTSConfig(),
+		`"@/*": ["./src/*"]`,
+		`"@/*": ["./src/*"],
+      "@repo/shared/*": ["./src/shared/*"]`,
+		1,
+	)
+}
+
 func singleFrontendPackageJSON(opts Options) string {
 	// postinstall + "routes:generate" wire @tanstack/router-cli so that
 	// routeTree.gen.ts exists even before `pnpm dev` has been run once.
@@ -420,7 +490,8 @@ func singleFrontendPackageJSON(opts Options) string {
     "lucide-react": "^0.468.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "zod": "^3.22.0"
   },
   "devDependencies": {
     "@tanstack/react-router-devtools": "^1.93.0",
