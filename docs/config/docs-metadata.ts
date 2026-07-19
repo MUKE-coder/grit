@@ -397,6 +397,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Dashboard widgets in Grit admin: StatsCard, ChartWidget (Recharts), ActivityWidget, and WidgetGrid for building custom dashboards.',
   },
+  '/docs/admin/roles': {
+    title: 'Roles & Permissions UI',
+    description:
+      'The Grit admin permission editor at /system/roles: tri-state CRUD matrix, wildcard-preserving saves, locked built-in roles, and gating your own UI with usePermissions().',
+  },
   '/docs/admin/standalone-usage': {
     title: 'Standalone Usage',
     description:

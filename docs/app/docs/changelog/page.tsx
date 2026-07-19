@@ -28,6 +28,50 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.74.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.74.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fix: single-binary apps could not install on pnpm 11.</strong>{' '}
+                  <code>pnpm install</code> in <code>frontend/</code> exited non-zero with{' '}
+                  <code>ERR_PNPM_IGNORED_BUILDS</code> on esbuild. pnpm 11 made an ignored
+                  build script a hard error, renamed <code>onlyBuiltDependencies</code> to{' '}
+                  <code>allowBuilds</code>, and stopped reading the <code>pnpm</code> field
+                  in <code>package.json</code> altogether. Scaffolded projects now declare{' '}
+                  <code>allowBuilds</code> in <code>pnpm-workspace.yaml</code>, keeping the
+                  pnpm 10 spelling alongside it so they install on either version.
+                </p>
+                <p>
+                  <strong>And the bug that failure was hiding:</strong> with install fixed,{' '}
+                  <code>pnpm build</code> failed too. The single-mode <code>use-blogs</code>{' '}
+                  hook imported <code>@repo/shared/types</code>, but a single-binary app has
+                  no pnpm workspace and therefore no <code>packages/shared</code>. The shared
+                  schemas and types are now mirrored into <code>frontend/src/shared/</code>{' '}
+                  with a <code>tsconfig</code> alias, so import paths read the same in every
+                  architecture. The mirrored theme module reads{' '}
+                  <code>import.meta.env.VITE_THEME</code> instead of{' '}
+                  <code>process.env.NEXT_PUBLIC_THEME</code> &mdash; the latter is undefined
+                  in a browser, so <code>--theme</code> was silently ignored at runtime.
+                </p>
+                <p>
+                  <strong>Fix: the Expo app did not typecheck.</strong> A progress bar built
+                  its width by string concatenation, which React Native types as{' '}
+                  <code>DimensionValue</code> rather than <code>string</code>, and the local{' '}
+                  <code>User</code> interface was missing <code>avatar</code>.
+                </p>
+                <p>
+                  All twelve kits now scaffold, install, compile, and typecheck clean.
+                </p>
+              </div>
+            </div>
+
             {/* v3.73.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

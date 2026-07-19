@@ -784,6 +784,46 @@ export default function CLICheatsheetPage() {
               </div>
 
               {/* -------------------------------------------------------- */}
+              {/*  grit plugin                                             */}
+              {/* -------------------------------------------------------- */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-2">
+                  grit plugin
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4 mt-3">
+                  Plugins write real code into your repo — models, routes, pages,
+                  migrations — rather than hiding behind a runtime dependency.
+                  Every install is recorded in{' '}
+                  <code className="text-xs font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                    .grit/plugins.lock.json
+                  </code>
+                  , and removal replays that record backwards. Commit the lockfile.
+                </p>
+                <div className="space-y-3">
+                  <TerminalCard
+                    cmd="grit plugin list"
+                    desc="List available plugins"
+                  />
+                  <TerminalCard
+                    cmd="grit plugin info multitenant"
+                    desc="Show what a plugin does before installing it"
+                  />
+                  <TerminalCard
+                    cmd="grit plugin add multitenant"
+                    desc="Install a plugin (refuses to run with uncommitted changes)"
+                  />
+                  <TerminalCard
+                    cmd="grit plugin add multitenant --force"
+                    desc="Install even with a dirty working tree"
+                  />
+                  <TerminalCard
+                    cmd="grit plugin remove multitenant"
+                    desc="Reverse the install using the lockfile record"
+                  />
+                </div>
+              </div>
+
+              {/* -------------------------------------------------------- */}
               {/*  grit remove resource                                    */}
               {/* -------------------------------------------------------- */}
               <div className="mb-12">

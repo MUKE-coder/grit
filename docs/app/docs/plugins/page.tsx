@@ -5,6 +5,7 @@ import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
+import { Callout } from '@/components/callout'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/plugins')
@@ -211,13 +212,33 @@ export default function PluginsPage() {
             <div className="mb-10">
               <span className="tag-mono text-primary/80 mb-3 block">Extend Grit</span>
               <h1 className="text-4xl font-bold tracking-tight mb-4">
-                Plugins
+                Optional Go Modules
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Grit plugins are standalone Go packages that add specific functionality to your project.
-                Each plugin is a drop-in module with Gin handlers, GORM models, and a Claude Code skill file
-                so AI assistants know how to use it.
+                Standalone Go packages that add specific functionality to your project.
+                Each one is a drop-in module with Gin handlers, GORM models, and a Claude Code skill file
+                so AI assistants know how to use it. You install them with{' '}
+                <code className="text-sm font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                  go get
+                </code>
+                .
               </p>
+              <Callout type="note" title="Not the same as grit plugin add">
+                These are ordinary Go dependencies you wire up yourself. Grit&apos;s{' '}
+                <Link href="/docs/plugins/authoring" className="text-primary hover:underline">
+                  plugin system
+                </Link>{' '}
+                is a different thing: it generates code into your repo and records the
+                install in{' '}
+                <code className="text-xs font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                  .grit/plugins.lock.json
+                </code>{' '}
+                so it can be reversed. The{' '}
+                <Link href="/docs/plugins/multitenant" className="text-primary hover:underline">
+                  multi-tenancy plugin
+                </Link>{' '}
+                is one of those.
+              </Callout>
               <LaneFlow
                 id="plugins"
                 lanes={['A Grit plugin', 'Drops into your project']}

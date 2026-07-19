@@ -55,7 +55,7 @@ export default function SingleArchitecturePage() {
                 (not <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">myapp/apps/api</code>).
                 Schemas and types live directly in{' '}
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">frontend/src/</code>{' '}
-                -- no shared package needed.
+                -- there is no pnpm workspace, so no shared package.
               </p>
 
               <div className="rounded-lg border border-border/40 bg-accent/20 p-5 mb-6">
@@ -121,7 +121,7 @@ export default function SingleArchitecturePage() {
                     </tr>
                     <tr className="border-b border-border/20">
                       <td className="px-4 py-2.5 font-mono text-xs">Shared types</td>
-                      <td className="px-4 py-2.5">Inline in frontend/src/ (no packages/shared)</td>
+                      <td className="px-4 py-2.5">Mirrored into frontend/src/shared/ (no packages/shared)</td>
                     </tr>
                     <tr>
                       <td className="px-4 py-2.5 font-mono text-xs">Deployment</td>
@@ -194,8 +194,7 @@ export default function SingleArchitecturePage() {
                     <Folder name="components" />
                     <Folder name="hooks" />
                     <Folder name="lib" />
-                    <Folder name="schemas" comment="Zod schemas (inline, not shared package)" />
-                    <Folder name="types" comment="TypeScript types (inline)" />
+                    <Folder name="shared" comment="Zod schemas + TS types (aliased as @repo/shared)" />
                   </Folder>
                 </Folder>
               </Files>
@@ -287,10 +286,14 @@ func main() {
                     <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">src/routes/</code>.
                     Unlike the triple or double architecture, there is no{' '}
                     <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">packages/shared/</code> directory.
-                    Zod schemas live in{' '}
-                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">src/schemas/</code>{' '}
-                    and TypeScript types in{' '}
-                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">src/types/</code> --
+                    The Zod schemas and TypeScript types that other architectures publish as a
+                    workspace package are mirrored into{' '}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">src/shared/</code>{' '}
+                    instead, and{' '}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">tsconfig.json</code>{' '}
+                    aliases{' '}
+                    <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">@repo/shared/*</code>{' '}
+                    onto them. Import paths therefore read the same in every architecture --
                     everything is self-contained within the frontend directory.
                   </p>
                 </div>
@@ -458,27 +461,20 @@ scp .env server:/opt/myapp/
                       <td className="px-4 py-2.5">Route injection</td>
                       <td className="px-4 py-2.5 font-mono text-xs">internal/routes/routes.go</td>
                     </tr>
-                    <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5">Zod schema</td>
-                      <td className="px-4 py-2.5 font-mono text-xs">frontend/src/schemas/post.ts</td>
-                    </tr>
-                    <tr className="border-b border-border/20">
-                      <td className="px-4 py-2.5">TypeScript types</td>
-                      <td className="px-4 py-2.5 font-mono text-xs">frontend/src/types/post.ts</td>
-                    </tr>
                     <tr>
-                      <td className="px-4 py-2.5">React Query hooks</td>
+                      <td className="px-4 py-2.5">React Query hooks + types</td>
                       <td className="px-4 py-2.5 font-mono text-xs">frontend/src/hooks/use-posts.ts</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
               <p className="text-sm text-muted-foreground/60 mt-3">
-                Notice that schemas and types go into{' '}
-                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">frontend/src/</code>{' '}
-                directly, not into a{' '}
+                With no{' '}
                 <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">packages/shared/</code>{' '}
-                directory. There is no shared package in the single architecture.
+                to publish to, the generated hook declares its own{' '}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Post</code>{' '}
+                interface inline rather than importing one -- a single-binary app has exactly one
+                consumer, so there is nothing to keep in sync.
               </p>
             </div>
 
