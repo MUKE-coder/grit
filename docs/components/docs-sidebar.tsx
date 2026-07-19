@@ -185,6 +185,8 @@ const navItems: NavItem[] = [
       { title: 'AI Integration', href: '/docs/batteries/ai' },
       { title: 'Security (Sentinel)', href: '/docs/batteries/security' },
       { title: 'Turning modules off', href: '/docs/batteries/modules' },
+      { title: 'Plugins', href: '/docs/plugins/authoring' },
+      { title: 'Multi-tenancy plugin', href: '/docs/plugins/multitenant' },
     ],
   },
   {
