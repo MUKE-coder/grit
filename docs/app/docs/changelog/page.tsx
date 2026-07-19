@@ -28,6 +28,62 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.72.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.72.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Plugins — and multi-tenancy as the first one.</strong> Grit can now
+                  be extended, and #71&apos;s last open point is answered.
+                </p>
+                <pre>
+                  <code>
+                    {`grit plugin list
+grit plugin add multitenant
+grit plugin remove multitenant`}
+                  </code>
+                </pre>
+                <p>
+                  A plugin <strong>generates code into your project</strong> rather than being
+                  a runtime dependency &mdash; Grit is a generator, so there is no framework
+                  object to hook into. You own the code and can edit or delete it.
+                </p>
+                <p>
+                  <strong>Removal is exact.</strong> Installation records every file and every
+                  injected snippet in <code>.grit/plugins.lock.json</code>, and removal replays
+                  it backwards. A plugin author writes no uninstall code at all &mdash; a
+                  separate hand-maintained removal list is precisely how this kind of tooling
+                  drifts and starts leaving projects that don&apos;t compile. Code you edited
+                  by hand is reported, never overwritten.
+                </p>
+                <p>
+                  <strong>The multitenant plugin</strong> adds organizations, per-organization
+                  roles (reusing the roles system, not a parallel one), and{' '}
+                  <em>automatic</em> query scoping via a GORM callback. Mark a model with{' '}
+                  <code>tenant.Owned</code> and every query is scoped for you; opt out
+                  deliberately with <code>tenant.Unscoped(db)</code>.
+                </p>
+                <p>
+                  Scoping <strong>fails closed</strong>: a query with no active organization
+                  errors rather than quietly returning every tenant&apos;s rows. Hand-written
+                  scoping fails the other way &mdash; one forgotten <code>WHERE</code> is a
+                  silent cross-tenant leak that no test catches, because the query returns{' '}
+                  <em>more</em> rows rather than failing. No subdomains; the active org comes
+                  from a header and membership is always verified server-side.
+                </p>
+                <p>
+                  See <Link href="/docs/plugins/authoring">Plugins</Link> and{' '}
+                  <Link href="/docs/plugins/multitenant">Multi-tenancy</Link>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.71.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
