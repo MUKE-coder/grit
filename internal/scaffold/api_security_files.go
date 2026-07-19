@@ -33,13 +33,14 @@ func writeSecurityFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "authz", "permissions.go"):      authzPermissionsGo(),
 		filepath.Join(apiRoot, "internal", "authz", "permissions_test.go"): authzPermissionsTestGo(),
 		// Role model + the single user->grants resolution seam.
-		filepath.Join(apiRoot, "internal", "models", "role.go"):             roleModelGo(),
-		filepath.Join(apiRoot, "internal", "authz", "grants.go"):            authzGrantsGo(),
-		filepath.Join(apiRoot, "internal", "authz", "grants_test.go"):       authzGrantsTestGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "role.go"):           roleHandlerGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "role_test.go"):      roleHandlerTestGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "csrf.go"):         csrfMiddlewareGo(),
-		filepath.Join(apiRoot, "internal", "middleware", "security_log.go"): securityLogGo(),
+		filepath.Join(apiRoot, "internal", "models", "role.go"):                  roleModelGo(),
+		filepath.Join(apiRoot, "internal", "authz", "grants.go"):                 authzGrantsGo(),
+		filepath.Join(apiRoot, "internal", "authz", "grants_test.go"):            authzGrantsTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "role.go"):                roleHandlerGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "role_test.go"):           roleHandlerTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "user_role_sync_test.go"): userRoleSyncTestGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "csrf.go"):              csrfMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "security_log.go"):      securityLogGo(),
 	}
 
 	for path, content := range files {

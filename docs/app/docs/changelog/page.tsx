@@ -28,6 +28,45 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.70.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.70.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Permissions are complete.</strong> This finishes the arc started in
+                  v3.66.0 &mdash; catalog, API, admin UI, frontend gating and docs.
+                </p>
+                <p>
+                  <strong>The role dropdown now actually takes effect.</strong> Grant resolution
+                  prefers the <code>user_roles</code> table, so changing a user&apos;s role in the
+                  admin used to update the string and change nothing about what they could do
+                  &mdash; a silent no-op. Editing a user now syncs their assignment, and a
+                  regression test proves a demotion removes the permission.
+                </p>
+                <p>
+                  <strong>Frontend gating.</strong> A new <code>usePermissions()</code> hook
+                  exposes <code>can(&quot;products.delete&quot;)</code> and{' '}
+                  <code>can(&quot;products.*&quot;)</code> for hiding buttons and nav items. It is
+                  a Set lookup, not a second wildcard matcher &mdash; the API returns permissions
+                  already expanded, so the client can&apos;t drift from the server. Sidebar items
+                  can now declare a <code>requires</code> permission; the Roles screen itself is
+                  gated on <code>roles.view</code>.
+                </p>
+                <p>
+                  <strong>Docs:</strong> a{' '}
+                  <Link href="/docs/security/authorization">Roles &amp; Permissions guide</Link>{' '}
+                  covering key format, guarding routes, the admin UI, upgrading an existing app,
+                  and why hiding UI is not access control.
+                </p>
+              </div>
+            </div>
+
             {/* v3.69.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
