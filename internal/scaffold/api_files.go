@@ -1946,6 +1946,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
+	"` + "{{MODULE}}" + `/internal/authz"
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/services"
 )
@@ -2114,6 +2115,43 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 	})
 }
 
+// syncUserRoleAssignment makes the user_roles table reflect a single role name.
+//
+// The admin UI edits a user's role as one string, while authorization resolves
+// through the many-to-many user_roles table. This bridges the two so the simple
+// dropdown keeps working and actually takes effect.
+//
+// Assign several roles to one user with PUT /api/users/:id/roles instead — that
+// endpoint is the full many-to-many path and this helper is its one-role case.
+//
+// A role name with no matching row (a custom legacy string) clears the
+// assignments and lets grant resolution fall back to users.role, rather than
+// failing the update.
+func syncUserRoleAssignment(db *gorm.DB, userID, roleName string) error {
+	var role models.Role
+	err := db.Where("name = ?", roleName).First(&role).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return err
+	}
+
+	txErr := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("user_id = ?", userID).Delete(&models.UserRole{}).Error; err != nil {
+			return err
+		}
+		if role.ID == "" {
+			return nil // unknown name — fall back to the legacy string
+		}
+		return tx.Create(&models.UserRole{UserID: userID, RoleID: role.ID}).Error
+	})
+	if txErr != nil {
+		return txErr
+	}
+
+	// Permissions just changed for this user; drop the cached grants.
+	authz.Invalidate()
+	return nil
+}
+
 // Update modifies an existing user.
 func (h *UserHandler) Update(c *gin.Context) {
 	id := c.Param("id")
@@ -2188,6 +2226,25 @@ func (h *UserHandler) Update(c *gin.Context) {
 	}
 	if req.Active != nil {
 		updates["active"] = *req.Active
+	}
+
+	// Keep role ASSIGNMENTS in step with the role string.
+	//
+	// Grant resolution prefers the user_roles table and only falls back to
+	// users.role. Without this, changing the Role dropdown for a user who
+	// already has an assignment would update the string and change nothing
+	// about what they can actually do — a silent no-op, and a nasty one to
+	// debug.
+	if req.Role != "" {
+		if err := syncUserRoleAssignment(h.DB, user.ID, req.Role); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": gin.H{
+					"code":    "INTERNAL_ERROR",
+					"message": "Failed to update role assignment",
+				},
+			})
+			return
+		}
 	}
 
 	if err := h.DB.Model(&user).Updates(updates).Error; err != nil {

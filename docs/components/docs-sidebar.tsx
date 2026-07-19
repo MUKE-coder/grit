@@ -191,6 +191,7 @@ const navItems: NavItem[] = [
     icon: <Shield className="h-3.5 w-3.5" />,
     items: [
       { title: 'Security Guide (OWASP)', href: '/docs/security' },
+      { title: 'Roles & Permissions', href: '/docs/security/authorization' },
       { title: "Defender's Handbook ↔ Grit", href: '/docs/security/defenders-handbook' },
       { title: 'Performance & Pentest Testing', href: '/docs/testing' },
     ],

@@ -169,3 +169,66 @@ export function collapseGrants(selected: Set<string>, modules: PermModule[]): st
 `
 	return strings.ReplaceAll(src, "~", "`")
 }
+
+// adminUsePermissions emits hooks/use-permissions.ts — the client-side can()
+// helper used for nav gating and hiding actions.
+//
+// Deliberately thin: the API returns the caller's permissions ALREADY EXPANDED,
+// so this is a Set lookup, not a second implementation of wildcard matching.
+// Keeping a matcher here too is how the system this was modelled on ended up
+// with a client that disagreed with its server about who could do what.
+//
+// This is a UX layer, never a security boundary — every route is enforced
+// server-side. Hiding a button the API would reject is a courtesy, not
+// protection.
+func adminUsePermissions() string {
+	src := `"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
+
+interface MyPermissions {
+	grants: string[];
+	permissions: string[];
+	is_super: boolean;
+}
+
+export function usePermissions() {
+	const { data, isLoading } = useQuery({
+		queryKey: ["my-permissions"],
+		staleTime: 60 * 1000,
+		queryFn: async () => {
+			const res = await apiClient.get("/api/auth/permissions");
+			return res.data.data as MyPermissions;
+		},
+	});
+
+	const granted = new Set(data?.permissions ?? []);
+	const isSuper = data?.is_super ?? false;
+
+	/**
+	 * can("users.delete")  — exact permission
+	 * can("users.*")       — any permission on that resource
+	 *
+	 * Returns false while loading. Nav items and action buttons therefore stay
+	 * hidden until permissions are known, rather than flashing into view and
+	 * disappearing — a flash of forbidden UI looks broken and leaks the shape of
+	 * the admin to users who can't use it.
+	 */
+	function can(permission: string): boolean {
+		if (isSuper) return true;
+		if (permission.endsWith(".*")) {
+			const prefix = permission.slice(0, -1); // "users."
+			for (const p of granted) {
+				if (p.startsWith(prefix)) return true;
+			}
+			return false;
+		}
+		return granted.has(permission);
+	}
+
+	return { can, isSuper, isLoading, permissions: data?.permissions ?? [] };
+}
+`
+	return strings.ReplaceAll(src, "~", "`")
+}

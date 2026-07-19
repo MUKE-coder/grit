@@ -515,6 +515,7 @@ import { usePathname } from "next/navigation";
 import { resources } from "@/resources";
 import { brand } from "@repo/shared/brand";
 import { useLogout } from "@/hooks/use-auth";
+import { usePermissions } from "@/hooks/use-permissions";
 import {
   getIcon,
   ChevronDown,
@@ -551,11 +552,20 @@ const INTERNAL_NAV = [
 // Health / Performance / Security live here so they're one click away
 // during an incident — the System hub at /system still aggregates every
 // surface for the broader browse case.
-const SYSTEM_NAV = [
+type NavEntry = {
+  href: string;
+  label: string;
+  iconKey: string;
+  adminOnly: boolean;
+  /** Permission required to see this item, e.g. "roles.view". Optional. */
+  requires?: string;
+};
+
+const SYSTEM_NAV: readonly NavEntry[] = [
   { href: "/settings/dashboard", label: "Dashboard settings", iconKey: "Settings",    adminOnly: false },
   { href: "/system/health",       label: "System Health", iconKey: "ActivityIcon", adminOnly: true },
   { href: "/system/performance",  label: "Performance",   iconKey: "TrendingUp",   adminOnly: true },
-  { href: "/system/roles",        label: "Roles & permissions", iconKey: "ShieldCheck", adminOnly: true },
+  { href: "/system/roles",        label: "Roles & permissions", iconKey: "ShieldCheck", adminOnly: true, requires: "roles.view" },
   { href: "/system/security",     label: "Security",      iconKey: "Shield",       adminOnly: true },
   { href: "/system",              label: "System Hub",    iconKey: "Settings",     adminOnly: true },
 ] as const;
@@ -614,9 +624,19 @@ export function CollapsibleSidebar({
     });
   }, [pathname]);
 
+  const { can, isLoading: permsLoading } = usePermissions();
+
   const visibleResources = resources.filter((r) => !r.adminOnly || isAdmin);
   const visibleInternal = INTERNAL_NAV.filter((r) => !r.adminOnly || isAdmin);
-  const visibleSystem = SYSTEM_NAV.filter((r) => !r.adminOnly || isAdmin);
+  // Permission gating, on top of the adminOnly check.
+  //
+  // Only applied once permissions have loaded: can() fails closed while the
+  // request is in flight, so filtering during load would briefly blank items an
+  // admin is entitled to. This is a UX layer either way — every route is
+  // enforced server-side.
+  const visibleSystem = SYSTEM_NAV.filter(
+    (r) => (!r.adminOnly || isAdmin) && (!r.requires || permsLoading || can(r.requires))
+  );
 
   const groups: Record<string, typeof resources> = { _root: [] };
   for (const r of visibleResources) {
