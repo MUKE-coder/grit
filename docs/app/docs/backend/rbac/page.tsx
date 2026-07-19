@@ -32,6 +32,24 @@ export default function RBACPage() {
             </div>
 
             <div className="prose-grit">
+              {/* Superseded-by notice. This page documents role-name guards,
+                  which still work — but permissions are the model to build on
+                  now, and a reader landing here shouldn't adopt the older
+                  approach without knowing that. */}
+              <div className="mb-10 rounded-xl border border-primary/30 bg-primary/5 p-5">
+                <strong className="text-foreground">
+                  Roles now carry permissions.
+                </strong>
+                <p className="mb-0 mt-2 text-sm text-muted-foreground">
+                  Since v3.66.0 a role is a bag of permissions, and routes can be
+                  guarded by permission instead of role name &mdash; so adding a role
+                  no longer means editing every route. Everything on this page still
+                  works and needs no changes, but{' '}
+                  <Link href="/docs/security/authorization">Roles &amp; Permissions</Link>{' '}
+                  is the model to build on.
+                </p>
+              </div>
+
               {/* Overview */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">

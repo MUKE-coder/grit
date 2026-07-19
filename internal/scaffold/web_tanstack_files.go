@@ -16,6 +16,7 @@ func writeWebTanStackFiles(root string, opts Options) error {
 		// .cjs (not .js) because package.json sets "type": "module" and PostCSS
 		// config still uses CommonJS module.exports.
 		filepath.Join(webRoot, "postcss.config.cjs"):                 webPostCSSConfig(),
+		filepath.Join(webRoot, "src", "vite-env.d.ts"):               viteEnvTypes(),
 		filepath.Join(webRoot, "tsconfig.json"):                      webTanStackTSConfig(),
 		filepath.Join(webRoot, "src", "main.tsx"):                    webTanStackMain(),
 		filepath.Join(webRoot, "src", "globals.css"):                 webGlobalCSS(),
@@ -23,12 +24,13 @@ func writeWebTanStackFiles(root string, opts Options) error {
 		filepath.Join(webRoot, "src", "routes", "index.tsx"):         webTanStackIndexRoute(opts),
 		filepath.Join(webRoot, "src", "routes", "blog", "index.tsx"): webTanStackBlogListRoute(),
 		filepath.Join(webRoot, "src", "routes", "blog", "$slug.tsx"): webTanStackBlogDetailRoute(),
-		filepath.Join(webRoot, "src", "components", "navbar.tsx"):    webNavbar(opts),
-		filepath.Join(webRoot, "src", "components", "footer.tsx"):    webFooter(opts),
+		filepath.Join(webRoot, "src", "components", "navbar.tsx"):    nextToTanStack(webNavbar(opts)),
+		filepath.Join(webRoot, "src", "components", "footer.tsx"):    nextToTanStack(webFooter(opts)),
 		filepath.Join(webRoot, "src", "components", "providers.tsx"): webTanStackProviders(),
+		filepath.Join(webRoot, "src", "lib", "next-compat.tsx"):      adminNextCompatShim(),
 		filepath.Join(webRoot, "src", "lib", "utils.ts"):             webUtils(),
 		filepath.Join(webRoot, "src", "lib", "api.ts"):               viteAPIClient(),
-		filepath.Join(webRoot, "src", "hooks", "use-blogs.ts"):       webUseBlogsHook(),
+		filepath.Join(webRoot, "src", "hooks", "use-blogs.ts"):       nextToTanStack(webUseBlogsHook()),
 		filepath.Join(webRoot, "public", ".gitkeep"):                 "",
 	}
 
@@ -49,7 +51,8 @@ func webTanStackPackageJSON(opts Options) string {
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
+    "typecheck": "tsc -b",
     "preview": "vite preview",
     "lint": "eslint ."
   },
@@ -61,7 +64,8 @@ func webTanStackPackageJSON(opts Options) string {
     "lucide-react": "^0.468.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "@repo/shared": "workspace:*"
   },
   "devDependencies": {
     "@tanstack/react-router-devtools": "^1.93.0",
@@ -199,7 +203,7 @@ func webTanStackTSConfig() string {
     },
     "baseUrl": "."
   },
-  "include": ["src"]
+  "include": ["src", "src/vite-env.d.ts"]
 }
 `
 }
@@ -449,6 +453,26 @@ export function Providers({ children }: { children: ReactNode }) {
       {children}
     </QueryClientProvider>
   )
+}
+`
+}
+
+// viteEnvTypes emits src/vite-env.d.ts.
+//
+// Without the vite/client reference, import.meta.env is untyped and any file
+// reading it fails to compile with "Property 'env' does not exist on type
+// 'ImportMeta'". The api client reads VITE_API_URL, so this is required, not
+// cosmetic.
+func viteEnvTypes() string {
+	return `/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+	readonly VITE_API_URL?: string
+	readonly VITE_THEME?: string
+}
+
+interface ImportMeta {
+	readonly env: ImportMetaEnv
 }
 `
 }

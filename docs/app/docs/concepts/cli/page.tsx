@@ -132,6 +132,41 @@ export default function CLICommandsPage() {
                 </div>
               </div>
 
+              {/* grit plugin */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  grit plugin
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Install and remove plugins. A plugin generates code into your project
+                  &mdash; models, routes, pages &mdash; which you then own and can edit.
+                  Everything an install does is recorded in{' '}
+                  <code>.grit/plugins.lock.json</code>, and removal replays that record
+                  backwards, so uninstalling is exact rather than best-effort. Commit the
+                  lockfile.
+                </p>
+                <div className="rounded-xl border border-border/40 bg-card/50 p-4 font-mono text-sm mb-4">
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-muted-foreground/40"># See what&apos;s available and what you have</span>
+                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit plugin list</span></div>
+                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit plugin info multitenant</span></div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground/40"># Install / uninstall</span>
+                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit plugin add multitenant</span></div>
+                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit plugin remove multitenant</span></div>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  See <Link href="/docs/plugins/authoring" className="text-primary hover:underline">Plugins</Link>{' '}
+                  for writing your own, and{' '}
+                  <Link href="/docs/plugins/multitenant" className="text-primary hover:underline">Multi-tenancy</Link>{' '}
+                  for the first-party one.
+                </p>
+              </div>
+
               {/* grit remove resource */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
