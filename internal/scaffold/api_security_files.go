@@ -39,6 +39,7 @@ func writeSecurityFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "handlers", "role.go"):                roleHandlerGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "role_test.go"):           roleHandlerTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user_role_sync_test.go"): userRoleSyncTestGo(),
+		filepath.Join(apiRoot, "internal", "config", "modules_test.go"):          configModulesTestGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "csrf.go"):              csrfMiddlewareGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "security_log.go"):      securityLogGo(),
 	}

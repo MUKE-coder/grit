@@ -357,6 +357,7 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "hooks", "use-profile.ts"):          nextToTanStack(adminUseProfile()),
 		filepath.Join(adminRoot, "src", "hooks", "use-roles.ts"):            nextToTanStack(adminUseRoles()),
 		filepath.Join(adminRoot, "src", "hooks", "use-permissions.ts"):      nextToTanStack(adminUsePermissions()),
+		filepath.Join(adminRoot, "src", "hooks", "use-modules.ts"):          nextToTanStack(adminUseModules()),
 		filepath.Join(adminRoot, "src", "hooks", "use-backups.ts"):          nextToTanStack(adminUseBackups()),
 		filepath.Join(adminRoot, "src", "hooks", "use-dashboard-layout.ts"): nextToTanStack(adminUseDashboardLayoutTS()),
 		filepath.Join(adminRoot, "src", "hooks", "use-toasted-mutation.ts"): nextToTanStack(adminToastHook()),

@@ -271,6 +271,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "roles", "page.tsx"):       adminRolesPage(),
 		filepath.Join(adminRoot, "hooks", "use-roles.ts"):                                   adminUseRoles(),
 		filepath.Join(adminRoot, "hooks", "use-permissions.ts"):                             adminUsePermissions(),
+		filepath.Join(adminRoot, "hooks", "use-modules.ts"):                                 adminUseModules(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "performance", "page.tsx"): adminPerformancePageV2(),
 		// v3.31.20: public form-share management page (Phase 2)
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "form-shares", "page.tsx"): adminFormSharesPage(),
