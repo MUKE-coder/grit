@@ -28,6 +28,44 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.69.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.69.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The Roles &amp; permissions screen.</strong> Permissions are now
+                  manageable from the admin panel &mdash; at{' '}
+                  <code>/system/roles</code>, in the sidebar under System. This completes the
+                  feature started in v3.66.0; until now roles could only be managed over HTTP.
+                </p>
+                <p>
+                  Create and edit roles with a permission tree: tri-state checkboxes at module,
+                  group and feature level, a CRUD matrix per feature (actions a feature
+                  doesn&apos;t support render as a dash rather than a checkbox that does nothing),
+                  a live &ldquo;N / total granted&rdquo; counter, a filter, and
+                  copy-permissions-from another role.
+                </p>
+                <p>
+                  Selections are seeded from the server&apos;s expanded grant list and{' '}
+                  <em>collapsed back to wildcards</em> on save &mdash; tick every action on a
+                  resource and it stores <code>products.*</code>, so the role keeps inheriting
+                  actions added later. Built-in roles show their name locked and no delete button,
+                  matching the server, which refuses both regardless of what the UI allows.
+                </p>
+                <p>
+                  The same component serves the Next.js and Vite/TanStack admins. That&apos;s
+                  deliberate: a permission editor that disagreed between the two would be a
+                  security bug, not a cosmetic one.
+                </p>
+              </div>
+            </div>
+
             {/* v3.68.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

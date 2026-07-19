@@ -555,6 +555,7 @@ const SYSTEM_NAV = [
   { href: "/settings/dashboard", label: "Dashboard settings", iconKey: "Settings",    adminOnly: false },
   { href: "/system/health",       label: "System Health", iconKey: "ActivityIcon", adminOnly: true },
   { href: "/system/performance",  label: "Performance",   iconKey: "TrendingUp",   adminOnly: true },
+  { href: "/system/roles",        label: "Roles & permissions", iconKey: "ShieldCheck", adminOnly: true },
   { href: "/system/security",     label: "Security",      iconKey: "Shield",       adminOnly: true },
   { href: "/system",              label: "System Hub",    iconKey: "Settings",     adminOnly: true },
 ] as const;
