@@ -586,6 +586,75 @@ type StorageConfig struct {
 }
 
 // Config holds all application configuration.
+// ModuleFlags switches optional batteries on and off.
+//
+// A disabled module mounts no routes, registers no workers or cron entries, and
+// migrates no tables — so turning one off removes it from the running app and
+// the database, not just from view. The code stays in the repo; delete it by
+// hand if you want it gone entirely.
+type ModuleFlags struct {
+	AI        bool // /api/ai/* — chat + completion endpoints
+	Jobs      bool // asynq background workers + the Jobs admin page
+	Cron      bool // scheduled tasks
+	Backup    bool // database backup/restore + the Data & Backup page
+	Webhooks  bool // outbound webhook delivery
+	Realtime  bool // WebSocket hub
+	Files     bool // uploads + the File manager
+	Mail      bool // transactional email
+	Audit     bool // activity log
+	Flags     bool // feature flags
+	TwoFactor bool // TOTP / 2FA
+}
+
+// Enabled reports whether a module is on, by the name used in the API and the
+// admin nav. Unknown names return false so a typo hides the feature rather than
+// silently exposing it.
+func (m ModuleFlags) Enabled(name string) bool {
+	switch name {
+	case "ai":
+		return m.AI
+	case "jobs":
+		return m.Jobs
+	case "cron":
+		return m.Cron
+	case "backup":
+		return m.Backup
+	case "webhooks":
+		return m.Webhooks
+	case "realtime":
+		return m.Realtime
+	case "files":
+		return m.Files
+	case "mail":
+		return m.Mail
+	case "audit":
+		return m.Audit
+	case "flags":
+		return m.Flags
+	case "twofactor":
+		return m.TwoFactor
+	}
+	return false
+}
+
+// Map renders the flags for the /api/system/modules endpoint, which the admin
+// uses to hide nav entries for modules that are off.
+func (m ModuleFlags) Map() map[string]bool {
+	return map[string]bool{
+		"ai":        m.AI,
+		"jobs":      m.Jobs,
+		"cron":      m.Cron,
+		"backup":    m.Backup,
+		"webhooks":  m.Webhooks,
+		"realtime":  m.Realtime,
+		"files":     m.Files,
+		"mail":      m.Mail,
+		"audit":     m.Audit,
+		"flags":     m.Flags,
+		"twofactor": m.TwoFactor,
+	}
+}
+
 type Config struct {
 	AppName     string
 	AppEnv      string
@@ -607,6 +676,16 @@ type Config struct {
 	MailFrom     string
 
 	CORSOrigins []string
+
+	// Modules turns optional batteries off.
+	//
+	// Grit ships everything on purpose — the batteries are the point. But not
+	// every app wants an AI endpoint or a job queue, and a module you aren't
+	// using shouldn't mount routes, start workers, or create tables.
+	//
+	// All default to TRUE, so an existing app behaves exactly as before. Set
+	// MODULE_<NAME>=false in .env to switch one off.
+	Modules ModuleFlags
 
 	GORMStudioEnabled  bool
 	GORMStudioUsername string
@@ -676,6 +755,22 @@ func Load() (*Config, error) {
 		// matches the wails.localhost host on any port), so it needs no entry
 		// here — its dev origin includes a configurable port.
 		CORSOrigins: strings.Split(getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"), ","),
+
+		// Optional batteries. Default on, so nothing changes for an existing
+		// app; set MODULE_<NAME>=false to switch one off.
+		Modules: ModuleFlags{
+			AI:        getEnv("MODULE_AI", "true") == "true",
+			Jobs:      getEnv("MODULE_JOBS", "true") == "true",
+			Cron:      getEnv("MODULE_CRON", "true") == "true",
+			Backup:    getEnv("MODULE_BACKUP", "true") == "true",
+			Webhooks:  getEnv("MODULE_WEBHOOKS", "true") == "true",
+			Realtime:  getEnv("MODULE_REALTIME", "true") == "true",
+			Files:     getEnv("MODULE_FILES", "true") == "true",
+			Mail:      getEnv("MODULE_MAIL", "true") == "true",
+			Audit:     getEnv("MODULE_AUDIT", "true") == "true",
+			Flags:     getEnv("MODULE_FLAGS", "true") == "true",
+			TwoFactor: getEnv("MODULE_TWOFACTOR", "true") == "true",
+		},
 
 		GORMStudioEnabled:  getEnv("GORM_STUDIO_ENABLED", "true") == "true",
 		GORMStudioUsername: getEnv("GORM_STUDIO_USERNAME", "admin"),
@@ -7170,6 +7265,13 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// gating. Any authenticated user may read their own — it tells them
 		// nothing they can't already discover by clicking.
 		protected.GET("/auth/permissions", roleHandler.MyPermissions)
+
+		// Which optional modules are enabled. The admin reads this to hide nav
+		// entries for modules that are switched off — a dead link to a route
+		// that no longer exists is worse than no link.
+		protected.GET("/system/modules", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"data": cfg.Modules.Map()})
+		})
 		protected.POST("/auth/logout", authHandler.Logout)
 
 		// Two-Factor Authentication (TOTP)
@@ -7197,10 +7299,13 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		protected.POST("/sync/push", syncHandler.Push)
 		protected.GET("/sync/pull", syncHandler.Pull)
 
-		// AI
-		protected.POST("/ai/complete", aiHandler.Complete)
-		protected.POST("/ai/chat", aiHandler.Chat)
-		protected.POST("/ai/stream", aiHandler.Stream)
+		// AI — only mounted when the module is enabled, so an app that
+		// doesn't use it exposes no AI surface at all (MODULE_AI=false).
+		if cfg.Modules.AI {
+			protected.POST("/ai/complete", aiHandler.Complete)
+			protected.POST("/ai/chat", aiHandler.Chat)
+			protected.POST("/ai/stream", aiHandler.Stream)
+		}
 
 
 		// In-app notification bell — every authenticated user. Pulls

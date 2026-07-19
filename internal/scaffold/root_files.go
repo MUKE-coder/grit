@@ -179,6 +179,25 @@ GORM_STUDIO_ENABLED=true
 GORM_STUDIO_USERNAME=admin
 GORM_STUDIO_PASSWORD=studio
 
+# ============================================
+# Optional modules
+# ============================================
+# Grit ships every battery enabled. Switch one off and it mounts no routes,
+# starts no workers, creates no tables, and disappears from the admin nav.
+# The code stays in the repo — delete it by hand if you want it gone entirely.
+# All default to true, so leaving these unset changes nothing.
+MODULE_AI=true
+MODULE_JOBS=true
+MODULE_CRON=true
+MODULE_BACKUP=true
+MODULE_WEBHOOKS=true
+MODULE_REALTIME=true
+MODULE_FILES=true
+MODULE_MAIL=true
+MODULE_AUDIT=true
+MODULE_FLAGS=true
+MODULE_TWOFACTOR=true
+
 # AI — Vercel AI Gateway (one key, hundreds of models)
 AI_GATEWAY_API_KEY=                           # Get from vercel.com/ai-gateway
 AI_GATEWAY_MODEL=anthropic/claude-sonnet-4-6  # provider/model format

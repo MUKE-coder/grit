@@ -516,6 +516,7 @@ import { resources } from "@/resources";
 import { brand } from "@repo/shared/brand";
 import { useLogout } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useModules } from "@/hooks/use-modules";
 import {
   getIcon,
   ChevronDown,
@@ -543,7 +544,7 @@ const GRIT_CLI_VERSION = "v{{GRIT_VERSION}}";
 // which resources were generated. Kept out of the resources registry so
 // developers don't accidentally remove them when editing resources.ts.
 const INTERNAL_NAV = [
-  { href: "/system/activity",      label: "Activity",      iconKey: "Activity",       adminOnly: false },
+  { href: "/system/activity",      label: "Activity",      iconKey: "Activity",       adminOnly: false, module: "audit" },
   { href: "/system/support",       label: "Support",       iconKey: "MessageSquare",  adminOnly: false },
   { href: "/system/notifications", label: "Notifications", iconKey: "Bell",           adminOnly: false },
 ] as const;
@@ -559,6 +560,8 @@ type NavEntry = {
   adminOnly: boolean;
   /** Permission required to see this item, e.g. "roles.view". Optional. */
   requires?: string;
+  /** Optional module this item belongs to; hidden when that module is off. */
+  module?: string;
 };
 
 const SYSTEM_NAV: readonly NavEntry[] = [
@@ -625,6 +628,7 @@ export function CollapsibleSidebar({
   }, [pathname]);
 
   const { can, isLoading: permsLoading } = usePermissions();
+  const { moduleEnabled } = useModules();
 
   const visibleResources = resources.filter((r) => !r.adminOnly || isAdmin);
   const visibleInternal = INTERNAL_NAV.filter((r) => !r.adminOnly || isAdmin);
@@ -635,7 +639,10 @@ export function CollapsibleSidebar({
   // admin is entitled to. This is a UX layer either way — every route is
   // enforced server-side.
   const visibleSystem = SYSTEM_NAV.filter(
-    (r) => (!r.adminOnly || isAdmin) && (!r.requires || permsLoading || can(r.requires))
+    (r) =>
+      (!r.adminOnly || isAdmin) &&
+      (!r.requires || permsLoading || can(r.requires)) &&
+      (!r.module || moduleEnabled(r.module))
   );
 
   const groups: Record<string, typeof resources> = { _root: [] };

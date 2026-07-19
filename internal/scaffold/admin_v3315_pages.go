@@ -22,6 +22,7 @@ func adminSystemHubPageV2() string {
 	return `"use client";
 
 import Link from "next/link";
+import { useModules } from "@/hooks/use-modules";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import {
   Activity, Bell, Calendar, Database, FileText, Mail,
@@ -30,6 +31,8 @@ import {
 
 interface SystemTile {
   href: string;
+  /** Optional module; the tile is hidden when that module is disabled. */
+  module?: string;
   title: string;
   description: string;
   icon: React.ReactNode;
@@ -39,12 +42,12 @@ const TILES: SystemTile[] = [
   { href: "/system/health",        title: "System Health",    description: "Real-time infrastructure status — Postgres, Redis, API, jobs, email.",      icon: <Activity className="h-5 w-5" /> },
   { href: "/system/performance",   title: "Performance",      description: "Four Google SRE golden signals — latency, traffic, errors, saturation.",   icon: <TrendingUp className="h-5 w-5" /> },
   { href: "/system/security",      title: "Security",         description: "Sentinel summary — banned IPs, rate-limit pressure, recent threats.",      icon: <Shield className="h-5 w-5" /> },
-  { href: "/system/jobs",          title: "Background Jobs",  description: "Queue depth, in-flight workers, dead-letter queue.",                       icon: <Database className="h-5 w-5" /> },
-  { href: "/system/files",         title: "File Storage",     description: "Browse uploads, manage retention, audit usage.",                            icon: <Upload className="h-5 w-5" /> },
-  { href: "/system/cron",          title: "Cron Schedules",   description: "Recurring jobs, next-run times, run history.",                              icon: <Calendar className="h-5 w-5" /> },
-  { href: "/system/mail",          title: "Mail Preview",     description: "Email template gallery + recent send log.",                                 icon: <Mail className="h-5 w-5" /> },
+  { href: "/system/jobs",          title: "Background Jobs",  description: "Queue depth, in-flight workers, dead-letter queue.",                       icon: <Database className="h-5 w-5" /> , module: "jobs" },
+  { href: "/system/files",         title: "File Storage",     description: "Browse uploads, manage retention, audit usage.",                            icon: <Upload className="h-5 w-5" /> , module: "files" },
+  { href: "/system/cron",          title: "Cron Schedules",   description: "Recurring jobs, next-run times, run history.",                              icon: <Calendar className="h-5 w-5" /> , module: "cron" },
+  { href: "/system/mail",          title: "Mail Preview",     description: "Email template gallery + recent send log.",                                 icon: <Mail className="h-5 w-5" /> , module: "mail" },
   { href: "/system/observability", title: "Observability",    description: "Pulse summary — latency, SLOs, top N+1, runtime.",                          icon: <TrendingUp className="h-5 w-5" /> },
-  { href: "/system/activity",      title: "User Activity",    description: "Auth events, writes, operator actions with IP + severity.",                 icon: <Activity className="h-5 w-5" /> },
+  { href: "/system/activity",      title: "User Activity",    description: "Auth events, writes, operator actions with IP + severity.",                 icon: <Activity className="h-5 w-5" /> , module: "audit" },
   { href: "/system/support",       title: "Support",          description: "Incoming tickets, threads, assignments, closures.",                         icon: <MessageSquare className="h-5 w-5" /> },
   { href: "/system/notifications", title: "Notifications",    description: "Recent system + Sentinel + Pulse notifications.",                           icon: <Bell className="h-5 w-5" /> },
   // v3.31.41 — public form sharing (FormShare table). Page existed
@@ -53,6 +56,11 @@ const TILES: SystemTile[] = [
 ];
 
 export default function SystemHubPage() {
+  // Hide tiles for modules that are switched off — a tile linking to a route
+  // the server no longer mounts just 404s.
+  const { moduleEnabled } = useModules();
+  const tiles = TILES.filter((t) => !t.module || moduleEnabled(t.module));
+
   return (
     <div>
       <PageHeader
@@ -65,7 +73,7 @@ export default function SystemHubPage() {
       </p>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {TILES.map((t) => (
+        {tiles.map((t) => (
           <Link
             key={t.href}
             href={t.href}

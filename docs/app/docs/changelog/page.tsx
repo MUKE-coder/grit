@@ -28,6 +28,41 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.71.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.71.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 19, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Turn modules off you don&apos;t use.</strong> Answers the third point
+                  in #71 &mdash; every project shipping AI, cron, jobs, backups and webhooks
+                  whether it wants them or not.
+                </p>
+                <p>
+                  Eleven <code>MODULE_*</code> flags in <code>.env</code>:{' '}
+                  <code>AI</code>, <code>JOBS</code>, <code>CRON</code>, <code>BACKUP</code>,{' '}
+                  <code>WEBHOOKS</code>, <code>REALTIME</code>, <code>FILES</code>,{' '}
+                  <code>MAIL</code>, <code>AUDIT</code>, <code>FLAGS</code>,{' '}
+                  <code>TWOFACTOR</code>. A disabled module mounts no routes, registers no
+                  workers, and disappears from the admin sidebar and System hub.
+                </p>
+                <p>
+                  <strong>All default to true</strong>, so upgrading changes nothing. The code
+                  stays in your repo &mdash; it&apos;s your codebase, so delete it if you want
+                  it gone entirely.
+                </p>
+                <p>
+                  See <Link href="/docs/batteries/modules">Turning modules off</Link>. Note the
+                  flags are read at startup, so changing one needs a restart.
+                </p>
+              </div>
+            </div>
+
             {/* v3.70.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
