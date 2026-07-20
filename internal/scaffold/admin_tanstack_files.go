@@ -579,7 +579,7 @@ func adminTanStackPackageJSON(opts Options) string {
 }
 
 func adminTanStackViteConfig() string {
-	return `import { defineConfig } from 'vite'
+	return `import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
@@ -753,13 +753,20 @@ export const Route = createFileRoute('/')({
 
 func adminTanStackAuthLayout() string {
 	return `import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
+import { apiClient } from '@/lib/api-client'
 
 export const Route = createFileRoute('/_auth')({
-  beforeLoad: () => {
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      throw redirect({ to: '/dashboard' })
+  // Auth tokens live in HttpOnly cookies, so JS cannot read them — a
+  // localStorage check here is always empty and would show the login form to
+  // an already-signed-in user. Ask the API instead: /api/auth/me succeeds
+  // when the cookie is valid and 401s when it isn't.
+  beforeLoad: async () => {
+    try {
+      await apiClient.get('/api/auth/me')
+    } catch {
+      return // not signed in — show the auth screens
     }
+    throw redirect({ to: '/dashboard' })
   },
   component: () => (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -773,11 +780,17 @@ export const Route = createFileRoute('/_auth')({
 func adminTanStackDashboardLayout() string {
 	return `import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { AdminLayout } from '@/components/layout/admin-layout'
+import { apiClient } from '@/lib/api-client'
 
 export const Route = createFileRoute('/_dashboard')({
-  beforeLoad: () => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
+  // Auth tokens live in HttpOnly cookies, so JS cannot read them. Reading
+  // localStorage here always returned null, which bounced every signed-in
+  // user straight back to /login and made the whole admin unreachable.
+  // Ask the API instead — the cookie rides along on the request.
+  beforeLoad: async () => {
+    try {
+      await apiClient.get('/api/auth/me')
+    } catch {
       throw redirect({ to: '/login' })
     }
   },
