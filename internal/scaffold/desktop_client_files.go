@@ -66,6 +66,7 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		filepath.Join(desktopRoot, "frontend", "src", "components", "system-ui.tsx"):                    desktopClientSystemUI(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.index.tsx"):              desktopClientSystemHubPage(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.users.tsx"):              desktopClientSystemUsersPage(),
+		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.roles.tsx"):              desktopClientSystemRolesPage(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.activity.tsx"):           desktopClientSystemActivityPage(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.notifications.tsx"):      desktopClientSystemNotificationsPage(),
 		filepath.Join(desktopRoot, "frontend", "src", "routes", "app", "system.health.tsx"):             desktopClientSystemHealthPage(),
@@ -120,6 +121,7 @@ func writeDesktopClientFiles(root string, opts Options) error {
 
 		// Hooks
 		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-auth.ts"):          desktopClientUseAuth(),
+		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-permissions.ts"):   desktopClientUsePermissions(),
 		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-online-status.ts"): desktopClientUseOnlineStatus(),
 		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-realtime.ts"):      desktopClientUseRealtime(),
 		filepath.Join(desktopRoot, "frontend", "src", "hooks", "use-sync.ts"):          desktopClientUseSync(),

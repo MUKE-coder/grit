@@ -239,11 +239,27 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { api } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
-const ROLES = ["ADMIN", "EDITOR", "USER"];
+interface Role {
+  id: string;
+  name: string;
+  description: string;
+}
 
 export default function CreateUserScreen() {
   const router = useRouter();
+
+  // Roles are whatever the project defines. This list used to be hardcoded to
+  // ["ADMIN","EDITOR","USER"], so a role created in the admin never appeared
+  // here and could not be assigned from a phone.
+  const { data: roles } = useQuery<Role[]>({
+    queryKey: ["roles"],
+    queryFn: async () => {
+      const res = await api.get("/roles");
+      return (res.data?.data ?? []) as Role[];
+    },
+  });
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -264,7 +280,9 @@ export default function CreateUserScreen() {
     if (password.length < 6) return setError("Password must be at least 6 characters");
     setSaving(true);
     try {
-      await api.post("/admin/users", {
+      // POST /users, not /admin/users — the latter is not a registered route
+      // and every create from mobile 404'd.
+      const created = await api.post("/users", {
         first_name: firstName,
         last_name: lastName,
         email,
@@ -272,6 +290,15 @@ export default function CreateUserScreen() {
         role,
         active,
       });
+
+      // Bind the user to the role record itself, so custom roles grant their
+      // permissions. The role string above is the legacy field and only
+      // covers the three built-ins.
+      const newUserId = created.data?.data?.id;
+      const picked = roles?.find((r) => r.name === role);
+      if (newUserId && picked) {
+        await api.put("/users/" + newUserId + "/roles", { role_ids: [picked.id] });
+      }
       router.back();
     } catch (e: any) {
       setError(e.message || "Failed to create user");
@@ -302,7 +329,7 @@ export default function CreateUserScreen() {
 
         <Text className={labelClass}>Role</Text>
         <View className="flex-row mb-4">
-          {ROLES.map((r) => (
+          {roles?.map((rr) => rr.name).map((r) => (
             <Pressable key={r} onPress={() => setRole(r)} className={role === r ? "px-4 py-2 mr-2 rounded-full bg-[#6c5ce7]" : "px-4 py-2 mr-2 rounded-full bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#2a2a3a]"}>
               <Text className={role === r ? "text-white font-medium capitalize" : "text-[#0F1018] dark:text-white capitalize"}>{r.toLowerCase()}</Text>
             </Pressable>

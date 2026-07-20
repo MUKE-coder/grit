@@ -915,6 +915,7 @@ func desktopClientNavConfig() string {
   MessageSquare,
   Bell,
   Shield,
+  ShieldCheck,
   LayoutGrid,
   DatabaseBackup,
   type LucideIcon,
@@ -969,6 +970,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: "System",
     items: [
       { to: "/app/system/health", label: "System Health", icon: Activity },
+      { to: "/app/system/roles", label: "Roles & Permissions", icon: ShieldCheck },
       { to: "/app/system/security", label: "Security", icon: Shield },
       { to: "/app/system", label: "System Hub", icon: LayoutGrid },
     ],
