@@ -28,6 +28,41 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.76.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.76.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 20, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The Vite admin was unreachable.</strong> Both route guards checked{' '}
+                  <code>localStorage.getItem(&apos;access_token&apos;)</code>, but auth tokens live
+                  in HttpOnly cookies and are never written to localStorage. The check was always
+                  null, so every signed-in user was bounced straight back to{' '}
+                  <code>/login</code> — you could authenticate successfully and still never reach
+                  the dashboard. The guards now ask the API (<code>/api/auth/me</code>), which is
+                  what the documentation already described.
+                </p>
+                <p>
+                  <strong>The Vite CSP ignored VITE_API_URL.</strong>{' '}
+                  <code>vite.config.ts</code> read it from <code>process.env</code>, but Vite does
+                  not load <code>.env</code> files into <code>process.env</code> for the config
+                  file itself — that needs <code>loadEnv</code>. The origin silently fell back to{' '}
+                  <code>localhost:8080</code>, so anyone who moved the API had every request
+                  blocked by their own Content-Security-Policy. The dev-only public-IP hint is
+                  allowed there too, matching the Next.js apps.
+                </p>
+                <p>
+                  Both were found by driving the Vite admin in a browser: login, dashboard, and
+                  the roles screen now match the Next.js admin exactly.
+                </p>
+              </div>
+            </div>
+
             {/* v3.75.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

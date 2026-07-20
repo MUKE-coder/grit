@@ -120,7 +120,15 @@ func viteSecurityHeaders() string {
 //   * style-src/font-src allow Google Fonts — index.html loads the theme's
 //     fonts from fonts.googleapis.com, and CSP blocks them silently.
 //   * connect-src must include the API origin or every fetch is blocked.
-const API_ORIGIN = process.env.VITE_API_URL || 'http://localhost:8080'
+//
+// VITE_API_URL is read through loadEnv, not process.env: Vite does not load
+// .env files into process.env for the config file itself, so reading it
+// directly always saw undefined and pinned the CSP to localhost:8080 — which
+// then blocked every request for anyone who moved the API.
+const viteMode = process.env.NODE_ENV || 'development'
+const viteEnv = loadEnv(viteMode, process.cwd(), '')
+const API_ORIGIN = viteEnv.VITE_API_URL || 'http://localhost:8080'
+const isDev = viteMode !== 'production'
 
 const csp = [
   "default-src 'self'",
@@ -128,7 +136,9 @@ const csp = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https://fonts.gstatic.com",
-  "connect-src 'self' ws: wss: " + API_ORIGIN,
+  // api.ipify.org is the dev-only public-IP hint the API client fetches so
+  // local audit records show a real address instead of ::1.
+  "connect-src 'self' ws: wss: " + API_ORIGIN + (isDev ? ' https://api.ipify.org' : ''),
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
