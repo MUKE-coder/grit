@@ -67,7 +67,7 @@ func (b *Blog) BeforeCreate(tx *gorm.DB) error {
 // BeforeUpdate increments Version so offline clients can detect that
 // a record they edited has moved on.
 func (b *Blog) BeforeUpdate(tx *gorm.DB) error {
-	b.Version++
+	tx.Statement.SetColumn("version", gorm.Expr("version + 1"))
 	return nil
 }
 `

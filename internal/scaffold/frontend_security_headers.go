@@ -50,8 +50,11 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  // ws:/wss: keep the dev overlay + HMR socket working.
-  "connect-src 'self' " + API_ORIGIN + (isDev ? " ws: wss:" : ""),
+  // ws:/wss: keep the dev overlay + HMR socket working. api.ipify.org is the
+  // public-IP hint the API client fetches so local audit records show a real
+  // address instead of ::1 — dev only, and it must be allowed here or the
+  // browser logs a CSP violation on every page load.
+  "connect-src 'self' " + API_ORIGIN + (isDev ? " ws: wss: https://api.ipify.org" : ""),
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

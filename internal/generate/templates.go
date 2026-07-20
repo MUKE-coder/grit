@@ -192,7 +192,7 @@ func (m *%s) BeforeCreate(tx *gorm.DB) error {
 	content += fmt.Sprintf(`
 // BeforeUpdate increments Version so offline clients can detect server-side updates.
 func (m *%s) BeforeUpdate(tx *gorm.DB) error {
-	m.Version++
+	tx.Statement.SetColumn("version", gorm.Expr("version + 1"))
 	return nil
 }
 `, names.Pascal)

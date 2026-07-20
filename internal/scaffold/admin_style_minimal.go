@@ -410,6 +410,10 @@ import { StatsCard } from "@/components/widgets/stats-card";
 import { WidgetGrid } from "@/components/widgets/widget-grid";
 import { getIcon } from "@/lib/icons";
 
+// The API origin the browser talks to. Hardcoding localhost:8080 here meant
+// the Quick Links pointed at the wrong port whenever the API moved.
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
 export default function AdminDashboard() {
   const { data: user } = useMe();
   const allWidgets = resources.flatMap((r) => r.dashboard?.widgets ?? []);
@@ -488,7 +492,7 @@ export default function AdminDashboard() {
         <h2 className="text-sm font-medium text-text-secondary mb-3">Quick links</h2>
         <div className="flex flex-wrap gap-2">
           <a
-            href="http://localhost:8080/studio"
+            href={API_URL + "/studio"}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-full border border-border bg-bg-secondary px-3.5 py-1.5 text-xs font-medium text-text-secondary hover:text-foreground hover:border-accent/40 transition-colors"
@@ -497,7 +501,7 @@ export default function AdminDashboard() {
             GORM Studio
           </a>
           <a
-            href="http://localhost:8080/api/health"
+            href={API_URL + "/api/health"}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-full border border-border bg-bg-secondary px-3.5 py-1.5 text-xs font-medium text-text-secondary hover:text-foreground hover:border-accent/40 transition-colors"

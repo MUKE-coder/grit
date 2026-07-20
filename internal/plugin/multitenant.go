@@ -153,7 +153,7 @@ func (o *Organization) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (o *Organization) BeforeUpdate(tx *gorm.DB) error {
-	o.Version++
+	tx.Statement.SetColumn("version", gorm.Expr("version + 1"))
 	return nil
 }
 

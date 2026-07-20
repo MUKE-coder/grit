@@ -28,6 +28,56 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.75.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.75.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 20, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  Four bugs found by actually <em>running</em> a scaffolded app &mdash; booting
+                  the API, driving the admin in a browser &mdash; rather than only compiling it.
+                  None of them could fail a build.
+                </p>
+                <p>
+                  <strong>The Roles &amp; permissions page crashed on every new project.</strong>{' '}
+                  <code>authz.Expand</code> returned a nil slice for a role with no grants, which
+                  Go marshals as <code>null</code>. The roles UI maps over{' '}
+                  <code>expanded</code> and reads <code>.length</code>, so the default{' '}
+                  <code>USER</code> role &mdash; which grants nothing &mdash; took down the whole
+                  screen. <code>Expand</code> now returns <code>[]</code>, and the UI tolerates a
+                  null from any source.
+                </p>
+                <p>
+                  <strong>Version never incremented, breaking offline sync.</strong> Every model&apos;s{' '}
+                  <code>BeforeUpdate</code> hook did <code>x.Version++</code>, which mutates the Go
+                  struct but never reaches the UPDATE statement &mdash; generated services update
+                  with a map, and the SQL is built from that map. The column stayed at 1 forever, so
+                  an offline client could never detect that a record had moved on. All seven hooks,
+                  including the one the resource generator emits, now use{' '}
+                  <code>tx.Statement.SetColumn</code>. A regression test guards it.
+                </p>
+                <p>
+                  <strong>Three 404s on the login page.</strong>{' '}
+                  <code>brand.config.ts</code> shipped default hero image paths that the scaffold
+                  never included, so the Pulse auth carousel requested three images that did not
+                  exist. The list now defaults to empty and the auth screens fall back to a themed
+                  gradient.
+                </p>
+                <p>
+                  <strong>Admin Quick Links ignored the configured API URL,</strong> hardcoding{' '}
+                  <code>localhost:8080</code> in all four dashboard styles. And the public-IP hint
+                  the API client fetches is now dev-only and allowed by the CSP &mdash; it was
+                  logging a Content-Security-Policy violation on every page load, and reaching out
+                  to a third party from production builds.
+                </p>
+              </div>
+            </div>
+
             {/* v3.74.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

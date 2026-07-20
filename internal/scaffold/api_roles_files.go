@@ -65,7 +65,7 @@ func (r *Role) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (r *Role) BeforeUpdate(tx *gorm.DB) error {
-	r.Version++
+	tx.Statement.SetColumn("version", gorm.Expr("version + 1"))
 	return nil
 }
 

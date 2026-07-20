@@ -941,3 +941,35 @@ func firstN(s string, n int) string {
 	}
 	return s[:n]
 }
+
+// ── Version bump hooks ───────────────────────────────────────────────────────
+
+// TestBeforeUpdateHooksPersistVersion guards a bug that shipped silently:
+// the hooks used to do `x.Version++`, which mutates the Go struct but never
+// reaches the UPDATE statement when the service updates with a map (as every
+// generated service does). Version therefore never incremented, and offline
+// sync could not detect that a record had moved on. Only SetColumn reaches
+// the SQL, so assert no model goes back to the struct-mutating form.
+func TestBeforeUpdateHooksPersistVersion(t *testing.T) {
+	sources := map[string]string{
+		"blog":         blogModelGo(),
+		"user":         apiUserModelGo(),
+		"upload":       apiUploadModelGo(),
+		"feature flag": apiFeatureFlagModelGo(),
+		"role":         roleModelGo(),
+	}
+
+	for name, src := range sources {
+		if !strings.Contains(src, "func (") || !strings.Contains(src, "BeforeUpdate") {
+			continue // model has no BeforeUpdate hook
+		}
+		if strings.Contains(src, "Version++") {
+			t.Errorf("%s model: BeforeUpdate uses Version++, which never reaches the "+
+				"UPDATE when the service updates with a map; use "+
+				`tx.Statement.SetColumn("version", gorm.Expr("version + 1"))`, name)
+		}
+		if !strings.Contains(src, `SetColumn("version"`) {
+			t.Errorf("%s model: BeforeUpdate does not SetColumn(\"version\", ...)", name)
+		}
+	}
+}
