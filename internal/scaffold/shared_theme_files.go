@@ -46,13 +46,15 @@ export const brand = {
 
   /** Hero imagery — used by the Pulse theme's auth carousel and as a
    *  fallback wallpaper by Atlas/Aurora when set. Paths resolve from
-   *  /public. Provide at least 3 for the carousel to feel alive. */
+   *  /public.
+   *
+   *  Empty by default: the scaffold ships no photography, so listing paths
+   *  here would 404 on the login page of every new project. Drop your own
+   *  images into public/hero/ and add them below — provide at least 3 for
+   *  the carousel to feel alive. While this is empty the auth screens fall
+   *  back to a themed gradient. */
   hero: {
-    images: [
-      "/hero/01.jpg",
-      "/hero/02.jpg",
-      "/hero/03.jpg",
-    ] as string[],
+    images: [] as string[],
     /** Carousel rotation interval in ms. */
     intervalMs: 5000,
   },

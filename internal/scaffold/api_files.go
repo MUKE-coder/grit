@@ -1096,7 +1096,7 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
 // a record they edited has moved on. Pair with the Idempotency-Key
 // middleware + /api/sync/push for safe write replay.
 func (u *User) BeforeUpdate(tx *gorm.DB) error {
-	u.Version++
+	tx.Statement.SetColumn("version", gorm.Expr("version + 1"))
 	return nil
 }
 
@@ -1282,7 +1282,7 @@ type Upload struct {
 // BeforeUpdate increments Version on every server-side write so offline
 // clients can detect that a record they edited has moved on.
 func (u *Upload) BeforeUpdate(tx *gorm.DB) error {
-	u.Version++
+	tx.Statement.SetColumn("version", gorm.Expr("version + 1"))
 	return nil
 }
 `
@@ -4972,7 +4972,7 @@ func (f *FeatureFlag) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (f *FeatureFlag) BeforeUpdate(tx *gorm.DB) error {
-	f.Version++
+	tx.Statement.SetColumn("version", gorm.Expr("version + 1"))
 	return nil
 }
 

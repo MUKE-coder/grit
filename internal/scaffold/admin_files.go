@@ -1059,7 +1059,11 @@ async function getPublicIPHint(): Promise<string | null> {
 }
 // Kick off the lookup eagerly so the cache is warm by the time the
 // first request fires. Fire-and-forget; failures are silent.
-if (typeof window !== "undefined") {
+//
+// Dev only, for two reasons: the hint is only ever honoured when the API sees
+// a loopback peer (production goes through X-Forwarded-For), and a production
+// build should not reach out to a third party on every page load.
+if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
   void getPublicIPHint();
 }
 

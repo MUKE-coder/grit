@@ -206,7 +206,10 @@ func matches(pattern, key string) bool {
 // never has to reimplement matching — a duplicated matcher is how Shoppleet's Go
 // and TypeScript rules drifted apart.
 func Expand(grants []string) []string {
-	var out []string
+	// Non-nil so a role with no grants marshals to [] rather than null. The
+	// roles UI maps over this and reads .length; null crashed the whole page
+	// for the default USER role, which grants nothing.
+	out := []string{}
 	for _, key := range Keys() {
 		if Granted(grants, key) {
 			out = append(out, key)

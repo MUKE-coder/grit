@@ -142,7 +142,7 @@ function RolesList({
 							<span className="font-mono">
 								{role.grants.indexOf("*") >= 0
 									? "all permissions"
-									: role.expanded.length + " granted"}
+									: (role.expanded ?? []).length + " granted"}
 							</span>
 						</div>
 					</button>
@@ -331,7 +331,7 @@ function RoleEditor({
 	const [error, setError] = useState("");
 	// Seeded from the server-expanded list — the client never resolves wildcards.
 	const [selected, setSelected] = useState<Set<string>>(
-		new Set(role ? role.expanded : [])
+		new Set(role?.expanded ?? [])
 	);
 
 	const isSuper = role ? role.grants.indexOf("*") >= 0 : false;
@@ -471,7 +471,7 @@ function RoleEditor({
 							.map((r) => (
 								<button
 									key={r.id}
-									onClick={() => setSelected(new Set(r.expanded))}
+									onClick={() => setSelected(new Set(r.expanded ?? []))}
 									className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-text-secondary transition-colors hover:border-accent/40 hover:text-text-primary"
 								>
 									<Copy className="h-3 w-3" />

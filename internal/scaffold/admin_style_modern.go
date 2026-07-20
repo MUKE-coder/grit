@@ -465,6 +465,10 @@ import { StatsCard } from "@/components/widgets/stats-card";
 import { WidgetGrid } from "@/components/widgets/widget-grid";
 import { getIcon } from "@/lib/icons";
 
+// The API origin the browser talks to. Hardcoding localhost:8080 here meant
+// the Quick Links pointed at the wrong port whenever the API moved.
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
 export default function AdminDashboard() {
   const { data: user } = useMe();
   const allWidgets = resources.flatMap((r) => r.dashboard?.widgets ?? []);
@@ -548,7 +552,7 @@ export default function AdminDashboard() {
           <h2 className="text-lg font-semibold text-foreground mb-4">Quick Links</h2>
           <div className="space-y-2">
             <a
-              href="http://localhost:8080/studio"
+              href={API_URL + "/studio"}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 rounded-xl border border-border bg-bg-tertiary px-4 py-3 hover:border-accent/30 hover:bg-bg-hover transition-all group"
@@ -562,7 +566,7 @@ export default function AdminDashboard() {
               </div>
             </a>
             <a
-              href="http://localhost:8080/api/health"
+              href={API_URL + "/api/health"}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 rounded-xl border border-border bg-bg-tertiary px-4 py-3 hover:border-accent/30 hover:bg-bg-hover transition-all group"
