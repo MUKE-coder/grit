@@ -28,6 +28,44 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.78.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.78.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 20, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fixes the mobile screens shipped in v3.77.0.</strong> The Expo{' '}
+                  <code>api.get()</code> resolves to the parsed response body, not an
+                  axios-style <code>{'{ data: body }'}</code> wrapper. The new roles screens
+                  unwrapped one level too many, so every query resolved to{' '}
+                  <code>undefined</code> and React Query raised{' '}
+                  <em>&ldquo;Query data cannot be undefined&rdquo;</em> — the permission editor
+                  could not load.
+                </p>
+                <p>
+                  The same mistake predated these screens: the home stat card read{' '}
+                  <code>res.data?.meta?.total</code> where the body already <em>is</em>{' '}
+                  <code>res</code>, so the user count read 0 even for an administrator who was
+                  allowed to see it.
+                </p>
+                <p>
+                  The new roles screens also omitted <code>showBack</code> on their{' '}
+                  <code>ScreenHeader</code>, so they opened with no back button and stranded you
+                  on the page. Every other non-tab screen already passed it.
+                </p>
+                <p>
+                  Verified on an emulator: the roles list renders built-in and custom roles with
+                  correct grant counts, and the editor seeds its checkboxes from the
+                  server-expanded permission set.
+                </p>
+              </div>
+            </div>
+
             {/* v3.77.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

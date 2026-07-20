@@ -1443,7 +1443,7 @@ export default function HomeScreen() {
     enabled: canViewUsers,
     queryFn: async () => {
       const res = await api.get("/users?page=1&page_size=1");
-      return { total_users: res.data?.meta?.total ?? 0 };
+      return { total_users: res.meta?.total ?? 0 };
     },
   });
 
@@ -2539,8 +2539,10 @@ export function usePermissions() {
     queryKey: ["my-permissions"],
     staleTime: 60 * 1000,
     queryFn: async () => {
+      // api.get resolves to the parsed body ({data, meta}), not an
+      // axios-style {data: body} — one .data, not two.
       const res = await api.get("/auth/permissions");
-      return res.data?.data as MyPermissions;
+      return res.data as MyPermissions;
     },
   });
 

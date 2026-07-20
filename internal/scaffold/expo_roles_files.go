@@ -45,14 +45,14 @@ export default function RolesScreen() {
     enabled: can("roles.view"),
     queryFn: async () => {
       const res = await api.get("/roles");
-      return (res.data?.data ?? []) as Role[];
+      return (res.data ?? []) as Role[];
     },
   });
 
   if (permsLoading || isLoading) {
     return (
       <View className="flex-1 bg-[#F7F7F9] dark:bg-[#0a0a0f]">
-        <ScreenHeader title="Roles & permissions" />
+        <ScreenHeader title="Roles & permissions" showBack />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator color="#6c5ce7" />
         </View>
@@ -65,7 +65,7 @@ export default function RolesScreen() {
   if (!can("roles.view")) {
     return (
       <View className="flex-1 bg-[#F7F7F9] dark:bg-[#0a0a0f]">
-        <ScreenHeader title="Roles & permissions" />
+        <ScreenHeader title="Roles & permissions" showBack />
         <View className="flex-1 items-center justify-center px-8">
           <Ionicons name="lock-closed-outline" size={40} color="#9090a8" />
           <Text className="text-[#6B7280] dark:text-[#9090a8] text-[15px] text-center mt-4">
@@ -78,7 +78,7 @@ export default function RolesScreen() {
 
   return (
     <View className="flex-1 bg-[#F7F7F9] dark:bg-[#0a0a0f]">
-      <ScreenHeader title="Roles & permissions" />
+      <ScreenHeader title="Roles & permissions" showBack />
       <ScrollView
         className="flex-1 px-5"
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#6c5ce7" />}
@@ -189,7 +189,7 @@ export default function RoleEditorScreen() {
     queryKey: ["permission-catalog"],
     queryFn: async () => {
       const res = await api.get("/permissions");
-      return res.data?.data as Catalog;
+      return res.data as Catalog;
     },
   });
 
@@ -198,7 +198,7 @@ export default function RoleEditorScreen() {
     enabled: !isNew,
     queryFn: async () => {
       const res = await api.get("/roles/" + id);
-      return res.data?.data as Role;
+      return res.data as Role;
     },
   });
 
@@ -279,7 +279,7 @@ export default function RoleEditorScreen() {
   if (!isNew && isLoading) {
     return (
       <View className="flex-1 bg-[#F7F7F9] dark:bg-[#0a0a0f]">
-        <ScreenHeader title="Role" />
+        <ScreenHeader title="Role" showBack />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator color="#6c5ce7" />
         </View>
@@ -293,7 +293,7 @@ export default function RoleEditorScreen() {
 
   return (
     <View className="flex-1 bg-[#F7F7F9] dark:bg-[#0a0a0f]">
-      <ScreenHeader title={isNew ? "New role" : name || "Role"} />
+      <ScreenHeader title={isNew ? "New role" : name || "Role"} showBack />
       <ScrollView className="flex-1 px-5">
         {error ? (
           <View className="bg-[#ff6b6b]/10 border border-[#ff6b6b]/30 rounded-2xl px-4 py-3 mb-4">
