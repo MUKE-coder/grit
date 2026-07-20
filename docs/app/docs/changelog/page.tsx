@@ -28,6 +28,59 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.77.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.77.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 20, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Social login buttons no longer appear before a provider exists.</strong>{' '}
+                  <code>SOCIAL_AUTH_ENABLED</code> defaulted to <code>true</code> while{' '}
+                  <code>GOOGLE_CLIENT_ID</code> and <code>GITHUB_CLIENT_ID</code> ship empty, so
+                  every fresh project rendered a &ldquo;Continue with Google&rdquo; button that
+                  dropped the user on a page reading{' '}
+                  <code>no provider for google exists</code>. It now defaults to{' '}
+                  <code>false</code>; fill in a provider&apos;s credentials and flip it on.
+                </p>
+                <p>
+                  <strong>The mobile app ignored the flag entirely.</strong> Web and admin both
+                  gate their social block, but the Expo login screen rendered it unconditionally
+                  — there was no <code>SOCIAL_AUTH_ENABLED</code> check anywhere in the Expo app.
+                  It now reads <code>EXPO_PUBLIC_SOCIAL_AUTH_ENABLED</code>, matching the other
+                  two clients.
+                </p>
+                <p>
+                  <strong>Roles &amp; permissions now exist on mobile and desktop.</strong> Both
+                  apps knew only the coarse <code>user.role</code> string — neither called{' '}
+                  <code>/api/auth/permissions</code>, and both offered a hardcoded{' '}
+                  <code>USER / EDITOR / ADMIN</code> picker, so a role you defined in the admin
+                  could never be assigned from a phone or the desktop client. Each now ships a{' '}
+                  <code>usePermissions()</code> hook and a full permission editor against the same
+                  endpoints and the same wildcard semantics as the web admin, and creating a user
+                  binds them to the role record via <code>PUT /api/users/:id/roles</code> rather
+                  than only setting the legacy string.
+                </p>
+                <p>
+                  <strong>Creating a user from mobile always failed:</strong> the screen posted to{' '}
+                  <code>/api/admin/users</code>, which is not a registered route — a guaranteed
+                  404. And the mobile home screen fetched the ADMIN-only <code>/api/users</code>{' '}
+                  for every signed-in user, rendering the resulting 403 as{' '}
+                  <code>0 Total Users</code>; two of its four stat cards were hardcoded zeros and
+                  a third duplicated the first. It now asks only when the user holds{' '}
+                  <code>users.view</code>, and shows only the count the API actually reports.
+                </p>
+                <p>
+                  Found by running the Expo app on an Android emulator: Metro bundle, launch,
+                  sign in, dashboard.
+                </p>
+              </div>
+            </div>
+
             {/* v3.76.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -39,7 +39,10 @@ func writeExpoFiles(root string, opts Options) error {
 		filepath.Join(expoRoot, "app", "blogs", "index.tsx"):                      expoBlogListScreen(),
 		filepath.Join(expoRoot, "app", "blogs", "new.tsx"):                        expoBlogCreateScreen(),
 		filepath.Join(expoRoot, "app", "users", "new.tsx"):                        expoUserCreateScreen(),
+		filepath.Join(expoRoot, "app", "roles", "index.tsx"):                      expoRolesListScreen(),
+		filepath.Join(expoRoot, "app", "roles", "[id].tsx"):                       expoRoleEditorScreen(),
 		filepath.Join(expoRoot, "hooks", "use-blogs.ts"):                          expoBlogHook(),
+		filepath.Join(expoRoot, "hooks", "use-permissions.ts"):                    expoUsePermissions(),
 		filepath.Join(expoRoot, "lib", "upload.ts"):                               ExpoUploadHelper(),
 		filepath.Join(expoRoot, "lib", "images.ts"):                               ExpoImageResolver(),
 		filepath.Join(expoRoot, "lib", "format.ts"):                               ExpoNumberFormat(),
@@ -572,6 +575,12 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
+// Mirrors SOCIAL_AUTH_ENABLED from the root .env. Defaults to off: showing a
+// provider button that no provider backs sends the user to a browser page
+// reading "no provider for google exists".
+const socialAuthEnabled =
+  (process.env.EXPO_PUBLIC_SOCIAL_AUTH_ENABLED ?? "false").toLowerCase() === "true";
+
 export default function LoginScreen() {
   const { login, loginWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -807,7 +816,14 @@ export default function LoginScreen() {
                   </LinearGradient>
                 </PressableScale>
 
-                {/* Divider */}
+                {/* Divider + social — hidden unless a provider is configured.
+                    EXPO_PUBLIC_SOCIAL_AUTH_ENABLED mirrors SOCIAL_AUTH_ENABLED
+                    from the root .env, matching the web and admin apps. Without
+                    this check the button rendered on every fresh project and
+                    dropped the user into a browser showing "no provider for
+                    google exists". */}
+                {socialAuthEnabled && (
+                <>
                 <View className="flex-row items-center my-6">
                   <View className="flex-1 h-px bg-[#E5E7EB] dark:bg-[#2a2a3a]" />
                   <Text className="text-[#9CA3AF] dark:text-[#606078] mx-4 text-[12px]">or</Text>
@@ -832,6 +848,8 @@ export default function LoginScreen() {
                     </>
                   )}
                 </PressableScale>
+                </>
+                )}
 
                 <View className="flex-row justify-center mt-6">
                   <Text className="text-[#6B7280] dark:text-[#9090a8] text-[13.5px]">Don't have an account? </Text>
@@ -1357,14 +1375,12 @@ func expoHomeScreen() string {
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/hooks/use-permissions";
 import { useState, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
 
 interface Stats {
   total_users: number;
-  active_users: number;
-  new_today: number;
-  total_items: number;
 }
 
 interface RecentItem {
@@ -1416,16 +1432,18 @@ export default function HomeScreen() {
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
+  // /users is ADMIN-only. Fetching it for everyone meant a regular user got a
+  // 403 and the screen rendered 0 as if that were the real count. Ask only
+  // when the user actually holds the permission.
+  const { can, isLoading: permsLoading } = usePermissions();
+  const canViewUsers = can("users.view");
+
   const { data: stats, refetch } = useQuery<Stats>({
     queryKey: ["home-stats"],
+    enabled: canViewUsers,
     queryFn: async () => {
       const res = await api.get("/users?page=1&page_size=1");
-      return {
-        total_users: res.data?.meta?.total || 0,
-        active_users: res.data?.meta?.total || 0,
-        new_today: 0,
-        total_items: 0,
-      };
+      return { total_users: res.data?.meta?.total ?? 0 };
     },
   });
 
@@ -1464,15 +1482,14 @@ export default function HomeScreen() {
         Here's what's happening today.
       </Text>
 
-      <View className="flex-row gap-3 mb-6">
-        <StatCard title="Total Users" value={stats?.total_users || 0} color="#6c5ce7" icon="people-outline" />
-        <StatCard title="Active" value={stats?.active_users || 0} color="#00b894" icon="pulse-outline" />
-      </View>
-
-      <View className="flex-row gap-3 mb-8">
-        <StatCard title="New Today" value={stats?.new_today || 0} color="#74b9ff" icon="trending-up-outline" />
-        <StatCard title="Items" value={stats?.total_items || 0} color="#fdcb6e" icon="cube-outline" />
-      </View>
+      {/* Only the counts the API actually reports, and only for users allowed
+          to see them. The three sibling cards here used to be a copy of this
+          number plus two hardcoded zeros — invented data on every install. */}
+      {!permsLoading && canViewUsers && (
+        <View className="flex-row gap-3 mb-8">
+          <StatCard title="Total Users" value={stats?.total_users ?? 0} color="#6c5ce7" icon="people-outline" />
+        </View>
+      )}
 
       <Text className="text-lg font-semibold text-[#0F1018] dark:text-white mb-3">Recent Activity</Text>
 
@@ -2495,5 +2512,61 @@ export const queryClient = new QueryClient({
     },
   },
 });
+`
+}
+
+// expoUsePermissions emits hooks/use-permissions.ts.
+//
+// Mobile had no permission awareness at all: the home screen fetched
+// /users — an ADMIN-only route — for every signed-in user, got a 403, and
+// rendered 0 as though that were the real count. This mirrors the admin
+// panel's usePermissions so mobile asks the same question the same way.
+//
+// As on the web, this is a UX layer and never a security boundary — every
+// route is enforced server-side.
+func expoUsePermissions() string {
+	return `import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+
+interface MyPermissions {
+  grants: string[];
+  permissions: string[];
+  is_super: boolean;
+}
+
+export function usePermissions() {
+  const { data, isLoading } = useQuery<MyPermissions>({
+    queryKey: ["my-permissions"],
+    staleTime: 60 * 1000,
+    queryFn: async () => {
+      const res = await api.get("/auth/permissions");
+      return res.data?.data as MyPermissions;
+    },
+  });
+
+  const granted = new Set(data?.permissions ?? []);
+  const isSuper = data?.is_super ?? false;
+
+  /**
+   * can("users.view")  — exact permission
+   * can("users.*")     — any permission on that resource
+   *
+   * Returns false while loading, so admin-only UI stays hidden rather than
+   * flashing in and disappearing.
+   */
+  function can(permission: string): boolean {
+    if (isSuper) return true;
+    if (permission.endsWith(".*")) {
+      const prefix = permission.slice(0, -1);
+      for (const p of granted) {
+        if (p.startsWith(prefix)) return true;
+      }
+      return false;
+    }
+    return granted.has(permission);
+  }
+
+  return { can, isSuper, isLoading, permissions: data?.permissions ?? [] };
+}
 `
 }

@@ -243,12 +243,16 @@ SENTINEL_SECRET_KEY=%s
 # the right theme without a flash of unstyled content.
 THEME=%s
 
-# Social login buttons (Google + GitHub). Set to false to hide them from
-# auth pages and remove the "or continue with" divider. The OAuth API
-# routes stay registered server-side either way; flipping this only
-# changes what the UI renders. NEXT_PUBLIC_SOCIAL_AUTH_ENABLED mirrors
-# the value to the browser bundle.
-SOCIAL_AUTH_ENABLED=true
+# Social login buttons (Google + GitHub). The OAuth API routes stay
+# registered server-side either way; this only changes what the UI renders.
+# NEXT_PUBLIC_SOCIAL_AUTH_ENABLED / EXPO_PUBLIC_SOCIAL_AUTH_ENABLED mirror
+# the value to the browser and mobile bundles.
+#
+# Off by default because no provider is configured yet: GOOGLE_CLIENT_ID and
+# GITHUB_CLIENT_ID above are empty, so the buttons would render and then fail
+# with "no provider for google exists". Fill in a provider's credentials,
+# then flip this to true.
+SOCIAL_AUTH_ENABLED=false
 `,
 		opts.ProjectName, opts.ProjectName, // banner + APP_NAME
 		postgresPassword, opts.ProjectName, // POSTGRES_PASSWORD + POSTGRES_DB

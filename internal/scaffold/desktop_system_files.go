@@ -194,10 +194,22 @@ function SystemUsersPage() {
   });
 
   const save = useMutation({
-    mutationFn: (payload: Record<string, unknown>) =>
-      drawer.record
-        ? apiClient.put("/users/" + drawer.record.id, payload)
-        : apiClient.post("/users", payload),
+    mutationFn: async (payload: Record<string, unknown>) => {
+      // role_id is ours, not a column on the user — pull it out before writing.
+      const { role_id: roleID, ...body } = payload as { role_id?: string } & Record<string, unknown>;
+
+      const res = drawer.record
+        ? await apiClient.put("/users/" + drawer.record.id, body)
+        : await apiClient.post("/users", body);
+
+      // Bind the user to the role record itself. Without this a custom role is
+      // only a string on the user and grants nothing.
+      const userID = drawer.record?.id ?? (res.data as { data?: { id?: string } })?.data?.id;
+      if (userID && roleID) {
+        await apiClient.put("/users/" + userID + "/roles", { role_ids: [roleID] });
+      }
+      return res;
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["system", "users"] }); setDrawer({ open: false, record: null }); },
   });
   const del = useMutation({
@@ -251,6 +263,16 @@ function UserForm({
   const [role, setRole] = useState("USER");
   const [active, setActive] = useState(true);
 
+  // Roles come from the API. This dropdown used to hardcode User/Editor/Admin,
+  // so a role created on the Roles screen could never be assigned here.
+  const { data: roles } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ["system", "roles", "options"],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ data: { id: string; name: string }[] }>("/roles");
+      return data.data ?? [];
+    },
+  });
+
   useEffect(() => {
     setFirstName(String(record?.first_name ?? ""));
     setLastName(String(record?.last_name ?? ""));
@@ -264,6 +286,10 @@ function UserForm({
     e.preventDefault();
     const payload: Record<string, unknown> = { first_name: firstName, last_name: lastName, email, role, active };
     if (password) payload.password = password;
+    // role is the legacy string column; role_id binds the user to the role
+    // record so custom roles actually grant their permissions.
+    const picked = (roles ?? []).find((r) => r.name === role);
+    if (picked) payload.role_id = picked.id;
     onSubmit(payload);
   };
 
@@ -294,9 +320,11 @@ function UserForm({
           <div>
             <label className="mb-1.5 block text-[13px] font-medium text-foreground">Role</label>
             <select value={role} onChange={(e) => setRole(e.target.value)} className={inputCls}>
-              <option value="USER">User</option>
-              <option value="EDITOR">Editor</option>
-              <option value="ADMIN">Admin</option>
+              {(roles ?? []).map((r) => (
+                <option key={r.id} value={r.name}>
+                  {r.name}
+                </option>
+              ))}
             </select>
           </div>
           <label className="mt-6 flex items-center gap-2 text-[13px] text-foreground">
