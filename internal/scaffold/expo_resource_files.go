@@ -257,7 +257,7 @@ export default function CreateUserScreen() {
     queryKey: ["roles"],
     queryFn: async () => {
       const res = await api.get("/roles");
-      return (res.data?.data ?? []) as Role[];
+      return (res.data ?? []) as Role[];
     },
   });
   const [firstName, setFirstName] = useState("");
@@ -294,7 +294,7 @@ export default function CreateUserScreen() {
       // Bind the user to the role record itself, so custom roles grant their
       // permissions. The role string above is the legacy field and only
       // covers the three built-ins.
-      const newUserId = created.data?.data?.id;
+      const newUserId = created.data?.id;
       const picked = roles?.find((r) => r.name === role);
       if (newUserId && picked) {
         await api.put("/users/" + newUserId + "/roles", { role_ids: [picked.id] });
