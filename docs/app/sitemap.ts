@@ -1,8 +1,48 @@
 import type { MetadataRoute } from 'next'
+import fs from 'fs'
+import path from 'path'
 import { COURSES } from '@/config/courses'
 import { getAllPosts } from '@/lib/blog'
 
 const baseUrl = 'https://gritframework.dev'
+
+// Walk the app/ directory and return the URL path of every STATIC page (a
+// directory holding a page.tsx with no dynamic [slug] or catch-all segment).
+// Route groups like (marketing) don't appear in the URL, so they're stripped.
+// This guarantees a brand-new page lands in the sitemap without anyone
+// remembering to add it by hand — dynamic routes (blog posts, courses) are still
+// enumerated explicitly below from their data sources.
+function discoverStaticRoutes(): string[] {
+  const appDir = path.join(process.cwd(), 'app')
+  const found: string[] = []
+
+  function walk(dir: string, urlSegments: string[]) {
+    let entries: fs.Dirent[]
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true })
+    } catch {
+      return
+    }
+
+    if (entries.some((e) => e.isFile() && /^page\.(tsx|ts|jsx|js|mdx)$/.test(e.name))) {
+      found.push('/' + urlSegments.join('/'))
+    }
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      const name = entry.name
+      // Skip dynamic ([slug], [...all]) and private (_folder) dirs — those are
+      // handled by explicit loops, and can't be enumerated as static URLs.
+      if (name.startsWith('[') || name.startsWith('_') || name.startsWith('.')) continue
+      // Route groups (folder) are transparent in the URL.
+      const isGroup = name.startsWith('(') && name.endsWith(')')
+      walk(path.join(dir, name), isGroup ? urlSegments : [...urlSegments, name])
+    }
+  }
+
+  walk(appDir, [])
+  return found
+}
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const routes = [
@@ -182,6 +222,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Blog — one entry per published post.
   for (const post of getAllPosts()) {
     routes.push({ path: `/blog/${post.slug}`, priority: 0.7, changeFrequency: 'weekly' as const })
+  }
+
+  // Backstop: fold in every static page discovered on disk that isn't already
+  // listed above, so nothing is ever silently missing from the sitemap. The
+  // hand-tuned priorities above win; anything new gets a sensible default.
+  const known = new Set(routes.map((r) => r.path))
+  for (const p of discoverStaticRoutes()) {
+    if (known.has(p)) continue
+    known.add(p)
+    routes.push({
+      path: p,
+      priority: p.startsWith('/docs') ? 0.6 : 0.5,
+      changeFrequency: 'monthly' as const,
+    })
   }
 
   return routes.map((route) => ({

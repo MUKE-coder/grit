@@ -139,6 +139,7 @@ const searchIndex: SearchItem[] = [
   { title: 'PDF Generation', href: '/docs/batteries/storage', section: 'Batteries', keywords: 'pdf generation invoice receipt lease fpdf go-pdf doc primitives header table totals' },
   { title: 'CSV / Excel Export', href: '/docs/batteries/storage', section: 'Batteries', keywords: 'csv excel xlsx export resource download streaming excelize' },
   { title: 'Cursor-based Pagination', href: '/docs/backend/response-format', section: 'Batteries', keywords: 'cursor pagination offset paginate next_cursor has_more sticky pages stable' },
+  { title: 'Data & Backup', href: '/docs/batteries/backups', section: 'Batteries', keywords: 'backup restore database dump schedule automatic snapshot download grit restore disaster recovery data export s3 minio scheduled cron daily' },
 
   // Plugins
   { title: 'What are plugins', href: '/docs/plugins/overview', section: 'Plugins', keywords: 'plugin plugins overview extend extension codegen code generation lockfile reversible install remove grit plugin add' },

@@ -198,3 +198,12 @@ Plugins are how Grit stays small at the core and still grows. The batteries ever
 app needs are built in. The bigger, opinionated pieces — multi-tenancy today,
 more soon — are plugins: real code, in your repo, that you can always take back
 out.
+
+---
+
+**Read more in the docs:** [What are plugins](/docs/plugins/overview) ·
+[Multi-tenancy](/docs/plugins/multitenant) ·
+[Impersonate](/docs/plugins/impersonate) ·
+[Command palette](/docs/plugins/command-palette) ·
+[Saved views](/docs/plugins/saved-views) ·
+[Writing a plugin](/docs/plugins/authoring)
