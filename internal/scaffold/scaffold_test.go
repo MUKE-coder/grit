@@ -973,3 +973,32 @@ func TestBeforeUpdateHooksPersistVersion(t *testing.T) {
 		}
 	}
 }
+
+// ── Backup restore ───────────────────────────────────────────────────────────
+
+// TestRestoreTruncatesBeforeReplay guards a bug that made every backup
+// unrestorable: `grit restore` runs migrations first, which seed the default
+// roles, and the dump then re-inserts ADMIN/EDITOR/USER — colliding on the
+// unique role-name index and aborting the whole restore. The fix truncates the
+// backed-up tables before replaying the dump. Assert both that the truncate is
+// present and that it happens BEFORE the statement-replay loop.
+func TestRestoreTruncatesBeforeReplay(t *testing.T) {
+	src := backupRestoreGo()
+
+	truncateAt := strings.Index(src, "TRUNCATE")
+	if truncateAt < 0 {
+		t.Fatal("restore does not TRUNCATE before replay — seeded roles will collide with the dump and the restore aborts")
+	}
+	if !strings.Contains(src, "RESTART IDENTITY CASCADE") {
+		t.Error("restore TRUNCATE should use RESTART IDENTITY CASCADE to reset sequences and satisfy foreign keys")
+	}
+	// The replay loop runs tx.Exec(s) over the dump statements. Truncation must
+	// come first, or it wipes the rows it just restored.
+	replayAt := strings.Index(src, "for _, s := range stmts")
+	if replayAt < 0 {
+		t.Fatal("could not locate the statement-replay loop")
+	}
+	if truncateAt > replayAt {
+		t.Error("restore TRUNCATEs AFTER replaying the dump — that erases the restored rows")
+	}
+}

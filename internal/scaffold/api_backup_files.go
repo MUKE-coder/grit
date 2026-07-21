@@ -805,6 +805,27 @@ func Restore(db *gorm.DB, zipPath string) (Manifest, error) {
 
 	stmts := SplitStatements(stripComments(dump))
 	return man, db.Transaction(func(tx *gorm.DB) error {
+		// Clear every table the dump repopulates BEFORE replaying it. Migrations
+		// run first (cmd/restore) and seed baseline rows — the default roles —
+		// and the dump carries its own authoritative copy of those same rows.
+		// Without this, replaying the dump's ADMIN/EDITOR/USER inserts collides
+		// with the freshly seeded ones on the unique role-name index and the
+		// whole restore aborts: the backup becomes unrestorable. Truncating first
+		// makes the restored database match the backup exactly, and makes restore
+		// idempotent onto a non-empty schema. Table names come from the manifest,
+		// derived from models.Models() — never user input — so this is not an
+		// injection surface. RESTART IDENTITY resets sequences; CASCADE handles
+		// foreign keys regardless of order.
+		if len(man.Tables) > 0 {
+			quoted := make([]string, len(man.Tables))
+			for i, t := range man.Tables {
+				quoted[i] = "\"" + t + "\""
+			}
+			if err := tx.Exec("TRUNCATE " + strings.Join(quoted, ", ") + " RESTART IDENTITY CASCADE").Error; err != nil {
+				return fmt.Errorf("clearing tables before restore: %w", err)
+			}
+		}
+
 		for _, s := range stmts {
 			switch strings.ToUpper(strings.TrimSpace(s)) {
 			case "BEGIN", "COMMIT":
