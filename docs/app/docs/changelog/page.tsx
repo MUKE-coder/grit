@@ -28,6 +28,52 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.82.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.82.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The admin sidebar and dashboard now honour the permissions you
+                  grant.</strong> A role granted only two resources — say Categories and
+                  Products — now sees exactly those two. Before this release the navigation
+                  and dashboard were gated only by a coarse admin/editor check, so a limited
+                  role could still see Users, Blogs, Dashboard settings, Support and the
+                  activity log in the sidebar even though every underlying API route already
+                  rejected them.
+                </p>
+                <ul>
+                  <li>
+                    <strong>Sidebar resources</strong> are filtered by the viewer&apos;s{" "}
+                    <code>&lt;resource&gt;.view</code> grant. Each generated resource already
+                    registers that permission, so the nav matches what the role can actually open.
+                  </li>
+                  <li>
+                    <strong>Internal nav</strong> — the activity log is gated on{" "}
+                    <code>audit.view</code>, support triage is admin-only, and Dashboard settings
+                    moved to admin-only. Notifications stay visible to everyone (they&apos;re your own).
+                  </li>
+                  <li>
+                    <strong>The dashboard body</strong> — stat tiles, Quick access and the
+                    By-resource widgets — is gated the same way, so it shows the same surface as
+                    the sidebar instead of leaking every resource.
+                  </li>
+                </ul>
+                <p>
+                  Super-admins (the <code>*</code> grant) short-circuit every check and still see
+                  everything. Verified end to end: a fresh triple app, a custom{" "}
+                  <code>support</code> role granted only Categories and Products, logged in through
+                  the browser — sidebar and dashboard showed only those two resources, their own
+                  notifications and the dashboard itself; the admin still saw the full app.
+                </p>
+              </div>
+            </div>
+
             {/* v3.81.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
