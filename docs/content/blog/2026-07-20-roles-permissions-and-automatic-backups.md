@@ -8,6 +8,7 @@ readingTime: "9 min"
 author: "Muke JohnBaptist"
 tags: [grit, rbac, roles, permissions, authorization, backups, security, go, react]
 canonical: "https://gritframework.dev/blog/roles-permissions-and-automatic-backups"
+thumbnail: "/blog/grit_roles_and_permissions.png"
 ---
 
 Two things every real app needs, and almost nobody wants to build twice:
