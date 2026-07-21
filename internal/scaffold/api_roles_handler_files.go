@@ -27,6 +27,7 @@ func roleHandlerGo() string {
 	src := `package handlers
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -242,13 +243,33 @@ func (h *RoleHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	// Drop the assignments too, or users keep a dangling role_id that resolves
-	// to nothing and silently loses them permissions.
-	if err := h.DB.Where("role_id = ?", role.ID).Delete(&models.UserRole{}).Error; err != nil {
+	// A role still assigned to users cannot be deleted — removing it would
+	// silently strip those users of the permissions it grants. Reassign or
+	// remove them first, then the role becomes deletable.
+	//
+	// Assignment comes two ways and BOTH must be counted: the user_roles
+	// join table (the real model) AND the legacy users.role string, which is
+	// how the admin's user form assigns a role today. Checking only the join
+	// table let a role deleted out from under string-assigned users.
+	var viaJoin, viaString int64
+	if err := h.DB.Model(&models.UserRole{}).Where("role_id = ?", role.ID).Count(&viaJoin).Error; err != nil {
 		respond.Internal(c, err)
 		return
 	}
-	if err := h.DB.Delete(&role).Error; err != nil {
+	if err := h.DB.Model(&models.User{}).Where("role = ?", role.Name).Count(&viaString).Error; err != nil {
+		respond.Internal(c, err)
+		return
+	}
+	if total := viaJoin + viaString; total > 0 {
+		respond.BadRequest(c, fmt.Sprintf("Role is assigned to %d user(s); reassign them before deleting it", total))
+		return
+	}
+
+	// Hard delete (Unscoped): the role name has a unique index, and a soft
+	// delete leaves a tombstone row that blocks ever creating a role with the
+	// same name again ("duplicate key idx_roles_name"). An unassigned role has
+	// no audit value, so remove it outright.
+	if err := h.DB.Unscoped().Delete(&role).Error; err != nil {
 		respond.Internal(c, err)
 		return
 	}

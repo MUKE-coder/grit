@@ -164,12 +164,15 @@ func DefaultRoles() []Role {
 func SeedRoles(db *gorm.DB) error {
 	for _, want := range DefaultRoles() {
 		var existing Role
-		err := db.Where("name = ?", want.Name).First(&existing).Error
-		if err == nil {
-			continue // already present — leave the operator's grants intact
-		}
-		if err != gorm.ErrRecordNotFound {
+		// Find, not First: on a fresh database every role is missing, and First
+		// logs each miss as "record not found" — three scary-looking lines on
+		// the first migrate even though creating them is exactly the point.
+		// Find treats zero rows as normal and stays quiet.
+		if err := db.Where("name = ?", want.Name).Limit(1).Find(&existing).Error; err != nil {
 			return err
+		}
+		if existing.ID != "" {
+			continue // already present — leave the operator's grants intact
 		}
 		role := want
 		if err := db.Create(&role).Error; err != nil {

@@ -99,6 +99,16 @@ func coreModules() []Module {
 			Name: "Content",
 			Groups: []Group{
 				{
+					Key:  "publishing",
+					Name: "Publishing",
+					Features: []Feature{
+						// Blog ships as a built-in resource (/api/admin/blogs).
+						// It belongs in the catalog like any other so a role can
+						// be granted blog access and the UI can gate on blogs.*.
+						{Key: "blogs", Name: "Blogs", Actions: AllActions},
+					},
+				},
+				{
 					Key:  "media",
 					Name: "Media",
 					Features: []Feature{

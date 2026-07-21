@@ -124,6 +124,12 @@ export interface FieldDefinition {
   displayField?: string;
   relationshipKey?: string;
 
+  // select field: load options from an endpoint at render time, on top of any
+  // static options. optionsLabelKey/optionsValueKey default to "name".
+  optionsUrl?: string;
+  optionsLabelKey?: string;
+  optionsValueKey?: string;
+
   // v3.31.30 — file / files field knobs. Set by the resource generator
   // from the CLI :file:<accepts> / :files:<accepts> syntax, but can be
   // overridden by hand in the resource definition.
@@ -430,6 +436,10 @@ export const usersResource = defineResource({
         label: "Role",
         type: "select",
         required: true,
+        // Loads every role from the database (built-in and custom), so a role
+        // created at runtime through Roles & permissions is assignable here.
+        // The static list stays as an offline fallback + the CLI injection point.
+        optionsUrl: "/api/roles",
         options: [
           { label: "Admin", value: "ADMIN" },
           { label: "Editor", value: "EDITOR" },
@@ -1495,7 +1505,7 @@ export const blogsResource = defineResource({
   name: "Blog",
   slug: "blogs",
   endpoint: "/api/admin/blogs",
-  icon: "FileText",
+  icon: "Newspaper",
   label: { singular: "Blog", plural: "Blogs" },
 
   table: {

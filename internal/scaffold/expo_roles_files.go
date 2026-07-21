@@ -182,6 +182,15 @@ export default function RoleEditorScreen() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Permission modules collapse by default; expand one at a time.
+  const [openModules, setOpenModules] = useState<Set<string>>(new Set());
+  const toggleModule = (key: string) =>
+    setOpenModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -332,10 +341,23 @@ export default function RoleEditorScreen() {
           {selected.size} of {catalog?.keys?.length ?? 0} granted
         </Text>
 
-        {catalog?.modules?.map((mod) => (
+        {catalog?.modules?.map((mod) => {
+          const modKeys = mod.groups.flatMap((g) =>
+            g.features.flatMap((f) => f.actions.map((a) => f.key + "." + a))
+          );
+          const modOn = modKeys.filter((k) => selected.has(k)).length;
+          const isOpen = openModules.has(mod.key);
+          return (
           <View key={mod.key} className="mb-5">
-            <Text className="text-[12px] font-semibold uppercase tracking-wide text-[#9090a8] mb-2">{mod.name}</Text>
-            {mod.groups.map((group) => (
+            {/* Collapsed by default — tap a module to expand it. */}
+            <Pressable onPress={() => toggleModule(mod.key)} className="flex-row items-center justify-between mb-2">
+              <View className="flex-row items-center">
+                <Ionicons name={isOpen ? "chevron-down" : "chevron-forward"} size={14} color="#9090a8" />
+                <Text className="text-[12px] font-semibold uppercase tracking-wide text-[#9090a8] ml-1">{mod.name}</Text>
+              </View>
+              <Text className="text-[12px] text-[#6c5ce7]">{modOn}/{modKeys.length}</Text>
+            </Pressable>
+            {isOpen && mod.groups.map((group) => (
               <View key={group.key} className="mb-3">
                 {group.features.map((feature) => {
                   const keys = feature.actions.map((a) => feature.key + "." + a);
@@ -379,7 +401,8 @@ export default function RoleEditorScreen() {
               </View>
             ))}
           </View>
-        ))}
+          );
+        })}
 
         <Pressable
           onPress={onSave}

@@ -145,6 +145,35 @@ func TestRoleAPI_SystemRolesProtected(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
 }
 
+func TestRoleAPI_DeleteBlockedWhileAssigned(t *testing.T) {
+	db := roleTestDB(t)
+	r := roleRouter(db)
+
+	// A custom role assigned to a user via the legacy role STRING (how the admin
+	// user form assigns) must not be deletable — deleting it would silently
+	// strip that user of its grants.
+	w := do(t, r, "POST", "/roles", map[string]any{"name": "support", "grants": []string{"users.view"}})
+	require.Equal(t, http.StatusCreated, w.Code, w.Body.String())
+	var role models.Role
+	require.NoError(t, db.Where("name = ?", "support").First(&role).Error)
+
+	u := models.User{ID: "sup1", Email: "sup1@x.com", FirstName: "S", LastName: "1", Role: "support"}
+	require.NoError(t, db.Create(&u).Error)
+
+	w = do(t, r, "DELETE", "/roles/"+role.ID, nil)
+	assert.Equal(t, http.StatusBadRequest, w.Code, "a role assigned via the role string must not be deletable")
+
+	// Reassign the user, and the role becomes deletable — then its name is free
+	// to reuse (hard delete, not a soft-delete tombstone that trips the unique
+	// index).
+	require.NoError(t, db.Model(&models.User{}).Where("id = ?", "sup1").Update("role", models.RoleUser).Error)
+	w = do(t, r, "DELETE", "/roles/"+role.ID, nil)
+	assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
+
+	w = do(t, r, "POST", "/roles", map[string]any{"name": "support", "grants": []string{"users.view"}})
+	assert.Equal(t, http.StatusCreated, w.Code, "the name must be reusable after delete")
+}
+
 func TestRoleAPI_AssignUserRoles(t *testing.T) {
 	db := roleTestDB(t)
 	r := roleRouter(db)

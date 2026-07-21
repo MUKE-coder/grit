@@ -523,12 +523,14 @@ import {
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
+  LayoutGrid,
   Activity,
   MessageSquare,
   Bell,
   Settings,
   TrendingUp,
   Shield,
+  ShieldCheck,
   User as UserIcon,
   LogOut,
 } from "@/lib/icons";
@@ -570,9 +572,12 @@ const SYSTEM_NAV: readonly NavEntry[] = [
   { href: "/system/performance",  label: "Performance",   iconKey: "TrendingUp",   adminOnly: true },
   { href: "/system/roles",        label: "Roles & permissions", iconKey: "ShieldCheck", adminOnly: true, requires: "roles.view" },
   { href: "/system/security",     label: "Security",      iconKey: "Shield",       adminOnly: true },
-  { href: "/system",              label: "System Hub",    iconKey: "Settings",     adminOnly: true },
+  { href: "/system",              label: "System Hub",    iconKey: "LayoutGrid",   adminOnly: true },
 ] as const;
 
+// Every iconKey used in SYSTEM_NAV / INTERNAL_NAV must have an entry here, or
+// the link renders with no icon (that's how "Roles & permissions" lost its
+// ShieldCheck). Keep distinct icons per link so two entries don't look alike.
 const INTERNAL_ICON: Record<string, React.ReactNode> = {
   Activity: <Activity className="h-5 w-5" />,
   ActivityIcon: <Activity className="h-5 w-5" />,
@@ -581,6 +586,8 @@ const INTERNAL_ICON: Record<string, React.ReactNode> = {
   Settings: <Settings className="h-5 w-5" />,
   TrendingUp: <TrendingUp className="h-5 w-5" />,
   Shield: <Shield className="h-5 w-5" />,
+  ShieldCheck: <ShieldCheck className="h-5 w-5" />,
+  LayoutGrid: <LayoutGrid className="h-5 w-5" />,
 };
 
 interface SidebarProps {

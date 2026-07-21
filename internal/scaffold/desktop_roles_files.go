@@ -206,6 +206,15 @@ function RoleEditor({
   const [name, setName] = useState(role?.name ?? "");
   const [description, setDescription] = useState(role?.description ?? "");
   const [selected, setSelected] = useState<Set<string>>(new Set(role?.expanded ?? []));
+  // Permission modules are collapsed by default; expand one at a time.
+  const [openModules, setOpenModules] = useState<Set<string>>(new Set());
+  const toggleModule = (key: string) =>
+    setOpenModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -310,10 +319,26 @@ function RoleEditor({
       )}
 
       <div className="mt-5 max-h-[420px] overflow-y-auto pr-1">
-        {catalog?.modules?.map((mod) => (
-          <div key={mod.key} className="mb-4">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-foreground-muted">{mod.name}</p>
-            {mod.groups.map((group) =>
+        {catalog?.modules?.map((mod) => {
+          const modKeys = mod.groups.flatMap((g) =>
+            g.features.flatMap((f) => f.actions.map((a) => f.key + "." + a))
+          );
+          const modOn = modKeys.filter((k) => selected.has(k)).length;
+          const isOpen = openModules.has(mod.key);
+          return (
+          <div key={mod.key} className="mb-3">
+            {/* Collapsed by default — click to expand one module at a time. */}
+            <button
+              onClick={() => toggleModule(mod.key)}
+              className="mb-2 flex w-full items-center justify-between text-left"
+            >
+              <span className="flex items-center gap-1.5">
+                <span className={"text-foreground-muted transition-transform " + (isOpen ? "rotate-90" : "")}>&rsaquo;</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-foreground-muted">{mod.name}</span>
+              </span>
+              <span className="text-[11px] text-accent">{modOn}/{modKeys.length}</span>
+            </button>
+            {isOpen && mod.groups.map((group) =>
               group.features.map((feature) => {
                 const keys = feature.actions.map((a) => feature.key + "." + a);
                 const onCount = keys.filter((k) => selected.has(k)).length;
@@ -352,7 +377,8 @@ function RoleEditor({
               })
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mt-4 flex items-center gap-2">
