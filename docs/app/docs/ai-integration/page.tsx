@@ -24,10 +24,11 @@ export default function AIIntegrationPage() {
                 Generate a Grit prompt for your<br className="hidden md:block" /> AI coding agent
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed max-w-3xl">
-                Building with Claude Code, Cursor, Lovable, Bolt, or another AI tool? Answer four
-                questions and we&apos;ll write the prompt that tells your agent exactly how to plan
-                and scaffold your project with Grit — kit choice, stack, file structure, and the
-                four planning documents to produce first.
+                Building with Claude Code, Cursor, Lovable, Bolt, or another AI tool? Pick the
+                clients you need, choose your stack and any plugins, and we&apos;ll generate a
+                complete brief that teaches your agent Grit from zero to one hundred — the exact
+                scaffold command, the conventions, code generation, batteries, and pitfalls.
+                Copy it, or download it as a Markdown file.
               </p>
 
               <div className="mt-6 flex items-center gap-4 flex-wrap text-sm">
