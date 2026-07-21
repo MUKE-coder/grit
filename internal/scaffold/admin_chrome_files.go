@@ -573,6 +573,7 @@ const SYSTEM_NAV: readonly NavEntry[] = [
   { href: "/system/roles",        label: "Roles & permissions", iconKey: "ShieldCheck", adminOnly: true, requires: "roles.view" },
   { href: "/system/security",     label: "Security",      iconKey: "Shield",       adminOnly: true },
   { href: "/system",              label: "System Hub",    iconKey: "LayoutGrid",   adminOnly: true },
+  // grit:nav:system
 ] as const;
 
 // Every iconKey used in SYSTEM_NAV / INTERNAL_NAV must have an entry here, or
