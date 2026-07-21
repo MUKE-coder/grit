@@ -514,6 +514,7 @@ import { DataTable } from "@/components/tables/data-table";
 import { TableToolbar } from "@/components/tables/table-toolbar";
 import { TablePagination } from "@/components/tables/table-pagination";
 import { TableFilters } from "@/components/tables/table-filters";
+// grit:resource:imports
 import { dateRangeToQueryParams, type DateRange } from "@/components/tables/date-filter";
 
 // v3.31.34 -- read date filter state from URL search params so a
@@ -893,6 +894,8 @@ function ResourceListView({ resource }: ResourcePageProps) {
           apiSearchParams={apiSearchParams}
           onImport={resource.table.import !== false ? () => setImportOpen(true) : undefined}
         />
+
+        {/* grit:table:toolbar */}
 
         {resource.table.filters && resource.table.filters.length > 0 && (
           <TableFilters
