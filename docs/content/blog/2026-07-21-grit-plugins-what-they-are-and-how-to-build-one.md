@@ -8,6 +8,7 @@ readingTime: "11 min"
 author: "Muke JohnBaptist"
 tags: [grit, plugins, extensibility, codegen, multitenancy, go, react, architecture]
 canonical: "https://gritframework.dev/blog/grit-plugins-what-they-are-and-how-to-build-one"
+thumbnail: "/blog/grit_plugins.png"
 ---
 
 Most frameworks let you extend them with a package: you `install` it, it lives in

@@ -80,7 +80,10 @@ export function getAllPosts(): BlogPost[] {
     const slug = file.replace(/^\d{4}-\d{2}-\d{2}-/, '').replace(/\.md$/, '')
     return {
       slug,
-      thumbnail: findThumbnail(slug),
+      // An explicit `thumbnail:` in the frontmatter wins (lets a post point at
+      // an image whose filename doesn't match the slug); otherwise fall back to
+      // the by-slug convention public/blog/<slug>.<ext>.
+      thumbnail: (typeof data.thumbnail === 'string' && data.thumbnail.trim()) || findThumbnail(slug),
       title: (data.title as string) || file,
       subtitle: (data.subtitle as string) || '',
       date: toISO(data.date),
