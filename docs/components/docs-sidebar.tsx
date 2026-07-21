@@ -16,6 +16,7 @@ import {
   Palette,
   BookOpen,
   Layers,
+  Package,
   Settings,
   Lightbulb,
   Wand2,
@@ -186,8 +187,18 @@ const navItems: NavItem[] = [
       { title: 'AI Integration', href: '/docs/batteries/ai' },
       { title: 'Security (Sentinel)', href: '/docs/batteries/security' },
       { title: 'Turning modules off', href: '/docs/batteries/modules' },
+    ],
+  },
+  {
+    title: 'Plugins',
+    icon: <Package className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'What are plugins', href: '/docs/plugins/overview' },
+      { title: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
+      { title: 'Impersonate', href: '/docs/plugins/impersonate' },
+      { title: 'Command palette', href: '/docs/plugins/command-palette' },
+      { title: 'Saved views', href: '/docs/plugins/saved-views' },
       { title: 'Writing a plugin', href: '/docs/plugins/authoring' },
-      { title: 'Multi-tenancy plugin', href: '/docs/plugins/multitenant' },
     ],
   },
   {

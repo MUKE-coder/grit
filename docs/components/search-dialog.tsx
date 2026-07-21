@@ -140,6 +140,14 @@ const searchIndex: SearchItem[] = [
   { title: 'CSV / Excel Export', href: '/docs/batteries/storage', section: 'Batteries', keywords: 'csv excel xlsx export resource download streaming excelize' },
   { title: 'Cursor-based Pagination', href: '/docs/backend/response-format', section: 'Batteries', keywords: 'cursor pagination offset paginate next_cursor has_more sticky pages stable' },
 
+  // Plugins
+  { title: 'What are plugins', href: '/docs/plugins/overview', section: 'Plugins', keywords: 'plugin plugins overview extend extension codegen code generation lockfile reversible install remove grit plugin add' },
+  { title: 'Multi-tenancy plugin', href: '/docs/plugins/multitenant', section: 'Plugins', keywords: 'plugin multitenant multi-tenancy organizations org tenant scoping gorm callback per-org roles saas' },
+  { title: 'Impersonate plugin', href: '/docs/plugins/impersonate', section: 'Plugins', keywords: 'plugin impersonate impersonation admin login as user sign in support debug audit trail return to yourself session swap' },
+  { title: 'Command palette plugin', href: '/docs/plugins/command-palette', section: 'Plugins', keywords: 'plugin command palette cmdk ctrl-k cmd-k keyboard navigation search jump quick actions spotlight' },
+  { title: 'Saved views plugin', href: '/docs/plugins/saved-views', section: 'Plugins', keywords: 'plugin saved views table filters sort columns advanced tables named view per-user query string' },
+  { title: 'Writing a plugin', href: '/docs/plugins/authoring', section: 'Plugins', keywords: 'plugin authoring write build create custom plugin injection marker lockfile files context' },
+
   // Security & Testing
   { title: 'Security Guide', href: '/docs/security', section: 'Security & Testing', keywords: 'security owasp top 10 2025 idor sqli xss csrf ssrf broken access control authentication authorization injection cryptography secrets headers csp hsts dependabot supply chain audit log hardening checklist sentinel waf rate limiting' },
   { title: "Defender's Handbook ↔ Grit", href: '/docs/security/defenders-handbook', section: 'Security & Testing', keywords: 'defenders handbook jb desishub hackers break in attack defense nmap reconnaissance gobuster directory brute force hydra login credential stuffing username enumeration sql injection union select blind time based password hash cracking bcrypt argon2 salt rainbow table totp seed theft sim swap adversary in the middle aitm evilginx phishing reverse shell meterpreter mimikatz browser saved passwords mitm ssl strip evil twin arp poisoning dns hijacking ddos mirai botnet least privilege defense in depth' },
