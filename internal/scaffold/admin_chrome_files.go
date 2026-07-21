@@ -545,11 +545,16 @@ const GRIT_CLI_VERSION = "v{{GRIT_VERSION}}";
 // Internal nav block — pages that exist for every Grit app regardless of
 // which resources were generated. Kept out of the resources registry so
 // developers don't accidentally remove them when editing resources.ts.
-const INTERNAL_NAV = [
-  { href: "/system/activity",      label: "Activity",      iconKey: "Activity",       adminOnly: false, module: "audit" },
-  { href: "/system/support",       label: "Support",       iconKey: "MessageSquare",  adminOnly: false },
+// Typed as NavEntry[] so items can carry a "requires" permission and be
+// gated — otherwise these show for every signed-in user regardless of role.
+const INTERNAL_NAV: readonly NavEntry[] = [
+  // The audit/activity log is admin-facing — gate on audit.view.
+  { href: "/system/activity",      label: "Activity",      iconKey: "Activity",       adminOnly: false, module: "audit", requires: "audit.view" },
+  // Ticket triage is an admin surface.
+  { href: "/system/support",       label: "Support",       iconKey: "MessageSquare",  adminOnly: true },
+  // A user's own notifications — fine to show to any signed-in user.
   { href: "/system/notifications", label: "Notifications", iconKey: "Bell",           adminOnly: false },
-] as const;
+];
 
 // v3.31.5: dedicated SYSTEM section for admin-only operational surfaces.
 // Health / Performance / Security live here so they're one click away
@@ -567,7 +572,7 @@ type NavEntry = {
 };
 
 const SYSTEM_NAV: readonly NavEntry[] = [
-  { href: "/settings/dashboard", label: "Dashboard settings", iconKey: "Settings",    adminOnly: false },
+  { href: "/settings/dashboard", label: "Dashboard settings", iconKey: "Settings",    adminOnly: true },
   { href: "/system/health",       label: "System Health", iconKey: "ActivityIcon", adminOnly: true },
   { href: "/system/performance",  label: "Performance",   iconKey: "TrendingUp",   adminOnly: true },
   { href: "/system/roles",        label: "Roles & permissions", iconKey: "ShieldCheck", adminOnly: true, requires: "roles.view" },
@@ -638,14 +643,26 @@ export function CollapsibleSidebar({
   const { can, isLoading: permsLoading } = usePermissions();
   const { moduleEnabled } = useModules();
 
-  const visibleResources = resources.filter((r) => !r.adminOnly || isAdmin);
-  const visibleInternal = INTERNAL_NAV.filter((r) => !r.adminOnly || isAdmin);
   // Permission gating, on top of the adminOnly check.
   //
   // Only applied once permissions have loaded: can() fails closed while the
   // request is in flight, so filtering during load would briefly blank items an
   // admin is entitled to. This is a UX layer either way — every route is
   // enforced server-side.
+  //
+  // Every generated resource registers a "<slug>.view" permission (feature key
+  // == slug), so a user who was granted, say, only Categories and Products sees
+  // exactly those two in the nav — not the whole catalog. Super-admins short-
+  // circuit inside can(), so they still see everything.
+  const visibleResources = resources.filter(
+    (r) => (!r.adminOnly || isAdmin) && (permsLoading || can(r.slug + ".view"))
+  );
+  const visibleInternal = INTERNAL_NAV.filter(
+    (r) =>
+      (!r.adminOnly || isAdmin) &&
+      (!r.requires || permsLoading || can(r.requires)) &&
+      (!r.module || moduleEnabled(r.module))
+  );
   const visibleSystem = SYSTEM_NAV.filter(
     (r) =>
       (!r.adminOnly || isAdmin) &&

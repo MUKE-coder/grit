@@ -21,6 +21,7 @@ import {
   Tooltip, XAxis, YAxis, PieChart, Pie, Cell,
 } from "recharts";
 import { useMe } from "@/hooks/use-auth";
+import { usePermissions } from "@/hooks/use-permissions";
 import { resources } from "@/resources";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { SkeletonCards } from "@/components/ui/Skeleton";
@@ -50,6 +51,15 @@ interface NotificationsResponse { unread: number }
 
 export default function DashboardPage() {
   const { data: user } = useMe();
+  // Gate every resource-driven widget by the viewer's "<slug>.view" grant so
+  // the dashboard shows the same surface the sidebar does — a user granted
+  // only Categories + Products sees only those, not the whole catalog. Fails
+  // open while permissions load (can() is closed until then); super-admins
+  // short-circuit inside can(). Every underlying route is enforced server-side.
+  const { can, isSuper, isLoading: permsLoading } = usePermissions();
+  const visibleResources = resources.filter((r) => permsLoading || can(r.slug + ".view"));
+  const canViewUsers = permsLoading || can("users.view");
+  const canViewActivity = permsLoading || can("audit.view");
   // v3.31.44 -- shared DateFilter scopes the per-resource widgets
   // (Total + Latest N). Held in state here so the filter survives
   // hot-reload but doesn't bleed into the URL (would conflict with
@@ -171,22 +181,26 @@ export default function DashboardPage() {
         <SkeletonCards count={4} />
       ) : (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <StatTile
-            label="Users"
-            value={userCount.data?.users ?? 0}
-            icon={<Users className="h-4 w-4" />}
-            href="/resources/users"
-            accent="info"
-          />
-          <StatTile
-            label="Events (24h)"
-            value={activityStats.data?.total ?? 0}
-            icon={<ActivityIcon className="h-4 w-4" />}
-            href="/system/activity"
-            accent="default"
-            sublabel={(activityStats.data?.critical ?? 0) > 0 ? (activityStats.data?.critical + " critical") : "All clear"}
-            sublabelTone={(activityStats.data?.critical ?? 0) > 0 ? "danger" : "success"}
-          />
+          {canViewUsers && (
+            <StatTile
+              label="Users"
+              value={userCount.data?.users ?? 0}
+              icon={<Users className="h-4 w-4" />}
+              href="/resources/users"
+              accent="info"
+            />
+          )}
+          {canViewActivity && (
+            <StatTile
+              label="Events (24h)"
+              value={activityStats.data?.total ?? 0}
+              icon={<ActivityIcon className="h-4 w-4" />}
+              href="/system/activity"
+              accent="default"
+              sublabel={(activityStats.data?.critical ?? 0) > 0 ? (activityStats.data?.critical + " critical") : "All clear"}
+              sublabelTone={(activityStats.data?.critical ?? 0) > 0 ? "danger" : "success"}
+            />
+          )}
           <StatTile
             label="Notifications"
             value={notifications.data ?? 0}
@@ -197,7 +211,7 @@ export default function DashboardPage() {
           />
           <StatTile
             label="Resources"
-            value={resources.length}
+            value={visibleResources.length}
             icon={<Database className="h-4 w-4" />}
             href="/dashboard"
             accent="default"
@@ -327,7 +341,7 @@ export default function DashboardPage() {
       <div className="mt-6">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-muted">Quick access</h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-          {resources.slice(0, 8).map((r) => {
+          {visibleResources.slice(0, 8).map((r) => {
             const Icon = getIcon(r.icon);
             return (
               <Link
@@ -345,16 +359,18 @@ export default function DashboardPage() {
               </Link>
             );
           })}
-          <Link
-            href="/system"
-            className="group rounded-xl border border-dashed border-border bg-bg-elevated p-4 transition-colors hover:bg-bg-hover"
-          >
-            <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-bg-hover text-text-secondary">
-              <Shield className="h-4 w-4" />
-            </div>
-            <p className="text-sm font-semibold text-foreground group-hover:text-accent">System hub</p>
-            <p className="text-xs text-text-muted">Jobs, files, security, observability</p>
-          </Link>
+          {(permsLoading || isSuper) && (
+            <Link
+              href="/system"
+              className="group rounded-xl border border-dashed border-border bg-bg-elevated p-4 transition-colors hover:bg-bg-hover"
+            >
+              <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-bg-hover text-text-secondary">
+                <Shield className="h-4 w-4" />
+              </div>
+              <p className="text-sm font-semibold text-foreground group-hover:text-accent">System hub</p>
+              <p className="text-xs text-text-muted">Jobs, files, security, observability</p>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -364,7 +380,7 @@ export default function DashboardPage() {
           are skipped here. Each row's queries are keyed on the
           shared DateFilter range so changing the filter refetches
           every widget in lockstep. */}
-      {resources.filter((r) => r.dashboard?.enabled !== false).length > 0 && (
+      {visibleResources.filter((r) => r.dashboard?.enabled !== false).length > 0 && (
         <div className="mt-8">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
@@ -375,7 +391,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="space-y-4">
-            {resources
+            {visibleResources
               .filter((r) => r.dashboard?.enabled !== false)
               .map((r) => (
                 <ResourceWidgetsRow key={r.slug} resource={r} dateRange={dateRange} />
