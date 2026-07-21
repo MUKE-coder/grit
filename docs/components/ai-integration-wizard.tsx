@@ -50,6 +50,10 @@ export function AIIntegrationWizard() {
   const [pluginMode, setPluginMode] = useState<'none' | 'all' | 'pick'>('none')
   const [picked, setPicked] = useState<PluginId[]>([])
   const [projectName, setProjectName] = useState('my-app')
+  // Which command option the user picked. Held by id (stable across frontend/
+  // theme edits); falls back to the first/recommended option when the id no
+  // longer exists (e.g. after changing which clients are selected).
+  const [chosenId, setChosenId] = useState<string>('')
 
   const plugins: PluginId[] = pluginMode === 'all' ? ALL_PLUGINS : pluginMode === 'pick' ? picked : []
   const hasWebUI = clients.includes('website') || clients.includes('admin')
@@ -59,9 +63,12 @@ export function AIIntegrationWizard() {
     [clients, frontend, theme, projectName],
   )
 
+  // Resolve the chosen option, defaulting to the recommended (first) one.
+  const chosen = commands.options.find((o) => o.id === chosenId) ?? commands.options[0]
+
   const prompt = useMemo(
-    () => buildFrameworkPrompt({ clients, frontend, theme, plugins, projectName }),
-    [clients, frontend, theme, plugins, projectName],
+    () => buildFrameworkPrompt({ clients, frontend, theme, plugins, projectName, command: chosen.command }),
+    [clients, frontend, theme, plugins, projectName, chosen.command],
   )
 
   function toggleClient(id: ClientId) {
@@ -214,35 +221,56 @@ export function AIIntegrationWizard() {
               </div>
             )}
 
-            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <span className="text-xs font-medium uppercase tracking-wide text-primary">
-                  Recommended · {commands.archLabel}
+            <p className="mb-2 text-sm font-medium text-foreground">
+              Choose your scaffold command
+              {commands.options.length > 1 && (
+                <span className="ml-1 font-normal text-muted-foreground">
+                  — the selected one is used in your prompt.
                 </span>
-                <CopyButton text={commands.primary} />
-              </div>
-              <code className="block break-all font-mono text-sm text-foreground">{commands.primary}</code>
-            </div>
-
-            {commands.variants.length > 0 && (
-              <div className="mt-4">
-                <p className="mb-2 text-sm font-medium text-foreground">Or a variant</p>
-                <div className="space-y-2">
-                  {commands.variants.map((v) => (
-                    <div
-                      key={v.command}
-                      className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2"
+              )}
+            </p>
+            <div className="space-y-2">
+              {commands.options.map((o, i) => {
+                const selected = o.id === chosen.id
+                return (
+                  <div
+                    key={o.id}
+                    className={
+                      'flex items-start gap-2 rounded-xl border p-2 pr-2 transition-colors ' +
+                      (selected ? 'border-primary bg-primary/5' : 'border-border')
+                    }
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setChosenId(o.id)}
+                      aria-pressed={selected}
+                      className="flex min-w-0 flex-1 items-start gap-3 rounded-lg p-2 text-left"
                     >
-                      <div className="min-w-0">
-                        <div className="text-xs text-muted-foreground">{v.label}</div>
-                        <code className="block break-all font-mono text-sm text-foreground">{v.command}</code>
-                      </div>
-                      <CopyButton text={v.command} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                      <span
+                        className={
+                          'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ' +
+                          (selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border')
+                        }
+                      >
+                        {selected && <Check className="h-3 w-3" />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="mb-1 flex flex-wrap items-center gap-2">
+                          {i === 0 && (
+                            <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                              Recommended
+                            </span>
+                          )}
+                          <span className="text-xs text-muted-foreground">{o.label}</span>
+                        </span>
+                        <code className="block break-all font-mono text-sm text-foreground">{o.command}</code>
+                      </span>
+                    </button>
+                    <CopyButton text={o.command} className="mt-1" />
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
 

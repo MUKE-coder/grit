@@ -13,6 +13,17 @@ export interface PromptInput {
   theme: string
   plugins: PluginId[]
   projectName: string
+  /** The scaffold command the user chose in the wizard. When omitted, the
+   *  recommended command (first option from deriveCommands) is used. */
+  command?: string
+}
+
+export interface CommandOption {
+  id: string
+  /** Short human label shown above the command. */
+  label: string
+  /** The full `grit new ...` command. */
+  command: string
 }
 
 const PLUGIN_META: Record<PluginId, { summary: string }> = {
@@ -22,11 +33,12 @@ const PLUGIN_META: Record<PluginId, { summary: string }> = {
   'saved-views': { summary: "Per-user named table views (filters + sort), built on the tables' URL state." },
 }
 
-// Map the selected clients + frontend into the recommended `grit new` command
-// plus a few honest variants, so the reader sees the shape of the CLI.
+// Map the selected clients + frontend into a set of `grit new` command options,
+// so the reader sees the shape of the CLI and can pick the exact one they want.
+// The FIRST option is the recommended default. Frontend + theme flags are baked
+// into every option, so flipping those toggles updates all commands at once.
 export function deriveCommands(input: Pick<PromptInput, 'clients' | 'frontend' | 'theme' | 'projectName'>): {
-  primary: string
-  variants: { label: string; command: string }[]
+  options: CommandOption[]
   archLabel: string
 } {
   const { clients, frontend, theme, projectName } = input
@@ -55,46 +67,61 @@ export function deriveCommands(input: Pick<PromptInput, 'clients' | 'frontend' |
   }
 
   const webish = arch === 'triple' || arch === 'double'
-  let primary = `grit new ${name} --${arch}`
-  if (webish) primary += fe
-  if (webish) primary += themeFlag
-  if (has('mobile') && arch !== 'mobile') primary += ' --expo'
-  if (has('desktop')) primary += ' --desktop'
 
-  const variants: { label: string; command: string }[] = []
+  // The command that exactly matches the selected clients.
+  let explicit = `grit new ${name} --${arch}`
+  if (webish) explicit += fe + themeFlag
+  if (has('mobile') && arch !== 'mobile') explicit += ' --expo'
+  if (has('desktop')) explicit += ' --desktop'
 
-  if (arch === 'triple') {
-    variants.push({ label: 'Add a docs site too (full)', command: primary.replace('--triple', '--full') })
-  }
-  if (webish && frontend === 'next') {
-    variants.push({ label: 'Vite / TanStack Router instead of Next.js', command: primary.replace('--next', '--vite') })
-  }
-  if (webish && frontend === 'vite') {
-    variants.push({ label: 'Next.js instead of Vite', command: primary.replace('--vite', '--next') })
-  }
-  if (has('website') && !has('admin') && !has('mobile') && !has('desktop')) {
-    variants.push({
-      label: 'One self-contained binary (embedded SPA)',
-      command: `grit new ${name} --single${frontend === 'vite' ? ' --vite' : ''}`,
+  // `--full` already bundles web + admin + API + mobile + desktop + a docs site,
+  // so it takes NO --expo/--desktop (those would be redundant). It still honours
+  // the frontend + theme choice.
+  const fullCommand = `grit new ${name} --full${fe}${themeFlag}`
+
+  const options: CommandOption[] = []
+
+  // When the user asked for the whole multi-client set (web + admin + mobile +
+  // desktop), `--full` is the clean, one-flag way to say it — recommend that,
+  // and offer the explicit flag list (without the docs site) as the alternative.
+  if (arch === 'triple' && has('mobile') && has('desktop')) {
+    options.push({
+      id: 'full',
+      label: 'Everything in one flag — web, admin, API, mobile, desktop + a docs site',
+      command: fullCommand,
     })
-  }
-  if (webish) {
-    const alt = theme === 'aurora' ? 'pulse' : 'aurora'
-    const tail =
-      (has('mobile') && arch !== 'mobile' ? ' --expo' : '') + (has('desktop') ? ' --desktop' : '')
-    variants.push({
-      label: `Try the ${alt} theme`,
-      command: `grit new ${name} --${arch}${fe} --theme ${alt}${tail}`,
+    options.push({
+      id: 'explicit',
+      label: 'Explicit flags instead (skips the docs site)',
+      command: explicit,
     })
+  } else {
+    options.push({ id: 'recommended', label: archLabel, command: explicit })
+    if (arch === 'triple') {
+      options.push({
+        id: 'full',
+        label: 'Add mobile, desktop & a docs site (full)',
+        command: fullCommand,
+      })
+    }
+    if (has('website') && !has('admin') && !has('mobile') && !has('desktop')) {
+      options.push({
+        id: 'single',
+        label: 'One self-contained binary (embedded SPA)',
+        command: `grit new ${name} --single${frontend === 'vite' ? ' --vite' : ''}${themeFlag}`,
+      })
+    }
   }
 
-  return { primary, variants, archLabel }
+  return { options, archLabel }
 }
 
 export function buildFrameworkPrompt(input: PromptInput): string {
-  const { clients, frontend, plugins, projectName } = input
+  const { clients, frontend, plugins, projectName, command } = input
   const name = projectName || 'my-app'
-  const { primary } = deriveCommands(input)
+  // Use the command the user chose in the wizard; fall back to the recommended
+  // (first) option when none was passed.
+  const primary = command || deriveCommands(input).options[0].command
   const has = (c: ClientId) => clients.includes(c)
 
   const pluginAdds =
