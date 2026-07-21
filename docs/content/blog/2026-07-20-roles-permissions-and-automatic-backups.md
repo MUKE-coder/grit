@@ -138,3 +138,9 @@ grit new my-app --triple
 ```
 
 Ship the product. The boring, important parts are handled.
+
+---
+
+**Read more in the docs:** [Roles &amp; Permissions](/docs/security/authorization) ·
+[Roles &amp; Permissions UI](/docs/admin/roles) ·
+[Data &amp; Backup](/docs/batteries/backups)

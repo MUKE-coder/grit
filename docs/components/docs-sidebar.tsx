@@ -186,6 +186,7 @@ const navItems: NavItem[] = [
       { title: 'Redis Caching', href: '/docs/batteries/caching' },
       { title: 'AI Integration', href: '/docs/batteries/ai' },
       { title: 'Security (Sentinel)', href: '/docs/batteries/security' },
+      { title: 'Data & Backup', href: '/docs/batteries/backups' },
       { title: 'Turning modules off', href: '/docs/batteries/modules' },
     ],
   },
