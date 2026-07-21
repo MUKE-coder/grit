@@ -1506,8 +1506,16 @@ export function NumberField({ field, value, onChange, error }: NumberFieldProps)
 }
 
 // adminSelectField returns the select dropdown field component.
+//
+// Beyond static options, a field may set optionsUrl to load choices from an
+// endpoint at render time (optionsLabelKey/optionsValueKey default to "name").
+// The users "role" field uses this to list every role in the database —
+// including ones created at runtime through the admin — instead of a hardcoded
+// ADMIN/EDITOR/USER list that never saw custom roles.
 func adminSelectField() string {
-	return `import type { FieldDefinition } from "@/lib/resource";
+	return `import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
+import type { FieldDefinition } from "@/lib/resource";
 
 interface SelectFieldProps {
   field: FieldDefinition;
@@ -1517,6 +1525,27 @@ interface SelectFieldProps {
 }
 
 export function SelectField({ field, value, onChange, error }: SelectFieldProps) {
+  const labelKey = field.optionsLabelKey ?? "name";
+  const valueKey = field.optionsValueKey ?? "name";
+
+  // Only fires when the field opts into a remote source.
+  const { data: remote } = useQuery({
+    queryKey: ["select-options", field.optionsUrl],
+    enabled: !!field.optionsUrl,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const res = await apiClient.get(field.optionsUrl as string);
+      const rows = (res.data?.data ?? res.data ?? []) as Record<string, unknown>[];
+      return rows.map((r) => ({ label: String(r[labelKey]), value: String(r[valueKey]) }));
+    },
+  });
+
+  // Remote choices win, then static options fill in — deduped by value so a
+  // built-in that appears in both isn't listed twice.
+  const merged = [...(remote ?? []), ...(field.options ?? [])];
+  const seen = new Set<string>();
+  const options = merged.filter((o) => (seen.has(o.value) ? false : seen.add(o.value)));
+
   return (
     <div className="space-y-1.5">
       <label className="block text-sm font-medium text-foreground">
@@ -1529,7 +1558,7 @@ export function SelectField({ field, value, onChange, error }: SelectFieldProps)
         className={` + "`" + `w-full rounded-lg border border-border bg-bg-tertiary px-4 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${error ? "border-danger" : ""}` + "`" + `}
       >
         <option value="">{field.placeholder ?? "Select..."}</option>
-        {field.options?.map((opt) => (
+        {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}
           </option>

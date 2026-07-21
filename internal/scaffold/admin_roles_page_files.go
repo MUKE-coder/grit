@@ -220,8 +220,13 @@ function ModuleSection({
 	disabled: boolean;
 	filter: string;
 }) {
-	const [open, setOpen] = useState(true);
+	// Collapsed by default so a long catalog opens as a tidy list of modules
+	// you expand one at a time, rather than a wall of every feature at once.
+	// A filter query force-expands so matches are never hidden behind a
+	// collapsed header.
+	const [open, setOpen] = useState(false);
 	const q = filter.trim().toLowerCase();
+	const isOpen = open || q.length > 0;
 
 	const groups = useMemo(() => {
 		if (!q) return module.groups;
@@ -253,14 +258,32 @@ function ModuleSection({
 					onClick={() => setOpen(!open)}
 					className="flex flex-1 items-center justify-between text-left"
 				>
-					<span className="font-semibold text-text-primary">{module.name}</span>
+					<span className="flex items-center gap-2">
+						{/* Inline chevron (rotates when open) instead of a lib icon —
+						    keeps the collapsible affordance visible without touching
+						    the three-list icons module. */}
+						<svg
+							width="12"
+							height="12"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2.5"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							className={"text-text-muted transition-transform " + (isOpen ? "rotate-90" : "")}
+						>
+							<polyline points="9 18 15 12 9 6" />
+						</svg>
+						<span className="font-semibold text-text-primary">{module.name}</span>
+					</span>
 					<span className="font-mono text-xs text-text-muted">
 						{granted} / {keys.length}
 					</span>
 				</button>
 			</div>
 
-			{open ? (
+			{isOpen ? (
 				<div className="pb-2">
 					{groups.map((g) => {
 						const gKeys = groupKeys(g as PermGroup);

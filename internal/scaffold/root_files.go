@@ -135,6 +135,15 @@ NEXT_PUBLIC_ADMIN_URL=http://localhost:3001
 # Storage — Which provider to use: minio, s3, r2, b2
 STORAGE_DRIVER=minio
 
+# Browser-facing storage origin. Uploads are presigned PUTs the browser makes
+# straight to object storage, and stored images load from the same host, so
+# this origin must be allowed by the frontend Content-Security-Policy. In dev
+# the admin/web CSP already defaults to the MinIO endpoint below. In PRODUCTION,
+# set NEXT_PUBLIC_STORAGE_URL (Next.js apps) or VITE_STORAGE_URL (Vite apps) in
+# the frontend environment to your public storage origin — e.g.
+# https://<bucket>.s3.<region>.amazonaws.com or your CDN domain — or presigned
+# uploads and image display will be blocked by CSP.
+
 # MinIO (local development — used when STORAGE_DRIVER=minio)
 MINIO_ENDPOINT=http://localhost:9002
 MINIO_ACCESS_KEY=minioadmin

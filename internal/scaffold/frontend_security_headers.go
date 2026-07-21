@@ -42,19 +42,26 @@ func nextSecurityHeaders() string {
 //     browser calls the Go API cross-origin, and a missing entry breaks every
 //     fetch with a CSP violation.
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+// Browser-facing origin of stored files. Uploads are presigned PUTs made
+// directly from the browser to object storage, and stored images are served
+// from the same host — both are blocked unless this origin is in connect-src
+// and img-src. Defaults to the local MinIO endpoint; in production set
+// NEXT_PUBLIC_STORAGE_URL to your S3/R2/B2 public origin
+// (e.g. https://cdn.example.com or https://<bucket>.s3.<region>.amazonaws.com).
+const STORAGE_ORIGIN = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:9002";
 const isDev = process.env.NODE_ENV !== "production";
 
 const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'" + (isDev ? " 'unsafe-eval'" : ""),
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https:",
+  "img-src 'self' data: blob: https: " + STORAGE_ORIGIN,
   "font-src 'self' data:",
   // ws:/wss: keep the dev overlay + HMR socket working. api.ipify.org is the
   // public-IP hint the API client fetches so local audit records show a real
   // address instead of ::1 — dev only, and it must be allowed here or the
   // browser logs a CSP violation on every page load.
-  "connect-src 'self' " + API_ORIGIN + (isDev ? " ws: wss: https://api.ipify.org" : ""),
+  "connect-src 'self' " + API_ORIGIN + " " + STORAGE_ORIGIN + (isDev ? " ws: wss: https://api.ipify.org" : ""),
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -128,17 +135,21 @@ func viteSecurityHeaders() string {
 const viteMode = process.env.NODE_ENV || 'development'
 const viteEnv = loadEnv(viteMode, process.cwd(), '')
 const API_ORIGIN = viteEnv.VITE_API_URL || 'http://localhost:8080'
+// Browser-facing storage origin — presigned uploads PUT here directly and
+// stored images load from it. Defaults to local MinIO; set VITE_STORAGE_URL
+// to your S3/R2/B2 public origin in production.
+const STORAGE_ORIGIN = viteEnv.VITE_STORAGE_URL || 'http://localhost:9002'
 const isDev = viteMode !== 'production'
 
 const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "img-src 'self' data: blob: https:",
+  "img-src 'self' data: blob: https: " + STORAGE_ORIGIN,
   "font-src 'self' data: https://fonts.gstatic.com",
   // api.ipify.org is the dev-only public-IP hint the API client fetches so
   // local audit records show a real address instead of ::1.
-  "connect-src 'self' ws: wss: " + API_ORIGIN + (isDev ? ' https://api.ipify.org' : ''),
+  "connect-src 'self' ws: wss: " + API_ORIGIN + " " + STORAGE_ORIGIN + (isDev ? ' https://api.ipify.org' : ''),
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

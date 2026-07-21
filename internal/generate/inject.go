@@ -460,7 +460,7 @@ func guessLucideIcon(name string) string {
 		"location":     "MapPin",
 		"contact":      "Contact",
 		"lead":         "Target",
-		"deal":         "Handshake",
+		"deal":         "HeartHandshake",
 		"pipeline":     "GitBranch",
 		"workflow":     "Workflow",
 		"template":     "LayoutTemplate",
@@ -476,7 +476,7 @@ func guessLucideIcon(name string) string {
 		"feature":      "Sparkles",
 		"release":      "Rocket",
 		"version":      "GitCommit",
-		"deploy":       "CloudUpload",
+		"deploy":       "UploadCloud",
 	}
 
 	for key, icon := range icons {

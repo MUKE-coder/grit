@@ -516,6 +516,71 @@ fields:
                 </div>
               </div>
 
+              {/* Editing a resource after generation */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  Editing a resource after generation
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Generated code is <strong>yours to edit</strong> — Grit scaffolds it once and
+                  never overwrites it. Two common follow-ups:
+                </p>
+
+                <h3 className="text-lg font-semibold tracking-tight mb-2 mt-6">Add a field</h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  There is no separate &ldquo;add field&rdquo; command — you edit the model and
+                  regenerate the derived types. Say you want a <code>sku</code> on Product:
+                </p>
+                <CodeBlock language="go" filename="apps/api/internal/models/product.go" code={`type Product struct {
+    // ...existing fields...
+    SKU string ` + "`gorm:\"size:64;index\" json:\"sku\"`" + `   // 1. add the field
+}`} />
+                <CodeBlock language="bash" code={`# 2. regenerate the shared TypeScript types + Zod schemas from the Go model
+grit sync
+
+# 3. apply the new column to the database
+grit migrate`} />
+                <p className="text-muted-foreground leading-relaxed mb-4 mt-4">
+                  <code>grit sync</code> rewrites <code>packages/shared</code> from your Go structs,
+                  so the type and Zod schema pick up <code>sku</code> automatically. The one manual
+                  step: the admin resource definition (<code>apps/admin/resources/products.ts</code>)
+                  lists its columns and form fields explicitly, so add <code>sku</code> there where
+                  you want it shown or edited:
+                </p>
+                <CodeBlock language="typescript" filename="apps/admin/resources/products.ts" code={`fields: [
+  // ...existing fields...
+  { key: "sku", label: "SKU", type: "text" },   // shows in the create/edit form
+],
+table: {
+  columns: [
+    // ...existing columns...
+    { key: "sku", label: "SKU" },               // shows in the data table
+  ],
+},`} />
+
+                <h3 className="text-lg font-semibold tracking-tight mb-2 mt-8">Change a sidebar icon</h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Every resource declares an <code>icon</code> — a{" "}
+                  <a href="https://lucide.dev/icons" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Lucide</a>{" "}
+                  icon name — at the top of its resource file. The generator guesses one from the
+                  resource name; change it to any icon you like:
+                </p>
+                <CodeBlock language="typescript" filename="apps/admin/resources/products.ts" code={`export const productsResource = defineResource({
+  name: "Product",
+  slug: "products",
+  icon: "Package",   // <- any Lucide icon name, e.g. "ShoppingCart", "Tag", "Boxes"
+  // ...
+});`} />
+                <p className="text-muted-foreground leading-relaxed mb-2 mt-4">
+                  The name must exist in <code>apps/admin/lib/icons.ts</code> (the app&apos;s icon
+                  registry). Most common icons are already there; if you pick one that isn&apos;t,
+                  add it to that file&apos;s import, the <code>iconMap</code>, and the re-export, and
+                  it becomes available. System links (Roles, Security, System Hub) get their icons
+                  from the sidebar component (<code>components/chrome/CollapsibleSidebar</code>)
+                  rather than a resource file.
+                </p>
+              </div>
+
               {/* Field Type Mappings */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">

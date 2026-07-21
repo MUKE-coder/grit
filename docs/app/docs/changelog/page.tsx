@@ -28,6 +28,71 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.79.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.79.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  A batch of fixes from hands-on testing of the admin, all verified in a running
+                  app.
+                </p>
+                <ul>
+                  <li>
+                    <strong>Image uploads were blocked by the app&apos;s own CSP.</strong> Presigned
+                    uploads PUT straight from the browser to object storage, but the
+                    Content-Security-Policy only allowed the API origin — so every upload (and
+                    every stored image) was blocked. The storage origin is now in{" "}
+                    <code>connect-src</code> and <code>img-src</code>, defaulting to local MinIO;
+                    set <code>NEXT_PUBLIC_STORAGE_URL</code> / <code>VITE_STORAGE_URL</code> to your
+                    S3/R2 public origin in production.
+                  </li>
+                  <li>
+                    <strong>Custom roles didn&apos;t appear when creating a user.</strong> The role
+                    dropdown was a hardcoded ADMIN/EDITOR/USER list, so a role you defined in Roles
+                    &amp; permissions could never be assigned. It now loads every role from the API.
+                  </li>
+                  <li>
+                    <strong>Blogs was missing from the permission catalog.</strong> The built-in
+                    Blog resource had no catalog entry, so no role could be granted blog access.
+                    Added under Content → Publishing.
+                  </li>
+                  <li>
+                    <strong>A role assigned to users could be deleted,</strong> silently stripping
+                    their permissions. Deletion is now blocked while any user holds the role (via
+                    either the role string or a role assignment); reassign them first. Unassigned
+                    roles delete cleanly and their name is immediately reusable.
+                  </li>
+                  <li>
+                    <strong>Sidebar &amp; icon fixes:</strong> the &ldquo;Roles &amp;
+                    permissions&rdquo; link had no icon; the icon map was missing ~29 names the
+                    resource generator could produce, so many generated resources fell back to the
+                    same generic document icon. Both fixed.
+                  </li>
+                  <li>
+                    <strong>System Hub</strong> now links to Roles &amp; permissions and Data
+                    &amp; Backup, which were previously unreachable from it.
+                  </li>
+                  <li>
+                    Permission modules in the role editor now <strong>collapse by default</strong>{" "}
+                    (web, mobile and desktop) — expand one at a time instead of a wall of every
+                    feature.
+                  </li>
+                  <li>
+                    <code>grit migrate</code> no longer prints three scary{" "}
+                    <code>record not found</code> lines while seeding the default roles — that was
+                    the seeder&apos;s normal &ldquo;does this role exist yet?&rdquo; check, now
+                    quiet.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.78.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

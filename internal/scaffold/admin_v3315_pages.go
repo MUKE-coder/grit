@@ -26,7 +26,7 @@ import { useModules } from "@/hooks/use-modules";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import {
   Activity, Bell, Calendar, Database, FileText, Mail,
-  MessageSquare, Shield, TrendingUp, Upload, Link as LinkIcon,
+  MessageSquare, Shield, ShieldCheck, TrendingUp, Upload, Link as LinkIcon,
 } from "@/lib/icons";
 
 interface SystemTile {
@@ -42,6 +42,8 @@ const TILES: SystemTile[] = [
   { href: "/system/health",        title: "System Health",    description: "Real-time infrastructure status — Postgres, Redis, API, jobs, email.",      icon: <Activity className="h-5 w-5" /> },
   { href: "/system/performance",   title: "Performance",      description: "Four Google SRE golden signals — latency, traffic, errors, saturation.",   icon: <TrendingUp className="h-5 w-5" /> },
   { href: "/system/security",      title: "Security",         description: "Sentinel summary — banned IPs, rate-limit pressure, recent threats.",      icon: <Shield className="h-5 w-5" /> },
+  { href: "/system/roles",         title: "Roles & permissions", description: "Define what each role can see and do, and assign roles to users.",       icon: <ShieldCheck className="h-5 w-5" /> },
+  { href: "/system/backups",       title: "Data & Backup",    description: "Create, schedule and restore database backups.",                            icon: <Database className="h-5 w-5" /> , module: "backup" },
   { href: "/system/jobs",          title: "Background Jobs",  description: "Queue depth, in-flight workers, dead-letter queue.",                       icon: <Database className="h-5 w-5" /> , module: "jobs" },
   { href: "/system/files",         title: "File Storage",     description: "Browse uploads, manage retention, audit usage.",                            icon: <Upload className="h-5 w-5" /> , module: "files" },
   { href: "/system/cron",          title: "Cron Schedules",   description: "Recurring jobs, next-run times, run history.",                              icon: <Calendar className="h-5 w-5" /> , module: "cron" },
