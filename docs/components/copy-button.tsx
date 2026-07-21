@@ -9,7 +9,7 @@ interface CopyButtonProps extends ButtonProps {
   text: string
 }
 
-export function CopyButton({ text, className, children, size = 'icon', variant = 'ghost', ...props }: CopyButtonProps) {
+export function CopyButton({ text, className, children, size, variant = 'ghost', ...props }: CopyButtonProps) {
   const [copied, setCopied] = React.useState(false)
 
   const handleCopy = async () => {
@@ -19,10 +19,12 @@ export function CopyButton({ text, className, children, size = 'icon', variant =
   }
 
   if (children) {
+    // A labelled button must NOT use the fixed-square "icon" size — that clips
+    // the text. Default to the regular size unless the caller overrides it.
     return (
       <Button
         variant={variant}
-        size={size}
+        size={size ?? 'default'}
         className={className}
         onClick={handleCopy}
         {...props}
