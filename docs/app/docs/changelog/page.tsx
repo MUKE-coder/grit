@@ -28,6 +28,44 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.80.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.80.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Backups were unrestorable.</strong> A backup you can&apos;t restore is
+                  a hope, not a backup — so this one got tested end to end, and it was broken.
+                </p>
+                <p>
+                  <code>grit restore</code> runs migrations first (which seed the default ADMIN,
+                  EDITOR and USER roles) and then replays the dump — which carries its own copy of
+                  those same roles. The dump&apos;s inserts collided with the freshly seeded rows
+                  on the unique role-name index, and the entire restore aborted with{" "}
+                  <code>duplicate key value violates unique constraint &quot;idx_roles_name&quot;</code>.
+                  Every backup was affected.
+                </p>
+                <p>
+                  Restore now clears the backed-up tables (<code>TRUNCATE … RESTART IDENTITY
+                  CASCADE</code>) inside the restore transaction before replaying the dump, so the
+                  seeded rows can&apos;t collide and the restored database matches the backup
+                  exactly. Verified by restoring a real archive into a fresh Postgres, checking
+                  every row count, and logging in with the restored credentials. A regression test
+                  guards that restore truncates before it replays.
+                </p>
+                <p>
+                  Also: two new posts on <a href="/blog" className="text-primary hover:underline">The Daily Grit</a> —
+                  roles, permissions &amp; automatic backups by default, and a guide to Grit
+                  plugins (what they are, the default ones, and how to build your own).
+                </p>
+              </div>
+            </div>
+
             {/* v3.79.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
