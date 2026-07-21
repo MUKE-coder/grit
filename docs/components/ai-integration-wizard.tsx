@@ -1,660 +1,378 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import Link from 'next/link'
 import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
+  Server,
   Globe,
+  LayoutDashboard,
   Smartphone,
   Monitor,
-  Server,
-  Layers,
-  Sparkles,
-  Building,
-  ShoppingCart,
-  FileText,
-  Wrench,
-  Bot,
-  Box,
-  ExternalLink,
+  Check,
+  Download,
+  ArrowLeft,
+  ArrowRight,
+  RotateCcw,
+  Puzzle,
 } from 'lucide-react'
-import { Textarea } from '@/components/ui/textarea'
 import { CopyButton } from '@/components/copy-button'
-import { buildKitPrompt, KITS, type KitSlug } from '@/lib/kit-prompts'
-import { cn } from '@/lib/utils'
+import {
+  buildFrameworkPrompt,
+  deriveCommands,
+  type ClientId,
+  type Frontend,
+  type PluginId,
+} from '@/lib/framework-prompt'
 
-type Platform = 'web' | 'mobile' | 'desktop' | 'api' | 'multi'
-
-interface PlatformOption {
-  id: Platform
-  title: string
-  body: string
-  icon: React.ComponentType<{ className?: string }>
-  /** Which kit slugs this platform unlocks. */
-  kits: KitSlug[]
-}
-
-const PLATFORMS: PlatformOption[] = [
-  {
-    id: 'web',
-    title: 'Web app',
-    body: 'A browser-first product — marketing site, dashboard, SaaS, or internal tool.',
-    icon: Globe,
-    kits: ['single', 'single-vite', 'double', 'triple'],
-  },
-  {
-    id: 'mobile',
-    title: 'Mobile app',
-    body: 'React Native via Expo, with a shared Go API. iOS / Android.',
-    icon: Smartphone,
-    kits: ['mobile'],
-  },
-  {
-    id: 'desktop',
-    title: 'Desktop app',
-    body: 'Native Wails desktop binary — offline-first with local SQLite.',
-    icon: Monitor,
-    kits: ['desktop'],
-  },
-  {
-    id: 'api',
-    title: 'API only',
-    body: 'Headless Go API. Bring your own frontend (mobile, bot, native).',
-    icon: Server,
-    kits: ['api'],
-  },
-  {
-    id: 'multi',
-    title: 'Multi-platform',
-    body: 'Web + admin + mobile (and optionally desktop) sharing one API.',
-    icon: Layers,
-    kits: ['triple', 'mobile', 'desktop'],
-  },
+const CLIENTS: { id: ClientId; label: string; desc: string; icon: typeof Server }[] = [
+  { id: 'api', label: 'API', desc: 'Go backend (Gin + GORM) — the base every client talks to.', icon: Server },
+  { id: 'website', label: 'Website', desc: 'Public web frontend — marketing, storefront, SaaS, dashboard.', icon: Globe },
+  { id: 'admin', label: 'Admin panel', desc: 'Generated Filament-like dashboard — tables, forms, roles.', icon: LayoutDashboard },
+  { id: 'mobile', label: 'Mobile app', desc: 'Expo / React Native — iOS + Android, shared API.', icon: Smartphone },
+  { id: 'desktop', label: 'Desktop app', desc: 'Native Wails window — offline-first with local SQLite.', icon: Monitor },
 ]
 
-interface KitOption {
-  slug: KitSlug
-  title: string
-  body: string
-  badge?: string
-}
-
-const KIT_BLURBS: Record<KitSlug, KitOption> = {
-  single: {
-    slug: 'single',
-    title: 'Single — Next.js + Go',
-    body: 'One binary, Next.js embedded. Smallest deploy; best for marketing + product in one app.',
-  },
-  'single-vite': {
-    slug: 'single-vite',
-    title: 'Single — Vite + TanStack Router',
-    body: 'One binary, Vite SPA embedded. Sub-second cold starts; best for pure dashboard apps.',
-  },
-  double: {
-    slug: 'double',
-    title: 'Double — Web + API',
-    body: 'Turborepo with apps/web (Next.js) + apps/api (Go). Two deploy targets.',
-  },
-  triple: {
-    slug: 'triple',
-    title: 'Triple — Web + Admin + API',
-    body: 'The full SaaS shape. Public site + Filament-style admin + Go API.',
-    badge: 'Recommended',
-  },
-  api: {
-    slug: 'api',
-    title: 'API only',
-    body: 'Pure Gin + GORM. OpenAPI auto-served at /docs.',
-  },
-  mobile: {
-    slug: 'mobile',
-    title: 'Mobile — Expo + API',
-    body: 'React Native + Go API, shared Zod schemas, EAS Build configured.',
-  },
-  desktop: {
-    slug: 'desktop',
-    title: 'Desktop — Wails',
-    body: 'Standalone Wails v2 app with local SQLite + bcrypt auth.',
-  },
-}
-
-interface UseCaseOption {
-  id: string
-  title: string
-  body: string
-  icon: React.ComponentType<{ className?: string }>
-  /** One-line prompt-side hint. */
-  hint: string
-}
-
-const USE_CASES: UseCaseOption[] = [
-  {
-    id: 'saas',
-    title: 'SaaS product',
-    body: 'Multi-tenant, billing, admin, end-user dashboards.',
-    icon: Building,
-    hint: 'A multi-tenant SaaS — each tenant gets its own scoped data and roles; billing via Stripe; an admin panel for staff plus a dashboard for end users.',
-  },
-  {
-    id: 'ecommerce',
-    title: 'E-commerce / marketplace',
-    body: 'Products, orders, checkout, fulfilment.',
-    icon: ShoppingCart,
-    hint: 'An online store — product catalogue, cart, checkout with payments, order management, inventory, and a back-office for admin.',
-  },
-  {
-    id: 'internal',
-    title: 'Internal tool',
-    body: 'Operations dashboard, ops admin, CRM-style.',
-    icon: Wrench,
-    hint: 'An internal operations tool — focused on a small team, RBAC matters, dashboards summarize KPIs, audit log on every mutation.',
-  },
-  {
-    id: 'content',
-    title: 'Content / blog / CMS',
-    body: 'Articles, authors, drafts, public reading surface.',
-    icon: FileText,
-    hint: 'A content publishing platform — drafts and published states, multi-author, SEO-first public pages, an admin for editorial.',
-  },
-  {
-    id: 'ai',
-    title: 'AI-native product',
-    body: 'LLM workflows, chat, agentic flows.',
-    icon: Bot,
-    hint: 'An AI-native product that leans on the Grit AI Gateway — chat history, streaming responses, model selection, and rate-limited usage tracking per user.',
-  },
-  {
-    id: 'other',
-    title: 'Something else',
-    body: 'Anything not on this list — describe it below.',
-    icon: Sparkles,
-    hint: '',
-  },
+const PLUGINS: { id: PluginId; label: string; desc: string }[] = [
+  { id: 'multitenant', label: 'Multi-tenancy', desc: 'Organizations, per-org roles, automatic query scoping.' },
+  { id: 'impersonate', label: 'Impersonate', desc: 'Admin signs in as another user, with an audit trail.' },
+  { id: 'command-palette', label: 'Command palette', desc: '⌘K navigation across the admin. Frontend-only.' },
+  { id: 'saved-views', label: 'Saved views', desc: 'Per-user named table views (filters + sort).' },
 ]
 
-const STEPS = ['Platform', 'Tech Kit', 'Use case', 'Your prompt'] as const
+const ALL_PLUGINS: PluginId[] = PLUGINS.map((p) => p.id)
+const THEMES = ['atlas', 'aurora', 'pulse']
+const STEPS = ['Clients', 'Stack', 'Plugins', 'Prompt'] as const
 
 export function AIIntegrationWizard() {
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0)
-  const [platform, setPlatform] = useState<Platform | null>(null)
-  const [kit, setKit] = useState<KitSlug | null>(null)
-  const [useCase, setUseCase] = useState<string | null>(null)
-  const [idea, setIdea] = useState('')
+  const [clients, setClients] = useState<ClientId[]>(['api'])
+  const [frontend, setFrontend] = useState<Frontend>('next')
+  const [theme, setTheme] = useState('atlas')
+  const [pluginMode, setPluginMode] = useState<'none' | 'all' | 'pick'>('none')
+  const [picked, setPicked] = useState<PluginId[]>([])
+  const [projectName, setProjectName] = useState('my-app')
 
-  const availableKits = useMemo<KitOption[]>(() => {
-    if (!platform) return []
-    const slugs = PLATFORMS.find((p) => p.id === platform)?.kits ?? []
-    return slugs.map((s) => KIT_BLURBS[s])
-  }, [platform])
+  const plugins: PluginId[] = pluginMode === 'all' ? ALL_PLUGINS : pluginMode === 'pick' ? picked : []
+  const hasWebUI = clients.includes('website') || clients.includes('admin')
 
-  const generatedPrompt = useMemo(() => {
-    if (!kit) return ''
-    const useCaseLabel = USE_CASES.find((u) => u.id === useCase)
-    return buildKitPrompt(kit, {
-      useCase: useCaseLabel?.hint,
-      idea: idea.trim(),
-    })
-  }, [kit, useCase, idea])
+  const commands = useMemo(
+    () => deriveCommands({ clients, frontend, theme, projectName }),
+    [clients, frontend, theme, projectName],
+  )
 
-  const canAdvance =
-    (step === 0 && platform) ||
-    (step === 1 && kit) ||
-    (step === 2 && useCase) ||
-    step === 3
+  const prompt = useMemo(
+    () => buildFrameworkPrompt({ clients, frontend, theme, plugins, projectName }),
+    [clients, frontend, theme, plugins, projectName],
+  )
 
-  const handleNext = () => {
-    if (!canAdvance) return
-    if (step < 3) setStep((step + 1) as 0 | 1 | 2 | 3)
+  function toggleClient(id: ClientId) {
+    setClients((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]))
   }
-  const handleBack = () => {
-    if (step > 0) setStep((step - 1) as 0 | 1 | 2 | 3)
+  function togglePlugin(id: PluginId) {
+    setPicked((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]))
   }
-  const handleRestart = () => {
-    setStep(0)
-    setPlatform(null)
-    setKit(null)
-    setUseCase(null)
-    setIdea('')
+
+  function download() {
+    const blob = new Blob([prompt], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'grit-llm-prompt.md'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
   }
+
+  const canNext = step === 0 ? clients.length > 0 : true
 
   return (
-    <div>
-      {/* Progress dots */}
-      <div className="mb-10 flex items-center gap-3 flex-wrap">
-        {STEPS.map((label, i) => {
-          const isActive = i === step
-          const isDone = i < step
-          return (
-            <div key={label} className="flex items-center gap-3">
-              <div className="flex items-center gap-2.5">
-                <div
-                  className={cn(
-                    'h-7 w-7 rounded-full text-[11px] font-semibold flex items-center justify-center transition-colors border',
-                    isActive && 'bg-primary text-primary-foreground border-primary',
-                    isDone && 'bg-primary/15 text-primary border-primary/30',
-                    !isActive && !isDone && 'bg-card/40 text-muted-foreground border-border/40',
-                  )}
-                >
-                  {isDone ? <Check className="h-3.5 w-3.5" /> : i + 1}
+    <div className="rounded-2xl border border-border bg-card/30">
+      {/* Step indicator */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-border/60 px-6 py-4">
+        {STEPS.map((label, i) => (
+          <div key={label} className="flex items-center gap-2">
+            <div
+              className={
+                'flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ' +
+                (i < step
+                  ? 'bg-primary text-primary-foreground'
+                  : i === step
+                    ? 'border border-primary text-primary'
+                    : 'border border-border text-muted-foreground')
+              }
+            >
+              {i < step ? <Check className="h-3.5 w-3.5" /> : i + 1}
+            </div>
+            <span className={'text-sm ' + (i === step ? 'font-medium text-foreground' : 'text-muted-foreground')}>
+              {label}
+            </span>
+            {i < STEPS.length - 1 && <div className="mx-1 h-px w-4 bg-border sm:w-8" />}
+          </div>
+        ))}
+      </div>
+
+      <div className="p-6">
+        {/* ── Step 1: Clients ─────────────────────────────── */}
+        {step === 0 && (
+          <div>
+            <h2 className="mb-2 text-xl font-semibold tracking-tight">What are you building?</h2>
+            <p className="mb-6 text-sm text-muted-foreground">
+              Pick every surface you need — the API is the base, the rest are clients that share it.
+              Select as many as apply.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {CLIENTS.map((c) => {
+                const on = clients.includes(c.id)
+                const Icon = c.icon
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => toggleClient(c.id)}
+                    className={
+                      'flex items-start gap-3 rounded-xl border p-4 text-left transition-colors ' +
+                      (on ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40')
+                    }
+                  >
+                    <span
+                      className={
+                        'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border ' +
+                        (on ? 'border-primary bg-primary text-primary-foreground' : 'border-border')
+                      }
+                    >
+                      {on && <Check className="h-3.5 w-3.5" />}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-foreground">{c.label}</span>
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">{c.desc}</p>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Step 2: Stack + commands ────────────────────── */}
+        {step === 1 && (
+          <div>
+            <h2 className="mb-2 text-xl font-semibold tracking-tight">Assemble your stack</h2>
+            <p className="mb-6 text-sm text-muted-foreground">
+              Based on your clients, here&apos;s the command to scaffold it — plus a few variants.
+            </p>
+
+            <div className="mb-6 grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-medium text-foreground">Project name</span>
+                <input
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value.replace(/[^a-zA-Z0-9-_]/g, ''))}
+                  placeholder="my-app"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                />
+              </label>
+              {hasWebUI && (
+                <div>
+                  <span className="mb-1.5 block text-sm font-medium text-foreground">Frontend framework</span>
+                  <div className="flex gap-2">
+                    {(['next', 'vite'] as Frontend[]).map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => setFrontend(f)}
+                        className={
+                          'flex-1 rounded-lg border px-3 py-2 text-sm ' +
+                          (frontend === f ? 'border-primary bg-primary/5 text-foreground' : 'border-border text-muted-foreground')
+                        }
+                      >
+                        {f === 'next' ? 'Next.js' : 'Vite / TanStack'}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <span
-                  className={cn(
-                    'text-[13px] font-medium hidden sm:block',
-                    isActive && 'text-foreground',
-                    isDone && 'text-muted-foreground',
-                    !isActive && !isDone && 'text-muted-foreground/60',
-                  )}
-                >
-                  {label}
-                </span>
-              </div>
-              {i < STEPS.length - 1 && (
-                <div className={cn('h-px w-8 sm:w-14', isDone ? 'bg-primary/40' : 'bg-border/40')} />
               )}
             </div>
-          )
-        })}
-      </div>
 
-      {/* Card */}
-      <div className="rounded-2xl border border-border/50 bg-card/40 p-6 sm:p-8 mb-6 min-h-[480px]">
-        {step === 0 && (
-          <StepPlatform
-            value={platform}
-            onChange={(v) => {
-              setPlatform(v)
-              // Reset downstream choices when platform changes
-              setKit(null)
-            }}
-          />
+            {hasWebUI && (
+              <div className="mb-6">
+                <span className="mb-1.5 block text-sm font-medium text-foreground">Theme</span>
+                <div className="flex flex-wrap gap-2">
+                  {THEMES.map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setTheme(t)}
+                      className={
+                        'rounded-lg border px-3 py-1.5 text-sm capitalize ' +
+                        (theme === t ? 'border-primary bg-primary/5 text-foreground' : 'border-border text-muted-foreground')
+                      }
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <span className="text-xs font-medium uppercase tracking-wide text-primary">
+                  Recommended · {commands.archLabel}
+                </span>
+                <CopyButton text={commands.primary} />
+              </div>
+              <code className="block break-all font-mono text-sm text-foreground">{commands.primary}</code>
+            </div>
+
+            {commands.variants.length > 0 && (
+              <div className="mt-4">
+                <p className="mb-2 text-sm font-medium text-foreground">Or a variant</p>
+                <div className="space-y-2">
+                  {commands.variants.map((v) => (
+                    <div
+                      key={v.command}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-xs text-muted-foreground">{v.label}</div>
+                        <code className="block break-all font-mono text-sm text-foreground">{v.command}</code>
+                      </div>
+                      <CopyButton text={v.command} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         )}
-        {step === 1 && (
-          <StepKit
-            options={availableKits}
-            value={kit}
-            onChange={setKit}
-          />
-        )}
+
+        {/* ── Step 3: Plugins ─────────────────────────────── */}
         {step === 2 && (
-          <StepUseCase
-            value={useCase}
-            onChange={setUseCase}
-            idea={idea}
-            onIdeaChange={setIdea}
-          />
+          <div>
+            <h2 className="mb-2 text-xl font-semibold tracking-tight">Add plugins?</h2>
+            <p className="mb-6 text-sm text-muted-foreground">
+              Plugins generate reversible code into the repo. Add none, all, or pick the ones you want.
+            </p>
+
+            <div className="mb-4 flex flex-wrap gap-2">
+              {(['none', 'all', 'pick'] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setPluginMode(m)}
+                  className={
+                    'rounded-lg border px-4 py-2 text-sm ' +
+                    (pluginMode === m ? 'border-primary bg-primary/5 text-foreground' : 'border-border text-muted-foreground')
+                  }
+                >
+                  {m === 'none' ? 'None' : m === 'all' ? 'All' : 'Pick each'}
+                </button>
+              ))}
+            </div>
+
+            {(pluginMode === 'pick' || pluginMode === 'all') && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {PLUGINS.map((p) => {
+                  const on = pluginMode === 'all' || picked.includes(p.id)
+                  return (
+                    <button
+                      key={p.id}
+                      disabled={pluginMode === 'all'}
+                      onClick={() => togglePlugin(p.id)}
+                      className={
+                        'flex items-start gap-3 rounded-xl border p-4 text-left transition-colors ' +
+                        (on ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40')
+                      }
+                    >
+                      <span
+                        className={
+                          'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border ' +
+                          (on ? 'border-primary bg-primary text-primary-foreground' : 'border-border')
+                        }
+                      >
+                        {on && <Check className="h-3.5 w-3.5" />}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Puzzle className="h-4 w-4 text-primary" />
+                          <span className="font-mono text-sm font-medium text-foreground">{p.id}</span>
+                        </div>
+                        <p className="mt-1 text-sm text-muted-foreground">{p.desc}</p>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         )}
-        {step === 3 && kit && <StepPrompt prompt={generatedPrompt} kitSlug={kit} />}
+
+        {/* ── Step 4: Prompt ──────────────────────────────── */}
+        {step === 3 && (
+          <div>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight">Your Grit prompt is ready</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  A full brief that teaches an AI agent Grit from zero — paste it into Claude Code,
+                  Cursor, or any coding agent, or download it as <code>grit-llm-prompt.md</code>.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <CopyButton
+                  text={prompt}
+                  variant="default"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  Copy prompt
+                </CopyButton>
+                <button
+                  onClick={download}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:border-primary/40"
+                >
+                  <Download className="h-4 w-4" />
+                  Download .md
+                </button>
+              </div>
+            </div>
+
+            <div className="max-h-[28rem] overflow-y-auto rounded-xl border border-border bg-background p-4">
+              <pre className="whitespace-pre-wrap break-words font-mono text-[12.5px] leading-relaxed text-muted-foreground">
+                {prompt}
+              </pre>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/*
-        Nav buttons. The Nexora chat widget mounts a fixed bottom-right
-        button (~96px square + label). Bottom padding here ensures the Next
-        button never sits beneath it; the right-side spacer on `Next` keeps
-        them side-by-side on narrow screens instead of stacked.
-      */}
-      <div className="flex items-center justify-between gap-3 pb-28">
+      {/* Nav */}
+      <div className="flex items-center justify-between border-t border-border/60 px-6 py-4">
         <button
-          type="button"
-          onClick={handleBack}
+          onClick={() => (step === 0 ? undefined : setStep((s) => (s - 1) as 0 | 1 | 2 | 3))}
           disabled={step === 0}
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors',
-            step === 0
-              ? 'border-border/30 text-muted-foreground/40 cursor-not-allowed'
-              : 'border-border/60 text-foreground hover:bg-accent/40',
-          )}
+          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-40"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
+          <ArrowLeft className="h-4 w-4" />
           Back
         </button>
 
-        <span className="text-xs text-muted-foreground hidden sm:block">
-          Step {step + 1} of {STEPS.length}
-        </span>
-
         {step < 3 ? (
           <button
-            type="button"
-            onClick={handleNext}
-            disabled={!canAdvance}
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-medium transition-colors sm:mr-32',
-              canAdvance
-                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                : 'bg-primary/30 text-primary-foreground/70 cursor-not-allowed',
-            )}
+            onClick={() => canNext && setStep((s) => (s + 1) as 0 | 1 | 2 | 3)}
+            disabled={!canNext}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
           >
             Next
-            <ArrowRight className="h-3.5 w-3.5" />
+            <ArrowRight className="h-4 w-4" />
           </button>
         ) : (
           <button
-            type="button"
-            onClick={handleRestart}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-5 py-2 text-sm font-medium text-foreground hover:bg-accent/40 transition-colors sm:mr-32"
+            onClick={() => setStep(0)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
           >
+            <RotateCcw className="h-4 w-4" />
             Start over
           </button>
         )}
-      </div>
-    </div>
-  )
-}
-
-/* ─── Step 1: Platform ─────────────────────────────────────────────── */
-
-function StepPlatform({
-  value,
-  onChange,
-}: {
-  value: Platform | null
-  onChange: (p: Platform) => void
-}) {
-  return (
-    <div>
-      <h2 className="text-xl font-semibold tracking-tight mb-2">What are you building?</h2>
-      <p className="text-sm text-muted-foreground mb-6">
-        The prompt adapts to your stack. Mobile picks up Expo + React Query patterns; web tunes
-        for SSR vs SPA.
-      </p>
-      <div className="space-y-2.5">
-        {PLATFORMS.map((p) => {
-          const Icon = p.icon
-          const selected = value === p.id
-          return (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => onChange(p.id)}
-              className={cn(
-                'w-full text-left rounded-xl border p-4 transition-all flex items-start gap-4',
-                selected
-                  ? 'border-primary/60 bg-primary/[0.06] ring-1 ring-primary/30'
-                  : 'border-border/40 bg-card/40 hover:border-primary/30 hover:bg-card/60',
-              )}
-            >
-              <div
-                className={cn(
-                  'h-10 w-10 rounded-lg flex items-center justify-center shrink-0',
-                  selected
-                    ? 'bg-primary/15 text-primary'
-                    : 'bg-muted/40 text-muted-foreground',
-                )}
-              >
-                <Icon className="h-5 w-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="font-semibold text-foreground">{p.title}</p>
-                  {selected && (
-                    <Check className="h-4 w-4 text-primary" strokeWidth={3} />
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">{p.body}</p>
-              </div>
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-/* ─── Step 2: Kit ──────────────────────────────────────────────────── */
-
-function StepKit({
-  options,
-  value,
-  onChange,
-}: {
-  options: KitOption[]
-  value: KitSlug | null
-  onChange: (k: KitSlug) => void
-}) {
-  return (
-    <div>
-      <h2 className="text-xl font-semibold tracking-tight mb-2">Pick a tech kit</h2>
-      <p className="text-sm text-muted-foreground mb-6">
-        Each kit is a complete scaffold — pre-wired auth, jobs, mail, storage, AI, security, and
-        observability.
-      </p>
-      <div className="space-y-2.5">
-        {options.map((o) => {
-          const selected = value === o.slug
-          return (
-            <button
-              key={o.slug}
-              type="button"
-              onClick={() => onChange(o.slug)}
-              className={cn(
-                'w-full text-left rounded-xl border p-4 transition-all flex items-start gap-4',
-                selected
-                  ? 'border-primary/60 bg-primary/[0.06] ring-1 ring-primary/30'
-                  : 'border-border/40 bg-card/40 hover:border-primary/30 hover:bg-card/60',
-              )}
-            >
-              <div
-                className={cn(
-                  'h-10 w-10 rounded-lg flex items-center justify-center shrink-0',
-                  selected
-                    ? 'bg-primary/15 text-primary'
-                    : 'bg-muted/40 text-muted-foreground',
-                )}
-              >
-                <Box className="h-5 w-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                  <p className="font-semibold text-foreground">{o.title}</p>
-                  {o.badge && (
-                    <span className="text-[9px] font-mono uppercase tracking-wider bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded-full">
-                      {o.badge}
-                    </span>
-                  )}
-                  {selected && (
-                    <Check className="h-4 w-4 text-primary ml-auto" strokeWidth={3} />
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-1.5">{o.body}</p>
-                <code className="text-[10px] font-mono text-primary/70 bg-primary/5 px-1.5 py-0.5 rounded">
-                  {KITS[o.slug].command}
-                </code>
-              </div>
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-/* ─── Step 3: Use case ─────────────────────────────────────────────── */
-
-function StepUseCase({
-  value,
-  onChange,
-  idea,
-  onIdeaChange,
-}: {
-  value: string | null
-  onChange: (id: string) => void
-  idea: string
-  onIdeaChange: (v: string) => void
-}) {
-  return (
-    <div>
-      <h2 className="text-xl font-semibold tracking-tight mb-2">What kind of project is it?</h2>
-      <p className="text-sm text-muted-foreground mb-6">
-        This tunes the prompt so Claude understands the project shape and recommends the right
-        Grit primitives.
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-7">
-        {USE_CASES.map((u) => {
-          const Icon = u.icon
-          const selected = value === u.id
-          return (
-            <button
-              key={u.id}
-              type="button"
-              onClick={() => onChange(u.id)}
-              className={cn(
-                'text-left rounded-xl border p-4 transition-all flex items-start gap-3',
-                selected
-                  ? 'border-primary/60 bg-primary/[0.06] ring-1 ring-primary/30'
-                  : 'border-border/40 bg-card/40 hover:border-primary/30 hover:bg-card/60',
-              )}
-            >
-              <div
-                className={cn(
-                  'h-9 w-9 rounded-lg flex items-center justify-center shrink-0',
-                  selected
-                    ? 'bg-primary/15 text-primary'
-                    : 'bg-muted/40 text-muted-foreground',
-                )}
-              >
-                <Icon className="h-4 w-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="font-semibold text-foreground text-sm">{u.title}</p>
-                  {selected && (
-                    <Check className="h-3.5 w-3.5 text-primary ml-auto" strokeWidth={3} />
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">{u.body}</p>
-              </div>
-            </button>
-          )
-        })}
-      </div>
-
-      <div>
-        <label htmlFor="idea" className="block text-sm font-medium text-foreground mb-2">
-          Describe your idea
-          <span className="text-muted-foreground font-normal"> — optional, but recommended</span>
-        </label>
-        <Textarea
-          id="idea"
-          value={idea}
-          onChange={(e) => onIdeaChange(e.target.value)}
-          rows={6}
-          placeholder="E.g. A platform for music teachers to schedule lessons, send reminders, and accept payments. Single tenant per teacher — they sign up, set their availability, and share a public booking link with students. Inspired by Calendly but tuned for recurring lessons."
-          className="resize-y bg-background/40 border-border/40 text-sm leading-relaxed"
-        />
-        <p className="mt-2 text-xs text-muted-foreground">
-          A paragraph here gets pasted directly into the prompt. Leave blank and you&apos;ll see
-          a <code className="text-[0.85em]">[YOUR IDEA]</code> placeholder in the result that you
-          fill in later.
-        </p>
-      </div>
-    </div>
-  )
-}
-
-/* ─── Step 4: Generated prompt ─────────────────────────────────────── */
-
-function StepPrompt({ prompt, kitSlug }: { prompt: string; kitSlug: KitSlug }) {
-  const kit = KITS[kitSlug]
-  return (
-    <div>
-      <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight mb-1.5 flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            Your prompt is ready
-          </h2>
-          <p className="text-sm text-muted-foreground max-w-2xl">
-            Paste this into{' '}
-            <Link
-              href="https://claude.ai"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              claude.ai
-            </Link>
-            . Claude will return four planning files. Save them next to your scaffold and run{' '}
-            <code className="text-[0.85em] bg-primary/5 px-1 py-0.5 rounded text-primary/90">
-              {kit.command}
-            </code>
-            .
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <CopyButton text={prompt} variant="default" className="bg-primary text-primary-foreground hover:bg-primary/90">
-            Copy prompt
-          </CopyButton>
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-border/50 bg-background/40 overflow-hidden">
-        <div className="flex items-center justify-between gap-3 border-b border-border/40 bg-muted/30 px-4 py-2.5">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="h-2 w-2 rounded-full bg-rose-400/70" />
-            <span className="h-2 w-2 rounded-full bg-amber-400/70" />
-            <span className="h-2 w-2 rounded-full bg-emerald-400/70" />
-            <span className="ml-2 text-[11px] font-mono text-muted-foreground truncate">
-              prompt — {kit.label}
-            </span>
-          </div>
-          <CopyButton
-            text={prompt}
-            size="sm"
-            variant="ghost"
-            className="h-7 px-2.5 text-[11px] text-muted-foreground hover:text-foreground"
-          >
-            Copy
-          </CopyButton>
-        </div>
-        <pre className="px-5 py-5 text-[12.5px] leading-[1.65] font-mono text-foreground/85 whitespace-pre-wrap break-words max-h-[460px] overflow-y-auto">
-          {prompt}
-        </pre>
-      </div>
-
-      {/* Next steps */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-3">
-        {[
-          {
-            n: '1',
-            t: 'Paste into claude.ai',
-            d: 'Open a fresh chat and paste the full prompt above.',
-            href: 'https://claude.ai',
-            external: true,
-          },
-          {
-            n: '2',
-            t: 'Save the 4 files',
-            d: 'Claude returns project-description.md, project-phases.md, design-style-guide.md, prompt.md.',
-          },
-          {
-            n: '3',
-            t: 'Run prompt.md in Claude Code',
-            d: `Scaffold with \`${kit.command}\`, then paste prompt.md to begin building.`,
-          },
-        ].map((s) => (
-          <div key={s.n} className="rounded-xl border border-border/40 bg-card/30 p-4">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="h-6 w-6 rounded-full bg-primary/10 text-primary text-[11px] font-mono font-semibold flex items-center justify-center">
-                {s.n}
-              </span>
-              <p className="text-sm font-semibold">{s.t}</p>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">{s.d}</p>
-            {s.href && (
-              <Link
-                href={s.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
-              >
-                Open claude.ai
-                <ExternalLink className="h-3 w-3" />
-              </Link>
-            )}
-          </div>
-        ))}
       </div>
     </div>
   )
