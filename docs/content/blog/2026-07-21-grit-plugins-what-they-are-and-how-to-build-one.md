@@ -93,20 +93,32 @@ It touches models, migrations, middleware and admin UI at once — exactly the k
 of cross-cutting change that's painful to do by hand and perfect for a recorded,
 reversible plugin.
 
-## More first-party plugins are landing
+## The first-party catalog
 
-The plugin mechanism is proven; now we're filling out the catalog with the
-small, high-value features that the best admin ecosystems treat as add-ons:
+Alongside multi-tenancy, three more first-party plugins ship today — the small,
+high-value features that the best admin ecosystems treat as add-ons:
 
-- **impersonate** — an admin logs in *as* another user to reproduce a bug, with
-  a full audit trail and a one-click "return to yourself."
-- **command-palette** — ⌘K navigation and quick actions across the admin.
-- **saved-views** — save a table's filters, sorts and columns as a named view you
-  can return to. (In other ecosystems this is a *paid* add-on — which tells you
-  what it's worth.)
+- **impersonate** — an admin signs in *as* another user to reproduce a bug or
+  check their access, with a full audit trail and a one-click return. The swap
+  is server-side through HttpOnly cookies, so the admin never handles a token.
+- **command-palette** — ⌘K / Ctrl-K navigation and quick actions across the
+  admin, built from your resource registry. Frontend-only: it proves a Grit
+  plugin can be pure client code, touching no Go at all.
+- **saved-views** — save a table's filters, sort, search and date range as a
+  named view you can return to, per user, per resource. In other ecosystems this
+  is a *paid* add-on — which tells you what it's worth. Here it's a small plugin,
+  because Grit's tables already keep their state in the URL, so a saved view is
+  just a saved query string.
 
 Each is deliberately contained: real value, a small blast radius, and a different
-corner of the mechanism exercised.
+corner of the mechanism exercised — one touches auth and cookies, one touches no
+server at all, one adds a model and a per-user API.
+
+```bash
+grit plugin add impersonate
+grit plugin add command-palette
+grit plugin add saved-views
+```
 
 ## How to build your own plugin
 

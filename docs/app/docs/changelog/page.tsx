@@ -28,6 +28,49 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.81.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.81.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 21, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Three new first-party plugins,</strong> each built and verified end to
+                  end in a running app, and each reversible with{" "}
+                  <code>grit plugin remove</code> down to a byte-for-byte revert.
+                </p>
+                <ul>
+                  <li>
+                    <code>grit plugin add impersonate</code> — an admin signs in as another user
+                    to reproduce a bug or check their access, then returns in one click. The
+                    session swap is server-side through HttpOnly cookies (the admin never handles
+                    a token), and every start and stop is written to the activity log.
+                  </li>
+                  <li>
+                    <code>grit plugin add command-palette</code> — a ⌘K / Ctrl-K palette to jump
+                    to any resource or system page, built from the resource registry.
+                    Frontend-only: it touches no Go at all.
+                  </li>
+                  <li>
+                    <code>grit plugin add saved-views</code> — save a table&apos;s filters, sort,
+                    search and date range as a named view, per user, per resource. Built on the
+                    URL state the tables already use, so nothing in the table itself changes.
+                  </li>
+                </ul>
+                <p>
+                  Enabling the frontend plugins meant adding a few reusable injection markers to
+                  the admin (a layout banner slot, a system-nav slot, and a resource-table toolbar
+                  slot) that community plugins can target too. New posts on{" "}
+                  <a href="/blog" className="text-primary hover:underline">The Daily Grit</a>{" "}
+                  cover the plugin model and how to build your own.
+                </p>
+              </div>
+            </div>
+
             {/* v3.80.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
