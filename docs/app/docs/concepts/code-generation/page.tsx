@@ -526,37 +526,42 @@ fields:
                   never overwrites it. Two common follow-ups:
                 </p>
 
-                <h3 className="text-lg font-semibold tracking-tight mb-2 mt-6">Add a field</h3>
+                <h3 className="text-lg font-semibold tracking-tight mb-2 mt-6">Add a field to an existing model</h3>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  There is no separate &ldquo;add field&rdquo; command — you edit the model and
-                  regenerate the derived types. Say you want a <code>sku</code> on Product:
+                  There&apos;s no <code>add field</code> command because you don&apos;t need one —
+                  edit the Go model, then let <code>grit sync</code> propagate it. Say you want a{" "}
+                  <code>sku</code> on Product:
                 </p>
                 <CodeBlock language="go" filename="apps/api/internal/models/product.go" code={`type Product struct {
     // ...existing fields...
     SKU string ` + "`gorm:\"size:64;index\" json:\"sku\"`" + `   // 1. add the field
 }`} />
-                <CodeBlock language="bash" code={`# 2. regenerate the shared TypeScript types + Zod schemas from the Go model
+                <CodeBlock language="bash" code={`# 2. regenerate shared types + Zod AND add the field to the admin table + form
 grit sync
 
 # 3. apply the new column to the database
 grit migrate`} />
                 <p className="text-muted-foreground leading-relaxed mb-4 mt-4">
-                  <code>grit sync</code> rewrites <code>packages/shared</code> from your Go structs,
-                  so the type and Zod schema pick up <code>sku</code> automatically. The one manual
-                  step: the admin resource definition (<code>apps/admin/resources/products.ts</code>)
-                  lists its columns and form fields explicitly, so add <code>sku</code> there where
-                  you want it shown or edited:
+                  <code>grit sync</code> rewrites <code>packages/shared</code> (TypeScript type +
+                  Zod schema) from your Go structs, <strong>and</strong> inserts the new field into
+                  the admin resource definition&apos;s columns and form &mdash; between the{" "}
+                  <code>// grit:cols:auto</code> / <code>// grit:fields:auto</code> markers, so your
+                  hand-edited rows are never touched. In practice, adding a field is edit-model →{" "}
+                  <code>grit sync</code> → <code>grit migrate</code>, and it shows up in the admin
+                  automatically.
                 </p>
-                <CodeBlock language="typescript" filename="apps/admin/resources/products.ts" code={`fields: [
-  // ...existing fields...
-  { key: "sku", label: "SKU", type: "text" },   // shows in the create/edit form
-],
-table: {
-  columns: [
-    // ...existing columns...
-    { key: "sku", label: "SKU" },               // shows in the data table
-  ],
-},`} />
+                <div className="rounded-lg border border-border/50 bg-card/40 p-4 mb-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-0">
+                    <strong>One thing to know:</strong> the create/update handler binds an explicit
+                    request struct, so for the API to <em>accept</em> and save the new field, add it
+                    there too (<code>apps/api/internal/handlers/product_handler.go</code>, the{" "}
+                    <code>Create</code> / <code>Update</code> req structs). If you haven&apos;t
+                    hand-customized the generated files, the quickest path is to re-run{" "}
+                    <code>grit generate resource Product --fields &quot;&hellip;including sku&quot;</code>{" "}
+                    — it regenerates the model, handler, service and shared types together, and its
+                    injections are idempotent (existing routes/registrations are skipped).
+                  </p>
+                </div>
 
                 <h3 className="text-lg font-semibold tracking-tight mb-2 mt-8">Change a sidebar icon</h3>
                 <p className="text-muted-foreground leading-relaxed mb-4">

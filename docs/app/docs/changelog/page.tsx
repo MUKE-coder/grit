@@ -28,6 +28,69 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.83.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.83.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 22, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>A big admin round: inline line-items, detail pages, and form polish.</strong>{" "}
+                  Most of this came from building a real freight app on Grit and hitting the rough
+                  edges.
+                </p>
+                <ul>
+                  <li>
+                    <strong>Inline line-items (parent + child in one form).</strong> A new{" "}
+                    <code>grit generate resource Invoice --items{" "}
+                    &quot;InvoiceItem:description:string,qty:int,unit_rate:float&quot;</code>{" "}
+                    scaffolds the parent with an editable line-items table <em>inside</em> its form —
+                    add rows, a live per-row and grand total — and the child saved{" "}
+                    <strong>atomically with the parent</strong> in one GORM transaction (has-many).
+                    The child is generated as a full resource (so it&apos;s filterable by the parent
+                    FK) but hidden from the sidebar. This is the Invoice/InvoiceItem shape that a
+                    Category/Product split can&apos;t express.
+                  </li>
+                  <li>
+                    <strong>View opens a detail page, not a modal.</strong> Every{" "}
+                    <code>view</code> now navigates to <code>/resources/&lt;slug&gt;/&lt;id&gt;</code>{" "}
+                    — a real page that presents the record, edits it in place, and loads every{" "}
+                    <strong>related table</strong> (its line-items, plus any resource that
+                    belongs_to it), so an Invoice shows its items without a hand-written page.
+                  </li>
+                  <li>
+                    <strong>Card-style radio &amp; checkbox.</strong> The <code>radio</code> and{" "}
+                    <code>checkbox</code> field types now render as selectable cards (label,
+                    description, right-aligned hint), not bare inputs.
+                  </li>
+                  <li>
+                    <strong>Sheet forms.</strong> The create/edit drawer opens at 50% width with a{" "}
+                    <strong>maximize</strong> toggle to 80%, square edges, and an optional{" "}
+                    <code>form.sheetWidth: &quot;wide&quot;</code>.
+                  </li>
+                  <li>
+                    <strong>Comma-formatted numbers everywhere.</strong> Every number input,
+                    including the new line-item cells, thousands-separates as you type
+                    (1000 → 1,000), honoring the field&apos;s int/uint/float domain.
+                  </li>
+                  <li>
+                    <strong>Tighter type scale.</strong> The admin base font drops to 15px for a
+                    denser, dashboard-like feel.
+                  </li>
+                </ul>
+                <p>
+                  <strong>Adding a field to an existing model?</strong> Edit the Go model, run{" "}
+                  <code>grit sync</code> (regenerates the shared types + Zod and adds the field to the
+                  admin table + form, non-destructively), then <code>grit migrate</code> for the
+                  column. See <a href="/docs/concepts/code-generation" className="text-primary hover:underline">Code Generation</a>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.82.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

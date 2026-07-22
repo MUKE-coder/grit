@@ -13,6 +13,18 @@ import (
 type ResourceDefinition struct {
 	Name   string  `yaml:"name"`
 	Fields []Field `yaml:"fields"`
+
+	// Items, when set (via `--items Child:"fields"`), is an inline has-many
+	// child resource. It is generated as a normal resource (so it gets its own
+	// model/handler/routes and a belongs_to back to this parent), AND the
+	// parent gains a has-many slice + an inline line-items form field, so its
+	// rows are created atomically with the parent. Nil for ordinary resources.
+	Items *ResourceDefinition `yaml:"items,omitempty"`
+
+	// Hidden marks a resource that should be generated fully but kept OUT of the
+	// admin sidebar (set on inline `--items` children — you manage them through
+	// the parent's form + detail page, not a top-level nav entry).
+	Hidden bool `yaml:"-"`
 }
 
 // LoadFromYAML reads a resource definition from a YAML file.
@@ -123,6 +135,45 @@ func ParseInlineFields(name string, fieldStr string) (*ResourceDefinition, error
 	}
 
 	return def, nil
+}
+
+// ParseItems parses the `--items Child:"field:type,..."` spec into an inline
+// child ResourceDefinition owned by the parent. The child gets a synthesized
+// belongs_to back to the parent (so its FK column + list filter exist) and is
+// flagged Hidden (generated fully, but kept out of the sidebar). Example:
+//
+//	ParseItems("Invoice", `InvoiceItem:description:string,qty:int,unit_rate:float`)
+func ParseItems(parentName, spec string) (*ResourceDefinition, error) {
+	spec = strings.TrimSpace(spec)
+	// Split off the child name (everything up to the first colon); the rest is
+	// the field spec passed to ParseInlineFields.
+	idx := strings.Index(spec, ":")
+	if idx < 0 {
+		return nil, fmt.Errorf("--items must be \"ChildName:field:type,...\" (got %q)", spec)
+	}
+	childName := strings.TrimSpace(spec[:idx])
+	fieldStr := strings.TrimSpace(spec[idx+1:])
+	if childName == "" || fieldStr == "" {
+		return nil, fmt.Errorf("--items must be \"ChildName:field:type,...\" (got %q)", spec)
+	}
+
+	child, err := ParseInlineFields(childName, fieldStr)
+	if err != nil {
+		return nil, fmt.Errorf("parsing --items fields: %w", err)
+	}
+
+	// Synthesize the belongs_to back-link to the parent so the child owns a
+	// <parent>_id FK column and a matching list filter.
+	parentPascal := toPascalCase(parentName)
+	child.Fields = append(child.Fields, Field{
+		Name:         toSnakeCase(parentPascal),
+		Type:         string(FieldBelongsTo),
+		Required:     true,
+		RelatedModel: parentPascal,
+	})
+	child.Hidden = true
+
+	return child, nil
 }
 
 // splitTopLevelCommas splits a string on commas that are NOT inside

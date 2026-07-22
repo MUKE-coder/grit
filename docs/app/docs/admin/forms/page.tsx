@@ -79,6 +79,19 @@ export default function FormBuilderPage() {
                 </Link>{' '}
                 guide for full documentation.
               </p>
+              <p>
+                The default sheet drawer opens at <strong>50% of the viewport</strong> with square
+                edges and a <strong>maximize</strong> toggle in its header that widens it to 80%
+                &mdash; handy for wide content like a line-items table or a two-column layout. Set{" "}
+                <code>form.sheetWidth: &apos;wide&apos;</code> to have a resource open wide by default.
+              </p>
+              <p>
+                <strong>Viewing a record</strong> opens a dedicated <strong>detail page</strong> at{" "}
+                <code>/resources/[slug]/[id]</code> (not a modal): it presents the record, lets you
+                edit it in place, and loads every related table &mdash; its inline line-items and
+                any resource that <code>belongs_to</code> it. Detail routes are generated for every
+                resource, so <code>view</code> always has a page to land on.
+              </p>
             </div>
 
             <div className="mt-4 mb-8">
@@ -238,41 +251,73 @@ export default defineResource({
             <div className="prose-grit">
               <h3>Checkbox</h3>
               <p>
-                A standard checkbox for boolean values. Visually different from a toggle &mdash;
-                it renders as a small square with a checkmark. Typically used for consent,
-                terms, or opt-in fields.
+                A boolean field that renders as a <strong>selectable card</strong> &mdash; the whole
+                card is the hit target, with an accent border and a check pill when on. Give it a{" "}
+                <code>description</code> for the second line. Typically used for consent, terms, or
+                opt-in fields.
               </p>
             </div>
 
             <div className="mt-4 mb-8">
-              <CodeBlock filename="Checkbox field" code={`{
-  key: 'active',
-  label: 'Active',
+              <CodeBlock filename="Checkbox field (card)" code={`{
+  key: 'insured',
+  label: 'Add goods-in-transit insurance',
+  description: 'Covers the declared value while the shipment is in transit.',
   type: 'checkbox',
-  defaultValue: true,
 }`} />
             </div>
 
             <div className="prose-grit">
               <h3>Radio Group</h3>
               <p>
-                A group of radio buttons for single-selection from multiple options. Radio
-                groups are useful when you want all options visible at once (unlike a
-                select dropdown that requires clicking to see options).
+                Single-selection rendered as a stack of <strong>selectable cards</strong> (the
+                selected one gets the accent border). Each option can carry an optional{" "}
+                <code>description</code> (a second line under the label) and a short{" "}
+                <code>hint</code> (right-aligned, e.g. a price or ETA). Great when you want the
+                choices &mdash; and their trade-offs &mdash; visible at once.
               </p>
             </div>
 
             <div className="mt-4 mb-8">
-              <CodeBlock filename="Radio field" code={`{
-  key: 'visibility',
-  label: 'Visibility',
+              <CodeBlock filename="Radio field (cards with description + hint)" code={`{
+  key: 'mode',
+  label: 'Preferred freight mode',
   type: 'radio',
+  required: true,
   options: [
-    { label: 'Public',   value: 'public' },
-    { label: 'Private',  value: 'private' },
-    { label: 'Unlisted', value: 'unlisted' },
+    { value: 'air', label: 'Air freight', description: 'Fastest — arrives in days',        hint: 'Days'  },
+    { value: 'sea', label: 'Sea freight', description: 'Most economical — arrives in weeks', hint: 'Weeks' },
   ],
-  defaultValue: 'public',
+}`} />
+            </div>
+
+            <div className="prose-grit">
+              <h3>Line items (inline children)</h3>
+              <p>
+                An editable child table rendered <strong>inside</strong> the parent form &mdash; add
+                and remove rows, with a live per-row and grand total. The rows submit as an array
+                and are saved atomically with the parent. This is what{" "}
+                <code>grit generate resource Invoice --items &quot;InvoiceItem:&hellip;&quot;</code>{" "}
+                scaffolds; see{" "}
+                <a href="/docs/admin/relationships#inline-items" className="text-primary hover:underline">Inline items</a>{" "}
+                for the full relationship. Number columns thousands-separate as you type
+                (1000 → 1,000).
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="Line-items field" code={`{
+  key: 'items',
+  label: 'Invoice Items',
+  type: 'line-items',
+  colSpan: 2,
+  itemEndpoint: '/api/invoice_items',
+  foreignKey: 'invoice_id',
+  itemFields: [
+    { key: 'description', label: 'Description', type: 'text' },
+    { key: 'qty',         label: 'Qty',         type: 'number', numberKind: 'int' },
+    { key: 'unit_rate',   label: 'Unit Rate',   type: 'number', numberKind: 'float' },
+  ],
 }`} />
             </div>
 
