@@ -85,6 +85,26 @@ func (g *Generator) Run() error {
 
 	fmt.Printf("\n  Generating resource: %s\n\n", names.Pascal)
 
+	// Inline child (from --items): generate it as its own full resource FIRST,
+	// so the parent's has-many + handler can reference models.<Child>, and so
+	// the child owns a belongs_to back to the parent (its FK filter powers the
+	// parent detail page's items table). The child carries Hidden=true, so it
+	// stays out of the sidebar and is managed inline / via the detail page.
+	if g.Definition.Items != nil {
+		childGen := &Generator{
+			Root:         g.Root,
+			Module:       g.Module,
+			Architecture: g.Architecture,
+			Frontend:     g.Frontend,
+			Definition:   g.Definition.Items,
+			Roles:        g.Roles,
+		}
+		if err := childGen.Run(); err != nil {
+			return fmt.Errorf("generating inline items resource %q: %w", g.Definition.Items.Name, err)
+		}
+		fmt.Printf("\n  Continuing parent resource: %s\n\n", names.Pascal)
+	}
+
 	// 1. Create new Go files
 	if err := g.writeGoModel(names); err != nil {
 		return fmt.Errorf("writing Go model: %w", err)
@@ -158,6 +178,11 @@ func (g *Generator) Run() error {
 			return fmt.Errorf("writing resource page: %w", err)
 		}
 		fmt.Printf("  ✓ apps/admin/app/(dashboard)/resources/%s/page.tsx\n", names.PluralKebab)
+
+		if err := g.writeResourceDetailPage(names); err != nil {
+			return fmt.Errorf("writing resource detail page: %w", err)
+		}
+		fmt.Printf("  ✓ apps/admin/app/(dashboard)/resources/%s/[id]/page.tsx\n", names.PluralKebab)
 	} else if dirExists(adminTanStackResourcesDir) {
 		// TanStack admin
 		if err := g.writeResourceDefinitionTanStack(names); err != nil {
@@ -168,7 +193,12 @@ func (g *Generator) Run() error {
 		if err := g.writeResourcePageTanStack(names); err != nil {
 			return fmt.Errorf("writing resource page: %w", err)
 		}
-		fmt.Printf("  ✓ apps/admin/src/routes/_dashboard/resources/%s.tsx\n", names.PluralKebab)
+		fmt.Printf("  ✓ apps/admin/src/routes/_dashboard/resources/%s/index.tsx\n", names.PluralKebab)
+
+		if err := g.writeResourceDetailPageTanStack(names); err != nil {
+			return fmt.Errorf("writing resource detail page: %w", err)
+		}
+		fmt.Printf("  ✓ apps/admin/src/routes/_dashboard/resources/%s/$id.tsx\n", names.PluralKebab)
 	}
 
 	// Mobile (Expo) screens + hooks — file-based routing means creating the

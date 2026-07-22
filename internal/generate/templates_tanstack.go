@@ -112,19 +112,45 @@ func (g *Generator) writeResourceDefinitionTanStack(names Names) error {
 	return os.WriteFile(filepath.Join(dir, names.PluralKebab+".ts"), []byte(content), 0644)
 }
 
-// writeResourcePageTanStack writes a TanStack Router resource page.
+// writeResourcePageTanStack writes a TanStack Router resource list page. It uses
+// the <kebab>/index.tsx form (not a flat <kebab>.tsx) so a sibling $id detail
+// route can live under the same directory — mirroring the built-in blogs.
 func (g *Generator) writeResourcePageTanStack(names Names) error {
 	content := fmt.Sprintf(`import { createFileRoute } from '@tanstack/react-router'
 import { ResourcePage } from '@/components/resource/resource-page'
 import { %sResource } from '@/resources/%s'
 
-export const Route = createFileRoute('/_dashboard/resources/%s')({
+export const Route = createFileRoute('/_dashboard/resources/%s/')({
   component: () => <ResourcePage resource={%sResource} />,
 })
 `, names.Camel, names.PluralKebab, names.PluralKebab, names.Camel)
 
-	dir := filepath.Join(g.Root, "apps", "admin", "src", "routes", "_dashboard", "resources")
+	dir := filepath.Join(g.Root, "apps", "admin", "src", "routes", "_dashboard", "resources", names.PluralKebab)
 	os.MkdirAll(dir, 0755)
-	return os.WriteFile(filepath.Join(dir, names.PluralKebab+".tsx"), []byte(content), 0644)
+	// Remove any stale flat route from a pre-detail-page generation so the two
+	// don't collide on the same path.
+	os.Remove(filepath.Join(g.Root, "apps", "admin", "src", "routes", "_dashboard", "resources", names.PluralKebab+".tsx"))
+	return os.WriteFile(filepath.Join(dir, "index.tsx"), []byte(content), 0644)
+}
+
+// writeResourceDetailPageTanStack writes the per-resource $id detail route.
+func (g *Generator) writeResourceDetailPageTanStack(names Names) error {
+	content := fmt.Sprintf(`import { createFileRoute } from '@tanstack/react-router'
+import { ResourceDetailPage } from '@/components/resource/resource-detail-page'
+import { %sResource } from '@/resources/%s'
+
+export const Route = createFileRoute('/_dashboard/resources/%s/$id')({
+  component: RouteComponent,
+})
+
+function RouteComponent() {
+  const { id } = Route.useParams()
+  return <ResourceDetailPage resource={%sResource} id={id} />
+}
+`, names.Camel, names.PluralKebab, names.PluralKebab, names.Camel)
+
+	dir := filepath.Join(g.Root, "apps", "admin", "src", "routes", "_dashboard", "resources", names.PluralKebab)
+	os.MkdirAll(dir, 0755)
+	return os.WriteFile(filepath.Join(dir, "$id.tsx"), []byte(content), 0644)
 }
 

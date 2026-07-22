@@ -23,6 +23,7 @@ import { FilesField } from "./fields/files-field";
 import { RichTextField } from "./fields/rich-text-field";
 import { RelationshipSelectField } from "./fields/relationship-select-field";
 import { MultiRelationshipSelectField } from "./fields/multi-relationship-select-field";
+import { LineItemsField } from "./fields/line-items-field";
 import { Loader2 } from "@/lib/icons";
 
 interface FormBuilderProps {
@@ -294,6 +295,21 @@ export function FieldRenderer({
           )}
         />
       );
+    case "line-items":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          render={({ field: formField }) => (
+            <LineItemsField
+              field={field}
+              value={Array.isArray(formField.value) ? formField.value : []}
+              onChange={formField.onChange}
+              error={error}
+            />
+          )}
+        />
+      );
     default:
       return null;
   }
@@ -309,6 +325,7 @@ const ARRAY_FIELD_TYPES = new Set([
   "images",
   "videos",
   "multi-relationship-select",
+  "line-items",
 ]);
 
 const NULLABLE_OBJECT_FIELD_TYPES = new Set([
@@ -429,10 +446,11 @@ export function FormModal({ resource, item, onClose }: FormModalProps) {
 func adminFormSheet() string {
 	return `"use client";
 
+import { useState } from "react";
 import type { ResourceDefinition } from "@/lib/resource";
 import { FormBuilder } from "./form-builder";
 import { useCreateResource, useUpdateResource } from "@/hooks/use-resource";
-import { X } from "@/lib/icons";
+import { X, Maximize2, Minimize2 } from "@/lib/icons";
 
 interface FormSheetProps {
   resource: ResourceDefinition;
@@ -442,6 +460,12 @@ interface FormSheetProps {
 
 export function FormSheet({ resource, item, onClose }: FormSheetProps) {
   const isEdit = item !== null;
+  // The drawer opens at half the viewport width; the maximize toggle widens it
+  // to 80% for forms with wide content (inline line-item tables, two-column
+  // layouts). A resource can override the default via form.sheetWidth.
+  const defaultWidth = resource.form?.sheetWidth === "wide" ? "md:w-[80vw]" : "md:w-1/2";
+  const [expanded, setExpanded] = useState(resource.form?.sheetWidth === "wide");
+  const widthClass = expanded ? "md:w-[80vw]" : defaultWidth;
   const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint);
   const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint);
 
@@ -457,22 +481,36 @@ export function FormSheet({ resource, item, onClose }: FormSheetProps) {
   };
 
   return (
-    // Walkie-Check style: bottom sheet on mobile, right drawer on desktop.
-    // Good for long forms — uses full screen height and accommodates more
-    // fields than a centered modal can without scrolling.
+    // Right drawer on desktop, bottom sheet on mobile. Half-width by default,
+    // square edges (no rounded corners on desktop), maximizes to 80%.
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-stretch md:justify-end">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-h-[90vh] overflow-y-auto rounded-t-2xl border border-border bg-bg-secondary shadow-2xl md:max-h-none md:h-full md:max-w-lg md:rounded-none md:rounded-l-2xl">
+      <div
+        className={
+          "relative z-10 w-full max-h-[90vh] overflow-y-auto rounded-t-2xl border border-border bg-bg-secondary shadow-2xl transition-[width] duration-200 md:max-h-none md:h-full md:max-w-none md:rounded-none " +
+          widthClass
+        }
+      >
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <h2 className="text-lg font-semibold text-foreground">
             {isEdit ? "Edit" : "Create"} {resource.label?.singular ?? resource.name}
           </h2>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setExpanded((e) => !e)}
+              className="hidden rounded-lg p-1 text-text-secondary transition-colors hover:bg-bg-hover hover:text-foreground md:block"
+              title={expanded ? "Restore width" : "Maximize"}
+              aria-label={expanded ? "Restore width" : "Maximize"}
+            >
+              {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </button>
+            <button
+              onClick={onClose}
+              className="rounded-lg p-1 text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         <div className="p-6">
@@ -1356,7 +1394,7 @@ interface NumberFieldProps {
   error?: string;
 }
 
-interface FormatOpts {
+export interface FormatOpts {
   allowDecimal: boolean;
   allowNegative: boolean;
 }
@@ -1366,7 +1404,7 @@ interface FormatOpts {
 // point) and inserts thousand-separators into the integer part. The
 // decimal portion is kept verbatim so a mid-typed "3000." doesn't
 // lose the dot on the way to "3,000.".
-function formatNumberDisplay(raw: string, opts: FormatOpts): string {
+export function formatNumberDisplay(raw: string, opts: FormatOpts): string {
   if (raw === "" || raw == null) return "";
   let s = String(raw).replace(opts.allowDecimal ? /[^0-9.\-]/g : /[^0-9\-]/g, "");
   const negative = opts.allowNegative && s.startsWith("-");
@@ -1404,7 +1442,7 @@ function formatNumberDisplay(raw: string, opts: FormatOpts): string {
 // "" for the "no value yet" states (empty, lone minus, lone dot) so
 // react-hook-form's required validation can still distinguish empty
 // from zero.
-function parseFormattedNumber(formatted: string): number | "" {
+export function parseFormattedNumber(formatted: string): number | "" {
   if (formatted === "" || formatted === "-" || formatted === "." || formatted === "-.") {
     return "";
   }
@@ -1653,6 +1691,7 @@ export function ToggleField({ field, value, onChange, error }: ToggleFieldProps)
 // adminCheckboxField returns the checkbox field component.
 func adminCheckboxField() string {
 	return `import type { FieldDefinition } from "@/lib/resource";
+import { Check } from "@/lib/icons";
 
 interface CheckboxFieldProps {
   field: FieldDefinition;
@@ -1662,28 +1701,45 @@ interface CheckboxFieldProps {
 }
 
 export function CheckboxField({ field, value, onChange, error }: CheckboxFieldProps) {
+  // Card-style boolean: the whole card is the hit target, the accent border
+  // + check pill signal the on state (matches the radio cards below).
   return (
     <div className="space-y-1.5">
-      <label className="flex items-center gap-3 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={value}
-          onChange={(e) => onChange(e.target.checked)}
-          className="h-4 w-4 rounded border-border bg-bg-tertiary accent-accent"
-        />
-        <span className="text-sm font-medium text-foreground">{field.label}</span>
-      </label>
-      {field.description && !error && (
-        <p className="text-xs text-text-muted ml-7">{field.description}</p>
-      )}
-      {error && <p className="text-xs text-danger ml-7">{error}</p>}
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={value}
+        onClick={() => onChange(!value)}
+        className={
+          "flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-colors " +
+          (value ? "border-accent bg-accent/5" : "border-border hover:border-accent/40")
+        }
+      >
+        <span
+          className={
+            "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border " +
+            (value ? "border-accent bg-accent text-white" : "border-border")
+          }
+        >
+          {value && <Check className="h-3.5 w-3.5" />}
+        </span>
+        <span className="min-w-0">
+          <span className="block text-sm font-medium text-foreground">{field.label}</span>
+          {field.description && (
+            <span className="mt-0.5 block text-xs text-text-muted">{field.description}</span>
+          )}
+        </span>
+      </button>
+      {error && <p className="text-xs text-danger">{error}</p>}
     </div>
   );
 }
 `
 }
 
-// adminRadioField returns the radio button group field component.
+// adminRadioField returns the radio field as a stack of selectable cards
+// (each option is a card; the selected one gets the accent border). Options may
+// carry an optional description (second line) and hint (right-aligned).
 func adminRadioField() string {
 	return `import type { FieldDefinition } from "@/lib/resource";
 
@@ -1702,25 +1758,312 @@ export function RadioField({ field, value, onChange, error }: RadioFieldProps) {
         {field.required && <span className="text-danger ml-1">*</span>}
       </label>
       <div className="space-y-2">
-        {field.options?.map((opt) => (
-          <label key={opt.value} className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="radio"
-              name={field.key}
-              value={opt.value}
-              checked={value === opt.value}
-              onChange={(e) => onChange(e.target.value)}
-              className="h-4 w-4 border-border bg-bg-tertiary accent-accent"
-            />
-            <span className="text-sm text-foreground">{opt.label}</span>
-          </label>
-        ))}
+        {field.options?.map((opt) => {
+          const selected = value === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onChange(opt.value)}
+              className={
+                "flex w-full items-center justify-between gap-3 rounded-xl border p-4 text-left transition-colors " +
+                (selected ? "border-accent bg-accent/5" : "border-border hover:border-accent/40")
+              }
+            >
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-foreground">{opt.label}</span>
+                {opt.description && (
+                  <span className="mt-0.5 block text-xs text-text-muted">{opt.description}</span>
+                )}
+              </span>
+              {opt.hint && (
+                <span className={"shrink-0 text-sm font-medium " + (selected ? "text-accent" : "text-text-muted")}>
+                  {opt.hint}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
       {field.description && !error && (
         <p className="text-xs text-text-muted">{field.description}</p>
       )}
       {error && <p className="text-xs text-danger">{error}</p>}
     </div>
+  );
+}
+`
+}
+
+// adminLineItemsField returns the inline line-items (repeater) field: a child
+// resource rendered as an editable table inside the parent form. Rows are held
+// as an array under the field's key and submitted with the parent payload, then
+// saved atomically by the parent's create/update handler (GORM has-many).
+func adminLineItemsField() string {
+	return `"use client";
+
+import { useMemo, useState, useRef, useEffect } from "react";
+import type { FieldDefinition } from "@/lib/resource";
+import { Plus, Trash2 } from "@/lib/icons";
+import { RelationshipSelectField } from "./relationship-select-field";
+import { formatNumberDisplay, parseFormattedNumber } from "./number-field";
+
+interface LineItemsFieldProps {
+  field: FieldDefinition;
+  value: Record<string, unknown>[];
+  onChange: (value: Record<string, unknown>[]) => void;
+  error?: string;
+}
+
+// Heuristic: if the item has a quantity column and a rate/price column, show a
+// derived per-row Total and a grand total. Display-only — only the declared
+// columns are submitted; any stored total is the backend's business.
+const QTY_RE = /(^|_)(qty|quantity)($|_)/i;
+const RATE_RE = /(unit[_-]?rate|unit[_-]?price|(^|_)(rate|price|amount)($|_))/i;
+
+export function LineItemsField({ field, value, onChange, error }: LineItemsFieldProps) {
+  const cols = field.itemFields ?? [];
+  const rows = Array.isArray(value) ? value : [];
+  const noun = field.itemNoun ?? "item";
+
+  const qtyKey = cols.find((c) => QTY_RE.test(c.key))?.key;
+  const rateKey = cols.find((c) => RATE_RE.test(c.key))?.key;
+  const showTotal = Boolean(qtyKey && rateKey);
+
+  const rowTotal = (row: Record<string, unknown>) => {
+    if (!qtyKey || !rateKey) return 0;
+    return (Number(row[qtyKey]) || 0) * (Number(row[rateKey]) || 0);
+  };
+  const grandTotal = useMemo(
+    () => rows.reduce((sum, r) => sum + rowTotal(r), 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows]
+  );
+
+  const blankRow = () => {
+    const r: Record<string, unknown> = {};
+    for (const c of cols) r[c.key] = c.type === "number" ? "" : c.defaultValue ?? "";
+    return r;
+  };
+  const addRow = () => onChange([...rows, blankRow()]);
+  const removeRow = (i: number) => onChange(rows.filter((_, idx) => idx !== i));
+  const setCell = (i: number, key: string, v: unknown) =>
+    onChange(rows.map((r, idx) => (idx === i ? { ...r, [key]: v } : r)));
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <label className="block text-sm font-medium text-foreground">
+          {field.label}
+          {field.required && <span className="text-danger ml-1">*</span>}
+        </label>
+        <button
+          type="button"
+          onClick={addRow}
+          className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-accent hover:bg-bg-hover transition-colors"
+        >
+          <Plus className="h-3.5 w-3.5" /> Add {noun}
+        </button>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-border">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border bg-bg-tertiary/40 text-left">
+              {cols.map((c) => (
+                <th key={c.key} className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-text-muted">
+                  {c.label}
+                </th>
+              ))}
+              {showTotal && (
+                <th className="px-3 py-2 text-right text-xs font-medium uppercase tracking-wide text-text-muted">
+                  Total
+                </th>
+              )}
+              <th className="w-10 px-3 py-2" />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={cols.length + (showTotal ? 2 : 1)}
+                  className="px-3 py-6 text-center text-xs text-text-muted"
+                >
+                  No {noun}s yet — click &ldquo;Add {noun}&rdquo;.
+                </td>
+              </tr>
+            ) : (
+              rows.map((row, i) => (
+                <tr key={i} className="border-b border-border/60 last:border-b-0">
+                  {cols.map((c) => (
+                    <td key={c.key} className="px-2 py-1.5 align-top">
+                      <LineItemCell
+                        col={c}
+                        value={row[c.key]}
+                        onChange={(v) => setCell(i, c.key, v)}
+                      />
+                    </td>
+                  ))}
+                  {showTotal && (
+                    <td className="px-3 py-1.5 text-right font-medium text-foreground align-middle">
+                      {rowTotal(row).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                  )}
+                  <td className="px-2 py-1.5 text-right align-middle">
+                    <button
+                      type="button"
+                      onClick={() => removeRow(i)}
+                      className="rounded-md p-1 text-text-muted hover:bg-bg-hover hover:text-danger transition-colors"
+                      aria-label={"Remove " + noun}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+          {showTotal && rows.length > 0 && (
+            <tfoot>
+              <tr className="border-t border-border">
+                <td colSpan={cols.length} className="px-3 py-2 text-right text-xs font-medium uppercase tracking-wide text-text-muted">
+                  Total
+                </td>
+                <td className="px-3 py-2 text-right text-sm font-semibold text-foreground">
+                  {grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
+                <td />
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+      {field.description && !error && <p className="text-xs text-text-muted">{field.description}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
+    </div>
+  );
+}
+
+// A single editable cell, rendered by the column's field type. Keeps the inputs
+// compact so a row reads like a spreadsheet line, not a stack of form fields.
+function LineItemCell({
+  col,
+  value,
+  onChange,
+}: {
+  col: FieldDefinition;
+  value: unknown;
+  onChange: (v: unknown) => void;
+}) {
+  const base =
+    "w-full rounded-md border border-border bg-bg-tertiary px-2 py-1.5 text-sm text-foreground outline-none focus:border-accent";
+
+  if (col.type === "number") {
+    return <LineItemNumberCell col={col} value={value} onChange={onChange} className={base + " text-right"} />;
+  }
+  if (col.type === "select") {
+    return (
+      <select value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} className={base}>
+        <option value="">Select…</option>
+        {col.options?.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+  if (col.type === "relationship-select") {
+    return (
+      <RelationshipSelectField field={col} value={String(value ?? "")} onChange={onChange} />
+    );
+  }
+  if (col.type === "date" || col.type === "datetime") {
+    return (
+      <input
+        type={col.type === "datetime" ? "datetime-local" : "date"}
+        value={String(value ?? "")}
+        onChange={(e) => onChange(e.target.value)}
+        className={base}
+      />
+    );
+  }
+  return (
+    <input
+      type="text"
+      value={String(value ?? "")}
+      placeholder={col.placeholder ?? col.label}
+      onChange={(e) => onChange(e.target.value)}
+      className={base}
+    />
+  );
+}
+
+// A comma-formatting number cell — mirrors NumberField's thousand-separator
+// behaviour (1000 -> 1,000) inside the line-items table, storing the parsed
+// numeric value in form state and keeping the caret put as commas shift.
+function LineItemNumberCell({
+  col,
+  value,
+  onChange,
+  className,
+}: {
+  col: FieldDefinition;
+  value: unknown;
+  onChange: (v: unknown) => void;
+  className: string;
+}) {
+  const kind = col.numberKind ?? "float";
+  const opts = { allowDecimal: kind === "float", allowNegative: kind !== "uint" };
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [display, setDisplay] = useState(() =>
+    formatNumberDisplay(value === null || value === undefined ? "" : String(value), opts)
+  );
+
+  useEffect(() => {
+    const parsed = parseFormattedNumber(display);
+    if (parsed === value) return;
+    setDisplay(value === "" || value == null ? "" : formatNumberDisplay(String(value), opts));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    const raw = input.value;
+    const cursorBefore = input.selectionStart ?? raw.length;
+    let nonCommasBeforeCursor = 0;
+    for (let i = 0; i < cursorBefore; i++) {
+      if (raw[i] !== ",") nonCommasBeforeCursor++;
+    }
+    const formatted = formatNumberDisplay(raw, opts);
+    setDisplay(formatted);
+    onChange(parseFormattedNumber(formatted));
+    requestAnimationFrame(() => {
+      if (!inputRef.current) return;
+      let pos = 0;
+      let counted = 0;
+      while (pos < formatted.length && counted < nonCommasBeforeCursor) {
+        if (formatted[pos] !== ",") counted++;
+        pos++;
+      }
+      inputRef.current.setSelectionRange(pos, pos);
+    });
+  };
+
+  return (
+    <input
+      ref={inputRef}
+      type="text"
+      inputMode={opts.allowDecimal ? "decimal" : "numeric"}
+      autoComplete="off"
+      value={display}
+      placeholder={col.placeholder}
+      onChange={handleChange}
+      className={className}
+    />
   );
 }
 `

@@ -343,6 +343,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "forms", "fields", "files-field.tsx"):                     adminFilesField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "relationship-select-field.tsx"):       adminRelationshipSelectField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "multi-relationship-select-field.tsx"): adminMultiRelationshipSelectField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "line-items-field.tsx"):                adminLineItemsField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "rich-text-field.tsx"):                 adminRichTextField(),
 
 		// UI components
@@ -356,7 +357,8 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "widgets", "widget-grid.tsx"):     adminWidgetGrid(),
 
 		// Resource components
-		filepath.Join(adminRoot, "components", "resource", "resource-page.tsx"): adminResourcePage(),
+		filepath.Join(adminRoot, "components", "resource", "resource-page.tsx"):        adminResourcePage(),
+		filepath.Join(adminRoot, "components", "resource", "resource-detail-page.tsx"): adminResourceDetailPage(),
 		filepath.Join(adminRoot, "components", "resource", "view-modal.tsx"):    adminViewModal(),
 
 		// Resource definitions
@@ -380,7 +382,8 @@ func writeAdminFiles(root string, opts Options) error {
 		// Dashboard pages — (dashboard) route group (style variant)
 		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):          adminDashboardPageForStyle(opts.Style),
 		filepath.Join(adminRoot, "app", "(dashboard)", "profile", "page.tsx"):            adminCaptivatingProfile(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"): adminUsersPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"):        adminUsersPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "[id]", "page.tsx"): adminResourceDetailRoute("users", "users", "Users"),
 		// v3.31.7: blog list uses a two-step create flow (sheet -> redirect
 		// to detail page with WordEditor) instead of the stock resource page.
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "blogs", "page.tsx"):         adminBlogsListPage(),
@@ -734,6 +737,10 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-display), system-ui, sans-serif;
+  /* Base a notch below the 16px browser default so the whole admin reads a bit
+     tighter and more dashboard-dense. Tailwind's text-* scale is rem-based, so
+     this rescales every size proportionally. */
+  font-size: 15px;
 }
 
 * {

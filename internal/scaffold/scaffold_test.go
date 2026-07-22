@@ -617,7 +617,7 @@ func TestWriteAdminTanStackFiles(t *testing.T) {
 		filepath.Join(root, "apps", "admin", "src", "routes", "_auth", "sign-up.tsx"),
 		filepath.Join(root, "apps", "admin", "src", "routes", "_dashboard.tsx"),
 		filepath.Join(root, "apps", "admin", "src", "routes", "_dashboard", "dashboard.tsx"),
-		filepath.Join(root, "apps", "admin", "src", "routes", "_dashboard", "resources", "users.tsx"),
+		filepath.Join(root, "apps", "admin", "src", "routes", "_dashboard", "resources", "users", "index.tsx"),
 		filepath.Join(root, "apps", "admin", "src", "components", "layout", "sidebar.tsx"),
 		filepath.Join(root, "apps", "admin", "src", "components", "tables", "data-table.tsx"),
 		filepath.Join(root, "apps", "admin", "src", "components", "forms", "form-builder.tsx"),

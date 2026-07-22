@@ -655,7 +655,7 @@ export function CollapsibleSidebar({
   // exactly those two in the nav — not the whole catalog. Super-admins short-
   // circuit inside can(), so they still see everything.
   const visibleResources = resources.filter(
-    (r) => (!r.adminOnly || isAdmin) && (permsLoading || can(r.slug + ".view"))
+    (r) => !r.hidden && (!r.adminOnly || isAdmin) && (permsLoading || can(r.slug + ".view"))
   );
   const visibleInternal = INTERNAL_NAV.filter(
     (r) =>

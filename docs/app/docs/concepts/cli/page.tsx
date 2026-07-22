@@ -128,6 +128,10 @@ export default function CLICommandsPage() {
                       <span className="text-muted-foreground/40"># Article with an auto-generated slug</span>
                       <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit g resource Article --fields &quot;title:string,slug:slug,body:text,published:bool&quot;</span></div>
                     </div>
+                    <div>
+                      <span className="text-muted-foreground/40"># Invoice with inline line-items — an editable child table inside the form, saved atomically</span>
+                      <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit g resource Invoice --fields &quot;number:string,status:string&quot; --items &quot;InvoiceItem:description:string,qty:int,unit_rate:float&quot;</span></div>
+                    </div>
                   </div>
                 </div>
               </div>

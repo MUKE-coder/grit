@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.82.0"
+var version = "3.83.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -648,6 +648,7 @@ func generateResourceCmd() *cobra.Command {
 	var seed bool
 	var faker bool
 	var seedCount int
+	var items string
 
 	cmd := &cobra.Command{
 		Use:   "resource <Name>",
@@ -686,9 +687,22 @@ func generateResourceCmd() *cobra.Command {
 				return fmt.Errorf("specify fields with --fields, --from, or use -i for interactive mode\n\nExamples:\n  grit generate resource Post --fields \"title:string,content:text,published:bool\"\n  grit generate resource Post --fields \"title:string,slug:string:unique,views:int\"\n  grit generate resource Post --from post.yaml\n  grit generate resource Post -i")
 			}
 
+			// --items: attach an inline has-many child (e.g. Invoice + InvoiceItem).
+			// The child is generated fully and the parent gets a line-items field.
+			if items != "" {
+				child, ierr := generate.ParseItems(name, items)
+				if ierr != nil {
+					return ierr
+				}
+				def.Items = child
+			}
+
 			// Detect project type and dispatch
 			info, _ := project.DetectProject()
 			if info != nil && info.Type == project.ProjectDesktop {
+				if def.Items != nil {
+					return fmt.Errorf("--items (inline line-items) isn't supported for desktop projects yet")
+				}
 				return generate.RunDesktop(def)
 			}
 
@@ -725,6 +739,7 @@ func generateResourceCmd() *cobra.Command {
 	cmd.Flags().StringVar(&fromFile, "from", "", "YAML file defining the resource fields")
 	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Interactively define fields")
 	cmd.Flags().StringVar(&fields, "fields", "", "Inline field definitions (e.g., \"title:string,content:text,published:bool\")")
+	cmd.Flags().StringVar(&items, "items", "", "Inline has-many child rendered as a line-items table in this resource's form (e.g., \"InvoiceItem:description:string,qty:int,unit_rate:float\")")
 	cmd.Flags().StringVar(&roles, "roles", "", "Restrict routes to specific roles (comma-separated, e.g., \"ADMIN,EDITOR\")")
 	cmd.Flags().BoolVar(&seed, "seed", false, "Also generate a seeder file with one example record")
 	cmd.Flags().BoolVar(&faker, "faker", false, "Also generate a seeder that fills many rows with gofakeit (implies --seed)")

@@ -116,6 +116,14 @@ func (g *Generator) writeGoModel(names Names) error {
 		structFields += fmt.Sprintf("\t%s %s `%s`\n", goName, goType, tags)
 	}
 
+	// Inline has-many child (from --items): the parent owns a slice of children
+	// keyed on <Parent>ID. GORM creates these in the same transaction as the
+	// parent when they're set before Create, giving atomic invoice+items saves.
+	if g.Definition.Items != nil {
+		childNames := BuildNames(g.Definition.Items)
+		structFields += fmt.Sprintf("\tItems []%s `gorm:\"foreignKey:%sID\" json:\"items\"`\n", childNames.Pascal, names.Pascal)
+	}
+
 	content := fmt.Sprintf(`package models
 
 %s
@@ -477,10 +485,43 @@ func (g *Generator) writeGoHandler(names Names) error {
 		}
 	}
 
+	// Inline has-many items (from --items): a request slice, an atomic create
+	// (GORM cascades the children in Create's transaction), and a replace-all on
+	// update. The parent FK is set by the association (create) or by hand
+	// (update) — clients never send it per row.
+	itemsReqField := ""
+	itemsBuild := ""
+	itemsUpdate := ""
+	if g.Definition.Items != nil {
+		childModel := BuildNames(g.Definition.Items).Pascal
+		reqStructFields := ""
+		assign := ""
+		for _, cf := range g.Definition.Items.Fields {
+			if cf.IsBelongsTo() || cf.IsSlug() || cf.IsManyToMany() {
+				continue
+			}
+			gName := toPascalCase(cf.Name)
+			gType := cf.GoType()
+			jTag := toSnakeCase(cf.Name)
+			reqStructFields += fmt.Sprintf("\t\t\t%s %s `json:\"%s\"`\n", gName, gType, jTag)
+			assign += fmt.Sprintf("\t\t\t\t%s: it.%s,\n", gName, gName)
+		}
+		itemsReqField = fmt.Sprintf("\t\tItems []struct {\n%s\t\t} `json:\"items\"`\n", reqStructFields)
+		itemsBuild = fmt.Sprintf("\n\tif len(req.Items) > 0 {\n\t\titems := make([]models.%s, 0, len(req.Items))\n\t\tfor _, it := range req.Items {\n\t\t\titems = append(items, models.%s{\n%s\t\t\t})\n\t\t}\n\t\titem.Items = items\n\t}\n", childModel, childModel, assign)
+		fkCol := names.Snake + "_id"
+		itemsUpdate = fmt.Sprintf("\n\tif req.Items != nil {\n\t\th.DB.Where(\"%s = ?\", item.ID).Delete(&models.%s{})\n\t\tif len(req.Items) > 0 {\n\t\t\tnewItems := make([]models.%s, 0, len(req.Items))\n\t\t\tfor _, it := range req.Items {\n\t\t\t\trow := models.%s{\n%s\t\t\t\t}\n\t\t\t\trow.%sID = item.ID\n\t\t\t\tnewItems = append(newItems, row)\n\t\t\t}\n\t\t\th.DB.Create(&newItems)\n\t\t}\n\t}\n", fkCol, childModel, childModel, childModel, assign, names.Pascal)
+	}
+	createFields += itemsReqField
+	updateFields += itemsReqField
+
 	// Build preload chain
 	preloadChain := ""
 	for _, p := range preloads {
 		preloadChain += fmt.Sprintf(".Preload(\"%s\")", p)
+	}
+	// Load inline items on reads so the detail form + related table are populated.
+	if g.Definition.Items != nil {
+		preloadChain += ".Preload(\"Items\")"
 	}
 
 	// Build reload-with-preloads line (used after Create/Update)
@@ -605,6 +646,8 @@ func (g *Generator) writeGoHandler(names Names) error {
 		"{{PRELOADS}}", preloadChain,
 		"{{M2M_CREATE}}", m2mCreateCode,
 		"{{M2M_UPDATE}}", m2mUpdateCode,
+		"{{ITEMS_BUILD}}", itemsBuild,
+		"{{ITEMS_UPDATE}}", itemsUpdate,
 		"{{RELOAD}}", reloadLine,
 		"{{TIME_IMPORT}}", timeImport,
 		"{{DATATYPES_IMPORT}}", datatypesImport,
@@ -799,7 +842,7 @@ func (h *{{Pascal}}Handler) Create(c *gin.Context) {
 
 	item := models.{{Pascal}}{
 {{CREATE_ASSIGN}}	}
-
+{{ITEMS_BUILD}}
 	if err := h.DB.Create(&item).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
@@ -859,7 +902,7 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 		})
 		return
 	}
-{{M2M_UPDATE}}
+{{M2M_UPDATE}}{{ITEMS_UPDATE}}
 {{RELOAD}}{{UPDATE_CLEANUP}}
 
 	services.LogUpdate(h.DB, c, "{{Pascal}}", {{IDENT_EXPR}}, item.ID, services.DiffSummary(updates))
@@ -1483,6 +1526,53 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 		}
 	}
 
+	// Inline line-items field (parent of --items): an editable child table inside
+	// the parent form. itemFields are the child's editable columns (its FK back
+	// to the parent is set server-side, so it's never a column).
+	if g.Definition.Items != nil {
+		childNames := BuildNames(g.Definition.Items)
+		itemCols := ""
+		for _, cf := range g.Definition.Items.Fields {
+			if cf.IsSlug() || cf.IsManyToMany() {
+				continue
+			}
+			if cf.IsBelongsTo() && cf.RelatedModelName() == names.Pascal {
+				continue // the back-link to the parent
+			}
+			label := strings.Join(splitPascal(toPascalCase(strings.TrimSuffix(cf.Name, "_id"))), " ")
+			if cf.IsBelongsTo() {
+				relKebab := replaceAll(Pluralize(toSnakeCase(cf.RelatedModelName())), "_", "-")
+				itemCols += fmt.Sprintf("\n        { key: %q, label: %q, type: \"relationship-select\", relatedEndpoint: \"/api/%s\", displayField: \"name\" },", cf.FKColumnName(), label, relKebab)
+				continue
+			}
+			typ := "text"
+			extra := ""
+			switch FieldType(cf.Type) {
+			case FieldInt:
+				typ, extra = "number", `, numberKind: "int"`
+			case FieldUint:
+				typ, extra = "number", `, numberKind: "uint"`
+			case FieldFloat:
+				typ, extra = "number", `, numberKind: "float"`
+			case FieldDate, FieldDatetime:
+				typ = "date"
+			}
+			itemCols += fmt.Sprintf("\n        { key: %q, label: %q, type: %q%s },", toSnakeCase(cf.Name), label, typ, extra)
+		}
+		// itemEndpoint is the API path (snake plural, matching the child's routes),
+		// NOT the kebab frontend slug. The label is the spaced plural.
+		itemsLabel := strings.Join(splitPascal(childNames.PluralPascal), " ")
+		formFields += fmt.Sprintf("\n    { key: \"items\", label: %q, type: \"line-items\", colSpan: 2, itemEndpoint: \"/api/%s\", foreignKey: %q, itemFields: [%s\n    ] },",
+			itemsLabel, childNames.Plural, names.Snake+"_id", itemCols)
+	}
+
+	// Hidden resources (inline --items children) are generated fully but kept
+	// out of the sidebar — managed via the parent's form + detail page.
+	hiddenLine := ""
+	if g.Definition.Hidden {
+		hiddenLine = "\n  hidden: true,"
+	}
+
 	// v3.31.19: conditionally pull in the StackedCell helper. Only
 	// emitted when the column-pack heuristic actually fires — keeps
 	// resources without a pack from carrying a dead import.
@@ -1495,7 +1585,7 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 
 export const %sResource = defineResource({
   name: "%s",
-  slug: "%s",
+  slug: "%s",%s
   endpoint: "/api/%s",
   icon: "%s",
   label: { singular: "%s", plural: "%s" },
@@ -1533,6 +1623,7 @@ export const %sResource = defineResource({
 		names.Camel,
 		names.Pascal,
 		names.PluralKebab,
+		hiddenLine,
 		names.Plural,
 		icon,
 		names.Pascal, names.PluralPascal,
@@ -1570,6 +1661,29 @@ export default function %sPage() {
 	)
 
 	path := filepath.Join(g.Root, "apps", "admin", "app", "(dashboard)", "resources", names.PluralKebab, "page.tsx")
+	return writeFileWithDirs(path, content)
+}
+
+// writeResourceDetailPage writes the per-resource [id] detail route (Next.js).
+// Every "view" action navigates here.
+func (g *Generator) writeResourceDetailPage(names Names) error {
+	content := fmt.Sprintf(`"use client";
+
+import { use } from "react";
+import { ResourceDetailPage } from "@/components/resource/resource-detail-page";
+import { %sResource } from "@/resources/%s";
+
+export default function %sDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  return <ResourceDetailPage resource={%sResource} id={id} />;
+}
+`,
+		names.Camel, names.PluralKebab,
+		names.PluralPascal,
+		names.Camel,
+	)
+
+	path := filepath.Join(g.Root, "apps", "admin", "app", "(dashboard)", "resources", names.PluralKebab, "[id]", "page.tsx")
 	return writeFileWithDirs(path, content)
 }
 

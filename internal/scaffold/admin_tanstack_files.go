@@ -334,7 +334,8 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "routes", "_dashboard", "dashboard.tsx"):                   adminTanStackPageRoute("/_dashboard/dashboard", "@/pages/dashboard"),
 		filepath.Join(adminRoot, "src", "routes", "_dashboard", "profile.tsx"):                     adminTanStackPageRoute("/_dashboard/profile", "@/pages/profile"),
 		filepath.Join(adminRoot, "src", "routes", "_dashboard", "settings", "dashboard.tsx"):       adminTanStackPageRoute("/_dashboard/settings/dashboard", "@/pages/settings/dashboard"),
-		filepath.Join(adminRoot, "src", "routes", "_dashboard", "resources", "users.tsx"):          adminTanStackPageRoute("/_dashboard/resources/users", "@/pages/resources/users"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "resources", "users", "index.tsx"): adminTanStackPageRoute("/_dashboard/resources/users/", "@/pages/resources/users"),
+		filepath.Join(adminRoot, "src", "routes", "_dashboard", "resources", "users", "$id.tsx"):   adminResourceDetailRouteTanStack("users", "users"),
 		filepath.Join(adminRoot, "src", "routes", "_dashboard", "resources", "blogs", "index.tsx"): adminTanStackPageRoute("/_dashboard/resources/blogs/", "@/pages/resources/blogs"),
 		filepath.Join(adminRoot, "src", "routes", "_dashboard", "resources", "blogs", "$id.tsx"):   adminTanStackPageRoute("/_dashboard/resources/blogs/$id", "@/pages/resources/blog-detail"),
 		filepath.Join(adminRoot, "src", "routes", "_dashboard", "system", "index.tsx"):             adminTanStackPageRoute("/_dashboard/system/", "@/pages/system"),
@@ -475,6 +476,7 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "components", "forms", "fields", "files-field.tsx"):                     nextToTanStack(adminFilesField()),
 		filepath.Join(adminRoot, "src", "components", "forms", "fields", "relationship-select-field.tsx"):       nextToTanStack(adminRelationshipSelectField()),
 		filepath.Join(adminRoot, "src", "components", "forms", "fields", "multi-relationship-select-field.tsx"): nextToTanStack(adminMultiRelationshipSelectField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "line-items-field.tsx"):                nextToTanStack(adminLineItemsField()),
 		filepath.Join(adminRoot, "src", "components", "forms", "fields", "rich-text-field.tsx"):                 nextToTanStack(adminRichTextField()),
 
 		// UI components
@@ -488,7 +490,8 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "components", "widgets", "widget-grid.tsx"):     nextToTanStack(adminWidgetGrid()),
 
 		// Resource components
-		filepath.Join(adminRoot, "src", "components", "resource", "resource-page.tsx"): nextToTanStack(adminResourcePage()),
+		filepath.Join(adminRoot, "src", "components", "resource", "resource-page.tsx"):        nextToTanStack(adminResourcePage()),
+		filepath.Join(adminRoot, "src", "components", "resource", "resource-detail-page.tsx"): nextToTanStack(adminResourceDetailPage()),
 		filepath.Join(adminRoot, "src", "components", "resource", "view-modal.tsx"):    nextToTanStack(adminViewModal()),
 
 		// Resource definitions (same as Next.js)

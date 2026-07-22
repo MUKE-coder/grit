@@ -338,6 +338,69 @@ type Category struct {
             </div>
 
             <div className="prose-grit">
+              {/* Inline items */}
+              <h2 id="inline-items">Inline items (<code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--items</code>)</h2>
+              <p>
+                <strong>Category / Product</strong> is the default relationship shape: two
+                resources, two pages, two forms, two tables, linked by a{" "}
+                <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">belongs_to</code>.
+                But some pairs &mdash; <strong>Invoice / InvoiceItem</strong>, Order / OrderLine,
+                Survey / Question &mdash; want the child created <em>inside</em> the parent&apos;s
+                form: you build the invoice and its line items in one go, and they save together
+                or not at all.
+              </p>
+              <p>
+                Generate that shape with <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--items</code>:
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
+                <div className="p-5 font-mono text-sm">
+                  <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit generate resource Invoice \</span></div>
+                  <div className="pl-4"><span className="text-foreground/80">--fields &quot;number:string,status:string&quot; \</span></div>
+                  <div className="pl-4"><span className="text-foreground/80">--items &quot;InvoiceItem:description:string,qty:int,unit_rate:float&quot;</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="prose-grit">
+              <p>That one command:</p>
+              <ul>
+                <li>Generates <strong>InvoiceItem</strong> as a full resource (model, handler, routes) with a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">invoice:belongs_to:Invoice</code> back-reference &mdash; so it&apos;s filterable by <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">?invoice_id=</code> &mdash; but marked <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">hidden</code>, so it stays out of the sidebar.</li>
+                <li>Gives <strong>Invoice</strong> a has-many <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Items []InvoiceItem</code> and a <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">line-items</code> field in its form &mdash; an editable table with add/remove rows and a live per-row and grand total.</li>
+                <li>Makes the parent&apos;s <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Create</code>/<code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">Update</code> handler accept an <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">items</code> array and persist the parent + children in <strong>one GORM transaction</strong> &mdash; atomic, no orphans.</li>
+              </ul>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="apps/admin/resources/invoices.ts — the generated line-items field" code={`{
+  key: "items",
+  label: "Invoice Items",
+  type: "line-items",
+  colSpan: 2,
+  itemEndpoint: "/api/invoice_items",  // child list, for the detail page
+  foreignKey: "invoice_id",            // child FK back to the parent
+  itemFields: [                        // the editable row columns
+    { key: "description", label: "Description", type: "text" },
+    { key: "qty",        label: "Qty",        type: "number", numberKind: "int" },
+    { key: "unit_rate",  label: "Unit Rate",  type: "number", numberKind: "float" },
+  ],
+}`} />
+            </div>
+
+            <div className="prose-grit">
+              <p>
+                If a row&apos;s columns include a quantity and a rate/price, the table shows a
+                derived <strong>Total</strong> column and a grand total automatically. The
+                parent&apos;s <a href="/docs/admin/resources" className="text-primary hover:underline">detail page</a> renders
+                the same items as a related table (fetched by the foreign key), so you see them
+                after saving without any extra wiring. You can hand-edit this field like any other
+                &mdash; add columns, change types, point it at a different child.
+              </p>
+            </div>
+
+            <div className="prose-grit">
               {/* Full Example */}
               <h2>Full Example &mdash; E-Commerce</h2>
               <p>
