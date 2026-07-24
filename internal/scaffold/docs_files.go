@@ -13,7 +13,6 @@ func writeDocsFiles(root string, opts Options) error {
 		filepath.Join(docsRoot, "package.json"):       docsPackageJSON(opts),
 		filepath.Join(docsRoot, "tsconfig.json"):      docsTSConfig(),
 		filepath.Join(docsRoot, "next.config.mjs"):    docsNextConfig(),
-		filepath.Join(docsRoot, "tailwind.config.js"): docsTailwindConfig(),
 		filepath.Join(docsRoot, "postcss.config.mjs"): docsPostCSSConfig(),
 		filepath.Join(docsRoot, "source.config.ts"):   docsSourceConfig(),
 
@@ -68,26 +67,28 @@ func docsPackageJSON(opts Options) string {
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "rm -rf .next && next dev --port 3002",
-    "build": "next build",
+    "dev": "rm -rf .next && fumadocs-mdx && next dev --port 3002",
+    "build": "fumadocs-mdx && next build",
     "start": "next start --port 3002"
   },
   "dependencies": {
-    "next": "^15.1.0",
+    "next": "^16.1.6",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "fumadocs-core": "^14.0.0",
-    "fumadocs-ui": "^14.0.0",
-    "fumadocs-mdx": "^11.0.0"
+    "fumadocs-core": "^16.0.0",
+    "fumadocs-ui": "^16.0.0",
+    "fumadocs-mdx": "^15.0.0",
+    "lucide-react": "^0.468.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/mdx": "^2.0.13",
     "typescript": "^5.7.0",
-    "tailwindcss": "^3.4.0",
-    "postcss": "^8.4.0",
-    "autoprefixer": "^10.4.0"
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "postcss": "^8.4.0"
   }
 }
 `, opts.ProjectName)
@@ -134,41 +135,10 @@ export default withMDX(config);
 `
 }
 
-func docsTailwindConfig() string {
-	return `const { createPreset } = require("fumadocs-ui/tailwind-plugin");
-
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  darkMode: "class",
-  content: [
-    "./components/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./content/**/*.{md,mdx}",
-    "./node_modules/fumadocs-ui/dist/**/*.js",
-  ],
-  presets: [
-    createPreset({
-      preset: "ocean",
-    }),
-  ],
-  theme: {
-    extend: {
-      colors: {
-        accent: {
-          DEFAULT: "#6c5ce7",
-          foreground: "#ffffff",
-        },
-      },
-    },
-  },
-};
-`
-}
-
 func docsSourceConfig() string {
 	return `import { defineDocs, defineConfig } from "fumadocs-mdx/config";
 
-export const { docs, meta } = defineDocs({
+export const docs = defineDocs({
   dir: "content/docs",
 });
 
@@ -179,21 +149,19 @@ export default defineConfig();
 func docsPostCSSConfig() string {
 	return `export default {
   plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
+    "@tailwindcss/postcss": {},
   },
 };
 `
 }
 
 func docsAppSource() string {
-	return `import { docs, meta } from "@/.source";
-import { createMDXSource } from "fumadocs-mdx";
+	return `import { docs } from "@/.source/server";
 import { loader } from "fumadocs-core/source";
 
 export const source = loader({
   baseUrl: "/docs",
-  source: createMDXSource(docs, meta),
+  source: docs.toFumadocsSource(),
 });
 `
 }
@@ -207,15 +175,15 @@ export const { GET } = createFromSource(source);
 }
 
 func docsGlobalCSS() string {
-	return `@tailwind base;
-@tailwind components;
-@tailwind utilities;
+	return `@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
 `
 }
 
 func docsRootLayout(opts Options) string {
 	return fmt.Sprintf(`import "./global.css";
-import { RootProvider } from "fumadocs-ui/provider";
+import { RootProvider } from "fumadocs-ui/provider/next";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -283,7 +251,7 @@ import { source } from "@/app/source";
 export default function Layout({ children }: { children: ReactNode }) {
   return (
     <DocsLayout
-      tree={source.pageTree}
+      tree={source.getPageTree()}
       nav={{
         title: (
           <span className="flex items-center gap-2 font-bold">

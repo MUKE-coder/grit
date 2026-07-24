@@ -459,7 +459,7 @@ func adminPackageJSON(opts Options) string {
     "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
-    "lucide-react": "^0.303.0",
+    "lucide-react": "^0.468.0",
     "next": "^16.1.6",
     "react": "19.2.7",
     "react-dom": "19.2.7",
