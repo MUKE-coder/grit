@@ -28,6 +28,51 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.84.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.84.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Plugins can now depend on real Go modules.</strong> The plugin system
+                  documented that a plugin&apos;s <code>GoDeps</code> were &ldquo;added to
+                  go.mod&rdquo; — but nothing did that. The field was copied into the lockfile and
+                  otherwise ignored. No built-in plugin declared one, so it went unnoticed; any
+                  plugin wrapping an external module would have generated code importing something
+                  absent from <code>go.mod</code> and failed to build.
+                </p>
+                <p>
+                  <code>grit plugin add</code> now runs <code>go get</code> for each declared
+                  dependency <em>before</em> writing any file — <code>go get</code> loads the module
+                  graph, and doing it after emitting code that imports the not-yet-required module
+                  is exactly what makes it fail. It also means a network error aborts the install
+                  before anything on disk changed. The lockfile records what was actually fetched
+                  rather than what was merely declared.
+                </p>
+                <p>
+                  This unlocks the &ldquo;package + plugin&rdquo; shape: the heavy runtime logic
+                  lives in a versioned Go module you upgrade with <code>go get -u</code>, while the
+                  plugin generates only the thin wiring you own and can edit.
+                </p>
+                <p>
+                  Alongside it, the{" "}
+                  <a href="https://github.com/MUKE-coder/grit-plugins" className="text-primary hover:underline">grit-plugins</a>{" "}
+                  packages were repaired and are installable for the first time: their module paths
+                  pointed at a GitHub org that doesn&apos;t exist, so <code>go get</code> failed for
+                  all ten. They also stored <code>user_id</code> as <code>uint</code> while a Grit{" "}
+                  <code>User.ID</code> is a UUID string — meaning every authenticated request
+                  returned &ldquo;Invalid user ID in context&rdquo;. Both are fixed, tagged{" "}
+                  <code>v0.2.0</code>. Note that <code>grit-websockets</code> duplicates the built-in{" "}
+                  <code>MODULE_REALTIME</code> — check core before adding a dependency.
+                </p>
+              </div>
+            </div>
+
             {/* v3.83.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
