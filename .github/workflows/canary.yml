@@ -1,0 +1,158 @@
+# Dependency drift canary.
+#
+# Grit is a scaffolder: `grit new` writes a package.json and the user runs a
+# fresh `pnpm install`. That means a generated project's dependency graph is
+# resolved at THEIR install time, not at our release time — so a transitive
+# dependency can publish a breaking version and break `grit new` without a
+# single line of Grit changing.
+#
+# That is not hypothetical. In July 2026 a @radix-ui patch broke the scaffolded
+# docs app (fumadocs was two majors behind, so it had no compatible floor), and
+# it was only caught by a manual matrix run a day and a half later. This job
+# exists so the next one is caught overnight instead.
+#
+# It deliberately does NOT use a lockfile: resolving fresh every night is the
+# entire point. A green run means "a user who scaffolds today gets a project
+# that builds."
+name: Dependency Drift Canary
+
+on:
+  schedule:
+    # 06:00 UTC daily — after the US npm publishing window, before EU morning.
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # --full is the widest surface: api + web + admin + docs + expo + desktop.
+          - name: full
+            flags: "--full"
+          # The Vite/TanStack admin resolves a different dependency graph than
+          # the Next one, so a Next-only canary would miss half the exposure.
+          - name: triple-vite
+            flags: "--triple --vite"
+
+    name: scaffold ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Build grit from this commit
+        run: |
+          go build -o /usr/local/bin/grit ./cmd/grit
+          grit version
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Scaffold
+        run: |
+          mkdir -p /tmp/canary && cd /tmp/canary
+          grit new app ${{ matrix.flags }}
+
+      # Go modules float too (MVS picks the highest minor within a major), so a
+      # Go dependency can drift exactly like an npm one.
+      - name: Build Go API
+        run: |
+          cd /tmp/canary/app
+          if [ -d apps/api ]; then cd apps/api; fi
+          go build ./...
+          go test ./... 2>&1 | tail -20
+
+      - name: Install JS dependencies (fresh resolution, no lockfile)
+        run: |
+          cd /tmp/canary/app
+          pnpm install 2>&1 | tee /tmp/install.log
+
+      - name: Build every frontend app
+        run: |
+          cd /tmp/canary/app
+          failed=""
+          for app in web admin docs; do
+            [ -d "apps/$app" ] || continue
+            echo "::group::build apps/$app"
+            if ! (cd "apps/$app" && pnpm build 2>&1 | tee "/tmp/build-$app.log"); then
+              failed="$failed $app"
+            fi
+            echo "::endgroup::"
+          done
+          # Single-binary kits keep the SPA in frontend/ rather than apps/.
+          if [ -d frontend ]; then
+            echo "::group::build frontend"
+            if ! (cd frontend && pnpm build 2>&1 | tee /tmp/build-frontend.log); then
+              failed="$failed frontend"
+            fi
+            echo "::endgroup::"
+          fi
+          if [ -n "$failed" ]; then
+            echo "FAILED APPS:$failed"
+            exit 1
+          fi
+
+      # The resolved versions are the actual evidence: diffing this against the
+      # last green run is how you find which package moved.
+      - name: Capture resolved dependency versions
+        if: always()
+        run: |
+          cd /tmp/canary/app
+          pnpm list --depth=1 --recursive > /tmp/resolved-versions.txt 2>&1 || true
+          cp pnpm-lock.yaml /tmp/ 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canary-${{ matrix.name }}
+          path: |
+            /tmp/*.log
+            /tmp/resolved-versions.txt
+            /tmp/pnpm-lock.yaml
+          retention-days: 14
+
+  report:
+    needs: canary
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update the drift issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          TITLE="Dependency drift: scaffolded project no longer builds"
+          # One rolling issue rather than one per night.
+          EXISTING=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+            --search "\"$TITLE\" in:title" --json number --jq '.[0].number' || true)
+          # Built with printf rather than a heredoc: YAML block scalars indent
+          # every line, and an indented terminator never closes a heredoc.
+          BODY=$(printf '%s\n' \
+            "The nightly canary scaffolded a fresh project and it failed to build." \
+            "" \
+            "**Grit itself did not necessarily change** — this job resolves npm and Go dependencies fresh every night, so a transitive dependency publishing a breaking version produces exactly this failure." \
+            "" \
+            "Run: $RUN_URL" \
+            "" \
+            "The \`canary-*\` artifacts on that run contain the build logs and the resolved dependency versions. Diff \`resolved-versions.txt\` against the last green run to find what moved.")
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --repo "$GITHUB_REPOSITORY" --body "$BODY"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body "$BODY"
+          fi
