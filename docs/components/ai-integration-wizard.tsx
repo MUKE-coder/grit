@@ -14,6 +14,7 @@ import {
   RotateCcw,
   Puzzle,
 } from 'lucide-react'
+import { track } from 'zenith-analytics/client'
 import { CopyButton } from '@/components/copy-button'
 import {
   buildFrameworkPrompt,
@@ -79,6 +80,12 @@ export function AIIntegrationWizard() {
   }
 
   function download() {
+    track('ai_prompt_download', {
+      clients: clients.join(','),
+      frontend,
+      plugins: plugins.length,
+      command: chosen.command,
+    })
     const blob = new Blob([prompt], { type: 'text/markdown;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -385,7 +392,20 @@ export function AIIntegrationWizard() {
 
         {step < 3 ? (
           <button
-            onClick={() => canNext && setStep((s) => (s + 1) as 0 | 1 | 2 | 3)}
+            onClick={() => {
+              if (!canNext) return
+              const next = (step + 1) as 0 | 1 | 2 | 3
+              // Reaching the final step means a prompt was actually generated.
+              if (next === 3) {
+                track('ai_prompt_generated', {
+                  clients: clients.join(','),
+                  frontend,
+                  plugins: plugins.length,
+                  command: chosen.command,
+                })
+              }
+              setStep(next)
+            }}
             disabled={!canNext}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
           >
