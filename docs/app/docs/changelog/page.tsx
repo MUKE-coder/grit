@@ -28,6 +28,70 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.86.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.86.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Sessions you can actually revoke.</strong> A JWT is self-contained —
+                  once signed it stays valid until it expires, and nothing the server does can
+                  take it back. Every refresh token is now backed by a <code>sessions</code> row,
+                  which makes &ldquo;sign out this laptop&rdquo;, &ldquo;sign out
+                  everywhere&rdquo;, and &ldquo;kill every device when the password
+                  changes&rdquo; possible for the first time.
+                </p>
+                <ul>
+                  <li>
+                    <strong>Active Sessions screen</strong> on the admin profile page — every
+                    signed-in device with its browser, OS, IP and last activity, the current one
+                    badged, per-device sign-out, and &ldquo;sign out of all other devices&rdquo;.
+                  </li>
+                  <li>
+                    <strong>Rotation with replay detection.</strong> Every refresh swaps the
+                    token. Presenting an already-rotated one is the signature of theft, so the
+                    session is revoked rather than refreshed — surfacing the compromise instead
+                    of letting both parties quietly share the account.
+                  </li>
+                  <li>
+                    <strong>Idle <em>and</em> absolute timeouts</strong> (7 and 30 days by
+                    default, both overridable). Most apps ship one; auditors ask for both.
+                  </li>
+                  <li>
+                    <strong>Changing a password signs out every other device</strong> and
+                    re-issues the caller a fresh session, so they stay signed in.
+                  </li>
+                  <li>
+                    The raw token is never stored — only its SHA-256 — so a dump of the table
+                    cannot be replayed as a login. New endpoints:{" "}
+                    <code>GET /api/auth/sessions</code>,{" "}
+                    <code>DELETE /api/auth/sessions/:id</code>,{" "}
+                    <code>POST /api/auth/sessions/revoke-all</code>.
+                  </li>
+                </ul>
+                <p>
+                  <strong>Security fix — every JWT now carries a unique <code>jti</code>.</strong>{" "}
+                  Found while testing this: two tokens minted for the same user in the same
+                  second were <em>byte-identical</em> (same claims, same second-resolution{" "}
+                  <code>exp</code>, same key), so two devices logging in together shared one
+                  refresh token — indistinguishable and impossible to revoke separately. Tokens
+                  are now unique per issuance.
+                </p>
+                <p>
+                  Proven against a running app, not just compiled: three devices signed in,
+                  one revoked, its refresh returning <code>401 SESSION_REVOKED</code> while the
+                  others kept working — 22 end-to-end assertions covering revoke-by-id,
+                  cross-user isolation, replay detection, password change, revoke-all and
+                  logout. Scaffolded projects ship 9 session tests of their own.
+                </p>
+              </div>
+            </div>
+
             {/* v3.85.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

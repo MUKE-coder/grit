@@ -38,7 +38,7 @@
 
 **Current Phase:** Phase 5 — Polish & Launch
 **Status:** In Progress
-**Last Updated:** 2026-03-03 (Grit UI 91-component expansion)
+**Last Updated:** 2026-07-24 (v3.86.0 — server-side sessions & revocation)
 
 ### What's Been Built
 - [x] CLI Scaffolder (`grit new <project-name>` with `--api` flag, name validation, ASCII art)
@@ -69,6 +69,8 @@
 - [x] Go API test templates scaffolded into generated projects: auth_test.go (6 tests: register success/validation/duplicate, login success/wrong-password/unknown), user_test.go (4 tests: auth guard, admin list, 404, success), bench_test.go (BenchmarkHealthCheck, BenchmarkAuthLogin, BenchmarkAuthRegister) — uses SQLite in-memory + testify
 - [x] Frontend test templates scaffolded: web/__tests__ (navbar, footer — Vitest + RTL), admin/__tests__ (login form, utils), e2e/ (auth.spec.ts, admin.spec.ts — Playwright), vitest.config.ts + playwright.config.ts — all wired into package.json scripts (test, test:watch, test:e2e)
 - [x] 30-day social media content: SOCIAL.md — LinkedIn + Twitter/X for Grit framework + Grit Cloud (launch/features/positioning/tutorials/Grit Cloud/community)
+- [x] Enterprise hardening: nightly dependency-drift canary, contract tests across all 10 grit-plugins packages, `grit plugin add webhooks` (Standard Webhooks spec)
+- [x] Server-side sessions (v3.86.0): every refresh token backed by a `sessions` row (SHA-256 only), rotation with replay detection, idle + absolute timeouts, per-device revoke, Active Sessions UI on the admin profile page, password change signs out all devices. Fixed a pre-existing bug where two logins in the same second produced identical refresh JWTs — every token now carries a unique `jti`.
 - [ ] Public launch (execute SOCIAL.md plan, README GIF, Product Hunt listing)
 
 ---

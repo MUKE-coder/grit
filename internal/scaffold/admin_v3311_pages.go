@@ -489,9 +489,10 @@ import { useMe } from "@/hooks/use-auth";
 import { useUpdateProfile, useChangePassword } from "@/hooks/use-profile";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { DeleteAccountDialog } from "@/components/profile/delete-account-dialog";
+import { ActiveSessions } from "@/components/profile/active-sessions";
 import { uploadFile } from "@/lib/api-client";
 import {
-  User as UserIcon, Briefcase, Lock, Trash2, Save, Loader2, Upload,
+  User as UserIcon, Briefcase, Lock, Trash2, Save, Loader2, Upload, ShieldCheck,
 } from "@/lib/icons";
 
 const PersonalInfoSchema = z.object({
@@ -739,6 +740,15 @@ export default function ProfilePage() {
             </SubmitButton>
           </div>
         </form>
+      </ProfileCard>
+
+      {/* Active sessions */}
+      <ProfileCard
+        icon={<ShieldCheck className="h-4 w-4" />}
+        title="Active sessions"
+        description="Every device signed in to your account. Changing your password signs the others out automatically."
+      >
+        <ActiveSessions />
       </ProfileCard>
 
       {/* Danger zone */}
