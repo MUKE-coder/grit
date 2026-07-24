@@ -249,8 +249,9 @@ Ordinary Go modules you import and wire up yourself. They hold runtime logic
 go get github.com/MUKE-coder/grit-plugins/grit-websockets@v0.1.0
 ```
 
-> **Status: v0.1.0, early.** These build and vet clean, but they have **no test
-> suite yet** and are not yet runtime-verified against the current framework.
+> **Status: v0.3.0, early.** These build and vet clean and now carry contract
+> tests (35 across the ten) plus per-module CI. Behavioural tests against live
+> services (Meilisearch, FFmpeg, Stripe) are still a TODO.
 > `grit-notifications`, `grit-video`, `grit-webhooks` and `grit-conference` still
 > store `user_id` as `uint`, while a Grit `User.ID` is a UUID string — so linking
 > them to a Grit user needs a change first. `grit-oauth` and `grit-stripe` are
