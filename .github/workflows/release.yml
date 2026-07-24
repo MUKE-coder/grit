@@ -7,6 +7,10 @@ on:
 
 permissions:
   contents: write
+  # Keyless signing and provenance both mint a short-lived OIDC token instead of
+  # using a long-lived key. There is no signing key in this repo to leak.
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -19,7 +23,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version: "1.26"
           cache: true
 
       - name: Run tests
@@ -30,19 +34,58 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/}
           LDFLAGS="-s -w -X main.Version=${VERSION}"
 
-          GOOS=linux   GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o dist/grit-linux-amd64   ./cmd/grit
-          GOOS=linux   GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o dist/grit-linux-arm64   ./cmd/grit
-          GOOS=darwin  GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o dist/grit-darwin-amd64  ./cmd/grit
-          GOOS=darwin  GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o dist/grit-darwin-arm64  ./cmd/grit
-          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o dist/grit-windows-amd64.exe ./cmd/grit
+          # -trimpath drops local filesystem paths from the binary, so the same
+          # source produces the same bytes regardless of where it was built.
+          GOOS=linux   GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="$LDFLAGS" -o dist/grit-linux-amd64   ./cmd/grit
+          GOOS=linux   GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags="$LDFLAGS" -o dist/grit-linux-arm64   ./cmd/grit
+          GOOS=darwin  GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="$LDFLAGS" -o dist/grit-darwin-amd64  ./cmd/grit
+          GOOS=darwin  GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags="$LDFLAGS" -o dist/grit-darwin-arm64  ./cmd/grit
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="$LDFLAGS" -o dist/grit-windows-amd64.exe ./cmd/grit
 
-          # Create tarballs for unix, zip for windows
+          # Tarballs for unix, zip for windows.
           cd dist
           tar czf grit-linux-amd64.tar.gz  grit-linux-amd64
           tar czf grit-linux-arm64.tar.gz  grit-linux-arm64
           tar czf grit-darwin-amd64.tar.gz grit-darwin-amd64
           tar czf grit-darwin-arm64.tar.gz grit-darwin-arm64
           zip grit-windows-amd64.zip grit-windows-amd64.exe
+
+          # One checksum file over the distributed archives. Signing this single
+          # file covers all of them.
+          sha256sum *.tar.gz *.zip > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          artifact-name: grit-sbom.spdx.json
+          output-file: dist/grit-sbom.spdx.json
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign the checksums
+        run: |
+          cd dist
+          # Keyless: the certificate binds the signature to this workflow's
+          # identity and the whole thing is logged in Rekor, so a signature
+          # cannot be produced outside a real run of this file.
+          cosign sign-blob --yes \
+            --output-certificate SHA256SUMS.pem \
+            --output-signature   SHA256SUMS.sig \
+            SHA256SUMS
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/grit-linux-amd64.tar.gz
+            dist/grit-linux-arm64.tar.gz
+            dist/grit-darwin-amd64.tar.gz
+            dist/grit-darwin-arm64.tar.gz
+            dist/grit-windows-amd64.zip
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -53,6 +96,10 @@ jobs:
             dist/grit-darwin-amd64.tar.gz
             dist/grit-darwin-arm64.tar.gz
             dist/grit-windows-amd64.zip
+            dist/SHA256SUMS
+            dist/SHA256SUMS.pem
+            dist/SHA256SUMS.sig
+            dist/grit-sbom.spdx.json
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}

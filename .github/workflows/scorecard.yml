@@ -1,0 +1,59 @@
+# OpenSSF Scorecard.
+#
+# Scores this repository against the checks enterprise procurement and security
+# teams actually look up before adopting a dependency: are releases signed, are
+# workflow permissions least-privilege, is there a disclosure policy, are
+# dangerous workflow patterns present, is there branch protection.
+#
+# The results are published to the public Scorecard API, so the score is
+# something a prospective user can check without asking us.
+name: Scorecard
+
+on:
+  branch_protection_rule:
+  schedule:
+    # Weekly — the inputs (branch protection, release signing, policy files)
+    # change on the order of releases, not commits.
+    - cron: "0 7 * * 1"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    permissions:
+      # Upload the SARIF result to the Security tab.
+      security-events: write
+      # Publish the score to the public API (results are already public).
+      id-token: write
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        uses: ossf/scorecard-action@v2
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scorecard-results
+          path: results.sarif
+          retention-days: 30
+
+      - name: Upload to code scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif

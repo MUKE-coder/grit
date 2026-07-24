@@ -204,25 +204,24 @@ require (
 	github.com/MUKE-coder/gorm-studio v1.0.1
 	// Pinned to the v1.0.0 commit on main.
 	github.com/MUKE-coder/pulse v0.0.0-20260529025319-478cdfa8ce5f
-	github.com/aws/aws-sdk-go-v2 v1.25.0
-	github.com/aws/aws-sdk-go-v2/config v1.27.0
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.0
-	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.16.0
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.51.0
+	github.com/aws/aws-sdk-go-v2 v1.43.0
+	github.com/aws/aws-sdk-go-v2/config v1.32.31
+	github.com/aws/aws-sdk-go-v2/credentials v1.19.30
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.106.0
 	github.com/brianvoe/gofakeit/v7 v7.15.0
 	github.com/disintegration/imaging v1.6.2
-	github.com/gin-gonic/gin v1.10.0
-	github.com/go-pdf/fpdf v0.9.0
-	github.com/golang-jwt/jwt/v5 v5.2.0
+	github.com/gin-gonic/gin v1.11.0
+	github.com/go-pdf/fpdf v1.4.3
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/sessions v1.4.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/hibiken/asynq v0.24.1
 	github.com/markbates/goth v1.80.0
 	github.com/joho/godotenv v1.5.1
-	github.com/redis/go-redis/v9 v9.4.0
-	github.com/xuri/excelize/v2 v2.8.1
-	golang.org/x/crypto v0.23.0
+	github.com/redis/go-redis/v9 v9.6.3
+	github.com/xuri/excelize/v2 v2.10.0
+	golang.org/x/crypto v0.53.0
 	// Sentinel now ships a proper /v2 module path, so we track real tags.
 	// v2.1.1 is the minimum safe release for WAF.Mode = ModeBlock: v2.1.0
 	// fixed the SSRF rule matching "0.0.0.0" inside a Chrome User-Agent
@@ -233,13 +232,27 @@ require (
 	// than as a 403 weeks later. Do not downgrade below v2.1.1.
 	github.com/MUKE-coder/sentinel/v2 v2.2.1
 	gorm.io/datatypes v1.2.7
-	gorm.io/driver/postgres v1.5.11
-	gorm.io/gorm v1.25.12
+	gorm.io/driver/postgres v1.6.0
+	gorm.io/gorm v1.31.1
 )
 
 require (
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.11.1
 	github.com/glebarez/sqlite v1.11.0
+)
+
+// Security floors for transitive dependencies. These are not imported directly;
+// they are pinned because a dependency pulls in a version with a known,
+// reachable vulnerability and MVS would otherwise settle on it. Each one was
+// confirmed with govulncheck against a freshly scaffolded project.
+//
+// Raise these, never lower them. Re-check with:
+//   go install golang.org/x/vuln/cmd/govulncheck@latest && govulncheck ./...
+require (
+	github.com/jackc/pgx/v5 v5.9.2 // GO-2026-5004
+	github.com/quic-go/quic-go v0.59.1 // GO-2026-5676, GO-2025-4233
+	golang.org/x/image v0.43.0 // GO-2026-5066, -5062, -5032, -5031, -4815
+	golang.org/x/text v0.39.0 // GO-2026-5970
 )
 `, opts.Module())
 }
