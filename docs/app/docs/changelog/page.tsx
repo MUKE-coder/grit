@@ -28,6 +28,43 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.84.1 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.84.1
+                </span>
+                <span className="text-sm text-muted-foreground">July 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fixes a broken <code>grit new --full</code>.</strong> The scaffolded docs
+                  app stopped building with{" "}
+                  <code>TypeError: e.createContext is not a function</code>. Nothing in Grit changed
+                  — the docs template pinned <code>fumadocs ^14</code>, whose last release was
+                  January 2025, and its floating transitive dependencies drifted out from under it.
+                  A Radix UI patch published mid-run was the trigger; behind it,{" "}
+                  <code>fumadocs-ui@14</code> also wanted <code>lucide-react ^0.473</code> while the
+                  scaffold pinned <code>^0.303</code>, so <code>CircleX</code> didn&apos;t exist.
+                </p>
+                <p>
+                  The docs app is now on <strong>fumadocs 16 + fumadocs-mdx 15 + Next 16 +
+                  Tailwind v4</strong>, matching the web and admin apps (which were already on Next
+                  16 — docs was the straggler). MDX generation moved from a <code>postinstall</code>{" "}
+                  hook into the build/dev scripts, because in a pnpm workspace the hook runs before
+                  the local binary is linked. <code>lucide-react</code> is aligned on{" "}
+                  <code>^0.468</code> everywhere, which also fixes the missing-icon errors
+                  (<code>CircleX</code>, <code>CloudUpload</code>) you&apos;d hit adding icons to the
+                  admin.
+                </p>
+                <p>
+                  Verified by scaffolding a fresh <code>--full</code> project and building all three
+                  frontends, then the full kit matrix.
+                </p>
+              </div>
+            </div>
+
             {/* v3.84.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
