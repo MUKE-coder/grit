@@ -19,6 +19,9 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "models", "user.go"):            apiUserModelGo(),
 		filepath.Join(apiRoot, "internal", "models", "upload.go"):          apiUploadModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "auth.go"):          apiAuthServiceGo(),
+		filepath.Join(apiRoot, "internal", "models", "session.go"):         apiSessionModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "session.go"):       apiSessionServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "session.go"):       apiSessionHandlerGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "auth.go"):          apiAuthHandlerGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user.go"):          apiUserHandlerGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "auth.go"):        apiAuthMiddlewareGo(),
@@ -69,6 +72,7 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, ".air.toml"):                              airConfig(),
 		// Test files — give the generated API a working test suite out of the box
 		filepath.Join(apiRoot, "internal", "handlers", "auth_test.go"):  apiAuthTestGo(),
+		filepath.Join(apiRoot, "internal", "services", "session_test.go"): apiSessionTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user_test.go"):  apiUserTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "bench_test.go"): apiBenchTestGo(),
 	}
@@ -1119,6 +1123,8 @@ func (u *User) CheckPassword(password string) bool {
 func Models() []interface{} {
 	return []interface{}{
 		&User{},
+		// Server-side refresh sessions — must exist before anything logs in.
+		&Session{},
 		// Role/UserRole must migrate before anything authorises a request.
 		&Role{},
 		&UserRole{},
@@ -1377,11 +1383,21 @@ func GenerateResetToken() (string, error) {
 func (s *AuthService) generateToken(userID string, email, role string, expiry time.Duration) (string, int64, error) {
 	expiresAt := time.Now().Add(expiry)
 
+	// Every token gets a unique jti. Without it, two tokens minted for the same
+	// user in the same second are byte-identical — same claims, same
+	// second-resolution exp, same key — so two different devices would share one
+	// refresh token and could not be told apart or revoked independently.
+	jti, err := GenerateResetToken()
+	if err != nil {
+		return "", 0, fmt.Errorf("generating token id: %w", err)
+	}
+
 	claims := &Claims{
 		UserID: userID,
 		Email:  email,
 		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        jti,
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
@@ -1555,6 +1571,11 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
+	// Record the refresh token as a server-side session so it can be revoked.
+	if _, err := services.CreateSession(h.DB, c, user.ID, tokens.RefreshToken); err != nil {
+		log.Printf("auth: failed to record session for %s: %v", user.ID, err)
+	}
+
 	// Set HttpOnly auth cookies for browser clients.
 	h.AuthService.SetAuthCookies(c, tokens)
 
@@ -1690,6 +1711,12 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	// Set HttpOnly auth cookies for browser clients. Native mobile/desktop
 	// clients ignore them and continue to use the Bearer header from the
 	// tokens object below — both flows work.
+	//
+	// Record the refresh token as a server-side session so this device can be
+	// listed and revoked later.
+	if _, err := services.CreateSession(h.DB, c, user.ID, tokens.RefreshToken); err != nil {
+		log.Printf("auth: failed to record session for %s: %v", user.ID, err)
+	}
 	h.AuthService.SetAuthCookies(c, tokens)
 
 	// v3.30.1: successful sign-in lands in /system/activity at info
@@ -1778,6 +1805,20 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	// Refresh the HttpOnly cookies so the new access token lands in the
 	// browser without any JS handling. The bearer JSON path is unchanged
 	// for native clients.
+	//
+	// Rotate the session. This is where revocation actually bites: a session
+	// that was revoked, idled out, aged past its absolute limit, or whose token
+	// was replayed after rotation has no live row, and the refresh is refused.
+	if _, err := services.RotateSession(h.DB, c, refreshToken, tokens.RefreshToken); err != nil {
+		h.AuthService.ClearAuthCookies(c)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": gin.H{
+				"code":    "SESSION_REVOKED",
+				"message": "This session is no longer valid. Please sign in again.",
+			},
+		})
+		return
+	}
 	h.AuthService.SetAuthCookies(c, tokens)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -1802,13 +1843,21 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		}
 	}
 
+	// Revoke the server-side session BEFORE clearing cookies — once they're
+	// gone we can no longer identify which session to kill. This is what makes
+	// logout real: the refresh token is dead immediately, not merely forgotten
+	// by this browser.
+	if rt, err := c.Cookie("grit_refresh"); err == nil && rt != "" {
+		if err := services.RevokeSessionByToken(h.DB, rt); err != nil {
+			log.Printf("auth: failed to revoke session on logout: %v", err)
+		}
+	}
+
 	h.AuthService.ClearAuthCookies(c)
 
 	if actorID != "" {
 		services.LogLogout(h.DB, c, actorID, actorEmail)
 	}
-	// In a production system, you'd also blacklist the refresh token in Redis
-	// so a leaked token can't be reused before its natural expiry.
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Logged out successfully",
 	})
@@ -2016,6 +2065,12 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 		return
 	}
 
+	// Record the refresh token as a server-side session, so an OAuth login is
+	// listed and revocable exactly like a password login.
+	if _, err := services.CreateSession(h.DB, c, user.ID, tokens.RefreshToken); err != nil {
+		log.Printf("OAuth: failed to record session for %s: %v", user.ID, err)
+	}
+
 	// Set HttpOnly auth cookies BEFORE redirecting so the browser stores
 	// them as part of this same response. The callback page then just
 	// navigates — no tokens in URL, no tokens in JS, no XSS exposure.
@@ -2033,6 +2088,7 @@ func apiUserHandlerGo() string {
 	return `package handlers
 
 import (
+	"log"
 	"math"
 	"net/http"
 	"strconv"
@@ -2447,6 +2503,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	}
 
 	updates := map[string]interface{}{}
+	passwordChanged := false
 	if req.FirstName != "" {
 		updates["first_name"] = req.FirstName
 	}
@@ -2468,6 +2525,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 			return
 		}
 		updates["password"] = string(hashedPassword)
+		passwordChanged = true
 	}
 	if req.Avatar != "" {
 		updates["avatar"] = req.Avatar
@@ -2490,6 +2548,31 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	}
 
 	h.DB.Where("id = ?", userID).First(&user)
+
+	// Changing a password must invalidate every logged-in device — that is the
+	// whole point of changing it after a suspected compromise.
+	//
+	// The caller is then re-issued a brand-new session rather than spared: the
+	// grit_refresh cookie is scoped to /api/auth, so a PUT /api/profile never
+	// carries it and there is no way to recognise "this device" here. Revoking
+	// everything and minting a fresh pair is both simpler and stricter — the old
+	// token is dead even for the caller, and they stay signed in.
+	if passwordChanged {
+		if err := services.RevokeAllUserSessions(h.DB, user.ID, ""); err != nil {
+			// Log it; the password DID change, so failing the request now would be
+			// misleading. Sessions still die at their idle/absolute timeout.
+			log.Printf("failed to revoke sessions after password change for user %s: %v", user.ID, err)
+		} else if h.AuthService != nil {
+			pair, terr := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
+			if terr != nil {
+				log.Printf("failed to re-issue tokens after password change for user %s: %v", user.ID, terr)
+			} else if _, serr := services.CreateSession(h.DB, c, user.ID, pair.RefreshToken); serr != nil {
+				log.Printf("failed to open a session after password change for user %s: %v", user.ID, serr)
+			} else {
+				h.AuthService.SetAuthCookies(c, pair)
+			}
+		}
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":    user,
@@ -7110,6 +7193,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// v3.31.77 — full-database backups (weekly cron + manual + download)
 	backupHandler := &handlers.BackupHandler{DB: db, Storage: svc.Storage}
 	roleHandler := handlers.NewRoleHandler(db)
+	sessionHandler := handlers.NewSessionHandler(db)
 	// grit:handlers
 
 	// Health check
@@ -7273,6 +7357,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 			c.JSON(http.StatusOK, gin.H{"data": cfg.Modules.Map()})
 		})
 		protected.POST("/auth/logout", authHandler.Logout)
+
+		// Active sessions — see every signed-in device and revoke one or all.
+		protected.GET("/auth/sessions", sessionHandler.List)
+		protected.DELETE("/auth/sessions/:id", sessionHandler.Revoke)
+		protected.POST("/auth/sessions/revoke-all", sessionHandler.RevokeAll)
 
 		// Two-Factor Authentication (TOTP)
 		protected.POST("/auth/totp/setup", totpHandler.Setup)

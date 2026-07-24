@@ -368,6 +368,7 @@ func writeAdminFiles(root string, opts Options) error {
 
 		// Profile components
 		filepath.Join(adminRoot, "components", "profile", "delete-account-dialog.tsx"): adminDeleteAccountDialog(),
+		filepath.Join(adminRoot, "components", "profile", "active-sessions.tsx"):       adminActiveSessions(),
 
 		// Hooks
 		filepath.Join(adminRoot, "hooks", "use-auth.ts"):     adminUseAuth(),

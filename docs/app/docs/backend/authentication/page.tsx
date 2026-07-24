@@ -145,8 +145,15 @@ JWT_REFRESH_EXPIRY=168h`} />
     UserID string \`json:"user_id"\`
     Email  string \`json:"email"\`
     Role   string \`json:"role"\`
-    jwt.RegisteredClaims  // exp, iat, etc.
+    jwt.RegisteredClaims  // jti, exp, iat
 }`} />
+              <p className="text-sm text-muted-foreground">
+                Every token carries a unique <code>jti</code>. Without it, two tokens minted
+                for the same user in the same second would be byte-identical — same claims,
+                same second-resolution <code>exp</code>, same signing key — and two devices
+                would end up sharing one refresh token, indistinguishable and impossible to
+                revoke separately. See <a href="#sessions">Sessions &amp; Revocation</a>.
+              </p>
 
               {/* ── Auth Endpoints ─────────────────────────────── */}
               <h2 id="auth-endpoints">Auth Endpoints</h2>
@@ -619,6 +626,131 @@ export const clearTokens = async () => {
                   and re-validates the resolved IP at TCP-connect time to defeat DNS rebinding.
                 </li>
               </ul>
+
+              {/* ── Sessions ─────────────────────────────── */}
+              <h2 id="sessions">Sessions &amp; Revocation</h2>
+              <p>
+                A JWT is self-contained: once signed, it stays valid until it expires and
+                nothing the server does can take it back. That is acceptable for a
+                short-lived access token and unacceptable for the refresh token behind it —
+                it would make &ldquo;log out this laptop&rdquo;, &ldquo;sign out
+                everywhere&rdquo;, and &ldquo;kill every session when the password
+                changes&rdquo; impossible.
+              </p>
+              <p>
+                So every refresh token Grit issues is backed by a <code>sessions</code> row.
+                The token itself is never stored — only its SHA-256 — so a dump of that
+                table cannot be replayed as a login.
+              </p>
+
+              <h3 id="sessions-rotation">Rotation and replay detection</h3>
+              <p>
+                Every call to <code>/api/auth/refresh</code> rotates the refresh token: the
+                row records the new hash and keeps the previous one. If a token that has
+                already been rotated is presented again, that is the signature of theft —
+                the attacker and the legitimate user cannot both hold the current token, so
+                whoever refreshes second presents a stale one. Grit revokes the whole
+                session rather than refreshing it, which surfaces the compromise instead of
+                silently letting both parties share the account.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                This does log the real user out too. That is the intended trade-off: one
+                re-authentication beats an undetected intruder riding along.
+              </p>
+
+              <h3 id="sessions-timeouts">Two timeouts</h3>
+              <ul>
+                <li>
+                  <strong>Idle</strong> — <code>services.SessionIdleTimeout</code> (default 7
+                  days). No refresh within the window and the session dies.
+                </li>
+                <li>
+                  <strong>Absolute</strong> — <code>services.SessionAbsoluteTimeout</code>{' '}
+                  (default 30 days). The session dies at this age no matter how actively it
+                  is used.
+                </li>
+              </ul>
+              <p>
+                Most apps ship one; auditors ask for both. Override either at startup:
+              </p>
+              <CodeBlock filename="cmd/server/main.go" code={`services.SessionIdleTimeout = 24 * time.Hour
+services.SessionAbsoluteTimeout = 7 * 24 * time.Hour`} />
+
+              <h3 id="sessions-endpoints">Endpoints</h3>
+              <div className="overflow-x-auto">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Method</th>
+                      <th>Path</th>
+                      <th>What it does</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>GET</code></td>
+                      <td><code>/api/auth/sessions</code></td>
+                      <td>
+                        The caller&apos;s live sessions, newest activity first. The one making
+                        the request is flagged <code>current: true</code>.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><code>DELETE</code></td>
+                      <td><code>/api/auth/sessions/:id</code></td>
+                      <td>
+                        Revoke one device. Scoped to the owner — another user passing your
+                        session id gets a 404.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><code>POST</code></td>
+                      <td><code>/api/auth/sessions/revoke-all</code></td>
+                      <td>Sign out of every other device, keeping the current one.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>
+                A revoked session&apos;s next refresh returns <code>401</code> with code{' '}
+                <code>SESSION_REVOKED</code> and its auth cookies are cleared.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <strong>Native clients:</strong> mobile and desktop apps send the refresh token
+                in the request body rather than a cookie, so every session behaves identically
+                — but <code>current</code> comes back <code>false</code> for all of them, since
+                the server recognises &ldquo;this device&rdquo; by the{' '}
+                <code>grit_refresh</code> cookie. If you build a sessions screen in a native
+                app, track the session id you got at login instead.
+              </p>
+
+              <h3 id="sessions-password-change">Changing a password signs out every device</h3>
+              <p>
+                <code>PUT /api/profile</code> with a <code>password</code> field revokes every
+                session for that user and immediately issues the caller a fresh one — so the
+                person who changed the password stays signed in and everyone else is out. That
+                is the behaviour you want after a suspected compromise, and it happens without
+                any extra call.
+              </p>
+
+              <h3 id="sessions-ui">The Active Sessions screen</h3>
+              <p>
+                The admin panel renders all of this on <code>/profile</code> under
+                &ldquo;Active sessions&rdquo;: each device with its browser, OS, IP and last
+                activity, a badge on the current one, per-row sign-out, and a &ldquo;sign out
+                of all other devices&rdquo; button. It is generated into your project at{' '}
+                <code>components/profile/active-sessions.tsx</code> — yours to edit.
+              </p>
+
+              <h3 id="sessions-scope">What revocation does not cover</h3>
+              <p>
+                Revocation bites at <em>refresh</em> time. An access token already in flight
+                stays valid until it expires (15 minutes by default), because checking the
+                database on every single request is the cost most teams are not willing to
+                pay. If your threat model needs instant cut-off, shorten{' '}
+                <code>JWT_ACCESS_EXPIRY</code> — that number is exactly your worst-case
+                revocation lag.
+              </p>
 
               {/* ── Password Hashing ─────────────────────────────── */}
               <h2 id="password-hashing">Password Hashing</h2>
