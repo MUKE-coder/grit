@@ -73,6 +73,9 @@ func writeAPIFiles(root string, opts Options) error {
 		// Test files — give the generated API a working test suite out of the box
 		filepath.Join(apiRoot, "internal", "handlers", "auth_test.go"):  apiAuthTestGo(),
 		filepath.Join(apiRoot, "internal", "services", "session_test.go"): apiSessionTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "password_reset.go"):          apiPasswordResetModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "password_reset.go"):        apiPasswordResetServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "password_reset_test.go"):   apiPasswordResetTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user_test.go"):  apiUserTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "bench_test.go"): apiBenchTestGo(),
 	}
@@ -1125,6 +1128,7 @@ func Models() []interface{} {
 		&User{},
 		// Server-side refresh sessions — must exist before anything logs in.
 		&Session{},
+		&PasswordResetToken{},
 		// Role/UserRole must migrate before anything authorises a request.
 		&Role{},
 		&UserRole{},
@@ -1463,10 +1467,12 @@ func apiAuthHandlerGo() string {
 	return `package handlers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -1476,6 +1482,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"` + "{{MODULE}}" + `/internal/config"
+	"` + "{{MODULE}}" + `/internal/mail"
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/services"
 	"` + "{{MODULE}}" + `/internal/totp"
@@ -1486,6 +1493,10 @@ type AuthHandler struct {
 	DB          *gorm.DB
 	AuthService *services.AuthService
 	Config      *config.Config
+	// Mailer is optional. Without it the reset link is logged instead of sent,
+	// which is what you want in dev and must never be what happens in prod —
+	// ForgotPassword refuses to log the token when APP_ENV is production.
+	Mailer *mail.Mailer
 }
 
 type registerRequest struct {
@@ -1894,33 +1905,80 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
+	// One response for every outcome. Any variation — a different message, a
+	// different status, a measurably different latency — turns this endpoint
+	// into an oracle for which email addresses hold accounts.
+	const genericResponse = "If an account with that email exists, a password reset link has been sent"
+
 	var user models.User
 	if err := h.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
-		// Return success even if email not found (security)
-		c.JSON(http.StatusOK, gin.H{
-			"message": "If an account with that email exists, a password reset link has been sent",
-		})
+		c.JSON(http.StatusOK, gin.H{"message": genericResponse})
 		return
 	}
 
+	// Everything past the lookup — minting the token, storing it, delivering the
+	// link — runs off the request path. Both branches then do the same work
+	// before answering (parse, one indexed SELECT), so a registered address does
+	// not take measurably longer to respond than an unregistered one. Identical
+	// wording with a distinguishable response time is still an oracle.
+	//
+	// c.ClientIP() is read here: the gin context must not be touched once the
+	// handler has returned.
+	go h.deliverPasswordReset(user, c.ClientIP())
+
+	c.JSON(http.StatusOK, gin.H{"message": genericResponse})
+}
+
+// deliverPasswordReset issues a reset token and sends the link. It runs in its
+// own goroutine, so it owns its context and reports failures only to the log —
+// there is no caller left to tell, and telling the original one would have
+// confirmed the address exists.
+func (h *AuthHandler) deliverPasswordReset(user models.User, clientIP string) {
 	token, err := services.GenerateResetToken()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    "INTERNAL_ERROR",
-				"message": "Failed to generate reset token",
-			},
-		})
+		log.Printf("password reset: generating token for %s: %v", user.Email, err)
 		return
 	}
 
-	// For Phase 1, just log the token (email integration comes in Phase 4)
-	log.Printf("Password reset token for %s: %s", user.Email, token)
+	if _, err := services.CreatePasswordResetToken(h.DB, user.ID, token, clientIP); err != nil {
+		log.Printf("password reset: storing token for %s: %v", user.Email, err)
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "If an account with that email exists, a password reset link has been sent",
-	})
+	resetURL := strings.TrimSuffix(h.Config.OAuthFrontendURL, "/") + "/reset-password?token=" + url.QueryEscape(token)
+
+	if h.Mailer != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		if err := h.Mailer.Send(ctx, mail.SendOptions{
+			To:       user.Email,
+			Subject:  "Reset your password",
+			Template: "password-reset",
+			Data: map[string]interface{}{
+				"AppName":  h.Config.AppName,
+				"Title":    "Reset your password",
+				"Message":  "We received a request to reset your password. This link expires in one hour and can only be used once. If you didn't ask for this, you can ignore this email.",
+				"ResetURL": resetURL,
+				"Year":     time.Now().Year(),
+			},
+		}); err != nil {
+			log.Printf("password reset: sending email to %s: %v", user.Email, err)
+		}
+		return
+	}
+
+	if h.Config.AppEnv == "production" {
+		// No mailer in production means nobody can complete a reset. Say so
+		// loudly rather than printing a working token into the log — a live
+		// reset link in a log file is a credential.
+		log.Printf("password reset: NO MAILER CONFIGURED — %s cannot receive a reset link. Set RESEND_API_KEY.", user.Email)
+		return
+	}
+
+	// Dev convenience only, and only outside production.
+	log.Printf("password reset link for %s: %s", user.Email, resetURL)
 }
+
 
 // ResetPassword resets a user's password with a valid token.
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
@@ -1935,8 +1993,19 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	// Phase 1: simplified reset (in production, validate the token against stored tokens)
-	// For now, this is a placeholder that demonstrates the API contract
+	// Consume first. The token is single-use and burning it before doing any
+	// work means a failure later can't leave a still-valid token behind.
+	userID, err := services.ConsumePasswordResetToken(h.DB, req.Token)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{
+				"code":    "INVALID_TOKEN",
+				"message": "This reset link is invalid or has expired. Request a new one.",
+			},
+		})
+		return
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -1947,10 +2016,27 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		})
 		return
 	}
-	_ = hashedPassword
+
+	if err := h.DB.Model(&models.User{}).Where("id = ?", userID).
+		Update("password", string(hashedPassword)).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "INTERNAL_ERROR",
+				"message": "Failed to update password",
+			},
+		})
+		return
+	}
+
+	// The reason someone resets a password is to evict whoever they think is in
+	// their account. Leaving that person's session alive would defeat the entire
+	// exercise, so every device is signed out — including any the attacker holds.
+	if err := services.RevokeAllUserSessions(h.DB, userID, ""); err != nil {
+		log.Printf("password reset: revoking sessions for %s: %v", userID, err)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Password reset successfully",
+		"message": "Password reset successfully. Please sign in with your new password.",
 	})
 }
 
@@ -7127,6 +7213,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		DB:          db,
 		AuthService: authService,
 		Config:      cfg,
+		Mailer:      svc.Mailer,
 	}
 	userHandler := &handlers.UserHandler{
 		DB:          db,
