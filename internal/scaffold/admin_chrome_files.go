@@ -531,6 +531,7 @@ import {
   TrendingUp,
   Shield,
   ShieldCheck,
+  Webhook,
   User as UserIcon,
   LogOut,
 } from "@/lib/icons";
@@ -594,6 +595,7 @@ const INTERNAL_ICON: Record<string, React.ReactNode> = {
   Shield: <Shield className="h-5 w-5" />,
   ShieldCheck: <ShieldCheck className="h-5 w-5" />,
   LayoutGrid: <LayoutGrid className="h-5 w-5" />,
+  Webhook: <Webhook className="h-5 w-5" />,
 };
 
 interface SidebarProps {
