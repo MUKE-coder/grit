@@ -28,6 +28,78 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.88.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.88.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Supply chain: signed releases, an SBOM, build provenance — and 12
+                  CVEs removed from every generated project.</strong>
+                </p>
+                <p>
+                  Adding <code>govulncheck</code> to CI immediately paid for itself. It found
+                  a reachable vulnerability in <code>crypto/tls</code>{" "}
+                  (<code>GO-2026-5856</code>) — and because the fix landed in Go 1.25.12, the
+                  1.24 toolchain we built with had no patched release at all. Every published
+                  Grit binary, and every generated project&apos;s production Docker image
+                  (<code>golang:1.24-alpine</code>), shipped that vulnerable standard library.
+                  Both now build on Go 1.26.
+                </p>
+                <p>
+                  Scanning a freshly scaffolded project then turned up{" "}
+                  <strong>11 more reachable vulnerabilities across 6 modules</strong> — s3 was
+                  46 minor versions behind, and <code>x/image</code> alone accounted for five.
+                  Dependencies were resolved against a real project, built and tested, and the
+                  proven set lifted into the template. A fresh scaffold now reports{" "}
+                  <em>0 reachable vulnerabilities</em>, down from 11. Transitive modules that
+                  MVS would otherwise settle on a vulnerable version of are pinned to explicit
+                  security floors, each annotated with the advisory it closes.
+                </p>
+                <ul>
+                  <li>
+                    <strong>Signed releases.</strong> A <code>SHA256SUMS</code> file signed
+                    with cosign keyless — no signing key exists to be stolen, and the identity
+                    is recorded in Rekor, so a signature cannot be produced outside a real run
+                    of the release workflow.
+                  </li>
+                  <li>
+                    <strong>SBOM</strong> (SPDX JSON) attached to every release, and{" "}
+                    <strong>SLSA build provenance</strong> — verify with{" "}
+                    <code>gh attestation verify</code> that a binary came from this repo&apos;s
+                    workflow rather than someone&apos;s laptop.
+                  </li>
+                  <li>
+                    <strong>Reproducible builds</strong> via <code>-trimpath</code>.
+                  </li>
+                  <li>
+                    <strong><code>SECURITY.md</code></strong> — private disclosure, response
+                    targets, scope. A vulnerability in generated code counts as a
+                    vulnerability in Grit, because every user gets that code.
+                  </li>
+                  <li>
+                    <strong>Continuous scanning.</strong> <code>govulncheck</code> gates CI,
+                    and the nightly canary now scans the dependency surface of a freshly
+                    generated project — the code users actually deploy — so the next CVE to
+                    land in a transitive dependency is caught overnight.
+                  </li>
+                  <li>
+                    <strong>OpenSSF Scorecard</strong> runs weekly and publishes publicly, so
+                    a prospective adopter can check the score without asking.
+                  </li>
+                </ul>
+                <p className="text-sm text-muted-foreground">
+                  Also dropped <code>feature/s3/manager</code>, which the scaffold declared but
+                  never imported and which AWS has since deprecated.
+                </p>
+              </div>
+            </div>
+
             {/* v3.87.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

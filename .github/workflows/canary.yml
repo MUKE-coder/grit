@@ -47,7 +47,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version: "1.26"
 
       - name: Build grit from this commit
         run: |
@@ -75,6 +75,17 @@ jobs:
           if [ -d apps/api ]; then cd apps/api; fi
           go build ./...
           go test ./... 2>&1 | tail -20
+
+      # The generated app's dependency surface is what users actually deploy, and
+      # it drifts nightly like everything else here. A CVE landing in a
+      # transitive Go dependency shows up first in a freshly scaffolded project,
+      # not in the CLI repo.
+      - name: Scan generated Go dependencies
+        run: |
+          cd /tmp/canary/app
+          if [ -d apps/api ]; then cd apps/api; fi
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./... 2>&1 | tee /tmp/govulncheck.log
 
       - name: Install JS dependencies (fresh resolution, no lockfile)
         run: |
@@ -105,6 +116,16 @@ jobs:
             echo "FAILED APPS:$failed"
             exit 1
           fi
+
+      # Advisory-only: the npm graph of a scaffolded app is large and mostly
+      # build-time tooling, so a high-severity transitive advisory should be
+      # visible in the log without failing the drift signal this job exists for.
+      - name: Audit generated JS dependencies
+        if: always()
+        continue-on-error: true
+        run: |
+          cd /tmp/canary/app
+          pnpm audit --audit-level high 2>&1 | tee /tmp/pnpm-audit.log || true
 
       # The resolved versions are the actual evidence: diffing this against the
       # last green run is how you find which package moved.

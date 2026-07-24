@@ -412,6 +412,91 @@ export default function SecurityGuidePage() {
                 </section>
               ))}
 
+              <h2 id="supply-chain" className="mt-12">Supply chain</h2>
+              <p>
+                Two questions an enterprise review always asks: <em>can I prove this binary
+                came from you</em>, and <em>what known vulnerabilities does the code you
+                generate carry</em>. Both have concrete answers.
+              </p>
+
+              <h3 id="supply-chain-verify">Verifying a release</h3>
+              <p>
+                Releases are signed with cosign in keyless mode — there is no signing key to
+                steal, and the signing identity is recorded in the public Rekor transparency
+                log, so a valid signature cannot be produced outside a real run of the release
+                workflow. Every release also carries an SPDX SBOM and SLSA build provenance.
+              </p>
+              <CodeBlock filename="verify.sh" code={`# Checksums
+curl -LO https://github.com/MUKE-coder/grit/releases/download/vX.Y.Z/SHA256SUMS
+sha256sum -c SHA256SUMS --ignore-missing
+
+# Signature (keyless — verified against Rekor, no key required)
+cosign verify-blob \
+  --certificate SHA256SUMS.pem \
+  --signature   SHA256SUMS.sig \
+  --certificate-identity-regexp '^https://github.com/MUKE-coder/grit/.github/workflows/release.yml@refs/tags/v' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  SHA256SUMS
+
+# Provenance — proves the workflow built it, not someone's laptop
+gh attestation verify grit-linux-amd64.tar.gz --repo MUKE-coder/grit`} />
+
+              <h3 id="supply-chain-scanning">Known vulnerabilities in generated code</h3>
+              <p>
+                The dependency versions a scaffolded project pins are part of Grit&apos;s
+                security surface — every user inherits them. They are checked with{' '}
+                <code>govulncheck</code>, which reports only vulnerabilities in code paths
+                actually reachable, so a finding is exploitable rather than merely present in
+                the module graph.
+              </p>
+              <ul>
+                <li>
+                  <code>govulncheck</code> gates CI on every push.
+                </li>
+                <li>
+                  The nightly canary scaffolds a fresh project and scans <em>its</em>{' '}
+                  dependencies, so a CVE landing in a transitive dependency is caught overnight
+                  rather than at your next audit.
+                </li>
+                <li>
+                  Transitive modules that Go&apos;s minimal version selection would otherwise
+                  settle on a vulnerable version of are pinned to explicit security floors in
+                  the generated <code>go.mod</code>, each annotated with the advisory it
+                  closes. Raise them, never lower them.
+                </li>
+              </ul>
+              <p>
+                Run the same check against your own project at any time:
+              </p>
+              <CodeBlock filename="apps/api" code={`go install golang.org/x/vuln/cmd/govulncheck@latest
+govulncheck ./...`} />
+              <p className="text-sm text-muted-foreground">
+                Your Go <em>toolchain</em> matters as much as your modules: a standard-library
+                CVE is fixed by upgrading Go, not a dependency. Generated Dockerfiles pin a
+                patched Go image, but a locally built binary uses whatever you have installed.
+              </p>
+
+              <h3 id="supply-chain-reporting">Reporting a vulnerability</h3>
+              <p>
+                Privately, through{' '}
+                <a
+                  href="https://github.com/MUKE-coder/grit/security/advisories/new"
+                  className="text-primary hover:underline"
+                >
+                  GitHub Security Advisories
+                </a>
+                . A vulnerability in code Grit <em>generates</em> counts as a vulnerability in
+                Grit — every user gets that code, and it is the category we most want to hear
+                about. Scope and response targets are in{' '}
+                <a
+                  href="https://github.com/MUKE-coder/grit/blob/main/SECURITY.md"
+                  className="text-primary hover:underline"
+                >
+                  SECURITY.md
+                </a>
+                .
+              </p>
+
               <h2 id="hardening-checklist" className="mt-12">Pre-launch hardening checklist</h2>
               <p>
                 The fastest audit pass — work the list, tick the box. Every item is a
