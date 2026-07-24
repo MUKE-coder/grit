@@ -28,6 +28,44 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.85.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.85.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Outbound webhooks — <code>grit plugin add webhooks</code>.</strong> Core
+                  already <em>verifies incoming</em> webhooks (Stripe/GitHub signatures); this sends{" "}
+                  <em>outgoing</em> ones, signed to the{" "}
+                  <a href="https://www.standardwebhooks.com" className="text-primary hover:underline">Standard Webhooks</a>{" "}
+                  spec so any consumer can verify them with an off-the-shelf library.
+                </p>
+                <ul>
+                  <li>
+                    One command wires the <a href="https://github.com/MUKE-coder/grit-plugins/tree/main/grit-webhooks" className="text-primary hover:underline">grit-webhooks</a> module, migrates the tables, mounts the subscription + delivery-log endpoints, and adds a <strong>System → Webhooks</strong> admin page.
+                  </li>
+                  <li>
+                    Signatures cover <code>{"{id}.{timestamp}.{body}"}</code> (so a captured delivery can&apos;t be replayed), per-subscription <code>whsec_</code> secrets, exponential backoff with jitter, a dead-letter after the retry budget, and one-click resend.
+                  </li>
+                  <li>
+                    Fire an event from any handler: <code>handlers.DispatchWebhook(&quot;invoice.paid&quot;, data)</code>.
+                  </li>
+                </ul>
+                <p>
+                  This is the first plugin to wrap an <strong>external Go module</strong> — proving the
+                  &ldquo;package + plugin&rdquo; shape: the runtime logic lives in a versioned module you{" "}
+                  <code>go get -u</code>, the plugin generates only the thin wiring. Verified end to end
+                  in a live app: a delivery arrived with a signature that validated independently in
+                  Python, and appeared in the delivery log.
+                </p>
+              </div>
+            </div>
+
             {/* v3.84.1 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
