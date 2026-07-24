@@ -256,6 +256,15 @@ go get github.com/MUKE-coder/grit-plugins/grit-websockets@v0.1.0
 > them to a Grit user needs a change first. `grit-oauth` and `grit-stripe` are
 > already fixed. Treat them as a starting point, not a supported dependency.
 
+> **Check core first.** Several of these overlap with modules you already have
+> behind `MODULE_*` flags. In particular **`grit-websockets` duplicates
+> `MODULE_REALTIME`** — a scaffolded app already ships `internal/realtime` and a
+> WebSocket handler wired to your `AuthService`. `grit-export` overlaps
+> `internal/export` (it adds PDF). `grit-webhooks` does *not* overlap despite the
+> name: core verifies **incoming** webhooks, that package **sends** outgoing ones.
+> The [repo README](https://github.com/MUKE-coder/grit-plugins) has the full
+> per-package comparison.
+
 All are `github.com/MUKE-coder/grit-plugins/<module>`:
 
 | Module | Go package | Purpose |

@@ -3,6 +3,7 @@ package plugin
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -39,8 +40,36 @@ func Install(ctx Context, p Plugin) (*InstalledPlugin, error) {
 		Version:     p.Version,
 		InstalledAt: time.Now().UTC(),
 		Requires:    p.Requires,
-		GoDeps:      p.GoDeps,
-		NodeDeps:    p.NodeDeps,
+		// GoDeps is appended as each one is actually fetched, so the lockfile
+		// records what landed rather than what was merely declared.
+		NodeDeps: p.NodeDeps,
+	}
+
+	// --- Go dependencies ---
+	//
+	// Run BEFORE any file is written: `go get` loads the module graph, and a
+	// tree that already contains generated code importing a module not yet in
+	// go.mod is exactly the state that makes it fail. Doing it first also means
+	// a network error aborts the install before anything on disk changed.
+	if len(p.GoDeps) > 0 {
+		apiDir := ctx.APIRoot
+		if apiDir == "" {
+			apiDir = ctx.Root
+		}
+		for _, d := range p.GoDeps {
+			spec := d.Name
+			if d.Version != "" {
+				spec += "@" + d.Version
+			}
+			cmd := exec.Command("go", "get", spec)
+			cmd.Dir = apiDir
+			cmd.Env = append(os.Environ(), "GOFLAGS=-mod=mod")
+			if out, err := cmd.CombinedOutput(); err != nil {
+				return nil, fmt.Errorf("go get %s: %w\n%s", spec, err, strings.TrimSpace(string(out)))
+			}
+			record.GoDeps = append(record.GoDeps, d)
+			fmt.Printf("  ✓ go get %s\n", spec)
+		}
 	}
 
 	// --- Files ---
