@@ -5,7 +5,9 @@ import { Geist, Ubuntu, JetBrains_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { OrganizationSchema } from '@/components/structured-data'
 import { NexoraChat } from '@/components/nexora-chat'
+import { Analytics } from 'zenith-analytics/next'
 import { siteConfig } from '@/config/site'
+import { ZENITH_PUBLIC } from '@/config/zenith'
 
 import './globals.css'
 
@@ -91,6 +93,9 @@ export default function RootLayout({
           {children}
           <NexoraChat />
         </ThemeProvider>
+        {/* Zenith analytics — server-rendered so the ~1KB snippet is inlined
+            into the HTML. Cookieless, so there is nothing to consent to. */}
+        <Analytics config={ZENITH_PUBLIC} />
         {process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID && (
           <Script
             defer
