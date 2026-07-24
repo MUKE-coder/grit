@@ -859,6 +859,67 @@ func GenerateResetToken() (string, error) {
 // Output example: "a3f4b2c1e5d6f7890123456789abcdef..."
 // (64 hex characters = 32 bytes of randomness)`} />
 
+              <h3 id="reset-flow">The reset flow</h3>
+              <p>
+                The token is never stored — only its SHA-256, in a{' '}
+                <code>password_reset_tokens</code> row. A leak of that table cannot be used
+                to reset anyone&apos;s password.
+              </p>
+              <ol>
+                <li>
+                  <code>POST /api/auth/forgot-password</code> issues a token, stores its
+                  hash, and emails a link to{' '}
+                  <code>{'{OAUTH_FRONTEND_URL}/reset-password?token=…'}</code>. Requesting a
+                  new link <strong>retires the previous one</strong> — otherwise every
+                  request would widen the window of usable tokens.
+                </li>
+                <li>
+                  <code>POST /api/auth/reset-password</code> consumes the token, writes the
+                  new bcrypt hash, and <strong>revokes every session</strong>. The reason
+                  someone resets a password is to evict whoever they think is in the
+                  account; leaving that person signed in would defeat the exercise.
+                </li>
+              </ol>
+              <p>
+                Tokens are single-use and expire after{' '}
+                <code>services.PasswordResetTTL</code> (1 hour). Single use is enforced by
+                one conditional <code>UPDATE</code> rather than a read-then-write, so two
+                concurrent requests cannot both consume the same token.
+              </p>
+
+              <h3 id="reset-enumeration">It will not tell you who has an account</h3>
+              <p>
+                <code>forgot-password</code> returns the same <code>200</code> and the same
+                message whether the address exists, the token fails to generate, or the
+                email fails to send. Any variation would turn the endpoint into a directory
+                of your users. Delivery failures are logged, never surfaced.
+              </p>
+              <p>
+                Identical wording is not enough on its own — a distinguishable{' '}
+                <em>response time</em> is an oracle too. So everything past the initial
+                lookup (minting the token, storing it, sending the mail) happens off the
+                request path in a goroutine. Both branches do the same work before
+                answering: parse the body, run one indexed <code>SELECT</code>, reply.
+                Measured on a scaffolded app, the known and unknown response times overlap
+                within noise; sending the mail inline made a known address roughly 3×
+                slower.
+              </p>
+
+              <h3 id="reset-no-mailer">Without a mailer configured</h3>
+              <p>
+                In development the reset link is written to the API log so you can complete
+                the flow without an email provider. In <strong>production</strong> that is
+                suppressed — a working reset token in a log file is a credential. Instead
+                Grit logs a loud warning that <code>RESEND_API_KEY</code> is missing and
+                nobody can complete a reset.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                The landing page ships too: <code>/reset-password</code> in the admin panel
+                reads the token from the query string, validates the new password, and
+                sends the user back to sign in. A valid token with no page to land on is
+                not a working feature.
+              </p>
+
               {/* ── Two-Factor Authentication ─────────────────────────────── */}
               <h2 id="two-factor">Two-Factor Authentication (TOTP)</h2>
               <p>

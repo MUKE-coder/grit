@@ -97,6 +97,7 @@ func webAuthFiles(webRoot string, opts Options) []webAuthFile {
 		{filepath.Join(webRoot, "app", "(auth)", "login", "page.tsx"), webThemedLoginPage()},
 		{filepath.Join(webRoot, "app", "(auth)", "register", "page.tsx"), webThemedRegisterPage()},
 		{filepath.Join(webRoot, "app", "(auth)", "forgot-password", "page.tsx"), webThemedForgotPasswordPage()},
+		{filepath.Join(webRoot, "app", "(auth)", "reset-password", "page.tsx"), webThemedResetPasswordPage()},
 		{filepath.Join(webRoot, "app", "(auth)", "callback", "page.tsx"), webAuthCallback()},
 
 		// Theme-aware shells (copied from admin so the web bundle is

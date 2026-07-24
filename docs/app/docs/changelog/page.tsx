@@ -28,6 +28,74 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.87.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.87.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 24, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Password reset actually resets the password.</strong> It didn&apos;t
+                  before. <code>ForgotPassword</code> generated a token and logged it without
+                  storing it; <code>ResetPassword</code> hashed the new password, discarded it
+                  with <code>_ = hashedPassword</code>, wrote nothing, and returned
+                  &ldquo;Password reset successfully&rdquo;. Anyone who used forgot-password
+                  believed they had locked an attacker out and had changed nothing.
+                </p>
+                <ul>
+                  <li>
+                    Tokens are stored as SHA-256 only, are <strong>single-use</strong>
+                    {" "}(enforced by one conditional <code>UPDATE</code>, so two concurrent
+                    requests can&apos;t both consume one), and expire after an hour.
+                  </li>
+                  <li>
+                    Requesting a new link <strong>retires the previous one</strong> — otherwise
+                    every request would widen the window of usable tokens.
+                  </li>
+                  <li>
+                    Completing a reset <strong>revokes every session</strong>. The reason you
+                    reset a password is to evict whoever you think is in your account.
+                  </li>
+                  <li>
+                    <code>forgot-password</code> returns an identical response whether the
+                    address exists or not, so it can&apos;t be used to enumerate your users.
+                    Delivery failures are logged, never surfaced.
+                  </li>
+                  <li>
+                    In development the link is logged so you can finish the flow without an
+                    email provider. In <strong>production</strong> that&apos;s suppressed — a
+                    live reset token in a log file is a credential — and replaced by a loud
+                    warning that <code>RESEND_API_KEY</code> is missing.
+                  </li>
+                </ul>
+                <p>
+                  <strong>The landing page ships too.</strong> There was no{" "}
+                  <code>/reset-password</code> route, so even a working token would have hit a
+                  404. Both admin frontends now have one: it reads the token from the query
+                  string, confirms the new password, handles the used / expired / malformed-link
+                  cases, and returns you to sign in.
+                </p>
+                <p>
+                  <strong>Also fixed: <code>grit add web-auth</code> produced a project that
+                  could not build.</strong> The generated web login page called{" "}
+                  <code>useSearchParams()</code> with no Suspense boundary, so{" "}
+                  <code>next build</code> failed outright on <code>/login</code>. It went
+                  unnoticed because web auth is opt-in and nothing in the release matrix ever
+                  ran the command — there is now a kit that does.
+                </p>
+                <p>
+                  Verified by walking the whole flow in a browser — request a link, follow it
+                  from the log, set a new password, sign in with it — plus 17 end-to-end HTTP
+                  assertions and 8 unit tests that ship in every scaffolded project. The
+                  assertion that matters: <em>the old password now returns 401</em>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.86.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

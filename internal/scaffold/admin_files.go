@@ -229,6 +229,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "app", "(auth)", "login", "page.tsx"):           adminThemedLoginPage(),
 		filepath.Join(adminRoot, "app", "(auth)", "sign-up", "page.tsx"):         adminThemedSignUpPage(),
 		filepath.Join(adminRoot, "app", "(auth)", "forgot-password", "page.tsx"): adminThemedForgotPasswordPage(),
+		filepath.Join(adminRoot, "app", "(auth)", "reset-password", "page.tsx"):  adminThemedResetPasswordPage(),
 		filepath.Join(adminRoot, "app", "(auth)", "callback", "page.tsx"):        adminAuthCallbackPage(),
 
 		// Theme-aware auth shells (v3.28)
