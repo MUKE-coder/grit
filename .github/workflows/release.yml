@@ -55,13 +55,30 @@ jobs:
           sha256sum *.tar.gz *.zip > SHA256SUMS
           cat SHA256SUMS
 
+      # Installed by hand rather than via anchore/sbom-action so this can retry.
+      # A single 504 from the GitHub CDN fetching syft once aborted an entire
+      # release, leaving a tag with no binaries attached — the SBOM is a
+      # guarantee we make in SECURITY.md, so it must not be silently skipped,
+      # but neither should one flaky download cost the release.
       - name: Generate SBOM
-        uses: anchore/sbom-action@v0
-        with:
-          path: .
-          format: spdx-json
-          artifact-name: grit-sbom.spdx.json
-          output-file: dist/grit-sbom.spdx.json
+        env:
+          SYFT_VERSION: v1.42.3
+        run: |
+          for attempt in 1 2 3; do
+            if curl -sSfL https://get.anchore.io/syft | sh -s -- -b /usr/local/bin "$SYFT_VERSION"; then
+              break
+            fi
+            echo "syft install attempt $attempt failed; retrying in 15s"
+            sleep 15
+          done
+          syft version
+          # node_modules is excluded because scanning it takes minutes and adds
+          # nothing: the published artifact is a Go binary, and every npm package
+          # that matters is already recorded via its lockfile.
+          syft dir:. --exclude './**/node_modules/**' --exclude './**/.next/**' -o spdx-json > dist/grit-sbom.spdx.json
+          # An empty or truncated SBOM is worse than none: it would pass a
+          # scanner and report nothing.
+          python3 -c "import json,sys; d=json.load(open('dist/grit-sbom.spdx.json')); n=len(d.get('packages',[])); print(f'SBOM packages: {n}'); sys.exit(1 if n == 0 else 0)"
 
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
