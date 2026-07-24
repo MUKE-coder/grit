@@ -223,9 +223,42 @@ grit upgrade                           # Upgrade project templates
 
 ## Plugins
 
-10 official drop-in Go packages for functionality that doesn't ship in core:
+Grit extends in two different ways. They're often confused, so the distinction matters:
 
-| Plugin | Package | Purpose |
+### 1. `grit plugin add` — code generation
+
+Installs a feature by **generating real code into your project** — models, routes,
+admin pages, frontend components — recorded in `.grit/plugins.lock.json` so
+`grit plugin remove` reverses every file and injection. You own and can edit the
+result. Run `grit plugin list` to see what's available:
+
+```bash
+grit plugin add multitenant       # organizations, per-org roles, query scoping
+grit plugin add impersonate       # sign in as another user, with an audit trail
+grit plugin add command-palette   # ⌘K navigation across the admin
+grit plugin add saved-views       # per-user named table views
+```
+
+### 2. Official Go packages — runtime libraries
+
+Ordinary Go modules you import and wire up yourself. They hold runtime logic
+(a WebSocket hub, a Stripe client, an OAuth manager) and upgrade with `go get -u`.
+**These are not installed by `grit plugin add`.**
+
+```bash
+go get github.com/MUKE-coder/grit-plugins/grit-websockets@v0.1.0
+```
+
+> **Status: v0.1.0, early.** These build and vet clean, but they have **no test
+> suite yet** and are not yet runtime-verified against the current framework.
+> `grit-notifications`, `grit-video`, `grit-webhooks` and `grit-conference` still
+> store `user_id` as `uint`, while a Grit `User.ID` is a UUID string — so linking
+> them to a Grit user needs a change first. `grit-oauth` and `grit-stripe` are
+> already fixed. Treat them as a starting point, not a supported dependency.
+
+All are `github.com/MUKE-coder/grit-plugins/<module>`:
+
+| Module | Go package | Purpose |
 |--------|---------|---------|
 | [grit-websockets](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-websockets) | `ws` | Hub, rooms, broadcast, auth |
 | [grit-stripe](https://github.com/MUKE-coder/grit-plugins/tree/main/grit-stripe) | `gritstripe` | Checkout, subscriptions, webhooks |
