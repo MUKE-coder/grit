@@ -28,6 +28,59 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.89.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.89.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Ship your audit trail to any SIEM — OCSF export.</strong> Grit
+                  already records a semantic activity log (who did what: auth.login,
+                  user.delete, session.revoke_all, with actor, severity, resource and IP). It
+                  now speaks the vendor-neutral{" "}
+                  <a href="https://ocsf.io" className="text-primary hover:underline">Open
+                  Cybersecurity Schema Framework</a> that Splunk, Elastic, Microsoft Sentinel,
+                  Chronicle and Amazon Security Lake all ingest.
+                </p>
+                <ul>
+                  <li>
+                    <code>GET /api/audit/ocsf</code> (admin only) streams the log as
+                    newline-delimited OCSF JSON. Each event is mapped to its class — a failed
+                    sign-in becomes Authentication (<code>3002</code>) with{" "}
+                    <code>status_id 2</code>, account changes become Account Change
+                    (<code>3001</code>), everything else API Activity (<code>6003</code>).
+                  </li>
+                  <li>
+                    <strong>Cursor pagination, not offset.</strong> The response headers carry
+                    the exact position to resume from, so a collector polling every minute
+                    never skips or repeats a row — proven with disjoint pages in testing.
+                  </li>
+                  <li>
+                    <strong>Pull, not push.</strong> No credentials for Grit to store, no queue
+                    to babysit; the collector owns its cursor — the model every one of those
+                    SIEMs already ships an HTTP connector for.
+                  </li>
+                  <li>
+                    An unknown action still exports (API Activity, Unknown activity), so a new
+                    event type is never silently dropped. Grit&apos;s native action name is
+                    preserved under <code>unmapped.grit_action</code> for pivoting back.
+                  </li>
+                </ul>
+                <p>
+                  Verified against a running server: real register / failed-login / login
+                  events came back OCSF-conformant (required fields present,{" "}
+                  <code>type_uid = class_uid*100 + activity_id</code>, epoch-millis time), the
+                  cursor produced non-overlapping pages, and the endpoint returned 401
+                  unauthenticated and 403 for a non-admin. 6 unit tests ship in every project.
+                </p>
+              </div>
+            </div>
+
             {/* v3.88.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
