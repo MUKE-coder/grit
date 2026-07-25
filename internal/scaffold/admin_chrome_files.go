@@ -579,6 +579,7 @@ const SYSTEM_NAV: readonly NavEntry[] = [
   { href: "/system/roles",        label: "Roles & permissions", iconKey: "ShieldCheck", adminOnly: true, requires: "roles.view" },
   { href: "/system/security",     label: "Security",      iconKey: "Shield",       adminOnly: true },
   { href: "/system",              label: "System Hub",    iconKey: "LayoutGrid",   adminOnly: true },
+  { href: "/system/access-reviews", label: "Access Reviews", iconKey: "UserCheck", adminOnly: true },
   // grit:nav:system
 ] as const;
 

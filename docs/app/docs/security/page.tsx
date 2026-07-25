@@ -293,6 +293,18 @@ curl -s -D headers.txt \
           HTTP connector for. An unknown action still exports (as API Activity with an Unknown
           activity), so a new event type is never silently dropped from the feed.
         </p>
+        <p>
+          <strong>Access reviews (recertification).</strong> SOC 2 CC6.2/CC6.3 and ISO 27001
+          A.9.2.5 all require periodic proof that someone with authority reviewed who has access
+          to what. <code>/system/access-reviews</code> in the admin panel does exactly that: a
+          campaign snapshots every current role assignment, a reviewer certifies or revokes each
+          one, and the campaign is signed off as evidence. Revoking removes the grant
+          immediately and writes an <code>access_review.revoke</code> event to the audit log
+          (which flows out through the OCSF export above). The snapshot copies each user&apos;s
+          email and role name, so the record stays legible even after the user or role is later
+          deleted — a completed review is immutable, and you cannot complete one with grants
+          still undecided.
+        </p>
       </>
     ),
   },
