@@ -62,6 +62,10 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "services", "ocsf.go"):        apiOCSFServiceGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "ocsf.go"):        apiOCSFHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "ocsf_test.go"):   apiOCSFTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "access_review.go"):        apiAccessReviewModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "access_review.go"):      apiAccessReviewServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "access_review.go"):      apiAccessReviewHandlerGo(),
+		filepath.Join(apiRoot, "internal", "services", "access_review_test.go"): apiAccessReviewTestGo(),
 		// v3.31.40 — per-user dashboard customisation
 		filepath.Join(apiRoot, "internal", "models", "dashboard_layout.go"):   dashboardLayoutModelGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "dashboard_layout.go"): strings.ReplaceAll(dashboardLayoutHandlerGo(), "{{MODULE}}", opts.Module()),
@@ -1160,6 +1164,8 @@ func Models() []interface{} {
 		&Notification{},
 		// v3.30
 		&UserActivity{},
+		&AccessReview{},
+		&AccessReviewItem{},
 		&Ticket{},
 		&TicketReply{},
 		// v3.31.20 — public form sharing (Phase 2)
@@ -2817,6 +2823,7 @@ func Auth(db *gorm.DB, authService *services.AuthService) gin.HandlerFunc {
 
 		c.Set("user", user)
 		c.Set("user_id", user.ID)
+		c.Set("user_email", user.Email)
 		c.Set("user_role", user.Role)
 
 		// Resolve the caller's permission grants once per request so route
@@ -7273,6 +7280,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// + admin notifications.
 	userActivityHandler := &handlers.UserActivityHandler{DB: db}
 	ocsfHandler := handlers.NewOCSFHandler(db, cfg.AppName)
+	accessReviewHandler := handlers.NewAccessReviewHandler(db)
 	ticketHandler := &handlers.TicketHandler{DB: db, Mail: svc.Mailer}
 	// v3.31.20 — public form sharing (Phase 2)
 	formShareHandler := &handlers.FormShareHandler{DB: db}
@@ -7559,6 +7567,14 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// OCSF audit export — the semantic activity log in the vendor-neutral
 		// shape SIEMs ingest. Cursor-paginated NDJSON; poll to resume.
 		admin.GET("/audit/ocsf", ocsfHandler.Export)
+
+		// Access reviews (recertification) — snapshot every grant, certify or
+		// revoke each, sign off. Admin-only; revocations hit the audit trail.
+		admin.GET("/access-reviews", accessReviewHandler.List)
+		admin.POST("/access-reviews", accessReviewHandler.Open)
+		admin.GET("/access-reviews/:id", accessReviewHandler.Get)
+		admin.POST("/access-reviews/:id/items/:itemId/decision", accessReviewHandler.Decide)
+		admin.POST("/access-reviews/:id/complete", accessReviewHandler.Complete)
 
 		// Webhook receiver admin (review + replay failed events)
 		admin.GET("/admin/webhooks", webhookHandler.List)

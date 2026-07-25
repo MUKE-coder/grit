@@ -28,6 +28,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.90.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.90.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 25, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Access reviews — the recertification workflow auditors ask for.</strong>{" "}
+                  SOC 2 CC6.2/CC6.3 and ISO 27001 A.9.2.5 all require periodic, documented proof
+                  that someone with authority reviewed who has access to what. The admin panel now
+                  has it at <code>/system/access-reviews</code>.
+                </p>
+                <ul>
+                  <li>
+                    A campaign <strong>snapshots every current role assignment</strong> into a
+                    list of items to certify. The snapshot copies each user&apos;s email and role
+                    name, so the record stays legible even after the user or role is later
+                    deleted.
+                  </li>
+                  <li>
+                    A reviewer <strong>approves (keep) or revokes (remove)</strong> each grant.
+                    Revoking deletes the role assignment immediately and writes an{" "}
+                    <code>access_review.revoke</code> event to the audit log — which flows out
+                    through the OCSF/SIEM export from v3.89.0.
+                  </li>
+                  <li>
+                    Three invariants auditors care about are enforced in the service, not just the
+                    UI: a revoke is <strong>terminal</strong> (the grant is gone), a completed
+                    review is <strong>immutable</strong> evidence, and you <strong>cannot
+                    complete</strong> a review with grants still undecided.
+                  </li>
+                </ul>
+                <p>
+                  Proven end to end in a browser: opened a campaign, clicked Revoke on a real
+                  grant, and confirmed the role assignment was gone from the database and the
+                  revocation had landed in the audit trail; the Complete button stayed disabled
+                  until every item was decided, then signed the review off with a timestamp and
+                  reviewer. 7 unit tests ship in every project. Admin-only — non-admins get 403.
+                  Matrix 73/0.
+                </p>
+              </div>
+            </div>
+
             {/* v3.89.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

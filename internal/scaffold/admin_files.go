@@ -266,6 +266,7 @@ func writeAdminFiles(root string, opts Options) error {
 		// v3.31.5: dedicated System Health / Security / Performance pages.
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "health", "page.tsx"):   adminSystemHealthPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "security", "page.tsx"): adminSecurityPageV2(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "access-reviews", "page.tsx"): adminAccessReviewPage(),
 		// Roles & permissions. The SAME component is used by the Vite admin — a
 		// permission editor that disagreed between the two would be a security
 		// bug, not a cosmetic one.

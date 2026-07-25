@@ -291,6 +291,7 @@ export {
   File,
   Image,
   User,
+  UserCheck,
   UserCircle,
   Save,
   AlertTriangle,
