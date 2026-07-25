@@ -58,6 +58,7 @@ export function SiteHeader() {
               highlighted. */}
           {[
             { label: 'Docs', href: '/docs' },
+            { label: 'Builder', href: '/builder' },
             { label: 'AI Integration', href: '/docs/ai-integration', highlight: true },
             { label: 'Courses', href: '/courses' },
             { label: 'Blog', href: '/blog' },
