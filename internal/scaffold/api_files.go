@@ -59,6 +59,9 @@ func writeAPIFiles(root string, opts Options) error {
 		// public IP instead of "::1".
 		filepath.Join(apiRoot, "internal", "services", "clientip.go"):      clientIPHelperGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user_activity.go"): userActivityHandlerGo(),
+		filepath.Join(apiRoot, "internal", "services", "ocsf.go"):        apiOCSFServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "ocsf.go"):        apiOCSFHandlerGo(),
+		filepath.Join(apiRoot, "internal", "services", "ocsf_test.go"):   apiOCSFTestGo(),
 		// v3.31.40 — per-user dashboard customisation
 		filepath.Join(apiRoot, "internal", "models", "dashboard_layout.go"):   dashboardLayoutModelGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "dashboard_layout.go"): strings.ReplaceAll(dashboardLayoutHandlerGo(), "{{MODULE}}", opts.Module()),
@@ -7269,6 +7272,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// when nil the ticket handler skips email-out and only writes the row
 	// + admin notifications.
 	userActivityHandler := &handlers.UserActivityHandler{DB: db}
+	ocsfHandler := handlers.NewOCSFHandler(db, cfg.AppName)
 	ticketHandler := &handlers.TicketHandler{DB: db, Mail: svc.Mailer}
 	// v3.31.20 — public form sharing (Phase 2)
 	formShareHandler := &handlers.FormShareHandler{DB: db}
@@ -7551,6 +7555,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// Separate from /admin/activity above which is the HTTP audit log.
 		admin.GET("/user-activity", userActivityHandler.List)
 		admin.GET("/user-activity/stats", userActivityHandler.Stats)
+
+		// OCSF audit export — the semantic activity log in the vendor-neutral
+		// shape SIEMs ingest. Cursor-paginated NDJSON; poll to resume.
+		admin.GET("/audit/ocsf", ocsfHandler.Export)
 
 		// Webhook receiver admin (review + replay failed events)
 		admin.GET("/admin/webhooks", webhookHandler.List)

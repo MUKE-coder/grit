@@ -266,6 +266,33 @@ if errors.Is(err, safefetch.ErrBlocked) {
           alerting (PagerDuty, Slack, email) via Sentinel webhooks for spikes in failed
           logins, AuthZ denials, or WAF blocks.
         </p>
+        <p>
+          <strong>SIEM export (OCSF).</strong> The semantic activity log is exposed in the{' '}
+          <a href="https://ocsf.io" className="text-primary hover:underline">Open Cybersecurity
+          Schema Framework</a> shape that Splunk, Elastic, Microsoft Sentinel, Chronicle and
+          Amazon Security Lake all ingest, at{' '}
+          <code>GET /api/audit/ocsf</code> (admin only). Each event is mapped to its OCSF class —
+          a failed sign-in becomes Authentication (<code>class_uid 3002</code>) with{' '}
+          <code>status_id 2</code>; account changes become Account Change
+          (<code>3001</code>); everything else is API Activity (<code>6003</code>). Grit&apos;s
+          native action name is preserved under <code>unmapped.grit_action</code> so you can
+          pivot back. Output is newline-delimited JSON, cursor-paginated:
+        </p>
+        <CodeBlock filename="pull-audit.sh" code={`# First poll: from a start time. Thereafter, resume from the cursor the
+# previous response returned in its headers — no row skipped or repeated.
+curl -s -D headers.txt \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  "https://api.example.com/api/audit/ocsf?since=2026-07-01T00:00:00Z&limit=1000" \
+  > batch.ndjson
+
+# X-Grit-Next-Since / X-Grit-Next-After are the cursor for the next poll.
+# Fewer than 'limit' rows back means you are caught up.`} />
+        <p className="text-sm text-muted-foreground">
+          Pull, not push: nothing to configure, no credentials for Grit to store, and the
+          collector owns its own position — the model every one of those SIEMs already ships an
+          HTTP connector for. An unknown action still exports (as API Activity with an Unknown
+          activity), so a new event type is never silently dropped from the feed.
+        </p>
       </>
     ),
   },
