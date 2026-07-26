@@ -580,6 +580,7 @@ const SYSTEM_NAV: readonly NavEntry[] = [
   { href: "/system/security",     label: "Security",      iconKey: "Shield",       adminOnly: true },
   { href: "/system",              label: "System Hub",    iconKey: "LayoutGrid",   adminOnly: true },
   { href: "/system/access-reviews", label: "Access Reviews", iconKey: "UserCheck", adminOnly: true },
+  { href: "/system/gdpr", label: "GDPR", iconKey: "Shield", adminOnly: true },
   // grit:nav:system
 ] as const;
 

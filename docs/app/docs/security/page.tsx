@@ -305,6 +305,29 @@ curl -s -D headers.txt \
           deleted — a completed review is immutable, and you cannot complete one with grants
           still undecided.
         </p>
+        <p>
+          <strong>GDPR data toolkit.</strong> Two rights, both scaffolded. Right-to-access
+          (Art. 15): <code>GET /api/users/:id/gdpr-export</code> returns a full JSON copy of
+          everything the system holds on a person — profile, uploads, sessions, activity — with
+          the password hash and OAuth ids scrubbed. A user can export their own data; an admin,
+          anyone&apos;s. Right-to-erasure (Art. 17): <code>/system/gdpr</code> hard-deletes the
+          child records that exist only to serve that user and anonymizes the account in place —
+          scrubbing name, email and every PII column while keeping the id, so references resolve
+          to a tombstone instead of dangling. Erasure uses an unscoped delete on purpose: a
+          normal GORM delete would only <em>soft</em>-delete rows that carry{' '}
+          <code>gorm.DeletedAt</code>, leaving the personal data physically in the table — which
+          is not erasure at all.
+        </p>
+        <p>
+          The tamper-evident activity log is deliberately left intact: its rows hold a bare UUID,
+          not inline PII, so scrubbing the user row anonymizes them too, and editing them would
+          break the audit hash chain. Every erasure appends one row to a{' '}
+          <code>deletion_journal</code> — itself a hash chain, the same construction as the audit
+          log — recording who erased whom, when, and how many records fell, but never the erased
+          person&apos;s data. That&apos;s the evidence an auditor asks for; the admin page shows
+          the journal with a live &ldquo;chain verified&rdquo; badge that turns red the moment any
+          entry is altered after the fact.
+        </p>
       </>
     ),
   },
