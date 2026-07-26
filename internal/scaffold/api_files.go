@@ -66,6 +66,10 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "services", "access_review.go"):      apiAccessReviewServiceGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "access_review.go"):      apiAccessReviewHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "access_review_test.go"): apiAccessReviewTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "deletion_journal.go"): apiGDPRModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "gdpr.go"):          apiGDPRServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "gdpr.go"):          apiGDPRHandlerGo(),
+		filepath.Join(apiRoot, "internal", "services", "gdpr_test.go"):     apiGDPRTestGo(),
 		// v3.31.40 — per-user dashboard customisation
 		filepath.Join(apiRoot, "internal", "models", "dashboard_layout.go"):   dashboardLayoutModelGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "dashboard_layout.go"): strings.ReplaceAll(dashboardLayoutHandlerGo(), "{{MODULE}}", opts.Module()),
@@ -1166,6 +1170,7 @@ func Models() []interface{} {
 		&UserActivity{},
 		&AccessReview{},
 		&AccessReviewItem{},
+		&DeletionJournal{},
 		&Ticket{},
 		&TicketReply{},
 		// v3.31.20 — public form sharing (Phase 2)
@@ -7281,6 +7286,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	userActivityHandler := &handlers.UserActivityHandler{DB: db}
 	ocsfHandler := handlers.NewOCSFHandler(db, cfg.AppName)
 	accessReviewHandler := handlers.NewAccessReviewHandler(db)
+	gdprHandler := handlers.NewGDPRHandler(db)
 	ticketHandler := &handlers.TicketHandler{DB: db, Mail: svc.Mailer}
 	// v3.31.20 — public form sharing (Phase 2)
 	formShareHandler := &handlers.FormShareHandler{DB: db}
@@ -7486,6 +7492,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		// User routes (authenticated)
 		protected.GET("/users/:id", userHandler.GetByID)
 
+		// GDPR right-to-access: a user may export their own data; an admin, anyone's.
+		protected.GET("/users/:id/gdpr-export", gdprHandler.Export)
+
 		// File uploads
 		protected.POST("/uploads", uploadHandler.Create)
 		protected.POST("/uploads/presign", uploadHandler.Presign)
@@ -7575,6 +7584,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		admin.GET("/access-reviews/:id", accessReviewHandler.Get)
 		admin.POST("/access-reviews/:id/items/:itemId/decision", accessReviewHandler.Decide)
 		admin.POST("/access-reviews/:id/complete", accessReviewHandler.Complete)
+
+		// GDPR right-to-erasure: anonymize a user + hard-delete their PII, recorded
+		// in a tamper-evident deletion journal. Admin-only; the journal is verifiable.
+		admin.POST("/users/:id/gdpr-erase", gdprHandler.Erase)
+		admin.GET("/gdpr/journal", gdprHandler.Journal)
 
 		// Webhook receiver admin (review + replay failed events)
 		admin.GET("/admin/webhooks", webhookHandler.List)

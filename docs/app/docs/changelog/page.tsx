@@ -28,6 +28,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.91.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.91.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>GDPR data toolkit — right-to-access and right-to-erasure.</strong>{" "}
+                  The two data-subject rights every privacy regime turns on, scaffolded into every
+                  project.
+                </p>
+                <ul>
+                  <li>
+                    <strong>Export (Art. 15).</strong> <code>GET /api/users/:id/gdpr-export</code>{" "}
+                    returns a full JSON copy of a person&apos;s data — profile, uploads, sessions,
+                    activity — with the password hash and OAuth ids scrubbed. A user can export
+                    their own; an admin, anyone&apos;s.
+                  </li>
+                  <li>
+                    <strong>Erasure (Art. 17).</strong> <code>/system/gdpr</code> hard-deletes the
+                    records that exist only to serve a user and anonymizes the account in place,
+                    keeping the id so references resolve to a tombstone. It uses an{" "}
+                    <em>unscoped</em> delete on purpose — a normal GORM delete would only
+                    soft-delete rows carrying <code>gorm.DeletedAt</code>, leaving the PII
+                    physically in the table.
+                  </li>
+                  <li>
+                    <strong>Tamper-evident deletion journal.</strong> Every erasure appends one
+                    hash-chained row — who erased whom, when, how many records fell, never the
+                    erased person&apos;s data. The admin page shows a live &ldquo;chain
+                    verified&rdquo; badge that turns red the moment any entry is altered.
+                  </li>
+                </ul>
+                <p>
+                  The audit log is left intact by design: its rows hold a bare UUID, so scrubbing
+                  the user anonymizes them too, and editing them would break the audit hash chain.
+                  Proven end to end — unit tests, a runtime walkthrough, and a browser erase that
+                  physically removed a user&apos;s uploads and left a verified journal entry. 6
+                  unit tests ship in every project; admin-only, with self-erasure refused. Matrix
+                  73/0.
+                </p>
+              </div>
+            </div>
+
             {/* v3.90.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
