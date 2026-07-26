@@ -126,6 +126,52 @@ function buildCommand(s: BuilderState): string {
   return parts.join(' ')
 }
 
+// Presets are common starting points — one click sets the whole stack. The
+// name is kept out of them so a preset never clobbers what the user typed.
+const PRESETS: { name: string; desc: string; state: Omit<BuilderState, 'name'> }[] = [
+  { name: 'Full-stack SaaS', desc: 'Web + admin + API, glass admin', state: { arch: 'triple', frontend: 'next', desktop: false, expo: false, style: 'glass', theme: 'atlas' } },
+  { name: 'API service', desc: 'Go API only', state: { arch: 'api', frontend: 'next', desktop: false, expo: false, style: 'default', theme: 'atlas' } },
+  { name: 'Web + mobile', desc: 'Web, API and an Expo app', state: { arch: 'triple', frontend: 'next', desktop: false, expo: true, style: 'default', theme: 'atlas' } },
+  { name: 'Everything', desc: 'Full: web, admin, docs, mobile, desktop', state: { arch: 'full', frontend: 'next', desktop: false, expo: false, style: 'default', theme: 'atlas' } },
+]
+
+// URL state — the selection round-trips through the query string so a stack is
+// shareable by link. Only non-default values are written, keeping URLs short;
+// everything is validated on the way back in so a hand-edited URL can never put
+// the builder into a state that emits an invalid command.
+const ARCH_IDS = ARCHITECTURES.map((a) => a.id)
+const FE_IDS = FRONTENDS.map((f) => f.id)
+const STYLE_IDS = STYLES.map((s) => s.id)
+const THEME_IDS = THEMES.map((t) => t.id)
+
+function encodeState(s: BuilderState): string {
+  const p = new URLSearchParams()
+  if (s.name.trim() && s.name.trim() !== 'my-app') p.set('name', s.name.trim())
+  p.set('arch', s.arch)
+  if (archById(s.arch).hasFrontend && s.frontend !== 'next') p.set('fe', s.frontend)
+  if (s.arch !== 'full' && s.desktop && desktopAvailable(s.arch)) p.set('desktop', '1')
+  if (s.arch !== 'full' && s.expo && expoAvailable(s.arch)) p.set('expo', '1')
+  if (archById(s.arch).hasAdmin && s.style !== 'default') p.set('style', s.style)
+  if (archById(s.arch).hasFrontend && s.theme !== 'atlas') p.set('theme', s.theme)
+  return p.toString()
+}
+
+function decodeState(qs: string): BuilderState {
+  const p = new URLSearchParams(qs)
+  const pick = <T extends string>(v: string | null, allowed: readonly T[], fallback: T): T =>
+    v && (allowed as readonly string[]).includes(v) ? (v as T) : fallback
+  const arch = pick(p.get('arch'), ARCH_IDS, DEFAULT_STATE.arch)
+  return {
+    name: p.get('name')?.slice(0, 60) || DEFAULT_STATE.name,
+    arch,
+    frontend: pick(p.get('fe'), FE_IDS, DEFAULT_STATE.frontend),
+    desktop: p.get('desktop') === '1',
+    expo: p.get('expo') === '1',
+    style: pick(p.get('style'), STYLE_IDS, DEFAULT_STATE.style),
+    theme: pick(p.get('theme'), THEME_IDS, DEFAULT_STATE.theme),
+  }
+}
+
 function Card({
   active, onClick, disabled, icon: Icon, name, desc, badge,
 }: {
@@ -185,6 +231,25 @@ export function StackBuilder() {
   const arch = archById(state.arch)
   const command = React.useMemo(() => buildCommand(state), [state])
 
+  // Hydrate from the URL once on mount. This runs client-only, so the server
+  // always renders DEFAULT_STATE and there's no hydration mismatch.
+  const hydrated = React.useRef(false)
+  React.useEffect(() => {
+    const qs = window.location.search.replace(/^\?/, '')
+    if (qs) setState(decodeState(qs))
+    hydrated.current = true
+  }, [])
+
+  // Mirror state back into the URL so any stack is shareable by link. Only
+  // non-defaults are written (see encodeState), keeping the URL short.
+  const [shareUrl, setShareUrl] = React.useState('')
+  React.useEffect(() => {
+    const qs = encodeState(state)
+    const path = window.location.pathname
+    if (hydrated.current) window.history.replaceState(null, '', qs ? `${path}?${qs}` : path)
+    setShareUrl(`${window.location.origin}${path}${qs ? `?${qs}` : ''}`)
+  }, [state])
+
   // Selected-stack chips — only the things that actually shape the command.
   const chips: string[] = [state.arch]
   if (arch.hasFrontend) chips.push(state.frontend === 'vite' ? 'tanstack' : 'next')
@@ -218,7 +283,10 @@ export function StackBuilder() {
         <div>
           <div className="mb-2 flex items-center justify-between">
             <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Command</span>
-            <CopyButton text={command} variant="ghost" className="h-7 px-2 text-xs">Copy</CopyButton>
+            <div className="flex items-center gap-1">
+              <CopyButton text={shareUrl} variant="ghost" className="h-7 px-2 text-xs">Share link</CopyButton>
+              <CopyButton text={command} variant="ghost" className="h-7 px-2 text-xs">Copy</CopyButton>
+            </div>
           </div>
           <div className="rounded-lg border border-border bg-background/60 p-3">
             <code className="block whitespace-pre-wrap break-words font-mono text-[13px] leading-relaxed text-foreground">
@@ -259,6 +327,23 @@ export function StackBuilder() {
 
       {/* Right: options */}
       <div className="space-y-10">
+        <Section label="Presets" hint="Start from a common stack">
+          <div className="flex flex-wrap gap-2">
+            {PRESETS.map((p) => (
+              <button
+                key={p.name}
+                type="button"
+                onClick={() => setState((s) => ({ ...p.state, name: s.name }))}
+                title={p.desc}
+                className="rounded-lg border border-border bg-card/40 px-3 py-2 text-left transition-all hover:border-primary/40 hover:bg-card/60"
+              >
+                <span className="block text-[13px] font-medium text-foreground">{p.name}</span>
+                <span className="block text-[11px] text-muted-foreground">{p.desc}</span>
+              </button>
+            ))}
+          </div>
+        </Section>
+
         <Section label="Architecture" hint="What gets scaffolded">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {ARCHITECTURES.map((a) => (
