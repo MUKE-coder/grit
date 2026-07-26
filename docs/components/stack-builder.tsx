@@ -3,7 +3,7 @@
 import * as React from 'react'
 import {
   Layers, Boxes, Globe, Server, Smartphone, Monitor,
-  Check, Terminal, Sparkles, Palette, Zap, RotateCcw,
+  Check, Terminal, Sparkles, Palette, Zap, RotateCcw, FolderTree,
 } from 'lucide-react'
 import { CopyButton } from '@/components/copy-button'
 import { cn } from '@/lib/utils'
@@ -126,6 +126,73 @@ function buildCommand(s: BuilderState): string {
   return parts.join(' ')
 }
 
+// Preview tree — what `grit new` actually writes for the current selection.
+// The shapes here are ground-truthed against real scaffolds: single is a
+// single-binary Go app with an embedded frontend (no monorepo); api is just
+// apps/api; the rest are Turborepo monorepos whose apps/ set follows the arch
+// and add-ons. The extra mobile app scaffolds to apps/expo, not apps/mobile.
+interface TreeNode {
+  name: string
+  note?: string
+  children?: TreeNode[]
+}
+
+function buildTree(s: BuilderState): TreeNode {
+  const name = (s.name.trim() || 'my-app') + '/'
+
+  if (s.arch === 'single') {
+    return {
+      name,
+      children: [
+        { name: 'cmd/', note: 'server entrypoint' },
+        { name: 'internal/', note: 'handlers, services, models' },
+        { name: 'frontend/', note: s.frontend === 'vite' ? 'embedded TanStack SPA' : 'embedded React SPA' },
+        { name: 'main.go' },
+        { name: 'go.mod' },
+        { name: 'Dockerfile' },
+        { name: 'docker-compose.yml' },
+        { name: 'README.md' },
+      ],
+    }
+  }
+
+  const feNote = s.frontend === 'vite' ? 'TanStack Router (Vite)' : 'Next.js (App Router)'
+  const apps: TreeNode[] = [{ name: 'api/', note: 'Go + Gin + GORM' }]
+  if (s.arch === 'double' || s.arch === 'triple' || s.arch === 'full') apps.push({ name: 'web/', note: feNote })
+  if (s.arch === 'triple' || s.arch === 'full') apps.push({ name: 'admin/', note: 'admin panel' })
+  const withExpo = s.arch === 'mobile' || s.arch === 'full' || (expoAvailable(s.arch) && s.expo)
+  if (withExpo) apps.push({ name: 'expo/', note: 'Expo mobile app' })
+  const withDesktop = s.arch === 'full' || (desktopAvailable(s.arch) && s.desktop)
+  if (withDesktop) apps.push({ name: 'desktop/', note: 'Wails desktop app' })
+  if (s.arch === 'full') apps.push({ name: 'docs/', note: 'documentation site' })
+
+  const children: TreeNode[] = [{ name: 'apps/', children: apps }]
+  // api-only skips the monorepo tooling and the shared package.
+  if (s.arch !== 'api') {
+    children.push({ name: 'packages/', children: [{ name: 'shared/', note: 'Zod schemas + TS types' }] })
+  }
+  children.push({ name: 'docker-compose.yml' })
+  if (s.arch !== 'api') {
+    children.push({ name: 'turbo.json' })
+    children.push({ name: 'pnpm-workspace.yaml' })
+    children.push({ name: 'grit.config.ts' })
+  }
+  children.push({ name: 'README.md' })
+  return { name, children }
+}
+
+function flattenTree(node: TreeNode, prefix = '', isRoot = true): { line: string; note?: string }[] {
+  const rows: { line: string; note?: string }[] = []
+  if (isRoot) rows.push({ line: node.name })
+  const kids = node.children ?? []
+  kids.forEach((k, i) => {
+    const last = i === kids.length - 1
+    rows.push({ line: prefix + (last ? '└─ ' : '├─ ') + k.name, note: k.note })
+    if (k.children) rows.push(...flattenTree(k, prefix + (last ? '   ' : '│  '), false))
+  })
+  return rows
+}
+
 // Presets are common starting points — one click sets the whole stack. The
 // name is kept out of them so a preset never clobbers what the user typed.
 const PRESETS: { name: string; desc: string; state: Omit<BuilderState, 'name'> }[] = [
@@ -225,6 +292,7 @@ function Section({ label, hint, children }: { label: string; hint?: string; chil
 
 export function StackBuilder() {
   const [state, setState] = React.useState<BuilderState>(DEFAULT_STATE)
+  const [view, setView] = React.useState<'configure' | 'preview'>('configure')
   const set = <K extends keyof BuilderState>(key: K, value: BuilderState[K]) =>
     setState((s) => ({ ...s, [key]: value }))
 
@@ -261,6 +329,8 @@ export function StackBuilder() {
   }
   if (arch.hasAdmin && state.style !== 'default') chips.push(state.style)
   if (arch.hasFrontend && state.theme !== 'atlas') chips.push(state.theme)
+
+  const treeRows = React.useMemo(() => flattenTree(buildTree(state)), [state])
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[340px_1fr]">
@@ -325,8 +395,46 @@ export function StackBuilder() {
         </p>
       </aside>
 
-      {/* Right: options */}
+      {/* Right: Configure / Preview */}
       <div className="space-y-10">
+        <div className="inline-flex rounded-lg border border-border bg-card/40 p-1">
+          {(['configure', 'preview'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-mono text-xs uppercase tracking-wider transition-colors',
+                view === v ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {v === 'configure' ? <Terminal className="h-3.5 w-3.5" /> : <FolderTree className="h-3.5 w-3.5" />}
+              {v}
+            </button>
+          ))}
+        </div>
+
+        {view === 'preview' && (
+          <Section label="Project structure" hint="What grit new writes">
+            <div className="overflow-x-auto rounded-xl border border-border bg-background/60 p-4">
+              <pre className="font-mono text-[13px] leading-relaxed">
+                {treeRows.map((r, i) => (
+                  <div key={i} className="flex">
+                    <span className="whitespace-pre text-foreground">{r.line}</span>
+                    {r.note && <span className="ml-3 shrink-0 text-muted-foreground"># {r.note}</span>}
+                  </div>
+                ))}
+              </pre>
+            </div>
+            <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
+              Top-level layout only. Each app ships with its own tests, Dockerfile, and config;
+              run the command to get the full tree.
+            </p>
+          </Section>
+        )}
+
+        {view === 'configure' && (
+        <>
         <Section label="Presets" hint="Start from a common stack">
           <div className="flex flex-wrap gap-2">
             {PRESETS.map((p) => (
@@ -442,6 +550,8 @@ export function StackBuilder() {
               ))}
             </div>
           </Section>
+        )}
+        </>
         )}
       </div>
     </div>
