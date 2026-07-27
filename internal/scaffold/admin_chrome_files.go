@@ -1200,14 +1200,16 @@ func adminDarkModeCSSAddon() string {
 
 .dark[data-theme="aurora"],
 [data-theme-mode="dark"][data-theme="aurora"] {
-  --accent: #a78bfa;
-  --accent-hover: #c4b5fd;
+  /* Apple-dark greys — kept dark enough that the white button label reads. */
+  --accent: #48484a;
+  --accent-hover: #636366;
 }
 
 .dark[data-theme="pulse"],
 [data-theme-mode="dark"][data-theme="pulse"] {
-  --accent: #fbbf24;
-  --accent-hover: #fcd34d;
+  /* Cloudflare blue, brightened one step for the dark canvas. */
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
 }
 
 /* Form controls + selection still need the dark hint or the browser
