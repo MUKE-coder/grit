@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.95.0"
+var version = "3.96.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -311,6 +311,7 @@ func generateCmd() *cobra.Command {
 	cmd.AddCommand(generateSequenceCmd())
 	cmd.AddCommand(generateSeederCmd())
 	cmd.AddCommand(generatePerfCmd())
+	cmd.AddCommand(generateFieldCmd())
 
 	return cmd
 }
@@ -406,6 +407,39 @@ Examples:
 	cmd.Flags().StringVar(&duration, "duration", "30s", "How long to hold at peak (e.g. 30s, 2m)")
 	cmd.Flags().StringVar(&target, "target", "http://localhost:8080", "Default base URL (override at run time with BASE_URL)")
 
+	return cmd
+}
+
+func generateFieldCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "field <Resource> <name:type[:options]>",
+		Short: "Add a field (column) to an existing resource",
+		Long: `Add one field to an already-generated resource, in place. It injects the
+column into the Go model, the create/update Zod schemas, the TypeScript type,
+and the admin form + table. The database column is added by GORM on the next
+"grit migrate" (the model is the source of truth), so no migration file is
+written.
+
+Supports scalar, select, and toggle types. For relationship, file, slug, or
+array fields, regenerate the resource instead.
+
+Examples:
+  grit g field Invoice status:select:draft=Draft|sent=Sent|paid=Paid
+  grit g field Invoice notes:text
+  grit g field Invoice paid:toggle`,
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+			if err := generate.AddField(args[0], args[1]); err != nil {
+				return err
+			}
+			fmt.Println()
+			green := color.New(color.FgGreen)
+			green.Printf("  Field added to %s.\n", args[0])
+			color.New(color.FgHiBlack).Println("  Run 'grit migrate' to add the database column.")
+			return nil
+		},
+	}
 	return cmd
 }
 

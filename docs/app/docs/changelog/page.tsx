@@ -28,6 +28,42 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.96.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.96.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>grit g field — add a column to an existing resource.</strong>{" "}
+                  Forgot a field? Add it in place without regenerating:
+                </p>
+                <pre><code>{`grit g field Invoice status:select:draft=Draft|sent=Sent|paid=Paid
+grit g field Invoice notes:text`}</code></pre>
+                <p>
+                  It injects the column into the Go model, the create/update Zod schemas, the
+                  TypeScript type, and the admin form + table — in place, at structural anchors, so
+                  it works on resources generated before the command existed and never disturbs
+                  your hand edits. The database column is added by GORM on the next{" "}
+                  <code>grit migrate</code> (the model is the source of truth), so there&apos;s no
+                  migration file to manage. Re-running is idempotent.
+                </p>
+                <p>
+                  Supports scalar, select, and toggle types; relationship, file, slug, and array
+                  fields still want a regenerate (they change imports and joins), and the command
+                  says so. Proven end to end: added a select and a text field to a generated
+                  Invoice, confirmed all five injections, rebuilt the API, ran{" "}
+                  <code>grit migrate</code> and watched it ALTER the live table (&ldquo;added 1
+                  column(s): priority&rdquo;), and rebuilt the admin clean. 4 unit tests. Matrix
+                  73/0.
+                </p>
+              </div>
+            </div>
+
             {/* v3.95.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
