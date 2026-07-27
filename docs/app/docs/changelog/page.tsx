@@ -28,6 +28,35 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.93.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.93.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>grit generate perf — a k6 load test for your API.</strong>{" "}
+                  <code>grit generate perf</code> writes <code>perf/load.js</code> and a runbook.
+                  The script follows Grit&apos;s conventions: it registers and logs in a user in
+                  k6&apos;s <code>setup()</code> to mint a bearer token, then every virtual user
+                  hits the health check, an authenticated profile read, and — with{" "}
+                  <code>--resource Blog</code> — that resource&apos;s list endpoint.
+                </p>
+                <p>
+                  Thresholds (p95 &lt; 500ms, error rate &lt; 1%) fail the run on a regression, so
+                  it doubles as a CI gate, not just an ad-hoc benchmark. Flags: <code>--resource</code>,{" "}
+                  <code>--vus</code>, <code>--duration</code>, <code>--target</code>; override the
+                  base URL at run time with <code>BASE_URL</code>. Proven by generating the script
+                  in a scaffolded project and running k6 against a live server — hundreds of
+                  iterations across 15 VUs with no failures. 6 generator unit tests. Matrix 73/0.
+                </p>
+              </div>
+            </div>
+
             {/* v3.92.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.92.0"
+var version = "3.93.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -310,6 +310,7 @@ func generateCmd() *cobra.Command {
 	cmd.AddCommand(generateResourceCmd())
 	cmd.AddCommand(generateSequenceCmd())
 	cmd.AddCommand(generateSeederCmd())
+	cmd.AddCommand(generatePerfCmd())
 
 	return cmd
 }
@@ -356,6 +357,54 @@ Examples:
 
 	cmd.Flags().BoolVar(&faker, "faker", false, "Fill many rows with gofakeit instead of one example record")
 	cmd.Flags().IntVar(&count, "count", 10, "Number of rows for the faker seeder")
+
+	return cmd
+}
+
+func generatePerfCmd() *cobra.Command {
+	var resource string
+	var vus int
+	var duration string
+	var target string
+
+	cmd := &cobra.Command{
+		Use:   "perf",
+		Short: "Generate a k6 load test for this API",
+		Long: `Generate a k6 load test (perf/load.js) plus a runbook (perf/README.md).
+
+The script follows Grit's API conventions: it registers and logs in a user in
+setup() to get a bearer token, then every virtual user hits the health check,
+the authenticated profile read, and — with --resource — that resource's list
+endpoint. Thresholds (p95 < 500ms, error rate < 1%) fail the run on a
+regression, so it works as a CI gate as well as an ad-hoc benchmark.
+
+Examples:
+  grit generate perf
+  grit generate perf --resource Blog --vus 50 --duration 1m
+  grit generate perf --target https://staging.example.com`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			printLogo()
+
+			if err := generate.GeneratePerf(generate.PerfOptions{
+				Resource: resource,
+				VUs:      vus,
+				Duration: duration,
+				BaseURL:  target,
+			}); err != nil {
+				return err
+			}
+
+			fmt.Println()
+			color.New(color.FgGreen).Println("  Load test created: perf/load.js")
+			color.New(color.FgHiBlack).Println("  Run it with: k6 run perf/load.js")
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&resource, "resource", "", "Also load-test this resource's list endpoint (e.g. Blog)")
+	cmd.Flags().IntVar(&vus, "vus", 20, "Peak number of virtual users")
+	cmd.Flags().StringVar(&duration, "duration", "30s", "How long to hold at peak (e.g. 30s, 2m)")
+	cmd.Flags().StringVar(&target, "target", "http://localhost:8080", "Default base URL (override at run time with BASE_URL)")
 
 	return cmd
 }
