@@ -20,7 +20,7 @@ import { useResourceItem, useResource, useDeleteResource } from "@/hooks/use-res
 import { renderCell } from "@/components/tables/cell-renderers";
 import { DataTable } from "@/components/tables/data-table";
 import { FormSheet } from "@/components/forms/form-sheet";
-import { ArrowLeft, Pencil, Trash2, Loader2 } from "@/lib/icons";
+import { ArrowLeft, Pencil, Trash2, Loader2, Printer } from "@/lib/icons";
 
 interface ResourceDetailPageProps {
   resource: ResourceDefinition;
@@ -95,20 +95,26 @@ export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
   const cols = resource.table.columns.filter((c) => !c.hidden);
 
   return (
-    <div>
+    <div id="print-area">
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link
             href={"/resources/" + resource.slug}
-            className="mb-2 inline-flex items-center gap-1 text-xs text-text-muted hover:text-foreground"
+            className="no-print mb-2 inline-flex items-center gap-1 text-xs text-text-muted hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back to {resource.label?.plural ?? resource.name}
           </Link>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{titleOf(resource, record)}</h1>
           <p className="text-sm text-text-muted">{resource.label?.singular ?? resource.name} details</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="no-print flex items-center gap-2">
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-text-secondary hover:border-accent/40 hover:text-foreground transition-colors"
+          >
+            <Printer className="h-4 w-4" /> Print
+          </button>
           <button
             onClick={() => setEditing(true)}
             className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
@@ -158,7 +164,8 @@ export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
         ) : null
       )}
 
-      {/* Related registry resources */}
+      {/* Related registry resources — not part of the printed record */}
+      <div className="no-print">
       {related.map(({ resource: r, fk }) => (
         <RelatedTable
           key={r.slug}
@@ -170,6 +177,7 @@ export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
           slug={r.slug}
         />
       ))}
+      </div>
 
       {editing && <FormSheet resource={resource} item={record} onClose={() => setEditing(false)} />}
     </div>

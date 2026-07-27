@@ -647,6 +647,22 @@ func adminGlobalCSS() string {
 @tailwind components;
 @tailwind utilities;
 
+/* Print: isolate the record. Everything is hidden, then only #print-area (the
+ * detail card + line items) is made visible and floated to the top-left, so the
+ * sidebar, navbar and action buttons never reach the paper. Resource detail
+ * pages wrap their printable content in #print-area and mark controls .no-print. */
+@media print {
+  body * { visibility: hidden !important; }
+  #print-area, #print-area * { visibility: visible !important; }
+  #print-area {
+    position: absolute !important;
+    left: 0; top: 0; width: 100%;
+    padding: 0 !important; margin: 0 !important;
+  }
+  .no-print { display: none !important; }
+  body { background: #fff !important; }
+}
+
 /* v3.28.1 — theme-aware CSS variables.
  *
  * Each theme overrides the variable set via [data-theme="<name>"] on the

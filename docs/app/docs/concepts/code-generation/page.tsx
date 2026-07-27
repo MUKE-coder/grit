@@ -491,7 +491,7 @@ fields:
                         <td className="px-4 py-2.5 font-mono text-xs">type</td>
                         <td className="px-4 py-2.5 font-mono text-xs">string</td>
                         <td className="px-4 py-2.5 font-mono text-xs">(required)</td>
-                        <td className="px-4 py-2.5 text-xs">One of: string, text, richtext, int, uint, float, bool, datetime, date, slug, belongs_to, many_to_many, string_array, file, files</td>
+                        <td className="px-4 py-2.5 text-xs">One of: string, text, richtext, int, uint, float, bool, toggle, select, check, datetime, date, slug, belongs_to, many_to_many, string_array, file, files</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">required</td>
@@ -654,6 +654,22 @@ grit migrate`} />
                         <td className="px-3 py-2.5 font-mono text-xs">(none)</td>
                         <td className="px-3 py-2.5 font-mono text-xs">boolean</td>
                         <td className="px-3 py-2.5 font-mono text-xs">toggle</td>
+                        <td className="px-3 py-2.5 text-xs">No</td>
+                        <td className="px-3 py-2.5 text-xs">No</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-3 py-2.5 font-mono text-xs">select</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">size:255</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">text</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">select</td>
+                        <td className="px-3 py-2.5 text-xs">No</td>
+                        <td className="px-3 py-2.5 text-xs">No</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-3 py-2.5 font-mono text-xs">check</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">type:json</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">&mdash;</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">checkbox-group</td>
                         <td className="px-3 py-2.5 text-xs">No</td>
                         <td className="px-3 py-2.5 text-xs">No</td>
                       </tr>

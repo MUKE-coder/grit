@@ -688,6 +688,14 @@ grit deploy`} />
                         <td className="px-4 py-2.5">Generate a sequential numbering helper (e.g. INV-202605-0001)</td>
                       </tr>
                       <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit generate field &lt;Resource&gt; &lt;spec&gt;</td>
+                        <td className="px-4 py-2.5">Add a column to an existing resource (model + Zod + TS + admin)</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit generate perf</td>
+                        <td className="px-4 py-2.5">Generate a k6 load test (perf/load.js) for the API</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit remove resource &lt;Name&gt;</td>
                         <td className="px-4 py-2.5">Remove a generated resource and clean up markers</td>
                       </tr>
