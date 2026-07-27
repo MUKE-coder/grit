@@ -338,6 +338,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "forms", "fields", "toggle-field.tsx"):                    adminToggleField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "checkbox-field.tsx"):                  adminCheckboxField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "radio-field.tsx"):                     adminRadioField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "checkbox-group-field.tsx"):           adminCheckboxGroupField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "image-field.tsx"):                     adminImageField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "images-field.tsx"):                    adminImagesField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "video-field.tsx"):                     adminVideoField(),

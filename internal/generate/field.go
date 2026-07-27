@@ -24,6 +24,14 @@ const (
 	FieldStringArray FieldType = "string_array"
 	FieldFile        FieldType = "file"  // single FileRef
 	FieldFiles       FieldType = "files" // []FileRef
+
+	// Option-backed types. select = one value from a fixed list (dropdown);
+	// check = zero-or-more values (checkbox group, stored as a JSON array);
+	// toggle = an on/off boolean (a friendlier alias for bool). Options are
+	// declared as value=Label pairs: "status:select:draft=Draft|paid=Paid".
+	FieldSelect FieldType = "select"
+	FieldCheck  FieldType = "check"
+	FieldToggle FieldType = "toggle"
 )
 
 // Field describes a single field in a resource.
@@ -42,6 +50,69 @@ type Field struct {
 	// Values are aliases ("image", "video", "pdf", "all", ...) — see
 	// resolveFileMIMEs() in the scaffolded API for the runtime mapping.
 	FileAccepts []string `yaml:"file_accepts,omitempty"`
+
+	// Options holds the value=Label choices for select/check fields, parsed
+	// from the third position of name:select:v1=L1|v2=L2.
+	Options []FieldOption `yaml:"options,omitempty"`
+}
+
+// FieldOption is one choice in a select or check field: Value is stored,
+// Label is shown.
+type FieldOption struct {
+	Value string `yaml:"value"`
+	Label string `yaml:"label"`
+}
+
+// IsSelect reports a single-choice dropdown field.
+func (f Field) IsSelect() bool { return FieldType(f.Type) == FieldSelect }
+
+// IsCheck reports a multi-choice checkbox-group field (stored as a JSON array).
+func (f Field) IsCheck() bool { return FieldType(f.Type) == FieldCheck }
+
+// IsToggle reports an on/off boolean field.
+func (f Field) IsToggle() bool { return FieldType(f.Type) == FieldToggle }
+
+// HasOptions reports whether this field carries a value=Label option list.
+func (f Field) HasOptions() bool { return len(f.Options) > 0 }
+
+// OptionValues returns just the stored values, in declared order — used to
+// build Zod enums and TS unions.
+func (f Field) OptionValues() []string {
+	vals := make([]string, len(f.Options))
+	for i, o := range f.Options {
+		vals[i] = o.Value
+	}
+	return vals
+}
+
+// tsUnion renders the option values as a TypeScript string-literal union,
+// e.g. `"draft" | "sent" | "paid"`.
+func (f Field) tsUnion() string {
+	parts := make([]string, len(f.Options))
+	for i, o := range f.Options {
+		parts[i] = fmt.Sprintf("%q", o.Value)
+	}
+	return strings.Join(parts, " | ")
+}
+
+// zodEnumList renders the option values as a comma-separated quoted list for
+// z.enum([...]), e.g. `"draft", "sent", "paid"`.
+func (f Field) zodEnumList() string {
+	parts := make([]string, len(f.Options))
+	for i, o := range f.Options {
+		parts[i] = fmt.Sprintf("%q", o.Value)
+	}
+	return strings.Join(parts, ", ")
+}
+
+// OptionsLiteral renders the options as a TS array-of-objects for the admin
+// form definition: `[{ value: "draft", label: "Draft" }, ...]`.
+func (f Field) OptionsLiteral() string {
+	parts := make([]string, len(f.Options))
+	for i, o := range f.Options {
+		parts[i] = fmt.Sprintf("{ value: %q, label: %q }", o.Value, o.Label)
+	}
+	return "[" + strings.Join(parts, ", ") + "]"
 }
 
 // IsSlug returns true if this field is an auto-generated slug.
@@ -86,7 +157,7 @@ func (f Field) IsFileField() bool {
 
 // NeedsDatatypesImport returns true if this field requires "gorm.io/datatypes" import.
 func (f Field) NeedsDatatypesImport() bool {
-	return FieldType(f.Type) == FieldStringArray
+	return FieldType(f.Type) == FieldStringArray || FieldType(f.Type) == FieldCheck
 }
 
 // NeedsFilesImport returns true if this field requires the models/files
@@ -109,8 +180,12 @@ func (f Field) GoType() string {
 		return "string"
 	case FieldFloat:
 		return "float64"
-	case FieldBool:
+	case FieldBool, FieldToggle:
 		return "bool"
+	case FieldSelect:
+		return "string"
+	case FieldCheck:
+		return "datatypes.JSONSlice[string]"
 	case FieldDatetime, FieldDate:
 		return "*time.Time"
 	case FieldManyToMany:
@@ -160,8 +235,10 @@ func (f Field) GORMTag() string {
 	case FieldBelongsTo:
 		// FK matches the referenced model's UUID string PK.
 		parts = append(parts, "size:36", "index")
-	case FieldStringArray:
+	case FieldStringArray, FieldCheck:
 		parts = append(parts, "type:json")
+	case FieldSelect:
+		parts = append(parts, "size:255")
 	case FieldFile, FieldFiles:
 		// FileRef / FileRefs implement Value / Scan via the files package,
 		// so GORM stores them as JSON. type:json signals jsonb on Postgres
@@ -216,8 +293,18 @@ func (f Field) TSType() string {
 	case FieldBelongsTo:
 		// FK columns match the referenced model's UUID string PK.
 		return "string"
-	case FieldBool:
+	case FieldBool, FieldToggle:
 		return "boolean"
+	case FieldSelect:
+		if f.HasOptions() {
+			return f.tsUnion()
+		}
+		return "string"
+	case FieldCheck:
+		if f.HasOptions() {
+			return "(" + f.tsUnion() + ")[]"
+		}
+		return "string[]"
 	case FieldDatetime, FieldDate:
 		return "string | null"
 	case FieldManyToMany:
@@ -252,8 +339,20 @@ func (f Field) ZodType() string {
 		base = "z.number().int().nonnegative()"
 	case FieldFloat:
 		base = "z.number()"
-	case FieldBool:
+	case FieldBool, FieldToggle:
 		base = "z.boolean()"
+	case FieldSelect:
+		if f.HasOptions() {
+			base = "z.enum([" + f.zodEnumList() + "])"
+		} else {
+			base = "z.string()"
+		}
+	case FieldCheck:
+		if f.HasOptions() {
+			base = "z.array(z.enum([" + f.zodEnumList() + "])).optional()"
+		} else {
+			base = "z.array(z.string()).optional()"
+		}
 	case FieldDatetime, FieldDate:
 		base = "z.string().nullable()"
 	case FieldBelongsTo:
@@ -274,7 +373,7 @@ func (f Field) ZodType() string {
 		base = "z.string()"
 	}
 
-	if !f.Required && FieldType(f.Type) != FieldDatetime && FieldType(f.Type) != FieldDate && FieldType(f.Type) != FieldSlug && FieldType(f.Type) != FieldRichtext && FieldType(f.Type) != FieldBelongsTo && FieldType(f.Type) != FieldManyToMany && FieldType(f.Type) != FieldStringArray && FieldType(f.Type) != FieldFile && FieldType(f.Type) != FieldFiles {
+	if !f.Required && FieldType(f.Type) != FieldDatetime && FieldType(f.Type) != FieldDate && FieldType(f.Type) != FieldSlug && FieldType(f.Type) != FieldRichtext && FieldType(f.Type) != FieldBelongsTo && FieldType(f.Type) != FieldManyToMany && FieldType(f.Type) != FieldStringArray && FieldType(f.Type) != FieldCheck && FieldType(f.Type) != FieldFile && FieldType(f.Type) != FieldFiles {
 		base += ".optional()"
 	}
 
@@ -316,8 +415,12 @@ func (f Field) FormFieldType() string {
 		return "richtext"
 	case FieldInt, FieldUint, FieldFloat:
 		return "number"
-	case FieldBool:
+	case FieldBool, FieldToggle:
 		return "toggle"
+	case FieldSelect:
+		return "select"
+	case FieldCheck:
+		return "checkbox-group"
 	case FieldDatetime:
 		return "datetime"
 	case FieldDate:
@@ -356,7 +459,7 @@ func (f Field) IsSearchable() bool {
 
 // ValidFieldTypes returns all valid field type names.
 func ValidFieldTypes() []string {
-	return []string{"string", "text", "richtext", "int", "uint", "float", "bool", "datetime", "date", "slug", "belongs_to", "many_to_many", "string_array", "file", "files"}
+	return []string{"string", "text", "richtext", "int", "uint", "float", "bool", "toggle", "select", "check", "datetime", "date", "slug", "belongs_to", "many_to_many", "string_array", "file", "files"}
 }
 
 // FKColumnName returns the foreign key column name for a belongs_to field.

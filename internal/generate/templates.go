@@ -1511,6 +1511,11 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 		case FieldFloat:
 			parts = append(parts, `numberKind: "float"`)
 		}
+		// select / check carry their value=label choices so the SelectField /
+		// CheckboxGroupField can render the dropdown or checkboxes.
+		if f.HasOptions() {
+			parts = append(parts, "options: "+f.OptionsLiteral())
+		}
 
 		formFields += "\n    { " + strings.Join(parts, ", ") + " },"
 	}

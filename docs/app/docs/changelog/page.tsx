@@ -28,6 +28,48 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.95.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.95.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Option-backed field types: select, check, and toggle.</strong>{" "}
+                  Define dropdowns, checkbox groups, and switches — with their choices — right in
+                  the <code>--fields</code> string, and the whole stack is generated to match.
+                </p>
+                <pre><code>{`grit g resource Invoice --fields   "number:string,status:select:draft=Draft|sent=Sent|paid=Paid,   channels:check:email=Email|sms=SMS|push=Push,active:toggle"`}</code></pre>
+                <ul>
+                  <li>
+                    <code>select:v=Label|…</code> — a single choice. Go <code>string</code>, Zod{" "}
+                    <code>z.enum([…])</code>, a TS string-literal union, and a dropdown in the
+                    admin form.
+                  </li>
+                  <li>
+                    <code>check:v=Label|…</code> — many choices. Go{" "}
+                    <code>datatypes.JSONSlice[string]</code>, <code>z.array(z.enum([…]))</code>, and a
+                    checkbox group.
+                  </li>
+                  <li>
+                    <code>toggle</code> — an on/off boolean rendered as a switch. A bare option value
+                    like <code>in_progress</code> is auto-labeled &ldquo;In Progress&rdquo;.
+                  </li>
+                </ul>
+                <p>
+                  Proven end to end: 7 unit tests over the parser and every type mapping, the admin
+                  builds, the create form renders the dropdown / checkbox group / switch with the
+                  right labels, and a create round-trips with the right stored types — status a
+                  string, channels a JSON array, active a boolean. Matrix 73/0. (An add-column
+                  command, <code>grit g field</code>, follows next.)
+                </p>
+              </div>
+            </div>
+
             {/* v3.94.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
