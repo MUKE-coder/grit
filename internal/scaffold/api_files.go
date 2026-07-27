@@ -70,6 +70,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "services", "gdpr.go"):          apiGDPRServiceGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "gdpr.go"):          apiGDPRHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "gdpr_test.go"):     apiGDPRTestGo(),
+		filepath.Join(apiRoot, "internal", "crypto", "field.go"):      apiCryptoFieldGo(),
+		filepath.Join(apiRoot, "internal", "crypto", "field_test.go"): apiCryptoFieldTestGo(),
 		// v3.31.40 — per-user dashboard customisation
 		filepath.Join(apiRoot, "internal", "models", "dashboard_layout.go"):   dashboardLayoutModelGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "dashboard_layout.go"): strings.ReplaceAll(dashboardLayoutHandlerGo(), "{{MODULE}}", opts.Module()),
@@ -604,6 +606,8 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+
+	"{{MODULE}}/internal/crypto"
 )
 
 // StorageConfig holds credentials for a single S3-compatible provider.
@@ -697,6 +701,10 @@ type Config struct {
 	JWTAccessExpiry  time.Duration
 	JWTRefreshExpiry time.Duration
 
+	// FieldEncryptionKey (base64, 32 bytes) enables transparent AES-256-GCM on
+	// crypto.EncryptedString columns. Empty = disabled (values stored plaintext).
+	FieldEncryptionKey string
+
 	RedisURL string
 
 	// Storage
@@ -774,6 +782,7 @@ func Load() (*Config, error) {
 		AppURL:      getEnv("APP_URL", "http://localhost:8080"),
 		DatabaseURL: resolveDatabaseURL(),
 		JWTSecret:   getEnv("JWT_SECRET", ""),
+		FieldEncryptionKey: getEnv("FIELD_ENCRYPTION_KEY", ""),
 		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6380"),
 
 		StorageDriver: storageDriver,
@@ -842,6 +851,12 @@ func Load() (*Config, error) {
 	}
 	if len(cfg.JWTSecret) < 32 {
 		log.Println("WARNING: JWT_SECRET should be at least 32 characters for security. Generate one with: openssl rand -hex 32")
+	}
+
+	// Configure field-level encryption. A malformed key fails fast — running
+	// without the encryption you configured is worse than refusing to start.
+	if err := crypto.InitFieldKey(cfg.FieldEncryptionKey); err != nil {
+		return nil, err
 	}
 
 	// Parse durations
@@ -1071,6 +1086,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"{{MODULE}}/internal/crypto"
 )
 
 // Role constants
@@ -1091,7 +1108,7 @@ type User struct {
 	Role            string         ` + "`" + `gorm:"size:20;default:USER" json:"role"` + "`" + `
 	Avatar          string         ` + "`" + `gorm:"size:500" json:"avatar"` + "`" + `
 	JobTitle        string         ` + "`" + `gorm:"size:255" json:"job_title"` + "`" + `
-	Bio             string         ` + "`" + `gorm:"type:text" json:"bio"` + "`" + `
+	Bio             crypto.EncryptedString ` + "`" + `gorm:"type:text" json:"bio"` + "`" + `
 	Active          bool           ` + "`" + `gorm:"default:true" json:"active"` + "`" + `
 	Provider        string         ` + "`" + `gorm:"size:50;default:'local'" json:"provider"` + "`" + `
 	GoogleID        string         ` + "`" + `gorm:"size:255" json:"-"` + "`" + `
@@ -2211,6 +2228,7 @@ import (
 	"gorm.io/gorm"
 
 	"` + "{{MODULE}}" + `/internal/authz"
+	"` + "{{MODULE}}" + `/internal/crypto"
 	"` + "{{MODULE}}" + `/internal/models"
 	"` + "{{MODULE}}" + `/internal/services"
 )
@@ -2486,7 +2504,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 		updates["job_title"] = req.JobTitle
 	}
 	if req.Bio != "" {
-		updates["bio"] = req.Bio
+		updates["bio"] = crypto.EncryptedString(req.Bio)
 	}
 	if req.Active != nil {
 		updates["active"] = *req.Active
@@ -2647,7 +2665,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		updates["job_title"] = req.JobTitle
 	}
 	if req.Bio != "" {
-		updates["bio"] = req.Bio
+		updates["bio"] = crypto.EncryptedString(req.Bio)
 	}
 
 	if err := h.DB.Model(&user).Updates(updates).Error; err != nil {

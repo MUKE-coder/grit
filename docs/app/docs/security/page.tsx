@@ -133,10 +133,36 @@ func (i *Invoice) GetOwnerID() string { return i.UserID }`} />
             <code> JWT_SECRET</code> enforced at startup. The auth middleware verifies the
             algorithm explicitly so the classic <code>alg:none</code> attack is closed.
           </li>
+          <li>
+            <strong>Field-level encryption</strong> — declare a model field as{' '}
+            <code>crypto.EncryptedString</code> and it is transparently encrypted at rest with
+            AES-256-GCM. GORM stores ciphertext (tagged <code>enc:v1:</code> with a fresh nonce
+            per write) and your code reads plaintext; the column is opaque to anyone with the
+            database but no key.
+          </li>
         </ul>
         <p>
           Secrets live in environment variables, never in source. <code>.env</code> is in
           <code> .gitignore</code>; the scaffold ships only <code>.env.example</code>.
+        </p>
+        <p>
+          <strong>Encrypting a column.</strong> Set <code>FIELD_ENCRYPTION_KEY</code> (base64,
+          32 bytes — <code>openssl rand -base64 32</code>) and change a field&apos;s type from{' '}
+          <code>string</code> to <code>crypto.EncryptedString</code>. That&apos;s it — writes
+          encrypt, reads decrypt, and JSON responses stay plaintext. One rule: because every
+          write uses a fresh nonce the ciphertext is non-deterministic, so an encrypted column
+          can&apos;t be queried by equality. Use it for data you store and display but never
+          filter on — personal notes, tokens, contact details — not for keys or lookup columns
+          like email. With no key set the type passes values through as plaintext, so a project
+          can adopt encryption later without a migration. Keep the key backed up: lose it and the
+          encrypted columns are unrecoverable.
+        </p>
+        <p>
+          A subtlety the type handles for you: GORM map-based updates
+          (<code>Updates(map[string]any{`{"bio": ...}`})</code>) bypass a column&apos;s encoder
+          unless the value is itself an <code>EncryptedString</code> — pass a bare string and it
+          would store plaintext. The scaffolded handlers wrap the value, and the generated tests
+          check the raw column is ciphertext, so the trap is closed where it matters.
         </p>
       </>
     ),
