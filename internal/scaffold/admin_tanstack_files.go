@@ -659,8 +659,9 @@ func adminTanStackIndexHTML(opts Options) string {
 		fontLink = `<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />`
 		fontVars = "--font-display: 'Geist', system-ui, sans-serif;\n      --font-mono: 'Geist Mono', ui-monospace, monospace;"
 	case "pulse":
-		fontLink = `<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />`
-		fontVars = "--font-display: 'Onest', system-ui, sans-serif;\n      --font-serif: 'DM Serif Display', Georgia, serif;\n      --font-mono: 'JetBrains Mono', ui-monospace, monospace;"
+		// Cloudflare-inspired: clean sans throughout, no serif display face.
+		fontLink = `<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />`
+		fontVars = "--font-display: 'Onest', system-ui, sans-serif;\n      --font-mono: 'JetBrains Mono', ui-monospace, monospace;"
 	default: // atlas
 		fontLink = `<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />`
 		fontVars = "--font-display: 'Inter', system-ui, sans-serif;\n      --font-mono: 'JetBrains Mono', ui-monospace, monospace;"

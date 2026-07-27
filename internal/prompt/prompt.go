@@ -21,9 +21,11 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 	frontend := string(opts.Frontend)
 	theme := opts.Theme
 
+	// "full" is a sentinel, not an Architecture enum: it maps to opts.Full,
+	// which Normalize() expands to triple + web + admin + docs + expo + desktop.
 	needsFrontend := func() bool {
 		a := scaffold.Architecture(arch)
-		return a == scaffold.ArchSingle || a == scaffold.ArchDouble || a == scaffold.ArchTriple
+		return arch == "full" || a == scaffold.ArchSingle || a == scaffold.ArchDouble || a == scaffold.ArchTriple
 	}
 
 	form := huh.NewForm(
@@ -32,6 +34,7 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 				Key("arch").
 				Title("Select architecture").
 				Options(
+					huh.NewOption("Full — Web + Admin + API + Docs + Expo + Desktop (everything)", "full"),
 					huh.NewOption("Triple — Web + Admin + API (Turborepo)", string(scaffold.ArchTriple)),
 					huh.NewOption("Double — Web + API (Turborepo)", string(scaffold.ArchDouble)),
 					huh.NewOption("Single — Go API + embedded React SPA (one binary)", string(scaffold.ArchSingle)),
@@ -65,8 +68,8 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 				Description("Drives auth layout, dashboard tokens, fonts, and brand colors.").
 				Options(
 					huh.NewOption("Atlas — split-screen, blue/white, team/organisation (Inter)", "atlas"),
-					huh.NewOption("Aurora — centered Clerk-style, pastel, consumer SaaS (Geist)", "aurora"),
-					huh.NewOption("Pulse — split + hero carousel, bold, ecommerce/brand (Onest + DM Serif)", "pulse"),
+					huh.NewOption("Aurora — Apple-inspired, monochrome black/white/grey (Geist)", "aurora"),
+					huh.NewOption("Pulse — Cloudflare-inspired, premium blue, elevated cards (Onest)", "pulse"),
 				).
 				Value(&theme),
 		).WithHideFunc(func() bool {
@@ -78,7 +81,13 @@ func RunNewProjectPrompt(opts *scaffold.Options) error {
 		return err
 	}
 
-	opts.Architecture = scaffold.Architecture(arch)
+	if arch == "full" {
+		// Full is a shorthand, not an architecture. Normalize() turns opts.Full
+		// into triple + web + admin + docs + expo + desktop.
+		opts.Full = true
+	} else {
+		opts.Architecture = scaffold.Architecture(arch)
+	}
 	opts.Frontend = scaffold.Frontend(frontend)
 	opts.Theme = theme
 	return nil

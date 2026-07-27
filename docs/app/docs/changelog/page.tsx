@@ -28,6 +28,47 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.94.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.94.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Full in the interactive picker, and two themes reimagined.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>Full architecture</strong> is now the first option in{" "}
+                    <code>grit new</code>&apos;s interactive selector — Web + Admin + API + Docs +
+                    Expo + Desktop in one pick, the same as the <code>--full</code> flag.
+                  </li>
+                  <li>
+                    <strong>Aurora → Apple.</strong> Reworked into a monochrome, iCloud-inspired
+                    theme: near-black text and CTAs on white and Apple&apos;s warm greys, blue
+                    reserved for links only. The sign-in button is the black pill you know.
+                  </li>
+                  <li>
+                    <strong>Pulse → Cloudflare.</strong> A premium blue theme: Cloudflare-blue
+                    CTAs on a cool grey-blue canvas, white elevated cards, a deep-blue hero panel,
+                    and Cloudflare orange as the single warm accent. The serif display face is gone
+                    — clean Onest sans throughout.
+                  </li>
+                </ul>
+                <p>
+                  Both themes were reworked across every surface — the Next and TanStack admin,
+                  the web app, the auth pages, and the shared token bag — and verified in a
+                  browser: the Aurora login renders the Apple card-and-black-button look, the Pulse
+                  login the blue-hero split, and the Pulse dashboard the premium blue cards on the
+                  cool canvas. Matrix 73/0.
+                </p>
+              </div>
+            </div>
+
             {/* v3.93.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

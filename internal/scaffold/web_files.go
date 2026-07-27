@@ -261,39 +261,39 @@ func webGlobalCSS() string {
 }
 
 [data-theme="aurora"] {
-  --bg-primary: #fafaf9;
+  --bg-primary: #fbfbfd;
   --bg-secondary: #ffffff;
-  --bg-tertiary: #f5f5f4;
+  --bg-tertiary: #f5f5f7;
   --bg-elevated: #ffffff;
-  --bg-hover: #f5f5f4;
-  --border: #e7e5e4;
-  --text-primary: #1c1917;
-  --text-secondary: #57534e;
-  --text-muted: #a8a29e;
-  --accent: #7c3aed;
-  --accent-hover: #6d28d9;
+  --bg-hover: #f5f5f7;
+  --border: #d2d2d7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #424245;
+  --text-muted: #86868b;
+  --accent: #1d1d1f;
+  --accent-hover: #000000;
   --success: #10b981;
   --danger: #ef4444;
   --warning: #f59e0b;
-  --info: #0ea5e9;
+  --info: #0071e3;
 }
 
 [data-theme="pulse"] {
-  --bg-primary: #fafaf9;
+  --bg-primary: #f6f7f9;
   --bg-secondary: #ffffff;
-  --bg-tertiary: #f5f5f4;
+  --bg-tertiary: #eef1f5;
   --bg-elevated: #ffffff;
-  --bg-hover: #f5f5f4;
-  --border: #e5e5e5;
-  --text-primary: #0f0f0f;
-  --text-secondary: #525252;
-  --text-muted: #a3a3a3;
-  --accent: #0f0f0f;
-  --accent-hover: #1f1f1f;
+  --bg-hover: #eef1f5;
+  --border: #e0e4e9;
+  --text-primary: #1d1f26;
+  --text-secondary: #4b5563;
+  --text-muted: #8a94a6;
+  --accent: #0051c3;
+  --accent-hover: #003d99;
   --success: #16a34a;
   --danger: #dc2626;
-  --warning: #fbbf24;
-  --info: #0284c7;
+  --warning: #f6821f;
+  --info: #0051c3;
 }
 
 [data-theme="midnight"] {
@@ -527,12 +527,12 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-display", weight: ["
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500", "600"] });`
 		fontVars = "${geist.variable} ${geistMono.variable}"
 	case "pulse":
-		fontImport = `import { Onest, DM_Serif_Display, JetBrains_Mono } from "next/font/google";
+		fontImport = `import { Onest, JetBrains_Mono } from "next/font/google";
 
+// Pulse is Cloudflare-inspired: a clean sans throughout, no serif display face.
 const onest = Onest({ subsets: ["latin"], variable: "--font-display", weight: ["400", "500", "600", "700"] });
-const dmSerif = DM_Serif_Display({ subsets: ["latin"], variable: "--font-serif", weight: ["400"] });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500", "600"] });`
-		fontVars = "${onest.variable} ${dmSerif.variable} ${jetbrainsMono.variable}"
+		fontVars = "${onest.variable} ${jetbrainsMono.variable}"
 	default: // atlas
 		fontImport = `import { Inter, JetBrains_Mono } from "next/font/google";
 
