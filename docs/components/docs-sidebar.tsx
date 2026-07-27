@@ -112,6 +112,7 @@ const navItems: NavItem[] = [
       { title: 'Social Login (OAuth2)', href: '/docs/backend/oauth' },
       { title: 'API Response Format', href: '/docs/backend/response-format' },
       { title: 'Migrations', href: '/docs/backend/migrations' },
+      { title: 'Invoices & Line Items', href: '/docs/backend/invoices' },
       { title: 'Seeders', href: '/docs/backend/seeders' },
       { title: 'RBAC & Roles', href: '/docs/backend/rbac' },
       { title: 'API Documentation', href: '/docs/backend/api-docs' },

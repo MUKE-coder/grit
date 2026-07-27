@@ -198,6 +198,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Built-in Grit middleware: authentication, CORS, logging, rate limiting, cache, and how to write custom Gin middleware.',
   },
+  '/docs/backend/invoices': {
+    title: 'Invoices & Line Items',
+    description:
+      'Generate a parent resource with inline line items, create the parent and child separately, and auto-number records with grit generate sequence.',
+  },
   '/docs/backend/migrations': {
     title: 'Migrations',
     description:

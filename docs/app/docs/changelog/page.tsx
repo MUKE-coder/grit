@@ -28,6 +28,55 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.97.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.97.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 27, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Invoices &amp; line items — a guide, plus print.</strong> A new{" "}
+                  <a href="/docs/backend/invoices">Invoices &amp; Line Items</a> guide documents the
+                  parent-with-children pattern end to end — and it&apos;s generic: read
+                  &ldquo;Invoice&rdquo; as orders/order-items, purchase-orders/lines, or whatever
+                  you&apos;re modeling.
+                </p>
+                <ul>
+                  <li>
+                    <strong>One command vs. separate.</strong> The guide breaks down{" "}
+                    <code>--items</code> (child resource + inline line-items table, saved
+                    atomically with the parent) and shows the equivalent two{" "}
+                    <code>grit g resource</code> calls with an explicit{" "}
+                    <code>belongs_to</code> if you&apos;d rather build the pieces yourself.
+                  </li>
+                  <li>
+                    <strong>Auto-numbering.</strong> Documents <code>grit generate sequence</code>{" "}
+                    — atomic, gap-free numbers like <code>INV-202607-0001</code> backed by a DB
+                    counter — and how to call <code>NextInvoiceNumber</code> from{" "}
+                    <code>BeforeCreate</code> so every record is numbered without collisions.
+                  </li>
+                  <li>
+                    <strong>Print (new).</strong> Every generated resource detail page now has a{" "}
+                    <strong>Print</strong> button. A print stylesheet isolates the record: the
+                    detail content is wrapped in <code>#print-area</code> and everything else —
+                    sidebar, navbar, Edit/Delete controls, related tables — is hidden, so the
+                    printout is just the record and its line items.
+                  </li>
+                </ul>
+                <p>
+                  Proven in a browser against a live invoice with two line items: the Print button
+                  renders, <code>#print-area</code> wraps the details + items, the chrome carries{" "}
+                  <code>no-print</code>, and the <code>@media print</code> rules ship in the admin
+                  CSS. The print feature works on every resource with no per-resource code. Matrix
+                  73/0.
+                </p>
+              </div>
+            </div>
+
             {/* v3.96.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
