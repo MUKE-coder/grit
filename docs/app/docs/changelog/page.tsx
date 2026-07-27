@@ -28,6 +28,51 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.92.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.92.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 26, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Field-level encryption — transparent AES-256-GCM on any column.</strong>{" "}
+                  Declare a model field as <code>crypto.EncryptedString</code> and it is encrypted
+                  at rest: GORM stores ciphertext, your code reads plaintext, and JSON responses
+                  stay plaintext. The column is opaque to anyone with the database but not the key.
+                </p>
+                <ul>
+                  <li>
+                    Versioned scheme (<code>enc:v1:</code> = AES-256-GCM, fresh nonce per write) so
+                    it can rotate later. Key comes from <code>FIELD_ENCRYPTION_KEY</code> (base64,
+                    32 bytes); with no key set the type passes values through as plaintext, so a
+                    project can adopt encryption later without a migration.
+                  </li>
+                  <li>
+                    Non-deterministic by design, so encrypted columns can&apos;t be queried by
+                    equality — for data you store and display (notes, tokens, contact details),
+                    not keys or lookup columns. A malformed key fails startup rather than silently
+                    running without the encryption you configured.
+                  </li>
+                  <li>
+                    A footgun the type closes for you: GORM map-based Updates bypass a column&apos;s
+                    encoder unless the value is itself an <code>EncryptedString</code> — a bare
+                    string would store plaintext. The scaffolded handlers wrap the value, and it
+                    was proven at runtime that a bio set through the API lands in the database as
+                    ciphertext while the API still returns plaintext.
+                  </li>
+                </ul>
+                <p>
+                  7 unit tests ship in every project (round-trip, random nonce, wrong-key failure,
+                  disabled passthrough, key validation, JSON transparency, ciphertext on write).
+                  The User <code>bio</code> field ships as the worked example. Matrix 73/0.
+                </p>
+              </div>
+            </div>
+
             {/* v3.91.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

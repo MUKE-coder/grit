@@ -110,6 +110,10 @@ POSTGRES_PORT=5434
 
 # JWT — generated at scaffold time. Rotate with: openssl rand -hex 32
 JWT_SECRET=%s
+# Field-level encryption (optional). Set a base64 32-byte key to enable AES-256-GCM
+# on crypto.EncryptedString columns. Generate one: openssl rand -base64 32
+# Keep it safe and backed up — losing it makes encrypted columns unreadable.
+# FIELD_ENCRYPTION_KEY=
 JWT_ACCESS_EXPIRY=15m
 JWT_REFRESH_EXPIRY=168h
 
@@ -300,6 +304,10 @@ POSTGRES_PORT=5434                   # host port; 5432 inside docker network
 
 # JWT — Authentication tokens
 JWT_SECRET=change-me-in-production   # MUST change in production
+# Field-level encryption (optional). Set a base64 32-byte key to enable AES-256-GCM
+# on crypto.EncryptedString columns. Generate one: openssl rand -base64 32
+# Keep it safe and backed up — losing it makes encrypted columns unreadable.
+# FIELD_ENCRYPTION_KEY=
 JWT_ACCESS_EXPIRY=15m                # Access token lifetime
 JWT_REFRESH_EXPIRY=168h              # Refresh token lifetime (7 days)
 
@@ -416,6 +424,10 @@ DATABASE_URL=postgres://user:password@ep-xxx-xxx-123456.us-east-2.aws.neon.tech/
 
 # ─── JWT ───────────────────────────────────────────────
 JWT_SECRET=change-me-to-a-random-string-at-least-32-chars
+# Field-level encryption (optional). Set a base64 32-byte key to enable AES-256-GCM
+# on crypto.EncryptedString columns. Generate one: openssl rand -base64 32
+# Keep it safe and backed up — losing it makes encrypted columns unreadable.
+# FIELD_ENCRYPTION_KEY=
 JWT_ACCESS_EXPIRY=15m
 JWT_REFRESH_EXPIRY=168h
 
