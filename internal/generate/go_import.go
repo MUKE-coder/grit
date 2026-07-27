@@ -84,6 +84,7 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 	var assign strings.Builder
 	var headers []string
 	needStrconv := false
+	needDatatypes := false
 
 	for _, f := range g.Definition.Fields {
 		t := FieldType(f.Type)
@@ -142,9 +143,13 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 		case FieldFloat:
 			needStrconv = true
 			assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\tn, _ := strconv.ParseFloat(v, 64)\n\t\t\titem.%s = n\n\t\t}\n", jsonName, goName))
-		case FieldBool:
+		case FieldBool, FieldToggle:
 			assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\titem.%s = v == \"true\" || v == \"1\" || v == \"yes\"\n\t\t}\n", jsonName, goName))
-		default: // string, text, richtext
+		case FieldCheck:
+			// Multi-value cell: pipe-separated values → JSON string slice.
+			needDatatypes = true
+			assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok && v != \"\" {\n\t\t\titem.%s = datatypes.JSONSlice[string](strings.Split(v, \"|\"))\n\t\t}\n", jsonName, goName))
+		default: // string, text, richtext, select
 			assign.WriteString(fmt.Sprintf("\t\tif v, ok := get(rec, %q); ok {\n\t\t\titem.%s = v\n\t\t}\n", jsonName, goName))
 		}
 	}
@@ -152,6 +157,10 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 	strconvImport := ""
 	if needStrconv {
 		strconvImport = "\n\t\"strconv\""
+	}
+	datatypesImport := ""
+	if needDatatypes {
+		datatypesImport = "\n\t\"gorm.io/datatypes\""
 	}
 	templateHeaders := strings.Join(headers, ",")
 
@@ -161,6 +170,7 @@ func (g *Generator) writeGoImportHandler(names Names) error {
 		"{{Plural}}", names.Plural,
 		"{{PluralKebab}}", names.PluralKebab,
 		"{{STRCONV}}", strconvImport,
+		"{{DATATYPES}}", datatypesImport,
 		"{{ASSIGN}}", assign.String(),
 		"{{HEADERS}}", templateHeaders,
 	)
@@ -177,7 +187,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm/clause"
+	"gorm.io/gorm/clause"{{DATATYPES}}
 
 	"{{MODULE}}/internal/models"
 )

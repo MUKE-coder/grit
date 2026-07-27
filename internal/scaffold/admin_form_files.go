@@ -14,6 +14,7 @@ import { DateField } from "./fields/date-field";
 import { ToggleField } from "./fields/toggle-field";
 import { CheckboxField } from "./fields/checkbox-field";
 import { RadioField } from "./fields/radio-field";
+import { CheckboxGroupField } from "./fields/checkbox-group-field";
 import { ImageField } from "./fields/image-field";
 import { ImagesField } from "./fields/images-field";
 import { VideoField } from "./fields/video-field";
@@ -179,6 +180,16 @@ export function FieldRenderer({
           control={control}
           render={({ field: formField }) => (
             <CheckboxField field={field} value={Boolean(formField.value)} onChange={formField.onChange} error={error} />
+          )}
+        />
+      );
+    case "checkbox-group":
+      return (
+        <Controller
+          name={field.key}
+          control={control}
+          render={({ field: formField }) => (
+            <CheckboxGroupField field={field} value={Array.isArray(formField.value) ? formField.value : []} onChange={formField.onChange} error={error} />
           )}
         />
       );
@@ -1783,6 +1794,74 @@ export function RadioField({ field, value, onChange, error }: RadioFieldProps) {
                   {opt.hint}
                 </span>
               )}
+            </button>
+          );
+        })}
+      </div>
+      {field.description && !error && (
+        <p className="text-xs text-text-muted">{field.description}</p>
+      )}
+      {error && <p className="text-xs text-danger">{error}</p>}
+    </div>
+  );
+}
+`
+}
+
+// adminCheckboxGroupField returns the multi-select checkbox-group field: one
+// checkbox per option, stored as a string array.
+func adminCheckboxGroupField() string {
+	return `import type { FieldDefinition } from "@/lib/resource";
+
+interface CheckboxGroupFieldProps {
+  field: FieldDefinition;
+  value: string[];
+  onChange: (value: string[]) => void;
+  error?: string;
+}
+
+export function CheckboxGroupField({ field, value, onChange, error }: CheckboxGroupFieldProps) {
+  const toggle = (v: string) => {
+    if (value.includes(v)) {
+      onChange(value.filter((x) => x !== v));
+    } else {
+      onChange([...value, v]);
+    }
+  };
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-sm font-medium text-foreground">
+        {field.label}
+        {field.required && <span className="text-danger ml-1">*</span>}
+      </label>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {field.options?.map((opt) => {
+          const checked = value.includes(opt.value);
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              role="checkbox"
+              aria-checked={checked}
+              onClick={() => toggle(opt.value)}
+              className={
+                "flex items-center gap-3 rounded-xl border p-3 text-left transition-colors " +
+                (checked ? "border-accent bg-accent/5" : "border-border hover:border-accent/40")
+              }
+            >
+              <span
+                className={
+                  "flex h-4 w-4 shrink-0 items-center justify-center rounded border " +
+                  (checked ? "border-accent bg-accent text-white" : "border-border")
+                }
+              >
+                {checked && (
+                  <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M2.5 6.5L5 9l4.5-5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </span>
+              <span className="text-sm text-foreground">{opt.label}</span>
             </button>
           );
         })}

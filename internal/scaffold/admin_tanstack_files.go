@@ -474,6 +474,7 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "components", "forms", "fields", "toggle-field.tsx"):                    nextToTanStack(adminToggleField()),
 		filepath.Join(adminRoot, "src", "components", "forms", "fields", "checkbox-field.tsx"):                  nextToTanStack(adminCheckboxField()),
 		filepath.Join(adminRoot, "src", "components", "forms", "fields", "radio-field.tsx"):                     nextToTanStack(adminRadioField()),
+		filepath.Join(adminRoot, "src", "components", "forms", "fields", "checkbox-group-field.tsx"):           nextToTanStack(adminCheckboxGroupField()),
 		filepath.Join(adminRoot, "src", "components", "forms", "fields", "image-field.tsx"):                     nextToTanStack(adminImageField()),
 		filepath.Join(adminRoot, "src", "components", "forms", "fields", "images-field.tsx"):                    nextToTanStack(adminImagesField()),
 		filepath.Join(adminRoot, "src", "components", "forms", "fields", "video-field.tsx"):                     nextToTanStack(adminVideoField()),

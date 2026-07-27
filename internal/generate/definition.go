@@ -301,6 +301,25 @@ func parseFieldInput(input string) (Field, error) {
 		}, nil
 	}
 
+	// select / check: third part is the value=Label option list, pipe-separated
+	// (e.g. status:select:draft=Draft|sent=Sent|paid=Paid). A bare value gets a
+	// humanized label.
+	if typ == "select" || typ == "check" {
+		if len(parts) < 3 || strings.TrimSpace(parts[2]) == "" {
+			return Field{}, fmt.Errorf("%s field %q needs options, e.g. %s:%s:draft=Draft|sent=Sent", typ, name, name, typ)
+		}
+		options, err := parseFieldOptions(strings.TrimSpace(parts[2]))
+		if err != nil {
+			return Field{}, fmt.Errorf("field %q: %w", name, err)
+		}
+		return Field{
+			Name:     name,
+			Type:     typ,
+			Required: typ == "select", // a single-choice select defaults to required
+			Options:  options,
+		}, nil
+	}
+
 	// Default: string fields are required
 	required := typ == "string"
 	unique := false
@@ -328,6 +347,39 @@ func parseFieldInput(input string) (Field, error) {
 		Required: required,
 		Unique:   unique,
 	}, nil
+}
+
+// parseFieldOptions turns "draft=Draft|sent=Sent|paid=Paid" into options. A bare
+// value ("draft") is kept as the value with a humanized label ("Draft").
+func parseFieldOptions(s string) ([]FieldOption, error) {
+	var out []FieldOption
+	seen := map[string]bool{}
+	for _, pair := range strings.Split(s, "|") {
+		pair = strings.TrimSpace(pair)
+		if pair == "" {
+			continue
+		}
+		value, label := pair, ""
+		if i := strings.Index(pair, "="); i >= 0 {
+			value = strings.TrimSpace(pair[:i])
+			label = strings.TrimSpace(pair[i+1:])
+		}
+		if value == "" {
+			return nil, fmt.Errorf("empty option value in %q", s)
+		}
+		if seen[value] {
+			return nil, fmt.Errorf("duplicate option value %q", value)
+		}
+		seen[value] = true
+		if label == "" {
+			label = humanizeLabel(value)
+		}
+		out = append(out, FieldOption{Value: value, Label: label})
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("no options parsed from %q", s)
+	}
+	return out, nil
 }
 
 func isValidType(t string) bool {
