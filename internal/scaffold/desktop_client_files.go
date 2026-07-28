@@ -3906,11 +3906,18 @@ import { getToken, setToken, deleteToken } from "./wails-bridge";
 // In Wails dev, "/api" is proxied to http://localhost:8080 via Vite.
 // In Wails production, the frontend is served from file:// — we need the
 // full API URL. Configure via VITE_API_URL or default to localhost:8080.
-const API_URL =
+// Unlike the web/admin clients, this baseURL already carries "/api", so the
+// version is appended here rather than rewritten per-request. Bump
+// API_VERSION to move the whole desktop client to a new API version.
+export const API_VERSION = "v1";
+
+const API_ROOT =
   import.meta.env.VITE_API_URL ||
   (typeof window !== "undefined" && !!window.go?.main?.App
     ? "http://localhost:8080/api"
     : "/api");
+
+const API_URL = API_ROOT.replace(/\/+$/, "") + "/" + API_VERSION;
 
 export const apiClient = axios.create({
   baseURL: API_URL,

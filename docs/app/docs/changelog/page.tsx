@@ -28,6 +28,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.105.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.105.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>API versioning — the whole surface now lives under <code>/api/v1</code>.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>Every route is versioned.</strong> Auth, resources, admin, public
+                    forms, blogs — all of it hangs off a single <code>v1</code> group in{" "}
+                    <code>routes.go</code>, driven by an <code>APIVersion</code> constant. Once
+                    anything outside your repo calls your API — a mobile build you can&apos;t
+                    force-update, a partner integration — you can&apos;t change a response shape
+                    without breaking it. The prefix is where the new shape goes: add a{" "}
+                    <code>v2</code> group beside <code>v1</code>, leave <code>v1</code> answering
+                    the old way, and retire it when your logs say nobody&apos;s left.
+                  </li>
+                  <li>
+                    <strong>Nothing breaks on upgrade.</strong> Unversioned{" "}
+                    <code>/api/&hellip;</code> requests are transparently re-dispatched to{" "}
+                    <code>/api/v1/&hellip;</code> and answered normally, with{" "}
+                    <code>Deprecation: true</code> and a{" "}
+                    <code>Link: &lt;/api/v1&gt;; rel=&quot;successor-version&quot;</code> header so
+                    the old path shows up in callers&apos; logs. It runs as the 404 fallback, so
+                    the only requests that pay for it are ones that were going to 404 anyway.
+                  </li>
+                  <li>
+                    <strong>All five clients pinned in one line each.</strong> Admin, web (Next and
+                    Vite), the single-app SPA, desktop, and Expo each export an{" "}
+                    <code>API_VERSION</code> and apply it centrally — endpoints stay written as{" "}
+                    <code>/api/users</code>, so moving to v2 is a one-line change per app rather
+                    than a find-and-replace across ~200 call sites, and an app can never end up
+                    half-migrated.
+                  </li>
+                  <li>
+                    <code>/api/ws</code> stays unversioned — a WebSocket upgrade can&apos;t safely
+                    pass through the re-dispatch, and a transport endpoint isn&apos;t part of the
+                    REST surface being versioned.
+                  </li>
+                </ul>
+                <p>Matrix 73/0.</p>
+              </div>
+            </div>
+
             {/* v3.104.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

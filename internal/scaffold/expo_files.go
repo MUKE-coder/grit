@@ -2107,7 +2107,13 @@ function resolveApiUrl(): string {
   }) as string;
 }
 
-const API_URL = resolveApiUrl();
+// The API is served under a version prefix. resolveApiUrl() returns the root
+// ending in "/api", so the version is appended once here and every call site
+// (which builds URLs as API_URL + "/users") follows automatically. Bump this
+// to move the whole app to a new API version.
+export const API_VERSION = "v1";
+
+const API_URL = resolveApiUrl().replace(/\/+$/, "") + "/" + API_VERSION;
 
 // Fail fast instead of letting fetch hang for minutes when the API is
 // unreachable — that hang is what leaves the splash screen stuck.

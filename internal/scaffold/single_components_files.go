@@ -349,13 +349,27 @@ const ACCESS_KEY = "grit.access_token"
 const REFRESH_KEY = "grit.refresh_token"
 const EXPIRES_KEY = "grit.token_expires_at"
 
+// The API is served under a version prefix (/api/v1/...). Endpoints are
+// written as "/api/..." throughout the app and pinned to the version in the
+// interceptor below, so moving to v2 is a one-line change.
+export const API_VERSION = "v1"
+
 export const api = axios.create({
   baseURL: API_URL,
   headers: { "Content-Type": "application/json" },
 })
 
-// Attach Authorization + Idempotency-Key on every outgoing request.
+// Attach Authorization + Idempotency-Key on every outgoing request, and pin
+// the request to the current API version.
 api.interceptors.request.use((config) => {
+  const url = config.url ?? ""
+  if (
+    url.startsWith("/api/") &&
+    url !== "/api/ws" &&
+    !url.startsWith("/api/" + API_VERSION + "/")
+  ) {
+    config.url = "/api/" + API_VERSION + url.slice("/api".length)
+  }
   const token = typeof window === "undefined" ? null : localStorage.getItem(ACCESS_KEY)
   if (token && config.headers) {
     config.headers.Authorization = "Bearer " + token
