@@ -28,6 +28,44 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.103.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.103.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>A developer-defined Generate button for form fields.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>
+                      <code>generate</code> on a text / number field.
+                    </strong>{" "}
+                    Give a field a <code>generate: (values) =&gt; string | number</code> function
+                    and Grit renders a small <strong>Generate</strong> button in its label row.
+                    Clicking it runs your function with the current form values and fills the input
+                    with the result — the function can be async (call an endpoint, derive from
+                    another field, mint a code), and the button shows a spinner until it resolves.
+                    The field stays visible and editable.
+                  </li>
+                  <li>
+                    <strong>The visible counterpart to <code>auto</code>.</strong> Use{" "}
+                    <code>number:string:auto</code> when a value should be assigned silently on the
+                    server and hidden from the form; reach for <code>generate</code> when the user
+                    should see the field and trigger generation themselves. You wire{" "}
+                    <code>generate</code> by hand in the resource definition — the generator never
+                    emits it. Works in modal, full-page, and multi-step forms; both admins.
+                  </li>
+                </ul>
+                <p>Matrix 73/0.</p>
+              </div>
+            </div>
+
             {/* v3.102.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -47,6 +47,7 @@ export function FormBuilder({
   const {
     control,
     handleSubmit,
+    getValues,
     formState: { errors },
   } = useForm({
     defaultValues: buildDefaults(formDef.fields, defaultValues),
@@ -68,6 +69,7 @@ export function FormBuilder({
               field={field}
               control={control}
               errors={errors}
+              getValues={getValues}
             />
           </div>
         ))}
@@ -98,13 +100,24 @@ export function FieldRenderer({
   field,
   control,
   errors,
+  getValues,
 }: {
   field: FieldDefinition;
   control: ReturnType<typeof useForm>["control"];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   errors: Record<string, any>;
+  getValues?: ReturnType<typeof useForm>["getValues"];
 }) {
   const error = errors[field.key]?.message as string | undefined;
+
+  // A field with generate() gets a "Generate" button whose click runs the
+  // developer's function over the CURRENT form values and applies the result.
+  // getValues() snapshots without subscribing, so it always reflects what the
+  // user has typed so far. Returns undefined (no button) when unset.
+  const makeGenerate = (apply: (value: unknown) => void) =>
+    field.generate
+      ? () => Promise.resolve(field.generate!(getValues ? getValues() : {})).then(apply)
+      : undefined;
 
   switch (field.type) {
     case "text":
@@ -114,7 +127,7 @@ export function FieldRenderer({
           control={control}
           rules={field.required ? { required: ` + "`" + `${field.label} is required` + "`" + ` } : undefined}
           render={({ field: formField }) => (
-            <TextField field={field} value={formField.value ?? ""} onChange={formField.onChange} error={error} />
+            <TextField field={field} value={formField.value ?? ""} onChange={formField.onChange} error={error} onGenerate={makeGenerate(formField.onChange)} />
           )}
         />
       );
@@ -136,7 +149,7 @@ export function FieldRenderer({
           control={control}
           rules={field.required ? { required: ` + "`" + `${field.label} is required` + "`" + ` } : undefined}
           render={({ field: formField }) => (
-            <NumberField field={field} value={formField.value ?? ""} onChange={formField.onChange} error={error} />
+            <NumberField field={field} value={formField.value ?? ""} onChange={formField.onChange} error={error} onGenerate={makeGenerate(formField.onChange)} />
           )}
         />
       );
@@ -716,6 +729,7 @@ export function FormStepper({
     control,
     handleSubmit,
     trigger,
+    getValues,
     formState: { errors },
   } = useForm({
     defaultValues: buildDefaults(formDef.fields, defaultValues),
@@ -757,7 +771,7 @@ export function FormStepper({
                     key={field.key}
                     className={field.colSpan === 2 && isTwoColumn ? "sm:col-span-2" : ""}
                   >
-                    <FieldRenderer field={field} control={control} errors={errors} />
+                    <FieldRenderer field={field} control={control} errors={errors} getValues={getValues} />
                   </div>
                 ))}
               </div>
@@ -1154,6 +1168,7 @@ function GroupCard({ resource, group, record, id }: GroupCardProps) {
     control,
     handleSubmit,
     watch,
+    getValues,
     formState: { errors },
   } = useForm({ defaultValues: defaults });
 
@@ -1179,7 +1194,7 @@ function GroupCard({ resource, group, record, id }: GroupCardProps) {
 
       <form onSubmit={onSave} className="space-y-4">
         {groupFields.map((field) => (
-          <FieldRenderer key={field.key} field={field} control={control} errors={errors} />
+          <FieldRenderer key={field.key} field={field} control={control} errors={errors} getValues={getValues} />
         ))}
 
         <div className="flex justify-end pt-2">
@@ -1304,23 +1319,74 @@ export function FormPageSteps({ resource }: FormPageStepsProps) {
 }
 
 // adminTextField returns the text input field component.
+// adminGenerateButton returns the small "Generate" button rendered in the
+// label row of a text/number field that declares a generate() function. It
+// runs the developer's generator (sync or async) and shows a spinner while it
+// resolves. The FieldRenderer wires the actual generate call + form values.
+func adminGenerateButton() string {
+	return `import { useState } from "react";
+import { Sparkles, Loader2 } from "@/lib/icons";
+
+interface GenerateButtonProps {
+  /** Runs the field's generate() and applies the result. May be async. */
+  onGenerate: () => void | Promise<void>;
+}
+
+// A compact affordance next to a field's label. Clicking it runs the
+// developer-defined generate() for that field; the button shows a spinner
+// until the (possibly async) generator resolves, and never submits the form.
+export function GenerateButton({ onGenerate }: GenerateButtonProps) {
+  const [busy, setBusy] = useState(false);
+
+  const run = async () => {
+    if (busy) return;
+    try {
+      setBusy(true);
+      await onGenerate();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={run}
+      disabled={busy}
+      title="Generate"
+      className="inline-flex items-center gap-1 rounded-md border border-border bg-bg-tertiary px-2 py-1 text-xs font-medium text-text-secondary transition-colors hover:border-accent/40 hover:text-accent disabled:opacity-50"
+    >
+      {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+      Generate
+    </button>
+  );
+}
+`
+}
+
 func adminTextField() string {
 	return `import type { FieldDefinition } from "@/lib/resource";
+import { GenerateButton } from "./generate-button";
 
 interface TextFieldProps {
   field: FieldDefinition;
   value: string;
   onChange: (value: string) => void;
   error?: string;
+  /** When set, renders a Generate button in the label row (see FieldDefinition.generate). */
+  onGenerate?: () => void | Promise<void>;
 }
 
-export function TextField({ field, value, onChange, error }: TextFieldProps) {
+export function TextField({ field, value, onChange, error, onGenerate }: TextFieldProps) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-foreground">
-        {field.label}
-        {field.required && <span className="text-danger ml-1">*</span>}
-      </label>
+      <div className="flex items-center justify-between gap-2">
+        <label className="block text-sm font-medium text-foreground">
+          {field.label}
+          {field.required && <span className="text-danger ml-1">*</span>}
+        </label>
+        {onGenerate && <GenerateButton onGenerate={onGenerate} />}
+      </div>
 
       <div className="flex">
         {field.prefix && (
@@ -1404,12 +1470,15 @@ func adminNumberField() string {
 
 import { useEffect, useRef, useState } from "react";
 import type { FieldDefinition } from "@/lib/resource";
+import { GenerateButton } from "./generate-button";
 
 interface NumberFieldProps {
   field: FieldDefinition;
   value: string | number;
   onChange: (value: number | string) => void;
   error?: string;
+  /** When set, renders a Generate button in the label row (see FieldDefinition.generate). */
+  onGenerate?: () => void | Promise<void>;
 }
 
 export interface FormatOpts {
@@ -1469,7 +1538,7 @@ export function parseFormattedNumber(formatted: string): number | "" {
   return Number.isNaN(n) ? "" : n;
 }
 
-export function NumberField({ field, value, onChange, error }: NumberFieldProps) {
+export function NumberField({ field, value, onChange, error, onGenerate }: NumberFieldProps) {
   const kind = field.numberKind ?? "float";
   const allowDecimal = kind === "float";
   const allowNegative = kind !== "uint";
@@ -1523,10 +1592,13 @@ export function NumberField({ field, value, onChange, error }: NumberFieldProps)
 
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-foreground">
-        {field.label}
-        {field.required && <span className="text-danger ml-1">*</span>}
-      </label>
+      <div className="flex items-center justify-between gap-2">
+        <label className="block text-sm font-medium text-foreground">
+          {field.label}
+          {field.required && <span className="text-danger ml-1">*</span>}
+        </label>
+        {onGenerate && <GenerateButton onGenerate={onGenerate} />}
+      </div>
 
       <div className="flex">
         {field.prefix && (

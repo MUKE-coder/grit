@@ -175,6 +175,15 @@ export interface FieldDefinition {
    *  the Go field type. Unset = "float" (legacy permissive). */
   numberKind?: "int" | "uint" | "float";
 
+  // v3.103.0 — a visible field with a small "Generate" button in its label
+  // row. Unlike an auto field (which is server-filled and hidden from the
+  // form), this keeps the input visible and editable; clicking Generate runs
+  // YOUR function with the current form values and fills the field with what it
+  // returns (sync or async — e.g. call an endpoint, derive from another field,
+  // mint a code). text / number fields only. You define this by hand in the
+  // resource definition; the generator never emits it.
+  generate?: (values: Record<string, unknown>) => string | number | Promise<string | number>;
+
   // ── Inline line-items (type === "line-items") ──────────────────────
   // Renders a child resource as an editable table INSIDE the parent form
   // (e.g. an Invoice's items). The rows are submitted as an array under
