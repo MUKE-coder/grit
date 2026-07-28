@@ -28,6 +28,43 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.102.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.102.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>A calmer sidebar — one System Hub with tabs.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>The rail is just resources + System Hub now.</strong> The old{" "}
+                    <em>Internal</em> and <em>System</em> nav groups (Activity, Support,
+                    Notifications, Health, Performance, Security, Roles, Access Reviews, GDPR, …)
+                    no longer crowd the sidebar. Every operational surface moved into the System
+                    Hub at <code>/system</code>.
+                  </li>
+                  <li>
+                    <strong>The hub is now tabbed.</strong> Surfaces are grouped under{" "}
+                    <em>Operations</em>, <em>Security &amp; Access</em>, <em>Data &amp; Files</em>,{" "}
+                    <em>Communication</em>, and <em>Settings</em> — pick a tab, then a tile.
+                    Access Reviews, GDPR, and Dashboard settings are first-class tiles here.
+                  </li>
+                  <li>
+                    <strong>Plugins get an Extensions tab.</strong> Links that plugins inject
+                    (Webhooks, Impersonate, …) surface under a dedicated <em>Extensions</em> tab
+                    that only appears when something is installed — no plugin changes required.
+                  </li>
+                </ul>
+                <p>Matrix 73/0.</p>
+              </div>
+            </div>
+
             {/* v3.101.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -516,7 +516,6 @@ import { resources } from "@/resources";
 import { brand } from "@repo/shared/brand";
 import { useLogout } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useModules } from "@/hooks/use-modules";
 import {
   getIcon,
   ChevronDown,
@@ -547,22 +546,13 @@ const GRIT_CLI_VERSION = "v{{GRIT_VERSION}}";
 // Internal nav block — pages that exist for every Grit app regardless of
 // which resources were generated. Kept out of the resources registry so
 // developers don't accidentally remove them when editing resources.ts.
-// Typed as NavEntry[] so items can carry a "requires" permission and be
-// gated — otherwise these show for every signed-in user regardless of role.
-const INTERNAL_NAV: readonly NavEntry[] = [
-  // The audit/activity log is admin-facing — gate on audit.view.
-  { href: "/system/activity",      label: "Activity",      iconKey: "Activity",       adminOnly: false, module: "audit", requires: "audit.view" },
-  // Ticket triage is an admin surface.
-  { href: "/system/support",       label: "Support",       iconKey: "MessageSquare",  adminOnly: true },
-  // A user's own notifications — fine to show to any signed-in user.
-  { href: "/system/notifications", label: "Notifications", iconKey: "Bell",           adminOnly: false },
-];
-
-// v3.31.5: dedicated SYSTEM section for admin-only operational surfaces.
-// Health / Performance / Security live here so they're one click away
-// during an incident — the System hub at /system still aggregates every
-// surface for the broader browse case.
-type NavEntry = {
+// NavEntry describes a plugin-injectable System link. As of v3.102.0 the
+// built-in operational surfaces (Health, Performance, Security, Roles, …) no
+// longer live in the rail — they're grouped into tabs inside the System Hub
+// (/system). SYSTEM_NAV therefore holds ONLY what Grit plugins inject
+// (Webhooks, Impersonate, …); the hub reads it and lists those under an
+// "Extensions" tab. Exported so the hub can import it.
+export type NavEntry = {
   href: string;
   label: string;
   iconKey: string;
@@ -573,22 +563,18 @@ type NavEntry = {
   module?: string;
 };
 
-const SYSTEM_NAV: readonly NavEntry[] = [
-  { href: "/settings/dashboard", label: "Dashboard settings", iconKey: "Settings",    adminOnly: true },
-  { href: "/system/health",       label: "System Health", iconKey: "ActivityIcon", adminOnly: true },
-  { href: "/system/performance",  label: "Performance",   iconKey: "TrendingUp",   adminOnly: true },
-  { href: "/system/roles",        label: "Roles & permissions", iconKey: "ShieldCheck", adminOnly: true, requires: "roles.view" },
-  { href: "/system/security",     label: "Security",      iconKey: "Shield",       adminOnly: true },
-  { href: "/system",              label: "System Hub",    iconKey: "LayoutGrid",   adminOnly: true },
-  { href: "/system/access-reviews", label: "Access Reviews", iconKey: "UserCheck", adminOnly: true },
-  { href: "/system/gdpr", label: "GDPR", iconKey: "Shield", adminOnly: true },
+// Plugins inject their System link here (see internal/plugin/*.go — they anchor
+// on the injection marker below). Empty by default. That marker MUST stay
+// inside this array literal, or "grit plugin add" can't wire its nav link.
+export const SYSTEM_NAV: readonly NavEntry[] = [
   // grit:nav:system
 ] as const;
 
-// Every iconKey used in SYSTEM_NAV / INTERNAL_NAV must have an entry here, or
-// the link renders with no icon (that's how "Roles & permissions" lost its
-// ShieldCheck). Keep distinct icons per link so two entries don't look alike.
-const INTERNAL_ICON: Record<string, React.ReactNode> = {
+// Icon lookup for plugin-injected SYSTEM_NAV entries, keyed by iconKey.
+// Exported so the System Hub's Extensions tab renders the same icons. Keep
+// every entry even if the default (empty) nav doesn't use it: plugins
+// reference these keys, and listing them keeps the icon imports live.
+export const INTERNAL_ICON: Record<string, React.ReactNode> = {
   Activity: <Activity className="h-5 w-5" />,
   ActivityIcon: <Activity className="h-5 w-5" />,
   MessageSquare: <MessageSquare className="h-5 w-5" />,
@@ -647,7 +633,6 @@ export function CollapsibleSidebar({
   }, [pathname]);
 
   const { can, isLoading: permsLoading } = usePermissions();
-  const { moduleEnabled } = useModules();
 
   // Permission gating, on top of the adminOnly check.
   //
@@ -662,18 +647,6 @@ export function CollapsibleSidebar({
   // circuit inside can(), so they still see everything.
   const visibleResources = resources.filter(
     (r) => !r.hidden && (!r.adminOnly || isAdmin) && (permsLoading || can(r.slug + ".view"))
-  );
-  const visibleInternal = INTERNAL_NAV.filter(
-    (r) =>
-      (!r.adminOnly || isAdmin) &&
-      (!r.requires || permsLoading || can(r.requires)) &&
-      (!r.module || moduleEnabled(r.module))
-  );
-  const visibleSystem = SYSTEM_NAV.filter(
-    (r) =>
-      (!r.adminOnly || isAdmin) &&
-      (!r.requires || permsLoading || can(r.requires)) &&
-      (!r.module || moduleEnabled(r.module))
   );
 
   const groups: Record<string, typeof resources> = { _root: [] };
@@ -784,47 +757,21 @@ export function CollapsibleSidebar({
               </div>
             ))}
 
-          {/* Internal section — Activity / Support / Notifications. */}
-          <div className="pt-3">
-            {!collapsed && (
-              <p className="px-2 py-1 text-xs font-semibold uppercase tracking-wider text-text-muted">
-                Internal
-              </p>
-            )}
-            {visibleInternal.map((r) => (
+          {/* System Hub — a single entry point for every operational surface
+              (Health, Performance, Security, Roles, GDPR, Access Reviews, plus
+              anything plugins add). They're grouped into tabs inside the hub at
+              /system rather than crowding the rail. Admin-only, matching the
+              surfaces it fronts. Highlights for /system/* and /settings/*. */}
+          {isAdmin && (
+            <div className="pt-3">
               <SidebarLink
-                key={r.href}
-                href={r.href}
-                icon={INTERNAL_ICON[r.iconKey]}
-                label={r.label}
-                active={pathname.startsWith(r.href)}
+                href="/system"
+                icon={<LayoutGrid className="h-5 w-5" />}
+                label="System Hub"
+                active={pathname.startsWith("/system") || pathname.startsWith("/settings")}
                 collapsed={collapsed}
                 onClick={onMobileClose}
               />
-            ))}
-          </div>
-
-          {/* System section — admin-only operational surfaces (Health,
-              Performance, Security, hub). Active-state uses the full path
-              so /system/security highlights without /system also lighting up. */}
-          {visibleSystem.length > 0 && (
-            <div className="pt-3">
-              {!collapsed && (
-                <p className="px-2 py-1 text-xs font-semibold uppercase tracking-wider text-text-muted">
-                  System
-                </p>
-              )}
-              {visibleSystem.map((r) => (
-                <SidebarLink
-                  key={r.href}
-                  href={r.href}
-                  icon={INTERNAL_ICON[r.iconKey]}
-                  label={r.label}
-                  active={r.href === "/system" ? pathname === "/system" : pathname.startsWith(r.href)}
-                  collapsed={collapsed}
-                  onClick={onMobileClose}
-                />
-              ))}
             </div>
           )}
         </nav>
