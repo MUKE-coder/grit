@@ -176,6 +176,57 @@ export default defineResource({
             </div>
 
             <div className="prose-grit">
+              <h3 id="generate-button">Generate button</h3>
+              <p>
+                Add a <code>generate</code> function to a <code>text</code> or{' '}
+                <code>number</code> field and Grit renders a small{' '}
+                <strong>Generate</strong> button in that field&apos;s label row. Clicking it runs{' '}
+                <em>your</em> function with the current form values and fills the input with what
+                it returns. The function can be async — call an endpoint, derive a value from
+                another field, mint a code — and the button shows a spinner until it resolves. The
+                field stays fully visible and editable.
+              </p>
+              <p>
+                This is the visible counterpart to an{' '}
+                <Link href="/docs/concepts/field-types#auto" className="text-primary hover:underline">
+                  <code>auto</code>
+                </Link>{' '}
+                field: use <code>auto</code> when the value should be assigned silently on the
+                server and hidden from the form (invoice numbers); use <code>generate</code> when
+                the user should see the field and trigger generation themselves. You wire{' '}
+                <code>generate</code> by hand in the resource definition — the code generator never
+                emits it.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="Generate button (text / number fields)" code={`{
+  key: 'sku',
+  label: 'SKU',
+  type: 'text',
+  // 'values' is the whole form, so you can derive from other fields.
+  generate: (values) => {
+    const base = String(values.name ?? 'item')
+      .toUpperCase().replace(/[^A-Z0-9]+/g, '-').slice(0, 8);
+    const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+    return \`\${base}-\${rand}\`;
+  },
+}
+
+// Async is fine too — ask the server for the next value:
+{
+  key: 'reference',
+  label: 'Reference',
+  type: 'text',
+  generate: async () => {
+    const res = await fetch('/api/references/next');
+    const { value } = await res.json();
+    return value;
+  },
+}`} />
+            </div>
+
+            <div className="prose-grit">
               <h3>Select</h3>
               <p>
                 A dropdown select menu. The <code>options</code> property accepts either an
