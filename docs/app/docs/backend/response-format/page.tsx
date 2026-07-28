@@ -53,6 +53,65 @@ export default function ResponseFormatPage() {
                 caption="Every response is one of these three envelopes — predictable shapes for every client"
               />
 
+              {/* ── API versioning ────────────────────────────────────── */}
+              <h2 id="versioning">API versioning</h2>
+              <p>
+                Every route is served under a version prefix:
+              </p>
+              <CodeBlock language="text" code={`GET /api/v1/users
+POST /api/v1/auth/login
+GET /api/v1/invoices/:id/pdf`} />
+              <p>
+                <strong>Why it matters.</strong> The moment something outside your repo calls your
+                API — a mobile build you can&apos;t force-update, a partner integration, a
+                customer&apos;s script — you can no longer rename a field or change a response
+                shape without breaking it. The prefix gives the new shape somewhere to live. When
+                that day comes, add a <code>v2</code> group next to <code>v1</code> in{' '}
+                <code>routes.go</code>, leave <code>v1</code> answering the old way, and delete it
+                once your logs say nobody&apos;s calling it.
+              </p>
+              <p>
+                The version comes from one constant, so the whole surface moves together:
+              </p>
+              <CodeBlock
+                language="go"
+                filename="apps/api/internal/routes/routes.go"
+                code={`const APIVersion = "v1"
+
+// Every /api group hangs off this one.
+v1 := r.Group("/api/" + APIVersion)`}
+              />
+
+              <h3>Unversioned paths still work</h3>
+              <p>
+                A request to <code>/api/users</code> (no version) is re-dispatched internally to{' '}
+                <code>/api/v1/users</code> and answered normally, so upgrading Grit doesn&apos;t
+                break existing callers. Those responses carry two headers so the stale path is
+                visible in the caller&apos;s logs:
+              </p>
+              <CodeBlock language="text" code={`Deprecation: true
+Link: </api/v1>; rel="successor-version"`} />
+              <p>
+                Treat that alias as a transition aid, not a second API: it always points at{' '}
+                <em>whatever the current version is</em>, so a client that never adopts the prefix
+                will eventually be dragged onto a version it wasn&apos;t written against. It runs
+                as the 404 fallback, so it costs nothing on requests that already match a route.
+              </p>
+              <p>
+                One exception: <code>/api/ws</code> (the realtime WebSocket) stays unversioned. A
+                WebSocket upgrade doesn&apos;t survive the re-dispatch reliably, and a transport
+                endpoint isn&apos;t part of the REST surface being versioned.
+              </p>
+
+              <h3>Client apps</h3>
+              <p>
+                Every generated frontend — admin, web, the single-app SPA, desktop and Expo —
+                exports an <code>API_VERSION</code> and applies it in one place. Endpoints stay
+                written as <code>/api/users</code>, so moving an app to v2 is a one-line change
+                rather than a find-and-replace across every call site, and an app can never end up
+                half-migrated.
+              </p>
+
               {/* ── Success (Single Item) ─────────────────────────────── */}
               <h2 id="success-single">Success Response (Single Item)</h2>
               <p>

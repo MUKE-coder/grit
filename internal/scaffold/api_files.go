@@ -422,6 +422,15 @@ func main() {
 	}
 
 	// OAuth2 social login providers
+	//
+	// NOTE: these callback URLs are deliberately NOT versioned, even though the
+	// routes now live under /api/v1. The same string is registered in the
+	// Google / GitHub console as an authorized redirect URI — a value you
+	// control there, not here. Adding "/v1" would stop matching what every
+	// existing deployment has registered and break social login on upgrade,
+	// which is the exact class of breakage the version prefix exists to avoid.
+	// The unversioned path is re-dispatched to the current version by
+	// mountLegacyAPIAlias (query string preserved), so these keep working.
 	gothic.Store = sessions.NewCookieStore([]byte(cfg.JWTSecret))
 	var oauthProviders []goth.Provider
 	if cfg.GoogleClientID != "" {
@@ -7284,6 +7293,23 @@ import (
 	"` + "{{MODULE}}" + `/internal/webhooks"
 )
 
+// APIVersion is the version segment every /api route is served under, so the
+// public surface is /api/v1/... rather than /api/....
+//
+// Why a prefix at all: once anything outside this repo calls your API — a
+// mobile build you can't force-update, a partner integration, a customer's
+// script — you can no longer change a response shape without breaking them.
+// A version in the path gives you somewhere to put the new shape. When that
+// day comes, add a v2 group next to v1 and leave v1 answering the old way
+// until consumers have moved; delete it when your logs say nobody's left.
+//
+// Unversioned /api/... requests are rewritten to this version (see
+// mountLegacyAPIAlias), so existing clients keep working after an upgrade.
+// That alias is a courtesy for the transition, not a second API: it always
+// points at whatever APIVersion currently is, so a client that never adopts
+// the prefix will eventually be dragged onto a version it wasn't written for.
+const APIVersion = "v1"
+
 // Services holds all Phase 4 services for dependency injection.
 type Services struct {
 	Cache   *cache.Cache
@@ -7703,15 +7729,26 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	r.POST("/webhooks/:provider", webhookHandler.Receive)
 
 
+	// ── API version ──────────────────────────────────────────────────────
+	// Every /api route hangs off this group, so the whole surface is served
+	// under /api/v1. When a breaking change is unavoidable, add a v2 group
+	// beside it and keep v1 serving the old shape until consumers migrate —
+	// that's the entire point of the prefix.
+	//
+	// Unversioned /api/... requests are rewritten to the current version by
+	// the fallback at the bottom of this file, so older clients (and the
+	// generated frontends) keep working untouched.
+	v1 := r.Group("/api/" + APIVersion)
+
 	// Public blog routes (no auth required)
-	blogs := r.Group("/api/blogs")
+	blogs := v1.Group("/blogs")
 	{
 		blogs.GET("", blogHandler.ListPublished)
 		blogs.GET("/:slug", blogHandler.GetBySlug)
 	}
 
 	// Public auth routes
-	auth := r.Group("/api/auth")
+	auth := v1.Group("/auth")
 	{
 		auth.POST("/register", authHandler.Register)
 		auth.POST("/login", authHandler.Login)
@@ -7732,7 +7769,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	auth.POST("/totp/backup-codes/verify", totpHandler.VerifyBackupCode)
 
 	// Protected routes
-	protected := r.Group("/api")
+	protected := v1.Group("")
 	protected.Use(middleware.Auth(db, authService))
 	// Activity logger writes one row per successful authenticated mutation.
 	// Records who/what/when/where for audit. Read-only — see admin/activity.
@@ -7831,7 +7868,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	}
 
 	// Admin routes
-	admin := r.Group("/api")
+	admin := v1.Group("")
 	admin.Use(middleware.Auth(db, authService))
 	admin.Use(middleware.RequireRole("ADMIN"))
 	{
@@ -7950,7 +7987,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// Public form-sharing endpoints. NO auth, NO CSRF — Sentinel rate
 	// limits each token aggressively. The dispatch service is the
 	// security boundary (whitelists which resources are reachable).
-	publicForms := r.Group("/api/public/forms")
+	publicForms := v1.Group("/public/forms")
 	{
 		publicForms.GET("/:token", formShareHandler.PublicGet)
 		publicForms.POST("/:token/submit", formShareHandler.PublicSubmit)
@@ -7959,7 +7996,47 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	// Custom role-restricted routes
 	// grit:routes:custom
 
+	mountLegacyAPIAlias(r)
+
 	return r
+}
+
+// mountLegacyAPIAlias keeps unversioned /api/... paths working by re-dispatching
+// them to /api/<APIVersion>/... .
+//
+// It runs as the 404 fallback rather than as middleware because Gin resolves the
+// route before middleware executes — by the time a handler could rewrite the
+// path, the routing decision is already made. Landing here means no route
+// matched, so the only cost is on requests that were going to 404 anyway.
+//
+// /api/ws is deliberately excluded: a WebSocket upgrade re-dispatched through
+// HandleContext does not survive reliably, and a transport endpoint isn't part
+// of the REST surface being versioned.
+func mountLegacyAPIAlias(r *gin.Engine) {
+	versioned := "/api/" + APIVersion + "/"
+
+	r.NoRoute(func(c *gin.Context) {
+		p := c.Request.URL.Path
+
+		if strings.HasPrefix(p, "/api/") &&
+			!strings.HasPrefix(p, versioned) &&
+			p != "/api/ws" {
+			c.Request.URL.Path = "/api/" + APIVersion + strings.TrimPrefix(p, "/api")
+			// Tell the caller they're on a deprecated path. Harmless to
+			// ignore, but it shows up in their logs before v2 forces the issue.
+			c.Header("Deprecation", "true")
+			c.Header("Link", "</api/"+APIVersion+">; rel=\"successor-version\"")
+			r.HandleContext(c)
+			return
+		}
+
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": gin.H{
+				"code":    "NOT_FOUND",
+				"message": "no route matches " + c.Request.Method + " " + p,
+			},
+		})
+	})
 }
 `
 }

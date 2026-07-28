@@ -1219,11 +1219,28 @@ func viteAPIClient() string {
 
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
 
+// The API is served under a version prefix (/api/v1/...). Endpoints are
+// written as "/api/..." throughout the app and pinned to the version here, so
+// moving to v2 is a one-line change instead of a find-and-replace.
+export const API_VERSION = "v1";
+
 export const api = axios.create({
   baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },
+});
+
+api.interceptors.request.use((config) => {
+  const url = config.url ?? "";
+  if (
+    url.startsWith("/api/") &&
+    url !== "/api/ws" &&
+    !url.startsWith("/api/" + API_VERSION + "/")
+  ) {
+    config.url = "/api/" + API_VERSION + url.slice("/api".length);
+  }
+  return config;
 });
 
 // Auto-attach Idempotency-Key on unsafe methods so any mutation gets
@@ -1254,6 +1271,23 @@ export const api = axios.create({
   // on cross-origin requests in dev (api on :8080, web on :3000) and the
   // server treats every request as anonymous.
   withCredentials: true,
+});
+
+// The API is served under a version prefix (/api/v1/...). Endpoints are
+// written as "/api/..." throughout the app and pinned to the version here, so
+// moving to v2 is a one-line change instead of a find-and-replace.
+export const API_VERSION = "v1";
+
+api.interceptors.request.use((config) => {
+  const url = config.url ?? "";
+  if (
+    url.startsWith("/api/") &&
+    url !== "/api/ws" &&
+    !url.startsWith("/api/" + API_VERSION + "/")
+  ) {
+    config.url = "/api/" + API_VERSION + url.slice("/api".length);
+  }
+  return config;
 });
 
 // Echo the grit_csrf cookie into X-CSRF-Token on every state-changing

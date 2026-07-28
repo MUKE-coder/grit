@@ -1065,12 +1065,33 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 //   - The 401-refresh interceptor below POSTS /api/auth/refresh with no
 //     body — the API reads grit_refresh from the cookie and issues a
 //     new grit_access via Set-Cookie. JS still never sees a token.
+// The API is served under a version prefix (/api/v1/...). Rather than bake
+// "v1" into the ~200 endpoint strings scattered across resources, hooks and
+// pages, every request is pinned here — so bumping to v2 is a one-line change
+// and the app can never end up half-migrated. Endpoints stay written as
+// "/api/users"; this rewrites them on the way out.
+export const API_VERSION = "v1";
+
 export const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },
   withCredentials: true,
+});
+
+apiClient.interceptors.request.use((config) => {
+  const url = config.url ?? "";
+  // Skip the WebSocket endpoint (not part of the versioned REST surface) and
+  // anything already carrying a version, so re-entrant calls stay idempotent.
+  if (
+    url.startsWith("/api/") &&
+    url !== "/api/ws" &&
+    !url.startsWith("/api/" + API_VERSION + "/")
+  ) {
+    config.url = "/api/" + API_VERSION + url.slice("/api".length);
+  }
+  return config;
 });
 
 // v3.31.49 -- public-IP hint. When the operator runs the admin on
