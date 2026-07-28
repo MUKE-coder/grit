@@ -300,6 +300,47 @@ services:
     networks:
       - %s
 
+  # Connection pooler. Postgres forks a backend process per connection, so
+  # connection count — not query load — is usually what falls over first. The
+  # API and the asynq workers are separate processes against the same database,
+  # which is exactly that setup, and the failure ("too many clients already")
+  # arrives long before any traffic that would justify it.
+  #
+  # transaction pooling multiplexes many client connections onto few server
+  # ones. The tradeoff: session-scoped state (LISTEN/NOTIFY, session advisory
+  # locks, prepared statements outside a transaction) does not survive it. Grit
+  # uses none of those, but if you add them, point that code at postgres:5432
+  # directly and leave everything else on the pooler.
+  #
+  # To use it, set in .env:  DB_HOST=pgbouncer  DB_PORT=6432
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: %s-pgbouncer
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-grit}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-grit}
+      DB_NAME: ${POSTGRES_DB:-%s}
+      POOL_MODE: transaction
+      # Client slots the app may open, against server connections actually held
+      # open to Postgres. The whole point is that the first number can be much
+      # larger than the second.
+      MAX_CLIENT_CONN: 500
+      DEFAULT_POOL_SIZE: 20
+      AUTH_TYPE: scram-sha-256
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 6432 -U ${POSTGRES_USER:-grit}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - %s
+
   redis:
     image: redis:7-alpine
     container_name: %s-redis
@@ -337,7 +378,7 @@ volumes:
   postgres-data:
   redis-data:
   minio-data:
-`, name, name, name, name, name, name, name, name, name)
+`, name, name, name, name, name, name, name, name, name, name, name, name)
 
 	return result
 }

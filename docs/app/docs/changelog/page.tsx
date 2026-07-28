@@ -28,6 +28,59 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.107.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.107.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>A linter that starts green, and a connection pooler.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>
+                      <code>.golangci.yml</code> in every project — and it passes on day one.
+                    </strong>{" "}
+                    The enabled set was chosen by measurement rather than taste: each of the eleven
+                    linters was run against a freshly generated API and only the ones reporting{" "}
+                    <strong>zero</strong> findings were turned on. That is the difference between a
+                    linter you keep and one you disable within the hour. It covers what actually
+                    kills a Go service — leaked response bodies, unclosed{" "}
+                    <code>sql.Rows</code>, unchecked <code>Rows.Err()</code>, requests built with
+                    no context, <code>nil</code> returned after an error check — plus{" "}
+                    <code>govet</code> with its two noisiest style analyzers switched off.
+                  </li>
+                  <li>
+                    <strong>The stricter linters are documented, not hidden.</strong> The five that
+                    weren&apos;t green (<code>errcheck</code>, <code>staticcheck</code>,{" "}
+                    <code>errorlint</code>, <code>gosec</code>, <code>unused</code>) are listed in
+                    the config with their real finding counts and what causes them, so you can
+                    adopt them one at a time instead of meeting 133 findings on a new project.
+                  </li>
+                  <li>
+                    <strong>PgBouncer in the production compose.</strong> Postgres forks a backend
+                    process per connection, so connection count — not query load — is usually what
+                    falls over first, and the API plus asynq workers are already multiple processes
+                    against one database. Transaction pooling multiplexes 500 client slots onto 20
+                    server connections. Opt in with <code>DB_HOST=pgbouncer DB_PORT=6432</code>;
+                    the config notes exactly which Postgres features don&apos;t survive transaction
+                    pooling.
+                  </li>
+                  <li>
+                    <strong>A request-lifecycle doc.</strong> The exact middleware order, why CORS
+                    must run before auth, why Recovery sits after Logger, why CSRF skips bearer
+                    clients, and why <code>c.Abort()</code> is mandatory in denying middleware.
+                  </li>
+                </ul>
+                <p>Matrix 73/0.</p>
+              </div>
+            </div>
+
             {/* v3.106.1 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
