@@ -429,8 +429,16 @@ func handleTokensCleanup(deps WorkerDeps) func(ctx context.Context, task *asynq.
 
 		log.Println("Running token cleanup...")
 
-		// Clean up soft-deleted records older than 30 days
-		result := deps.DB.Exec("DELETE FROM users WHERE deleted_at IS NOT NULL AND deleted_at < NOW() - INTERVAL '30 days'")
+		// Clean up soft-deleted records older than 30 days.
+		//
+		// The cutoff is computed in Go and bound as a parameter rather than
+		// written as NOW() - INTERVAL '30 days'. That syntax is Postgres-only:
+		// on SQLite — a first-class target here, and the quick-start default —
+		// it fails with a syntax error near the interval literal, so this job
+		// errored on every run and the cleanup silently never happened.
+		cutoff := time.Now().AddDate(0, 0, -30)
+		result := deps.DB.Exec(
+			"DELETE FROM users WHERE deleted_at IS NOT NULL AND deleted_at < ?", cutoff)
 		if result.Error != nil {
 			return fmt.Errorf("cleaning up deleted users: %w", result.Error)
 		}

@@ -93,6 +93,7 @@ func writeAPIFiles(root string, opts Options) error {
 		// Test files — give the generated API a working test suite out of the box
 		filepath.Join(apiRoot, "internal", "handlers", "auth_test.go"):  apiAuthTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "sso_test.go"):   apiSSOTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "bool_flags_test.go"): apiBoolFlagTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "saml_test.go"):  apiSAMLTestGo(),
 		filepath.Join(apiRoot, "internal", "services", "session_test.go"): apiSessionTestGo(),
 		filepath.Join(apiRoot, "internal", "models", "password_reset.go"):          apiPasswordResetModelGo(),
@@ -1133,7 +1134,11 @@ type User struct {
 	Avatar          string         ` + "`" + `gorm:"size:500" json:"avatar"` + "`" + `
 	JobTitle        string         ` + "`" + `gorm:"size:255" json:"job_title"` + "`" + `
 	Bio             crypto.EncryptedString ` + "`" + `gorm:"type:text" json:"bio"` + "`" + `
-	Active          bool           ` + "`" + `gorm:"default:true" json:"active"` + "`" + `
+	// No gorm default on this bool. GORM omits zero-valued fields from an
+	// INSERT when the column carries a default, so default:true made
+	// Active:false unstorable on create — an admin creating a deactivated user
+	// silently got an active one. Every create path sets this explicitly.
+	Active          bool           ` + "`" + `gorm:"" json:"active"` + "`" + `
 	Provider        string         ` + "`" + `gorm:"size:50;default:'local'" json:"provider"` + "`" + `
 	GoogleID        string         ` + "`" + `gorm:"size:255" json:"-"` + "`" + `
 	GithubID        string         ` + "`" + `gorm:"size:255" json:"-"` + "`" + `

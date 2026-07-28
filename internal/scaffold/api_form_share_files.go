@@ -74,7 +74,9 @@ type FormShare struct {
 	// /check-password before /submit succeeds.
 	PasswordHash    string         ` + "`" + `gorm:"size:255" json:"-"` + "`" + `
 	HasPassword     bool           ` + "`" + `gorm:"-" json:"has_password"` + "`" + ` // computed, not stored
-	Enabled         bool           ` + "`" + `gorm:"not null;default:true" json:"enabled"` + "`" + `
+	// not null, but no default: a default made Enabled:false unstorable on
+	// create, so a share link meant to start disabled went live instead.
+	Enabled         bool           ` + "`" + `gorm:"not null" json:"enabled"` + "`" + `
 	SubmissionCount int            ` + "`" + `gorm:"not null;default:0" json:"submission_count"` + "`" + `
 	CreatedByUserID string         ` + "`" + `gorm:"size:36;index" json:"created_by_user_id"` + "`" + `
 	Label           string         ` + "`" + `gorm:"size:200" json:"label"` + "`" + ` // optional operator-facing label

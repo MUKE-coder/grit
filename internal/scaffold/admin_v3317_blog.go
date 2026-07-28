@@ -337,6 +337,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { WordEditor } from "@/components/forms/word-editor";
 import { IconButton } from "@/components/ui/IconButton";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { useToastedMutation } from "@/hooks/use-toasted-mutation";
 import { apiClient, uploadFile } from "@/lib/api-client";
 import { ArrowLeft, Save, Trash2, Upload, Check } from "@/lib/icons";
@@ -366,6 +367,7 @@ export default function BlogDetailPage() {
   const [content, setContent] = useState("");
   const [image, setImage] = useState("");
   const [coverUploading, setCoverUploading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   const { data: blog, isLoading } = useQuery<Blog>({
@@ -477,10 +479,21 @@ export default function BlogDetailPage() {
               variant="danger"
               icon={<Trash2 className="h-4 w-4" />}
               label="Delete"
-              onClick={() => { if (window.confirm("Delete this blog? This cannot be undone.")) del.mutate(); }}
+              onClick={() => setConfirmDelete(true)}
             />
           </>
         }
+      />
+
+      <ConfirmModal
+        open={confirmDelete}
+        title="Delete this blog?"
+        description="This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={del.isPending}
+        onCancel={() => setConfirmDelete(false)}
+        onConfirm={() => { setConfirmDelete(false); del.mutate(); }}
       />
 
       {/* Meta panel — cover, title, excerpt */}

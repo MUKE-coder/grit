@@ -90,6 +90,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, FileDown, FileSpreadsheet, Search } from "lucide-react";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/confirm-dialog";
 // @ts-ignore
 import { GetBlogs, DeleteBlog, ExportBlogsPDF, ExportBlogsExcel } from "../../../wailsjs/go/main/App";
 
@@ -100,6 +101,7 @@ export const Route = createFileRoute("/_layout/blogs/")({
 function BlogListPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const pageSize = 10;
@@ -118,8 +120,11 @@ function BlogListPage() {
     onError: (err: any) => toast.error(err?.message || "Failed to delete"),
   });
 
-  const handleDelete = (id: string, title: string) => {
-    if (window.confirm("Delete \"" + title + "\"? This cannot be undone.")) {
+  // Uses the app's themed confirm dialog rather than window.confirm: the
+  // native one is unstyled, unbrandable, and on Wails renders as an OS chrome
+  // popup that looks nothing like the rest of the app.
+  const handleDelete = async (id: string, title: string) => {
+    if (await confirm({ message: "Delete \"" + title + "\"? This cannot be undone.", danger: true })) {
       deleteMutation.mutate(id);
     }
   };
@@ -283,6 +288,7 @@ func desktopBlogNewRoute() string {
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/confirm-dialog";
 import { useAuth } from "../../hooks/use-auth";
 // @ts-ignore
 import { CreateBlog } from "../../../wailsjs/go/main/App";
@@ -294,6 +300,7 @@ export const Route = createFileRoute("/_layout/blogs/new")({
 function BlogNewPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -397,6 +404,7 @@ func desktopBlogEditRoute() string {
 	return `import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/confirm-dialog";
 import { useAuth } from "../../hooks/use-auth";
 // @ts-ignore
 import { GetBlog, UpdateBlog } from "../../../wailsjs/go/main/App";
@@ -535,6 +543,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, FileDown, FileSpreadsheet, Search } from "lucide-react";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/confirm-dialog";
 // @ts-ignore
 import { GetContacts, DeleteContact, ExportContactsPDF, ExportContactsExcel } from "../../../wailsjs/go/main/App";
 
@@ -545,6 +554,7 @@ export const Route = createFileRoute("/_layout/contacts/")({
 function ContactListPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const pageSize = 10;
@@ -563,8 +573,8 @@ function ContactListPage() {
     onError: (err: any) => toast.error(err?.message || "Failed to delete"),
   });
 
-  const handleDelete = (id: string, name: string) => {
-    if (window.confirm("Delete \"" + name + "\"? This cannot be undone.")) {
+  const handleDelete = async (id: string, name: string) => {
+    if (await confirm({ message: "Delete \"" + name + "\"? This cannot be undone.", danger: true })) {
       deleteMutation.mutate(id);
     }
   };
@@ -722,6 +732,7 @@ func desktopContactNewRoute() string {
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/confirm-dialog";
 // @ts-ignore
 import { CreateContact } from "../../../wailsjs/go/main/App";
 
@@ -732,6 +743,7 @@ export const Route = createFileRoute("/_layout/contacts/new")({
 function ContactNewPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -858,6 +870,7 @@ func desktopContactEditRoute() string {
 	return `import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/confirm-dialog";
 // @ts-ignore
 import { GetContact, UpdateContact } from "../../../wailsjs/go/main/App";
 

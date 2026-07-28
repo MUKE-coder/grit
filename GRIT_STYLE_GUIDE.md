@@ -1128,8 +1128,51 @@ Before merging any PR that adds UI, verify:
 
 ---
 
+## 20b. The Nielsen Pass — run this before any admin/system page ships
+
+Ten checks, derived from Nielsen's usability heuristics. This exists because
+every item below is a bug that actually shipped in Grit and had to be fixed by
+hand afterwards — not a hypothetical.
+
+Run it as a review gate on any new admin or `/system/*` page.
+
+1. **Can the user get back out?** Every page reachable from the System Hub needs
+   a route home. *(Access Reviews and GDPR shipped as dead ends — fixed in
+   v3.104.0 by deriving a back link in `PageHeader`.)*
+2. **No native `window.prompt` / `window.confirm` / `alert`.** Use the themed
+   `ConfirmModal` (admin) or `useConfirm()` (desktop). Native dialogs are
+   unbrandable, unstyleable, and on Wails render as OS chrome. *(Shipped in
+   Access Reviews and five other places; all replaced in Phase 1.)*
+3. **Destructive actions name the thing and the consequence.** "Delete Acme
+   Corp? Their users fall back to password login" beats "Are you sure?".
+4. **Every async action shows it's working.** A spinner or disabled state, so a
+   slow request doesn't look like a dead button.
+5. **Empty states say what to do next**, not just "No data". The Access Reviews
+   empty state explains what opening a review actually does.
+6. **Errors are actionable and in plain language.** No raw codes, no stack
+   traces, no silence. If it failed, say what to try.
+7. **A miss is not an error.** "No SSO configured for that address" is a normal
+   answer that should fall through to the password form, not a red banner.
+8. **Secrets are write-only.** Never render a stored credential back to the
+   browser; show "configured" and let blank mean "keep it".
+9. **Irreversible is visually distinct** from reversible. Danger variant,
+   different copy, and — where it matters — a typed confirmation.
+10. **Nothing silently disagrees with the operator.** If they set a toggle off,
+    it must be off. *(A `gorm:"default:true"` bool cannot store `false` on
+    create — this inverted five separate security switches before it was caught.
+    `internal/models/bool_flags_test.go` now guards it.)*
+
+**Also worth a grep before shipping backend work:**
+
+- No Postgres-only SQL (`NOW() - INTERVAL '...'`) — SQLite is a first-class
+  target, and that syntax fails there silently at runtime. Compute the cutoff in
+  Go and bind it.
+
+---
+
 ## 21. Version History
 
+- **v1.1** (2026-07-28) — Added the Nielsen Pass (§20b): a ten-point pre-ship gate for admin/system pages, each item derived from a bug that really shipped.
 - **v1.0** (2026-04-11) — Initial Grit style guide. Adapted from DGateway style guide. Premium Minimal aesthetic, Grit purple (#6C5CE7), Onest font, shadcn/ui base, dashboard layout rules (topbar-first), auth page rules (Linear school), CLI scaffolding design, email template rules.
 
 ---

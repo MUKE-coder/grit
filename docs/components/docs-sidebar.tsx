@@ -111,6 +111,7 @@ const navItems: NavItem[] = [
       { title: 'Authentication', href: '/docs/backend/authentication' },
       { title: 'Social Login (OAuth2)', href: '/docs/backend/oauth' },
       { title: 'API Response Format', href: '/docs/backend/response-format' },
+      { title: 'The Request Lifecycle', href: '/docs/backend/request-lifecycle' },
       { title: 'Migrations', href: '/docs/backend/migrations' },
       { title: 'Invoices & Line Items', href: '/docs/backend/invoices' },
       { title: 'Seeders', href: '/docs/backend/seeders' },

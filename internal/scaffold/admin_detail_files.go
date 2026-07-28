@@ -20,6 +20,7 @@ import { useResourceItem, useResource, useDeleteResource } from "@/hooks/use-res
 import { renderCell } from "@/components/tables/cell-renderers";
 import { DataTable } from "@/components/tables/data-table";
 import { FormSheet } from "@/components/forms/form-sheet";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { apiClient } from "@/lib/api-client";
 import { ArrowLeft, Pencil, Trash2, Loader2, Printer, Plus, FileText } from "@/lib/icons";
 
@@ -50,6 +51,7 @@ export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
   const record = data?.data;
   const [editing, setEditing] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const { mutate: deleteItem, isPending: isDeleting } = useDeleteResource(resource.endpoint, resource.label?.singular ?? resource.name);
 
   // Ask the API for the rendered PDF and hand the blob to the browser's
@@ -158,11 +160,7 @@ export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
           </button>
           <button
             disabled={isDeleting}
-            onClick={() => {
-              if (window.confirm("Delete this " + (resource.label?.singular ?? resource.name) + "?")) {
-                deleteItem(id, { onSuccess: () => router.push("/resources/" + resource.slug) });
-              }
-            }}
+            onClick={() => setConfirmDelete(true)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-text-secondary hover:border-danger/40 hover:text-danger disabled:opacity-50 transition-colors"
           >
             <Trash2 className="h-4 w-4" /> Delete
@@ -214,6 +212,20 @@ export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
         />
       ))}
       </div>
+
+      <ConfirmModal
+        open={confirmDelete}
+        title={"Delete this " + (resource.label?.singular ?? resource.name) + "?"}
+        description="This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={isDeleting}
+        onCancel={() => setConfirmDelete(false)}
+        onConfirm={() => {
+          setConfirmDelete(false);
+          deleteItem(id, { onSuccess: () => router.push("/resources/" + resource.slug) });
+        }}
+      />
 
       {editing && <FormSheet resource={resource} item={record} onClose={() => setEditing(false)} />}
     </div>

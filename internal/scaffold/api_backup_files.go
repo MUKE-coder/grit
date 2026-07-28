@@ -96,7 +96,9 @@ type BackupSchedule struct {
 	ID        uint      ~gorm:"primarykey" json:"-"~ // singleton, id = 1
 	Frequency string    ~gorm:"size:20;default:weekly" json:"frequency"~
 	Time      string    ~gorm:"size:5;default:02:00" json:"time"~
-	Enabled   bool      ~gorm:"default:true" json:"enabled"~
+	// No default: it would make Enabled:false unstorable on create, so a
+	// schedule created as disabled would still run backups.
+	Enabled   bool      ~json:"enabled"~
 	UpdatedAt time.Time ~json:"updated_at"~
 }
 
