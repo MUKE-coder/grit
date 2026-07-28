@@ -129,21 +129,29 @@ INV-202608-0001   ← monthly reset rolls the counter over`} />
             <p className="text-muted-foreground leading-relaxed mb-4 mt-6">
               Wire it into the invoice&apos;s <code>BeforeCreate</code> hook so every new invoice
               is numbered automatically — set it only when blank, so an imported invoice keeps its
-              original number:
+              original number. Call the generic <code>sequence.Next</code> directly: the{' '}
+              <code>services.NextInvoiceNumber</code> wrapper lives in the <code>services</code>{' '}
+              package (which imports <code>models</code>), so calling it from a model would be an
+              import cycle. The <code>sequence</code> package imports no models, so a model can call
+              it — use the wrapper from <em>handlers</em> instead.
             </p>
             <CodeBlock
               language="go"
               filename="internal/models/invoice.go"
-              code={`func (i *Invoice) BeforeCreate(tx *gorm.DB) error {
-	if i.ID == "" {
-		i.ID = uuid.NewString()
+              code={`import "yourapp/apps/api/internal/sequence"
+
+func (m *Invoice) BeforeCreate(tx *gorm.DB) error {
+	if m.ID == "" {
+		m.ID = uuid.New().String()
 	}
-	if i.Number == "" {
-		number, err := services.NextInvoiceNumber(tx, time.Now())
+	if m.Number == "" {
+		number, err := sequence.Next(tx, sequence.Config{
+			Name: "invoice", Prefix: "INV", Reset: sequence.ResetMonthly, Width: 4,
+		}, time.Now())
 		if err != nil {
 			return err
 		}
-		i.Number = number
+		m.Number = number
 	}
 	return nil
 }`}

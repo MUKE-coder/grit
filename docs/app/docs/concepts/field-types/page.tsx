@@ -49,7 +49,7 @@ const RENDER: { type: string; form: string; table: string }[] = [
   { type: 'int / uint / float', form: 'Number input', table: 'text' },
   { type: 'bool', form: 'Switch', table: 'boolean' },
   { type: 'toggle', form: 'Switch', table: 'boolean' },
-  { type: 'select', form: 'Dropdown (value=Label options)', table: 'text' },
+  { type: 'select', form: 'Searchable dropdown (value=Label options)', table: 'text' },
   { type: 'radio', form: 'Radio-button group (single choice)', table: 'text' },
   { type: 'check', form: 'Checkbox group (multi)', table: '—' },
   { type: 'datetime / date', form: 'Date / time picker', table: 'relative' },

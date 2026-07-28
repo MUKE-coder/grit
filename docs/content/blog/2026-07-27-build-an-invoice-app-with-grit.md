@@ -238,18 +238,29 @@ a monthly reset?** Use `--reset yearly` (rolls over each year) or `--reset never
 for one continuous, ever-incrementing series — `INV-0001`, `INV-0002`, … with no
 date segment at all.
 
-**4c. Wire it into the model.** Call the helper from the invoice's `BeforeCreate`
-hook, so a number is assigned automatically — and only when one isn't already set,
-so an imported invoice keeps its original:
+**4c. Wire it into the model.** Assign the number in the invoice's `BeforeCreate`
+hook, so it's filled automatically — and only when one isn't already set, so an
+imported invoice keeps its original.
+
+One important detail: call the generic `sequence.Next` **directly**, not the
+`services.NextInvoiceNumber` wrapper. The wrapper lives in the `services` package,
+which imports `models` — so calling it *from* a model would be a `models → services
+→ models` import cycle and won't compile. The `sequence` package imports no models,
+so a model can call it freely. (The `services.Next…Number` wrapper is for calling
+from **handlers**, where there's no cycle.)
 
 ```go
 // apps/api/internal/models/invoice.go
+import "invoicer/apps/api/internal/sequence"
+
 func (m *Invoice) BeforeCreate(tx *gorm.DB) error {
 	if m.ID == "" {
 		m.ID = uuid.New().String()
 	}
 	if m.Number == "" {
-		number, err := services.NextInvoiceNumber(tx, time.Now())
+		number, err := sequence.Next(tx, sequence.Config{
+			Name: "invoice", Prefix: "INV", Reset: sequence.ResetMonthly, Width: 4,
+		}, time.Now())
 		if err != nil {
 			return err
 		}

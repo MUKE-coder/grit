@@ -28,6 +28,39 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.99.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.99.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Searchable select fields, and a fixed Access Reviews icon.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>Select is now a searchable combobox.</strong> Every generated{" "}
+                    <code>select</code> field — including command-generated ones like a{" "}
+                    <code>status</code> dropdown — opens a panel with a type-to-filter search box
+                    and keyboard navigation (↑/↓, Enter, Esc), instead of a plain native{" "}
+                    <code>&lt;select&gt;</code>. Fields that pull choices from an endpoint
+                    (<code>optionsUrl</code>) get the same treatment. Proven in a browser: a
+                    five-option priority select filtered to one as you typed.
+                  </li>
+                  <li>
+                    <strong>Access Reviews sidebar icon.</strong> Its <code>UserCheck</code> icon
+                    was missing from the sidebar&apos;s internal icon map, so the entry rendered
+                    blank. Added it; the icon now shows.
+                  </li>
+                </ul>
+                <p>Matrix 73/0.</p>
+              </div>
+            </div>
+
             {/* v3.98.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
