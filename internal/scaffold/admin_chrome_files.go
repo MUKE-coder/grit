@@ -531,6 +531,7 @@ import {
   TrendingUp,
   Shield,
   ShieldCheck,
+  UserCheck,
   Webhook,
   User as UserIcon,
   LogOut,
@@ -596,6 +597,7 @@ const INTERNAL_ICON: Record<string, React.ReactNode> = {
   TrendingUp: <TrendingUp className="h-5 w-5" />,
   Shield: <Shield className="h-5 w-5" />,
   ShieldCheck: <ShieldCheck className="h-5 w-5" />,
+  UserCheck: <UserCheck className="h-5 w-5" />,
   LayoutGrid: <LayoutGrid className="h-5 w-5" />,
   Webhook: <Webhook className="h-5 w-5" />,
 };
