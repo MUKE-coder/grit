@@ -26,6 +26,23 @@ type SequenceOptions struct {
 // registers the Counter model with AutoMigrate. Every invocation also
 // writes a per-resource convenience wrapper at internal/services/<name>_sequence.go.
 func GenerateSequence(opts SequenceOptions) error {
+	root, err := findProjectRoot()
+	if err != nil {
+		return err
+	}
+	arch, _ := readGritJSON(root)
+	module, err := readModulePath(root, arch)
+	if err != nil {
+		return err
+	}
+	return generateSequenceAt(root, module, arch, opts)
+}
+
+// generateSequenceAt is the root/module-explicit core of GenerateSequence. The
+// CLI path (GenerateSequence) discovers root/module from the CWD; the resource
+// generator calls this directly with the values it already holds (g.Root,
+// g.Module, g.Architecture) so it never depends on the process CWD.
+func generateSequenceAt(root, module, arch string, opts SequenceOptions) error {
 	if opts.Name == "" {
 		return fmt.Errorf("sequence name is required (e.g. grit generate sequence Invoice)")
 	}
@@ -42,16 +59,6 @@ func GenerateSequence(opts SequenceOptions) error {
 	}
 	if opts.Prefix == "" {
 		opts.Prefix = defaultPrefix(opts.Name)
-	}
-
-	root, err := findProjectRoot()
-	if err != nil {
-		return err
-	}
-	arch, _ := readGritJSON(root)
-	module, err := readModulePath(root, arch)
-	if err != nil {
-		return err
 	}
 
 	apiRoot := root

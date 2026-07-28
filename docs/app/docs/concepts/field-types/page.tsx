@@ -96,6 +96,7 @@ export default function FieldTypesPage() {
                 <ul className="space-y-2.5 mt-4 mb-4">
                   {[
                     ['Modifiers', 'name:string:unique — append :unique, :required, or :optional. String fields default to required; everything else defaults to optional.'],
+                    ['Auto-number', 'number:string:auto:INV (string only) — the server fills it from an atomic, gap-free counter (INV-202607-0001) in BeforeCreate. Optional and hidden from the form; the prefix is optional. Shorthand for grit generate sequence; use that command directly for yearly/never resets or a custom width.'],
                     ['Options', 'status:select:draft=Draft|sent=Sent (select / radio / check) — pipe-separated choices. Labels are OPTIONAL: status:select:draft|sent|paid generates the labels by capitalizing each value (in_progress → In Progress). Use value=Label only when the label differs from the stored value.'],
                     ['Slug source', 'slug:slug:title — the 3rd segment is the field to slugify. Slugs are auto-unique and generated on save.'],
                     ['belongs_to', 'category:belongs_to (model inferred → Category) or author:belongs_to:User (explicit). Creates a <name>_id UUID foreign-key column.'],

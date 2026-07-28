@@ -55,7 +55,18 @@ type Field struct {
 	// Options holds the value=Label choices for select/check fields, parsed
 	// from the third position of name:select:v1=L1|v2=L2.
 	Options []FieldOption `yaml:"options,omitempty"`
+
+	// Auto marks a string field that is auto-generated from a sequence in the
+	// model's BeforeCreate hook (declared name:string:auto or name:string:auto:PREFIX).
+	// The generator wires the sequence infra + BeforeCreate call, makes the field
+	// optional, and drops it from the create/edit form. AutoPrefix is the sequence
+	// prefix (defaults to the first three letters of the resource, uppercased).
+	Auto       bool   `yaml:"auto,omitempty"`
+	AutoPrefix string `yaml:"auto_prefix,omitempty"`
 }
+
+// IsAuto reports a string field that is auto-generated from a sequence.
+func (f Field) IsAuto() bool { return f.Auto }
 
 // FieldOption is one choice in a select or check field: Value is stored,
 // Label is shown.
