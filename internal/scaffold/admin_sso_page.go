@@ -16,6 +16,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { ResponsiveSheet } from "@/components/ui/ResponsiveSheet";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { apiClient } from "@/lib/api-client";
 import { toast } from "sonner";
 import { ShieldCheck, Plus, Trash2, Loader2, Check, AlertTriangle, Copy } from "@/lib/icons";
@@ -73,6 +74,7 @@ export default function SSOPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Connection | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Connection | null>(null);
   const [form, setForm] = useState({ ...BLANK });
 
   const listQ = useQuery({
@@ -229,11 +231,7 @@ export default function SSOPage() {
                       Edit
                     </button>
                     <button
-                      onClick={() => {
-                        if (window.confirm("Delete " + c.name + "? Their users fall back to password login.")) {
-                          deleteM.mutate(c.id);
-                        }
-                      }}
+                      onClick={() => setPendingDelete(c)}
                       className="text-xs text-text-secondary hover:text-danger"
                     >
                       <Trash2 className="mr-1 inline h-3 w-3" />Delete
@@ -245,6 +243,20 @@ export default function SSOPage() {
           </table>
         )}
       </div>
+
+      <ConfirmModal
+        open={!!pendingDelete}
+        title={"Delete " + (pendingDelete?.name ?? "") + "?"}
+        description="Anyone who signed in through this provider falls back to password login. Their accounts and data are untouched."
+        confirmLabel="Delete connection"
+        variant="danger"
+        loading={deleteM.isPending}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => {
+          if (pendingDelete) deleteM.mutate(pendingDelete.id);
+          setPendingDelete(null);
+        }}
+      />
 
       <ResponsiveSheet
         open={open}

@@ -28,6 +28,58 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.106.1 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.106.1
+                </span>
+                <span className="text-sm text-muted-foreground">July 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Three correctness fixes, one of which broke every SQLite project.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>Postgres-only SQL in two background queries.</strong> The user-cleanup
+                    worker and the 24-hour activity panel used{" "}
+                    <code>NOW() - INTERVAL &apos;30 days&apos;</code>, which is Postgres syntax and
+                    errors on SQLite — a first-class target and the quick-start default. On those
+                    projects the cleanup job failed on <em>every</em> run and soft-deleted users
+                    were never purged. Both now compute the cutoff in Go and bind it as a
+                    parameter.
+                  </li>
+                  <li>
+                    <strong>A GORM default that inverted five security switches.</strong> A bool
+                    column declared <code>gorm:&quot;default:true&quot;</code> can never be stored
+                    as <code>false</code> through a create: GORM omits zero-valued fields when the
+                    column has a default, so the database default wins. That silently flipped{" "}
+                    <code>User.Active</code>, <code>FormShare.Enabled</code> and{" "}
+                    <code>BackupSchedule.Enabled</code> — creating a deactivated user gave you an
+                    active one, and a share link meant to start disabled went live. Removed the
+                    defaults; every create path already set these explicitly.{" "}
+                    <code>internal/models/bool_flags_test.go</code> now ships in every project to
+                    stop it recurring.
+                  </li>
+                  <li>
+                    <strong>No more native browser dialogs.</strong> Six destructive actions used{" "}
+                    <code>window.confirm</code> — unbrandable, unstyleable, and on the desktop app
+                    rendered as OS chrome. All now use the themed <code>ConfirmModal</code> (admin)
+                    or the promise-based <code>useConfirm()</code> the desktop scaffold already
+                    shipped but two of its own pages ignored.
+                  </li>
+                  <li>
+                    <strong>A ten-point &ldquo;Nielsen Pass&rdquo;</strong> added to{" "}
+                    <code>GRIT_STYLE_GUIDE.md</code> as a pre-ship gate for admin pages. Every item
+                    on it is a bug that actually shipped and had to be fixed by hand afterwards.
+                  </li>
+                </ul>
+                <p>Matrix 73/0.</p>
+              </div>
+            </div>
+
             {/* v3.106.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

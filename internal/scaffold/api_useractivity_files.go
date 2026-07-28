@@ -303,6 +303,7 @@ func userActivityHandlerGo() string {
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -363,9 +364,13 @@ func (h *UserActivityHandler) Stats(c *gin.Context) {
 		Count    int64  ` + "`" + `json:"count"` + "`" + `
 	}
 	var rows []bucket
+	// Bind a Go-computed cutoff rather than NOW() - INTERVAL '24 hours':
+	// that syntax is Postgres-only and errors on SQLite, which is a supported
+	// target here, so this panel returned zeros on every SQLite project.
+	since := time.Now().Add(-24 * time.Hour)
 	h.DB.Model(&models.UserActivity{}).
 		Select("severity, COUNT(*) AS count").
-		Where("created_at > NOW() - INTERVAL '24 hours'").
+		Where("created_at > ?", since).
 		Group("severity").
 		Scan(&rows)
 

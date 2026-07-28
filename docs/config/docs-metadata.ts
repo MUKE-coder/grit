@@ -279,6 +279,13 @@ export const docsMetadata: Record<string, DocPage> = {
   },
 
   // Security — GDPR data toolkit + Access Reviews
+  // Backend — the request lifecycle
+  '/docs/backend/request-lifecycle': {
+    title: 'The Request Lifecycle — What Runs, In What Order',
+    description:
+      "Every middleware a request passes through in a Grit API, in the exact order they execute: maintenance mode, security headers, body limit, request ID, logging, panic recovery, CORS, gzip, CSRF, idempotency, then Sentinel's WAF and Pulse's tracing, then per-group auth, role checks and the activity logger. Explains where to hook your own logic, why CSRF only enforces on cookie-authenticated mutations, why order matters for CORS and recovery, and the specific ordering mistakes that cause the CORS/CSP/WAF bugs people actually hit.",
+  },
+
   // Security — enterprise SSO (OIDC)
   '/docs/security/sso': {
     title: 'Enterprise SSO — OpenID Connect Single Sign-On',
