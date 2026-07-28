@@ -30,6 +30,10 @@ func writeTestingFiles(root string, opts Options) error {
 		filepath.Join(root, "tests", "k6", "breakpoint.js"):         k6BreakpointJS(),
 		filepath.Join(root, ".github", "dependabot.yml"):            dependabotYAML(opts),
 		filepath.Join(root, ".github", "workflows", "security.yml"): securityCIYAML(),
+		// Lint config lives beside the Go module it applies to — that is the
+		// repo root for --single, apps/api otherwise.
+		filepath.Join(opts.APIRoot(root), ".golangci.yml"):          golangciYAML(),
+		filepath.Join(root, ".github", "workflows", "lint.yml"):     lintCIYAML(opts),
 	}
 
 	for path, content := range files {
