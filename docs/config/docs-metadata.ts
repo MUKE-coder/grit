@@ -279,6 +279,13 @@ export const docsMetadata: Record<string, DocPage> = {
   },
 
   // Security — GDPR data toolkit + Access Reviews
+  // Security — enterprise SSO (OIDC)
+  '/docs/security/sso': {
+    title: 'Enterprise SSO — OpenID Connect Single Sign-On',
+    description:
+      "Let each customer's team sign in with their own identity provider. One OIDC connection per organisation, routed by email domain, configured at runtime in the admin — works with Okta, Entra ID, Auth0, Keycloak, Google Workspace, Ping and OneLogin. Users are provisioned on first login, roles are derived from IdP groups and re-applied on every sign-in, identities are linked by the provider's immutable subject rather than email, and client secrets are encrypted at rest and never returned by the API.",
+  },
+
   '/docs/security/compliance': {
     title: 'Privacy & Compliance — GDPR Toolkit + Access Reviews',
     description:

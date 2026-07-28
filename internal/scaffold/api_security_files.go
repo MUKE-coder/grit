@@ -538,6 +538,17 @@ func newCSRFToken() (string, error) {
 //   - POST/PUT/PATCH/DELETE with cookie   → require matching X-CSRF-Token.
 //   - POST/PUT/PATCH/DELETE bearer-only   → no-op (header auth is CSRF-safe).
 //   - Login / register / refresh routes   → skipped (they MINT the cookie).
+// isSAMLACSPath matches /api/auth/saml/<slug>/acs on both the versioned and
+// unversioned forms of the path, since the IdP posts to whichever one the
+// customer registered.
+func isSAMLACSPath(path string) bool {
+	if !strings.HasSuffix(path, "/acs") {
+		return false
+	}
+	return strings.HasPrefix(path, "/api/auth/saml/") ||
+		(strings.HasPrefix(path, "/api/") && strings.Contains(path, "/auth/saml/"))
+}
+
 func AutoCSRF() gin.HandlerFunc {
 	const (
 		csrfCookie   = "grit_csrf"
@@ -576,6 +587,21 @@ func AutoCSRF() gin.HandlerFunc {
 
 		// Bootstrap auth endpoints are exempt — they create the session.
 		if bootstrap[path] {
+			c.Next()
+			return
+		}
+
+		// SAML assertion consumer. The identity provider POSTs the signed
+		// assertion here from its own origin, so there is no CSRF token to
+		// present and never will be — the assertion's signature, audience
+		// restriction and validity window are what authenticate this request.
+		//
+		// It usually slips through the cookie check below anyway (a cross-site
+		// POST carries no SameSite=Lax cookie), but only by accident: an
+		// already-signed-in user coming back through their IdP's app tile can
+		// arrive holding grit_access and would then be rejected. Exempting the
+		// path states the intent instead of depending on that.
+		if isSAMLACSPath(path) {
 			c.Next()
 			return
 		}

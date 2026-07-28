@@ -67,7 +67,84 @@ export function AuthShell(props: AuthShellProps) {
 func adminAuthSocialButtons() string {
 	return `"use client";
 
+import { useState } from "react";
 import { isSocialAuthEnabled } from "@repo/shared/themes";
+
+// SSOSignIn is the enterprise entry point. Rather than listing every customer's
+// identity provider on a public page (which leaks your customer list), the user
+// types their work address and the server decides where it belongs. An address
+// with no connection falls back to the password form, which is what happens for
+// most users of most apps.
+export function SSOSignIn() {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const go = async () => {
+    if (!email.trim() || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch(apiUrl + "/api/auth/sso/discover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const body = await res.json();
+      // Follow the server's redirect_url rather than assembling one here: OIDC
+      // and SAML start at different paths, and the server already knows which
+      // protocol this connection uses. Building the URL client-side is how a
+      // SAML user ends up at the OIDC endpoint and is told their sign-in method
+      // doesn't exist.
+      if (res.ok && body?.data?.sso && body.data.redirect_url) {
+        window.location.href = apiUrl + body.data.redirect_url;
+        return;
+      }
+      setError("No single sign-on is set up for that address. Use your password below.");
+    } catch {
+      setError("Could not check that address. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-full rounded-[var(--auth-radius)] border border-[var(--auth-border)] px-4 py-2.5 text-sm font-medium text-[var(--auth-text)] transition-colors hover:bg-black/5"
+      >
+        Sign in with SSO
+      </button>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <input
+        type="email"
+        autoFocus
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") go(); }}
+        placeholder="you@company.com"
+        className="w-full rounded-[var(--auth-radius)] border border-[var(--auth-border)] bg-transparent px-4 py-2.5 text-sm text-[var(--auth-text)] outline-none focus:border-[var(--auth-accent)]"
+      />
+      <button
+        type="button"
+        onClick={go}
+        disabled={busy}
+        className="w-full rounded-[var(--auth-radius)] bg-[var(--auth-accent)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+      >
+        {busy ? "Checking…" : "Continue"}
+      </button>
+      {error && <p className="text-xs text-red-500">{error}</p>}
+    </div>
+  );
+}
 
 export function SocialAuthButtons() {
   if (!isSocialAuthEnabled()) return null;
