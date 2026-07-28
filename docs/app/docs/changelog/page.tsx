@@ -28,6 +28,83 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.106.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.106.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Enterprise SSO — sign in with your customer&apos;s identity provider.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>OpenID Connect, one connection per customer.</strong> Add a connection
+                    in <code>System → Single sign-on</code> with an issuer URL, client ID and
+                    secret, and the domains it covers. Anything with a discovery document works —{" "}
+                    <strong>Okta, Entra ID, Auth0, Keycloak, Google Workspace, Ping, OneLogin</strong>.
+                    No new dependency: it&apos;s built on the OIDC provider goth already ships.
+                  </li>
+                  <li>
+                    <strong>Routed by email domain.</strong> The login page now offers{" "}
+                    <em>Sign in with SSO</em>: the user types their work address and the server
+                    decides where it belongs, so you never publish a list of your customers on a
+                    public page. An address with no connection falls through to the password form.
+                  </li>
+                  <li>
+                    <strong>Users provisioned on first login, roles from IdP groups.</strong> Map
+                    IdP groups to roles (<code>{'{"it-admins":"ADMIN"}'}</code>) and they&apos;re
+                    re-applied on <em>every</em> login — so removing someone from a group in the IdP
+                    revokes their role here too, which is the only reason to map groups at all.
+                    Just-in-time provisioning can be turned off for customers who pre-create users.
+                  </li>
+                  <li>
+                    <strong>Identities are linked by subject, not email.</strong> A new{" "}
+                    <code>user_identities</code> table matches on the IdP&apos;s immutable{" "}
+                    <code>sub</code> first, so someone who changes their email at the identity
+                    provider keeps their account and their data instead of silently getting a second
+                    one. Email is the fallback, which is also how an existing password user gets
+                    linked the first time their company turns SSO on.
+                  </li>
+                  <li>
+                    <strong>Client secrets are encrypted at rest</strong> (the same AES-256-GCM
+                    field encryption used elsewhere) and are write-only — the API never returns
+                    them, so editing a connection shows a blank field meaning &ldquo;keep what&apos;s
+                    stored&rdquo;.
+                  </li>
+                  <li>
+                    <strong>Connections go live without a restart.</strong> Providers are built at
+                    boot and rebuilt when a connection is saved. The registry is owned and
+                    RWMutex-guarded rather than using goth&apos;s package-level provider map, whose
+                    unsynchronised writes would be a fatal concurrent map read/write the moment an
+                    admin saved a connection while somebody was signing in. A connection whose
+                    discovery fails is logged and skipped so one broken IdP can&apos;t stop everyone
+                    else.
+                  </li>
+                </ul>
+                <p>
+                  <strong>SAML 2.0 as well.</strong> Pick the protocol per connection. A SAML
+                  connection takes the IdP&apos;s metadata (URL or pasted XML) instead of client
+                  credentials, and publishes an SP metadata endpoint plus an ACS endpoint for the
+                  customer&apos;s IdP admin. The service-provider keypair is generated on first use
+                  and its private key encrypted at rest; authentication requests are signed
+                  (RSA-SHA256) so providers that require signed requests work without extra setup.
+                  IdP-initiated sign-in is on by default, since starting from the provider&apos;s
+                  app tile is how most enterprise users actually log in.
+                </p>
+                <p>
+                  Both protocols converge on one identity shape before any account is touched, so
+                  SAML inherits the provisioning, identity-linking and role-mapping behaviour OIDC
+                  already has tests for rather than growing a second, subtly different copy.
+                </p>
+                <p>Matrix 73/0.</p>
+              </div>
+            </div>
+
             {/* v3.105.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

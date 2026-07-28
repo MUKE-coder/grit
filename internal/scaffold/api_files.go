@@ -22,6 +22,12 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "models", "session.go"):         apiSessionModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "session.go"):       apiSessionServiceGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "session.go"):       apiSessionHandlerGo(),
+		filepath.Join(apiRoot, "internal", "models", "sso.go"):             apiSSOModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "sso.go"):           apiSSOServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "sso.go"):           apiSSOHandlerGo(),
+		filepath.Join(apiRoot, "internal", "models", "saml.go"):            apiSAMLModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "saml.go"):          apiSAMLServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "saml.go"):          apiSAMLHandlerGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "auth.go"):          apiAuthHandlerGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user.go"):          apiUserHandlerGo(),
 		filepath.Join(apiRoot, "internal", "middleware", "auth.go"):        apiAuthMiddlewareGo(),
@@ -86,6 +92,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, ".air.toml"):                              airConfig(),
 		// Test files — give the generated API a working test suite out of the box
 		filepath.Join(apiRoot, "internal", "handlers", "auth_test.go"):  apiAuthTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "sso_test.go"):   apiSSOTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "saml_test.go"):  apiSAMLTestGo(),
 		filepath.Join(apiRoot, "internal", "services", "session_test.go"): apiSessionTestGo(),
 		filepath.Join(apiRoot, "internal", "models", "password_reset.go"):          apiPasswordResetModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "password_reset.go"):        apiPasswordResetServiceGo(),
@@ -223,6 +231,12 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.30
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.106.0
 	github.com/brianvoe/gofakeit/v7 v7.15.0
+	// SAML 2.0 service provider for enterprise SSO. OIDC covers every modern
+	// IdP and needs no library, but SAML is still what a lot of enterprise
+	// procurement asks for, and it cannot be hand-rolled safely — assertion
+	// signature verification, audience restriction and clock-skew handling are
+	// exactly the places a DIY implementation becomes an auth bypass.
+	github.com/crewjam/saml v0.5.1
 	github.com/disintegration/imaging v1.6.2
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-pdf/fpdf v1.4.3
@@ -1212,6 +1226,12 @@ func Models() []interface{} {
 		&Backup{},
 		// backup schedule (period + time-of-day for automatic backups)
 		&BackupSchedule{},
+		// enterprise SSO: one OIDC connection per customer, plus the external
+		// identities linking their users to local accounts
+		&SSOConnection{},
+		&UserIdentity{},
+		// the service provider's own signing keypair, generated on first use
+		&SAMLKeypair{},
 		// grit:models
 	}
 }
@@ -7614,6 +7634,21 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	backupHandler := &handlers.BackupHandler{DB: db, Storage: svc.Storage}
 	roleHandler := handlers.NewRoleHandler(db)
 	sessionHandler := handlers.NewSessionHandler(db)
+
+	// Enterprise SSO. Providers are built once here (each one performs OIDC
+	// discovery against the customer's IdP) and rebuilt whenever an admin saves
+	// a connection, so adding a customer never needs a restart. A connection
+	// whose discovery fails is logged and skipped — one broken IdP must not
+	// stop everyone else signing in.
+	ssoRegistry := services.NewSSORegistry(cfg.AppURL)
+	for _, err := range ssoRegistry.Reload(db) {
+		log.Printf("sso: %v", err)
+	}
+	samlRegistry := services.NewSAMLRegistry(cfg.AppURL)
+	for _, err := range samlRegistry.Reload(db) {
+		log.Printf("saml: %v", err)
+	}
+	ssoHandler := handlers.NewSSOHandler(db, authService, cfg, ssoRegistry, samlRegistry)
 	// grit:handlers
 
 	// Health check
@@ -7762,6 +7797,31 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	{
 		oauth.GET("/:provider", authHandler.OAuthBegin)
 		oauth.GET("/:provider/callback", authHandler.OAuthCallback)
+	}
+
+	// Enterprise SSO (OIDC). Public by design — these ARE the login flow.
+	// Discover tells the login form whether an address belongs to a connection;
+	// the other two are the redirect out to the IdP and the return trip.
+	//
+	// Like the OAuth callbacks above, /callback is registered in the customer's
+	// IdP console, so its unversioned path must keep working — see the note on
+	// APIVersion.
+	sso := auth.Group("/sso")
+	{
+		sso.POST("/discover", ssoHandler.Discover)
+		sso.GET("/:slug", ssoHandler.Begin)
+		sso.GET("/:slug/callback", ssoHandler.Callback)
+	}
+
+	// SAML 2.0. /metadata is what the customer uploads to their IdP and /acs is
+	// where that IdP POSTs the signed assertion — both get registered on their
+	// side, so like the OAuth callbacks these unversioned paths must keep
+	// working across API version bumps.
+	samlGroup := auth.Group("/saml")
+	{
+		samlGroup.GET("/:slug/metadata", ssoHandler.SAMLMetadata)
+		samlGroup.GET("/:slug", ssoHandler.SAMLBegin)
+		samlGroup.POST("/:slug/acs", ssoHandler.SAMLACS)
 	}
 
 	// TOTP verification (public — uses pending tokens, not JWT)
@@ -7939,6 +7999,15 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		admin.GET("/admin/observability/summary", observabilityHandler.Summary)
 
 		// v3.31.20 — public form sharing admin
+		// SSO connections — admin only. Client secrets are write-only: they go
+		// in on create/update and are never returned, so a compromised admin
+		// session can't read a customer's IdP credentials back out.
+		admin.GET("/sso/connections", middleware.RequireRole("ADMIN"), ssoHandler.List)
+		admin.POST("/sso/connections", middleware.RequireRole("ADMIN"), ssoHandler.Create)
+		admin.PUT("/sso/connections/:id", middleware.RequireRole("ADMIN"), ssoHandler.Update)
+		admin.DELETE("/sso/connections/:id", middleware.RequireRole("ADMIN"), ssoHandler.Delete)
+		admin.GET("/sso/connections/:id/test", middleware.RequireRole("ADMIN"), ssoHandler.Test)
+
 		admin.GET("/admin/form-shares", formShareHandler.List)
 		admin.POST("/admin/form-shares", formShareHandler.Create)
 		admin.PATCH("/admin/form-shares/:id", formShareHandler.Update)
