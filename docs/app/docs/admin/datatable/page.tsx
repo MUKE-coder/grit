@@ -346,6 +346,42 @@ Response:
             </div>
 
             <div className="prose-grit">
+              {/* Custom row actions */}
+              <h2 id="custom-row-actions">Custom row actions</h2>
+              <p>
+                Beyond the built-in view / edit / delete controls, <code>table.rowActions</code>{' '}
+                adds your own per-row entries. Each one takes a <code>label</code> plus either an{' '}
+                <code>href(row)</code> (renders a link) or an <code>onClick(row)</code> (renders a
+                button). Add <code>variant: &quot;danger&quot;</code> to color it as destructive,
+                and <code>visible(row)</code> to show it only for some rows.
+              </p>
+              <p>
+                The Users resource ships one: <strong>Erase (GDPR)</strong>, which deep-links to
+                the GDPR page with that user pre-selected — because an ordinary delete is a
+                reversible soft delete, not an Art. 17 erasure.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="Custom row actions" code={`table: {
+  columns: [ /* … */ ],
+  actions: ['create', 'view', 'edit', 'delete'],
+  rowActions: [
+    {
+      label: 'Erase (GDPR)',
+      variant: 'danger',
+      href: (row) => '/system/gdpr?user=' + String(row.id),
+    },
+    {
+      label: 'Resend',
+      onClick: (row) => resend(String(row.id)),
+      visible: (row) => row.status === 'failed',
+    },
+  ],
+}`} />
+            </div>
+
+            <div className="prose-grit">
               {/* Row Actions */}
               <h2>Row Actions</h2>
               <p>

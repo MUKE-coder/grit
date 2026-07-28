@@ -579,11 +579,123 @@ func TestJournalTamperDetected(t *testing.T) {
 func adminGDPRPage() string {
 	src := `"use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { apiClient } from "@/lib/api-client";
-import { Shield, ShieldCheck, Download, Trash2, AlertTriangle, Loader2, Check, X } from "@/lib/icons";
+import { Shield, ShieldCheck, Download, Trash2, AlertTriangle, Loader2, Check, X, Search } from "@/lib/icons";
+
+interface PickedUser {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+// UserPicker — type to search the user directory instead of pasting a UUID.
+// GDPR requests arrive as "delete john@acme.com", never as an id, so the raw
+// id box was the wrong shape for the job. Selecting a user surfaces their id
+// for the record.
+function UserPicker({
+  value,
+  onChange,
+}: {
+  value: PickedUser | null;
+  onChange: (u: PickedUser | null) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  const searchQ = useQuery({
+    queryKey: ["gdpr-user-search", query],
+    queryFn: async () => {
+      const { data } = await apiClient.get("/api/users", {
+        params: { search: query, page_size: 8 },
+      });
+      return (data.data ?? []) as PickedUser[];
+    },
+    enabled: open,
+  });
+
+  const name = (u: PickedUser) =>
+    [u.first_name, u.last_name].filter(Boolean).join(" ") || u.email;
+
+  if (value) {
+    return (
+      <div className="flex min-w-[320px] flex-1 items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2">
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-medium text-foreground">{name(value)}</span>
+          <span className="block truncate font-mono text-xs text-muted-foreground">
+            {value.email} &middot; {value.id}
+          </span>
+        </span>
+        <button
+          type="button"
+          onClick={() => onChange(null)}
+          className="shrink-0 rounded p-1 text-muted-foreground hover:text-foreground"
+          title="Clear"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={boxRef} className="relative min-w-[320px] flex-1">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <input
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        spellCheck={false}
+        placeholder="Search a user by name or email…"
+        className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
+      />
+      {open && (
+        <div className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-border bg-card shadow-xl">
+          {searchQ.isLoading ? (
+            <p className="flex items-center gap-2 px-3 py-3 text-sm text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Searching…
+            </p>
+          ) : (searchQ.data ?? []).length === 0 ? (
+            <p className="px-3 py-3 text-sm text-muted-foreground">No users match.</p>
+          ) : (
+            (searchQ.data ?? []).map((u) => (
+              <button
+                key={u.id}
+                type="button"
+                onClick={() => {
+                  onChange(u);
+                  setOpen(false);
+                  setQuery("");
+                }}
+                className="flex w-full flex-col items-start px-3 py-2 text-left hover:bg-muted"
+              >
+                <span className="text-sm text-foreground">{name(u)}</span>
+                <span className="font-mono text-xs text-muted-foreground">{u.email}</span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface JournalRow {
   id: string;
@@ -602,10 +714,24 @@ interface JournalMeta {
 
 export default function GDPRPage() {
   const qc = useQueryClient();
-  const [userId, setUserId] = useState("");
+  const [picked, setPicked] = useState<PickedUser | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [reason, setReason] = useState("");
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const userId = picked?.id ?? "";
+
+  // The Users table's "Erase (GDPR)" action deep-links here with ?user=<id>,
+  // so the request arrives with the subject already chosen.
+  const searchParams = useSearchParams();
+  const deepLinked = searchParams?.get("user");
+  useEffect(() => {
+    if (!deepLinked || picked) return;
+    apiClient
+      .get("/api/users/" + deepLinked)
+      .then(({ data }) => setPicked(data.data as PickedUser))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepLinked]);
 
   const journalQ = useQuery({
     queryKey: ["gdpr-journal"],
@@ -641,7 +767,7 @@ export default function GDPRPage() {
       setMsg({ kind: "ok", text: "Erased " + d.records_affected + " record(s) and anonymized the user." });
       setConfirming(false);
       setReason("");
-      setUserId("");
+      setPicked(null);
       qc.invalidateQueries({ queryKey: ["gdpr-journal"] });
     },
     onError: (e: unknown) => setMsg({ kind: "err", text: errMsg(e) }),
@@ -676,20 +802,17 @@ export default function GDPRPage() {
           <h2 className="text-lg font-semibold">Export or erase a user</h2>
         </div>
         <p className="mb-4 max-w-2xl text-sm text-muted-foreground">
-          Enter a user ID. Export downloads a full JSON copy of their data (Art. 15). Erase
-          hard-deletes their personal records and anonymizes the account (Art. 17) — this cannot
-          be undone.
+          Search for the user this request is about. Export downloads a full JSON copy of their
+          data (Art. 15). Erase hard-deletes their personal records and anonymizes the account
+          (Art. 17) — this cannot be undone.
         </p>
         <div className="flex flex-wrap items-center gap-3">
-          <input
-            value={userId}
-            onChange={(e) => {
-              setUserId(e.target.value);
+          <UserPicker
+            value={picked}
+            onChange={(u) => {
+              setPicked(u);
               setConfirming(false);
             }}
-            spellCheck={false}
-            placeholder="user id (uuid)"
-            className="min-w-[320px] flex-1 rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm outline-none focus:border-primary"
           />
           <button
             type="button"
@@ -716,7 +839,8 @@ export default function GDPRPage() {
             <div className="mb-3 flex items-start gap-2 text-sm text-red-500">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>
-                This permanently deletes <span className="font-mono">{userId}</span>&rsquo;s uploads,
+                This permanently deletes{" "}
+                <span className="font-medium">{picked?.email ?? userId}</span>&rsquo;s uploads,
                 sessions, 2FA and more, and anonymizes their account. The audit trail is retained.
               </span>
             </div>
@@ -765,6 +889,12 @@ export default function GDPRPage() {
             </span>
           )}
         </div>
+
+        <p className="mb-4 text-xs text-muted-foreground">
+          Erasures only. Deleting a user from the Users page is an ordinary, reversible soft
+          delete — it keeps their data and is not recorded here. Use <strong>Erase</strong> above
+          for a real Art. 17 erasure.
+        </p>
 
         {journalQ.isLoading ? (
           <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">

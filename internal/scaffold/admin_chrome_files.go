@@ -391,7 +391,9 @@ func adminPageHeaderComponent() string {
 
 import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { RefreshCw, Search } from "@/lib/icons";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { RefreshCw, Search, ArrowLeft } from "@/lib/icons";
 import { DarkModeToggle } from "./DarkModeToggle";
 import { UserMenu } from "./UserMenu";
 import { NotificationBell } from "./NotificationBell";
@@ -413,6 +415,10 @@ interface PageHeaderProps {
   refreshKeys?: string[];
   /** Hide the refresh button entirely. */
   hideRefresh?: boolean;
+  /** Override the auto-derived back link. Pass null to suppress it entirely. */
+  backHref?: string | null;
+  /** Label for the back link. Defaults to "Back to System Hub". */
+  backLabel?: string;
 }
 
 /**
@@ -431,8 +437,28 @@ export function PageHeader({
   actions,
   refreshKeys,
   hideRefresh,
+  backHref,
+  backLabel,
 }: PageHeaderProps) {
   const queryClient = useQueryClient();
+  const pathname = usePathname();
+
+  // Every operational surface lives under the System Hub, but each page is
+  // its own route with no shared layout — so a sub-page would otherwise be a
+  // dead end. Derive the back link from the path: any /system/* or
+  // /settings/* page (but not the hub itself) gets "Back to System Hub"
+  // automatically, including pages added later by plugins. Pass backHref to
+  // point somewhere else, or backHref={null} to suppress it.
+  const autoBack =
+    pathname !== "/system" && (pathname.startsWith("/system/") || pathname.startsWith("/settings"));
+  const backTo =
+    backHref === null
+      ? null
+      : backHref
+        ? { href: backHref, label: backLabel ?? "Back" }
+        : autoBack
+          ? { href: "/system", label: backLabel ?? "Back to System Hub" }
+          : null;
 
   // Refresh defaults to invalidating every query on the page. Pages with
   // hot keys (jobs, files, sentinel) can scope by passing refreshKeys.
@@ -455,6 +481,15 @@ export function PageHeader({
         {/* Title block — min-w-0 + flex-shrink lets the title wrap
             cleanly when long subtitles share the row with action chrome. */}
         <div className="min-w-0 md:flex-1">
+          {backTo && (
+            <Link
+              href={backTo.href}
+              className="mb-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-text-muted transition-colors hover:text-accent"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              {backTo.label}
+            </Link>
+          )}
           <h1 className="text-2xl font-bold text-foreground tracking-tight truncate">{title}</h1>
           {subtitle && <p className="mt-1 text-sm text-text-secondary md:line-clamp-2">{subtitle}</p>}
         </div>

@@ -20,7 +20,8 @@ import { useResourceItem, useResource, useDeleteResource } from "@/hooks/use-res
 import { renderCell } from "@/components/tables/cell-renderers";
 import { DataTable } from "@/components/tables/data-table";
 import { FormSheet } from "@/components/forms/form-sheet";
-import { ArrowLeft, Pencil, Trash2, Loader2, Printer, Plus } from "@/lib/icons";
+import { apiClient } from "@/lib/api-client";
+import { ArrowLeft, Pencil, Trash2, Loader2, Printer, Plus, FileText } from "@/lib/icons";
 
 interface ResourceDetailPageProps {
   resource: ResourceDefinition;
@@ -48,7 +49,26 @@ export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
   const { data, isLoading } = useResourceItem<Record<string, unknown>>(resource.endpoint, id);
   const record = data?.data;
   const [editing, setEditing] = useState(false);
-  const { mutate: deleteItem, isPending: isDeleting } = useDeleteResource(resource.endpoint);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const { mutate: deleteItem, isPending: isDeleting } = useDeleteResource(resource.endpoint, resource.label?.singular ?? resource.name);
+
+  // Ask the API for the rendered PDF and hand the blob to the browser's
+  // viewer. Going through apiClient means the auth cookies, CSRF header and
+  // 401-refresh interceptor all apply, which a bare <a href> would miss.
+  const downloadPdf = async () => {
+    setPdfBusy(true);
+    try {
+      const res = await apiClient.get(resource.endpoint + "/" + id + "/pdf", {
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+      window.open(url, "_blank", "noopener,noreferrer");
+      // Revoke late — revoking immediately can race the new tab's load.
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } finally {
+      setPdfBusy(false);
+    }
+  };
 
   // Inline line-items declared on THIS resource (rendered from the field's own
   // itemEndpoint + itemFields).
@@ -109,6 +129,21 @@ export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
           <p className="text-sm text-text-muted">{resource.label?.singular ?? resource.name} details</p>
         </div>
         <div className="no-print flex items-center gap-2">
+          {/* The PDF is rendered server-side (GET <endpoint>/:id/pdf) so it
+              looks the same everywhere and can be emailed or archived —
+              unlike the browser's print dialog, which only reproduces the
+              page. Fetched through apiClient rather than opened as a bare
+              link: auth rides HttpOnly cookies, and a cross-origin top-level
+              navigation (admin :3001 → api :8080) would not reliably carry
+              them. The blob is opened in a new tab for viewing/saving. */}
+          <button
+            onClick={downloadPdf}
+            disabled={pdfBusy}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-text-secondary hover:border-accent/40 hover:text-foreground transition-colors disabled:opacity-50"
+          >
+            {pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+            PDF
+          </button>
           <button
             onClick={() => window.print()}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-text-secondary hover:border-accent/40 hover:text-foreground transition-colors"

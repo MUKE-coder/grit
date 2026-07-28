@@ -84,6 +84,7 @@ func (g *Generator) injectAll(names Names) error {
 		%sGroup.GET("", %sHandler.List)
 		%sGroup.GET("/export", %sHandler.Export)
 		%sGroup.GET("/:id", %sHandler.GetByID)
+		%sGroup.GET("/:id/pdf", %sHandler.PDF)
 		%sGroup.POST("", %sHandler.Create)
 		%sGroup.PUT("/:id", %sHandler.Update)
 		%sGroup.PATCH("/:id", %sHandler.Patch)
@@ -92,6 +93,7 @@ func (g *Generator) injectAll(names Names) error {
 				names.PluralPascal, strings.Join(g.Roles, ", "),
 				names.Camel, names.Plural,
 				names.Camel, rolesStr,
+				names.Camel, names.Camel,
 				names.Camel, names.Camel,
 				names.Camel, names.Camel,
 				names.Camel, names.Camel,
@@ -110,9 +112,11 @@ func (g *Generator) injectAll(names Names) error {
 		protected.POST("/%s/import", %sHandler.Import)
 		protected.GET("/%s/import/template", %sHandler.Template)
 		protected.GET("/%s/:id", %sHandler.GetByID)
+		protected.GET("/%s/:id/pdf", %sHandler.PDF)
 		protected.POST("/%s", %sHandler.Create)
 		protected.PUT("/%s/:id", %sHandler.Update)
 		protected.PATCH("/%s/:id", %sHandler.Patch)`,
+				names.Plural, names.Camel,
 				names.Plural, names.Camel,
 				names.Plural, names.Camel,
 				names.Plural, names.Camel,

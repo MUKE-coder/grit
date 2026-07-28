@@ -121,13 +121,25 @@ canonical(entry) = deleted_user_id | actor_id | actor_email |
             <h3>What the admin sees</h3>
             <p>
               The <code>/system/gdpr</code> page has two cards. <strong>Export or erase a user</strong>{' '}
-              takes a user UUID and offers an <em>Export data</em> button (downloads the JSON
-              bundle) and an <em>Erase…</em> button that opens an inline confirmation with a{' '}
-              <em>reason</em> field — the reason is stored in the journal. <strong>Deletion
-              journal</strong> lists every erasure (deleted user, erased-by, records affected,
-              reason, when) under the verified/broken pill. Empty until the first erasure:{' '}
-              <em>&ldquo;No erasures recorded yet.&rdquo;</em>
+              has a searchable user picker — requests arrive as &ldquo;delete
+              john@acme.com&rdquo;, never as a UUID — then an <em>Export data</em> button
+              (downloads the JSON bundle) and an <em>Erase…</em> button that opens an inline
+              confirmation with a <em>reason</em> field, which is stored in the journal.{' '}
+              <strong>Deletion journal</strong> lists every erasure (deleted user, erased-by,
+              records affected, reason, when) under the verified/broken pill. Empty until the first
+              erasure: <em>&ldquo;No erasures recorded yet.&rdquo;</em>
             </p>
+            <div className="mt-6 rounded-lg border border-amber-500/25 bg-amber-500/5 p-4">
+              <p className="!mb-0 text-sm">
+                <strong>Deleting a user is not an erasure.</strong> The Users page&apos;s{' '}
+                <em>Delete</em> is an ordinary GORM soft delete: it sets <code>deleted_at</code>{' '}
+                and the row — with its email, names and device identifiers — physically remains.
+                That is reversible, which is exactly what you want most of the time, and it is
+                deliberately <em>not</em> written to the journal. For a real Art. 17 request use
+                the <strong>Erase (GDPR)</strong> action on the Users table (it deep-links here
+                with the user pre-selected) or pick them here directly.
+              </p>
+            </div>
 
             {/* ──────────────────────── Access Reviews ──────────────────────── */}
             <h2 id="access-reviews" className="mt-12">Access Reviews</h2>
@@ -193,7 +205,8 @@ canonical(entry) = deleted_user_id | actor_id | actor_email |
               <em>{'{pending} · {approved} · {revoked}'}</em> counts; on the right, the selected
               review&apos;s items table (User, Role, Decision) with <strong>Keep</strong> /{' '}
               <strong>Revoke</strong> buttons per pending row and a <strong>Complete review</strong>{' '}
-              button that stays disabled until nothing is pending.
+              button that stays disabled until nothing is pending. <strong>New review</strong>{' '}
+              opens a form for the campaign&apos;s name and an optional note.
             </p>
 
             <div className="mt-8 rounded-lg border border-primary/20 bg-primary/5 p-4">

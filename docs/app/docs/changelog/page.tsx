@@ -28,6 +28,74 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.104.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.104.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Real PDFs, named toasts, and a way back out of the System Hub.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>Server-rendered PDFs.</strong> Every generated resource now exposes{" "}
+                    <code>GET /api/&lt;resource&gt;/:id/pdf</code>, and the detail page has a{" "}
+                    <strong>PDF</strong> button beside Print. The document is laid out from the
+                    record — a title block, a two-up field grid, line items as a table, totals and
+                    notes — with a <strong>repeating header and footer carrying &ldquo;Page N of
+                    M&rdquo;</strong> on every page. Because it&apos;s rendered in Go rather than by
+                    the browser, the same bytes can be emailed or archived. The generic renderer
+                    lives in <code>internal/pdf/record.go</code>; the handler it drives is plain
+                    generated Go you can restyle.
+                  </li>
+                  <li>
+                    <strong>Toasts name the resource.</strong> &ldquo;Invoice created
+                    successfully&rdquo; instead of a bare &ldquo;Created successfully&rdquo; —
+                    across create, update, save, delete, and bulk delete (which also reports the
+                    count: &ldquo;3 Invoices deleted successfully&rdquo;).
+                  </li>
+                  <li>
+                    <strong>Back to System Hub.</strong> Sub-pages under <code>/system/*</code> and{" "}
+                    <code>/settings/*</code> were dead ends once the sidebar collapsed into a single
+                    hub link. They now derive a back link automatically — including pages added by
+                    plugins. Override with <code>backHref</code>, or pass{" "}
+                    <code>backHref={"{null}"}</code> to suppress it.
+                  </li>
+                  <li>
+                    <strong>Access Reviews: a real form.</strong> &ldquo;New review&rdquo; opened a
+                    raw <code>window.prompt</code>; it now opens a proper sheet with a name field
+                    and an optional note (which the API already stored but nothing could set).
+                  </li>
+                  <li>
+                    <strong>GDPR is connected to Users.</strong> The page took a pasted UUID — it
+                    now has a searchable user picker, and the Users table gained an{" "}
+                    <strong>Erase (GDPR)</strong> row action that deep-links with the subject
+                    pre-selected. The journal still records erasures only; an ordinary delete is a
+                    reversible soft delete, and the page now says so instead of leaving you
+                    wondering why nothing appeared.
+                  </li>
+                  <li>
+                    <strong>Custom row actions.</strong> The <code>Erase (GDPR)</code> entry is
+                    built on a new <code>table.rowActions</code> extension point — give it a{" "}
+                    <code>label</code> plus an <code>href(row)</code> or <code>onClick(row)</code>,
+                    optionally <code>variant: &quot;danger&quot;</code> and a <code>visible(row)</code>{" "}
+                    predicate.
+                  </li>
+                  <li>
+                    <strong>Better browser print, too.</strong> Proper <code>@page</code> margins,
+                    ink-friendly colors, repeated table headers across pages, and no rows split
+                    down the middle.
+                  </li>
+                </ul>
+                <p>Matrix 73/0.</p>
+              </div>
+            </div>
+
             {/* v3.103.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
