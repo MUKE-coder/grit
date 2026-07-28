@@ -94,6 +94,7 @@ export default function FieldTypesPage() {
                 <ul className="space-y-2.5 mt-4 mb-4">
                   {[
                     ['Modifiers', 'name:string:unique — append :unique, :required, or :optional. String fields default to required; everything else defaults to optional.'],
+                    ['Options', 'status:select:draft=Draft|sent=Sent (select / check) — pipe-separated choices. Labels are OPTIONAL: status:select:draft|sent|paid generates the labels by capitalizing each value (in_progress → In Progress). Use value=Label only when the label differs from the stored value.'],
                     ['Slug source', 'slug:slug:title — the 3rd segment is the field to slugify. Slugs are auto-unique and generated on save.'],
                     ['belongs_to', 'category:belongs_to (model inferred → Category) or author:belongs_to:User (explicit). Creates a <name>_id UUID foreign-key column.'],
                     ['many_to_many', 'tags:many_to_many:Tag — the related model is required. GORM builds the join table.'],
