@@ -4,18 +4,81 @@ package scaffold
 func adminDataTable() string {
 	return `"use client";
 
+import { useState, type MouseEvent, type ReactNode } from "react";
 import type { ColumnDefinition } from "@/lib/resource";
 import { ColumnHeader } from "./column-header";
 import { renderCell } from "./cell-renderers";
 import { TableSkeleton } from "./table-skeleton";
 import { TableEmptyState } from "./table-empty-state";
-import { Eye } from "@/lib/icons";
+import { Eye, ArrowUpRight, Copy, Check } from "@/lib/icons";
 
 function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
   if (!path.includes(".")) return obj[path];
   return path.split(".").reduce<unknown>(
     (acc, key) => acc && typeof acc === "object" ? (acc as Record<string, unknown>)[key] : undefined,
     obj
+  );
+}
+
+// ClickableCell wraps a rendered cell when the column defines onClick. The two
+// built-ins ("link" → open the row, "copy" → copy the value) get an affordance
+// icon on hover; a custom function is called with (value, row). stopPropagation
+// keeps the cell click from bubbling to the row.
+function ClickableCell({
+  column,
+  value,
+  row,
+  onView,
+  children,
+}: {
+  column: ColumnDefinition;
+  value: unknown;
+  row: Record<string, unknown>;
+  onView?: (item: Record<string, unknown>) => void;
+  children: ReactNode;
+}) {
+  const [copied, setCopied] = useState(false);
+  const behavior = column.onClick;
+  if (!behavior) return <>{children}</>;
+
+  const handle = (e: MouseEvent) => {
+    e.stopPropagation();
+    if (behavior === "link") {
+      onView?.(row);
+    } else if (behavior === "copy") {
+      const text = value == null ? "" : String(value);
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1200);
+        });
+      }
+    } else if (typeof behavior === "function") {
+      behavior(value, row);
+    }
+  };
+
+  const title =
+    behavior === "link" ? "Open" : behavior === "copy" ? "Copy" : undefined;
+
+  return (
+    <button
+      type="button"
+      onClick={handle}
+      title={title}
+      className="group/cell inline-flex max-w-full items-center gap-1.5 text-left hover:text-accent transition-colors"
+    >
+      <span className="truncate">{children}</span>
+      {behavior === "link" && (
+        <ArrowUpRight className="h-3 w-3 shrink-0 opacity-0 group-hover/cell:opacity-60 transition-opacity" />
+      )}
+      {behavior === "copy" &&
+        (copied ? (
+          <Check className="h-3 w-3 shrink-0 text-success" />
+        ) : (
+          <Copy className="h-3 w-3 shrink-0 opacity-0 group-hover/cell:opacity-60 transition-opacity" />
+        ))}
+    </button>
   );
 }
 
@@ -130,7 +193,14 @@ export function DataTable({
                     className="px-4 py-3 text-sm text-foreground"
                     style={col.width ? { width: col.width } : undefined}
                   >
-                    {renderCell(col, getNestedValue(row, col.key), row)}
+                    <ClickableCell
+                      column={col}
+                      value={getNestedValue(row, col.key)}
+                      row={row}
+                      onView={onView}
+                    >
+                      {renderCell(col, getNestedValue(row, col.key), row)}
+                    </ClickableCell>
                   </td>
                 ))}
                 {(onView || onEdit || onDelete) && (

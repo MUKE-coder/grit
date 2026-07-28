@@ -34,7 +34,22 @@ export interface ColumnDefinition {
   // hand-written page. Receives the full row so dotted keys aren't
   // necessary. When defined, takes precedence over format / badge.
   cell?: (row: Record<string, unknown>) => ReactNode;
+  // v3.101.0: make a cell's value clickable. Two behaviors are built in —
+  // "link" opens the row's detail page, "copy" copies the cell value to the
+  // clipboard (with a brief check-mark) — or pass your own function to do
+  // anything (open a modal, fire a mutation, deep-link elsewhere). It gets the
+  // cell value and the full row. The click never triggers the row's other
+  // actions. Generated resources set onClick: "link" on their first column so
+  // the primary identifier is click-to-open out of the box.
+  onClick?: ColumnClick;
 }
+
+// ColumnClick is a table cell's click behavior: a built-in ("link" → open the
+// detail page, "copy" → copy the value) or a custom handler.
+export type ColumnClick =
+  | "link"
+  | "copy"
+  | ((value: unknown, row: Record<string, unknown>) => void);
 
 // ─── Filter Definitions ─────────────────────────────────────────────
 
