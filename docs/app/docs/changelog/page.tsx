@@ -28,6 +28,48 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.98.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.98.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>A radio field type, and &ldquo;New child&rdquo; buttons on detail
+                  pages.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong><code>radio</code> field type.</strong> A single choice rendered as a
+                    radio-button group — same Go <code>string</code>, Zod <code>z.enum</code>,
+                    and TS union as <code>select</code>, but the options are laid out as buttons
+                    instead of a dropdown. Use it for a few visible choices (a plan tier, a
+                    priority): <code>plan:radio:free=Free|pro=Pro</code>. Labels stay optional —
+                    bare values are capitalized (<code>past_due</code> &rarr; Past Due).
+                  </li>
+                  <li>
+                    <strong>Create a child from its parent.</strong> A resource&apos;s detail page
+                    already lists the records that <code>belongs_to</code> it; now each of those
+                    tables has a <strong>New &lt;child&gt;</strong> button that opens the child&apos;s
+                    create form with the parent already filled in. On a customer you get{" "}
+                    <em>New Invoice</em> scoped to that customer; on a category, <em>New
+                    Product</em> in that category. Backed by a new <code>defaults</code> prop on
+                    the form components for create-time pre-fill.
+                  </li>
+                </ul>
+                <p>
+                  Proven in a browser: on a customer&apos;s page the New Invoice button opened a
+                  Create Invoice drawer with the customer pre-selected and the status shown as
+                  radio buttons; saving wrote an invoice carrying the right{" "}
+                  <code>customer_id</code>. Matrix 73/0.
+                </p>
+              </div>
+            </div>
+
             {/* v3.97.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

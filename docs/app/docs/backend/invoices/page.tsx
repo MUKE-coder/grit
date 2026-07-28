@@ -155,6 +155,37 @@ INV-202608-0001   ← monthly reset rolls the counter over`} />
               <code>2026/Q3/0001</code>)? The helper is plain Go you can edit; the sequence package
               just hands you the next integer.
             </p>
+            <p className="text-muted-foreground leading-relaxed mb-4 mt-6">
+              <strong>The number fills in on the server, not in the form.</strong> The hook runs at
+              create time and only when the field is blank — nothing pre-fills the browser. So
+              declare the field <code>number:string:optional</code> (string fields are required by
+              default) and the create form won&apos;t demand it; the value appears on the detail
+              page and list right after you save. Prefer not to show an empty Number box at all?
+              Remove the <code>number</code> entry from the resource&apos;s <code>form.fields</code>{' '}
+              — it stays in the table and detail, just not the create form.
+            </p>
+
+            {/* line-item totals */}
+            <h2 id="line-item-totals" className="text-2xl font-semibold mb-4 mt-12">
+              Line-item totals
+            </h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              The inline line-items table shows a per-row <strong>Total</strong> and a grand total
+              as you type — driven by <em>column names</em>, not configuration. It looks for one
+              column matching a quantity pattern (<code>qty</code> / <code>quantity</code>) and one
+              matching a money pattern (<code>unit_rate</code>, <code>unit_price</code>,{' '}
+              <code>rate</code>, <code>price</code>, or <code>amount</code>); if both exist it
+              renders <code>Total = quantity × money</code> and sums the rows. The default{' '}
+              <code>qty:int</code> + <code>unit_rate:float</code> match, so you get it for free.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              It&apos;s <strong>display-only</strong> — computed in the browser to help data entry;
+              only the declared columns are submitted, so no total is stored unless you add an{' '}
+              <code>amount</code> column and compute it in the item&apos;s <code>BeforeSave</code>
+              hook. And because the trigger is the column name, renaming <code>qty</code> to{' '}
+              <code>count</code> or <code>unit_rate</code> to <code>cost</code> simply stops the
+              auto-total from showing (nothing breaks) — keep a name in those patterns to keep it.
+            </p>
 
             {/* D4 — print */}
             <h2 id="printing" className="text-2xl font-semibold mb-4 mt-12">

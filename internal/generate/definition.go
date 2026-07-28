@@ -304,7 +304,7 @@ func parseFieldInput(input string) (Field, error) {
 	// select / check: third part is the value=Label option list, pipe-separated
 	// (e.g. status:select:draft=Draft|sent=Sent|paid=Paid). A bare value gets a
 	// humanized label.
-	if typ == "select" || typ == "check" {
+	if typ == "select" || typ == "radio" || typ == "check" {
 		if len(parts) < 3 || strings.TrimSpace(parts[2]) == "" {
 			return Field{}, fmt.Errorf("%s field %q needs options, e.g. %s:%s:draft=Draft|sent=Sent", typ, name, name, typ)
 		}
@@ -315,7 +315,7 @@ func parseFieldInput(input string) (Field, error) {
 		return Field{
 			Name:     name,
 			Type:     typ,
-			Required: typ == "select", // a single-choice select defaults to required
+			Required: typ == "select" || typ == "radio", // single-choice fields default to required
 			Options:  options,
 		}, nil
 	}

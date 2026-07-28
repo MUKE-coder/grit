@@ -30,6 +30,7 @@ const (
 	// toggle = an on/off boolean (a friendlier alias for bool). Options are
 	// declared as value=Label pairs: "status:select:draft=Draft|paid=Paid".
 	FieldSelect FieldType = "select"
+	FieldRadio  FieldType = "radio"
 	FieldCheck  FieldType = "check"
 	FieldToggle FieldType = "toggle"
 )
@@ -65,6 +66,9 @@ type FieldOption struct {
 
 // IsSelect reports a single-choice dropdown field.
 func (f Field) IsSelect() bool { return FieldType(f.Type) == FieldSelect }
+
+// IsRadio reports a single-choice radio-button field.
+func (f Field) IsRadio() bool { return FieldType(f.Type) == FieldRadio }
 
 // IsCheck reports a multi-choice checkbox-group field (stored as a JSON array).
 func (f Field) IsCheck() bool { return FieldType(f.Type) == FieldCheck }
@@ -182,7 +186,7 @@ func (f Field) GoType() string {
 		return "float64"
 	case FieldBool, FieldToggle:
 		return "bool"
-	case FieldSelect:
+	case FieldSelect, FieldRadio:
 		return "string"
 	case FieldCheck:
 		return "datatypes.JSONSlice[string]"
@@ -237,7 +241,7 @@ func (f Field) GORMTag() string {
 		parts = append(parts, "size:36", "index")
 	case FieldStringArray, FieldCheck:
 		parts = append(parts, "type:json")
-	case FieldSelect:
+	case FieldSelect, FieldRadio:
 		parts = append(parts, "size:255")
 	case FieldFile, FieldFiles:
 		// FileRef / FileRefs implement Value / Scan via the files package,
@@ -295,7 +299,7 @@ func (f Field) TSType() string {
 		return "string"
 	case FieldBool, FieldToggle:
 		return "boolean"
-	case FieldSelect:
+	case FieldSelect, FieldRadio:
 		if f.HasOptions() {
 			return f.tsUnion()
 		}
@@ -341,7 +345,7 @@ func (f Field) ZodType() string {
 		base = "z.number()"
 	case FieldBool, FieldToggle:
 		base = "z.boolean()"
-	case FieldSelect:
+	case FieldSelect, FieldRadio:
 		if f.HasOptions() {
 			base = "z.enum([" + f.zodEnumList() + "])"
 		} else {
@@ -419,6 +423,8 @@ func (f Field) FormFieldType() string {
 		return "toggle"
 	case FieldSelect:
 		return "select"
+	case FieldRadio:
+		return "radio"
 	case FieldCheck:
 		return "checkbox-group"
 	case FieldDatetime:
@@ -459,7 +465,7 @@ func (f Field) IsSearchable() bool {
 
 // ValidFieldTypes returns all valid field type names.
 func ValidFieldTypes() []string {
-	return []string{"string", "text", "richtext", "int", "uint", "float", "bool", "toggle", "select", "check", "datetime", "date", "slug", "belongs_to", "many_to_many", "string_array", "file", "files"}
+	return []string{"string", "text", "richtext", "int", "uint", "float", "bool", "toggle", "select", "radio", "check", "datetime", "date", "slug", "belongs_to", "many_to_many", "string_array", "file", "files"}
 }
 
 // FKColumnName returns the foreign key column name for a belongs_to field.
