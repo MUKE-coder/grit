@@ -209,6 +209,7 @@ const navItems: NavItem[] = [
     items: [
       { title: 'Security Guide (OWASP)', href: '/docs/security' },
       { title: 'Roles & Permissions', href: '/docs/security/authorization' },
+      { title: 'Privacy & Compliance (GDPR)', href: '/docs/security/compliance' },
       { title: "Defender's Handbook ↔ Grit", href: '/docs/security/defenders-handbook' },
       { title: 'Performance & Pentest Testing', href: '/docs/testing' },
     ],
