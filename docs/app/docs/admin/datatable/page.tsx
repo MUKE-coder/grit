@@ -299,6 +299,53 @@ Response:
             </div>
 
             <div className="prose-grit">
+              {/* Clickable columns */}
+              <h2 id="clickable-columns">Clickable columns</h2>
+              <p>
+                Add <code>onClick</code> to a column to make its value clickable. Two behaviors
+                are built in, or you can pass your own function:
+              </p>
+              <ul>
+                <li>
+                  <code>onClick: &quot;link&quot;</code> &mdash; opens the row&apos;s{' '}
+                  <strong>detail page</strong> (an <em>open</em> arrow appears on hover). Generated
+                  resources set this on their <strong>first column</strong> automatically, so the
+                  primary identifier (invoice number, name, title) is click-to-open out of the box.
+                </li>
+                <li>
+                  <code>onClick: &quot;copy&quot;</code> &mdash; copies the cell value to the
+                  clipboard and flashes a check-mark. Ideal for IDs, reference numbers, or emails.
+                </li>
+                <li>
+                  <code>onClick: (value, row) =&gt; {'{'} … {'}'}</code> &mdash; a custom handler.
+                  Open a modal, fire a mutation, deep-link somewhere &mdash; you get the cell value
+                  and the whole row.
+                </li>
+              </ul>
+              <p>
+                The click is isolated: it never triggers the row&apos;s other actions, and it works
+                alongside <code>format</code>, <code>badge</code>, and <code>cell</code>.
+              </p>
+            </div>
+
+            <div className="mt-4 mb-8">
+              <CodeBlock filename="Clickable columns" code={`columns: [
+  // Click the number to open the invoice (this is the generated default)
+  { key: 'number', label: 'Invoice #', onClick: 'link' },
+
+  // Click to copy the value to the clipboard
+  { key: 'reference', label: 'Ref', onClick: 'copy' },
+
+  // Anything you want — you get the cell value and the full row
+  {
+    key: 'email',
+    label: 'Email',
+    onClick: (value, row) => window.open(\`mailto:\${value}\`),
+  },
+]`} />
+            </div>
+
+            <div className="prose-grit">
               {/* Row Actions */}
               <h2>Row Actions</h2>
               <p>

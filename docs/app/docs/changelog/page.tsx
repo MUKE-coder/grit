@@ -28,6 +28,45 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.101.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.101.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Clickable table columns.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>
+                      <code>onClick</code> on any column.
+                    </strong>{" "}
+                    Two behaviors are built in — <code>onClick: &quot;link&quot;</code> opens the
+                    row&apos;s detail page (with a hover <em>open</em> arrow), and{" "}
+                    <code>onClick: &quot;copy&quot;</code> copies the cell value to the clipboard
+                    with a check-mark flash — or pass{" "}
+                    <code>onClick: (value, row) =&gt; …</code> to do anything (open a modal, fire a
+                    mutation, deep-link elsewhere). The click is isolated: it never triggers the
+                    row&apos;s other actions and composes with <code>format</code>,{" "}
+                    <code>badge</code>, and custom <code>cell</code>.
+                  </li>
+                  <li>
+                    <strong>Click-to-open out of the box.</strong> Generated resources now set{" "}
+                    <code>onClick: &quot;link&quot;</code> on their first plain column, so the
+                    primary identifier — invoice number, name, title — opens the detail page on
+                    click without any wiring. Relationship columns are left alone (linking a related
+                    entity&apos;s name to <em>this</em> resource&apos;s page would mislead).
+                  </li>
+                </ul>
+                <p>Matrix 73/0.</p>
+              </div>
+            </div>
+
             {/* v3.100.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

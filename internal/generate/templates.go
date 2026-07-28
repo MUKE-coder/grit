@@ -1425,6 +1425,11 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 	// Users who want it can add { key: "id", label: "ID", width: "80px" }
 	// to the columns array by hand.
 	columns := ""
+	// The first plain (non-relationship) column becomes click-to-open — the
+	// primary identifier (number / name / title) links to the detail page out
+	// of the box. Developers can move it, switch it to "copy", or give any
+	// column a custom onClick.
+	linkedFirstColumn := false
 	for _, f := range g.Definition.Fields {
 		colName := toSnakeCase(f.Name)
 
@@ -1467,6 +1472,10 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 		}
 		if format != "text" {
 			parts = append(parts, fmt.Sprintf(`format: "%s"`, format))
+		}
+		if !linkedFirstColumn {
+			parts = append(parts, `onClick: "link"`)
+			linkedFirstColumn = true
 		}
 
 		columns += "\n      { " + strings.Join(parts, ", ") + " },"
