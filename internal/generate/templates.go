@@ -623,10 +623,12 @@ func (g *Generator) writeGoHandler(names Names) error {
 			hasFileFields = true
 		}
 	}
-	timeImport := ""
-	if needsTimeImport {
-		timeImport = "\n\t\"time\""
-	}
+	// The PDF endpoint always stamps the footer with time.Now() and reads
+	// APP_NAME, so "time" and "os" are imported unconditionally now — the
+	// needsTimeImport check below is kept only to document why other code
+	// paths wanted it.
+	_ = needsTimeImport
+	timeImport := "\n\t\"os\"\n\t\"time\""
 	datatypesImport := ""
 	if needsHandlerDatatypes {
 		datatypesImport = "\n\t\"gorm.io/datatypes\""
@@ -668,8 +670,80 @@ func (g *Generator) writeGoHandler(names Names) error {
 		}
 	}
 
+	// ── PDF endpoint ─────────────────────────────────────────────────────────
+	// Build the detail grid from the resource's own fields. Binary/collection
+	// types (files, images, video) and many-to-many have no sensible text
+	// rendering, so they're left out; belongs_to prints the related record's
+	// human label via pdf.Display, which reflects for Name/Title/Email/etc.
+	pdfFields := ""
+	for _, f := range g.Definition.Fields {
+		if f.IsManyToMany() || f.IsSlug() {
+			continue
+		}
+		switch f.FormFieldType() {
+		case "image", "images", "video", "videos", "file", "files", "richtext":
+			continue
+		}
+		label := strings.Join(splitPascal(toPascalCase(f.Name)), " ")
+		if f.IsBelongsTo() {
+			assoc := toPascalCase(strings.TrimSuffix(f.Name, "_id"))
+			pdfFields += fmt.Sprintf("\t\t\t{Label: %q, Value: pdf.Display(item.%s)},\n", label, assoc)
+			continue
+		}
+		pdfFields += fmt.Sprintf("\t\t\t{Label: %q, Value: pdf.Value(item.%s)},\n", label, toPascalCase(f.Name))
+	}
+	pdfFields += fmt.Sprintf("\t\t\t{Label: %q, Value: pdf.Value(item.CreatedAt)},\n", "Created")
+
+	// Line items become a table section, with a Total column when the child
+	// carries a quantity and a rate (the same name-based pairing the admin's
+	// inline line-items editor uses).
+	pdfSections := ""
+	if g.Definition.Items != nil {
+		childNames := BuildNames(g.Definition.Items)
+		headers := ""
+		cells := ""
+		aligns := ""
+		for _, cf := range g.Definition.Items.Fields {
+			if cf.IsBelongsTo() || cf.IsManyToMany() {
+				continue
+			}
+			switch cf.FormFieldType() {
+			case "image", "images", "video", "videos", "file", "files", "richtext":
+				continue
+			}
+			headers += fmt.Sprintf("%q, ", strings.Join(splitPascal(toPascalCase(cf.Name)), " "))
+			cells += fmt.Sprintf("pdf.Value(row.%s), ", toPascalCase(cf.Name))
+			if cf.FormFieldType() == "number" {
+				aligns += `"R", `
+			} else {
+				aligns += `"L", `
+			}
+		}
+		pdfSections = fmt.Sprintf(`
+	itemRows := make([][]string, 0, len(item.Items))
+	for _, row := range item.Items {
+		itemRows = append(itemRows, []string{%s})
+	}
+	if len(itemRows) > 0 {
+		rec.Sections = append(rec.Sections, pdf.Section{
+			Title:   %q,
+			Headers: []string{%s},
+			Aligns:  []string{%s},
+			Rows:    itemRows,
+		})
+	}
+`, strings.TrimSuffix(cells, ", "),
+			strings.Join(splitPascal(childNames.PluralPascal), " "),
+			strings.TrimSuffix(headers, ", "), strings.TrimSuffix(aligns, ", "))
+	}
+
 	r := strings.NewReplacer(
 		"{{FK_FILTERS}}", fkFilters,
+		"{{UPPER_LABEL}}", strings.ToUpper(strings.Join(splitPascal(names.Pascal), " ")),
+		"{{PDF_SUBTITLE}}", "pdf.Value("+identExpr+")",
+		"{{PDF_FIELDS}}", pdfFields,
+		"{{PDF_SECTIONS}}", pdfSections,
+		"{{kebab}}", names.Kebab,
 		"{{MODULE}}", g.Module,
 		"{{Pascal}}", names.Pascal,
 		"{{lower}}", names.Lower,
@@ -710,6 +784,7 @@ import (
 	"{{MODULE}}/internal/export"{{FILES_IMPORT}}
 	"{{MODULE}}/internal/models"
 	"{{MODULE}}/internal/paginate"
+	"{{MODULE}}/internal/pdf"
 	"{{MODULE}}/internal/services"
 )
 
@@ -863,6 +938,54 @@ func (h *{{Pascal}}Handler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": item,
 	})
+}
+
+// PDF streams this {{lower}} as a print-ready PDF — a repeating header and
+// footer with page numbers, the record's fields as a detail grid, and any
+// line items as a table. Edit the pdf.Record below to restyle it; the
+// renderer itself lives in internal/pdf/record.go.
+func (h *{{Pascal}}Handler) PDF(c *gin.Context) {
+	id := c.Param("id")
+
+	var item models.{{Pascal}}
+	if err := h.DB{{PRELOADS}}.First(&item, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": gin.H{
+				"code":    "NOT_FOUND",
+				"message": "{{Pascal}} not found",
+			},
+		})
+		return
+	}
+
+	appName := os.Getenv("APP_NAME")
+	if appName == "" {
+		appName = "{{Pascal}}"
+	}
+
+	rec := pdf.Record{
+		Title:      "{{UPPER_LABEL}}",
+		Subtitle:   {{PDF_SUBTITLE}},
+		Brand:      appName,
+		FooterNote: appName + " · generated " + time.Now().Format("2 Jan 2006 15:04"),
+		Fields: []pdf.Field{
+{{PDF_FIELDS}}		},
+	}
+{{PDF_SECTIONS}}
+	out, err := pdf.RenderRecord(rec)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "PDF_ERROR",
+				"message": "could not render the PDF",
+			},
+		})
+		return
+	}
+
+	filename := "{{kebab}}-" + id + ".pdf"
+	c.Header("Content-Disposition", "inline; filename=\""+filename+"\"")
+	c.Data(http.StatusOK, "application/pdf", out)
 }
 
 // Create adds a new {{lower}}.
@@ -1066,7 +1189,10 @@ func (h *{{Pascal}}Handler) Delete(c *gin.Context) {
 // so the log line is never blank ({verb} {entityType} {identifier}
 // is the format convention; identifier is never empty).
 func pickIdentifierExpr(fields []Field) string {
-	candidates := []string{"Name", "Title", "Slug", "Sku", "SKU", "Subject", "Label", "Email"}
+	// Number / Reference / Code come after the human-readable names but before
+	// the ID fallback, so an auto-numbered record (an invoice, an order) is
+	// identified by its number rather than an opaque UUID.
+	candidates := []string{"Name", "Title", "Slug", "Sku", "SKU", "Subject", "Label", "Email", "Number", "Reference", "Code"}
 	available := map[string]bool{}
 	for _, f := range fields {
 		if f.IsBelongsTo() || f.IsManyToMany() {

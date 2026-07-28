@@ -77,12 +77,29 @@ export interface FilterDefinition {
 export type TableAction = "create" | "view" | "edit" | "delete" | "export";
 export type BulkAction = "delete" | "export";
 
+// v3.104.0 — extra per-row actions rendered after the built-in view/edit/
+// delete controls. Either link somewhere (href) or run a handler (onClick);
+// both receive the row. Used by the Users resource to offer "Erase (GDPR)",
+// which deep-links to the GDPR page with the subject pre-selected.
+export interface RowActionDefinition {
+  label: string;
+  /** Link target. Takes precedence over onClick when both are set. */
+  href?: (row: Record<string, unknown>) => string;
+  onClick?: (row: Record<string, unknown>) => void;
+  /** "danger" renders the label in the danger color. */
+  variant?: "default" | "danger";
+  /** Hide the action for rows where this returns false. */
+  visible?: (row: Record<string, unknown>) => boolean;
+}
+
 export interface TableDefinition {
   columns: ColumnDefinition[];
   filters?: FilterDefinition[];
   searchable?: boolean;
   searchPlaceholder?: string;
   actions?: TableAction[];
+  /** Extra per-row actions rendered after view/edit/delete. */
+  rowActions?: RowActionDefinition[];
   bulkActions?: BulkAction[];
   defaultSort?: { key: string; direction: "asc" | "desc" };
   pageSize?: number;
@@ -443,6 +460,17 @@ export const usersResource = defineResource({
     searchable: true,
     searchPlaceholder: "Search by name or email...",
     actions: ["create", "view", "edit", "delete"],
+    // Delete is an ordinary, reversible soft delete — it keeps the row and its
+    // PII, and is deliberately NOT written to the GDPR journal. A real Art. 17
+    // request needs an erasure, so link to the GDPR page with this user already
+    // selected rather than leaving the two surfaces unconnected.
+    rowActions: [
+      {
+        label: "Erase (GDPR)",
+        variant: "danger",
+        href: (row) => "/system/gdpr?user=" + String(row.id),
+      },
+    ],
     bulkActions: ["delete"],
     defaultSort: { key: "created_at", direction: "desc" },
     pageSize: 20,
@@ -751,8 +779,8 @@ function ResourceListView({ resource }: ResourcePageProps) {
     dateField: resource.table.dateFilter?.field,
   });
 
-  const { mutate: deleteItem, isPending: isDeleting } = useDeleteResource(resource.endpoint);
-  const { mutate: bulkDelete, isPending: isBulkDeleting } = useBulkDeleteResource(resource.endpoint);
+  const { mutate: deleteItem, isPending: isDeleting } = useDeleteResource(resource.endpoint, resource.label?.singular ?? resource.name);
+  const { mutate: bulkDelete, isPending: isBulkDeleting } = useBulkDeleteResource(resource.endpoint, resource.label?.plural ?? resource.slug);
 
   // Visible columns
   const visibleColumns = useMemo(
@@ -969,6 +997,7 @@ function ResourceListView({ resource }: ResourcePageProps) {
           onView={actions.includes("view") ? handleView : undefined}
           onEdit={actions.includes("edit") ? handleEdit : undefined}
           onDelete={actions.includes("delete") ? handleDelete : undefined}
+          rowActions={resource.table.rowActions}
         />
 
         <TablePagination
@@ -1056,7 +1085,8 @@ export default function UsersPage() {
 
 // adminUseResource returns the generic resource data hooks.
 func adminUseResource() string {
-	return `import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+	return `import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 
@@ -1140,7 +1170,19 @@ export function useResourceItem<T = Record<string, unknown>>(
   });
 }
 
-export function useCreateResource(endpoint: string) {
+// Every mutation hook takes an optional resource label (the singular, e.g.
+// "Invoice") so toasts name what actually happened — "Invoice created
+// successfully" rather than a bare "Created successfully". Omitting it keeps
+// the old generic wording, so existing call sites still compile.
+function said(label: string | undefined, verb: string) {
+  return label ? label + " " + verb : verb.charAt(0).toUpperCase() + verb.slice(1);
+}
+
+function failed(label: string | undefined, verb: string) {
+  return label ? "Failed to " + verb + " " + label.toLowerCase() : "Failed to " + verb;
+}
+
+export function useCreateResource(endpoint: string, label?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -1150,16 +1192,16 @@ export function useCreateResource(endpoint: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoint] });
-      toast.success("Created successfully");
+      toast.success(said(label, "created successfully"));
     },
     onError: (err: unknown) => {
       const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(axiosErr?.response?.data?.error?.message || "Failed to create");
+      toast.error(axiosErr?.response?.data?.error?.message || failed(label, "create"));
     },
   });
 }
 
-export function useUpdateResource(endpoint: string) {
+export function useUpdateResource(endpoint: string, label?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -1169,11 +1211,11 @@ export function useUpdateResource(endpoint: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoint] });
-      toast.success("Updated successfully");
+      toast.success(said(label, "updated successfully"));
     },
     onError: (err: unknown) => {
       const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(axiosErr?.response?.data?.error?.message || "Failed to update");
+      toast.error(axiosErr?.response?.data?.error?.message || failed(label, "update"));
     },
   });
 }
@@ -1182,7 +1224,7 @@ export function useUpdateResource(endpoint: string) {
 // Save button calls patch() with only the fields it owns. The Go-side
 // Patch handler whitelists writable columns and silently drops anything
 // else, so it's safe to send only a subset.
-export function usePatchResource(endpoint: string) {
+export function usePatchResource(endpoint: string, label?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -1192,16 +1234,16 @@ export function usePatchResource(endpoint: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoint] });
-      toast.success("Saved");
+      toast.success(label ? label + " saved" : "Saved");
     },
     onError: (err: unknown) => {
       const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(axiosErr?.response?.data?.error?.message || "Failed to save");
+      toast.error(axiosErr?.response?.data?.error?.message || failed(label, "save"));
     },
   });
 }
 
-export function useDeleteResource(endpoint: string) {
+export function useDeleteResource(endpoint: string, label?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -1210,31 +1252,39 @@ export function useDeleteResource(endpoint: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoint] });
-      toast.success("Deleted successfully");
+      toast.success(said(label, "deleted successfully"));
     },
     onError: (err: unknown) => {
       const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(axiosErr?.response?.data?.error?.message || "Failed to delete");
+      toast.error(axiosErr?.response?.data?.error?.message || failed(label, "delete"));
     },
   });
 }
 
-export function useBulkDeleteResource(endpoint: string) {
+// Bulk delete reports a count, so it takes the PLURAL label ("Invoices")
+// and names how many rows went — "3 Invoices deleted successfully".
+export function useBulkDeleteResource(endpoint: string, pluralLabel?: string) {
   const queryClient = useQueryClient();
+  const [count, setCount] = useState(0);
 
   return useMutation({
     // ids are strings because Grit's models use UUID primary keys
     // (the User.ID column in packages/shared/types/user.ts is 'string',
     // and the same is true for every grit generate'd model).
     mutationFn: async (ids: string[]) => {
+      setCount(ids.length);
       await Promise.all(ids.map((id) => apiClient.delete(` + "`" + `${endpoint}/${id}` + "`" + `)));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoint] });
-      toast.success("Deleted successfully");
+      toast.success(
+        pluralLabel ? count + " " + pluralLabel + " deleted successfully" : "Deleted successfully"
+      );
     },
     onError: () => {
-      toast.error("Failed to delete some items");
+      toast.error(
+        pluralLabel ? "Failed to delete some " + pluralLabel.toLowerCase() : "Failed to delete some items"
+      );
     },
   });
 }

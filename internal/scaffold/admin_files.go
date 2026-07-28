@@ -652,6 +652,9 @@ func adminGlobalCSS() string {
  * detail card + line items) is made visible and floated to the top-left, so the
  * sidebar, navbar and action buttons never reach the paper. Resource detail
  * pages wrap their printable content in #print-area and mark controls .no-print. */
+@page {
+  margin: 16mm 14mm;
+}
 @media print {
   body * { visibility: hidden !important; }
   #print-area, #print-area * { visibility: visible !important; }
@@ -662,6 +665,21 @@ func adminGlobalCSS() string {
   }
   .no-print { display: none !important; }
   body { background: #fff !important; }
+  /* Ink-friendly: drop the dark surfaces and shadows the screen theme uses. */
+  #print-area * {
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #000 !important;
+  }
+  #print-area .rounded-xl, #print-area .rounded-lg {
+    border-color: #d4d4d8 !important;
+  }
+  /* Keep tables readable across page breaks: repeat the head on each page
+     and never split a row down the middle. */
+  #print-area thead { display: table-header-group; }
+  #print-area tfoot { display: table-footer-group; }
+  #print-area tr, #print-area img { break-inside: avoid; page-break-inside: avoid; }
+  #print-area h1, #print-area h2 { break-after: avoid; page-break-after: avoid; }
 }
 
 /* v3.28.1 — theme-aware CSS variables.

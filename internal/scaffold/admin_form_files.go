@@ -418,8 +418,8 @@ interface FormModalProps {
 
 export function FormModal({ resource, item, defaults, onClose }: FormModalProps) {
   const isEdit = item !== null;
-  const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint);
-  const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint);
+  const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint, resource.label?.singular ?? resource.name);
+  const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint, resource.label?.singular ?? resource.name);
 
   const handleSubmit = (data: Record<string, unknown>) => {
     if (isEdit) {
@@ -497,8 +497,8 @@ export function FormSheet({ resource, item, defaults, onClose }: FormSheetProps)
   const defaultWidth = resource.form?.sheetWidth === "wide" ? "md:w-[80vw]" : "md:w-1/2";
   const [expanded, setExpanded] = useState(resource.form?.sheetWidth === "wide");
   const widthClass = expanded ? "md:w-[80vw]" : defaultWidth;
-  const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint);
-  const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint);
+  const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint, resource.label?.singular ?? resource.name);
+  const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint, resource.label?.singular ?? resource.name);
 
   const handleSubmit = (data: Record<string, unknown>) => {
     if (isEdit) {
@@ -587,8 +587,8 @@ export function FormPage({ resource }: FormPageProps) {
     { enabled: isEdit }
   );
 
-  const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint);
-  const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint);
+  const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint, resource.label?.singular ?? resource.name);
+  const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint, resource.label?.singular ?? resource.name);
 
   const singularName = resource.label?.singular ?? resource.name;
   const pluralName = resource.label?.plural ?? resource.slug;
@@ -1015,8 +1015,8 @@ interface FormModalStepsProps {
 
 export function FormModalSteps({ resource, item, onClose }: FormModalStepsProps) {
   const isEdit = item !== null;
-  const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint);
-  const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint);
+  const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint, resource.label?.singular ?? resource.name);
+  const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint, resource.label?.singular ?? resource.name);
   const isVertical = resource.form.stepVariant === "vertical";
 
   const handleSubmit = (data: Record<string, unknown>) => {
@@ -1152,7 +1152,7 @@ interface GroupCardProps {
 }
 
 function GroupCard({ resource, group, record, id }: GroupCardProps) {
-  const { mutate: patch, isPending } = usePatchResource(resource.endpoint);
+  const { mutate: patch, isPending } = usePatchResource(resource.endpoint, resource.label?.singular ?? resource.name);
   const [isDirty, setIsDirty] = useState(false);
 
   // Build defaults from the record limited to this group's fields.
@@ -1240,8 +1240,8 @@ export function FormPageSteps({ resource }: FormPageStepsProps) {
     { enabled: isEdit }
   );
 
-  const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint);
-  const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint);
+  const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint, resource.label?.singular ?? resource.name);
+  const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint, resource.label?.singular ?? resource.name);
 
   const singularName = resource.label?.singular ?? resource.name;
   const pluralName = resource.label?.plural ?? resource.slug;

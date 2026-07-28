@@ -302,6 +302,7 @@ func adminAccessReviewPage() string {
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/chrome/PageHeader";
+import { ResponsiveSheet } from "@/components/ui/ResponsiveSheet";
 import { apiClient } from "@/lib/api-client";
 import { ShieldCheck, Check, X, Plus, Loader2, UserCheck } from "@/lib/icons";
 
@@ -334,6 +335,12 @@ interface ReviewDetail extends ReviewSummary {
 export default function AccessReviewPage() {
   const qc = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
+  // "New review" opens a proper form (name + optional note) rather than a
+  // browser prompt — the note is stored on the campaign as context for whoever
+  // audits it later.
+  const [newOpen, setNewOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newNote, setNewNote] = useState("");
 
   const listQ = useQuery({
     queryKey: ["access-reviews"],
@@ -353,13 +360,16 @@ export default function AccessReviewPage() {
   });
 
   const openM = useMutation({
-    mutationFn: async (name: string) => {
-      const { data } = await apiClient.post("/api/access-reviews", { name });
+    mutationFn: async (body: { name: string; note?: string }) => {
+      const { data } = await apiClient.post("/api/access-reviews", body);
       return data.data as ReviewDetail;
     },
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["access-reviews"] });
       setSelected(r.id);
+      setNewOpen(false);
+      setNewName("");
+      setNewNote("");
     },
   });
 
@@ -387,8 +397,8 @@ export default function AccessReviewPage() {
   });
 
   const startReview = () => {
-    const name = window.prompt("Name this access review (e.g. \"Q3 2026 quarterly\")");
-    if (name && name.trim()) openM.mutate(name.trim());
+    if (!newName.trim()) return;
+    openM.mutate({ name: newName.trim(), note: newNote.trim() || undefined });
   };
 
   const detail = detailQ.data;
@@ -405,7 +415,7 @@ export default function AccessReviewPage() {
         actions={
           <button
             type="button"
-            onClick={startReview}
+            onClick={() => setNewOpen(true)}
             disabled={openM.isPending}
             className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
           >
@@ -414,6 +424,72 @@ export default function AccessReviewPage() {
           </button>
         }
       />
+
+      {/* New review form. Opening a campaign snapshots every current role
+          assignment, so the copy says so up front — it's not a draft. */}
+      <ResponsiveSheet
+        open={newOpen}
+        onClose={() => setNewOpen(false)}
+        title="Start an access review"
+        description="This snapshots every current role assignment as pending items for you to certify."
+        size="md"
+        footer={
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setNewOpen(false)}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-hover"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={startReview}
+              disabled={!newName.trim() || openM.isPending}
+              className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
+            >
+              {openM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Create review
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-foreground">
+              Name<span className="ml-1 text-danger">*</span>
+            </label>
+            <input
+              autoFocus
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newName.trim()) startReview();
+              }}
+              placeholder="Q3 2026 quarterly"
+              className="w-full rounded-lg border border-border bg-bg-tertiary px-4 py-2.5 text-sm text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            />
+            <p className="text-xs text-text-muted">
+              Name it for the period you&rsquo;re certifying — it becomes the audit record.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-foreground">Note</label>
+            <textarea
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              rows={3}
+              placeholder="Optional context — scope, who requested it, ticket reference…"
+              className="w-full resize-y rounded-lg border border-border bg-bg-tertiary px-4 py-2.5 text-sm text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            />
+          </div>
+
+          {openM.isError && (
+            <p className="text-sm text-danger">Could not start the review. Please try again.</p>
+          )}
+        </div>
+      </ResponsiveSheet>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
         {/* Campaign list */}

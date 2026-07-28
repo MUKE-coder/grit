@@ -5,7 +5,8 @@ func adminDataTable() string {
 	return `"use client";
 
 import { useState, type MouseEvent, type ReactNode } from "react";
-import type { ColumnDefinition } from "@/lib/resource";
+import Link from "next/link";
+import type { ColumnDefinition, RowActionDefinition } from "@/lib/resource";
 import { ColumnHeader } from "./column-header";
 import { renderCell } from "./cell-renderers";
 import { TableSkeleton } from "./table-skeleton";
@@ -94,6 +95,8 @@ interface DataTableProps {
   onView?: (item: Record<string, unknown>) => void;
   onEdit?: (item: Record<string, unknown>) => void;
   onDelete?: (id: string) => void;
+  /** Extra per-row actions from the resource's table.rowActions. */
+  rowActions?: RowActionDefinition[];
 }
 
 export function DataTable({
@@ -108,9 +111,10 @@ export function DataTable({
   onView,
   onEdit,
   onDelete,
+  rowActions,
 }: DataTableProps) {
   if (isLoading) {
-    return <TableSkeleton columns={columns.length + (onSelectRows ? 1 : 0) + (onView || onEdit || onDelete ? 1 : 0)} />;
+    return <TableSkeleton columns={columns.length + (onSelectRows ? 1 : 0) + (onView || onEdit || onDelete || (rowActions && rowActions.length) ? 1 : 0)} />;
   }
 
   if (data.length === 0) {
@@ -158,7 +162,7 @@ export function DataTable({
                 onSort={onSort}
               />
             ))}
-            {(onView || onEdit || onDelete) && (
+            {(onView || onEdit || onDelete || (rowActions && rowActions.length > 0)) && (
               <th className="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider w-[140px]">
                 Actions
               </th>
@@ -203,7 +207,7 @@ export function DataTable({
                     </ClickableCell>
                   </td>
                 ))}
-                {(onView || onEdit || onDelete) && (
+                {(onView || onEdit || onDelete || (rowActions && rowActions.length > 0)) && (
                   <td className="px-4 py-3 text-right text-sm">
                     <div className="flex items-center justify-end gap-2">
                       {onView && (
@@ -231,6 +235,37 @@ export function DataTable({
                           Delete
                         </button>
                       )}
+                      {(rowActions ?? [])
+                        .filter((a) => !a.visible || a.visible(row))
+                        .map((a) =>
+                          a.href ? (
+                            <Link
+                              key={a.label}
+                              href={a.href(row)}
+                              className={
+                                "text-xs transition-colors " +
+                                (a.variant === "danger"
+                                  ? "text-text-secondary hover:text-danger"
+                                  : "text-text-secondary hover:text-accent")
+                              }
+                            >
+                              {a.label}
+                            </Link>
+                          ) : (
+                            <button
+                              key={a.label}
+                              onClick={() => a.onClick?.(row)}
+                              className={
+                                "text-xs transition-colors " +
+                                (a.variant === "danger"
+                                  ? "text-text-secondary hover:text-danger"
+                                  : "text-text-secondary hover:text-accent")
+                              }
+                            >
+                              {a.label}
+                            </button>
+                          )
+                        )}
                     </div>
                   </td>
                 )}

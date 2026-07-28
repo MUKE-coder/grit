@@ -241,17 +241,86 @@ func (m *Invoice) BeforeCreate(tx *gorm.DB) error {
               auto-total from showing (nothing breaks) — keep a name in those patterns to keep it.
             </p>
 
-            {/* D4 — print */}
+            {/* D4 — PDF */}
+            <h2 id="pdf" className="text-2xl font-semibold mb-4 mt-12">
+              The PDF endpoint
+            </h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              Every generated resource exposes a server-rendered PDF, and the detail page has a{' '}
+              <strong>PDF</strong> button that opens it:
+            </p>
+            <CodeBlock terminal code={`GET /api/invoices/:id/pdf   →   application/pdf`} />
+            <p className="text-muted-foreground leading-relaxed mb-4 mt-6">
+              It is rendered in <strong>Go</strong>, not by the browser, which is the important
+              part: the same bytes come back for everyone, so you can attach the PDF to an email,
+              push it to S3, or hand it to a background job — none of which is possible with a
+              print dialog. The layout is built from the record itself:
+            </p>
+            <ul className="list-disc pl-6 space-y-2 text-muted-foreground leading-relaxed mb-4">
+              <li>
+                a <strong>repeating header</strong> (your <code>APP_NAME</code> plus the
+                record&apos;s identifier) and a <strong>repeating footer</strong> with{' '}
+                <strong>Page N of M</strong> — on every page, so a long invoice stays navigable;
+              </li>
+              <li>
+                a title block, then the resource&apos;s fields as a <strong>two-up grid</strong>{' '}
+                (dates formatted, booleans as Yes/No, empty values as an em dash, and a{' '}
+                <code>belongs_to</code> shown by the related record&apos;s name rather than its
+                UUID);
+              </li>
+              <li>
+                each set of <strong>line items as a table</strong> with numeric columns
+                right-aligned, then totals and notes.
+              </li>
+            </ul>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              The handler is ordinary generated Go in{' '}
+              <code>internal/handlers/invoice.go</code> — it builds a <code>pdf.Record</code> and
+              hands it to <code>pdf.RenderRecord</code>. Restyle by editing that struct (reorder
+              fields, add a total, change the title); go deeper by editing{' '}
+              <code>internal/pdf/record.go</code>, or drop to the underlying{' '}
+              <code>go-pdf/fpdf</code> document for full control:
+            </p>
+            <CodeBlock
+              language="go"
+              filename="internal/handlers/invoice.go (generated — yours to edit)"
+              code={`rec := pdf.Record{
+	Title:      "INVOICE",
+	Subtitle:   pdf.Value(item.Number),
+	Brand:      appName,
+	FooterNote: appName + " · generated " + time.Now().Format("2 Jan 2006 15:04"),
+	Fields: []pdf.Field{
+		{Label: "Number",   Value: pdf.Value(item.Number)},
+		{Label: "Status",   Value: pdf.Value(item.Status)},
+		{Label: "Customer", Value: pdf.Display(item.Customer)},
+	},
+}
+
+// Line items become a table section, with totals underneath.
+rec.Sections = append(rec.Sections, pdf.Section{
+	Title:   "Invoice Items",
+	Headers: []string{"Description", "Qty", "Unit Rate"},
+	Aligns:  []string{"L", "R", "R"},
+	Rows:    itemRows,
+})
+rec.Totals = []pdf.TotalLine{{Label: "Total", Value: "6,000,000", Bold: true}}
+
+out, err := pdf.RenderRecord(rec)`}
+            />
+
+            {/* D5 — print */}
             <h2 id="printing" className="text-2xl font-semibold mb-4 mt-12">
               Printing an invoice
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              Every generated resource detail page ships with a <strong>Print</strong> button (open
-              a row from the table with its <em>View</em> action, then hit Print). It calls the
-              browser&apos;s print dialog against a print-optimized layout: a print stylesheet
-              hides everything except the record&apos;s detail card and its line-items table, so
-              the sidebar, navbar, and the Edit/Delete/Back controls never reach the paper. Related
-              resources are excluded too — the printout is just the invoice and its items.
+              The <strong>Print</strong> button next to it calls the browser&apos;s print dialog
+              against a print-optimized layout: a print stylesheet hides everything except the
+              record&apos;s detail card and its line-items table, so the sidebar, navbar, and the
+              Edit/Delete/Back controls never reach the paper. Related resources are excluded too.
+              The stylesheet sets <code>@page</code> margins, forces ink-friendly colors, repeats
+              table headers across pages, and avoids splitting a row down the middle. Reach for{' '}
+              <strong>PDF</strong> when you need a file to keep or send; reach for{' '}
+              <strong>Print</strong> when you just want paper.
             </p>
             <p className="text-muted-foreground leading-relaxed mb-4">
               It works the moment the resource exists, with no per-resource code. Under the hood
