@@ -323,29 +323,48 @@ func parseFieldInput(input string) (Field, error) {
 	// Default: string fields are required
 	required := typ == "string"
 	unique := false
+	auto := false
+	autoPrefix := ""
 
-	// Parse optional modifiers (parts[2], parts[3], etc.)
-	for _, mod := range parts[2:] {
-		mod = strings.TrimSpace(strings.ToLower(mod))
-		switch mod {
+	// Parse optional modifiers (parts[2], parts[3], etc.). Index-based so `auto`
+	// can consume an optional prefix that follows it (name:string:auto:INV).
+	mods := parts[2:]
+	for i := 0; i < len(mods); i++ {
+		mod := strings.TrimSpace(mods[i])
+		switch strings.ToLower(mod) {
 		case "unique":
 			unique = true
 		case "required":
 			required = true
 		case "optional":
 			required = false
+		case "auto":
+			// Auto-generated from a sequence in BeforeCreate. Never user-required.
+			auto = true
+			required = false
+			// An immediately following segment is the sequence prefix (case-preserved).
+			if i+1 < len(mods) && strings.TrimSpace(mods[i+1]) != "" {
+				autoPrefix = strings.TrimSpace(mods[i+1])
+				i++
+			}
 		case "":
 			// ignore empty modifiers
 		default:
-			return Field{}, fmt.Errorf("invalid modifier %q for field %q (valid: unique, required, optional)", mod, name)
+			return Field{}, fmt.Errorf("invalid modifier %q for field %q (valid: unique, required, optional, auto)", mod, name)
 		}
 	}
 
+	if auto && typ != "string" {
+		return Field{}, fmt.Errorf("field %q: auto is only valid on string fields (got %q)", name, typ)
+	}
+
 	return Field{
-		Name:     name,
-		Type:     typ,
-		Required: required,
-		Unique:   unique,
+		Name:       name,
+		Type:       typ,
+		Required:   required,
+		Unique:     unique,
+		Auto:       auto,
+		AutoPrefix: autoPrefix,
 	}, nil
 }
 

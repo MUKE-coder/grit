@@ -14,9 +14,9 @@ Feature lists are easy to skim and hard to remember. So instead of listing what'
 new in Grit, let's *build* something with it — a small but real invoice app — and
 pick up every new piece along the way. By the end you'll have customers, invoices
 with line items, auto-generated invoice numbers, a status dropdown, and a
-printable invoice, and you'll have touched relations, the new field types,
-`grit g field`, `grit generate sequence`, and the print view without any of them
-feeling like a detour.
+printable invoice, and you'll have touched relations, the new field types
+(including the one-modifier `auto` invoice number), `grit g field`, and the print
+view without any of them feeling like a detour.
 
 Ten minutes. One command per step. Each step links to the docs that explain it in
 full.
@@ -64,18 +64,19 @@ uses the new option-backed field types for its status and a flag:
 
 ```bash
 grit g resource Invoice --fields \
-  "number:string:optional,\
+  "number:string:auto:INV,\
    status:select:draft=Draft|sent=Sent|paid=Paid,\
    sent:toggle,\
    customer:belongs_to:Customer" \
   --items "InvoiceItem:description:string,qty:int,unit_rate:float"
 ```
 
-> **Why `number:string:optional`?** We're going to auto-generate the invoice
-> number in [Step 4](#step-4--auto-number-the-invoices), so the user should never
-> have to type it. String fields are *required* by default — the `:optional`
-> modifier tells Grit not to demand it in the form, which is what lets the server
-> fill it in. More on the timing in Step 4.
+> **What is `number:string:auto:INV`?** It's the invoice number, auto-generated.
+> Read it as *"a string column named `number`, auto-numbered with the prefix INV."*
+> That one modifier stands up an atomic counter, fills the field on the server as
+> `INV-202607-0001`, marks the column optional, and hides it from the form — so the
+> user never types or even sees an empty number box. We unpack exactly what it does
+> in [Step 4](#step-4--auto-number-the-invoices).
 
 That's a lot on one line, so here's each piece, on its own.
 
@@ -208,97 +209,83 @@ the moves.
 ## Step 4 — Auto-number the invoices
 
 Nobody should type `INV-0001` by hand, and two people creating invoices at the
-same moment must never collide. This is three small moves.
+same moment must never collide. Here's the surprise: **we already did this in
+Step 3.** The `number:string:auto:INV` field is the entire feature. There's no
+second command, no hook to write. Let's unpack what that one modifier bought us.
 
-**4a. Generate the counter.**
+**What `auto` generated for you.** Declaring the field with `:auto` made Grit:
+
+1. **Stand up an atomic counter.** It wrote `internal/sequence/` — a generic
+   counter package whose count lives in a database row that's locked and
+   incremented in a transaction, which is what makes it atomic and gap-free — and
+   registered its table with AutoMigrate. (First `auto` field in the project only;
+   later ones reuse it.)
+2. **Fill the field in `BeforeCreate`.** The generated model assigns the next
+   number on insert, and *only when one isn't already set*, so an imported invoice
+   keeps its original:
+
+   ```go
+   // apps/api/internal/models/invoice.go — generated for you
+   func (m *Invoice) BeforeCreate(tx *gorm.DB) error {
+   	if m.ID == "" {
+   		m.ID = uuid.New().String()
+   	}
+   	if m.Number == "" {
+   		n, err := sequence.Next(tx, sequence.Config{
+   			Name: "invoice_number", Prefix: "INV", Reset: sequence.ResetMonthly, Width: 4,
+   		}, time.Now())
+   		if err != nil {
+   			return err
+   		}
+   		m.Number = n
+   	}
+   	return nil
+   }
+   ```
+3. **Make the column optional and hide it from the form.** The API never demands a
+   number, and the create/edit form has no Number box at all — it still shows on the
+   table and detail page.
+
+**So what does the user see?** They fill in the customer, status, and line items,
+hit Save, and the invoice comes back numbered `INV-202607-0001`. The number was
+assigned **on the server, at create time** — never typed, never even shown as an
+empty field. The counter increments in the *same transaction* as the insert, so
+it's safe under concurrent load: no duplicates, no gaps.
+
+> **Why is the sequence name `"invoice_number"` and not `"invoice"`?** Each `auto`
+> field gets its own counter keyed by `<model>_<field>`, so an invoice could have a
+> separate auto `reference` number on its own series without the two colliding.
+
+**When you need more control: `grit generate sequence`.** `auto` is a shortcut over
+a lower-level command, and it makes one choice for you — **monthly reset, 4-digit
+width.** Want a yearly reset, no reset, or a different width? Or to number an
+*existing* column, or call the counter from your own handler code? Generate the
+sequence explicitly instead:
 
 ```bash
-grit generate sequence Invoice --prefix INV --reset monthly --width 4
+grit generate sequence Invoice --prefix INV --reset yearly --width 6
 ```
 
-**One thing to be clear about up front:** this command **does not create or modify
-any column** on the Invoice model. It doesn't know about your `number:string`
-field, and it doesn't need to. It generates a **standalone counter** — its own
-tiny storage plus a function — and the word `Invoice` here is just a *name* for
-that counter and its helper, not a link to the model. (You could name it
-`grit generate sequence Receipt` and get `NextReceiptNumber`.) That's exactly why
-step 4c is *you* deciding which field receives the value.
+This writes the same counter package plus a typed helper,
+`services.NextInvoiceNumber(db, t)`, that you call yourself — from a **handler**
+(where importing `services` is fine), or by hand-writing the same `BeforeCreate`
+hook `auto` generates. One rule if you call it from a model: use the generic
+`sequence.Next` **directly**, never the `services.NextInvoiceNumber` wrapper —
+the wrapper imports `models`, so calling it *from* a model is a `models → services
+→ models` import cycle that won't compile. The `sequence` package imports no
+models, so a model can always call it. `--reset never` drops the date segment
+entirely for one continuous series (`INV-000001`, `INV-000002`, …), and if you want
+a shape like `2026/Q3/0001`, the helper is plain Go you can edit.
 
-**4b. See what it wrote.** Two things:
-
-- `internal/sequence/` — a generic counter package. The count lives in a database
-  row that's locked and incremented in a transaction, which is what makes it
-  atomic and gap-free.
-- `internal/services/invoice_sequence.go` — a typed helper exposing one function,
-  `NextInvoiceNumber(db, t)`, that returns the next formatted string.
-
-The flags shape the output: `--prefix INV` is the leading text, `--width 4` is the
-zero-padding, and `--reset` decides when the counter rolls back to 1. **Don't want
-a monthly reset?** Use `--reset yearly` (rolls over each year) or `--reset never`
-for one continuous, ever-incrementing series — `INV-0001`, `INV-0002`, … with no
-date segment at all.
-
-**4c. Wire it into the model.** Assign the number in the invoice's `BeforeCreate`
-hook, so it's filled automatically — and only when one isn't already set, so an
-imported invoice keeps its original.
-
-One important detail: call the generic `sequence.Next` **directly**, not the
-`services.NextInvoiceNumber` wrapper. The wrapper lives in the `services` package,
-which imports `models` — so calling it *from* a model would be a `models → services
-→ models` import cycle and won't compile. The `sequence` package imports no models,
-so a model can call it freely. (The `services.Next…Number` wrapper is for calling
-from **handlers**, where there's no cycle.)
-
-```go
-// apps/api/internal/models/invoice.go
-import "invoicer/apps/api/internal/sequence"
-
-func (m *Invoice) BeforeCreate(tx *gorm.DB) error {
-	if m.ID == "" {
-		m.ID = uuid.New().String()
-	}
-	if m.Number == "" {
-		number, err := sequence.Next(tx, sequence.Config{
-			Name: "invoice", Prefix: "INV", Reset: sequence.ResetMonthly, Width: 4,
-		}, time.Now())
-		if err != nil {
-			return err
-		}
-		m.Number = number
-	}
-	return nil
-}
-```
-
-Now every new invoice is numbered `INV-202607-0001`, `INV-202607-0002`, … The
-counter is incremented in the *same transaction* as the insert, so it's safe under
-concurrent load — no duplicates, no gaps.
-
-**So what does the user see?** This is the part worth being precise about, because
-it surprises people. The number is filled **on the server, at create time, only
-when it's blank** — *not* in the browser as you type. So:
-
-- Because we declared `number:string:**optional**` back in Step 3, the create form
-  doesn't demand a number — you can submit with it empty.
-- On submit, `BeforeCreate` runs and assigns the next number.
-- The number then shows up on the invoice's **detail page and in the list**,
-  immediately after you save. It was never typed by hand.
-
-If you'd rather the empty Number box not appear in the create form at all, delete
-the `number` field from the invoice's `form.fields` in
-`apps/admin/resources/invoices.ts` — it stays in the table and on the detail page,
-it just leaves the create form. (And if you want a shape like `2026/Q3/0001`, the
-helper is plain Go you can edit; the sequence package just hands you the next
-integer.)
-
-📖 **Docs:** [Invoices &amp; line items → Auto-numbering](/docs/backend/invoices)
+📖 **Docs:** [Invoices &amp; line items → Auto-numbering](/docs/backend/invoices) ·
+[Field types → Auto-number](/docs/concepts/field-types)
 
 ## Step 5 — The column you forgot
 
 You build for ten minutes and realize invoices need a due date. In most
-generators that means regenerating (and clobbering the `BeforeCreate` hook you
-just wrote) or hand-editing five files. In Grit it's one command that adds the
-column *in place*:
+generators that means regenerating (and clobbering the auto-number `BeforeCreate`
+hook) or hand-editing five files. In Grit it's one command that adds the column
+*in place*:
 
 ```bash
 grit g field Invoice due_date:date

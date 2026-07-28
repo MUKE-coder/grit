@@ -51,6 +51,16 @@ func (g *Generator) writeGoModel(names Names) error {
 		}
 	}
 
+	// Auto-number fields (name:string:auto) get a sequence.Next call in
+	// BeforeCreate and pull in the internal/sequence package.
+	var autoFields []Field
+	for _, f := range fields {
+		if f.IsAuto() {
+			autoFields = append(autoFields, f)
+		}
+	}
+	hasAuto := len(autoFields) > 0
+
 	// Build imports
 	hasSlug := slugField != nil
 	var imports string
@@ -62,13 +72,43 @@ func (g *Generator) writeGoModel(names Names) error {
 	if needsDatatypes {
 		extImports = "\"github.com/google/uuid\"\n\t\"gorm.io/datatypes\"\n\t\"gorm.io/gorm\""
 	}
+	// Project imports (same module): internal/files and/or internal/sequence.
+	var projImports []string
 	if needsFiles {
-		// internal/files is part of the same module, so we group it as
-		// a project import after the external block.
-		filesImport := fmt.Sprintf("\"%s/internal/files\"", g.Module)
-		imports = fmt.Sprintf("import (\n\t%s\n\n\t%s\n\n\t%s\n)", stdImports, extImports, filesImport)
+		projImports = append(projImports, fmt.Sprintf("\"%s/internal/files\"", g.Module))
+	}
+	if hasAuto {
+		projImports = append(projImports, fmt.Sprintf("\"%s/internal/sequence\"", g.Module))
+	}
+	if len(projImports) > 0 {
+		imports = fmt.Sprintf("import (\n\t%s\n\n\t%s\n\n\t%s\n)", stdImports, extImports, strings.Join(projImports, "\n\t"))
 	} else {
 		imports = fmt.Sprintf("import (\n\t%s\n\n\t%s\n)", stdImports, extImports)
+	}
+
+	// Build the auto-number statements for BeforeCreate (shared by both the slug
+	// and non-slug hook variants). sequence.Next is called directly — the
+	// services wrapper would be a models→services import cycle.
+	autoHook := ""
+	for _, f := range autoFields {
+		goName := toPascalCase(f.Name)
+		prefix := f.AutoPrefix
+		if prefix == "" {
+			prefix = defaultPrefix(names.Pascal)
+		}
+		autoHook += fmt.Sprintf(`	if m.%s == "" {
+		n, err := sequence.Next(tx, sequence.Config{
+			Name:   %q,
+			Prefix: %q,
+			Reset:  sequence.ResetMonthly,
+			Width:  4,
+		}, time.Now())
+		if err != nil {
+			return err
+		}
+		m.%s = n
+	}
+`, goName, names.Snake+"_"+toSnakeCase(f.Name), prefix, goName)
 	}
 
 	structFields := ""
@@ -150,9 +190,9 @@ func (m *%s) BeforeCreate(tx *gorm.DB) error {
 	if m.%s == "" {
 		m.%s = slugify(fmt.Sprintf("%%v", m.%s))
 	}
-	return nil
+%s	return nil
 }
-`, names.Pascal, slugGoName, slugGoName, slugSourceGo)
+`, names.Pascal, slugGoName, slugGoName, slugSourceGo, autoHook)
 
 		// Write shared slugify helper if it doesn't exist yet
 		helpersPath := filepath.Join(g.APIRoot(), "internal", "models", "helpers.go")
@@ -182,16 +222,16 @@ func slugify(s string) string {
 			}
 		}
 	} else {
-		// No slug — still need UUID generation
+		// No slug — still need UUID generation (+ any auto-number fields)
 		content += fmt.Sprintf(`
 // BeforeCreate generates a UUID before inserting.
 func (m *%s) BeforeCreate(tx *gorm.DB) error {
 	if m.ID == "" {
 		m.ID = uuid.New().String()
 	}
-	return nil
+%s	return nil
 }
-`, names.Pascal)
+`, names.Pascal, autoHook)
 	}
 
 	// BeforeUpdate increments Version on every server-side write so offline
@@ -1438,6 +1478,11 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 	formFields := ""
 	for _, f := range g.Definition.Fields {
 		if f.IsSlug() {
+			continue
+		}
+		// Auto-number fields are filled by the server in BeforeCreate — keep them
+		// out of the create/edit form entirely (they still show in the table/detail).
+		if f.IsAuto() {
 			continue
 		}
 

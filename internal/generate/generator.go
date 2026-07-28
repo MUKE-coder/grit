@@ -111,6 +111,22 @@ func (g *Generator) Run() error {
 	}
 	fmt.Printf("  ✓ %sinternal/models/%s.go\n", apiPrefix, names.Snake)
 
+	// Auto-number fields (name:string:auto): stand up the sequence package +
+	// Counter migration so the BeforeCreate hook (generated above) can call
+	// sequence.Next. GenerateSequence is idempotent about the shared package.
+	for _, f := range g.Definition.Fields {
+		if !f.IsAuto() {
+			continue
+		}
+		prefix := f.AutoPrefix
+		if prefix == "" {
+			prefix = defaultPrefix(names.Pascal)
+		}
+		if err := generateSequenceAt(g.Root, g.Module, g.Architecture, SequenceOptions{Name: names.Pascal, Prefix: prefix}); err != nil {
+			return fmt.Errorf("setting up auto-number for field %q: %w", f.Name, err)
+		}
+	}
+
 	if err := g.writeGoService(names); err != nil {
 		return fmt.Errorf("writing Go service: %w", err)
 	}

@@ -28,6 +28,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.100.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.100.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 28, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    Auto-numbered fields in one modifier: <code>number:string:auto</code>.
+                  </strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>The <code>auto</code> field modifier.</strong> Declare a field as{" "}
+                    <code>number:string:auto:INV</code> and Grit does everything an
+                    auto-generated identifier needs: it stands up the atomic{" "}
+                    <code>internal/sequence</code> counter package (and registers its table with
+                    AutoMigrate), generates the model&apos;s <code>BeforeCreate</code> hook to fill
+                    the field as <code>INV-202607-0001</code>, marks the column optional, and hides
+                    it from the create/edit form — while keeping it on the table and detail page.
+                    The prefix is optional (<code>number:string:auto</code> derives one from the
+                    model name); each auto field gets its own counter keyed{" "}
+                    <code>&lt;model&gt;_&lt;field&gt;</code>.
+                  </li>
+                  <li>
+                    <strong>No more &ldquo;why is the number field empty and required?&rdquo;</strong>{" "}
+                    <code>auto</code> is a shortcut over <code>grit generate sequence</code>; the
+                    hook calls the generic <code>sequence.Next</code> directly (never the{" "}
+                    <code>services</code> wrapper — that would be a models→services import cycle), so
+                    generated projects compile clean. Reach for{" "}
+                    <code>grit generate sequence</code> directly when you want a yearly/never reset,
+                    a custom width, or to call the counter from your own handler.
+                  </li>
+                  <li>
+                    <strong>Under the hood.</strong> The sequence generator no longer depends on the
+                    process working directory — the resource generator wires the counter using the
+                    project root it already knows, so <code>auto</code> works the same however you
+                    invoke it.
+                  </li>
+                </ul>
+                <p>Matrix 73/0.</p>
+              </div>
+            </div>
+
             {/* v3.99.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

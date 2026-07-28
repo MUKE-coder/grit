@@ -107,10 +107,55 @@ grit g resource InvoiceItem \\
               Auto-number the invoice
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              You rarely want users typing invoice numbers by hand. <code>grit generate
-              sequence</code> creates an <strong>atomic, gap-free</strong> counter backed by a
-              database row (so two concurrent creates can never collide) and a typed helper you
-              call from the create path.
+              You rarely want users typing invoice numbers by hand. The one-liner is the{' '}
+              <code>auto</code> field modifier — declare it on the field and Grit wires up the
+              whole atomic-counter machinery for you:
+            </p>
+            <CodeBlock
+              terminal
+              code={`grit g resource Invoice --fields "number:string:auto:INV,status:string,total:float"`}
+            />
+            <p className="text-muted-foreground leading-relaxed mb-4 mt-6">
+              <code>number:string:auto:INV</code> reads as{' '}
+              <em>&ldquo;a string column named <code>number</code>, auto-generated with the prefix
+              INV.&rdquo;</em> The prefix is optional (<code>number:string:auto</code> derives one
+              from the model name). That single modifier does four things so you don&apos;t have to:
+            </p>
+            <ul className="list-disc pl-6 space-y-2 text-muted-foreground leading-relaxed mb-4">
+              <li>
+                stands up the shared <code>internal/sequence</code> package and registers its
+                counter table with AutoMigrate (once per project);
+              </li>
+              <li>
+                generates the model&apos;s <code>BeforeCreate</code> hook to fill the field from an
+                atomic, gap-free counter — <code>INV-202607-0001</code>, <code>-0002</code>, …;
+              </li>
+              <li>
+                makes the column <strong>optional</strong> (the server fills it, so nothing is
+                required at the API boundary);
+              </li>
+              <li>
+                <strong>hides it from the create/edit form</strong> — no empty &ldquo;Number&rdquo;
+                box for users to puzzle over — while keeping it on the table and detail page.
+              </li>
+            </ul>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              Create an invoice with no number and it comes back numbered; import one that already
+              has a number and that number is kept (the hook only fills blanks). By default{' '}
+              <code>auto</code> resets the counter monthly with a 4-digit width — want yearly, never,
+              or a different width? Reach for the explicit <code>grit generate sequence</code> route
+              below, which exposes all three knobs.
+            </p>
+
+            <h3 className="text-xl font-semibold mb-3 mt-8">
+              The explicit route: <code>grit generate sequence</code>
+            </h3>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              <code>auto</code> is a shortcut over this command. Use it directly when you want to
+              control the reset cadence or width, number an <em>existing</em> field, or call the
+              counter from your own handler code. It creates the same{' '}
+              <strong>atomic, gap-free</strong> counter plus a typed helper you can call from the
+              create path.
             </p>
             <CodeBlock
               terminal
@@ -165,12 +210,13 @@ func (m *Invoice) BeforeCreate(tx *gorm.DB) error {
             </p>
             <p className="text-muted-foreground leading-relaxed mb-4 mt-6">
               <strong>The number fills in on the server, not in the form.</strong> The hook runs at
-              create time and only when the field is blank — nothing pre-fills the browser. So
-              declare the field <code>number:string:optional</code> (string fields are required by
-              default) and the create form won&apos;t demand it; the value appears on the detail
-              page and list right after you save. Prefer not to show an empty Number box at all?
-              Remove the <code>number</code> entry from the resource&apos;s <code>form.fields</code>{' '}
-              — it stays in the table and detail, just not the create form.
+              create time and only when the field is blank — nothing pre-fills the browser. When you
+              wire the sequence by hand, declare the field <code>number:string:optional</code>{' '}
+              (string fields are required by default) so the create form won&apos;t demand it, and
+              drop the <code>number</code> entry from the resource&apos;s <code>form.fields</code> if
+              you&apos;d rather not show an empty box; it stays in the table and detail either way.
+              The <code>auto</code> modifier above does both of these for you — optional column,
+              hidden from the form — which is exactly why it exists.
             </p>
 
             {/* line-item totals */}
