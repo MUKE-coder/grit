@@ -396,10 +396,14 @@ import { X } from "@/lib/icons";
 interface FormModalProps {
   resource: ResourceDefinition;
   item: Record<string, unknown> | null;
+  // Pre-fill values for CREATE mode (item === null). Used to scope a new child
+  // to its parent — e.g. { customer_id: "…" } when adding an invoice from a
+  // customer's detail page.
+  defaults?: Record<string, unknown>;
   onClose: () => void;
 }
 
-export function FormModal({ resource, item, onClose }: FormModalProps) {
+export function FormModal({ resource, item, defaults, onClose }: FormModalProps) {
   const isEdit = item !== null;
   const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint);
   const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint);
@@ -436,7 +440,7 @@ export function FormModal({ resource, item, onClose }: FormModalProps) {
         <div className="p-6">
           <FormBuilder
             form={resource.form}
-            defaultValues={isEdit ? (item as Record<string, unknown>) : undefined}
+            defaultValues={isEdit ? (item as Record<string, unknown>) : defaults}
             onSubmit={handleSubmit}
             onCancel={onClose}
             isSubmitting={isCreating || isUpdating}
@@ -466,10 +470,13 @@ import { X, Maximize2, Minimize2 } from "@/lib/icons";
 interface FormSheetProps {
   resource: ResourceDefinition;
   item: Record<string, unknown> | null;
+  // Pre-fill values for CREATE mode (item === null) — scopes a new child to its
+  // parent (e.g. { customer_id: "…" }).
+  defaults?: Record<string, unknown>;
   onClose: () => void;
 }
 
-export function FormSheet({ resource, item, onClose }: FormSheetProps) {
+export function FormSheet({ resource, item, defaults, onClose }: FormSheetProps) {
   const isEdit = item !== null;
   // The drawer opens at half the viewport width; the maximize toggle widens it
   // to 80% for forms with wide content (inline line-item tables, two-column
@@ -527,7 +534,7 @@ export function FormSheet({ resource, item, onClose }: FormSheetProps) {
         <div className="p-6">
           <FormBuilder
             form={resource.form}
-            defaultValues={isEdit ? (item as Record<string, unknown>) : undefined}
+            defaultValues={isEdit ? (item as Record<string, unknown>) : defaults}
             onSubmit={handleSubmit}
             onCancel={onClose}
             isSubmitting={isCreating || isUpdating}

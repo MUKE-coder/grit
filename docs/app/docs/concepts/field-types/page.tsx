@@ -29,6 +29,7 @@ const ROWS: Row[] = [
   { type: 'bool', syntax: 'active:bool', go: 'bool', ts: 'boolean', zod: 'z.boolean()' },
   { type: 'toggle', syntax: 'active:toggle', go: 'bool', ts: 'boolean', zod: 'z.boolean()' },
   { type: 'select', syntax: 'status:select:draft=Draft|paid=Paid', go: 'string', ts: '"draft" | "paid"', zod: 'z.enum([...])' },
+  { type: 'radio', syntax: 'plan:radio:free=Free|pro=Pro', go: 'string', ts: '"free" | "pro"', zod: 'z.enum([...])' },
   { type: 'check', syntax: 'tags:check:news=News|ops=Ops', go: 'datatypes.JSONSlice[string]', ts: '("news" | "ops")[]', zod: 'z.array(z.enum([...]))' },
   { type: 'datetime', syntax: 'published_at:datetime', go: '*time.Time', ts: 'string | null', zod: 'z.string().nullable()' },
   { type: 'date', syntax: 'due:date', go: '*time.Time', ts: 'string | null', zod: 'z.string().nullable()' },
@@ -49,6 +50,7 @@ const RENDER: { type: string; form: string; table: string }[] = [
   { type: 'bool', form: 'Switch', table: 'boolean' },
   { type: 'toggle', form: 'Switch', table: 'boolean' },
   { type: 'select', form: 'Dropdown (value=Label options)', table: 'text' },
+  { type: 'radio', form: 'Radio-button group (single choice)', table: 'text' },
   { type: 'check', form: 'Checkbox group (multi)', table: '—' },
   { type: 'datetime / date', form: 'Date / time picker', table: 'relative' },
   { type: 'slug', form: 'Auto-filled (read-only)', table: 'text' },
@@ -94,7 +96,7 @@ export default function FieldTypesPage() {
                 <ul className="space-y-2.5 mt-4 mb-4">
                   {[
                     ['Modifiers', 'name:string:unique — append :unique, :required, or :optional. String fields default to required; everything else defaults to optional.'],
-                    ['Options', 'status:select:draft=Draft|sent=Sent (select / check) — pipe-separated choices. Labels are OPTIONAL: status:select:draft|sent|paid generates the labels by capitalizing each value (in_progress → In Progress). Use value=Label only when the label differs from the stored value.'],
+                    ['Options', 'status:select:draft=Draft|sent=Sent (select / radio / check) — pipe-separated choices. Labels are OPTIONAL: status:select:draft|sent|paid generates the labels by capitalizing each value (in_progress → In Progress). Use value=Label only when the label differs from the stored value.'],
                     ['Slug source', 'slug:slug:title — the 3rd segment is the field to slugify. Slugs are auto-unique and generated on save.'],
                     ['belongs_to', 'category:belongs_to (model inferred → Category) or author:belongs_to:User (explicit). Creates a <name>_id UUID foreign-key column.'],
                     ['many_to_many', 'tags:many_to_many:Tag — the related model is required. GORM builds the join table.'],

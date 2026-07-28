@@ -113,3 +113,28 @@ func TestOptionsLiteral(t *testing.T) {
 		t.Errorf("OptionsLiteral = %q", got)
 	}
 }
+
+func TestRadioField(t *testing.T) {
+	def, err := ParseInlineFields("Survey", "rating:radio:low=Low|high=High")
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	f := fieldByName(def, "rating")
+	if !f.IsRadio() {
+		t.Fatalf("rating not a radio: %q", f.Type)
+	}
+	// radio is single-choice like select — string, enum, union — but renders as
+	// radio buttons, not a dropdown.
+	if f.GoType() != "string" {
+		t.Errorf("radio GoType = %q, want string", f.GoType())
+	}
+	if got := f.ZodType(); got != `z.enum(["low", "high"])` {
+		t.Errorf("radio ZodType = %q", got)
+	}
+	if f.FormFieldType() != "radio" {
+		t.Errorf("radio FormFieldType = %q, want radio", f.FormFieldType())
+	}
+	if len(f.Options) != 2 || f.Options[0].Label != "Low" {
+		t.Errorf("radio options = %+v", f.Options)
+	}
+}

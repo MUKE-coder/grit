@@ -20,7 +20,7 @@ import { useResourceItem, useResource, useDeleteResource } from "@/hooks/use-res
 import { renderCell } from "@/components/tables/cell-renderers";
 import { DataTable } from "@/components/tables/data-table";
 import { FormSheet } from "@/components/forms/form-sheet";
-import { ArrowLeft, Pencil, Trash2, Loader2, Printer } from "@/lib/icons";
+import { ArrowLeft, Pencil, Trash2, Loader2, Printer, Plus } from "@/lib/icons";
 
 interface ResourceDetailPageProps {
   resource: ResourceDefinition;
@@ -175,6 +175,7 @@ export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
           parentId={id}
           columns={r.table.columns.filter((c) => !c.hidden)}
           slug={r.slug}
+          createResource={r}
         />
       ))}
       </div>
@@ -191,6 +192,7 @@ function RelatedTable({
   parentId,
   columns,
   slug,
+  createResource,
 }: {
   title: string;
   endpoint: string;
@@ -198,19 +200,34 @@ function RelatedTable({
   parentId: string;
   columns: ColumnDefinition[];
   slug?: string;
+  // When set, the table gets a "New <child>" button that opens the child's
+  // create form pre-scoped to this parent (its belongs_to FK is pre-filled).
+  createResource?: ResourceDefinition;
 }) {
   const router = useRouter();
+  const [creating, setCreating] = useState(false);
   const { data, isLoading } = useResource<Record<string, unknown>>(endpoint, {
     filters: { [fk]: parentId },
     pageSize: 100,
   });
   const rows = data?.data ?? [];
+  const childLabel = createResource?.label?.singular ?? createResource?.name ?? "item";
 
   return (
     <div className="mt-6 rounded-xl border border-border bg-bg-elevated">
-      <div className="flex items-center gap-2 border-b border-border px-6 py-4">
-        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-        <span className="rounded-full bg-bg-hover px-2 py-0.5 text-xs text-text-muted">{rows.length}</span>
+      <div className="flex items-center justify-between gap-2 border-b border-border px-6 py-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+          <span className="rounded-full bg-bg-hover px-2 py-0.5 text-xs text-text-muted">{rows.length}</span>
+        </div>
+        {createResource && (
+          <button
+            onClick={() => setCreating(true)}
+            className="no-print inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" /> New {childLabel}
+          </button>
+        )}
       </div>
       <div className="p-2">
         <DataTable
@@ -220,6 +237,14 @@ function RelatedTable({
           onView={slug ? (item) => router.push("/resources/" + slug + "/" + String(item.id)) : undefined}
         />
       </div>
+      {creating && createResource && (
+        <FormSheet
+          resource={createResource}
+          item={null}
+          defaults={{ [fk]: parentId }}
+          onClose={() => setCreating(false)}
+        />
+      )}
     </div>
   );
 }

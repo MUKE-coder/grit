@@ -64,12 +64,18 @@ uses the new option-backed field types for its status and a flag:
 
 ```bash
 grit g resource Invoice --fields \
-  "number:string,\
+  "number:string:optional,\
    status:select:draft=Draft|sent=Sent|paid=Paid,\
    sent:toggle,\
    customer:belongs_to:Customer" \
   --items "InvoiceItem:description:string,qty:int,unit_rate:float"
 ```
+
+> **Why `number:string:optional`?** We're going to auto-generate the invoice
+> number in [Step 4](#step-4--auto-number-the-invoices), so the user should never
+> have to type it. String fields are *required* by default — the `:optional`
+> modifier tells Grit not to demand it in the form, which is what lets the server
+> fill it in. More on the timing in Step 4.
 
 That's a lot on one line, so here's each piece, on its own.
 
@@ -93,13 +99,14 @@ including how to do it as two separate commands).
 
 ### The two choice fields — and how they render
 
-`status` and `sent` use Grit's new **option-backed field types**. There are three,
+`status` and `sent` use Grit's new **option-backed field types**. There are four,
 and the whole point is that you declare the *choices* in the field spec and Grit
 generates the control, the validation, and the types to match. Here's each one:
 
 | You write | Renders in the form as | Stored as | Types generated |
 |-----------|------------------------|-----------|-----------------|
 | `status:select:draft=Draft\|paid=Paid` | a **dropdown** (`<select>`) | Go `string` | Zod `z.enum([...])`, TS `"draft" \| "paid"` |
+| `rating:radio:low=Low\|high=High` | a **radio-button group** (single choice) | Go `string` | Zod `z.enum([...])`, TS `"low" \| "high"` |
 | `channels:check:email=Email\|sms=SMS` | a **checkbox group** (multi-select) | Go `datatypes.JSONSlice[string]` (JSON array) | Zod `z.array(z.enum([...]))`, TS `("email" \| "sms")[]` |
 | `sent:toggle` | a **switch** | Go `bool` | Zod `z.boolean()`, TS `boolean` |
 
@@ -108,6 +115,12 @@ Paid, stored as a string and validated against exactly those three values
 everywhere — the Go binding, the Zod schema, and the TypeScript union all agree
 because they're generated from the same token. And **`sent:toggle`** is a simple
 on/off switch backed by a boolean.
+
+**`select` and `radio` are both single-choice** from a fixed list and generate the
+exact same Go/Zod/TS — the only difference is the control. `select` is a compact
+dropdown; `radio` lays every option out as a button. Reach for `radio` when there
+are just a few choices you want visible at once (a plan tier, a priority), and
+`select` when the list is longer or space is tight.
 
 Want *multiple* choices instead of one? That's `check` — it renders a checkbox
 group and stores the ticked values as a JSON array. For example, if invoices could
@@ -134,23 +147,96 @@ match freely: `status:select:draft|sent=Sent to client|paid` works.
 📖 **Docs:** [Field types](/docs/concepts/field-types) — the full table mapping
 every type to its Go, GORM, TypeScript, Zod, and form representation.
 
+### The same shape, four other apps
+
+An invoice is just one instance of *a parent with a lifecycle status and a table
+of child rows*. Once you see the shape, it's everywhere. Here are four other apps,
+each one command, each leaning on the new field types the same way:
+
+**E-commerce — orders and line items.** A `select` for the order lifecycle, a
+`radio` for the two shipping options, line items as order lines.
+
+```bash
+grit g resource Order --fields \
+  "number:string,\
+   status:select:pending|paid|shipped|delivered,\
+   fulfillment:radio:standard|express,\
+   customer:belongs_to:Customer" \
+  --items "OrderLine:product:string,qty:int,unit_price:float"
+```
+
+**Loan management — loans and repayments.** A `select` for the loan state, a
+`radio` for the risk band, and each repayment carries a `date` and a `toggle`.
+
+```bash
+grit g resource Loan --fields \
+  "reference:string,\
+   status:select:pending|active|closed|defaulted,\
+   risk:radio:low|medium|high,\
+   borrower:belongs_to:Customer" \
+  --items "Repayment:due_date:date,amount:float,paid:toggle"
+```
+
+**Subscriptions — plans and line charges.** Two `select`s (the plan and the
+billing state) and an `auto_renew` `toggle`; line charges are the children.
+
+```bash
+grit g resource Subscription --fields \
+  "plan:select:starter|pro|enterprise,\
+   status:select:trialing|active|past_due|canceled,\
+   auto_renew:toggle,\
+   customer:belongs_to:Customer" \
+  --items "LineCharge:description:string,qty:int,unit_price:float"
+```
+
+**Clinic — prescriptions and medications.** A `select` for the prescription
+status, a `radio` for priority, and the prescribed drugs as line items.
+
+```bash
+grit g resource Prescription --fields \
+  "code:string,\
+   status:select:draft|issued|dispensed,\
+   priority:radio:routine|urgent,\
+   patient:belongs_to:Customer" \
+  --items "Medication:name:string,dose:string,quantity:int"
+```
+
+Notice none of these spell out a single label — the bare `select`/`radio` values
+get capitalized automatically (`past_due` → **Past Due**). Swap the nouns, keep
+the moves.
+
 ## Step 4 — Auto-number the invoices
 
 Nobody should type `INV-0001` by hand, and two people creating invoices at the
 same moment must never collide. This is three small moves.
 
-**4a. Generate the counter.** `grit generate sequence` creates an atomic, gap-free
-sequence backed by a database row:
+**4a. Generate the counter.**
 
 ```bash
 grit generate sequence Invoice --prefix INV --reset monthly --width 4
 ```
 
-**4b. See what it wrote.** Two things: a generic counter package under
-`internal/sequence/`, and a typed helper at
-`internal/services/invoice_sequence.go` exposing one function —
-`NextInvoiceNumber(db, t)`. `--prefix` sets the `INV` part, `--reset monthly`
-rolls the counter over each month, and `--width 4` is the zero-padding.
+**One thing to be clear about up front:** this command **does not create or modify
+any column** on the Invoice model. It doesn't know about your `number:string`
+field, and it doesn't need to. It generates a **standalone counter** — its own
+tiny storage plus a function — and the word `Invoice` here is just a *name* for
+that counter and its helper, not a link to the model. (You could name it
+`grit generate sequence Receipt` and get `NextReceiptNumber`.) That's exactly why
+step 4c is *you* deciding which field receives the value.
+
+**4b. See what it wrote.** Two things:
+
+- `internal/sequence/` — a generic counter package. The count lives in a database
+  row that's locked and incremented in a transaction, which is what makes it
+  atomic and gap-free.
+- `internal/services/invoice_sequence.go` — a typed helper exposing one function,
+  `NextInvoiceNumber(db, t)`, that returns the next formatted string.
+
+The flags shape the output: `--prefix INV` is the leading text, `--width 4` is the
+zero-padding, and `--reset` decides when the counter rolls back to 1. **Don't want
+a monthly reset?** Use `--reset yearly` (rolls over each year) or `--reset never`
+for one continuous, ever-incrementing series — `INV-0001`, `INV-0002`, … with no
+date segment at all.
 
 **4c. Wire it into the model.** Call the helper from the invoice's `BeforeCreate`
 hook, so a number is assigned automatically — and only when one isn't already set,
@@ -175,9 +261,24 @@ func (m *Invoice) BeforeCreate(tx *gorm.DB) error {
 
 Now every new invoice is numbered `INV-202607-0001`, `INV-202607-0002`, … The
 counter is incremented in the *same transaction* as the insert, so it's safe under
-concurrent load — no duplicates, no gaps. (Want a totally different shape like
-`2026/Q3/0001`? The helper is plain Go you can edit; the sequence package just
-hands you the next integer.)
+concurrent load — no duplicates, no gaps.
+
+**So what does the user see?** This is the part worth being precise about, because
+it surprises people. The number is filled **on the server, at create time, only
+when it's blank** — *not* in the browser as you type. So:
+
+- Because we declared `number:string:**optional**` back in Step 3, the create form
+  doesn't demand a number — you can submit with it empty.
+- On submit, `BeforeCreate` runs and assigns the next number.
+- The number then shows up on the invoice's **detail page and in the list**,
+  immediately after you save. It was never typed by hand.
+
+If you'd rather the empty Number box not appear in the create form at all, delete
+the `number` field from the invoice's `form.fields` in
+`apps/admin/resources/invoices.ts` — it stays in the table and on the detail page,
+it just leaves the create form. (And if you want a shape like `2026/Q3/0001`, the
+helper is plain Go you can edit; the sequence package just hands you the next
+integer.)
 
 📖 **Docs:** [Invoices &amp; line items → Auto-numbering](/docs/backend/invoices)
 
@@ -219,8 +320,31 @@ grit dev
 
 Open the admin panel, add a customer, then create an invoice: pick the customer
 from the searchable dropdown, choose a **status** from the select, flip the
-**sent** switch, add a couple of line items in the inline table, and save. The
-number fills itself in.
+**sent** switch, add a couple of line items in the inline table, and save. You
+never touch the number — it fills itself in on save (Step 4).
+
+### Where does the line-item total come from?
+
+As you type quantities and rates, the inline table shows a per-row **Total** and a
+grand total at the bottom — and you didn't ask for either. That's a small
+convenience, so it's worth knowing exactly how it works, because it's driven by
+**column names**, not magic:
+
+- The line-items table looks for one column whose name matches a **quantity**
+  pattern (`qty` or `quantity`) and one that matches a **money** pattern
+  (`unit_rate`, `unit_price`, `rate`, `price`, or `amount`).
+- If it finds both, it shows `Total = quantity × money` per row, and sums them.
+  Our `qty:int` and `unit_rate:float` match, so you get it for free.
+
+Two things follow from that. First, the total is **display-only** — it's computed
+in the browser to help data entry; only your declared columns (`description`,
+`qty`, `unit_rate`) are actually submitted and stored. If you need a *persisted*
+total, add an `amount` column and compute it in the item's `BeforeSave` hook — the
+same pattern as the invoice number. Second, because the trigger is the column
+*name*, if you rename `qty` to `count` or `unit_rate` to `cost`, the auto-total
+quietly stops appearing — rename them back to a name in those patterns (or keep
+`qty`/`unit_rate`) and it returns. Nothing breaks either way; you just gain or lose
+the convenience column.
 
 Now open that invoice's detail page and hit **Print**. Every generated resource
 detail page ships with the button, and a print stylesheet does the rest: the
