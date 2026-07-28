@@ -278,6 +278,13 @@ export const docsMetadata: Record<string, DocPage> = {
       "Walks JB's Defender's Handbook chapter by chapter — nmap recon, Gobuster brute-force, Hydra login spray, SQL injection (UNION / blind / time-based), hash cracking, TOTP seed theft, SIM swap, AitM phishing proxies, MITM / SSL strip, evil-twin Wi-Fi, DDoS — and shows exactly how Grit defends each one by default, with file paths and code. Plus a bonus list of defences Grit ships beyond the handbook: SSRF (safefetch), IDOR (authz.MustOwn), CSRF middleware, HMAC webhook signatures, idempotency, tamper-evident audit log, Sentinel WAF + AuthShield + Anomaly + Geo, Pulse observability, JWT alg pinning, and the k6 6-test suite.",
   },
 
+  // Security — GDPR data toolkit + Access Reviews
+  '/docs/security/compliance': {
+    title: 'Privacy & Compliance — GDPR Toolkit + Access Reviews',
+    description:
+      "Two admin-only compliance surfaces every Grit app ships with, and exactly how each gets populated. The GDPR toolkit exports a user's full data bundle and erases a user (hard-deleting child PII, anonymizing the user row) with every erasure written to a tamper-evident, hash-chained deletion journal. Access Reviews snapshot every current role assignment into a point-in-time recertification campaign an admin works item by item — Keep or Revoke — where a revoke deletes the real grant, then signs off. Nothing is scheduled or seeded: both are populated on demand by an admin action.",
+  },
+
   // Desktop — auto-updater + installers + release pipeline
   '/docs/desktop/auto-update': {
     title: 'Desktop Auto-Update + Installers — Binary Swap, NSIS Full + Slim',
