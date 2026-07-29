@@ -1,7 +1,6 @@
 package routeparser
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -20,18 +19,30 @@ type Route struct {
 
 // Parse reads a routes.go file and extracts all registered routes.
 func Parse(routesFile string) ([]Route, error) {
-	f, err := os.Open(routesFile)
+	data, err := os.ReadFile(routesFile)
 	if err != nil {
 		return nil, fmt.Errorf("opening routes file: %w", err)
 	}
-	defer f.Close()
+	lines := strings.Split(string(data), "\n")
+
+	// String constants are collected up front because a group prefix may be
+	// built from one: routes.go declares `const APIVersion = "v1"` and mounts
+	// everything under r.Group("/api/" + APIVersion). Without resolving that,
+	// the prefix silently evaluates to nothing and every route is reported one
+	// path segment short — /users instead of /api/v1/users, which is worse than
+	// no output at all because it looks plausible.
+	consts := parseStringConsts(lines)
 
 	var routes []Route
 	var currentGroup string // semantic group name (public, protected, admin)
 
 	// Patterns for route registration
 	routeRe := regexp.MustCompile(`\b(\w+)\.(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\("([^"]+)",\s*(\w+[\w.]*)\)`)
-	groupRe := regexp.MustCompile(`(\w+)\s*:?=\s*(?:\w+\.)?Group\("([^"]+)"\)`)
+	// The receiver is captured rather than searched for: the previous version
+	// looked for any known variable name appearing in the line, iterating a map
+	// in random order, so a line mentioning two known variables could inherit
+	// the wrong parent prefix on some runs and not others.
+	groupRe := regexp.MustCompile(`(\w+)\s*:?=\s*(?:(\w+)\.)?Group\(([^()]*)\)`)
 	useAuthRe := regexp.MustCompile(`\.Use\(middleware\.Auth`)
 	useRoleRe := regexp.MustCompile(`\.Use\(middleware\.RequireRole\("(\w+)"\)`)
 
@@ -40,9 +51,8 @@ func Parse(routesFile string) ([]Route, error) {
 		"r": "", // root router
 	}
 
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
+	for _, raw := range lines {
+		line := strings.TrimSpace(raw)
 
 		// Skip comments and empty lines
 		if line == "" || strings.HasPrefix(line, "//") {
@@ -50,19 +60,12 @@ func Parse(routesFile string) ([]Route, error) {
 		}
 
 		// Detect group definitions: auth := r.Group("/api/auth")
-		if matches := groupRe.FindStringSubmatch(line); len(matches) >= 3 {
+		if matches := groupRe.FindStringSubmatch(line); len(matches) >= 4 {
 			varName := matches[1]
-			prefix := matches[2]
+			receiver := matches[2]
+			prefix := resolveStringExpr(matches[3], consts)
 
-			// Find parent prefix by checking what variable the Group is called on
-			parentPrefix := ""
-			for pName, pPrefix := range groupPrefixes {
-				if strings.Contains(line, pName+".Group") || strings.Contains(line, pName+" .Group") {
-					parentPrefix = pPrefix
-					break
-				}
-			}
-			groupPrefixes[varName] = parentPrefix + prefix
+			groupPrefixes[varName] = groupPrefixes[receiver] + prefix
 		}
 
 		// Detect middleware usage for semantic grouping
@@ -101,10 +104,6 @@ func Parse(routesFile string) ([]Route, error) {
 		}
 	}
 
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("reading routes file: %w", err)
-	}
-
 	// Sort by path then method
 	sort.Slice(routes, func(i, j int) bool {
 		if routes[i].Path == routes[j].Path {
@@ -114,6 +113,72 @@ func Parse(routesFile string) ([]Route, error) {
 	})
 
 	return routes, nil
+}
+
+var (
+	singleConstRe = regexp.MustCompile(`^const\s+(\w+)\s*(?:=|\w+\s*=)\s*"([^"]*)"`)
+	blockConstRe  = regexp.MustCompile(`^(\w+)\s*(?:=|\w+\s*=)\s*"([^"]*)"`)
+)
+
+// parseStringConsts collects package-level string constants, both the
+// single-line form and entries inside a const (...) block, so a group prefix
+// assembled from one can be resolved.
+func parseStringConsts(lines []string) map[string]string {
+	consts := map[string]string{}
+	inBlock := false
+
+	for _, raw := range lines {
+		line := strings.TrimSpace(raw)
+		if line == "" || strings.HasPrefix(line, "//") {
+			continue
+		}
+
+		if strings.HasPrefix(line, "const (") {
+			inBlock = true
+			continue
+		}
+		if inBlock {
+			if line == ")" {
+				inBlock = false
+				continue
+			}
+			if m := blockConstRe.FindStringSubmatch(line); len(m) == 3 {
+				consts[m[1]] = m[2]
+			}
+			continue
+		}
+		if m := singleConstRe.FindStringSubmatch(line); len(m) == 3 {
+			consts[m[1]] = m[2]
+		}
+	}
+	return consts
+}
+
+// resolveStringExpr evaluates a Group() argument such as `"/api/auth"` or
+// `"/api/" + APIVersion` into the prefix it produces.
+//
+// An identifier that cannot be resolved is rendered as {Name} rather than
+// dropped. A path that is visibly incomplete tells you the parser hit something
+// it does not understand; a path that silently lost a segment reads as correct
+// and sends you at the wrong URL.
+func resolveStringExpr(expr string, consts map[string]string) string {
+	var out strings.Builder
+	for _, part := range strings.Split(expr, "+") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		if len(part) >= 2 && strings.HasPrefix(part, `"`) && strings.HasSuffix(part, `"`) {
+			out.WriteString(part[1 : len(part)-1])
+			continue
+		}
+		if v, ok := consts[part]; ok {
+			out.WriteString(v)
+			continue
+		}
+		out.WriteString("{" + part + "}")
+	}
+	return out.String()
 }
 
 // FindRoutesFile locates the routes.go file in a Grit project.

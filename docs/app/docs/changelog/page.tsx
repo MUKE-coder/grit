@@ -28,6 +28,70 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.110.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.110.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    <code>grit mcp serve</code> — your project, answerable by an AI agent.
+                  </strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>A Model Context Protocol server over stdio.</strong> Register it with{" "}
+                    <code>claude mcp add grit -- grit mcp serve --project .</code> and an agent can
+                    ask Grit three things instead of inferring them from a grep:{" "}
+                    <code>grit_project_info</code> (architecture, module path, whether Go lives at
+                    the root or under <code>apps/api</code>), <code>grit_list_routes</code> (every
+                    route with its full path, handler and access level, filterable by method or
+                    substring), and <code>grit_describe_models</code> (fields, Go types, JSON names,
+                    GORM tags).
+                  </li>
+                  <li>
+                    <strong>Read-only and static, on purpose.</strong> Every answer comes from
+                    parsing your source — no running server, no database, no credentials. So it
+                    works on a checkout that has never been started, has no secret to leak into an
+                    agent&apos;s context, cannot mutate your repo, and cannot be talked into running
+                    a migration by instructions hidden in a README. An agent that wants to change
+                    the project still calls the CLI, where the change lands in your diff.
+                  </li>
+                  <li>
+                    <strong>
+                      Fixed: <code>grit routes</code> was printing every path one segment short.
+                    </strong>{" "}
+                    Routes mount under <code>{'r.Group("/api/" + APIVersion)'}</code>, and the parser
+                    only understood string literals — so the prefix evaluated to nothing and{" "}
+                    <code>/api/v1/users</code> was reported as <code>/users</code>. Wrong in the
+                    worst way, because it looks right. The parser now resolves string constants,
+                    including inside <code>const (…)</code> blocks, and renders anything it still
+                    cannot resolve as <code>{'{Name}'}</code> rather than dropping it silently. This
+                    had to land first: an MCP tool confidently handing an agent the wrong URL is
+                    worse than no tool at all.
+                  </li>
+                  <li>
+                    <strong>Also fixed in the same parser:</strong> nested groups now inherit from
+                    the receiver they were actually created on. The previous code searched the line
+                    for any known variable name while iterating a map, so a line mentioning two
+                    known groups could pick the wrong parent on some runs and not others.
+                  </li>
+                  <li>
+                    <strong>Not shipped yet, deliberately:</strong> <code>openapi</code> and{" "}
+                    <code>recent_errors</code>. Both need a running server and a database
+                    connection, which is a credential and connection story the read-only tools
+                    don&apos;t require — a different surface, worth doing on its own.
+                  </li>
+                </ul>
+                <p>19 new tests. Matrix 73/0.</p>
+              </div>
+            </div>
+
             {/* v3.109.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -560,6 +560,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'How to use Claude AI to build Grit projects faster: prompting strategies, code generation, and AI-assisted development.',
   },
+  '/docs/ai-workflows/mcp': {
+    title: 'MCP Server',
+    description:
+      'Expose your Grit project to AI coding agents over the Model Context Protocol: real routes, real models, real layout — read-only and parsed from source.',
+  },
   '/docs/ai-workflows/antigravity': {
     title: 'Using Grit with Antigravity',
     description:
