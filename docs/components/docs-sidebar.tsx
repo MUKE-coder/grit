@@ -269,6 +269,7 @@ const navItems: NavItem[] = [
     items: [
       { title: 'Using Grit with Claude', href: '/docs/ai-workflows/claude' },
       { title: 'Using Grit with Antigravity', href: '/docs/ai-workflows/antigravity' },
+      { title: 'MCP Server', href: '/docs/ai-workflows/mcp' },
       { title: 'LLM Skill Guide', href: '/docs/ai-skill' },
       { title: 'Complete LLM Reference', href: '/docs/ai-skill/llm-guide' },
     ],
