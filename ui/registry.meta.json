@@ -1,0 +1,802 @@
+[
+  {
+    "name": "hero-01",
+    "title": "Hero Section",
+    "description": "Bold hero with gradient text and dual CTA buttons",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "pricing-card-01",
+    "title": "Pricing Card",
+    "description": "Pricing tier card with feature list and popular badge",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "product-card-01",
+    "title": "Product Card",
+    "description": "E-commerce product card with image, rating, and add-to-cart",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "feature-grid-01",
+    "title": "Feature Grid",
+    "description": "Feature showcase grid with icon cards",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "hero-split-01",
+    "title": "Split Hero",
+    "description": "Side-by-side hero with copy and terminal code block",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "logo-cloud-01",
+    "title": "Logo Cloud",
+    "description": "Infinite-scroll marquee of customer logos",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "testimonial-card-01",
+    "title": "Testimonial Card",
+    "description": "Single customer testimonial with avatar and stars",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "testimonial-grid-01",
+    "title": "Testimonial Grid",
+    "description": "3-column grid of customer testimonials",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "stats-banner-01",
+    "title": "Stats Banner",
+    "description": "Stats strip with large numbers and radial glow",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "faq-accordion-01",
+    "title": "FAQ Accordion",
+    "description": "Click-to-expand FAQ accordion",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "cta-banner-01",
+    "title": "CTA Banner",
+    "description": "Full-width CTA with email capture",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "newsletter-signup-01",
+    "title": "Newsletter Signup",
+    "description": "Newsletter card with subscriber count",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "changelog-item-01",
+    "title": "Changelog Item",
+    "description": "Version changelog entry with timeline",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "pricing-toggle-01",
+    "title": "Pricing Toggle",
+    "description": "Full pricing section with monthly/annual toggle",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "login-card-01",
+    "title": "Login Card",
+    "description": "Premium login card with social OAuth buttons",
+    "category": "auth",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "signup-card-01",
+    "title": "Signup Card",
+    "description": "Split signup form with feature list",
+    "category": "auth",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "forgot-password-card-01",
+    "title": "Forgot Password",
+    "description": "Email recovery card with success state",
+    "category": "auth",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "otp-input-01",
+    "title": "OTP Input",
+    "description": "6-digit OTP input with auto-advance and resend timer",
+    "category": "auth",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "social-login-buttons-01",
+    "title": "Social Login Buttons",
+    "description": "Google and GitHub OAuth buttons with divider",
+    "category": "auth",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "onboarding-wizard-01",
+    "title": "Onboarding Wizard",
+    "description": "3-step setup wizard with role and plan selection",
+    "category": "auth",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "two-factor-setup-01",
+    "title": "Two-Factor Setup",
+    "description": "2FA setup with QR scan, verify, and backup codes",
+    "category": "auth",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "profile-avatar-01",
+    "title": "Profile Avatar",
+    "description": "User avatar with image upload and initials fallback",
+    "category": "auth",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "account-deletion-01",
+    "title": "Account Deletion",
+    "description": "Confirmation dialog for account deletion",
+    "category": "auth",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "oauth-button-01",
+    "title": "OAuth Button",
+    "description": "OAuth provider button (GitHub, Google, Discord, X)",
+    "category": "auth",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "billing-card-01",
+    "title": "Billing Card",
+    "description": "Current plan card with usage bar and upgrade button",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "usage-meter-01",
+    "title": "Usage Meter",
+    "description": "Resource usage bar with limit indicator",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "team-member-row-01",
+    "title": "Team Member Row",
+    "description": "Team roster row with avatar, role badge, and actions",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "api-key-row-01",
+    "title": "API Key Row",
+    "description": "API key row with masked key, copy, and revoke",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "kanban-card-01",
+    "title": "Kanban Card",
+    "description": "Task card with priority, labels, and assignee",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "metric-card-01",
+    "title": "Metric Card",
+    "description": "KPI card with trend arrow and sparkline",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "activity-item-01",
+    "title": "Activity Feed Item",
+    "description": "Activity log entry with actor, action, and target",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "notification-item-01",
+    "title": "Notification Item",
+    "description": "Notification row with unread dot and mark-read",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "project-card-01",
+    "title": "Project Card",
+    "description": "Project/deployment card with status and last deploy",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "feature-flag-row-01",
+    "title": "Feature Flag Row",
+    "description": "Feature flag toggle row with key and rollout",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "webhook-row-01",
+    "title": "Webhook Row",
+    "description": "Webhook endpoint row with success rate and actions",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "plan-upgrade-banner-01",
+    "title": "Plan Upgrade Banner",
+    "description": "Upgrade prompt banner with feature callout",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "trial-countdown-01",
+    "title": "Trial Countdown",
+    "description": "Trial expiry countdown with days remaining",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "integration-card-01",
+    "title": "Integration Card",
+    "description": "Integration connect card with logo and status",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "empty-state-01",
+    "title": "Empty State",
+    "description": "Empty state with icon, title, description, and CTA",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "command-item-01",
+    "title": "Command Item",
+    "description": "Command palette item with icon and shortcut",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "onboarding-step-01",
+    "title": "Onboarding Step",
+    "description": "Onboarding checklist step with status and action",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "quota-alert-01",
+    "title": "Quota Alert",
+    "description": "Usage quota warning with progress bar",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "audit-log-row-01",
+    "title": "Audit Log Row",
+    "description": "Audit trail entry with actor, action, and IP",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "settings-section-01",
+    "title": "Settings Section",
+    "description": "Settings card with title, description, and action",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "invitation-link-01",
+    "title": "Invitation Link",
+    "description": "Workspace invite link with copy and expiry",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "file-upload-zone-01",
+    "title": "File Upload Zone",
+    "description": "Drag-and-drop file upload zone",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "progress-tracker-01",
+    "title": "Progress Tracker",
+    "description": "Multi-step completion tracker with step names",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "search-filter-bar-01",
+    "title": "Search Filter Bar",
+    "description": "Search input with filter pills",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "data-table-row-01",
+    "title": "Data Table Row",
+    "description": "Table row with checkbox, status badge, and actions",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "session-row-01",
+    "title": "Session Row",
+    "description": "Active session row with device, location, and revoke",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "billing-history-row-01",
+    "title": "Billing History Row",
+    "description": "Invoice row with status badge and PDF download",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "workspace-switcher-01",
+    "title": "Workspace Switcher",
+    "description": "Workspace/org switcher dropdown",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "permission-row-01",
+    "title": "Permission Row",
+    "description": "Permission scope row with role toggle buttons",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "sso-button-01",
+    "title": "SSO Button",
+    "description": "SSO provider sign-in button with org info",
+    "category": "saas",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "product-card-list-01",
+    "title": "Product List Row",
+    "description": "Product list row with image, rating, and stock",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "product-gallery-01",
+    "title": "Product Gallery",
+    "description": "Product image gallery with thumbnail strip",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "product-variant-01",
+    "title": "Product Variant Selector",
+    "description": "Color swatch and size variant selectors",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "cart-item-01",
+    "title": "Cart Item",
+    "description": "Cart line item with quantity spinner and remove",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "cart-summary-01",
+    "title": "Cart Summary",
+    "description": "Order summary card with subtotal, tax, and checkout",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "order-status-01",
+    "title": "Order Status Tracker",
+    "description": "Order progress timeline from placed to delivered",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "order-card-01",
+    "title": "Order Card",
+    "description": "Order history card with items, status, and track button",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "review-card-01",
+    "title": "Review Card",
+    "description": "Product review with stars and verified badge",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "discount-badge-01",
+    "title": "Discount Badge",
+    "description": "Sale / percent off badge and flash sale pill",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "stock-indicator-01",
+    "title": "Stock Indicator",
+    "description": "In stock / low stock / out of stock indicator",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "flash-sale-timer-01",
+    "title": "Flash Sale Timer",
+    "description": "Countdown timer for limited-time offers",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "bundle-offer-01",
+    "title": "Bundle Offer",
+    "description": "Frequently bought together bundle card",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "category-filter-01",
+    "title": "Category Filter",
+    "description": "Filter sidebar with categories and price range",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "checkout-step-indicator-01",
+    "title": "Checkout Step Indicator",
+    "description": "Checkout progress bar",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "payment-method-01",
+    "title": "Payment Method Selector",
+    "description": "Payment method selector (card, PayPal, Apple Pay)",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "address-card-01",
+    "title": "Address Card",
+    "description": "Saved address card with select, edit, and default",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "wishlist-button-01",
+    "title": "Wishlist Button",
+    "description": "Heart toggle button for wishlist",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "shipping-estimate-01",
+    "title": "Shipping Estimate",
+    "description": "Shipping option selector with delivery estimate",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "review-summary-01",
+    "title": "Review Summary",
+    "description": "Rating summary with star distribution bars",
+    "category": "ecommerce",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "social-proof-bar-01",
+    "title": "Social Proof Bar",
+    "description": "Avatar stack with member count and star rating trust bar",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "feature-comparison-01",
+    "title": "Feature Comparison",
+    "description": "Feature comparison table across plans (Linear pricing-style)",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "announcement-bar-01",
+    "title": "Announcement Bar",
+    "description": "Dismissible top-of-page announcement banner (Vercel-style)",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "waitlist-form-01",
+    "title": "Waitlist Form",
+    "description": "Pre-launch waitlist signup with position counter and join count",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "case-study-card-01",
+    "title": "Case Study Card",
+    "description": "Customer case study card with metric callout and quote",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "roadmap-item-01",
+    "title": "Roadmap Item",
+    "description": "Public roadmap card with status badge and upvote button",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "partner-card-01",
+    "title": "Partner Card",
+    "description": "Technology partner showcase card with official badge",
+    "category": "marketing",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "app-navbar-01",
+    "title": "App Navbar",
+    "description": "App top navbar with logo, nav links, and user menu",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "marketing-navbar-01",
+    "title": "Marketing Navbar",
+    "description": "Marketing site navbar with CTA button",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "sidebar-nav-01",
+    "title": "Sidebar Nav",
+    "description": "App sidebar with icon + label nav items",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "breadcrumb-01",
+    "title": "Breadcrumb",
+    "description": "Breadcrumb navigation with chevron separators",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "page-header-01",
+    "title": "Page Header",
+    "description": "Page header with title, description, and action button",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "marketing-footer-01",
+    "title": "Marketing Footer",
+    "description": "Footer with column links and copyright",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "alert-banner-01",
+    "title": "Alert Banner",
+    "description": "Alert/warning/success/error inline banner",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "modal-shell-01",
+    "title": "Modal Shell",
+    "description": "Modal dialog shell with Escape key close",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "code-block-01",
+    "title": "Code Block",
+    "description": "Code display with language badge and copy button",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "stat-card-01",
+    "title": "Stat Card",
+    "description": "Simple KPI stat card with icon and trend",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "section-header-01",
+    "title": "Section Header",
+    "description": "Centered marketing section header with badge",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "tab-nav-01",
+    "title": "Tab Nav",
+    "description": "Tab navigation bar with badges",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "loading-skeleton-01",
+    "title": "Loading Skeleton",
+    "description": "Animated skeleton placeholder",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "toast-notification-01",
+    "title": "Toast Notification",
+    "description": "Toast notification with variants and dismiss",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "data-list-01",
+    "title": "Data List",
+    "description": "Key-value data list / details panel",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "error-page-01",
+    "title": "Error Page",
+    "description": "404/500 error page with navigation buttons",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "card-grid-01",
+    "title": "Card Grid",
+    "description": "Responsive card grid wrapper with header",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "floating-action-01",
+    "title": "Floating Action Button",
+    "description": "Fixed floating action button",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "settings-nav-01",
+    "title": "Settings Nav",
+    "description": "Settings sidebar with grouped navigation sections (Vercel/GitHub-style)",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  },
+  {
+    "name": "command-palette-shell-01",
+    "title": "Command Palette Shell",
+    "description": "Full command palette modal with search, groups, and keyboard shortcuts",
+    "category": "layout",
+    "dependencies": [],
+    "hasSource": true
+  }
+]

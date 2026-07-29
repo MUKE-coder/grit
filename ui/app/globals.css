@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * The Grit UI palette.
+ *
+ * These are the same values exported from lib/tokens.ts and shipped in every
+ * registry item's cssVars block, so a component looks identical here and in
+ * the project that installs it.
+ */
+@layer base {
+  :root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #111118;
+    --bg-tertiary: #1a1a24;
+    --bg-elevated: #22222e;
+    --bg-hover: #2a2a38;
+    --border: #2a2a3a;
+    --text-primary: #e8e8f0;
+    --text-secondary: #9090a8;
+    --text-muted: #606078;
+    --accent: #6c5ce7;
+    --accent-hover: #7c6cf7;
+    --accent-foreground: #ffffff;
+    --success: #00b894;
+    --danger: #ff6b6b;
+    --warning: #fdcb6e;
+    --info: #74b9ff;
+  }
+
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer utilities {
+  .grit-grid {
+    background-image:
+      linear-gradient(to right, rgba(232, 232, 240, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(232, 232, 240, 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* Fades a decorative layer out toward the bottom so it never competes with
+     the content sitting on top of it. */
+  .mask-fade-b {
+    mask-image: linear-gradient(to bottom, black 0%, transparent 85%);
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 85%);
+  }
+}

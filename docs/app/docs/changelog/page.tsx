@@ -28,6 +28,75 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.112.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.112.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Grit UI — 100 components, and a registry that serves them.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>
+                      <a href="https://ui.gritframework.dev">ui.gritframework.dev</a>
+                    </strong>{' '}
+                    — a browsable gallery with live previews of 100 React components across
+                    marketing (20), SaaS (30), ecommerce (20), layout (20) and auth (10).
+                    Every preview is a real render of the source you would install, not a
+                    screenshot that can quietly go stale.
+                  </li>
+                  <li>
+                    <strong>
+                      <code>grit ui list</code> and <code>grit ui add</code>.
+                    </strong>{' '}
+                    Components are written into <code>components/grit-ui/</code> in the
+                    right app for your architecture. An existing file is never overwritten
+                    without <code>--force</code> — once you have edited a component it is
+                    your code.
+                  </li>
+                  <li>
+                    <strong>Works outside Grit entirely.</strong> Each component is a shadcn
+                    registry item, so{' '}
+                    <code>npx shadcn@latest add https://ui.gritframework.dev/r/hero-split-01.json</code>{' '}
+                    works in any React + Tailwind project. That one command writes the
+                    component, merges the design tokens into your CSS, and adds the colour
+                    scale to your Tailwind config.
+                  </li>
+                  <li>
+                    <strong>The library needed real repair first.</strong> The components
+                    were recovered from git history, where they had been removed from the
+                    scaffold with a note that they would ship standalone — which never
+                    happened. As recovered, they were not shippable:{' '}
+                    <strong>4 of 100 were advertised with no source at all</strong>, no
+                    registry item inlined its file content (so every install would have
+                    produced an empty file), <strong>55 used state or event handlers
+                    without <code>"use client"</code></strong> and would crash in any App
+                    Router project, 80 lacked a default export, 6 had required props with
+                    two genuine render crashes, and 4 used the <code>JSX</code> namespace
+                    React 19 removed. All fixed, and the four missing components were
+                    written rather than dropped.
+                  </li>
+                  <li>
+                    <strong>Verified by installing, not by building.</strong> A throwaway
+                    consumer project confirms the written file is byte-identical to the
+                    source, and that both the CSS variables and the Tailwind scale merge.
+                  </li>
+                  <li>
+                    <strong>Fixed: every failed command printed its error twice.</strong>{' '}
+                    Cobra printed a failing command&apos;s error and <code>main</code>{' '}
+                    printed it again. Long-standing, affected every command.
+                  </li>
+                </ul>
+                <p>10 new tests. Matrix 73/0.</p>
+              </div>
+            </div>
+
             {/* v3.111.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
