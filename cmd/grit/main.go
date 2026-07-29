@@ -29,13 +29,18 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.111.0"
+var version = "3.112.0"
 
 func main() {
 	rootCmd := &cobra.Command{
 		Use:   "grit",
 		Short: "Grit — Go + React. Built with Grit.",
 		Long:  "Grit is a full-stack meta-framework that fuses Go (Gin + GORM) with Next.js (React + TypeScript).",
+		// Cobra prints a failing RunE's error itself, and main prints it again
+		// below — so every failed command reported the same message twice.
+		// Silencing cobra's copy leaves exactly one, printed where the exit
+		// code is decided.
+		SilenceErrors: true,
 	}
 
 	rootCmd.AddCommand(newCmd())
@@ -58,6 +63,7 @@ func main() {
 	rootCmd.AddCommand(upgradeCmd())
 	rootCmd.AddCommand(updateCmd())
 	rootCmd.AddCommand(testCmd())
+	rootCmd.AddCommand(uiCmd())
 	rootCmd.AddCommand(mcpCmd())
 	rootCmd.AddCommand(versionCmd())
 	rootCmd.AddCommand(routesCmd())

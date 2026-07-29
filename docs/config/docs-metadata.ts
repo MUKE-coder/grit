@@ -560,6 +560,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'How to use Claude AI to build Grit projects faster: prompting strategies, code generation, and AI-assisted development.',
   },
+  '/docs/frontend/ui-components': {
+    title: 'UI Components',
+    description:
+      'Grit UI — 100 ready-made React components for marketing, SaaS, ecommerce, auth and layout. Install with grit ui add, or npx shadcn add in any React project.',
+  },
   '/docs/ai-workflows/mcp': {
     title: 'MCP Server',
     description:

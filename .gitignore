@@ -26,3 +26,7 @@ demo/sentinel.db
 /sentinel.db-shm
 /sentinel.db-wal
 docs/pnpm-workspace.yaml
+
+# Grit UI site build artifacts
+ui/node_modules/
+ui/.next/
