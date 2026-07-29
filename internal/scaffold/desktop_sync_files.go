@@ -43,9 +43,10 @@ import (
 	"time"
 
 	"github.com/glebarez/sqlite"
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"{{MODULE}}/internal/ids"
 )
 
 // Engine owns the local SQLite database and the HTTP transport used to
@@ -96,7 +97,7 @@ func Open(dbPath, apiURL string, getToken func() (string, error)) (*Engine, erro
 	// the Sync page and useful for correlating a device's changes server-side.
 	e.deviceID = e.getSetting("device_id")
 	if e.deviceID == "" {
-		e.deviceID = uuid.New().String()
+		e.deviceID = ids.New()
 		_ = e.setSetting("device_id", e.deviceID)
 	}
 	return e, nil
@@ -894,8 +895,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/ids"
 )
 
 var slugNonWord = regexp.MustCompile("[^a-z0-9]+")
@@ -908,11 +910,11 @@ func clientSlug(s string) string {
 }
 
 // LocalCreate persists data locally and queues a "create" entry in the
-// outbox. id is required (UUID); pass uuid.New().String() if you don't
+// outbox. id is required (UUID); pass ids.New() if you don't
 // have one yet. Reads via LocalGet/LocalList see the new row immediately.
 func (e *Engine) LocalCreate(tableName, id string, data map[string]interface{}) error {
 	if id == "" {
-		id = uuid.New().String()
+		id = ids.New()
 	}
 	data["id"] = id
 	if data["version"] == nil {

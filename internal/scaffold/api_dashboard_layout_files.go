@@ -12,7 +12,7 @@ func dashboardLayoutModelGo() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -65,7 +65,7 @@ type DashboardLayout struct {
 
 func (d *DashboardLayout) BeforeCreate(tx *gorm.DB) error {
 	if d.ID == "" {
-		d.ID = uuid.New().String()
+		d.ID = ids.New()
 	}
 	return nil
 }

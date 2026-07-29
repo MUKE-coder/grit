@@ -60,7 +60,7 @@ func notificationModelGo() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/gorm"
 )
 
@@ -84,7 +84,7 @@ type Notification struct {
 
 func (n *Notification) BeforeCreate(tx *gorm.DB) error {
 	if n.ID == "" {
-		n.ID = uuid.New().String()
+		n.ID = ids.New()
 	}
 	return nil
 }

@@ -228,7 +228,7 @@ second command, no hook to write. Let's unpack what that one modifier bought us.
    // apps/api/internal/models/invoice.go — generated for you
    func (m *Invoice) BeforeCreate(tx *gorm.DB) error {
    	if m.ID == "" {
-   		m.ID = uuid.New().String()
+   		m.ID = ids.New()
    	}
    	if m.Number == "" {
    		n, err := sequence.Next(tx, sequence.Config{

@@ -49,7 +49,7 @@ func formShareModelGo() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -98,7 +98,7 @@ type FormShare struct {
 
 func (s *FormShare) BeforeCreate(tx *gorm.DB) error {
 	if s.ID == "" {
-		s.ID = uuid.New().String()
+		s.ID = ids.New()
 	}
 	return nil
 }
@@ -125,7 +125,7 @@ func formSubmissionModelGo() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/gorm"
 )
 
@@ -149,7 +149,7 @@ type FormSubmission struct {
 
 func (s *FormSubmission) BeforeCreate(tx *gorm.DB) error {
 	if s.ID == "" {
-		s.ID = uuid.New().String()
+		s.ID = ids.New()
 	}
 	return nil
 }

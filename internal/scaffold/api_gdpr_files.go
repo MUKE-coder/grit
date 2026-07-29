@@ -30,7 +30,7 @@ func apiGDPRModelGo() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/gorm"
 )
 
@@ -56,7 +56,7 @@ type DeletionJournal struct {
 
 func (d *DeletionJournal) BeforeCreate(tx *gorm.DB) error {
 	if d.ID == "" {
-		d.ID = uuid.NewString()
+		d.ID = ids.New()
 	}
 	return nil
 }

@@ -24,7 +24,7 @@ import (
 	"encoding/hex"
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/gorm"
 )
 
@@ -48,7 +48,7 @@ type PasswordResetToken struct {
 
 func (t *PasswordResetToken) BeforeCreate(tx *gorm.DB) error {
 	if t.ID == "" {
-		t.ID = uuid.New().String()
+		t.ID = ids.New()
 	}
 	return nil
 }

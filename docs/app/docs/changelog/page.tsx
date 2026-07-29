@@ -28,6 +28,76 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.108.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.108.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Primary keys are now UUIDv7.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>
+                      A new <code>internal/ids</code> package, and every model uses it.
+                    </strong>{" "}
+                    <code>ids.New()</code> replaces <code>uuid.New().String()</code> in all 36
+                    places Grit mints an identifier — scaffolded models, generated resources, the
+                    desktop app and its offline sync engine, and the <code>saved-views</code> and{" "}
+                    <code>multitenant</code> plugins. A v7 UUID is still a standard 128-bit UUID
+                    that any client can generate
+                    offline with no coordination, but it carries a millisecond timestamp in its high
+                    bits, so ids sort chronologically.
+                  </li>
+                  <li>
+                    <strong>Why it matters: index locality.</strong> Random v4 keys scatter inserts
+                    across the whole B-tree, so every write dirties a different page and the index
+                    fragments as the table grows. Time-ordered keys append to the right-hand edge
+                    instead. You also get a free <code>ORDER BY id</code> that means &ldquo;oldest
+                    first&rdquo; without a second index on <code>created_at</code>.
+                  </li>
+                  <li>
+                    <strong>The trade-off, stated plainly: v7 ids leak creation time.</strong> The
+                    timestamp is readable by anyone holding the id. If you expose raw primary keys
+                    in public URLs, you are also publishing when each record was created — and,
+                    across two ids, how fast you are growing. That is fine for most applications and
+                    wrong for some. If it is wrong for yours, <code>internal/ids</code> is one small
+                    file with one function; change <code>New()</code> and every model follows.
+                  </li>
+                  <li>
+                    <strong>Existing rows keep working.</strong> Both versions are UUIDs in the same{" "}
+                    <code>varchar(36)</code> column, so there is no migration — old rows stay v4, new
+                    rows are v7, and nothing needs to be rewritten. Only ids created from this
+                    version on will sort chronologically.
+                  </li>
+                  <li>
+                    <strong>
+                      Four tests ship in every project, and they test the property, not the spelling.
+                    </strong>{" "}
+                    That ids are lexically time-ordered, are valid version 7, stay unique across
+                    10,000 generations inside a single millisecond, and are never empty. That last
+                    one is why <code>New()</code> falls back to v4 rather than returning an error: an
+                    unordered id is a performance regression, an empty primary key is data
+                    corruption.
+                  </li>
+                  <li>
+                    <strong>
+                      Also fixed: <code>Organization.Active</code> could never be stored as false.
+                    </strong>{" "}
+                    The sixth instance of the <code>gorm:&quot;default:true&quot;</code> trap — GORM
+                    omits zero-valued fields from the INSERT when the column has a default, so an
+                    organization created suspended came back live.
+                  </li>
+                </ul>
+                <p>Matrix 73/0.</p>
+              </div>
+            </div>
+
             {/* v3.107.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

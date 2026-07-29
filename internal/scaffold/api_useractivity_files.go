@@ -21,7 +21,7 @@ func userActivityModelGo() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/gorm"
 )
 
@@ -55,7 +55,7 @@ type UserActivity struct {
 
 func (a *UserActivity) BeforeCreate(tx *gorm.DB) error {
 	if a.ID == "" {
-		a.ID = uuid.New().String()
+		a.ID = ids.New()
 	}
 	if a.Severity == "" {
 		a.Severity = "info"

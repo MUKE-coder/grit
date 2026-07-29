@@ -68,15 +68,20 @@ func (g *Generator) writeGoModel(names Names) error {
 	if hasSlug {
 		stdImports = "\"fmt\"\n\t\"time\""
 	}
-	extImports := "\"github.com/google/uuid\"\n\t\"gorm.io/gorm\""
+	// uuid is no longer imported here: primary keys come from internal/ids
+	// (UUIDv7), so GORM is the only external dependency a model needs.
+	extImports := "\"gorm.io/gorm\""
 	if needsDatatypes {
-		extImports = "\"github.com/google/uuid\"\n\t\"gorm.io/datatypes\"\n\t\"gorm.io/gorm\""
+		extImports = "\"gorm.io/datatypes\"\n\t\"gorm.io/gorm\""
 	}
-	// Project imports (same module): internal/files and/or internal/sequence.
-	var projImports []string
+	// Project imports (same module). internal/ids is unconditional — every model
+	// mints its primary key in BeforeCreate. Appended in alphabetical order
+	// (files, ids, sequence) so the block is already gofmt-sorted.
+	projImports := []string{}
 	if needsFiles {
 		projImports = append(projImports, fmt.Sprintf("\"%s/internal/files\"", g.Module))
 	}
+	projImports = append(projImports, fmt.Sprintf("\"%s/internal/ids\"", g.Module))
 	if hasAuto {
 		projImports = append(projImports, fmt.Sprintf("\"%s/internal/sequence\"", g.Module))
 	}
@@ -185,7 +190,7 @@ type %s struct {
 // BeforeCreate generates a UUID and auto-generates the slug before inserting.
 func (m *%s) BeforeCreate(tx *gorm.DB) error {
 	if m.ID == "" {
-		m.ID = uuid.New().String()
+		m.ID = ids.New()
 	}
 	if m.%s == "" {
 		m.%s = slugify(fmt.Sprintf("%%v", m.%s))
@@ -227,7 +232,7 @@ func slugify(s string) string {
 // BeforeCreate generates a UUID before inserting.
 func (m *%s) BeforeCreate(tx *gorm.DB) error {
 	if m.ID == "" {
-		m.ID = uuid.New().String()
+		m.ID = ids.New()
 	}
 %s	return nil
 }

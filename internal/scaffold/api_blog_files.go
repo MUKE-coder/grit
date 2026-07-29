@@ -33,7 +33,7 @@ func blogModelGo() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/gorm"
 )
 
@@ -56,7 +56,7 @@ type Blog struct {
 // BeforeCreate auto-generates a UUID and the slug before inserting.
 func (b *Blog) BeforeCreate(tx *gorm.DB) error {
 	if b.ID == "" {
-		b.ID = uuid.New().String()
+		b.ID = ids.New()
 	}
 	if b.Slug == "" {
 		b.Slug = slugify(b.Title)

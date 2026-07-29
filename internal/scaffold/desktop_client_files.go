@@ -157,6 +157,11 @@ func writeDesktopClientFiles(root string, opts Options) error {
 		// Realtime client (WebSocket + reconnect + EventTarget bus)
 		filepath.Join(desktopRoot, "frontend", "src", "lib", "realtime.ts"): desktopClientRealtimeTS(),
 
+		// apps/desktop is its own Go module, so it needs its own copy of the ids
+		// package — the sync engine mints primary keys offline (LocalCreate) and
+		// those rows land in the same server tables as server-created ones.
+		filepath.Join(desktopRoot, "internal", "ids", "ids.go"): desktopIDsGo(),
+
 		// Offline-first sync engine (local SQLite + outbox + push/pull orchestration)
 		filepath.Join(desktopRoot, "sync", "engine.go"): desktopSyncEngineGo(),
 		filepath.Join(desktopRoot, "sync", "outbox.go"): desktopSyncOutboxGo(),

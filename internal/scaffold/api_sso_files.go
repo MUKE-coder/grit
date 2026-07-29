@@ -30,7 +30,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/crypto"
@@ -140,7 +140,7 @@ func (s *SSOConnection) AfterFind(tx *gorm.DB) error {
 
 func (s *SSOConnection) BeforeCreate(tx *gorm.DB) error {
 	if s.ID == "" {
-		s.ID = uuid.New().String()
+		s.ID = ids.New()
 	}
 	s.Slug = strings.ToLower(strings.TrimSpace(s.Slug))
 	return nil
@@ -216,7 +216,7 @@ type UserIdentity struct {
 
 func (i *UserIdentity) BeforeCreate(tx *gorm.DB) error {
 	if i.ID == "" {
-		i.ID = uuid.New().String()
+		i.ID = ids.New()
 	}
 	return nil
 }
