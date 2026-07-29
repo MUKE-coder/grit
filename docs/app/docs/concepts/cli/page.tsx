@@ -327,6 +327,71 @@ grit rm resource <Name>`} />
                 </p>
               </div>
 
+              {/* grit test */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-semibold tracking-tight mb-4">
+                  grit test
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Runs every test suite in the project &mdash; Go, the frontend suites, and with{' '}
+                  <code className="text-xs font-mono bg-accent/50 px-1.5 py-0.5 rounded">--e2e</code>{' '}
+                  the Playwright tests &mdash; then prints one report. Which suites exist depends on
+                  the architecture you scaffolded, and this command works that out for you.
+                </p>
+
+                <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden glow-purple-sm">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30 bg-accent/30">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    </div>
+                    <span className="ml-2 text-[11px] font-mono text-muted-foreground/40">terminal</span>
+                  </div>
+                  <div className="p-5 font-mono text-sm space-y-1">
+                    <div><span className="text-primary/50 select-none">$ </span><span className="text-foreground/80">grit test</span></div>
+                    <div className="text-muted-foreground/50">&nbsp;</div>
+                    <div className="text-muted-foreground/70">&nbsp;&nbsp;RUNNER&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;STATUS&nbsp;&nbsp;TIME</div>
+                    <div className="text-muted-foreground/40">&nbsp;&nbsp;──────────&nbsp;&nbsp;──────&nbsp;&nbsp;────────</div>
+                    <div className="text-foreground/80">&nbsp;&nbsp;Go&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-emerald-400">PASS</span>&nbsp;&nbsp;&nbsp;&nbsp;14.6s</div>
+                    <div className="text-foreground/80">&nbsp;&nbsp;web&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-emerald-400">PASS</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8.1s</div>
+                    <div className="text-muted-foreground/60">&nbsp;&nbsp;End-to-end&nbsp;&nbsp;SKIP&nbsp;&nbsp;&nbsp;&nbsp;not requested &mdash; pass --e2e</div>
+                  </div>
+                </div>
+
+                <h3 className="text-xl font-semibold tracking-tight mt-8 mb-3">Flags</h3>
+                <div className="rounded-xl border border-border/40 overflow-hidden mb-4">
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        ['--go', 'Run only the Go tests'],
+                        ['--node', 'Run only the frontend tests'],
+                        ['--e2e', 'Include the Playwright suite (needs the app running)'],
+                        ['--race', 'Enable the Go race detector'],
+                        ['--cover', 'Report Go coverage'],
+                      ].map(([flag, desc]) => (
+                        <tr key={flag} className="border-b border-border/20 last:border-0">
+                          <td className="px-4 py-2.5 font-mono text-xs w-40">{flag}</td>
+                          <td className="px-4 py-2.5 text-muted-foreground">{desc}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  A suite that cannot run is reported as <strong>SKIP with the reason</strong>,
+                  never dropped from the report. A runner that silently runs nothing looks exactly
+                  like one that passed, and that is the most expensive kind of green.
+                </p>
+                <p className="text-muted-foreground leading-relaxed">
+                  End-to-end tests are opt-in because they need the API and frontends already
+                  running &mdash; failing against a server that was never started tells you nothing
+                  about your code. The command exits non-zero if any suite fails, so it drops
+                  straight into CI.
+                </p>
+              </div>
+
               {/* grit sync */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
@@ -738,6 +803,14 @@ grit deploy`} />
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit studio</td>
                         <td className="px-4 py-2.5">Open the GORM Studio database browser</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit test</td>
+                        <td className="px-4 py-2.5">Run every test suite and print one report</td>
+                      </tr>
+                      <tr className="border-b border-border/20">
+                        <td className="px-4 py-2.5 font-mono text-xs">grit mcp serve</td>
+                        <td className="px-4 py-2.5">Expose the project to AI agents over MCP</td>
                       </tr>
                       <tr className="border-b border-border/20">
                         <td className="px-4 py-2.5 font-mono text-xs">grit sync</td>

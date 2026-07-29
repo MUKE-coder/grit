@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
+import { CommunityCTA } from '@/components/community-cta'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/getting-started/philosophy')
@@ -19,266 +20,265 @@ export default function PhilosophyPage() {
             {/* Header */}
             <div className="mb-10">
               <span className="tag-mono text-primary/80 mb-3 block">Getting Started</span>
-              <h1 className="text-4xl font-bold tracking-tight mb-4">
-                Philosophy &amp; Inspiration
-              </h1>
+              <h1 className="text-4xl font-bold tracking-tight mb-4">Philosophy</h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Why Grit exists, what inspired it, and the design principles that guide every decision
-                in the framework.
+                Why Grit exists, what it borrows from the frameworks that came before it, and
+                what each of its decisions costs you. Every choice below has a downside; they
+                are named rather than hidden.
               </p>
             </div>
 
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-8">
               <p className="text-sm text-muted-foreground leading-relaxed">
-                <strong className="text-foreground">The story behind Grit.</strong> This page is the
-                short version &mdash; the long-form founder story is on the blog:{' '}
-                <Link href="/blog/why-i-built-grit" className="text-primary hover:underline">Why I built Grit &rarr;</Link>
+                <strong className="text-foreground">Related reading.</strong> The{' '}
+                <Link href="/pitch" className="text-primary hover:underline">
+                  pitch
+                </Link>{' '}
+                states the six trade-offs in short form. The long-form founder story is on the
+                blog:{' '}
+                <Link href="/blog/why-i-built-grit" className="text-primary hover:underline">
+                  Why I built Grit &rarr;
+                </Link>
               </p>
             </div>
 
             <div className="prose-grit">
-              {/* Why Grit Exists */}
-              <h2>Why Grit Exists</h2>
+              {/* ============================================================ */}
+              <h2>Why Grit exists</h2>
               <p>
-                Building a modern full-stack application in 2025/2026 requires stitching together
-                15+ tools: Next.js, Prisma, NextAuth, tRPC, Zod, React Query, Tailwind, S3 SDK,
-                Resend, Redis client, Bull queues, an admin panel library... Every new project
-                starts with 2-3 days of boilerplate. Every developer makes different choices,
-                creating inconsistent codebases that are hard to maintain.
+                Building a full-stack application today means stitching together fifteen or more
+                tools: a framework, an ORM, an auth library, a validation library, a data-fetching
+                library, an S3 client, a mailer, a queue, an admin panel. Every project starts with
+                days of wiring. Every developer wires it differently, and the result is a codebase
+                where the interesting decisions are buried under the boring ones.
               </p>
               <p>
-                Meanwhile, Go has incredible performance, simplicity, and deployment story. But the
-                Go web ecosystem is fragmented -- Gin, Echo, Fiber, Chi for routing; GORM, sqlc, sqlx
-                for databases; dozens of auth libraries. There is no equivalent to Laravel or Rails
-                that gives you everything wired together. Go developers spend more time plumbing
-                than building.
+                Go has an excellent performance and deployment story, but its web ecosystem is
+                deliberately unopinionated &mdash; Gin, Echo, Fiber and Chi for routing; GORM, sqlc
+                and sqlx for data; dozens of auth libraries. That is a genuine strength for
+                infrastructure work and a genuine cost for product work, where you would rather
+                inherit good defaults than assemble them.
               </p>
               <p>
-                And then there is the admin panel problem. Laravel has <strong>Filament</strong> -- a tool
-                that lets you generate beautiful admin dashboards, data tables, forms, and widgets
-                from simple PHP definitions. The Go + React world has nothing comparable. Every team
-                builds their admin panel from scratch, wasting weeks on repetitive CRUD interfaces.
+                And then there is the admin panel. Laravel has <strong>Filament</strong>: define a
+                resource, get a real dashboard with tables, filters, forms and widgets. The Go +
+                React world has no equivalent, so every team rebuilds the same CRUD screens.
               </p>
               <p>
-                <strong>Grit bridges this gap.</strong> It takes the best ideas from Laravel, Rails,
-                and Django -- convention over configuration, batteries included, code generation --
-                and applies them to the most performant and modern stack available: Go for the
-                backend, React for the frontend.
+                <strong>Grit exists to close that gap</strong> &mdash; convention over
+                configuration, batteries included, and code generation, applied to Go on the
+                backend and React on the front.
               </p>
 
-              {/* Inspiration */}
-              <h2>Inspiration</h2>
+              {/* ============================================================ */}
+              <h2>What Grit borrows</h2>
               <p>
-                Grit draws inspiration from frameworks that have defined developer experience
-                in their respective ecosystems:
+                Almost nothing here is a new idea. Grit&apos;s contribution is the combination, not
+                the invention:
               </p>
               <ul>
                 <li>
-                  <strong>Laravel + Filament (PHP)</strong> -- The gold standard for developer experience.
-                  Artisan CLI, Eloquent ORM, and Filament&apos;s resource-based admin panel are the direct
-                  inspiration for Grit&apos;s CLI and admin panel generator.
+                  <strong>Laravel + Filament (PHP)</strong> &mdash; the Artisan CLI and
+                  resource-driven admin panel are the direct model for{' '}
+                  <code>grit generate</code> and Grit&apos;s admin.
                 </li>
                 <li>
-                  <strong>Ruby on Rails</strong> -- Convention over configuration, code generation with
-                  scaffolding, and the idea that frameworks should have opinions. Rails proved that
-                  opinionated frameworks make teams more productive.
+                  <strong>Ruby on Rails</strong> &mdash; convention over configuration, and the
+                  argument that frameworks <em>should</em> have opinions.
                 </li>
                 <li>
-                  <strong>Django (Python)</strong> -- The &quot;batteries included&quot; philosophy. Auth, admin,
-                  ORM, and email all ship with the framework. Grit applies this same idea to Go + React.
+                  <strong>Django (Python)</strong> &mdash; batteries included. Auth, admin, ORM and
+                  email belong in the box.
                 </li>
                 <li>
-                  <strong>Next.js</strong> -- File-based routing, server-side rendering, and the best
-                  React developer experience. Grit uses Next.js as its frontend runtime.
+                  <strong>Next.js</strong> &mdash; file-based routing and the React developer
+                  experience Grit builds its frontends on.
                 </li>
                 <li>
-                  <strong>GORM Studio</strong> -- Our own visual database browser that evolved into
-                  a key feature of the framework. Seeing your data without leaving the browser
-                  changes how you develop.
+                  <strong>GORM Studio</strong> &mdash; our own database browser, folded into the
+                  framework. Seeing your data without leaving the browser changes how you work.
                 </li>
               </ul>
+
+              {/* ============================================================ */}
+              <h2>Design principles, and what each costs</h2>
               <p>
-                The key insight is that no single existing framework combines Go&apos;s backend performance
-                with React&apos;s frontend ecosystem AND a Filament-class admin panel in one coherent
-                monorepo. Grit exists to fill that gap.
+                A principle that costs nothing is a slogan. Each of these buys something real and
+                charges for it.
               </p>
 
-              {/* Design Principles */}
-              <h2>Design Principles</h2>
-
-              <h3>1. Convention Over Configuration</h3>
+              <h3>1. Convention over configuration</h3>
               <p>
-                There is <strong>one way</strong> to do things in Grit. One auth system. One state management
-                approach. One folder structure. One naming convention. Opinions are features, not limitations.
+                One auth system. One folder structure. One naming convention. Any developer can
+                open any Grit project and know where things live, and an AI agent does not have to
+                infer which of six patterns you chose.
               </p>
               <p>
-                This means any developer can jump into any Grit project and immediately understand where
-                things live, how data flows, and how to add new features. No more spending the first
-                day on a project just figuring out the folder structure.
-              </p>
-
-              <h3>2. Code Generation Over Runtime Magic</h3>
-              <p>
-                Instead of complex runtime coupling between Go and React, Grit uses a CLI code generator.
-                When you run <code>grit generate resource Post</code>, it creates all the files -- Go model,
-                handler, React hook, Zod schema, admin page. The generated code is readable, editable,
-                and debuggable.
-              </p>
-              <p>
-                There are no hidden proxies, no auto-wiring at runtime, no reflection magic. You can open
-                any generated file, read it, understand it, and modify it. If you want to change how a
-                handler works, just edit the file. The framework gets out of your way.
+                <strong>The cost:</strong> if your application genuinely does not fit the
+                convention, you are swimming upstream, and the framework will not help you. Grit
+                is a good fit for CRUD-shaped products with an admin surface. It is a poor fit for
+                software whose core is an unusual data model or an unusual request lifecycle.
               </p>
 
-              <h3>3. Own Your Code</h3>
+              <h3>2. Code generation over runtime magic</h3>
               <p>
-                Every piece of code Grit generates belongs to you. It is installed directly into your
-                project, not hidden in a <code>node_modules</code> folder or compiled into a binary you
-                cannot inspect. No lock-in, no black boxes.
+                <code>grit generate resource Post</code> writes real files &mdash; Go model,
+                service, handler, routes, Zod schema, TypeScript types, React Query hook, admin
+                page. No hidden proxies, no auto-wiring, no reflection. Open any file, read it,
+                change it.
               </p>
               <p>
-                If you ever decide to stop using Grit&apos;s CLI, your project still works. It is just
-                a Go API, a Next.js app, and some TypeScript schemas. Standard tools, standard deployment.
-              </p>
-
-              <h3>4. Batteries Included, Optionally Removable</h3>
-              <p>
-                Auth, file storage, email, queues, cron, AI, and the admin panel ship with every project.
-                But they are modular -- you can remove what you do not need. The framework should be great
-                for a freelancer building a simple app AND for a team building a complex SaaS.
-              </p>
-              <p>
-                Every battery is a separate Go package and can be deleted without breaking the rest
-                of the application. Nothing is deeply coupled.
+                <strong>The cost:</strong> generated code is yours to maintain from the moment it
+                lands. Upgrading Grit does not retroactively improve resources you generated six
+                months ago &mdash; new templates apply to new code. That is the honest trade for
+                never being blocked by a framework internal you cannot see.
               </p>
 
-              <h3>5. Beautiful by Default</h3>
+              <h3>3. Own your code</h3>
               <p>
-                Every UI component -- the admin panel, data tables, forms, login pages -- ships with
-                a polished dark theme. First impressions matter. When a developer runs{' '}
-                <code>grit new</code> and sees the result, they should think &quot;this looks like a
-                real product,&quot; not &quot;this looks like a tutorial.&quot;
+                Everything Grit produces is in your repository, not in <code>node_modules</code>{' '}
+                and not compiled into a binary you cannot inspect. Stop using the CLI tomorrow and
+                the project still builds: it is a Go API, a Next.js app, and some TypeScript.
               </p>
               <p>
-                The design language is inspired by tools like Linear, Vercel Dashboard, and Raycast --
-                dark, polished, fast. Not generic Bootstrap. Not Material Design.
-              </p>
-
-              <h3>6. AI-Friendly (Vibe Coding Ready)</h3>
-              <p>
-                Grit&apos;s strict conventions and predictable structure make it ideal for AI-assisted
-                development. An AI assistant like Claude Code, Cursor, or GitHub Copilot can
-                understand the entire project structure, generate resources, and modify code
-                confidently because Grit follows the same patterns everywhere.
-              </p>
-              <p>
-                This is not an afterthought. Every naming convention, every folder structure decision,
-                every code pattern in Grit was designed with the question: &quot;Can an AI reliably
-                generate this?&quot; If the answer was no, the convention was simplified until the
-                answer became yes.
+                <strong>The cost:</strong> a bigger repository and more code with your name on it.
+                Some teams would rather depend on a library than own the source. That is a
+                reasonable preference, and it is the opposite of this one.
               </p>
 
-              {/* The Vibe Coding Philosophy */}
-              <h2>The &quot;Vibe Coding&quot; Philosophy</h2>
+              <h3>4. Batteries included, individually removable</h3>
               <p>
-                We believe the future of software development is a collaboration between human
-                developers and AI assistants. Grit is designed from the ground up for this paradigm.
+                Auth, storage, email, queues, cron, AI and the admin panel ship in every project.
+                Each is a separate Go package that can be switched off with{' '}
+                <code>MODULE_&lt;NAME&gt;=false</code> in <code>.env</code>, or deleted outright
+                without breaking the rest of the app.
               </p>
               <p>
-                When you describe a feature to an AI assistant -- &quot;add a blog with posts,
-                categories, and tags&quot; -- the AI should be able to:
-              </p>
-              <ol>
-                <li>Run <code>grit generate resource Post</code>, <code>grit generate resource Category</code>, and <code>grit generate resource Tag</code></li>
-                <li>Add relationships between the generated models</li>
-                <li>Customize the admin panel columns and form fields</li>
-                <li>Add frontend pages that display the blog</li>
-              </ol>
-              <p>
-                This works because Grit&apos;s patterns are <strong>predictable</strong>. The AI knows
-                exactly where models live, how handlers are structured, where hooks go, and how
-                the admin panel is configured. There is no ambiguity.
-              </p>
-              <p>
-                Frameworks that let developers &quot;choose your own adventure&quot; at every step make
-                AI assistance unreliable. Grit&apos;s opinionated nature is what makes vibe coding work.
+                <strong>The cost:</strong> more surface area to read on day one. A project that
+                needs three of the batteries still starts larger than a hand-rolled service that
+                needs three things.
               </p>
 
-              {/* Why Go + React */}
-              <h2>Why Go + React?</h2>
+              <h3>5. Secure before it is convenient</h3>
               <p>
-                We considered every major backend/frontend pairing. Here is why Go + React won:
+                CSRF, a strict CSP, rate limiting, SSRF defence, IDOR-safe ownership checks,
+                field-level encryption, server-side sessions with revocation, GDPR export and
+                erasure, and a tamper-evident audit log are in the scaffold, not in a checklist.
+              </p>
+              <p>
+                <strong>The cost:</strong> some of it will be in your way. A strict CSP means you
+                cannot paste an inline script and move on. That friction is the feature &mdash;
+                security work is what loses every argument against a deadline, so it ships before
+                the argument happens.
               </p>
 
-              <h3>Why Go (and not Node.js, Python, Ruby, or PHP)?</h3>
+              <h3>6. Predictable enough for machines</h3>
+              <p>
+                Because there is one way to do each thing, an AI assistant has nothing to guess.
+                Grit ships a <code>SKILL.md</code>, and{' '}
+                <Link href="/docs/ai-workflows/mcp">
+                  <code>grit mcp serve</code>
+                </Link>{' '}
+                hands an agent the real route table and model definitions over the Model Context
+                Protocol &mdash; parsed from your source, read-only.
+              </p>
+              <p>
+                <strong>The cost:</strong> conventions were sometimes simplified past what an
+                experienced developer would have chosen, because the question asked of every
+                pattern was &ldquo;can this be generated and read back reliably?&rdquo; Where the
+                answer was no, the clever version lost.
+              </p>
+
+              {/* ============================================================ */}
+              <h2>Why Go &mdash; and when it is the wrong answer</h2>
+              <p>
+                Go is small, explicit, and boring in the way infrastructure should be. It compiles
+                to a single static binary with no runtime to install, which collapses most of what
+                deployment usually costs. Its concurrency model suits the work a product backend
+                actually does &mdash; many concurrent requests, each mostly waiting on I/O. For
+                CPU-bound work it is substantially faster than interpreted runtimes, though for the
+                request/response work most applications do, the deployment story and the predictable
+                memory profile matter more than raw benchmark numbers.
+              </p>
+              <p>
+                <strong>Go is the wrong answer when:</strong> your core problem is data science or
+                machine learning, where Python&apos;s ecosystem is not close to matched; your team
+                is genuinely all-TypeScript and adding a second language costs more than the
+                runtime saves; or you want an expressive, metaprogramming-heavy style, which Go
+                will actively resist.
+              </p>
+
+              <h3>Why React &mdash; and when it is not</h3>
+              <p>
+                React has the largest component ecosystem of any frontend framework, the tools Grit
+                depends on are built for it first, and more developers know it than any
+                alternative, which matters when hiring. It also reaches mobile through Expo, so a
+                Grit project can share types and validation between web and native.
+              </p>
+              <p>
+                <strong>Pick something else when:</strong> you want the smallest possible bundle and
+                the simplest mental model, where Svelte is a better answer; you are building
+                server-rendered pages with sprinkles of interactivity, where HTMX plus Go templates
+                is genuinely lighter; or your team already knows Vue well, in which case that
+                knowledge outweighs the ecosystem gap.
+              </p>
+
+              <h3>Why not full-stack JavaScript</h3>
+              <p>
+                For CRMs, SaaS tools, internal dashboards, and anything with WebSockets, background
+                jobs, or sustained processing, a long-running server beats a serverless function,
+                and Go gives you one binary that handles high concurrency and deploys anywhere.
+              </p>
+              <p>
+                But if your team is small, entirely TypeScript, and shipping speed dominates every
+                other concern, a single-language stack is a real advantage.{' '}
+                <Link href="https://adonisjs.com" target="_blank" rel="noreferrer">
+                  AdonisJS
+                </Link>{' '}
+                and Nest solve a similar problem well inside that constraint. Grit is the answer
+                when you want the Laravel experience and a Go backend, not when you want one
+                language everywhere.
+              </p>
+
+              {/* ============================================================ */}
+              <h2>What Grit deliberately does not do</h2>
               <ul>
                 <li>
-                  <strong>Performance:</strong> Go is 10-50x faster than Node.js/PHP for CPU-bound
-                  work. A single Go binary can handle 100k+ concurrent connections with minimal
-                  memory usage.
+                  <strong>Support every database.</strong> Postgres in production, SQLite for
+                  development and tests. Adding more would dilute the migration and Studio work
+                  that makes those two good.
                 </li>
                 <li>
-                  <strong>Simplicity:</strong> Go has 25 keywords. The language is small, explicit,
-                  and readable. There is no magic, no metaprogramming, no inheritance hierarchies.
+                  <strong>Abstract the cloud.</strong> Grit generates Docker, Compose, and
+                  deployment config you can read. It does not wrap your provider in an interface
+                  that hides what is actually happening.
                 </li>
                 <li>
-                  <strong>Deployment:</strong> Go compiles to a single static binary. No runtime
-                  dependencies, no version managers, no interpreters. Copy the binary to a server
-                  and run it.
+                  <strong>Ship a plugin for everything.</strong> Plugins are added when someone
+                  needs one, not in anticipation. An unused abstraction is a maintenance cost with
+                  no user.
                 </li>
                 <li>
-                  <strong>Type Safety:</strong> Go&apos;s static type system catches bugs at compile time.
-                  Combined with GORM&apos;s struct tags and Zod on the frontend, you get end-to-end
-                  type safety from database to UI.
-                </li>
-                <li>
-                  <strong>Growing Ecosystem:</strong> Go is the fastest-growing backend language.
-                  Companies like Google, Uber, Twitch, Cloudflare, and Docker use it in production.
+                  <strong>Chase releases.</strong> Every release runs a 73-check matrix across 13
+                  project shapes and is re-verified by downloading the published binary and
+                  building a fresh project with it. That is slower than shipping on green unit
+                  tests, and it is the point.
                 </li>
               </ul>
 
-              <h3>Why React (and not Vue, Svelte, or HTMX)?</h3>
-              <ul>
-                <li>
-                  <strong>Ecosystem:</strong> React has the largest component ecosystem of any
-                  frontend framework. shadcn/ui, Radix, React Query, Recharts -- the best tools
-                  are built for React first.
-                </li>
-                <li>
-                  <strong>Hiring:</strong> More developers know React than any other frontend
-                  framework. If you are building a team or hiring freelancers, React is the
-                  safest bet.
-                </li>
-                <li>
-                  <strong>Next.js:</strong> The App Router provides file-based routing, server-side
-                  rendering, static generation, and streaming -- all built on React.
-                </li>
-                <li>
-                  <strong>React Native:</strong> With Grit&apos;s <code>--mobile</code> (or{' '}
-                  <code>--expo</code>) flag, you can add an Expo mobile app that shares types and
-                  validation with the web frontend. Same language, same patterns, mobile and web.
-                </li>
-              </ul>
-
-              <h3>Why Not Full-Stack JavaScript?</h3>
               <p>
-                Serverless is not always the answer. For many applications -- CRMs, SaaS tools,
-                internal dashboards, apps with WebSockets, background jobs, or heavy processing --
-                a real backend server is superior. Go gives you a single binary that handles
-                massive concurrency, deploys anywhere, and costs a fraction of serverless.
-              </p>
-              <p>
-                And while TypeScript is excellent on the frontend, Go&apos;s simplicity and performance
-                make it a better choice for backend services that need to handle real load.
+                If those trades sound right for what you are building, the{' '}
+                <Link href="/docs/getting-started/quick-start">quick start</Link> takes about five
+                minutes. If they do not, that is genuinely useful to know now rather than later.
               </p>
             </div>
+
+            <CommunityCTA className="mt-10" />
 
             {/* Next/Prev navigation */}
             <div className="flex flex-wrap gap-3 mt-12 pt-6 border-t border-border/30">
               <Button variant="outline" asChild className="border-border/60 bg-transparent hover:bg-accent/50">
-                <Link href="/docs">
-                  Introduction
-                </Link>
+                <Link href="/docs">Introduction</Link>
               </Button>
               <Button asChild className="glow-purple-sm ml-auto">
                 <Link href="/docs/getting-started/quick-start">
