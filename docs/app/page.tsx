@@ -9,6 +9,7 @@ import { FeatureTabs } from '@/components/feature-tabs'
 import { CpuArchitecture } from '@/components/ui/cpu-architecture'
 import { MagneticButton, GSAPSection, FadeIn, GlowOrb } from '@/components/motion-primitives'
 import { GoLogo, ReactLogo, VueLogo, SvelteLogo, NextLogo, TanStackLogo, TypeScriptLogo, TailwindLogo, PostgresLogo, RedisLogo, DockerLogo } from '@/components/framework-logos'
+import { CommunityCTA, WhatsAppIcon, WHATSAPP_COMMUNITY_URL } from '@/components/community-cta'
 import { HubAndSpoke } from '@/components/hub-and-spoke'
 import { ThreePlatforms } from '@/components/three-platforms'
 import { WhatIsGrit } from '@/components/what-is-grit'
@@ -1557,6 +1558,13 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
         </div>
       </section>
 
+      {/* ═══ COMMUNITY ═══ */}
+      <section className="relative py-20 px-6 border-t border-border/40">
+        <div className="max-w-5xl mx-auto">
+          <CommunityCTA />
+        </div>
+      </section>
+
       {/* ═══ CTA — "Start using Grit today" ═══ */}
       <section className="relative py-32 px-6 border-t border-border/40 overflow-hidden">
         {/* faint decorative grid */}
@@ -1644,6 +1652,12 @@ grit new my-app`} />
                 <li><Link href="/courses" className="text-muted-foreground hover:text-foreground transition-colors">Courses</Link></li>
                 <li><Link href="/sponsors" className="text-muted-foreground hover:text-foreground transition-colors">Sponsors</Link></li>
                 <li><Link href="/pitch" className="text-muted-foreground hover:text-foreground transition-colors">Pitch</Link></li>
+                <li>
+                  <Link href={WHATSAPP_COMMUNITY_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-emerald-500/90 hover:text-emerald-500 transition-colors">
+                    <WhatsAppIcon className="h-3 w-3" />
+                    WhatsApp Community
+                  </Link>
+                </li>
                 <li><Link href="/hire" className="text-muted-foreground hover:text-foreground transition-colors">Hire Us</Link></li>
               </ul>
             </div>
