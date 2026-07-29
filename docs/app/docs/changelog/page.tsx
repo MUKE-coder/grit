@@ -28,6 +28,63 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.111.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.111.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    <code>grit test</code> — every suite, one report.
+                  </strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>One command for a project with tests in three languages.</strong> Go in
+                    the API, Vitest in each frontend, Playwright at the root — and which of those
+                    exist depends on the architecture you scaffolded.{' '}
+                    <code>grit test</code> works that out and prints a single table with per-suite
+                    status and timing. Exits non-zero if anything failed, so it drops into CI
+                    unchanged.
+                  </li>
+                  <li>
+                    <strong>Suites that cannot run are reported, not dropped.</strong> Every skip
+                    carries its reason — &ldquo;no app under apps/ defines a test script&rdquo;,
+                    &ldquo;not requested — pass --e2e&rdquo;. A runner that silently runs nothing
+                    looks identical to one that passed, which is the most expensive kind of green.
+                  </li>
+                  <li>
+                    <strong>End-to-end is opt-in.</strong> Playwright needs the API and frontends
+                    already running; failing against a server that was never started tells you
+                    nothing about your code. <code>--e2e</code> turns it on.
+                  </li>
+                  <li>
+                    <strong>Respects your setup rather than second-guessing it.</strong> When the
+                    root <code>package.json</code> defines a <code>test</code> script, that is used
+                    as-is — usually turbo fanning out across the workspace — instead of running
+                    every app separately and duplicating the work. The package manager follows
+                    whichever lockfile is present. Flags: <code>--go</code>, <code>--node</code>,{' '}
+                    <code>--e2e</code>, <code>--race</code>, <code>--cover</code>.
+                  </li>
+                  <li>
+                    <strong>Rewritten philosophy page.</strong>{' '}
+                    <a href="/docs/getting-started/philosophy">The philosophy doc</a> and{' '}
+                    <a href="/pitch">the pitch</a> now state what each decision <em>costs</em>,
+                    including when Go, React, or Grit itself is the wrong answer. Also corrected a
+                    claim there: batteries are switched off with{' '}
+                    <code>MODULE_&lt;NAME&gt;=false</code> in <code>.env</code>, not with{' '}
+                    <code>grit new</code> flags.
+                  </li>
+                </ul>
+                <p>10 new tests. Verified on the api, single and triple architectures. Matrix 73/0.</p>
+              </div>
+            </div>
+
             {/* v3.110.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

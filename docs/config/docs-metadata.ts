@@ -55,7 +55,7 @@ export const docsMetadata: Record<string, DocPage> = {
   '/docs/getting-started/philosophy': {
     title: 'Philosophy',
     description:
-      'The design principles behind Grit: convention over configuration, batteries included, type safety, and developer experience.',
+      'Why Grit exists, what it borrows from Laravel, Rails and Django, and what each of its decisions costs you — including when Go, React, or Grit itself is the wrong answer.',
   },
   '/docs/getting-started/project-structure': {
     title: 'Project Structure',
