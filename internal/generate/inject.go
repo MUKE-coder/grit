@@ -368,7 +368,34 @@ func injectInline(filePath, marker, code string) error {
 		return fmt.Errorf("marker %q not found in %s", marker, filePath)
 	}
 
+	// Everything injected inline is one element of a comma-separated list —
+	// studio models, Wails constructor params/args/assignments — so the element
+	// before the marker has to be followed by a comma. It might not be: gofmt
+	// drops the optional trailing comma in a single-line composite literal,
+	// rewriting
+	//   []interface{}{&models.User{}, /* grit:studio */}
+	// as
+	//   []interface{}{&models.User{} /* grit:studio */}
+	// after which a naive splice yields "&models.User{} &models.Post{}", which
+	// parses as a bitwise AND and fails with a mismatched-types error nowhere
+	// near the real cause. Supply the separator instead of assuming it.
+	// The comma goes immediately after the preceding element rather than at the
+	// splice point, so the result reads "&models.User{}, &models.Post{}" and not
+	// "&models.User{} , &models.Post{}".
 	newContent := content[:idx] + code + content[idx:]
+	for i := idx - 1; i >= 0; i-- {
+		c := content[i]
+		if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
+			continue
+		}
+		// An empty list ends in its opening bracket; anything else is a
+		// preceding element that needs separating.
+		if c != ',' && c != '{' && c != '(' && c != '[' {
+			newContent = content[:i+1] + "," + content[i+1:idx] + code + content[idx:]
+		}
+		break
+	}
+
 	return os.WriteFile(filePath, []byte(newContent), 0644)
 }
 

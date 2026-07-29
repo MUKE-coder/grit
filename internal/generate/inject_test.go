@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"go/format"
 	"os"
 	"path/filepath"
 	"strings"
@@ -86,6 +87,43 @@ func TestInjectInline(t *testing.T) {
 		got := readFile(t, f)
 		if !strings.Contains(got, "&models.Post{}, /* grit:studio */") {
 			t.Errorf("inline code not found in expected position:\n%s", got)
+		}
+	})
+
+	// Generated Go is gofmt'd on write, and gofmt removes the optional trailing
+	// comma from a single-line composite literal. The injector must not depend
+	// on that comma being there — without this, the second resource generated
+	// into a project produced "&models.User{} &models.Post{}", a bitwise AND
+	// that failed to compile with a mismatched-types error far from the cause.
+	t.Run("supplies the separator when gofmt dropped the trailing comma", func(t *testing.T) {
+		f := writeTempFile(t, "routes.go", `studio.Mount(r, db, []interface{}{&models.User{} /* grit:studio */}, cfg)
+`)
+		if err := injectInline(f, "/* grit:studio */", "&models.Post{}, "); err != nil {
+			t.Fatalf("injectInline error: %v", err)
+		}
+		got := readFile(t, f)
+		if !strings.Contains(got, "&models.User{}, &models.Post{}, /* grit:studio */") {
+			t.Errorf("missing separator between elements:\n%s", got)
+		}
+		// The result has to be valid Go, not merely look right.
+		if _, err := format.Source([]byte("package x\nfunc f() {\n" + got + "\n}\n")); err != nil {
+			t.Errorf("injected result does not parse: %v\n%s", err, got)
+		}
+	})
+
+	// The empty-list case must NOT gain a leading comma.
+	t.Run("no separator after an opening bracket", func(t *testing.T) {
+		f := writeTempFile(t, "app.go", `func NewApp(/* grit:constructor-params */) *App {}
+`)
+		if err := injectInline(f, "/* grit:constructor-params */", "postSvc *service.PostService, "); err != nil {
+			t.Fatalf("injectInline error: %v", err)
+		}
+		got := readFile(t, f)
+		if strings.Contains(got, "(, ") {
+			t.Errorf("leading comma inserted into an empty list:\n%s", got)
+		}
+		if !strings.Contains(got, "NewApp(postSvc *service.PostService, /* grit:constructor-params */)") {
+			t.Errorf("unexpected result:\n%s", got)
 		}
 	})
 

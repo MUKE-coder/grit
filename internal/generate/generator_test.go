@@ -193,6 +193,38 @@ func readTestFile(t *testing.T, path string) string {
 	return string(data)
 }
 
+// containsField reports whether src contains needle, ignoring how much
+// horizontal whitespace separates the tokens.
+//
+// Generated Go is gofmt'd on write (internal/codefmt), so struct fields are
+// column-aligned and "Title string" appears as "Title     string" with padding
+// that shifts whenever a sibling field's name or type changes. Asserting on the
+// exact spacing would make these tests fail for a formatting change that is
+// precisely what we want — so they assert on the field, not on the padding.
+func containsField(src, needle string) bool {
+	return strings.Contains(collapseSpaces(src), collapseSpaces(needle))
+}
+
+// collapseSpaces reduces every run of spaces and tabs to a single space,
+// leaving newlines intact so line structure still matters.
+func collapseSpaces(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	prevSpace := false
+	for _, r := range s {
+		if r == ' ' || r == '\t' {
+			if !prevSpace {
+				b.WriteByte(' ')
+			}
+			prevSpace = true
+			continue
+		}
+		prevSpace = false
+		b.WriteRune(r)
+	}
+	return b.String()
+}
+
 // newTestGenerator builds a Generator directly (bypassing NewGenerator which
 // requires a real project on disk with findProjectRoot).
 func newTestGenerator(root, module string, def *ResourceDefinition) *Generator {
@@ -250,7 +282,7 @@ func TestWriteGoModel_BasicFields(t *testing.T) {
 	}
 
 	for _, c := range checks {
-		if !strings.Contains(got, c.pattern) {
+		if !containsField(got, c.pattern) {
 			t.Errorf("[%s] model missing %q:\n%s", c.label, c.pattern, got)
 		}
 	}
@@ -304,10 +336,10 @@ func TestWriteGoModel_BelongsTo(t *testing.T) {
 
 	got := readTestFile(t, filepath.Join(root, "apps", "api", "internal", "models", "post.go"))
 
-	if !strings.Contains(got, "CategoryID string") {
+	if !containsField(got, "CategoryID string") {
 		t.Errorf("belongs_to should generate CategoryID field:\n%s", got)
 	}
-	if !strings.Contains(got, "Category Category") {
+	if !containsField(got, "Category Category") {
 		t.Errorf("belongs_to should generate Category association:\n%s", got)
 	}
 }

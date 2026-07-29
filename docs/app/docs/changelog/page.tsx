@@ -28,6 +28,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.109.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.109.0
+                </span>
+                <span className="text-sm text-muted-foreground">July 29, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Generated Go is now gofmt&apos;d.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>Every Go file Grit writes goes through go/format first.</strong> Grit
+                    builds Go by concatenating strings, which is impossible to keep aligned by hand
+                    — struct tags drifted out of column and import groups came out in whatever order
+                    the generator happened to append them. A fresh project is now{" "}
+                    <code>gofmt -l</code> clean, and the templates only have to be correct rather
+                    than pretty.
+                  </li>
+                  <li>
+                    <strong>Formatting can never break scaffolding.</strong> If generated source
+                    doesn&apos;t parse, the original text is written unchanged instead of raising an
+                    error. A syntax error should surface at <code>go build</code> on your project,
+                    where the compiler points at the offending line — not as an opaque scaffolding
+                    failure with nothing on disk to inspect.
+                  </li>
+                  <li>
+                    <strong>
+                      Fixed a real bug this surfaced: the second resource you generate no longer
+                      breaks GORM Studio.
+                    </strong>{" "}
+                    Formatting removes the optional trailing comma from a single-line composite
+                    literal, so the studio model list became{" "}
+                    <code>{"{&models.User{} /* grit:studio */}"}</code> — and the injector, which
+                    assumed that comma was there, produced{" "}
+                    <code>{"&models.User{} &models.Post{}"}</code>. That parses as a bitwise AND and
+                    failed with a mismatched-types error nowhere near the cause. Inline injection now
+                    supplies the separator instead of assuming it, which also makes it robust to
+                    however you have hand-edited the line.
+                  </li>
+                </ul>
+                <p>Matrix 73/0.</p>
+              </div>
+            </div>
+
             {/* v3.108.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
