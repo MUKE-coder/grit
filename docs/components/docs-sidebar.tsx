@@ -4,6 +4,7 @@ import React, { useRef, useEffect } from "react"
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { WhatsAppIcon, WHATSAPP_COMMUNITY_URL } from '@/components/community-cta'
 import {
   ChevronRight,
   Home,
@@ -371,19 +372,51 @@ export function DocsSidebar() {
           ))}
         </nav>
 
-        {/* Sponsor CTA. Lives here rather than in a docs layout because there
-            isn't one — <DocsSidebar /> is the only component on every /docs
-            page, so this single block reaches all of them. */}
+        {/* Community + sponsor CTAs. They live here rather than in a docs
+            layout because there isn't one — <DocsSidebar /> is the only
+            component on every /docs page, so these blocks reach all of them.
+            Community comes first: someone reading docs is more likely to be
+            stuck than to be reaching for their wallet. */}
+        <CommunityNudge />
         <SponsorNudge />
       </aside>
     </>
   )
 }
 
-function SponsorNudge() {
+function CommunityNudge() {
   return (
     <div className="mt-6 px-4">
       <div className="border-t border-border/50 pt-5">
+        <Link
+          href={WHATSAPP_COMMUNITY_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="group block rounded-xl border border-emerald-500/25 bg-emerald-500/[0.05] p-3.5 transition-colors hover:border-emerald-500/45 hover:bg-emerald-500/[0.10]"
+        >
+          <div className="flex items-center gap-2">
+            <WhatsAppIcon className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+            <span className="text-[13px] font-semibold text-foreground">
+              Ask the community
+            </span>
+          </div>
+          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+            Stuck on something? Get help on WhatsApp from other Grit developers.
+          </p>
+          <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-emerald-500">
+            Join the group
+            <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+          </span>
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+function SponsorNudge() {
+  return (
+    <div className="mt-4 px-4">
+      <div className="pt-1">
         <Link
           href="/sponsor"
           className="group block rounded-xl border border-primary/25 bg-primary/[0.04] p-3.5 transition-colors hover:border-primary/40 hover:bg-primary/[0.08]"

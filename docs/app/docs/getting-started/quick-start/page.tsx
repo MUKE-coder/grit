@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CodeBlock } from "@/components/code-block";
 import { Steps, Step } from "@/components/steps";
+import { CommunityCTA } from "@/components/community-cta";
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/getting-started/quick-start')
@@ -486,6 +487,10 @@ grit seed         # (optional) add a demo admin + sample rows`} className="mb-0 
                 Browse all 6 examples on GitHub &rarr;
               </a>
             </div>
+
+            {/* Community — placed at the end of the first thing anyone reads,
+                where "it didn't work on my machine" is most likely. */}
+            <CommunityCTA className="mt-10" />
 
             {/* Nav */}
             <div className="flex flex-wrap gap-3 mt-12 pt-6 border-t border-border/30">

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { SearchDialog } from '@/components/search-dialog'
 import { MobileNav } from '@/components/docs-sidebar'
 import { GitHubStars } from '@/components/github-stars'
+import { WhatsAppIcon, WHATSAPP_COMMUNITY_URL } from '@/components/community-cta'
 import { cn } from '@/lib/utils'
 import { GRIT_VERSION } from '@/config/site'
 
@@ -110,6 +111,13 @@ export function SiteHeader() {
             <Link href="https://www.youtube.com/@GritFramework" target="_blank" rel="noreferrer">
               <Youtube className="h-4 w-4" />
               <span className="sr-only">YouTube</span>
+            </Link>
+          </Button>
+
+          <Button variant="ghost" size="icon" className="hidden sm:inline-flex h-8 w-8 text-emerald-500/70 hover:text-emerald-500 hover:bg-emerald-500/10" asChild>
+            <Link href={WHATSAPP_COMMUNITY_URL} target="_blank" rel="noreferrer">
+              <WhatsAppIcon className="h-4 w-4" />
+              <span className="sr-only">Join the WhatsApp community</span>
             </Link>
           </Button>
 
