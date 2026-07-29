@@ -2,9 +2,17 @@ import type { ZenithConfig } from 'zenith-analytics'
 
 // PUBLIC by design: both values ship inside the tracking snippet on every page,
 // and the site key only authorizes writing events.
+//
+// Deliberately NO fallback values. These are read at build time and baked into
+// every prerendered page, so a default here cannot be corrected later — it just
+// produces a site that looks instrumented and reports nothing. A placeholder
+// default also silently defeats the `required` prop on <Analytics>, which only
+// throws when a value is genuinely missing.
+//
+// Local builds need these in docs/.env.local (see .env.example).
 export const ZENITH_PUBLIC = {
-  backendUrl: process.env.ZENITH_URL || 'https://analytics.gritframework.dev',
-  siteKey: process.env.ZENITH_SITE_KEY || 'zk_the_public_site_key',
+  backendUrl: process.env.ZENITH_URL,
+  siteKey: process.env.ZENITH_SITE_KEY,
 }
 
 // The public half plus the three secrets. Server-side only. Note the secrets

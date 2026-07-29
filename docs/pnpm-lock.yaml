@@ -186,8 +186,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.2.3(@types/react@19.2.13))(@types/react@19.2.13)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       zenith-analytics:
-        specifier: ^0.4.3
-        version: 0.4.3(react@19.2.4)
+        specifier: ^0.4.5
+        version: 0.4.5(react@19.2.4)
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -2637,8 +2637,8 @@ packages:
   w3c-keyname@2.2.8:
     resolution: {integrity: sha512-dpojBhNsCNN7T82Tm7k26A6G9ML3NkhDsnw9n/eoxSRlVBB4CEtIQ/KTCLI2Fwf3ataSXRhYFkQi3SlnFwPvPQ==}
 
-  zenith-analytics@0.4.3:
-    resolution: {integrity: sha512-xZLGCZ6EK48+8HULt9UFmLn3rqeGGGQsUVxYH78R7Rky0Tf8HkOFeVopvmOeYP/g2T/46w4dKeTX/MHG0RhNig==}
+  zenith-analytics@0.4.5:
+    resolution: {integrity: sha512-k4ZKVLkjXIJwaoynEB/CEA+naU3XJxYEudwitkMv16YYwx1vOjc0kRfYqe7OfFNmpIPK09bWmi+4oy8TwWdk+Q==}
     hasBin: true
     peerDependencies:
       react: '>=18'
@@ -5242,7 +5242,7 @@ snapshots:
 
   w3c-keyname@2.2.8: {}
 
-  zenith-analytics@0.4.3(react@19.2.4):
+  zenith-analytics@0.4.5(react@19.2.4):
     dependencies:
       bcryptjs: 3.0.3
     optionalDependencies:
