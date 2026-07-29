@@ -9,8 +9,9 @@ func savedViewModelGo(ctx Context) string {
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/ids"
 )
 
 // SavedView is one user's saved state for one resource table — the URL query
@@ -32,12 +33,12 @@ type SavedView struct {
 
 func (s *SavedView) BeforeCreate(tx *gorm.DB) error {
 	if s.ID == "" {
-		s.ID = uuid.NewString()
+		s.ID = ids.New()
 	}
 	return nil
 }
 `
-	return strings.ReplaceAll(src, "~", "`")
+	return strings.ReplaceAll(strings.ReplaceAll(src, "~", "`"), "{{MODULE}}", ctx.Module)
 }
 
 // savedViewHandlerGo emits internal/handlers/saved_view.go.

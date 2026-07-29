@@ -48,19 +48,30 @@ func (g *DesktopGenerator) writeDesktopModel(names Names) error {
 	hasSlug := slugField != nil
 
 	// Build imports. time is ALWAYS needed (CreatedAt/UpdatedAt are time.Time)
-	// and uuid is ALWAYS needed (the BeforeCreate hook below assigns the PK).
-	// fmt is only needed when a slug hook formats the source value.
+	// and internal/ids is ALWAYS needed (the BeforeCreate hook below assigns
+	// the PK). fmt is only needed when a slug hook formats the source value.
 	stdImports := "\t\"time\""
 	if hasSlug {
 		stdImports = "\t\"fmt\"\n\t\"time\""
 	}
 	_ = needsTime // time is unconditionally imported now; kept for clarity above
 
-	extImports := "\t\"github.com/google/uuid\"\n\t\"gorm.io/gorm\""
+	// Project imports are built as a list rather than patched into the string
+	// afterwards. The previous version anchored a strings.Replace on the gorm
+	// line being last in the block; adding internal/ids moved that line and
+	// silently dropped the internal/files import, so any desktop model with a
+	// file field stopped compiling. Build the block once, from the fields.
+	// Appended in alphabetical order (files, ids) so the block is gofmt-sorted.
+	projImports := []string{}
+	if g.definitionHasFileField() {
+		projImports = append(projImports, "\t\"<MODULE>/internal/files\"")
+	}
+	projImports = append(projImports, "\t\"<MODULE>/internal/ids\"")
 
 	imports := "import (\n"
 	imports += stdImports + "\n\n"
-	imports += extImports + "\n)"
+	imports += "\t\"gorm.io/gorm\"\n\n"
+	imports += strings.Join(projImports, "\n") + "\n)"
 
 	// Build struct fields
 	structFields := ""
@@ -99,7 +110,7 @@ func (g *DesktopGenerator) writeDesktopModel(names Names) error {
 	content += "\n// BeforeCreate assigns the UUID primary key (and slug, if any) before inserting.\n"
 	content += "func (m *" + names.Pascal + ") BeforeCreate(tx *gorm.DB) error {\n"
 	content += "\tif m.ID == \"\" {\n"
-	content += "\t\tm.ID = uuid.New().String()\n"
+	content += "\t\tm.ID = ids.New()\n"
 	content += "\t}\n"
 	if hasSlug {
 		slugGoName := toPascalCase(slugField.Name)
@@ -109,15 +120,6 @@ func (g *DesktopGenerator) writeDesktopModel(names Names) error {
 	}
 	content += "\treturn nil\n"
 	content += "}\n"
-
-	// file/files fields use files.FileRef — add the import. The import block is
-	// rebuilt in several branches above but every one ends with the gorm line,
-	// so a single targeted insert covers them all.
-	if strings.Contains(content, "files.FileRef") {
-		content = strings.Replace(content,
-			"\t\"gorm.io/gorm\"\n)",
-			"\t\"gorm.io/gorm\"\n\n\t\"<MODULE>/internal/files\"\n)", 1)
-	}
 
 	content = strings.ReplaceAll(content, "<MODULE>", g.Module)
 

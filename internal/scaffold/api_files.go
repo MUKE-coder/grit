@@ -22,6 +22,8 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "models", "session.go"):         apiSessionModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "session.go"):       apiSessionServiceGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "session.go"):       apiSessionHandlerGo(),
+		filepath.Join(apiRoot, "internal", "ids", "ids.go"):                apiIDsGo(),
+		filepath.Join(apiRoot, "internal", "ids", "ids_test.go"):           apiIDsTestGo(),
 		filepath.Join(apiRoot, "internal", "models", "sso.go"):             apiSSOModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "sso.go"):           apiSSOServiceGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "sso.go"):           apiSSOHandlerGo(),
@@ -123,7 +125,7 @@ func importJobModelGo() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/gorm"
 )
 
@@ -151,7 +153,7 @@ type ImportJob struct {
 // BeforeCreate assigns a UUID so the job id is opaque in poll URLs.
 func (m *ImportJob) BeforeCreate(tx *gorm.DB) error {
 	if m.ID == "" {
-		m.ID = uuid.New().String()
+		m.ID = ids.New()
 	}
 	if m.Status == "" {
 		m.Status = "processing"
@@ -1107,7 +1109,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -1154,7 +1156,7 @@ type User struct {
 // BeforeCreate generates a UUID and hashes the password before saving.
 func (u *User) BeforeCreate(tx *gorm.DB) error {
 	if u.ID == "" {
-		u.ID = uuid.New().String()
+		u.ID = ids.New()
 	}
 	if u.Version == 0 {
 		u.Version = 1
@@ -1180,7 +1182,7 @@ func (u *User) BeforeUpdate(tx *gorm.DB) error {
 // BeforeCreate generates a UUID for uploads.
 func (u *Upload) BeforeCreate(tx *gorm.DB) error {
 	if u.ID == "" {
-		u.ID = uuid.New().String()
+		u.ID = ids.New()
 	}
 	return nil
 }
@@ -4326,7 +4328,7 @@ func apiActivityLogModelGo() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/gorm"
 )
 
@@ -4357,7 +4359,7 @@ type ActivityLog struct {
 
 func (a *ActivityLog) BeforeCreate(tx *gorm.DB) error {
 	if a.ID == "" {
-		a.ID = uuid.New().String()
+		a.ID = ids.New()
 	}
 	return nil
 }
@@ -4585,7 +4587,7 @@ func apiWebhookEventModelGo() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -4614,7 +4616,7 @@ type WebhookEvent struct {
 
 func (w *WebhookEvent) BeforeCreate(tx *gorm.DB) error {
 	if w.ID == "" {
-		w.ID = uuid.New().String()
+		w.ID = ids.New()
 	}
 	return nil
 }
@@ -5188,7 +5190,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -5216,7 +5218,7 @@ type FeatureFlag struct {
 
 func (f *FeatureFlag) BeforeCreate(tx *gorm.DB) error {
 	if f.ID == "" {
-		f.ID = uuid.New().String()
+		f.ID = ids.New()
 	}
 	return nil
 }
@@ -5277,7 +5279,7 @@ type FlagExposure struct {
 
 func (e *FlagExposure) BeforeCreate(tx *gorm.DB) error {
 	if e.ID == "" {
-		e.ID = uuid.New().String()
+		e.ID = ids.New()
 	}
 	return nil
 }

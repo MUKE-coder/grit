@@ -18,7 +18,7 @@ func ticketModelGo() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/gorm"
 )
 
@@ -48,7 +48,7 @@ type Ticket struct {
 
 func (t *Ticket) BeforeCreate(tx *gorm.DB) error {
 	if t.ID == "" {
-		t.ID = uuid.New().String()
+		t.ID = ids.New()
 	}
 	if t.Status == "" {
 		t.Status = "open"
@@ -77,7 +77,7 @@ type TicketReply struct {
 
 func (r *TicketReply) BeforeCreate(tx *gorm.DB) error {
 	if r.ID == "" {
-		r.ID = uuid.New().String()
+		r.ID = ids.New()
 	}
 	return nil
 }

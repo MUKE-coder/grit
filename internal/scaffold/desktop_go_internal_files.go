@@ -15,6 +15,7 @@ func writeDesktopGoInternalFiles(root string, opts DesktopOptions) error {
 		filepath.Join(root, "internal", "models", "contact.go"): desktopContactModel(),
 		filepath.Join(root, "internal", "models", "types.go"):   desktopTypesGo(),
 		filepath.Join(root, "internal", "models", "slug.go"):    desktopSlugGo(),
+		filepath.Join(root, "internal", "ids", "ids.go"):        desktopIDsGo(),
 	}
 
 	for path, content := range files {
@@ -128,7 +129,7 @@ func desktopUserModel() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"<MODULE>/internal/ids"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -146,7 +147,7 @@ type User struct {
 
 func (u *User) BeforeCreate(tx *gorm.DB) error {
 	if u.ID == "" {
-		u.ID = uuid.New().String()
+		u.ID = ids.New()
 	}
 	hashed, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -168,7 +169,7 @@ func desktopBlogModel() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"<MODULE>/internal/ids"
 	"gorm.io/gorm"
 )
 
@@ -187,7 +188,7 @@ type Blog struct {
 
 func (b *Blog) BeforeCreate(tx *gorm.DB) error {
 	if b.ID == "" {
-		b.ID = uuid.New().String()
+		b.ID = ids.New()
 	}
 	return nil
 }
@@ -200,7 +201,7 @@ func desktopContactModel() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"<MODULE>/internal/ids"
 	"gorm.io/gorm"
 )
 
@@ -218,7 +219,7 @@ type Contact struct {
 
 func (c *Contact) BeforeCreate(tx *gorm.DB) error {
 	if c.ID == "" {
-		c.ID = uuid.New().String()
+		c.ID = ids.New()
 	}
 	return nil
 }
@@ -283,5 +284,40 @@ type ContactInput struct {
 }
 
 // grit:input-types
+`
+}
+
+// desktopIDsGo emits internal/ids/ids.go for the desktop module.
+//
+// The desktop app is its own Go module, so it needs its own copy rather than
+// importing the API's. Keeping both on UUIDv7 matters more here than anywhere
+// else: an offline client mints IDs with no server contact, and those rows sync
+// into the same tables as server-created ones. If one side generated v4 and the
+// other v7, ordering would silently depend on which device created the record.
+func desktopIDsGo() string {
+	return `// Package ids generates primary keys.
+//
+// ids.New() returns a UUIDv7: a standard 128-bit UUID any client can generate
+// offline with no coordination, with a millisecond timestamp in the high bits
+// so IDs sort chronologically and insert with good index locality.
+//
+// Trade-off: a v7 identifier encodes when it was created. If you expose raw IDs
+// publicly you are also publishing creation times.
+package ids
+
+import "github.com/google/uuid"
+
+// New returns a time-ordered UUIDv7 string.
+//
+// uuid.NewV7 only fails if the OS entropy source does, which is a situation
+// where nothing else works either. It falls back to v4 rather than returning an
+// error into every BeforeCreate hook: an unordered id is a performance
+// regression, an empty primary key is data corruption.
+func New() string {
+	if u, err := uuid.NewV7(); err == nil {
+		return u.String()
+	}
+	return uuid.New().String()
+}
 `
 }

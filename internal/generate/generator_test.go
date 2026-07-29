@@ -231,7 +231,10 @@ func TestWriteGoModel_BasicFields(t *testing.T) {
 		{"package declaration", "package models"},
 		{"struct declaration", "type Post struct {"},
 		{"ID field", `gorm:"primarykey;size:36"`},
-		{"uuid import", `"github.com/google/uuid"`},
+		// Primary keys come from internal/ids (UUIDv7), not uuid.New() — models
+		// no longer import google/uuid at all.
+		{"ids import", `/internal/ids"`},
+		{"id generated from ids", `ids.New()`},
 		{"BeforeCreate hook", "func (m *Post) BeforeCreate"},
 		{"Title field", "Title string"},
 		{"title json tag", `json:"title"`},

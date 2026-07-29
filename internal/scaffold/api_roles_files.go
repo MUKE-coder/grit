@@ -27,7 +27,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/gorm"
 )
 
@@ -59,7 +59,7 @@ type Role struct {
 
 func (r *Role) BeforeCreate(tx *gorm.DB) error {
 	if r.ID == "" {
-		r.ID = uuid.NewString()
+		r.ID = ids.New()
 	}
 	return nil
 }

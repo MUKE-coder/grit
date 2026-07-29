@@ -21,7 +21,7 @@ func apiSAMLModelGo() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/crypto"
@@ -54,7 +54,7 @@ type SAMLKeypair struct {
 
 func (k *SAMLKeypair) BeforeCreate(tx *gorm.DB) error {
 	if k.ID == "" {
-		k.ID = uuid.New().String()
+		k.ID = ids.New()
 	}
 	return nil
 }

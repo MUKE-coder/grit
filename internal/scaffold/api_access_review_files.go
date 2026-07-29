@@ -22,7 +22,7 @@ func apiAccessReviewModelGo() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/gorm"
 )
 
@@ -53,7 +53,7 @@ type AccessReview struct {
 
 func (r *AccessReview) BeforeCreate(tx *gorm.DB) error {
 	if r.ID == "" {
-		r.ID = uuid.NewString()
+		r.ID = ids.New()
 	}
 	if r.Status == "" {
 		r.Status = "open"
@@ -86,7 +86,7 @@ type AccessReviewItem struct {
 
 func (i *AccessReviewItem) BeforeCreate(tx *gorm.DB) error {
 	if i.ID == "" {
-		i.ID = uuid.NewString()
+		i.ID = ids.New()
 	}
 	if i.Decision == "" {
 		i.Decision = "pending"

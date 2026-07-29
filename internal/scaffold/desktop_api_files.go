@@ -135,7 +135,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
+	"<MODULE>/internal/ids"
 
 	"<MODULE>/internal/files"
 )
@@ -170,7 +170,7 @@ func (s *Storage) Dir() string { return s.dir }
 // the original name is kept in the ref for display and downloads.
 func (s *Storage) Save(file multipart.File, header *multipart.FileHeader) (*files.FileRef, error) {
 	ext := strings.ToLower(filepath.Ext(header.Filename))
-	name := fmt.Sprintf("%d-%s%s", time.Now().UnixNano(), uuid.New().String(), ext)
+	name := fmt.Sprintf("%d-%s%s", time.Now().UnixNano(), ids.New(), ext)
 
 	dst, err := os.Create(filepath.Join(s.dir, name))
 	if err != nil {

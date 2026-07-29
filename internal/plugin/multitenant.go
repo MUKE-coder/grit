@@ -120,8 +120,9 @@ func mtOrganizationModel(ctx Context) string {
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
+
+	"{{MODULE}}/internal/ids"
 )
 
 // Organization is a tenant.
@@ -138,7 +139,10 @@ type Organization struct {
 	// membership roles so an owner can't be locked out by a permission change.
 	OwnerID string ~gorm:"size:36;index" json:"owner_id"~
 
-	Active    bool           ~gorm:"default:true" json:"active"~
+	// not null, but no default: a column default makes Active:false unstorable
+	// on create, because GORM omits zero-valued fields from the INSERT. An
+	// organization created suspended would come back live.
+	Active    bool           ~gorm:"not null" json:"active"~
 	Version   int            ~gorm:"not null;default:1" json:"version"~
 	CreatedAt time.Time      ~json:"created_at"~
 	UpdatedAt time.Time      ~json:"updated_at"~
@@ -147,7 +151,7 @@ type Organization struct {
 
 func (o *Organization) BeforeCreate(tx *gorm.DB) error {
 	if o.ID == "" {
-		o.ID = uuid.NewString()
+		o.ID = ids.New()
 	}
 	return nil
 }
@@ -176,7 +180,7 @@ type OrganizationMember struct {
 
 func (OrganizationMember) TableName() string { return "organization_members" }
 `
-	return strings.ReplaceAll(src, "~", "`")
+	return strings.ReplaceAll(strings.ReplaceAll(src, "~", "`"), "{{MODULE}}", ctx.Module)
 }
 
 // mtTenantPackage emits the scoping engine — the security-critical part.

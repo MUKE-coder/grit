@@ -48,7 +48,7 @@ func backupModelGo() string {
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"{{MODULE}}/internal/ids"
 	"gorm.io/gorm"
 )
 
@@ -77,7 +77,7 @@ type Backup struct {
 // BeforeCreate assigns a UUID so backup ids are opaque in download URLs.
 func (m *Backup) BeforeCreate(tx *gorm.DB) error {
 	if m.ID == "" {
-		m.ID = uuid.New().String()
+		m.ID = ids.New()
 	}
 	if m.Status == "" {
 		m.Status = "RUNNING"
