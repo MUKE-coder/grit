@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+
+	"github.com/MUKE-coder/grit/v3/internal/codefmt"
 )
 
 // Architecture represents the project architecture mode.
@@ -58,7 +60,7 @@ type Options struct {
 // DefaultVersion is the fallback string written into scaffolded README/docs
 // when Options.Version is empty. Kept in sync with cmd/grit/main.go's
 // version variable on release.
-const DefaultVersion = "3.108.0"
+const DefaultVersion = "3.109.0"
 
 // Normalize maps legacy boolean flags to the new Architecture enum.
 // Call this after constructing Options from CLI flags.
@@ -798,11 +800,13 @@ func createDirectories(root string, opts Options) error {
 	return nil
 }
 
-// writeFile creates a file with the given content.
+// writeFile creates a file with the given content. Go files are gofmt'd on the
+// way out (see internal/codefmt) so the templates only have to be correct, not
+// aligned; anything else is written byte-for-byte.
 func writeFile(path, content string) error {
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("creating directory for %s: %w", path, err)
 	}
-	return os.WriteFile(path, []byte(content), 0644)
+	return os.WriteFile(path, []byte(codefmt.File(path, content)), 0644)
 }

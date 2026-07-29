@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/MUKE-coder/grit/v3/internal/codefmt"
 )
 
 // Install applies a plugin to the project and records what it did.
@@ -92,7 +94,7 @@ func Install(ctx Context, p Plugin) (*InstalledPlugin, error) {
 			if err := os.MkdirAll(filepath.Dir(abs), 0755); err != nil {
 				return nil, fmt.Errorf("creating dir for %s: %w", rel, err)
 			}
-			if err := os.WriteFile(abs, []byte(files[rel]), 0644); err != nil {
+			if err := os.WriteFile(abs, []byte(codefmt.File(abs, files[rel])), 0644); err != nil {
 				return nil, fmt.Errorf("writing %s: %w", rel, err)
 			}
 			record.Files = append(record.Files, rel)

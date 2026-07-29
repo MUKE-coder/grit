@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"unicode"
+
+	"github.com/MUKE-coder/grit/v3/internal/codefmt"
 )
 
 // Generator holds context for generating a resource.
@@ -600,10 +602,12 @@ func dirExists(path string) bool {
 	return err == nil && info.IsDir()
 }
 
+// writeFileWithDirs writes a generated file, creating parent directories as
+// needed. Go files are gofmt'd on the way out (see internal/codefmt).
 func writeFileWithDirs(path, content string) error {
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("creating directory %s: %w", dir, err)
 	}
-	return os.WriteFile(path, []byte(content), 0644)
+	return os.WriteFile(path, []byte(codefmt.File(path, content)), 0644)
 }
