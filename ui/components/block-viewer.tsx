@@ -48,7 +48,7 @@ function Segmented<T extends string>({
   layoutId: string
 }) {
   return (
-    <div className="relative flex rounded-[10px] bg-gray-500/[0.08] p-0.5 dark:bg-white/[0.06]">
+    <div className="relative flex rounded-xl bg-gray-500/[0.08] p-1 dark:bg-white/[0.06]">
       {options.map((o) => {
         const selected = o.key === value
         return (
@@ -59,8 +59,11 @@ function Segmented<T extends string>({
             aria-pressed={selected}
             aria-label={o.title ?? o.label}
             title={o.title ?? o.label}
-            className={`relative z-10 inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors duration-200 ${
-              o.icon && !o.label ? 'w-8' : ''
+            // Icon-only options are square and 36px, which is a comfortable
+            // pointer target — the earlier 32px with a 15px glyph was fiddly to
+            // hit and read as an afterthought next to the labelled controls.
+            className={`relative z-10 inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] text-[13.5px] font-medium transition-colors duration-200 ${
+              o.icon && !o.label ? 'w-9' : 'px-3.5'
             } ${
               selected
                 ? 'text-gray-900 dark:text-white'
@@ -71,10 +74,10 @@ function Segmented<T extends string>({
               <motion.span
                 layoutId={layoutId}
                 transition={{ type: 'spring', stiffness: 520, damping: 38, mass: 0.7 }}
-                className="absolute inset-0 -z-10 rounded-lg bg-white shadow-[0_1px_2px_rgb(15_23_42_/_0.10),0_1px_1px_rgb(15_23_42_/_0.04)] dark:bg-white/[0.14] dark:shadow-none"
+                className="absolute inset-0 -z-10 rounded-[10px] bg-white shadow-[0_1px_2px_rgb(15_23_42_/_0.10),0_1px_1px_rgb(15_23_42_/_0.04)] dark:bg-white/[0.14] dark:shadow-none"
               />
             )}
-            {o.icon && <o.icon aria-hidden="true" className="size-[15px]" />}
+            {o.icon && <o.icon aria-hidden="true" className="size-[17px]" />}
             {o.label}
           </button>
         )
@@ -217,7 +220,7 @@ function CopyButton({ value, label }: { value: string; label: string }) {
     <button
       type="button"
       onClick={copy}
-      className="group inline-flex items-center gap-1.5 rounded-[10px] bg-gray-500/[0.08] px-3 py-1.5 text-[13px] font-medium text-gray-600 transition-all duration-200 hover:bg-gray-500/[0.14] active:scale-[0.97] dark:bg-white/[0.06] dark:text-gray-300 dark:hover:bg-white/[0.12]"
+      className="group inline-flex h-11 items-center gap-1.5 rounded-xl bg-gray-500/[0.08] px-4 text-[13.5px] font-medium text-gray-600 transition-all duration-200 hover:bg-gray-500/[0.14] active:scale-[0.97] dark:bg-white/[0.06] dark:text-gray-300 dark:hover:bg-white/[0.12]"
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
@@ -230,17 +233,17 @@ function CopyButton({ value, label }: { value: string; label: string }) {
         >
           {state === 'copied' ? (
             <>
-              <Check className="size-[15px] text-emerald-500" />
+              <Check className="size-[17px] text-emerald-500" />
               Copied
             </>
           ) : state === 'failed' ? (
             <>
-              <Copy className="size-[15px]" />
+              <Copy className="size-[17px]" />
               Press &#8984;C
             </>
           ) : (
             <>
-              <Copy className="size-[15px]" />
+              <Copy className="size-[17px]" />
               {label}
             </>
           )}

@@ -153,6 +153,132 @@ export default function CenteredEditorial({
           ))}
         </div>
       </div>
+
+      {/* Editor. The point of this layout is that the product appears directly
+          under the claim — an editorial hero with nothing beneath it is just a
+          headline. */}
+      <div className="border-t border-gray-900/[0.07] px-6 pt-14 pb-20 dark:border-white/10">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-xl border border-gray-900/10 bg-white shadow-[0_24px_70px_-24px_rgb(15_23_42_/_0.28)] dark:border-white/10 dark:bg-gray-900">
+          {/* Window chrome */}
+          <div className="flex items-center gap-2 border-b border-gray-900/[0.07] bg-gray-50 px-4 py-2.5 dark:border-white/10 dark:bg-gray-800/60">
+            <span className="size-3 rounded-full bg-[#ff5f57]" />
+            <span className="size-3 rounded-full bg-[#febc2e]" />
+            <span className="size-3 rounded-full bg-[#28c840]" />
+            <span className="ml-3 font-mono text-[11px] text-gray-500 dark:text-gray-400">
+              grit / apps/api
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[190px_1fr]">
+            {/* File tree */}
+            <div className="hidden border-r border-gray-900/[0.07] p-3 lg:block dark:border-white/10">
+              {[
+                { name: 'internal', dir: true },
+                { name: 'models', dir: true, indent: 1 },
+                { name: 'invoice.go', indent: 2, active: true },
+                { name: 'user.go', indent: 2 },
+                { name: 'services', dir: true, indent: 1 },
+                { name: 'invoice.go', indent: 2 },
+                { name: 'handlers', dir: true, indent: 1 },
+                { name: 'invoice.go', indent: 2 },
+                { name: 'routes', dir: true, indent: 1 },
+              ].map((f, i) => (
+                <div
+                  key={i}
+                  className={`mb-0.5 truncate rounded px-2 py-1 font-mono text-[11px] ${
+                    f.active
+                      ? 'bg-blue-600/10 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'
+                      : f.dir
+                        ? 'text-gray-700 dark:text-gray-300'
+                        : 'text-gray-500 dark:text-gray-500'
+                  }`}
+                  style={{ paddingLeft: `${8 + (f.indent ?? 0) * 12}px` }}
+                >
+                  {f.dir ? '▾ ' : ''}
+                  {f.name}
+                </div>
+              ))}
+            </div>
+
+            {/* Code */}
+            <div className="min-w-0">
+              <div className="flex border-b border-gray-900/[0.07] dark:border-white/10">
+                <span className="border-r border-gray-900/[0.07] bg-white px-4 py-2 font-mono text-[11px] text-gray-900 dark:border-white/10 dark:bg-gray-900 dark:text-white">
+                  invoice.go
+                </span>
+                <span className="px-4 py-2 font-mono text-[11px] text-gray-400 dark:text-gray-600">
+                  invoice_service.go
+                </span>
+              </div>
+
+              <pre className="overflow-x-auto p-4 font-mono text-[11.5px]/[1.75]">
+                <code>
+                  {[
+                    [['package ', 'kw'], ['models', 'plain']],
+                    [],
+                    [['import ', 'kw'], ['(', 'plain']],
+                    [['\t"time"', 'str']],
+                    [],
+                    [['\t"gorm.io/gorm"', 'str']],
+                    [['\t"myapp/internal/ids"', 'str']],
+                    [[')', 'plain']],
+                    [],
+                    [['type ', 'kw'], ['Invoice ', 'type'], ['struct', 'kw'], [' {', 'plain']],
+                    [['\tID        ', 'plain'], ['string', 'type'], ['         `gorm:"primarykey"`', 'tag']],
+                    [['\tNumber    ', 'plain'], ['string', 'type'], ['         `gorm:"uniqueIndex"`', 'tag']],
+                    [['\tTotal     ', 'plain'], ['float64', 'type'], ['        `json:"total"`', 'tag']],
+                    [['\tCreatedAt ', 'plain'], ['time', 'type'], ['.Time      `json:"created_at"`', 'tag']],
+                    [['}', 'plain']],
+                    [],
+                    [['func', 'kw'], [' (m *', 'plain'], ['Invoice', 'type'], [') ', 'plain'], ['BeforeCreate', 'fn'], ['(tx *gorm.DB) ', 'plain'], ['error', 'type'], [' {', 'plain']],
+                    [['\t', 'plain'], ['if', 'kw'], [' m.ID == ', 'plain'], ['""', 'str'], [' {', 'plain']],
+                    [['\t\tm.ID = ids.', 'plain'], ['New', 'fn'], ['()', 'plain']],
+                    [['\t}', 'plain']],
+                    [['\t', 'plain'], ['return', 'kw'], [' ', 'plain'], ['nil', 'kw']],
+                    [['}', 'plain']],
+                  ].map((line, i) => (
+                    <div key={i} className="flex">
+                      <span className="mr-4 w-5 shrink-0 text-right text-gray-300 select-none dark:text-gray-700">
+                        {i + 1}
+                      </span>
+                      <span className="whitespace-pre">
+                        {line.length === 0 ? ' ' : null}
+                        {line.map(([text, kind], j) => (
+                          <span
+                            key={j}
+                            className={
+                              kind === 'kw'
+                                ? 'text-rose-600 dark:text-rose-400'
+                                : kind === 'type'
+                                  ? 'text-teal-600 dark:text-teal-300'
+                                  : kind === 'str'
+                                    ? 'text-blue-700 dark:text-blue-300'
+                                    : kind === 'fn'
+                                      ? 'text-violet-600 dark:text-violet-300'
+                                      : kind === 'tag'
+                                        ? 'text-gray-400 dark:text-gray-500'
+                                        : 'text-gray-800 dark:text-gray-200'
+                            }
+                          >
+                            {text}
+                          </span>
+                        ))}
+                      </span>
+                    </div>
+                  ))}
+                </code>
+              </pre>
+
+              {/* Status bar */}
+              <div className="flex items-center gap-4 border-t border-gray-900/[0.07] px-4 py-2 font-mono text-[10.5px] text-gray-500 dark:border-white/10 dark:text-gray-500">
+                <span>Go 1.24</span>
+                <span className="text-green-600 dark:text-green-400">✓ build passing</span>
+                <span className="ml-auto">Ln 19, Col 22</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
