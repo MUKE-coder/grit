@@ -158,16 +158,34 @@ func TargetDir(root string) (dir string, label string, err error) {
 			"grit ui targets a React app. An --api project has no frontend to install into")
 }
 
-// Write saves the component's source under <appDir>/components/grit-ui/.
+// Write saves the component's source at the path the registry item asks for.
+//
+// The item's target is honoured rather than a name derived here, so that
+// `grit ui add` and `npx shadcn add` put the file in exactly the same place.
+// Deriving it locally is how the two drift apart.
+//
 // It refuses to clobber an existing file unless force is set, because a
 // component someone has already edited is their code, not ours.
 func Write(appDir string, c *Component, force bool) (string, error) {
-	outDir := filepath.Join(appDir, "components", "grit-ui")
+	rel := strings.TrimSpace(c.Files[0].Target)
+	if rel == "" {
+		rel = strings.TrimSpace(c.Files[0].Path)
+	}
+	if rel == "" {
+		rel = filepath.Join("components", "grit-ui", c.Name+".tsx")
+	}
+	// A registry is remote input: a target of "../../.ssh/authorized_keys"
+	// must not escape the app directory.
+	rel = filepath.Clean(filepath.FromSlash(rel))
+	if filepath.IsAbs(rel) || strings.HasPrefix(rel, "..") {
+		return "", fmt.Errorf("component %s has an unsafe target path %q", c.Name, c.Files[0].Target)
+	}
+
+	out := filepath.Join(appDir, rel)
+	outDir := filepath.Dir(out)
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return "", fmt.Errorf("creating %s: %w", outDir, err)
 	}
-
-	out := filepath.Join(outDir, c.Name+".tsx")
 	if !force {
 		if _, err := os.Stat(out); err == nil {
 			return "", fmt.Errorf("%s already exists — pass --force to overwrite", out)

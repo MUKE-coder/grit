@@ -172,6 +172,49 @@ func TestTargetDirExplainsWhenThereIsNoFrontend(t *testing.T) {
 	}
 }
 
+// The registry item decides where its file lands, so that `grit ui add` and
+// `npx shadcn add` agree. Deriving the path locally is how they drift.
+func TestWriteHonoursTheRegistryTarget(t *testing.T) {
+	app := t.TempDir()
+	c := &Component{
+		Name: "marketing-hero-sections-simple-centered",
+		Files: []File{{
+			Target:  "components/grit-ui/hero-sections/simple-centered.tsx",
+			Content: "export default function X() { return null }\n",
+		}},
+	}
+
+	path, err := Write(app, c, false)
+	if err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	want := filepath.Join(app, "components", "grit-ui", "hero-sections", "simple-centered.tsx")
+	if path != want {
+		t.Errorf("path = %q, want %q", path, want)
+	}
+	if _, err := os.Stat(want); err != nil {
+		t.Errorf("file not created at the target: %v", err)
+	}
+}
+
+// A registry is remote input. A target that climbs out of the app directory
+// must be refused rather than followed.
+func TestWriteRejectsAPathThatEscapesTheApp(t *testing.T) {
+	app := t.TempDir()
+	for _, target := range []string{
+		"../../../etc/passwd",
+		"..\\..\\evil.tsx",
+	} {
+		c := &Component{
+			Name:  "evil",
+			Files: []File{{Target: target, Content: "x"}},
+		}
+		if _, err := Write(app, c, true); err == nil {
+			t.Errorf("target %q was accepted; it must be rejected", target)
+		}
+	}
+}
+
 func TestWriteCreatesTheFileAndRefusesToClobber(t *testing.T) {
 	app := t.TempDir()
 	c := &Component{

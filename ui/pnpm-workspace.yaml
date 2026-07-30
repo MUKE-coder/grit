@@ -7,8 +7,9 @@
 # a decision. Leaving that placeholder in place is the same as saying no, which
 # is what shipped and what broke the deploy.
 #
-# pnpm 9 reads the equivalent setting from package.json
-# (pnpm.onlyBuiltDependencies). Both are set, so the install behaves the same
-# whichever version runs it.
+# This file is the ONLY place the approval lives. pnpm 11 no longer reads the
+# `pnpm` field in package.json and warns on every install if you leave one
+# there, so the belt-and-braces copy was removed. The Dockerfile pins pnpm to
+# 11.9.0 and copies this file into the deps stage before installing.
 allowBuilds:
   sharp: true

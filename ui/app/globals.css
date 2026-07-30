@@ -2,56 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
- * The Grit UI palette.
- *
- * These are the same values exported from lib/tokens.ts and shipped in every
- * registry item's cssVars block, so a component looks identical here and in
- * the project that installs it.
- */
 @layer base {
   :root {
-    --bg-primary: #0a0a0f;
-    --bg-secondary: #111118;
-    --bg-tertiary: #1a1a24;
-    --bg-elevated: #22222e;
-    --bg-hover: #2a2a38;
-    --border: #2a2a3a;
-    --text-primary: #e8e8f0;
-    --text-secondary: #9090a8;
-    --text-muted: #606078;
-    --accent: #6c5ce7;
-    --accent-hover: #7c6cf7;
-    --accent-foreground: #ffffff;
-    --success: #00b894;
-    --danger: #ff6b6b;
-    --warning: #fdcb6e;
-    --info: #74b9ff;
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
   }
 
-  * {
-    border-color: var(--border);
+  html {
+    scroll-behavior: smooth;
   }
 
   body {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
   }
 }
 
 @layer utilities {
-  .grit-grid {
+  /* The hairline grid the site chrome sits on — light and dark variants of the
+     same pattern, kept faint enough never to compete with a block preview. */
+  .site-grid {
     background-image:
-      linear-gradient(to right, rgba(232, 232, 240, 0.04) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(232, 232, 240, 0.04) 1px, transparent 1px);
-    background-size: 40px 40px;
+      linear-gradient(to right, rgb(0 0 0 / 0.055) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(0 0 0 / 0.055) 1px, transparent 1px);
+    background-size: 56px 56px;
   }
 
-  /* Fades a decorative layer out toward the bottom so it never competes with
-     the content sitting on top of it. */
-  .mask-fade-b {
-    mask-image: linear-gradient(to bottom, black 0%, transparent 85%);
-    -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 85%);
+  .dark .site-grid {
+    background-image:
+      linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+  }
+
+  /* Diagonal hatching used on the page gutters, as on the reference site. */
+  .site-hatch {
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgb(0 0 0 / 0.04) 0,
+      rgb(0 0 0 / 0.04) 1px,
+      transparent 0,
+      transparent 50%
+    );
+    background-size: 10px 10px;
+  }
+
+  .dark .site-hatch {
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgb(255 255 255 / 0.04) 0,
+      rgb(255 255 255 / 0.04) 1px,
+      transparent 0,
+      transparent 50%
+    );
+  }
+
+  .label-mono {
+    @apply font-mono text-xs uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400;
   }
 }

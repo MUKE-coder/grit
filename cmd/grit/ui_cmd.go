@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -144,10 +145,16 @@ func uiAddCmd() *cobra.Command {
 					deps[d] = true
 				}
 
+				// Report the path Write actually used, not a reconstruction of
+				// it — the registry decides the target, and printing a guess
+				// means telling someone about a file that is not there.
+				shown := path
+				if rel, relErr := filepath.Rel(appDir, path); relErr == nil {
+					shown = filepath.ToSlash(rel)
+				}
 				green.Print("  ✓ ")
 				fmt.Printf("%s", component.Title)
-				dim.Printf("  components/grit-ui/%s.tsx\n", component.Name)
-				_ = path
+				dim.Printf("  %s\n", shown)
 				installed++
 			}
 
