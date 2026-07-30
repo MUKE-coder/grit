@@ -1,34 +1,101 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, Clipboard, Monitor, Moon, Smartphone, Sun, Tablet } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import {
+  Check,
+  Code2,
+  Copy,
+  Eye,
+  Monitor,
+  MoonStar,
+  Smartphone,
+  Sun,
+  Tablet,
+} from 'lucide-react'
 
 type Tab = 'preview' | 'code'
 type Breakpoint = 'mobile' | 'tablet' | 'desktop'
 
-/** Frame widths, chosen to sit just inside common device breakpoints. */
 const WIDTHS: Record<Breakpoint, string> = {
   mobile: '390px',
-  tablet: '768px',
+  tablet: '834px',
   desktop: '100%',
 }
 
 const BREAKPOINTS: { key: Breakpoint; icon: typeof Monitor; label: string }[] = [
-  { key: 'mobile', icon: Smartphone, label: 'Mobile' },
-  { key: 'tablet', icon: Tablet, label: 'Tablet' },
-  { key: 'desktop', icon: Monitor, label: 'Desktop' },
+  { key: 'mobile', icon: Smartphone, label: 'iPhone width' },
+  { key: 'tablet', icon: Tablet, label: 'iPad width' },
+  { key: 'desktop', icon: Monitor, label: 'Full width' },
 ]
+
+/**
+ * iOS-style segmented control.
+ *
+ * The selected pill is a single shared element animated between positions with
+ * a layout transition, rather than a background toggled per option. That is the
+ * detail that makes it feel native: the indicator travels, it does not blink.
+ */
+function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+  layoutId,
+}: {
+  options: { key: T; label?: string; icon?: typeof Monitor; title?: string }[]
+  value: T
+  onChange: (v: T) => void
+  layoutId: string
+}) {
+  return (
+    <div className="relative flex rounded-[10px] bg-gray-500/[0.08] p-0.5 dark:bg-white/[0.06]">
+      {options.map((o) => {
+        const selected = o.key === value
+        return (
+          <button
+            key={o.key}
+            type="button"
+            onClick={() => onChange(o.key)}
+            aria-pressed={selected}
+            aria-label={o.title ?? o.label}
+            title={o.title ?? o.label}
+            className={`relative z-10 inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors duration-200 ${
+              o.icon && !o.label ? 'w-8' : ''
+            } ${
+              selected
+                ? 'text-gray-900 dark:text-white'
+                : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
+            }`}
+          >
+            {selected && (
+              <motion.span
+                layoutId={layoutId}
+                transition={{ type: 'spring', stiffness: 520, damping: 38, mass: 0.7 }}
+                className="absolute inset-0 -z-10 rounded-lg bg-white shadow-[0_1px_2px_rgb(15_23_42_/_0.10),0_1px_1px_rgb(15_23_42_/_0.04)] dark:bg-white/[0.14] dark:shadow-none"
+              />
+            )}
+            {o.icon && <o.icon aria-hidden="true" className="size-[15px]" />}
+            {o.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 export function BlockViewer({
   name,
   title,
   source,
+  highlighted,
   installCommand,
-  height = 640,
+  height = 660,
 }: {
   name: string
   title: string
   source: string
+  /** Shiki output, produced at build time. */
+  highlighted: string
   installCommand: string
   height?: number
 }) {
@@ -37,99 +104,95 @@ export function BlockViewer({
   const [dark, setDark] = useState(false)
 
   return (
-    <section className="scroll-mt-20" id={name}>
+    <section className="scroll-mt-24" id={name}>
       {/* Toolbar */}
-      <div className="mb-3 flex flex-wrap items-center gap-3">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
+      <div className="mb-3.5 flex flex-wrap items-center gap-3">
+        <h3 className="display text-[15px] text-gray-900 dark:text-white">{title}</h3>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          {/* Preview / Code */}
-          <div className="flex rounded-lg bg-gray-100 p-0.5 dark:bg-white/10">
-            {(['preview', 'code'] as Tab[]).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTab(t)}
-                aria-pressed={tab === t}
-                className={`rounded-md px-3 py-1 text-xs font-medium capitalize transition-colors ${
-                  tab === t
-                    ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white'
-                    : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+          <Segmented
+            layoutId={`${name}-tab`}
+            value={tab}
+            onChange={setTab}
+            options={[
+              { key: 'preview', label: 'Preview', icon: Eye },
+              { key: 'code', label: 'Code', icon: Code2 },
+            ]}
+          />
 
-          {/* Breakpoints — only meaningful while previewing */}
-          {tab === 'preview' && (
-            <>
-              <div className="hidden items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 sm:flex dark:bg-white/10">
-                {BREAKPOINTS.map(({ key, icon: Icon, label }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setBreakpoint(key)}
-                    aria-pressed={breakpoint === key}
-                    aria-label={label}
-                    title={label}
-                    className={`inline-flex size-7 items-center justify-center rounded-md transition-colors ${
-                      breakpoint === key
-                        ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white'
-                        : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-                    }`}
-                  >
-                    <Icon className="size-3.5" />
-                  </button>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setDark((d) => !d)}
-                aria-pressed={dark}
-                aria-label={dark ? 'Preview in light mode' : 'Preview in dark mode'}
-                title={dark ? 'Preview in light mode' : 'Preview in dark mode'}
-                className="inline-flex size-7 items-center justify-center rounded-md bg-gray-100 text-gray-500 transition-colors hover:text-gray-900 dark:bg-white/10 dark:text-gray-400 dark:hover:text-white"
+          <AnimatePresence initial={false}>
+            {tab === 'preview' && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.94 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.94 }}
+                transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                className="flex items-center gap-2"
               >
-                {dark ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />}
-              </button>
-            </>
-          )}
+                <div className="hidden sm:block">
+                  <Segmented
+                    layoutId={`${name}-bp`}
+                    value={breakpoint}
+                    onChange={setBreakpoint}
+                    options={BREAKPOINTS.map((b) => ({
+                      key: b.key,
+                      icon: b.icon,
+                      title: b.label,
+                    }))}
+                  />
+                </div>
+                <Segmented
+                  layoutId={`${name}-theme`}
+                  value={dark ? 'dark' : 'light'}
+                  onChange={(v) => setDark(v === 'dark')}
+                  options={[
+                    { key: 'light', icon: Sun, title: 'Preview in light' },
+                    { key: 'dark', icon: MoonStar, title: 'Preview in dark' },
+                  ]}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <CopyButton
             value={tab === 'code' ? source : installCommand}
-            label={tab === 'code' ? 'Copy code' : 'Copy command'}
+            label={tab === 'code' ? 'Copy code' : 'Copy'}
           />
         </div>
       </div>
 
       {/* Body */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-gray-900">
+      <div className="hairline overflow-hidden rounded-2xl border bg-white lift dark:bg-gray-900">
         {tab === 'preview' ? (
-          <div className="flex justify-center bg-gray-50 p-0 dark:bg-gray-950/50">
-            <iframe
-              // Remounting on theme change forces the frame to reload with the
-              // new search param; without a key React keeps the old document.
+          <div className="flex justify-center bg-gray-50/70 py-0 dark:bg-black/25">
+            <motion.iframe
               key={`${name}-${dark ? 'dark' : 'light'}`}
               src={`/preview/${name}?theme=${dark ? 'dark' : 'light'}`}
               title={`${title} preview`}
               loading="lazy"
-              className="border-0 bg-white transition-[width] duration-200 dark:bg-gray-900"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.25 }}
+              // Width is transitioned in CSS rather than by motion: the frame
+              // reflows its document as it resizes, and a spring on width makes
+              // the content inside jitter. An eased width reads as a window
+              // being dragged.
               style={{ width: WIDTHS[breakpoint], height }}
+              className="border-0 bg-white transition-[width] duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] dark:bg-gray-900"
             />
           </div>
         ) : (
-          <pre className="max-h-[640px] overflow-auto bg-gray-950 p-5 font-mono text-[13px]/6 text-gray-200">
-            <code>{source}</code>
-          </pre>
+          <div
+            className="shiki-wrap thin-scroll max-h-[660px] overflow-auto bg-gray-50/60 dark:bg-black/30"
+            // Shiki output is generated at build time from our own files.
+            dangerouslySetInnerHTML={{ __html: highlighted }}
+          />
         )}
       </div>
 
       {/* Install line */}
-      <div className="mt-2 flex items-center gap-2 overflow-x-auto">
-        <code className="font-mono text-[11px] text-gray-500 dark:text-gray-500">
+      <div className="mt-2.5 flex items-center gap-2">
+        <code className="truncate font-mono text-[11px] text-gray-400 dark:text-gray-600">
           {installCommand}
         </code>
       </div>
@@ -138,44 +201,51 @@ export function BlockViewer({
 }
 
 function CopyButton({ value, label }: { value: string; label: string }) {
-  const [copied, setCopied] = useState(false)
-  const [failed, setFailed] = useState(false)
+  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle')
 
   async function copy() {
     try {
       await navigator.clipboard.writeText(value)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1800)
+      setState('copied')
     } catch {
-      // clipboard is unavailable on insecure origins — say so rather than
-      // showing a success state that did not happen.
-      setFailed(true)
-      setTimeout(() => setFailed(false), 2400)
+      setState('failed')
     }
+    setTimeout(() => setState('idle'), 1900)
   }
 
   return (
     <button
       type="button"
       onClick={copy}
-      className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:text-gray-900 dark:bg-white/10 dark:text-gray-400 dark:hover:text-white"
+      className="group inline-flex items-center gap-1.5 rounded-[10px] bg-gray-500/[0.08] px-3 py-1.5 text-[13px] font-medium text-gray-600 transition-all duration-200 hover:bg-gray-500/[0.14] active:scale-[0.97] dark:bg-white/[0.06] dark:text-gray-300 dark:hover:bg-white/[0.12]"
     >
-      {copied ? (
-        <>
-          <Check className="size-3.5 text-green-600 dark:text-green-400" />
-          Copied
-        </>
-      ) : failed ? (
-        <>
-          <Clipboard className="size-3.5" />
-          Press &#8984;C
-        </>
-      ) : (
-        <>
-          <Clipboard className="size-3.5" />
-          {label}
-        </>
-      )}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={state}
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 4 }}
+          transition={{ duration: 0.14 }}
+          className="inline-flex items-center gap-1.5"
+        >
+          {state === 'copied' ? (
+            <>
+              <Check className="size-[15px] text-emerald-500" />
+              Copied
+            </>
+          ) : state === 'failed' ? (
+            <>
+              <Copy className="size-[15px]" />
+              Press &#8984;C
+            </>
+          ) : (
+            <>
+              <Copy className="size-[15px]" />
+              {label}
+            </>
+          )}
+        </motion.span>
+      </AnimatePresence>
     </button>
   )
 }

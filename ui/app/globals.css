@@ -4,58 +4,236 @@
 
 @layer base {
   :root {
-    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+    /* Springs. Short and slightly damped — Apple's motion reads as physical
+       without ever bouncing. Anything springier feels like a toy. */
+    --ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
+    --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   html {
     scroll-behavior: smooth;
+    /* Optical sizing and slightly tightened tracking are most of what makes
+       Inter pass for SF at display sizes. */
+    font-optical-sizing: auto;
   }
 
   body {
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Focus rings that match the accent instead of the browser default. */
+  :focus-visible {
+    outline: 2px solid rgb(99 102 241 / 0.6);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: rgb(99 102 241 / 0.22);
   }
 }
 
 @layer utilities {
-  /* The hairline grid the site chrome sits on — light and dark variants of the
-     same pattern, kept faint enough never to compete with a block preview. */
-  .site-grid {
-    background-image:
-      linear-gradient(to right, rgb(0 0 0 / 0.055) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(0 0 0 / 0.055) 1px, transparent 1px);
-    background-size: 56px 56px;
+  /* ── Glass ────────────────────────────────────────────────────────────────
+     Real translucency: a blur, a low-opacity fill, a hairline border, and an
+     inner top highlight. The highlight is the part people skip, and it is what
+     makes a surface read as glass rather than as a grey box. */
+  .glass {
+    background: rgb(255 255 255 / 0.72);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgb(0 0 0 / 0.06);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.85),
+      0 1px 2px rgb(15 23 42 / 0.04),
+      0 8px 24px -8px rgb(15 23 42 / 0.10);
   }
 
-  .dark .site-grid {
+  .dark .glass {
+    background: rgb(255 255 255 / 0.05);
+    border-color: rgb(255 255 255 / 0.09);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.07),
+      0 1px 2px rgb(0 0 0 / 0.3),
+      0 8px 24px -8px rgb(0 0 0 / 0.5);
+  }
+
+  /* Chrome bars — same idea, more transparent, no lift. */
+  .glass-bar {
+    background: rgb(255 255 255 / 0.78);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-bottom: 1px solid rgb(0 0 0 / 0.06);
+  }
+
+  .dark .glass-bar {
+    background: rgb(9 9 11 / 0.72);
+    border-bottom-color: rgb(255 255 255 / 0.08);
+  }
+
+  /* ── Depth ───────────────────────────────────────────────────────────────
+     Two-layer shadows: a tight contact shadow plus a wide soft one. A single
+     large blur looks like a drop shadow; two layers look like an object
+     resting on a surface. */
+  .lift {
+    box-shadow:
+      0 1px 2px rgb(15 23 42 / 0.05),
+      0 12px 32px -12px rgb(15 23 42 / 0.14);
+  }
+
+  .lift-lg {
+    box-shadow:
+      0 1px 3px rgb(15 23 42 / 0.06),
+      0 24px 64px -20px rgb(15 23 42 / 0.22);
+  }
+
+  .dark .lift,
+  .dark .lift-lg {
+    box-shadow:
+      0 1px 3px rgb(0 0 0 / 0.4),
+      0 24px 64px -20px rgb(0 0 0 / 0.7);
+  }
+
+  /* ── Hairlines ───────────────────────────────────────────────────────────
+     A true 1px rule at any DPR, which a border can't guarantee on retina. */
+  .hairline {
+    border-color: rgb(0 0 0 / 0.07);
+  }
+
+  .dark .hairline {
+    border-color: rgb(255 255 255 / 0.08);
+  }
+
+  /* ── Type ────────────────────────────────────────────────────────────────
+     Display sizes need negative tracking; body text does not. */
+  .display {
+    letter-spacing: -0.022em;
+    font-weight: 600;
+  }
+
+  .display-tight {
+    letter-spacing: -0.032em;
+    font-weight: 600;
+  }
+
+  .label-mono {
+    @apply font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-gray-500 dark:text-gray-500;
+  }
+
+  /* ── Texture ─────────────────────────────────────────────────────────────*/
+  .grid-fade {
+    background-image:
+      linear-gradient(to right, rgb(0 0 0 / 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(0 0 0 / 0.045) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 100% 70% at 50% 0%, black 20%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 100% 70% at 50% 0%, black 20%, transparent 75%);
+  }
+
+  .dark .grid-fade {
     background-image:
       linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
       linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
   }
 
-  /* Diagonal hatching used on the page gutters, as on the reference site. */
-  .site-hatch {
-    background-image: repeating-linear-gradient(
-      45deg,
-      rgb(0 0 0 / 0.04) 0,
-      rgb(0 0 0 / 0.04) 1px,
-      transparent 0,
-      transparent 50%
-    );
-    background-size: 10px 10px;
+  /* Specular sheen that sweeps a surface on hover. */
+  .sheen {
+    position: relative;
+    overflow: hidden;
   }
 
-  .dark .site-hatch {
-    background-image: repeating-linear-gradient(
-      45deg,
-      rgb(255 255 255 / 0.04) 0,
-      rgb(255 255 255 / 0.04) 1px,
-      transparent 0,
-      transparent 50%
+  .sheen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 35%,
+      rgb(255 255 255 / 0.28) 50%,
+      transparent 65%
     );
+    transform: translateX(-100%);
+    transition: transform 0.7s var(--ease-out-soft);
+    pointer-events: none;
   }
 
-  .label-mono {
-    @apply font-mono text-xs uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400;
+  .sheen:hover::after {
+    transform: translateX(100%);
+  }
+
+  /* ── Code ────────────────────────────────────────────────────────────────
+     With `defaultColor: false`, Shiki emits NO direct colour — both themes
+     become CSS variables (--shiki-light / --shiki-dark). That means BOTH cases
+     need a rule. Supplying only the dark one leaves light-mode code with
+     nothing to apply, and it renders monochrome, which is exactly what
+     happened before this comment existed. */
+  .shiki-wrap pre {
+    @apply overflow-x-auto p-5 text-[12.5px]/[1.7];
+    background-color: transparent !important;
+  }
+
+  .shiki-wrap code {
+    @apply font-mono;
+  }
+
+  .shiki-wrap .line {
+    display: inline-block;
+    width: 100%;
+  }
+
+  .shiki-wrap .shiki,
+  .shiki-wrap .shiki span {
+    color: var(--shiki-light);
+    font-style: var(--shiki-light-font-style);
+    font-weight: var(--shiki-light-font-weight);
+    text-decoration: var(--shiki-light-text-decoration);
+  }
+
+  .dark .shiki-wrap .shiki,
+  .dark .shiki-wrap .shiki span {
+    color: var(--shiki-dark);
+    font-style: var(--shiki-dark-font-style);
+    font-weight: var(--shiki-dark-font-weight);
+    text-decoration: var(--shiki-dark-text-decoration);
+  }
+
+  /* Scrollbars inside code and command surfaces: present but unobtrusive.
+     A default chrome scrollbar across a glass panel is the single loudest
+     thing on the page. */
+  .thin-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(100 116 139 / 0.35) transparent;
+  }
+
+  .thin-scroll::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+
+  .thin-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .thin-scroll::-webkit-scrollbar-thumb {
+    background: rgb(100 116 139 / 0.3);
+    border-radius: 999px;
+  }
+
+  .thin-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgb(100 116 139 / 0.5);
+  }
+
+  /* Fully hidden, for a single-line command that fades instead of scrolling. */
+  .no-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .no-scroll::-webkit-scrollbar {
+    display: none;
   }
 }

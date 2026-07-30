@@ -2,7 +2,7 @@
   "name": "grit-ui",
   "version": "0.1.0",
   "private": true,
-  "description": "Grit UI \u00e2\u20ac\u201d a shadcn-compatible registry of 100 React components",
+  "description": "Grit UI â€” a shadcn-compatible registry of 100 React components",
   "scripts": {
     "gen": "node scripts/generate-block-map.mjs",
     "dev": "pnpm gen && next dev -p 3100",
@@ -12,10 +12,12 @@
   },
   "dependencies": {
     "lucide-react": "^0.544.0",
+    "motion": "^12.43.0",
     "next": "16.1.6",
     "next-themes": "^0.4.6",
     "react": "^19",
-    "react-dom": "^19"
+    "react-dom": "^19",
+    "shiki": "^4.3.1"
   },
   "devDependencies": {
     "@types/node": "^22",
