@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
+import { Analytics } from 'zenith-analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
+import { ZENITH, analyticsEnabled } from '@/lib/analytics'
 import '../globals.css'
 
 export const metadata: Metadata = {
@@ -40,6 +42,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           {children}
         </ThemeProvider>
+        {/* Rendered only when both halves of the config are present. No
+            `required` here: unlike the docs, this site is useful unmeasured, so
+            a missing optional key must not fail the deploy. Note this lives in
+            the (site) layout only — putting it in the root would load the
+            tracker inside every preview iframe and double-count pageviews. */}
+        {analyticsEnabled && <Analytics config={ZENITH} />}
       </body>
     </html>
   )
