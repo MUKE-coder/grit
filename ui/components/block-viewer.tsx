@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { InstallCommand } from './install-command'
 import { trackBlockCopy } from '@/lib/track'
+import { InstallCount } from './install-count'
 import {
   Check,
   Code2,
@@ -97,6 +98,7 @@ export function BlockViewer({
   category,
   subcategory,
   blockSlug,
+  installs,
   height = 660,
 }: {
   name: string
@@ -108,6 +110,7 @@ export function BlockViewer({
   category: string
   subcategory: string
   blockSlug: string
+  installs?: number
   height?: number
 }) {
   const [tab, setTab] = useState<Tab>('preview')
@@ -118,7 +121,10 @@ export function BlockViewer({
     <section className="scroll-mt-24" id={name}>
       {/* Toolbar */}
       <div className="mb-3.5 flex flex-wrap items-center gap-3">
-        <h3 className="display text-[15px] text-gray-900 dark:text-white">{title}</h3>
+        <div className="flex items-center gap-2.5">
+          <h3 className="display text-[15px] text-gray-900 dark:text-white">{title}</h3>
+          <InstallCount count={installs} />
+        </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <Segmented
