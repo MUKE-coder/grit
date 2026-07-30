@@ -6,10 +6,13 @@ import type { ComponentType } from 'react'
 
 /** Keyed by the flat registry name: <category>-<subcategory>-<slug>. */
 export const BLOCK_MAP: Record<string, ComponentType> = {
+  "marketing-hero-sections-centered-editorial": dynamic(() => import('@/registry/marketing/hero-sections/centered-editorial').then((m) => ({ default: m.default }))),
+  "marketing-hero-sections-dark-with-dashboard": dynamic(() => import('@/registry/marketing/hero-sections/dark-with-dashboard').then((m) => ({ default: m.default }))),
+  "marketing-hero-sections-dark-with-email-capture": dynamic(() => import('@/registry/marketing/hero-sections/dark-with-email-capture').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-simple-centered": dynamic(() => import('@/registry/marketing/hero-sections/simple-centered').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-split-with-code": dynamic(() => import('@/registry/marketing/hero-sections/split-with-code').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-with-app-screenshot": dynamic(() => import('@/registry/marketing/hero-sections/with-app-screenshot').then((m) => ({ default: m.default }))),
 }
 
-/** 3 blocks at generation time. */
-export const BLOCK_COUNT: number = 3
+/** 6 blocks at generation time. */
+export const BLOCK_COUNT: number = 6

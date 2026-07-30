@@ -2,18 +2,15 @@ import Link from 'next/link'
 import { Github } from 'lucide-react'
 import { CATALOG } from '@/registry/catalog'
 import { ThemeToggle } from './theme-toggle'
+import { GritUILogo } from './grit-ui-logo'
 
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/85 backdrop-blur dark:border-white/10 dark:bg-gray-950/85">
       <div className="mx-auto flex h-14 max-w-[100rem] items-center gap-6 px-6">
-        <Link href="/" className="flex shrink-0 items-center gap-2">
-          <span className="flex size-6 items-center justify-center rounded-md bg-gray-900 text-[11px] font-bold text-white dark:bg-white dark:text-gray-900">
-            G
-          </span>
-          <span className="text-sm font-semibold tracking-tight">
-            grit<span className="text-indigo-600 dark:text-indigo-400">UI</span>
-          </span>
+        <Link href="/" className="shrink-0">
+          <GritUILogo size={24} />
+          <span className="sr-only">Grit UI home</span>
         </Link>
 
         <nav className="hidden items-center gap-5 md:flex">

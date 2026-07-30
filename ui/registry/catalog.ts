@@ -77,6 +77,27 @@ export const CATALOG: Category[] = [
                 description: 'Centred copy above a browser frame showing the product.',
                 dependencies: ['lucide-react'],
               },
+              {
+                slug: 'centered-editorial',
+                name: 'Centered editorial',
+                description:
+                  'Warm background, serif italic display headline, keyboard-hinted buttons and a three-column pillar row.',
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'dark-with-email-capture',
+                name: 'Dark with email capture',
+                description:
+                  'Dark hero with a gradient headline, inline email capture and a logo cloud.',
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'dark-with-dashboard',
+                name: 'Dark with dashboard',
+                description:
+                  'Dark centred hero above a full product dashboard mock with sidebar and activity feed.',
+                dependencies: ['lucide-react'],
+              },
             ],
           },
           { slug: 'feature-sections', name: 'Feature Sections', description: 'Show what the product does, in a grid or a stack.', blocks: [] },
