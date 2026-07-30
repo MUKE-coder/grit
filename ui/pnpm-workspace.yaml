@@ -1,2 +1,14 @@
+# next pulls in sharp for image optimisation, and sharp runs an install script
+# to fetch its native binaries. pnpm 10+ refuses to run any dependency's build
+# script until it is approved, and treats an unapproved one as a hard error — so
+# the Docker build failed *after* the install had otherwise succeeded.
+#
+# pnpm writes this file with the value "set this to true or false" and waits for
+# a decision. Leaving that placeholder in place is the same as saying no, which
+# is what shipped and what broke the deploy.
+#
+# pnpm 9 reads the equivalent setting from package.json
+# (pnpm.onlyBuiltDependencies). Both are set, so the install behaves the same
+# whichever version runs it.
 allowBuilds:
-  sharp: set this to true or false
+  sharp: true

@@ -16,6 +16,10 @@
     "react-dom": "^19",
     "lucide-react": "^0.544.0"
   },
+  "pnpm": {
+    "//": "next pulls in sharp for image optimisation, and sharp needs its install script to fetch native binaries. pnpm 10+ treats an unapproved build script as a hard error rather than a warning, which fails the Docker build after the install has otherwise succeeded. Approving it here is the non-interactive equivalent of `pnpm approve-builds`.",
+    "onlyBuiltDependencies": ["sharp"]
+  },
   "devDependencies": {
     "@types/node": "^22",
     "@types/react": "^19",
