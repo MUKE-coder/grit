@@ -12,6 +12,7 @@ import {
 } from '@/registry/catalog'
 import { baseUrl, blocksIn, readBlockSource } from '@/lib/blocks'
 import { highlight } from '@/lib/highlight'
+import { getInstallCounts } from '@/lib/install-counts'
 
 export async function generateMetadata({
   params,
@@ -41,6 +42,9 @@ export default async function SubcategoryPage({
   // Highlighted here, in the server component, so the browser gets finished
   // HTML and never loads a highlighter. Concurrent because Shiki's first call
   // loads the grammar and the rest are cheap.
+  // One read for the whole page, cached — not one per block.
+  const counts = await getInstallCounts()
+
   const prepared = await Promise.all(
     blocks.map(async (block) => {
       const source = readBlockSource(categorySlug, subSlug, block.slug)
@@ -131,6 +135,7 @@ export default async function SubcategoryPage({
                     category={category.slug}
                     subcategory={subcategory.slug}
                     blockSlug={block.slug}
+                    installs={counts[block.slug] ?? counts[name]}
                   />
                 </Reveal>
               ))}
