@@ -8,12 +8,12 @@ import { findByRegistryName, servableBlocks } from '@/lib/blocks'
  * An iframe rather than an inline render because blocks are full-page sections
  * — min-h-screen, absolutely positioned backdrops, their own stacking contexts
  * — which fight any layout wrapped around them. A frame gives each block its
- * own viewport, so resizing it is a genuine responsive test rather than a
- * simulated one.
+ * own viewport, so resizing it is a genuine responsive test.
  *
- * The theme comes in as a search param instead of from next-themes: the frame
- * has to be switchable independently of the surrounding page, so you can read
- * the docs in light while checking a block in dark.
+ * The theme is set here, server-side, from the search param. This route lives in
+ * the (preview) group precisely so no ThemeProvider runs in the frame: nothing
+ * can override the class after it is set, which is what previously made a
+ * light-mode request render dark.
  */
 export default async function PreviewPage({
   params,
@@ -32,7 +32,10 @@ export default async function PreviewPage({
   const isDark = theme === 'dark'
 
   return (
-    <div className={isDark ? 'dark' : undefined}>
+    <div
+      className={isDark ? 'dark' : undefined}
+      style={{ colorScheme: isDark ? 'dark' : 'light' }}
+    >
       <div className="min-h-screen bg-white dark:bg-gray-900">
         <Block />
       </div>
