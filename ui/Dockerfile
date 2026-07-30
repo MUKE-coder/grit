@@ -10,8 +10,13 @@
 # ── deps ─────────────────────────────────────────────────────────────────────
 FROM node:22-alpine AS deps
 WORKDIR /app
-RUN corepack enable
-COPY package.json pnpm-lock.yaml* ./
+RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
+# pnpm-workspace.yaml has to be here, not just in the build context: pnpm 10+
+# reads its allowBuilds approvals from that file, and without it sharp's install
+# script is treated as unapproved — which is a hard error, not a warning. The
+# install otherwise succeeds first, so the failure reads as unrelated to a
+# missing file.
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
 # --no-frozen-lockfile so a first deploy works before a lockfile is committed;
 # once ui/pnpm-lock.yaml exists this resolves from it.
 RUN pnpm install --no-frozen-lockfile
@@ -19,7 +24,7 @@ RUN pnpm install --no-frozen-lockfile
 # ── build ────────────────────────────────────────────────────────────────────
 FROM node:22-alpine AS builder
 WORKDIR /app
-RUN corepack enable
+RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
