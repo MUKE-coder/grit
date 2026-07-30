@@ -264,11 +264,11 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "page.tsx"):                  adminSystemHubPageV2(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "notifications", "page.tsx"): adminNotificationsPage(),
 		// v3.31.5: dedicated System Health / Security / Performance pages.
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "health", "page.tsx"):   adminSystemHealthPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "security", "page.tsx"): adminSecurityPageV2(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "health", "page.tsx"):         adminSystemHealthPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "security", "page.tsx"):       adminSecurityPageV2(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "access-reviews", "page.tsx"): adminAccessReviewPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "gdpr", "page.tsx"): adminGDPRPage(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "system", "sso", "page.tsx"): adminSSOPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "gdpr", "page.tsx"):           adminGDPRPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "sso", "page.tsx"):            adminSSOPage(),
 		// Roles & permissions. The SAME component is used by the Vite admin — a
 		// permission editor that disagreed between the two would be a security
 		// bug, not a cosmetic one.
@@ -340,7 +340,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "forms", "fields", "toggle-field.tsx"):                    adminToggleField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "checkbox-field.tsx"):                  adminCheckboxField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "radio-field.tsx"):                     adminRadioField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "checkbox-group-field.tsx"):           adminCheckboxGroupField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "checkbox-group-field.tsx"):            adminCheckboxGroupField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "image-field.tsx"):                     adminImageField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "images-field.tsx"):                    adminImagesField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "video-field.tsx"):                     adminVideoField(),
@@ -349,6 +349,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "forms", "fields", "files-field.tsx"):                     adminFilesField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "relationship-select-field.tsx"):       adminRelationshipSelectField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "multi-relationship-select-field.tsx"): adminMultiRelationshipSelectField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "inline-create-dialog.tsx"):            adminInlineCreateDialog(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "line-items-field.tsx"):                adminLineItemsField(),
 		filepath.Join(adminRoot, "components", "forms", "fields", "rich-text-field.tsx"):                 adminRichTextField(),
 
@@ -365,7 +366,7 @@ func writeAdminFiles(root string, opts Options) error {
 		// Resource components
 		filepath.Join(adminRoot, "components", "resource", "resource-page.tsx"):        adminResourcePage(),
 		filepath.Join(adminRoot, "components", "resource", "resource-detail-page.tsx"): adminResourceDetailPage(),
-		filepath.Join(adminRoot, "components", "resource", "view-modal.tsx"):    adminViewModal(),
+		filepath.Join(adminRoot, "components", "resource", "view-modal.tsx"):           adminViewModal(),
 
 		// Resource definitions
 		filepath.Join(adminRoot, "resources", "index.ts"): adminResourceRegistry(),
@@ -387,9 +388,9 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "app", "(dashboard)", "settings", "dashboard", "page.tsx"): adminDashboardSettingsPageTS(),
 
 		// Dashboard pages — (dashboard) route group (style variant)
-		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):          adminDashboardPageForStyle(opts.Style),
-		filepath.Join(adminRoot, "app", "(dashboard)", "profile", "page.tsx"):            adminCaptivatingProfile(),
-		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"):        adminUsersPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "dashboard", "page.tsx"):                  adminDashboardPageForStyle(opts.Style),
+		filepath.Join(adminRoot, "app", "(dashboard)", "profile", "page.tsx"):                    adminCaptivatingProfile(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "page.tsx"):         adminUsersPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", "users", "[id]", "page.tsx"): adminResourceDetailRoute("users", "users", "Users"),
 		// v3.31.7: blog list uses a two-step create flow (sheet -> redirect
 		// to detail page with WordEditor) instead of the stock resource page.

@@ -160,6 +160,14 @@ export interface FieldDefinition {
   displayField?: string;
   relationshipKey?: string;
 
+  // v3.113.0 — relationship-select / multi-relationship-select only. The
+  // dropdown offers a "New <Related>" row that opens the related resource's own
+  // form in a nested dialog and selects the record it creates. Requires the
+  // related model to be a registered resource (the row is looked up by
+  // relatedEndpoint) and the caller to hold <slug>.create. Set false to hide
+  // the row on a field where creating on the fly is not appropriate.
+  allowCreate?: boolean;
+
   // select field: load options from an endpoint at render time, on top of any
   // static options. optionsLabelKey/optionsValueKey default to "name".
   optionsUrl?: string;
@@ -252,6 +260,11 @@ export interface FormDefinition {
   groups?: GroupDefinition[];
   fieldsPerStep?: number;
   stepVariant?: "horizontal" | "vertical";
+  // v3.113.0 — on EDIT, give every step its own Update button that PATCHes only
+  // that step's fields. Disabled until the step is actually changed, and back to
+  // disabled once it saves. Defaults to on for stepped forms; set false to keep
+  // the old behaviour of one submit at the end that rewrites every field.
+  perStepSave?: boolean;
   // Drawer width for formView: "sheet". "half" (default) opens at 50% of the
   // viewport; "wide" opens at 80%. Either way the maximize button toggles to 80%.
   sheetWidth?: "half" | "wide";

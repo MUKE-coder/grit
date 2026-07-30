@@ -1,5 +1,7 @@
 package scaffold
 
+import "strings"
+
 // adminFormBuilder returns the dynamic form builder component.
 func adminFormBuilder() string {
 	return `"use client";
@@ -669,11 +671,43 @@ export function FormPage({ resource }: FormPageProps) {
 func adminFormStepper() string {
 	return `"use client";
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useMemo, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import type { FieldDefinition, FormDefinition, StepDefinition } from "@/lib/resource";
 import { FieldRenderer, buildDefaults } from "./form-builder";
 import { Check, ChevronLeft, ChevronRight, Loader2 } from "@/lib/icons";
+
+/**
+ * Has this value changed from what is stored?
+ *
+ * Deliberately loose, because "unchanged" has several spellings by the time a
+ * value has been through a form control:
+ *
+ *   - A column that was never set arrives as null, undefined or "" depending on
+ *     the field type. Treating those as different from each other lights up the
+ *     Update button on a step nobody touched.
+ *   - A number input hands back the string "5" for a stored number 5.
+ *   - Relationship arrays and line-items are objects, so identity comparison
+ *     always reports a change.
+ *
+ * Getting this wrong in the permissive direction means a permanently-enabled
+ * Update button, which trains people to ignore it.
+ */
+function sameValue(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  const emptyA = a === "" || a === null || a === undefined;
+  const emptyB = b === "" || b === null || b === undefined;
+  if (emptyA && emptyB) return true;
+  if (emptyA !== emptyB) return false;
+  if (typeof a === "object" || typeof b === "object") {
+    try {
+      return JSON.stringify(a) === JSON.stringify(b);
+    } catch {
+      return false;
+    }
+  }
+  return String(a) === String(b);
+}
 
 interface ComputedStep {
   title: string;
@@ -709,6 +743,20 @@ interface FormStepperProps {
   onCancel: () => void;
   isSubmitting?: boolean;
   submitLabel?: string;
+  /**
+   * EDIT MODE ONLY. Persist just the fields belonging to one step.
+   *
+   * When supplied, every step gets its own Update button and the whole-form
+   * submit disappears — the point being that editing the address on step 3 must
+   * not rewrite the twenty fields on steps 1 and 2 with whatever the form
+   * happens to be holding.
+   *
+   * Must reject on failure. The stepper only clears the step's dirty state when
+   * this resolves, so a silent catch here would show a saved step that was not.
+   */
+  onStepSave?: (values: Record<string, unknown>) => Promise<unknown>;
+  /** Label for the last step's close button when onStepSave is in play. */
+  doneLabel?: string;
 }
 
 export function FormStepper({
@@ -718,6 +766,8 @@ export function FormStepper({
   onCancel,
   isSubmitting,
   submitLabel = "Save",
+  onStepSave,
+  doneLabel = "Done",
 }: FormStepperProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const steps = computeSteps(formDef);
@@ -725,15 +775,61 @@ export function FormStepper({
   const isTwoColumn = formDef.layout === "two-column";
   const isLastStep = currentStep === steps.length - 1;
 
+  const initialValues = useMemo(
+    () => buildDefaults(formDef.fields, defaultValues),
+    // defaultValues is a fresh object on every render of the parent; keying off
+    // its identity would rebuild the baseline constantly and every step would
+    // read as clean forever.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [formDef.fields, JSON.stringify(defaultValues ?? {})]
+  );
+
   const {
     control,
     handleSubmit,
     trigger,
     getValues,
     formState: { errors },
-  } = useForm({
-    defaultValues: buildDefaults(formDef.fields, defaultValues),
-  });
+  } = useForm({ defaultValues: initialValues });
+
+  // What is currently persisted, per field. Advanced only when a step save
+  // actually succeeds, so a failed request leaves the step dirty and the button
+  // enabled to retry.
+  const [baseline, setBaseline] = useState<Record<string, unknown>>(initialValues);
+  const [savingStep, setSavingStep] = useState<number | null>(null);
+
+  const stepKeys = useMemo(
+    () => (steps[currentStep]?.fields ?? []).map((f) => f.key),
+    [steps, currentStep]
+  );
+
+  // Subscribing to just this step's fields, rather than watch()-ing everything,
+  // so typing in step 1 does not re-render step 4.
+  const watched = useWatch({ control, name: stepKeys as string[] });
+  const stepDirty =
+    !!onStepSave &&
+    stepKeys.some((key, i) => !sameValue((watched as unknown[])?.[i], baseline[key]));
+
+  const handleStepSave = async () => {
+    if (!onStepSave) return;
+    const valid = await trigger(stepKeys);
+    if (!valid) return;
+
+    const all = getValues() as Record<string, unknown>;
+    const patch: Record<string, unknown> = {};
+    for (const key of stepKeys) patch[key] = all[key];
+
+    setSavingStep(currentStep);
+    try {
+      await onStepSave(patch);
+      setBaseline((prev) => ({ ...prev, ...patch }));
+    } catch {
+      // The mutation already surfaced the error. Leave the baseline alone so
+      // the step stays dirty and the button stays live for another attempt.
+    } finally {
+      setSavingStep(null);
+    }
+  };
 
   const handleNext = async () => {
     const fieldKeys = steps[currentStep].fields.map((f) => f.key);
@@ -789,6 +885,9 @@ export function FormStepper({
           </div>
           <p className="text-xs text-text-muted mt-1.5">
             Step {currentStep + 1} of {steps.length}
+            {stepDirty && (
+              <span className="text-warning ml-2">Unsaved changes on this step</span>
+            )}
           </p>
         </div>
 
@@ -814,28 +913,64 @@ export function FormStepper({
               </button>
             )}
           </div>
-          <div>
-            {isLastStep ? (
+          {/* Editing an existing record saves step by step; creating a new one
+              still submits once at the end, because a half-created record has
+              nothing to PATCH against. */}
+          {onStepSave ? (
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={handleFinalSubmit}
-                disabled={isSubmitting}
-                className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
+                onClick={handleStepSave}
+                disabled={!stepDirty || savingStep !== null}
+                title={stepDirty ? undefined : "No changes on this step"}
+                className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                {submitLabel}
+                {savingStep === currentStep && <Loader2 className="h-4 w-4 animate-spin" />}
+                Update
               </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleNext}
-                className="flex items-center gap-1.5 rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+              {isLastStep ? (
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="rounded-lg border border-border px-5 py-2 text-sm font-medium text-text-secondary hover:bg-bg-hover transition-colors"
+                >
+                  {doneLabel}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="flex items-center gap-1.5 rounded-lg border border-border px-5 py-2 text-sm font-medium text-foreground hover:bg-bg-hover transition-colors"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          ) : (
+            <div>
+              {isLastStep ? (
+                <button
+                  type="button"
+                  onClick={handleFinalSubmit}
+                  disabled={isSubmitting}
+                  className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
+                >
+                  {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {submitLabel}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="flex items-center gap-1.5 rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1004,7 +1139,7 @@ func adminFormModalSteps() string {
 
 import type { ResourceDefinition } from "@/lib/resource";
 import { FormStepper } from "./form-stepper";
-import { useCreateResource, useUpdateResource } from "@/hooks/use-resource";
+import { useCreateResource, useUpdateResource, usePatchResource } from "@/hooks/use-resource";
 import { X } from "@/lib/icons";
 
 interface FormModalStepsProps {
@@ -1017,7 +1152,11 @@ export function FormModalSteps({ resource, item, onClose }: FormModalStepsProps)
   const isEdit = item !== null;
   const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint, resource.label?.singular ?? resource.name);
   const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint, resource.label?.singular ?? resource.name);
+  const { mutateAsync: patch } = usePatchResource(resource.endpoint, resource.label?.singular ?? resource.name);
   const isVertical = resource.form.stepVariant === "vertical";
+
+  // Per-step saving only makes sense against a record that already exists.
+  const perStepSave = isEdit && resource.form.perStepSave !== false;
 
   const handleSubmit = (data: Record<string, unknown>) => {
     if (isEdit) {
@@ -1054,6 +1193,12 @@ export function FormModalSteps({ resource, item, onClose }: FormModalStepsProps)
             onCancel={onClose}
             isSubmitting={isCreating || isUpdating}
             submitLabel={isEdit ? "Update" : "Create"}
+            onStepSave={
+              perStepSave && item
+                ? (values) => patch({ id: String(item.id), body: values })
+                : undefined
+            }
+            doneLabel="Close"
           />
         </div>
       </div>
@@ -1221,7 +1366,7 @@ func adminFormPageSteps() string {
 import { useRouter, useSearchParams } from "next/navigation";
 import type { ResourceDefinition } from "@/lib/resource";
 import { FormStepper } from "@/components/forms/form-stepper";
-import { useCreateResource, useUpdateResource, useResourceItem } from "@/hooks/use-resource";
+import { useCreateResource, useUpdateResource, usePatchResource, useResourceItem } from "@/hooks/use-resource";
 import { ChevronLeft } from "@/lib/icons";
 
 interface FormPageStepsProps {
@@ -1242,6 +1387,10 @@ export function FormPageSteps({ resource }: FormPageStepsProps) {
 
   const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint, resource.label?.singular ?? resource.name);
   const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint, resource.label?.singular ?? resource.name);
+  const { mutateAsync: patch } = usePatchResource(resource.endpoint, resource.label?.singular ?? resource.name);
+
+  // Per-step saving only makes sense against a record that already exists.
+  const perStepSave = isEdit && !!editId && resource.form.perStepSave !== false;
 
   const singularName = resource.label?.singular ?? resource.name;
   const pluralName = resource.label?.plural ?? resource.slug;
@@ -1310,6 +1459,12 @@ export function FormPageSteps({ resource }: FormPageStepsProps) {
           onCancel={() => router.back()}
           isSubmitting={isCreating || isUpdating}
           submitLabel={isEdit ? "Update" : "Create"}
+          onStepSave={
+            perStepSave && editId
+              ? (values) => patch({ id: editId, body: values })
+              : undefined
+          }
+          doneLabel="Back to list"
         />
       </div>
     </div>
@@ -2619,13 +2774,23 @@ export function FilesField({ field, value, onChange, error }: FilesFieldProps) {
 }
 
 func adminRelationshipSelectField() string {
-	return `"use client";
+	src := `"use client";
 
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { getResourceByEndpoint } from "@/resources";
+import { usePermissions } from "@/hooks/use-permissions";
 import type { FieldDefinition } from "@/lib/resource";
+import { Plus } from "@/lib/icons";
+
+// Lazy on purpose — see the note on adminInlineCreateDialog. A static import
+// here closes a cycle back through form-builder and the nested form silently
+// renders as nothing.
+const InlineCreateDialog = lazy(() =>
+  import("./inline-create-dialog").then((m) => ({ default: m.InlineCreateDialog }))
+);
 
 interface RelationshipSelectFieldProps {
   field: FieldDefinition;
@@ -2637,6 +2802,11 @@ interface RelationshipSelectFieldProps {
 export function RelationshipSelectField({ field, value, onChange, error }: RelationshipSelectFieldProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [creating, setCreating] = useState(false);
+  // The record just created inline. Held locally so its label shows the instant
+  // it is selected: the options query is refetching at that moment, and without
+  // this the field displays a raw UUID until the network settles.
+  const [justCreated, setJustCreated] = useState<Record<string, unknown> | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
@@ -2680,21 +2850,56 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
 
   const displayField = field.displayField || "name";
 
+  // Options plus anything created inline that the refetch has not returned yet.
+  const allOptions = useMemo(() => {
+    const list = options as Record<string, unknown>[];
+    if (!justCreated) return list;
+    const id = String(justCreated.id ?? "");
+    if (!id || list.some((o) => String(o.id) === id)) return list;
+    return [justCreated, ...list];
+  }, [options, justCreated]);
+
+  // The related resource, looked up by the endpoint the field already points
+  // at. Undefined when the related model has no registered admin resource — in
+  // which case there is no form to open and the button must not appear.
+  const relatedResource = useMemo(
+    () => (field.relatedEndpoint ? getResourceByEndpoint(field.relatedEndpoint) : undefined),
+    [field.relatedEndpoint]
+  );
+
+  // can() is false while permissions load, which is the right default here:
+  // a button that appears and then vanishes reads as a bug, and this one opens
+  // a form the API would reject anyway.
+  const { can } = usePermissions();
+  const canCreate =
+    field.allowCreate !== false && !!relatedResource && can(relatedResource.slug + ".create");
+
+  // Carry the typed search into the new record, but only when the related form
+  // actually has that field. Guessing at the first field instead would drop the
+  // text into whatever happens to be declared first.
+  const prefill = useMemo(() => {
+    const typed = search.trim();
+    if (!typed || !relatedResource) return undefined;
+    return relatedResource.form.fields.some((f) => f.key === displayField)
+      ? { [displayField]: typed }
+      : undefined;
+  }, [search, relatedResource, displayField]);
+
   const filtered = useMemo(() =>
-    (options as Record<string, unknown>[]).filter((item) => {
+    allOptions.filter((item) => {
       if (!search) return true;
       const label = String(item[displayField] || item.name || item.title || item.id || "");
       return label.toLowerCase().includes(search.toLowerCase());
     }),
-    [options, search, displayField]
+    [allOptions, search, displayField]
   );
 
   const selectedLabel = useMemo(() => {
     if (!value) return "";
-    const found = (options as Record<string, unknown>[]).find((item) => item.id === value);
+    const found = allOptions.find((item) => String(item.id) === String(value));
     if (!found) return String(value);
     return String(found[displayField] || found.name || found.title || found.id || "");
-  }, [value, options, displayField]);
+  }, [value, allOptions, displayField]);
 
   const dropdown = open ? createPortal(
     <div
@@ -2747,6 +2952,26 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
           </>
         )}
       </div>
+
+      {/* Deliberately OUTSIDE the empty/loading branch above. "No results
+          found" is exactly the moment someone needs to create the record, and
+          nesting this inside the populated branch would hide it precisely
+          then. */}
+      {canCreate && relatedResource && (
+        <div className="border-t border-border p-1">
+          <button
+            type="button"
+            onClick={() => { setOpen(false); setCreating(true); }}
+            className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm font-medium text-accent hover:bg-bg-hover"
+          >
+            <Plus className="h-4 w-4 shrink-0" />
+            <span className="truncate">
+              New {relatedResource.label?.singular ?? field.label}
+              {search.trim() ? ' “' + search.trim() + '”' : ""}
+            </span>
+          </button>
+        </div>
+      )}
     </div>,
     document.body
   ) : null;
@@ -2770,20 +2995,48 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
       </button>
       {dropdown}
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+
+      {creating && relatedResource && (
+        <Suspense fallback={null}>
+          <InlineCreateDialog
+            resource={relatedResource}
+            defaults={prefill}
+            onCreated={(record) => {
+              const id = record?.id;
+              if (id !== undefined && id !== null) {
+                setJustCreated(record);
+                onChange(String(id));
+              }
+              setCreating(false);
+              setSearch("");
+            }}
+            onClose={() => setCreating(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
 `
+	return src
 }
 
 func adminMultiRelationshipSelectField() string {
-	return `"use client";
+	src := `"use client";
 
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { getResourceByEndpoint } from "@/resources";
+import { usePermissions } from "@/hooks/use-permissions";
 import type { FieldDefinition } from "@/lib/resource";
+import { Plus } from "@/lib/icons";
+
+// Lazy for the same reason as the single select — see adminInlineCreateDialog.
+const InlineCreateDialog = lazy(() =>
+  import("./inline-create-dialog").then((m) => ({ default: m.InlineCreateDialog }))
+);
 
 interface MultiRelationshipSelectFieldProps {
   field: FieldDefinition;
@@ -2795,6 +3048,10 @@ interface MultiRelationshipSelectFieldProps {
 export function MultiRelationshipSelectField({ field, value = [], onChange, error }: MultiRelationshipSelectFieldProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [creating, setCreating] = useState(false);
+  // Records created inline, kept until the refetch returns them — otherwise a
+  // freshly added tag shows as a raw UUID chip for as long as the request takes.
+  const [justCreated, setJustCreated] = useState<Record<string, unknown>[]>([]);
   const triggerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
@@ -2838,22 +3095,55 @@ export function MultiRelationshipSelectField({ field, value = [], onChange, erro
 
   const displayField = field.displayField || "name";
 
+  // Options plus anything created inline that the refetch has not returned yet.
+  const allOptions = useMemo(() => {
+    const list = options as Record<string, unknown>[];
+    if (justCreated.length === 0) return list;
+    const known = new Set(list.map((o) => String(o.id)));
+    const extra = justCreated.filter((r) => !known.has(String(r.id ?? "")));
+    return extra.length > 0 ? [...extra, ...list] : list;
+  }, [options, justCreated]);
+
+  // The related resource, looked up by the endpoint the field already points
+  // at. Undefined when the related model has no registered admin resource — in
+  // which case there is no form to open and the button must not appear.
+  const relatedResource = useMemo(
+    () => (field.relatedEndpoint ? getResourceByEndpoint(field.relatedEndpoint) : undefined),
+    [field.relatedEndpoint]
+  );
+
+  // can() is false while permissions load, which is the right default here: a
+  // button that appears and then vanishes reads as a bug.
+  const { can } = usePermissions();
+  const canCreate =
+    field.allowCreate !== false && !!relatedResource && can(relatedResource.slug + ".create");
+
+  // Carry the typed search into the new record, but only when the related form
+  // actually declares that field.
+  const prefill = useMemo(() => {
+    const typed = search.trim();
+    if (!typed || !relatedResource) return undefined;
+    return relatedResource.form.fields.some((f) => f.key === displayField)
+      ? { [displayField]: typed }
+      : undefined;
+  }, [search, relatedResource, displayField]);
+
   const filtered = useMemo(() =>
-    (options as Record<string, unknown>[]).filter((item) => {
+    allOptions.filter((item) => {
       if (!search) return true;
       const label = String(item[displayField] || item.name || item.title || item.id || "");
       return label.toLowerCase().includes(search.toLowerCase());
     }),
-    [options, search, displayField]
+    [allOptions, search, displayField]
   );
 
   const selectedLabels = useMemo(() => {
     return value.map((id) => {
-      const found = (options as Record<string, unknown>[]).find((item) => item.id === id);
+      const found = allOptions.find((item) => String(item.id) === String(id));
       if (!found) return { id, label: String(id) };
       return { id, label: String(found[displayField] || found.name || found.title || found.id || "") };
     });
-  }, [value, options, displayField]);
+  }, [value, allOptions, displayField]);
 
   const toggleItem = (id: string) => {
     if (value.includes(id)) {
@@ -2927,6 +3217,24 @@ export function MultiRelationshipSelectField({ field, value = [], onChange, erro
           </>
         )}
       </div>
+
+      {/* Outside the empty branch on purpose: "No results found" is exactly
+          when someone needs to create the record. */}
+      {canCreate && relatedResource && (
+        <div className="border-t border-border p-1">
+          <button
+            type="button"
+            onClick={() => { setOpen(false); setCreating(true); }}
+            className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm font-medium text-accent hover:bg-bg-hover"
+          >
+            <Plus className="h-4 w-4 shrink-0" />
+            <span className="truncate">
+              New {relatedResource.label?.singular ?? field.label}
+              {search.trim() ? ' “' + search.trim() + '”' : ""}
+            </span>
+          </button>
+        </div>
+      )}
     </div>,
     document.body
   ) : null;
@@ -2966,10 +3274,34 @@ export function MultiRelationshipSelectField({ field, value = [], onChange, erro
       </div>
       {dropdown}
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+
+      {creating && relatedResource && (
+        <Suspense fallback={null}>
+          <InlineCreateDialog
+            resource={relatedResource}
+            defaults={prefill}
+            onCreated={(record) => {
+              const id = record?.id;
+              if (id !== undefined && id !== null) {
+                setJustCreated((prev) => [record, ...prev]);
+                // Append rather than replace: this select holds a list, and the
+                // whole point of creating inline is to add to what is already
+                // picked.
+                const next = String(id);
+                if (!value.includes(next)) onChange([...value, next]);
+              }
+              setCreating(false);
+              setSearch("");
+            }}
+            onClose={() => setCreating(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
 `
+	return src
 }
 
 // adminRichTextField returns the Tiptap rich text editor field component.
@@ -3196,4 +3528,135 @@ function ToolbarButton({ onClick, active, disabled, title, children }: ToolbarBu
   );
 }
 `
+}
+
+// adminInlineCreateDialog emits components/forms/fields/inline-create-dialog.tsx.
+//
+// The nested "create the related record without leaving this form" dialog that
+// a relationship select opens. Given the related ResourceDefinition it renders
+// that resource's OWN form — stepper included when the resource declares steps
+// — so a multi-step Category form opens as a multi-step form here too, with no
+// second definition to keep in sync.
+//
+// IMPORTANT — this module is loaded lazily by the relationship selects, and it
+// has to stay that way. The static graph is:
+//
+//	form-builder → relationship-select-field → (lazy) inline-create-dialog → form-builder
+//
+// A plain import closes that circle. ES modules tolerate cycles, but React
+// components resolved mid-cycle arrive as undefined and the form renders as a
+// blank panel with no error worth reading. React.lazy defers the resolution to
+// first click, which breaks the cycle at module-eval time and code-splits the
+// dialog out of the initial bundle as a bonus.
+func adminInlineCreateDialog() string {
+	src := `"use client";
+
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
+import type { ResourceDefinition } from "@/lib/resource";
+import { FormBuilder } from "../form-builder";
+import { FormStepper } from "../form-stepper";
+import { useCreateResource } from "@/hooks/use-resource";
+import { X } from "@/lib/icons";
+
+interface InlineCreateDialogProps {
+  resource: ResourceDefinition;
+  /** Pre-filled values — typically the text already typed into the select's search box. */
+  defaults?: Record<string, unknown>;
+  /** Receives the created record, so the caller can select it immediately. */
+  onCreated: (record: Record<string, unknown>) => void;
+  onClose: () => void;
+}
+
+export function InlineCreateDialog({ resource, defaults, onCreated, onClose }: InlineCreateDialogProps) {
+  const label = resource.label?.singular ?? resource.name;
+  const { mutate: create, isPending } = useCreateResource(resource.endpoint, label);
+
+  // Stepped when the resource says so, by either route the stepper supports.
+  const isStepped =
+    (resource.form.steps?.length ?? 0) > 0 || (resource.form.fieldsPerStep ?? 0) > 0;
+  const isVertical = resource.form.stepVariant === "vertical";
+
+  // Escape closes THIS dialog and stops there. Capture phase plus
+  // stopPropagation, because the form underneath is usually itself a modal
+  // listening for Escape — without this, one key press closes both and throws
+  // away everything typed into the parent form.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      onClose();
+    }
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, [onClose]);
+
+  const handleSubmit = (values: Record<string, unknown>) => {
+    create(values, {
+      onSuccess: (res) => {
+        // The API answers { data, message }; tolerate a bare record too, so a
+        // hand-written endpoint that returns the row directly still works.
+        const payload = res as { data?: Record<string, unknown> } | Record<string, unknown>;
+        const record =
+          (payload as { data?: Record<string, unknown> })?.data ??
+          (payload as Record<string, unknown>);
+        onCreated(record ?? {});
+      },
+    });
+  };
+
+  const width = isStepped ? (isVertical ? "max-w-4xl" : "max-w-2xl") : "max-w-md";
+
+  return createPortal(
+    // Above everything: the parent form modal sits at z-50 and the select's own
+    // dropdown portal at z-[9999]. A nested dialog that renders behind the form
+    // that opened it is the whole feature failing in the most confusing way.
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className={~relative z-10 w-full ${width} max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-bg-secondary shadow-2xl~}>
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">New {label}</h2>
+            <p className="text-xs text-text-secondary mt-0.5">
+              It will be selected when you save.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-lg p-1 text-text-secondary hover:bg-bg-hover hover:text-foreground transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          {isStepped ? (
+            <FormStepper
+              form={resource.form}
+              defaultValues={defaults}
+              onSubmit={handleSubmit}
+              onCancel={onClose}
+              isSubmitting={isPending}
+              submitLabel={~Create ${label}~}
+            />
+          ) : (
+            <FormBuilder
+              form={resource.form}
+              defaultValues={defaults}
+              onSubmit={handleSubmit}
+              onCancel={onClose}
+              isSubmitting={isPending}
+              submitLabel={~Create ${label}~}
+            />
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+`
+	return strings.ReplaceAll(src, "~", "`")
 }
