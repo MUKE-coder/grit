@@ -92,6 +92,27 @@ export const CATALOG: Category[] = [
                 dependencies: ['lucide-react'],
               },
               {
+                slug: 'with-mega-menu',
+                name: 'With mega menu',
+                description:
+                  'Announcement pill, centred headline and a product frame, above a two-column mega menu with a promo card.',
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'with-ai-chat',
+                name: 'With AI chat',
+                description:
+                  'Floating pill navigation, centred copy and an assistant conversation card.',
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'split-with-tabs',
+                name: 'Split with tabs',
+                description:
+                  'Oversized split headline above a tabbed product switcher and an issue-tracker mock.',
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'dark-with-dashboard',
                 name: 'Dark with dashboard',
                 description:
