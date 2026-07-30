@@ -142,7 +142,33 @@ export const CATALOG: Category[] = [
               },
             ],
           },
-          { slug: 'feature-sections', name: 'Feature Sections', description: 'Show what the product does, in a grid or a stack.', blocks: [] },
+          {
+            slug: 'feature-sections',
+            name: 'Feature Sections',
+            description: 'Show what the product does, in a grid, a stack, or a switcher.',
+            blocks: [
+              {
+                slug: 'three-column-icons',
+                name: 'Three column with icons',
+                description: 'Six features in a three-column grid, each with an icon tile.',
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'alternating-with-screenshots',
+                name: 'Alternating with screenshots',
+                description:
+                  'Copy and product mock alternating sides, with bullet lists and a terminal and table illustration.',
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'with-feature-tabs',
+                name: 'With feature tabs',
+                description:
+                  'Pill tab switcher where each tab changes both the copy and its own illustration.',
+                dependencies: ['lucide-react'],
+              },
+            ],
+          },
           { slug: 'cta-sections', name: 'CTA Sections', description: 'A single, unmissable ask.', blocks: [] },
           { slug: 'bento-grids', name: 'Bento Grids', description: 'Mixed-size tiles that show several features at once.', blocks: [] },
           { slug: 'pricing-sections', name: 'Pricing Sections', description: 'Tiers, toggles, and comparison tables.', blocks: [] },
