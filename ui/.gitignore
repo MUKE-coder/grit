@@ -3,3 +3,6 @@ node_modules/
 # Local env. The Zenith pair here is public by design, but .env.local is the
 # conventional home for machine-specific overrides and secrets, so it stays out.
 .env*.local
+
+# tsc --noEmit incremental cache
+tsconfig.tsbuildinfo

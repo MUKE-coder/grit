@@ -135,6 +135,7 @@ export default async function SubcategoryPage({
                     category={category.slug}
                     subcategory={subcategory.slug}
                     installs={counts[name]}
+                    height={block.previewHeight}
                   />
                 </Reveal>
               ))}
