@@ -1,21 +1,28 @@
 # Grit UI
 
-A shadcn-compatible registry of 100 React components — marketing, SaaS, ecommerce,
-auth and app layout. Deployed at **https://ui.gritframework.dev**.
+A shadcn-compatible registry of React **UI blocks** — full page sections built with
+stock Tailwind CSS, organised by category and subcategory. Deployed at
+**https://ui.gritframework.dev**.
 
-Components install into **any** React project with Tailwind. You do not need to use
-the Grit framework:
+Blocks install into **any** React project with Tailwind. You do not need to use the
+Grit framework:
 
 ```bash
-npx shadcn@latest add https://ui.gritframework.dev/r/hero-split-01.json
+npx shadcn@latest add https://ui.gritframework.dev/r/marketing-hero-sections-simple-centered.json
 ```
 
 Inside a Grit project the CLI wraps the same registry and picks the right app for
 your architecture:
 
 ```bash
-grit ui add hero-split-01
+grit ui add marketing-hero-sections-simple-centered
 ```
+
+Registry names are flat and carry the full path — `<category>-<subcategory>-<block>`
+— because a block slug alone is not unique. "stats" exists under both Marketing and
+Application UI, and two different blocks cannot share one registry name.
+
+See [ROADMAP.md](./ROADMAP.md) for what is built and what is next.
 
 ---
 
@@ -23,51 +30,64 @@ grit ui add hero-split-01
 
 ```
 ui/
-├── registry/            100 component sources (.tsx) — the source of truth
-├── registry.meta.json   name, title, description, category, dependencies
+├── registry/
+│   ├── catalog.ts               THE library definition: categories,
+│   │                            subcategories, blocks. Single source of truth.
+│   └── <category>/<subcategory>/<block>.tsx    the block sources
 ├── lib/
-│   ├── registry.ts      builds the shadcn registry payloads
-│   ├── tokens.ts        the palette, shared by the site and every registry item
-│   └── component-map.ts GENERATED — run `pnpm gen`
+│   ├── blocks.ts                reads block source, counts, base URL
+│   ├── block-map.ts             GENERATED — run `pnpm gen`
+│   ├── highlight.ts             build-time Shiki, both themes
+│   ├── analytics.ts             Zenith config, public + dashboard halves
+│   ├── install-counts.ts        reads per-block install counts back out
+│   └── format-count.ts          1234 -> "1.2k"
 ├── app/
-│   ├── page.tsx         gallery
-│   ├── c/[name]/        per-component page: preview, source, install command
-│   ├── preview/[name]/  bare render, embedded by the gallery iframes
-│   ├── install/         setup guide
-│   └── r/[name]/        the registry endpoints
-└── Dockerfile           what Dokploy builds
+│   ├── (site)/                  landing, category, subcategory pages
+│   ├── (preview)/preview/[name]/  bare render, embedded by the viewer iframes
+│   ├── r/[name]/                the registry endpoints
+│   ├── zenith/                  the analytics dashboard (password gated)
+│   └── global-not-found.tsx     the 404
+├── scripts/generate-block-map.mjs
+└── Dockerfile                   what Dokploy builds
 ```
 
-## Adding a component
+Two root layouts, on purpose. `(site)` carries the theme provider and the
+analytics tracker; `(preview)` carries neither, so a preview iframe renders in the
+theme its query string asks for instead of reading the site's shared localStorage,
+and embedding twelve previews does not send twelve pageviews.
 
-1. Drop `my-component-01.tsx` into `registry/`. Export a **default** function.
-2. Add an entry to `registry.meta.json` (`name`, `title`, `description`,
-   `category`, `dependencies`).
-3. Run `pnpm gen` — it regenerates the component map and warns about any
-   mismatch between the metadata and what is on disk.
-4. `pnpm dev` and check `/c/my-component-01`.
+## Adding a block
 
-Two rules the whole registry depends on:
+1. Add the block to its subcategory in `registry/catalog.ts`.
+2. Create `registry/<category>/<subcategory>/<slug>.tsx`. Export a **default**
+   function.
+3. Run `pnpm gen` to regenerate the block map.
+4. `pnpm dev` and check `/<category>/<subcategory>`.
 
-- **Mark interactive components `"use client"`.** Anything using `useState`,
+Rules the whole registry depends on:
+
+- **Mark interactive blocks `"use client"`.** Anything using `useState`,
   `useEffect` or an event handler needs it, or it breaks in every consumer's App
   Router project — not just here.
-- **Give every prop a default.** An installed component should render immediately
-  with sample content the user can replace. A component that needs five props
-  before it shows anything is a component nobody evaluates.
+- **Give every prop a default.** An installed block should render immediately with
+  sample content the user can replace. A block that needs five props before it
+  shows anything is a block nobody evaluates.
+- **Stock Tailwind only.** No design tokens, no config to patch. A block has to
+  look right in a project that has never heard of Grit.
+- **Check both themes.** Light and dark are both first-class; the viewer has a
+  toggle and reviewers use it.
 
 ## Endpoints
 
 | Path | Purpose |
 |---|---|
-| `/r/registry.json` | index of every component |
+| `/r/registry.json` | index of every block |
 | `/r/<name>.json` | one registry item, with its source inlined |
 | `/r/<name>` | same, extension optional |
 
-Each item carries the component source in `files[0].content`, plus `cssVars` and a
-`tailwind` colour scale. Both are needed: `cssVars` supplies the palette, and the
-Tailwind scale is what makes classes like `text-text-muted` and `bg-bg-elevated`
-resolve. `shadcn add` merges both automatically.
+Each item carries the block source **inlined** in `files[0].content`. This is not
+optional for a remote registry: with a bare `path` and no content, `shadcn add`
+writes an empty file and reports success.
 
 ## Local development
 
@@ -77,10 +97,18 @@ pnpm dev          # http://localhost:3100
 pnpm build        # production build (runs pnpm gen first)
 ```
 
+Two assertion scripts, run directly — one pure function each is not worth a test
+runner:
+
+```bash
+npx tsx lib/format-count.test.ts
+npx tsx lib/install-counts.test.ts
+```
+
 To test an install against your local registry, point `shadcn` at it:
 
 ```bash
-npx shadcn@latest add http://127.0.0.1:3100/r/hero-split-01.json
+npx shadcn@latest add http://127.0.0.1:3100/r/marketing-hero-sections-simple-centered.json
 ```
 
 ---
@@ -118,14 +146,42 @@ and this repo ships several releases a week.
 so it must be the public origin. Set it wrong and every copied command points at
 the wrong host.
 
-**4. Domain**
+**4. Analytics (optional)**
+
+Add these under **Build-time Arguments** — *not* only Environment. They are read
+while the pages are prerendered, and set only at runtime the tracker never
+appears in the HTML no matter what the container says:
+
+| Build argument | Value |
+|---|---|
+| `ZENITH_URL` | `https://analytics.gritframework.dev` |
+| `ZENITH_SITE_KEY` | `zk_o84KgGIkU3QNkH4bC4pURnxsoeFwbmq3OfL1PeIowr4` |
+
+Both are public: they ship in the snippet on every page and the site key can only
+write events. The Dockerfile also re-declares them in the runtime stage, because
+`/zenith` and the install-count refresh read `ZENITH_URL` at request time.
+
+Then add the secrets under **Environment** (runtime only — never build args):
+
+| Variable | Purpose |
+|---|---|
+| `ZENITH_API_KEY` | Reads analytics. Powers `/zenith` and the install counts. |
+| `ZENITH_PW_HASH` | bcrypt hash gating `/zenith`. |
+| `ZENITH_JWT_SECRET` | Signs the `/zenith` session cookie. |
+
+With all three absent the site is unaffected: `/zenith` answers 503 and the
+install-count badges stay hidden rather than showing zeros. The counts appear
+within 15 minutes of `ZENITH_API_KEY` being set — the read is cached with a
+revalidate window, so no redeploy is needed.
+
+**5. Domain**
 
 Add domain `ui.gritframework.dev`, container port `3100`, HTTPS on with Let's
 Encrypt. In Cloudflare, point the record at your Dokploy host. If you use the
 orange-cloud proxy, set SSL/TLS mode to **Full (strict)** so Cloudflare and
 Traefik agree — Flexible causes a redirect loop.
 
-**5. Verify the deploy**
+**6. Verify the deploy**
 
 ```bash
 curl -s https://ui.gritframework.dev/r/registry.json | head -c 200

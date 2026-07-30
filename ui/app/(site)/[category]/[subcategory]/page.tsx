@@ -134,8 +134,7 @@ export default async function SubcategoryPage({
                     installCommand={`npx shadcn@latest add ${base}/r/${name}.json`}
                     category={category.slug}
                     subcategory={subcategory.slug}
-                    blockSlug={block.slug}
-                    installs={counts[block.slug] ?? counts[name]}
+                    installs={counts[name]}
                   />
                 </Reveal>
               ))}

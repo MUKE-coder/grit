@@ -4,6 +4,13 @@ const nextConfig: NextConfig = {
   // standalone keeps the Docker image small — Dokploy builds the Dockerfile in
   // this directory and only needs .next/standalone plus static assets.
   output: 'standalone',
+  experimental: {
+    // Required for app/global-not-found.tsx to be used at all. This project has
+    // two root layouts — (site) and (preview) — so an unmatched URL matches
+    // neither group and a route-group not-found.tsx is silently ignored in
+    // favour of Next's built-in 404 page.
+    globalNotFound: true,
+  },
   images: {
     remotePatterns: [{ protocol: 'https', hostname: 'picsum.photos' }],
   },
