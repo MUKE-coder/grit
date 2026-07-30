@@ -52,12 +52,12 @@ Nothing else can start until this lands.
 
 23 subcategories. **3 blocks each to start**, expanded later.
 
-**Page Sections** — Hero Sections · Feature Sections · CTA Sections · Bento Grids ·
-Pricing Sections · Header Sections · Newsletter Sections · Stats · Testimonials ·
-Blog Sections · Contact Sections · Team Sections · Content Sections · Logo Clouds ·
-FAQs · Footers
+**Page Sections** — Hero Sections ✅ (12) · Feature Sections ✅ (3) · CTA Sections ·
+Bento Grids · Pricing Sections · Header Sections · Newsletter Sections · Stats ·
+Testimonials · Blog Sections · Contact Sections · Team Sections · Content Sections ·
+Logo Clouds · FAQs · Footers
 
-**Elements** — Headers · Flyout Menus · Banners
+**Elements** — Headers ✅ (6) · Flyout Menus · Banners
 
 **Feedback** — 404 Pages
 
@@ -107,3 +107,11 @@ reached users:
   block's own file.
 - **Registry-verified.** If it is listed, its source is served — an index that
   advertises what it cannot deliver is worse than a shorter index.
+- **Interactive blocks must be driven, not screenshotted.** A dropdown looks
+  correct in every screenshot taken while it is closed. Open it, at both themes
+  and all three breakpoints, before calling it done.
+- **Dismissable by Escape and by an outside click.** A menu that only closes by
+  clicking its own trigger is a trap on touch and unusable by keyboard.
+- **A short block sets `previewHeight`.** A header in the default 660px frame is
+  mostly empty space, and padding the block itself with a fake page stub would
+  ship that stub into everyone's project.

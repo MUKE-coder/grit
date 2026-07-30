@@ -36,7 +36,10 @@ export default async function PreviewPage({
       className={isDark ? 'dark' : undefined}
       style={{ colorScheme: isDark ? 'dark' : 'light' }}
     >
-      <div className="min-h-screen bg-white dark:bg-gray-900">
+      {/* gray-950 matches what the blocks themselves use for their page
+          background. It only shows on a block that does not fill the frame — a
+          header or a banner — and a mismatched tone there reads as a seam. */}
+      <div className="min-h-screen bg-white dark:bg-gray-950">
         <Block />
       </div>
     </div>

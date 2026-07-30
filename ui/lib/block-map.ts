@@ -9,6 +9,12 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-feature-sections-alternating-with-screenshots": dynamic(() => import('@/registry/marketing/feature-sections/alternating-with-screenshots').then((m) => ({ default: m.default }))),
   "marketing-feature-sections-three-column-icons": dynamic(() => import('@/registry/marketing/feature-sections/three-column-icons').then((m) => ({ default: m.default }))),
   "marketing-feature-sections-with-feature-tabs": dynamic(() => import('@/registry/marketing/feature-sections/with-feature-tabs').then((m) => ({ default: m.default }))),
+  "marketing-headers-floating-pill": dynamic(() => import('@/registry/marketing/headers/floating-pill').then((m) => ({ default: m.default }))),
+  "marketing-headers-full-width-mega-menu": dynamic(() => import('@/registry/marketing/headers/full-width-mega-menu').then((m) => ({ default: m.default }))),
+  "marketing-headers-simple-with-actions": dynamic(() => import('@/registry/marketing/headers/simple-with-actions').then((m) => ({ default: m.default }))),
+  "marketing-headers-with-grouped-panels": dynamic(() => import('@/registry/marketing/headers/with-grouped-panels').then((m) => ({ default: m.default }))),
+  "marketing-headers-with-nav-pill": dynamic(() => import('@/registry/marketing/headers/with-nav-pill').then((m) => ({ default: m.default }))),
+  "marketing-headers-with-split-mega-menu": dynamic(() => import('@/registry/marketing/headers/with-split-mega-menu').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-centered-editorial": dynamic(() => import('@/registry/marketing/hero-sections/centered-editorial').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-centered-with-floating-cards": dynamic(() => import('@/registry/marketing/hero-sections/centered-with-floating-cards').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-dark-with-dashboard": dynamic(() => import('@/registry/marketing/hero-sections/dark-with-dashboard').then((m) => ({ default: m.default }))),
@@ -23,5 +29,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-hero-sections-with-mega-menu": dynamic(() => import('@/registry/marketing/hero-sections/with-mega-menu').then((m) => ({ default: m.default }))),
 }
 
-/** 15 blocks at generation time. */
-export const BLOCK_COUNT: number = 15
+/** 21 blocks at generation time. */
+export const BLOCK_COUNT: number = 21
