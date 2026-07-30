@@ -113,6 +113,27 @@ export const CATALOG: Category[] = [
                 dependencies: ['lucide-react'],
               },
               {
+                slug: 'split-with-stats',
+                name: 'Split with stats',
+                description:
+                  'Split hero with a hand-drawn headline accent, inline email capture, a stats row and a four-column mega menu.',
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'minimal-with-product-card',
+                name: 'Minimal with product card',
+                description:
+                  'Quiet ruled canvas, one call to action, a product card mock and avatar social proof.',
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'centered-with-floating-cards',
+                name: 'Centered with floating cards',
+                description:
+                  'Pill navigation, centred copy and floating stat cards joined by dotted connector rails.',
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'dark-with-dashboard',
                 name: 'Dark with dashboard',
                 description:

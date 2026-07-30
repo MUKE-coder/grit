@@ -7,15 +7,18 @@ import type { ComponentType } from 'react'
 /** Keyed by the flat registry name: <category>-<subcategory>-<slug>. */
 export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-hero-sections-centered-editorial": dynamic(() => import('@/registry/marketing/hero-sections/centered-editorial').then((m) => ({ default: m.default }))),
+  "marketing-hero-sections-centered-with-floating-cards": dynamic(() => import('@/registry/marketing/hero-sections/centered-with-floating-cards').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-dark-with-dashboard": dynamic(() => import('@/registry/marketing/hero-sections/dark-with-dashboard').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-dark-with-email-capture": dynamic(() => import('@/registry/marketing/hero-sections/dark-with-email-capture').then((m) => ({ default: m.default }))),
+  "marketing-hero-sections-minimal-with-product-card": dynamic(() => import('@/registry/marketing/hero-sections/minimal-with-product-card').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-simple-centered": dynamic(() => import('@/registry/marketing/hero-sections/simple-centered').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-split-with-code": dynamic(() => import('@/registry/marketing/hero-sections/split-with-code').then((m) => ({ default: m.default }))),
+  "marketing-hero-sections-split-with-stats": dynamic(() => import('@/registry/marketing/hero-sections/split-with-stats').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-split-with-tabs": dynamic(() => import('@/registry/marketing/hero-sections/split-with-tabs').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-with-ai-chat": dynamic(() => import('@/registry/marketing/hero-sections/with-ai-chat').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-with-app-screenshot": dynamic(() => import('@/registry/marketing/hero-sections/with-app-screenshot').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-with-mega-menu": dynamic(() => import('@/registry/marketing/hero-sections/with-mega-menu').then((m) => ({ default: m.default }))),
 }
 
-/** 9 blocks at generation time. */
-export const BLOCK_COUNT: number = 9
+/** 12 blocks at generation time. */
+export const BLOCK_COUNT: number = 12
