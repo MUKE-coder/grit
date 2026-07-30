@@ -33,6 +33,22 @@ ARG NEXT_PUBLIC_SITE_URL=https://ui.gritframework.dev
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Zenith's public pair belongs HERE, in the stage that runs the build, and needs
+# both an ARG and a matching ENV — Next reads process.env, and a FROM starts a
+# fresh stage so an ARG declared earlier does not exist here.
+#
+# These are compiled into the prerendered HTML. Supplied only at runtime, the
+# tracker never appears in the page no matter what the container environment
+# says. Both are public by design: they ship in the snippet on every page and
+# the site key can only write events.
+#
+# ZENITH_API_KEY is deliberately absent: it is a secret, it is only read by a
+# dashboard route this site does not mount, and tracking does not need it.
+ARG ZENITH_URL
+ARG ZENITH_SITE_KEY
+ENV ZENITH_URL=$ZENITH_URL
+ENV ZENITH_SITE_KEY=$ZENITH_SITE_KEY
+
 RUN pnpm build
 
 # ── runtime ──────────────────────────────────────────────────────────────────
