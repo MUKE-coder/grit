@@ -2,23 +2,20 @@
   "name": "grit-ui",
   "version": "0.1.0",
   "private": true,
-  "description": "Grit UI — a shadcn-compatible registry of 100 React components",
+  "description": "Grit UI \u00e2\u20ac\u201d a shadcn-compatible registry of 100 React components",
   "scripts": {
-    "gen": "node scripts/generate-component-map.mjs",
+    "gen": "node scripts/generate-block-map.mjs",
     "dev": "pnpm gen && next dev -p 3100",
     "build": "pnpm gen && next build",
     "start": "next start -p 3100",
     "lint": "next lint"
   },
   "dependencies": {
+    "lucide-react": "^0.544.0",
     "next": "16.1.6",
+    "next-themes": "^0.4.6",
     "react": "^19",
-    "react-dom": "^19",
-    "lucide-react": "^0.544.0"
-  },
-  "pnpm": {
-    "//": "next pulls in sharp for image optimisation, and sharp needs its install script to fetch native binaries. pnpm 10+ treats an unapproved build script as a hard error rather than a warning, which fails the Docker build after the install has otherwise succeeded. Approving it here is the non-interactive equivalent of `pnpm approve-builds`.",
-    "onlyBuiltDependencies": ["sharp"]
+    "react-dom": "^19"
   },
   "devDependencies": {
     "@types/node": "^22",

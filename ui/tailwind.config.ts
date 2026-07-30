@@ -1,18 +1,15 @@
 import type { Config } from 'tailwindcss'
 
 /**
- * The Grit UI palette.
+ * Deliberately close to stock Tailwind.
  *
- * The component sources use two families of class: shadcn-standard ones like
- * `bg-background` and `text-foreground`, and Grit-specific ones like
- * `text-text-muted`, `bg-bg-elevated` and `bg-accent`. The nested `text` and
- * `bg` scales below are what make the second family resolve — `text-text-muted`
- * is the `text-` utility applied to the `text.muted` colour.
+ * Blocks are authored with default palette classes (bg-white, text-gray-900,
+ * bg-indigo-600) so a copied block renders correctly in any Tailwind project
+ * with no config to merge and no CSS variables to install. Adding a custom
+ * colour scale here would quietly make that untrue — the block would look right
+ * on this site and wrong everywhere else.
  *
- * Every value is a CSS variable rather than a literal so the exact same palette
- * can be shipped to a consumer project through the registry item's `cssVars`
- * block. A component that silently loses its colours in someone else's app is
- * worse than one that fails to compile, because it looks like a design choice.
+ * Only fonts are extended, and only for the site chrome.
  */
 const config: Config = {
   darkMode: 'class',
@@ -23,37 +20,9 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      colors: {
-        background: 'var(--bg-primary)',
-        foreground: 'var(--text-primary)',
-        border: 'var(--border)',
-
-        bg: {
-          primary: 'var(--bg-primary)',
-          secondary: 'var(--bg-secondary)',
-          tertiary: 'var(--bg-tertiary)',
-          elevated: 'var(--bg-elevated)',
-          hover: 'var(--bg-hover)',
-        },
-        text: {
-          primary: 'var(--text-primary)',
-          secondary: 'var(--text-secondary)',
-          muted: 'var(--text-muted)',
-        },
-        accent: {
-          DEFAULT: 'var(--accent)',
-          hover: 'var(--accent-hover)',
-          foreground: 'var(--accent-foreground)',
-        },
-
-        success: 'var(--success)',
-        danger: 'var(--danger)',
-        warning: 'var(--warning)',
-        info: 'var(--info)',
-      },
       fontFamily: {
-        sans: ['Onest', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
     },
   },

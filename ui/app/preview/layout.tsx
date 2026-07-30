@@ -1,8 +1,7 @@
 /**
- * Bare layout for iframe previews — no header, no padding, nothing that would
- * change how the component lays out. The root layout still supplies the fonts
- * and the token variables.
+ * Bare layout for iframe previews — nothing that could influence how a block
+ * lays out. The root layout still supplies fonts and the Tailwind base.
  */
 export default function PreviewLayout({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-screen bg-background">{children}</div>
+  return <>{children}</>
 }
