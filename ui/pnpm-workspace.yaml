@@ -13,3 +13,5 @@
 # 11.9.0 and copies this file into the deps stage before installing.
 allowBuilds:
   sharp: true
+minimumReleaseAgeExclude:
+  - zenith-analytics@0.4.5

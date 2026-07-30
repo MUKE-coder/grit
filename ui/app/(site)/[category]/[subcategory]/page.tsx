@@ -128,6 +128,9 @@ export default async function SubcategoryPage({
                     source={source}
                     highlighted={highlighted}
                     installCommand={`npx shadcn@latest add ${base}/r/${name}.json`}
+                    category={category.slug}
+                    subcategory={subcategory.slug}
+                    blockSlug={block.slug}
                   />
                 </Reveal>
               ))}

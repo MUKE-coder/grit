@@ -29,6 +29,9 @@ importers:
       shiki:
         specifier: ^4.3.1
         version: 4.3.1
+      zenith-analytics:
+        specifier: ^0.4.5
+        version: 0.4.5(react@19.2.8)
     devDependencies:
       '@types/node':
         specifier: ^22
@@ -371,6 +374,10 @@ packages:
   baseline-browser-mapping@2.11.5:
     resolution: {integrity: sha512-xJo6a6YZnwZfnyGmQKWMbVOcii7XRibjOskRh+WJ9UHQoX16xrQrcIgAMQOzfvs8XiLMx6ih/fsLPF73iY2D1A==}
     engines: {node: '>=6.0.0'}
+    hasBin: true
+
+  bcryptjs@3.0.3:
+    resolution: {integrity: sha512-GlF5wPWnSa/X5LKM1o0wz0suXIINz1iHRLvTS+sLyi7XPbe5ycmYI3DlZqVGZZtDgl4DmasFg7gOB3JYbphV5g==}
     hasBin: true
 
   binary-extensions@2.3.0:
@@ -888,6 +895,15 @@ packages:
   vfile@6.0.3:
     resolution: {integrity: sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==}
 
+  zenith-analytics@0.4.5:
+    resolution: {integrity: sha512-k4ZKVLkjXIJwaoynEB/CEA+naU3XJxYEudwitkMv16YYwx1vOjc0kRfYqe7OfFNmpIPK09bWmi+4oy8TwWdk+Q==}
+    hasBin: true
+    peerDependencies:
+      react: '>=18'
+    peerDependenciesMeta:
+      react:
+        optional: true
+
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
@@ -1136,6 +1152,8 @@ snapshots:
       postcss-value-parser: 4.2.0
 
   baseline-browser-mapping@2.11.5: {}
+
+  bcryptjs@3.0.3: {}
 
   binary-extensions@2.3.0: {}
 
@@ -1665,5 +1683,11 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
+
+  zenith-analytics@0.4.5(react@19.2.8):
+    dependencies:
+      bcryptjs: 3.0.3
+    optionalDependencies:
+      react: 19.2.8
 
   zwitch@2.0.4: {}

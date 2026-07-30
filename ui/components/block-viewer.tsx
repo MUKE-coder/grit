@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
+import { InstallCommand } from './install-command'
+import { trackBlockCopy } from '@/lib/track'
 import {
   Check,
   Code2,
@@ -92,6 +94,9 @@ export function BlockViewer({
   source,
   highlighted,
   installCommand,
+  category,
+  subcategory,
+  blockSlug,
   height = 660,
 }: {
   name: string
@@ -100,6 +105,9 @@ export function BlockViewer({
   /** Shiki output, produced at build time. */
   highlighted: string
   installCommand: string
+  category: string
+  subcategory: string
+  blockSlug: string
   height?: number
 }) {
   const [tab, setTab] = useState<Tab>('preview')
@@ -158,10 +166,23 @@ export function BlockViewer({
           </AnimatePresence>
 
           <CopyButton
-            value={tab === 'code' ? source : installCommand}
-            label={tab === 'code' ? 'Copy code' : 'Copy'}
+            value={source}
+            label="Copy code"
+            onCopied={() =>
+              trackBlockCopy({ block: blockSlug, category, subcategory, kind: 'code' })
+            }
           />
         </div>
+      </div>
+
+      {/* Install command, above the preview — see InstallCommand for why. */}
+      <div className="mb-3">
+        <InstallCommand
+          command={installCommand}
+          block={blockSlug}
+          category={category}
+          subcategory={subcategory}
+        />
       </div>
 
       {/* Body */}
@@ -193,23 +214,27 @@ export function BlockViewer({
         )}
       </div>
 
-      {/* Install line */}
-      <div className="mt-2.5 flex items-center gap-2">
-        <code className="truncate font-mono text-[11px] text-gray-400 dark:text-gray-600">
-          {installCommand}
-        </code>
-      </div>
     </section>
   )
 }
 
-function CopyButton({ value, label }: { value: string; label: string }) {
+function CopyButton({
+  value,
+  label,
+  onCopied,
+}: {
+  value: string
+  label: string
+  onCopied?: () => void
+}) {
   const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle')
 
   async function copy() {
     try {
       await navigator.clipboard.writeText(value)
       setState('copied')
+      // Only after a successful write — a failed copy is not a download.
+      onCopied?.()
     } catch {
       setState('failed')
     }
