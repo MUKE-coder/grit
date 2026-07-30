@@ -3,6 +3,21 @@
 import { useState } from 'react'
 import { ArrowRight, Menu, X } from 'lucide-react'
 
+/** The Grit UI mark, inlined so the block stays self-contained. */
+function GritMark({ className = 'size-8' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true" className={className}>
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M8 0H24A8 8 0 0 1 32 8V24A8 8 0 0 1 24 32H8A8 8 0 0 1 0 24V8A8 8 0 0 1 8 0ZM16 9.4A6.6 6.6 0 1 0 21.4 19.9V17.4H17.2A1.7 1.7 0 0 1 17.2 14H23.1A1.7 1.7 0 0 1 24.8 15.7V20.6A1.7 1.7 0 0 1 24.4 21.7A10 10 0 1 1 22.6 8.2A1.7 1.7 0 0 1 20.4 10.8A6.6 6.6 0 0 0 16 9.4Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+
 const NAV = [
   { name: 'Product', href: '#' },
   { name: 'Features', href: '#' },
@@ -36,8 +51,8 @@ export default function SimpleCentered({
               centre; without it they butt straight up against the logo. */}
           <div className="flex lg:flex-1">
             <a href="#" className="-m-1.5 flex items-center gap-2 p-1.5">
-              <span className="sr-only">Your Company</span>
-              <span className="size-8 rounded-lg bg-indigo-600" />
+              <span className="sr-only">Grit</span>
+              <GritMark className="size-8 text-indigo-600 dark:text-indigo-400" />
             </a>
           </div>
 
@@ -84,8 +99,8 @@ export default function SimpleCentered({
             <div className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10 dark:bg-gray-900 dark:sm:ring-white/10">
               <div className="flex items-center justify-between">
                 <a href="#" className="-m-1.5 p-1.5">
-                  <span className="sr-only">Your Company</span>
-                  <span className="block h-8 w-8 rounded-lg bg-indigo-600" />
+                  <span className="sr-only">Grit</span>
+                  <GritMark className="size-8 text-indigo-600 dark:text-indigo-400" />
                 </a>
                 <button
                   type="button"
