@@ -174,6 +174,51 @@ export const CATALOG: Category[] = [
                   'Pill tab switcher where each tab changes both the copy and its own illustration.',
                 dependencies: ['lucide-react'],
               },
+              {
+                slug: 'carousel-two-up',
+                name: 'Carousel, two up',
+                description:
+                  'Two large gradient cards per view with floating product mocks, swipeable and paged by arrows.',
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'carousel-three-up',
+                name: 'Carousel, three up',
+                description:
+                  'Three panels per view on a dashed ruled band, each with its own product mock and caption.',
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'expandable-with-tabbed-card',
+                name: 'Expandable with tabbed card',
+                description:
+                  'Accordion and compliance list beside a product card that carries its own tab strip.',
+                dependencies: ['lucide-react'],
+                previewHeight: 900,
+              },
+              {
+                slug: 'tabbed-split-panels',
+                name: 'Tabbed split panels',
+                description:
+                  'A tab strip above the fold switches the headline, copy, mock and canvas colour together.',
+                dependencies: ['lucide-react'],
+                previewHeight: 820,
+              },
+              {
+                slug: 'expandable-pills-with-diagram',
+                name: 'Expandable pills with diagram',
+                description:
+                  'Pill triggers that become a card when opened, stepped by arrows, beside isometric line art.',
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'headline-with-inline-icons',
+                name: 'Headline with inline icons',
+                description:
+                  'Oversized two-tone statement headline with inline icon chips, over a dashed rule grid.',
+                dependencies: ['lucide-react'],
+                previewHeight: 900,
+              },
             ],
           },
           { slug: 'cta-sections', name: 'CTA Sections', description: 'A single, unmissable ask.', blocks: [] },
