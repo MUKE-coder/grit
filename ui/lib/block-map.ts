@@ -6,6 +6,9 @@ import type { ComponentType } from 'react'
 
 /** Keyed by the flat registry name: <category>-<subcategory>-<slug>. */
 export const BLOCK_MAP: Record<string, ComponentType> = {
+  "marketing-feature-sections-alternating-with-screenshots": dynamic(() => import('@/registry/marketing/feature-sections/alternating-with-screenshots').then((m) => ({ default: m.default }))),
+  "marketing-feature-sections-three-column-icons": dynamic(() => import('@/registry/marketing/feature-sections/three-column-icons').then((m) => ({ default: m.default }))),
+  "marketing-feature-sections-with-feature-tabs": dynamic(() => import('@/registry/marketing/feature-sections/with-feature-tabs').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-centered-editorial": dynamic(() => import('@/registry/marketing/hero-sections/centered-editorial').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-centered-with-floating-cards": dynamic(() => import('@/registry/marketing/hero-sections/centered-with-floating-cards').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-dark-with-dashboard": dynamic(() => import('@/registry/marketing/hero-sections/dark-with-dashboard').then((m) => ({ default: m.default }))),
@@ -20,5 +23,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-hero-sections-with-mega-menu": dynamic(() => import('@/registry/marketing/hero-sections/with-mega-menu').then((m) => ({ default: m.default }))),
 }
 
-/** 12 blocks at generation time. */
-export const BLOCK_COUNT: number = 12
+/** 15 blocks at generation time. */
+export const BLOCK_COUNT: number = 15
