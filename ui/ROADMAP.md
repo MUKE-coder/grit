@@ -52,7 +52,7 @@ Nothing else can start until this lands.
 
 23 subcategories. **3 blocks each to start**, expanded later.
 
-**Page Sections** — Hero Sections ✅ (12) · Feature Sections ✅ (3) · CTA Sections ·
+**Page Sections** — Hero Sections ✅ (12) · Feature Sections ✅ (9) · CTA Sections ·
 Bento Grids · Pricing Sections · Header Sections · Newsletter Sections · Stats ·
 Testimonials · Blog Sections · Contact Sections · Team Sections · Content Sections ·
 Logo Clouds · FAQs · Footers
