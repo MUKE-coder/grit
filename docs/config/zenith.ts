@@ -10,10 +10,19 @@ import type { ZenithConfig } from 'zenith-analytics'
 // throws when a value is genuinely missing.
 //
 // Local builds need these in docs/.env.local (see .env.example).
+// The values are genuinely undefined when the environment is missing, and they
+// must stay that way: <Analytics required /> throws on undefined, which is the
+// whole point of the guard. The assertion is only here to satisfy the config
+// type — the component validates at render time.
+//
+// Do NOT "fix" this with `?? ''`. That was tried: an empty string type-checks,
+// passes the required guard, and ships a page with no tracker. Verified by
+// building with the environment removed and watching the build succeed when it
+// should have failed.
 export const ZENITH_PUBLIC = {
   backendUrl: process.env.ZENITH_URL,
   siteKey: process.env.ZENITH_SITE_KEY,
-}
+} as { backendUrl: string; siteKey: string }
 
 // The public half plus the three secrets. Server-side only. Note the secrets
 // have no fallback values — absent from the environment means undefined.
