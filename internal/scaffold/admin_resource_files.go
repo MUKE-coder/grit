@@ -168,6 +168,13 @@ export interface FieldDefinition {
   // the row on a field where creating on the fly is not appropriate.
   allowCreate?: boolean;
 
+  // v3.114.0 — date / datetime only. Bounds the picker: days outside the range
+  // are unselectable and the year dropdown only lists years inside it. ISO
+  // "YYYY-MM-DD". Without them the year list runs 100 years back to 10 forward,
+  // which covers a date of birth and a scheduling field alike.
+  minDate?: string;
+  maxDate?: string;
+
   // select field: load options from an endpoint at render time, on top of any
   // static options. optionsLabelKey/optionsValueKey default to "name".
   optionsUrl?: string;
