@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
-import { SubcategoryCard } from '@/app/page'
+import { SubcategoryCard } from '@/components/subcategory-card'
 import { CATALOG, getCategory } from '@/registry/catalog'
 import { countIn } from '@/lib/blocks'
 

@@ -1,88 +1,202 @@
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Copy, Layers, Palette, Sparkles, Zap } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
-import { CATALOG, subcategoriesOf } from '@/registry/catalog'
-import { countIn } from '@/lib/blocks'
+import { Reveal } from '@/components/reveal'
+import { SubcategoryCard } from '@/components/subcategory-card'
+import { CopyLine } from '@/components/copy-line'
+import { CATALOG } from '@/registry/catalog'
+import { countIn, baseUrl } from '@/lib/blocks'
 import { BLOCK_COUNT } from '@/lib/block-map'
 
+const PILLARS = [
+  {
+    icon: Copy,
+    title: 'Copy, or one command',
+    body: 'Every block is a shadcn registry item. Paste the source, or install it with a single line.',
+  },
+  {
+    icon: Palette,
+    title: 'Stock Tailwind only',
+    body: 'No design tokens to merge, no config to patch. A block looks right in any Tailwind project.',
+  },
+  {
+    icon: Layers,
+    title: 'Light and dark, both correct',
+    body: 'Not a dark theme with a light afterthought. Every block is checked in both.',
+  },
+  {
+    icon: Zap,
+    title: 'Yours the moment it lands',
+    body: 'Blocks are files in your repo, not a dependency. Edit them, rename them, delete them.',
+  },
+]
+
 export default function HomePage() {
+  const base = baseUrl()
+  const example = `npx shadcn@latest add ${base}/r/marketing-hero-sections-simple-centered.json`
+
   return (
     <div className="min-h-screen">
       <SiteHeader />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden border-b border-gray-200 dark:border-white/10">
-        <div aria-hidden className="pointer-events-none absolute inset-0 site-grid opacity-70" />
-        <div className="relative mx-auto max-w-[100rem] px-6 py-20 lg:py-28">
-          <p className="label-mono">UI blocks for Go + React apps</p>
-          <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
-            Beautiful UI components,
-            <br />
-            crafted with Tailwind CSS.
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg text-gray-600 dark:text-gray-400">
-            Professionally designed, fully responsive React components you can drop
-            into your Tailwind projects and customise to your heart&apos;s content.
-          </p>
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <section className="hairline relative overflow-hidden border-b">
+        <div aria-hidden className="pointer-events-none absolute inset-0 grid-fade" />
+        {/* A single wide, very low-opacity bloom. Apple uses light sparingly;
+            two competing gradients read as a template. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 -top-40 h-[42rem]"
+          style={{
+            background:
+              'radial-gradient(46rem 26rem at 50% 30%, rgb(99 102 241 / 0.13), transparent 68%)',
+          }}
+        />
 
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link
-              href="/marketing/hero-sections"
-              className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gray-700 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
-            >
-              Browse blocks
-              <ArrowRight className="size-4" />
-            </Link>
-            <Link
-              href="https://gritframework.dev/docs/frontend/ui-components"
-              className="rounded-full border border-gray-300 px-5 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50 dark:border-white/15 dark:hover:bg-white/5"
-            >
-              Documentation
-            </Link>
+        {/* Centred, with the product directly beneath the copy. A left-aligned
+            hero leaves half the viewport empty, which reads as unfinished at
+            this width — and Apple always puts the thing itself on screen. */}
+        <div className="relative mx-auto max-w-4xl px-6 pt-24 text-center lg:pt-32">
+          <Reveal>
+            <span className="glass inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[12.5px] font-medium text-gray-700 dark:text-gray-300">
+              <Sparkles aria-hidden="true" className="size-3.5 text-indigo-500" />
+              {BLOCK_COUNT} blocks and growing
+            </span>
+          </Reveal>
+
+          <Reveal delay={0.06}>
+            <h1 className="display-tight mt-7 text-[3.25rem] leading-[1.03] text-balance text-gray-900 sm:text-[4.5rem] dark:text-white">
+              Beautifully crafted{' '}
+              <span className="bg-gradient-to-br from-indigo-500 via-violet-500 to-sky-500 bg-clip-text text-transparent">
+                React UI blocks
+              </span>
+            </h1>
+          </Reveal>
+
+          <Reveal delay={0.12}>
+            <p className="mx-auto mt-7 max-w-xl text-[18px]/[1.6] text-pretty text-gray-500 dark:text-gray-400">
+              Production-ready sections built with Tailwind CSS. Drop them into
+              your project, then make them yours — the code is ordinary source you
+              own from the moment it lands.
+            </p>
+          </Reveal>
+
+          <Reveal delay={0.18}>
+            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/marketing/hero-sections"
+                className="group sheen inline-flex items-center gap-2 rounded-full bg-gray-900 px-6 py-3 text-[14px] font-semibold text-white transition-all duration-200 hover:bg-gray-800 active:scale-[0.98] dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+              >
+                Browse blocks
+                <ArrowRight
+                  aria-hidden="true"
+                  className="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
+                />
+              </Link>
+              <Link
+                href="https://gritframework.dev/docs/frontend/ui-components"
+                className="glass inline-flex items-center rounded-full px-6 py-3 text-[14px] font-semibold text-gray-900 transition-transform duration-200 active:scale-[0.98] dark:text-white"
+              >
+                Documentation
+              </Link>
+            </div>
+          </Reveal>
+
+          <Reveal delay={0.24}>
+            <div className="mx-auto mt-9 max-w-xl">
+              <CopyLine value={example} />
+            </div>
+          </Reveal>
+        </div>
+
+        {/* Product window: a real block, rendered live in a frame that is
+            clipped by the section so it appears to continue below the fold. */}
+        <Reveal delay={0.3}>
+          <div className="relative mx-auto mt-16 max-w-6xl px-6">
+            <div className="hairline overflow-hidden rounded-t-2xl border border-b-0 bg-white lift-lg dark:bg-gray-900">
+              <div className="hairline flex items-center gap-2 border-b px-4 py-2.5">
+                <span className="size-2.5 rounded-full bg-[#ff5f57]" />
+                <span className="size-2.5 rounded-full bg-[#febc2e]" />
+                <span className="size-2.5 rounded-full bg-[#28c840]" />
+                <span className="mx-auto font-mono text-[11px] text-gray-400">
+                  marketing / hero-sections / simple-centered
+                </span>
+              </div>
+              <iframe
+                src="/preview/marketing-hero-sections-simple-centered?theme=light"
+                title="A Grit UI block"
+                loading="lazy"
+                scrolling="no"
+                className="h-[430px] w-full border-0 dark:hidden"
+              />
+              <iframe
+                src="/preview/marketing-hero-sections-simple-centered?theme=dark"
+                title="A Grit UI block"
+                loading="lazy"
+                scrolling="no"
+                className="hidden h-[430px] w-full border-0 dark:block"
+              />
+            </div>
           </div>
+        </Reveal>
+      </section>
 
-          <p className="mt-6 font-mono text-xs text-gray-500 dark:text-gray-500">
-            {BLOCK_COUNT} block{BLOCK_COUNT === 1 ? '' : 's'} and growing · MIT licensed ·
-            React + Tailwind
-          </p>
+      {/* ── Pillars ──────────────────────────────────────────────────────── */}
+      <section className="hairline border-b">
+        <div className="mx-auto grid max-w-[100rem] grid-cols-1 gap-px bg-gray-500/[0.07] sm:grid-cols-2 lg:grid-cols-4 dark:bg-white/[0.07]">
+          {PILLARS.map(({ icon: Icon, title, body }, i) => (
+            <Reveal key={title} delay={i * 0.05}>
+              <div className="group h-full bg-white px-7 py-9 transition-colors duration-300 hover:bg-gray-50/60 dark:bg-gray-950 dark:hover:bg-white/[0.02]">
+                <span className="glass inline-flex size-10 items-center justify-center rounded-xl text-indigo-500 transition-transform duration-300 group-hover:-translate-y-0.5">
+                  <Icon aria-hidden="true" className="size-[18px]" />
+                </span>
+                <h3 className="display mt-5 text-[14.5px] text-gray-900 dark:text-white">
+                  {title}
+                </h3>
+                <p className="mt-2 text-[13.5px]/[1.6] text-gray-500 dark:text-gray-400">
+                  {body}
+                </p>
+              </div>
+            </Reveal>
+          ))}
         </div>
       </section>
 
-      {/* Categories */}
+      {/* ── Catalogue ────────────────────────────────────────────────────── */}
       {CATALOG.map((category) => (
-        <section
-          key={category.slug}
-          className="border-b border-gray-200 dark:border-white/10"
-        >
-          <div className="mx-auto max-w-[100rem] px-6 py-14">
-            <div className="max-w-2xl">
-              <h2 className="text-2xl font-semibold tracking-tight">
-                <Link href={`/${category.slug}`} className="hover:underline">
-                  {category.name}
-                </Link>
-              </h2>
-              <p className="mt-3 text-gray-600 dark:text-gray-400">
-                {category.description}
-              </p>
-            </div>
+        <section key={category.slug} className="hairline border-b">
+          <div className="mx-auto max-w-[100rem] px-6 py-16">
+            <Reveal>
+              <div className="max-w-2xl">
+                <h2 className="display-tight text-[2rem] leading-tight text-gray-900 dark:text-white">
+                  <Link
+                    href={`/${category.slug}`}
+                    className="transition-colors hover:text-indigo-600 dark:hover:text-indigo-400"
+                  >
+                    {category.name}
+                  </Link>
+                </h2>
+                <p className="mt-3 text-[16px]/[1.6] text-gray-500 dark:text-gray-400">
+                  {category.description}
+                </p>
+              </div>
+            </Reveal>
 
             {category.groups.map((group) => (
-              <div key={group.name} className="mt-10">
-                <p className="label-mono border-b border-gray-200 pb-3 dark:border-white/10">
-                  {group.name}
-                </p>
-                <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-3 lg:grid-cols-4">
-                  {group.subcategories.map((sub) => {
-                    const count = countIn(category.slug, sub.slug)
-                    return (
+              <div key={group.name} className="mt-12">
+                <Reveal>
+                  <p className="label-mono hairline border-b pb-3">{group.name}</p>
+                </Reveal>
+                <div className="mt-7 grid grid-cols-2 gap-x-6 gap-y-9 md:grid-cols-3 lg:grid-cols-4">
+                  {group.subcategories.map((sub, i) => (
+                    <Reveal key={sub.slug} delay={Math.min(i * 0.03, 0.2)}>
                       <SubcategoryCard
-                        key={sub.slug}
                         href={`/${category.slug}/${sub.slug}`}
                         name={sub.name}
-                        count={count}
+                        count={countIn(category.slug, sub.slug)}
                       />
-                    )
-                  })}
+                    </Reveal>
+                  ))}
                 </div>
               </div>
             ))}
@@ -90,59 +204,18 @@ export default function HomePage() {
         </section>
       ))}
 
-      <footer className="mx-auto max-w-[100rem] px-6 py-10 text-xs text-gray-500 dark:text-gray-500">
-        Part of the{' '}
-        <Link href="https://gritframework.dev" className="hover:underline">
-          Grit Framework
-        </Link>
-        . MIT licensed.
+      <footer className="mx-auto max-w-[100rem] px-6 py-12">
+        <p className="text-[13px] text-gray-400 dark:text-gray-600">
+          Part of the{' '}
+          <Link
+            href="https://gritframework.dev"
+            className="text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+          >
+            Grit Framework
+          </Link>
+          . MIT licensed.
+        </p>
       </footer>
     </div>
-  )
-}
-
-export function SubcategoryCard({
-  href,
-  name,
-  count,
-}: {
-  href: string
-  name: string
-  count: number
-}) {
-  const empty = count === 0
-
-  return (
-    <Link
-      href={href}
-      aria-disabled={empty}
-      className={`group block ${empty ? 'pointer-events-none' : ''}`}
-    >
-      <div
-        className={`flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg border transition-colors ${
-          empty
-            ? 'border-dashed border-gray-200 bg-gray-50/50 dark:border-white/10 dark:bg-white/[0.02]'
-            : 'border-gray-200 bg-gray-50 group-hover:border-gray-300 dark:border-white/10 dark:bg-white/[0.03] dark:group-hover:border-white/20'
-        }`}
-      >
-        {/* Wireframe placeholder — a real thumbnail would go stale silently. */}
-        <div className="w-2/3 space-y-2 opacity-60">
-          <div className="h-1.5 w-1/3 rounded bg-gray-300 dark:bg-gray-700" />
-          <div className="h-1.5 w-full rounded bg-gray-200 dark:bg-gray-800" />
-          <div className="h-1.5 w-4/5 rounded bg-gray-200 dark:bg-gray-800" />
-          <div className="mt-3 h-4 w-14 rounded bg-indigo-500/70" />
-        </div>
-      </div>
-      <h3
-        className={`mt-3 text-sm font-semibold ${
-          empty ? 'text-gray-400 dark:text-gray-600' : 'group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
-        }`}
-      >
-        {name}
-      </h3>
-      <p className="mt-0.5 font-mono text-xs text-gray-500 dark:text-gray-500">
-        {empty ? 'coming soon' : `${count} component${count === 1 ? '' : 's'}`}
-      </p>
-    </Link>
   )
 }
