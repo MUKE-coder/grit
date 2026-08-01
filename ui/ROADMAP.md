@@ -57,7 +57,7 @@ Bento Grids · Pricing Sections · Header Sections · Newsletter Sections · Sta
 Testimonials · Blog Sections · Contact Sections · Team Sections · Content Sections ·
 Logo Clouds · FAQs · Footers
 
-**Elements** — Headers ✅ (6) · Flyout Menus · Banners
+**Elements** — Headers ✅ (8) · Flyout Menus · Banners
 
 **Feedback** — 404 Pages
 
