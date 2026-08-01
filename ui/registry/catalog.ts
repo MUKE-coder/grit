@@ -294,6 +294,22 @@ export const CATALOG: Category[] = [
                 dependencies: ['lucide-react'],
                 previewHeight: 460,
               },
+              {
+                slug: 'retail-with-link-columns',
+                name: 'Retail with link columns',
+                description:
+                  'Marketplace header: utility bar with search and cart, scrolling department tabs, and a full-bleed panel of dense link columns with a promo tile and brand rail.',
+                dependencies: ['lucide-react'],
+                previewHeight: 720,
+              },
+              {
+                slug: 'storefront-with-category-tiles',
+                name: 'Storefront with category tiles',
+                description:
+                  'Fashion storefront: promo strip, dark utility bar, scrolling departments, and a panel built from a category rail and circular image tiles.',
+                dependencies: ['lucide-react'],
+                previewHeight: 760,
+              },
             ],
           },
           { slug: 'flyout-menus', name: 'Flyout Menus', description: 'Rich dropdowns for dense navigation.', blocks: [] },
