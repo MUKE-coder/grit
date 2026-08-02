@@ -53,6 +53,9 @@ const navItems: NavItem[] = [
   { title: 'Home', href: '/docs', icon: <Home className="h-3.5 w-3.5" /> },
   { title: 'Pitch', href: '/pitch', icon: <Megaphone className="h-3.5 w-3.5" /> },
   { title: 'Tutorials', href: '/docs/tutorials', icon: <GraduationCap className="h-3.5 w-3.5" /> },
+  // Courses left the top nav to make room for Grit UI; it needs a home here
+  // or the whole course track becomes reachable only from the footer.
+  { title: 'Courses', href: '/courses', icon: <GraduationCap className="h-3.5 w-3.5" /> },
   { title: 'Batteries Included', href: '/docs/batteries', icon: <Database className="h-3.5 w-3.5" /> },
   {
     title: 'Getting Started',

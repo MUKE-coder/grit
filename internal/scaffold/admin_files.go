@@ -253,6 +253,9 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "ui", "ResponsiveSheet.tsx"): adminResponsiveSheetComponent(),
 		filepath.Join(adminRoot, "components", "ui", "CurrencyInput.tsx"):   adminCurrencyInputComponent(),
 		filepath.Join(adminRoot, "components", "ui", "IconButton.tsx"):      adminIconButtonComponent(),
+		// Swappable slots — see admin_ui_primitives.go.
+		filepath.Join(adminRoot, "components", "ui", "button.tsx"):          adminButtonPrimitive(),
+		filepath.Join(adminRoot, "components", "ui", "input.tsx"):           adminInputPrimitive(),
 		filepath.Join(adminRoot, "components", "ui", "ResponsiveTable.tsx"): adminResponsiveTableComponent(),
 		filepath.Join(adminRoot, "lib", "export.ts"):                        adminExportLib(),
 

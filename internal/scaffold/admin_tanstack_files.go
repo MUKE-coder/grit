@@ -414,6 +414,8 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		// UI primitives the reused pages import.
 		filepath.Join(adminRoot, "src", "components", "ui", "Skeleton.tsx"):        nextToTanStack(adminSkeletonComponent()),
 		filepath.Join(adminRoot, "src", "components", "ui", "IconButton.tsx"):      nextToTanStack(adminIconButtonComponent()),
+		filepath.Join(adminRoot, "src", "components", "ui", "button.tsx"):          nextToTanStack(adminButtonPrimitive()),
+		filepath.Join(adminRoot, "src", "components", "ui", "input.tsx"):           nextToTanStack(adminInputPrimitive()),
 		filepath.Join(adminRoot, "src", "components", "ui", "UserCell.tsx"):        nextToTanStack(adminUserCellComponent()),
 		filepath.Join(adminRoot, "src", "components", "ui", "CurrencyInput.tsx"):   nextToTanStack(adminCurrencyInputComponent()),
 		filepath.Join(adminRoot, "src", "components", "ui", "ResponsiveSheet.tsx"): nextToTanStack(adminResponsiveSheetComponent()),

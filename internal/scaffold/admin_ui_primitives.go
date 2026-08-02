@@ -1,5 +1,7 @@
 package scaffold
 
+import "strings"
+
 // v3.29 form + table primitives.
 //
 //   components/ui/ResponsiveSheet.tsx — Dialog on >=md, Sheet on mobile.
@@ -603,4 +605,215 @@ function sanitize(name: string): string {
   return name.replace(/[^a-z0-9_-]+/gi, "-").replace(/^-+|-+$/g, "") || "export";
 }
 `
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   SWAPPABLE SLOTS
+
+   components/ui/button.tsx and components/ui/input.tsx are the two files
+   `grit swap` overwrites. Everything about them is shaped by that:
+
+   - The exported CONTRACT is what call sites depend on, so it is small and
+     versioned (button@1, input@1). A variant that quietly drops a size breaks
+     every compact toolbar the moment it lands.
+   - The class LOOKUPS are exported separately from the components. Plenty of
+     call sites are <a> or <label> styled as a control, and if a swap only
+     changed <Button> those would keep the old look and the app would end up
+     half-swapped.
+   - No cva, no Radix, no clsx. A swappable file that drags in a dependency
+     means `grit swap` has to install packages to change a border radius.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+// adminButtonPrimitive emits components/ui/button.tsx — the "button@1" slot.
+func adminButtonPrimitive() string {
+	src := `"use client";
+
+import * as React from "react";
+import { Loader2 } from "@/lib/icons";
+
+/* grit:slot button@1
+ *
+ * SWAPPABLE. Replace this whole file with:
+ *
+ *     grit swap button <variant>
+ *
+ * Anything exported below is contract. Call sites across the admin rely on it,
+ * so a replacement must keep every variant and size working — including the
+ * ones you personally would not use. Run ~grit swap --check~ to verify.
+ */
+
+export type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "outline"
+  | "ghost"
+  | "danger";
+
+export type ButtonSize = "sm" | "md" | "lg" | "icon";
+
+const VARIANTS: Record<ButtonVariant, string> = {
+  primary:
+    "bg-accent text-white hover:bg-accent-hover focus-visible:ring-accent",
+  secondary:
+    "bg-bg-tertiary text-foreground hover:bg-bg-hover focus-visible:ring-border",
+  outline:
+    "border border-border bg-transparent text-foreground hover:bg-bg-hover focus-visible:ring-border",
+  ghost:
+    "bg-transparent text-text-secondary hover:bg-bg-hover hover:text-foreground focus-visible:ring-border",
+  danger:
+    "bg-danger text-white hover:opacity-90 focus-visible:ring-danger",
+};
+
+const SIZES: Record<ButtonSize, string> = {
+  sm: "h-8 gap-1.5 rounded-lg px-3 text-[13px]",
+  md: "h-10 gap-2 rounded-lg px-4 text-sm",
+  lg: "h-11 gap-2 rounded-lg px-5 text-[15px]",
+  // Square. Width is pinned so an icon-only button never collapses to its
+  // glyph and becomes a 16px tap target.
+  icon: "h-10 w-10 gap-0 rounded-lg p-0 text-sm",
+};
+
+const BASE =
+  "inline-flex shrink-0 items-center justify-center font-medium transition-colors " +
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-secondary " +
+  "disabled:pointer-events-none disabled:opacity-50";
+
+/**
+ * The class string on its own.
+ *
+ * Exported because a good third of the controls in the admin are <a> or <label>
+ * that need to look like buttons. They call this instead of wrapping a Button,
+ * which is what keeps a swap total rather than leaving links on the old style.
+ */
+export function buttonClasses(opts?: {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  className?: string;
+}): string {
+  const variant = VARIANTS[opts?.variant ?? "primary"];
+  const size = SIZES[opts?.size ?? "md"];
+  return [BASE, variant, size, opts?.className ?? ""].filter(Boolean).join(" ");
+}
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  /** Shows a spinner and disables the button. */
+  loading?: boolean;
+}
+
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  function Button(
+    { variant, size, loading, disabled, className, children, type, ...rest },
+    ref,
+  ) {
+    return (
+      <button
+        ref={ref}
+        // Defaulting to "button" is deliberate. The HTML default is "submit",
+        // and an unlabelled button inside a form submits it — which is how a
+        // Cancel next to a Save ends up saving.
+        type={type ?? "button"}
+        disabled={disabled || loading}
+        className={buttonClasses({ variant, size, className })}
+        {...rest}
+      >
+        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+        {children}
+      </button>
+    );
+  },
+);
+`
+	return strings.ReplaceAll(src, "~", "`")
+}
+
+// adminInputPrimitive emits components/ui/input.tsx — the "input@1" slot.
+func adminInputPrimitive() string {
+	src := `"use client";
+
+import * as React from "react";
+
+/* grit:slot input@1
+ *
+ * SWAPPABLE. Replace this whole file with:
+ *
+ *     grit swap input <variant>
+ *
+ * Anything exported below is contract — see components/ui/button.tsx for the
+ * rules a replacement has to keep.
+ */
+
+export type InputSize = "sm" | "md" | "lg";
+
+const SIZES: Record<InputSize, string> = {
+  sm: "h-8 rounded-lg px-3 text-[13px]",
+  md: "h-10 rounded-lg px-3.5 text-sm",
+  lg: "h-11 rounded-lg px-4 text-[15px]",
+};
+
+/* A textarea sizes itself by rows, so it gets vertical padding and NO height.
+   Passing h-auto alongside h-10 would leave two height utilities fighting, and
+   which one wins depends on Tailwind's internal ordering rather than on the
+   order they appear in the string — the kind of thing that looks fine until a
+   Tailwind upgrade silently reorders it. */
+const MULTILINE_SIZES: Record<InputSize, string> = {
+  sm: "rounded-lg px-3 py-2 text-[13px]",
+  md: "rounded-lg px-3.5 py-2.5 text-sm",
+  lg: "rounded-lg px-4 py-3 text-[15px]",
+};
+
+const BASE =
+  "w-full border bg-bg-tertiary text-foreground transition-colors " +
+  "placeholder:text-text-muted " +
+  "focus:outline-none focus:ring-1 " +
+  "disabled:cursor-not-allowed disabled:opacity-60";
+
+/**
+ * The class string on its own — shared by <textarea> and <select> so the whole
+ * form keeps one shape. Without this, swapping the input would restyle text
+ * fields and leave every dropdown on the old look.
+ */
+export function inputClasses(opts?: {
+  inputSize?: InputSize;
+  invalid?: boolean;
+  /** Drops the fixed height, for <textarea>. */
+  multiline?: boolean;
+  className?: string;
+}): string {
+  const table = opts?.multiline ? MULTILINE_SIZES : SIZES;
+  const size = table[opts?.inputSize ?? "md"];
+  const state = opts?.invalid
+    ? "border-danger focus:border-danger focus:ring-danger"
+    : "border-border focus:border-accent focus:ring-accent";
+  return [BASE, size, state, opts?.className ?? ""].filter(Boolean).join(" ");
+}
+
+export interface InputProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size"> {
+  /**
+   * NOT "size". <input size> is a real HTML attribute taking a character count,
+   * so a prop called size would both collide with it and silently render
+   * size="md" into the DOM.
+   */
+  inputSize?: InputSize;
+  /** Paints the error border. Pair it with aria-invalid for screen readers. */
+  invalid?: boolean;
+}
+
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  function Input({ inputSize, invalid, className, ...rest }, ref) {
+    return (
+      <input
+        ref={ref}
+        aria-invalid={invalid || undefined}
+        className={inputClasses({ inputSize, invalid, className })}
+        {...rest}
+      />
+    );
+  },
+);
+`
+	return strings.ReplaceAll(src, "~", "`")
 }

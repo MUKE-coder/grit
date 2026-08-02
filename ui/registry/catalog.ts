@@ -28,6 +28,33 @@ export interface Block {
    * page stub would ship that stub into everyone's project.
    */
   previewHeight?: number
+
+  /**
+   * SWAPPABLE. The admin slot this block can replace, e.g. "button".
+   *
+   * A block with a slot is installable like any other — `shadcn add` still drops
+   * it in as a new file you import where you like — but it can ALSO be swapped
+   * in, which is a different operation: `grit swap button glow-ring` overwrites
+   * the one canonical `components/ui/button.tsx` so every call site in the admin
+   * changes at once, without a single import being edited.
+   *
+   * Only set this when the block genuinely satisfies the slot's contract. A
+   * variant that quietly drops `size="sm"` breaks every compact toolbar in the
+   * app the moment it lands.
+   */
+  slot?: string
+
+  /**
+   * The slot contract version this variant implements, e.g. "button@1".
+   *
+   * Versioned so the framework can add a prop later without silently breaking
+   * every variant already published against the old shape: `grit swap` refuses a
+   * variant whose contract major does not match the installed slot's.
+   */
+  contract?: string
+
+  /** Requires a paid licence to install or swap. Free variants omit it. */
+  pro?: boolean
 }
 
 export interface Subcategory {
