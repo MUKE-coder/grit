@@ -629,7 +629,12 @@ func adminButtonPrimitive() string {
 	src := `"use client";
 
 import * as React from "react";
-import { Loader2 } from "@/lib/icons";
+// lucide-react directly, NOT @/lib/icons. A swapped-in variant is authored
+// against the public registry where @/lib/icons does not exist, and @/lib/icons
+// only re-exports a curated subset — a variant reaching for an icon that is in
+// the iconMap but not the export block fails to compile. Importing the package
+// keeps default and variant byte-identical in shape and needs no rewrite on swap.
+import { Loader2 } from "lucide-react";
 
 /* grit:slot button@1
  *
