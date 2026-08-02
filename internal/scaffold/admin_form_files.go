@@ -24,10 +24,10 @@ import { VideosField } from "./fields/videos-field";
 import { FileField } from "./fields/file-field";
 import { FilesField } from "./fields/files-field";
 import { RichTextField } from "./fields/rich-text-field";
+import { Button } from "@/components/ui/button";
 import { RelationshipSelectField } from "./fields/relationship-select-field";
 import { MultiRelationshipSelectField } from "./fields/multi-relationship-select-field";
 import { LineItemsField } from "./fields/line-items-field";
-import { Loader2 } from "@/lib/icons";
 
 interface FormBuilderProps {
   form: FormDefinition;
@@ -78,21 +78,12 @@ export function FormBuilder({
       </div>
 
       <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-bg-hover transition-colors"
-        >
+        <Button variant="outline" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
-        >
-          {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+        </Button>
+        <Button type="submit" loading={isSubmitting}>
           {submitLabel}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -675,6 +666,7 @@ import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { FieldDefinition, FormDefinition, StepDefinition } from "@/lib/resource";
 import { FieldRenderer, buildDefaults } from "./form-builder";
+import { Button } from "@/components/ui/button";
 import { Check, ChevronLeft, ChevronRight, Loader2 } from "@/lib/icons";
 
 /**
@@ -895,22 +887,14 @@ export function FormStepper({
         <div className="flex items-center justify-between pt-4 border-t border-border">
           <div>
             {currentStep > 0 ? (
-              <button
-                type="button"
-                onClick={handlePrev}
-                className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-bg-hover transition-colors"
-              >
+              <Button variant="outline" onClick={handlePrev}>
                 <ChevronLeft className="h-4 w-4" />
                 Previous
-              </button>
+              </Button>
             ) : (
-              <button
-                type="button"
-                onClick={onCancel}
-                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-bg-hover transition-colors"
-              >
+              <Button variant="outline" onClick={onCancel}>
                 Cancel
-              </button>
+              </Button>
             )}
           </div>
           {/* Editing an existing record saves step by step; creating a new one
@@ -918,16 +902,14 @@ export function FormStepper({
               nothing to PATCH against. */}
           {onStepSave ? (
             <div className="flex items-center gap-2">
-              <button
-                type="button"
+              <Button
                 onClick={handleStepSave}
                 disabled={!stepDirty || savingStep !== null}
+                loading={savingStep === currentStep}
                 title={stepDirty ? undefined : "No changes on this step"}
-                className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                {savingStep === currentStep && <Loader2 className="h-4 w-4 animate-spin" />}
                 Update
-              </button>
+              </Button>
               {isLastStep ? (
                 <button
                   type="button"
@@ -1522,6 +1504,7 @@ export function GenerateButton({ onGenerate }: GenerateButtonProps) {
 func adminTextField() string {
 	return `import type { FieldDefinition } from "@/lib/resource";
 import { GenerateButton } from "./generate-button";
+import { Input } from "@/components/ui/input";
 
 interface TextFieldProps {
   field: FieldDefinition;
@@ -1549,12 +1532,16 @@ export function TextField({ field, value, onChange, error, onGenerate }: TextFie
             {field.prefix}
           </span>
         )}
-        <input
+        <Input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
-          className={` + "`" + `w-full ${field.prefix ? "rounded-r-lg" : field.suffix ? "rounded-l-lg" : "rounded-lg"} border border-border bg-bg-tertiary px-4 py-2.5 text-sm text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${error ? "border-danger" : ""}` + "`" + `}
+          invalid={!!error}
+          // Only the corner facing the addon is squared. rounded-l-none is
+          // emitted after rounded-lg by Tailwind, so it wins on the left and
+          // leaves the right corners alone.
+          className={field.prefix ? "rounded-l-none" : field.suffix ? "rounded-r-none" : ""}
         />
         {field.suffix && (
           <span className="inline-flex items-center rounded-r-lg border border-l-0 border-border bg-bg-tertiary px-3 text-sm text-text-muted">
@@ -1576,6 +1563,7 @@ export function TextField({ field, value, onChange, error, onGenerate }: TextFie
 // adminTextareaField returns the textarea field component.
 func adminTextareaField() string {
 	return `import type { FieldDefinition } from "@/lib/resource";
+import { inputClasses } from "@/components/ui/input";
 
 interface TextareaFieldProps {
   field: FieldDefinition;
@@ -1596,7 +1584,7 @@ export function TextareaField({ field, value, onChange, error }: TextareaFieldPr
         onChange={(e) => onChange(e.target.value)}
         placeholder={field.placeholder}
         rows={field.rows ?? 4}
-        className={` + "`" + `w-full rounded-lg border border-border bg-bg-tertiary px-4 py-2.5 text-sm text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent resize-y ${error ? "border-danger" : ""}` + "`" + `}
+        className={inputClasses({ multiline: true, invalid: !!error, className: "resize-y" })}
       />
       {field.description && !error && (
         <p className="text-xs text-text-muted">{field.description}</p>
@@ -1626,6 +1614,7 @@ func adminNumberField() string {
 import { useEffect, useRef, useState } from "react";
 import type { FieldDefinition } from "@/lib/resource";
 import { GenerateButton } from "./generate-button";
+import { Input } from "@/components/ui/input";
 
 interface NumberFieldProps {
   field: FieldDefinition;
@@ -1761,7 +1750,7 @@ export function NumberField({ field, value, onChange, error, onGenerate }: Numbe
             {field.prefix}
           </span>
         )}
-        <input
+        <Input
           ref={inputRef}
           type="text"
           inputMode={allowDecimal ? "decimal" : "numeric"}
@@ -1769,7 +1758,8 @@ export function NumberField({ field, value, onChange, error, onGenerate }: Numbe
           value={display}
           onChange={handleChange}
           placeholder={field.placeholder}
-          className={` + "`" + `w-full ${field.prefix ? "rounded-r-lg" : field.suffix ? "rounded-l-lg" : "rounded-lg"} border border-border bg-bg-tertiary px-4 py-2.5 text-sm text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${error ? "border-danger" : ""}` + "`" + `}
+          invalid={!!error}
+          className={field.prefix ? "rounded-l-none" : field.suffix ? "rounded-r-none" : ""}
         />
         {field.suffix && (
           <span className="inline-flex items-center rounded-r-lg border border-l-0 border-border bg-bg-tertiary px-3 text-sm text-text-muted">

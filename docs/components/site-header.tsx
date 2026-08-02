@@ -56,21 +56,27 @@ export function SiteHeader() {
               /docs and are already reachable from the docs sidebar; Pitch is a
               niche marketing page and is still linked from the footer. AI
               Integration stays despite being a docs page — it's deliberately
-              highlighted. */}
+              highlighted. Courses moved to the footer and the docs sidebar to
+              make room for Grit UI, which is a separate product on its own
+              domain and had no entry point from here at all. */}
           {[
             { label: 'Docs', href: '/docs' },
             { label: 'Builder', href: '/builder' },
             { label: 'AI Integration', href: '/docs/ai-integration', highlight: true },
-            { label: 'Courses', href: '/courses' },
+            { label: 'Grit UI', href: 'https://ui.gritframework.dev', external: true },
             { label: 'Blog', href: '/blog' },
             { label: 'Showcase', href: '/showcase' },
             { label: 'Sponsors', href: '/sponsors' },
           ].map((item) => {
-            const active = isActive(item.href)
+            // An off-domain entry can never be the active route, and running it
+            // through isActive() would prefix-match "https://…" against the
+            // pathname for no reason.
+            const active = !item.external && isActive(item.href)
             return (
               <Link
                 key={item.label}
                 href={item.href}
+                {...(item.external ? { target: '_blank', rel: 'noreferrer' } : {})}
                 className={cn(
                   'relative px-3 py-1.5 text-[13px] transition-colors',
                   active

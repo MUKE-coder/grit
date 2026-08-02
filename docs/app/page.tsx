@@ -1622,6 +1622,7 @@ grit new my-app`} />
               <h4 className="text-xs font-mono font-medium text-foreground/70 tracking-wider mb-4">PRODUCTS</h4>
               <ul className="space-y-2.5 text-sm">
                 <li><Link href="/docs" className="text-muted-foreground hover:text-foreground transition-colors">Grit CLI</Link></li>
+                <li><Link href="https://ui.gritframework.dev" target="_blank" className="text-muted-foreground hover:text-foreground transition-colors">Grit UI</Link></li>
                 <li><Link href="https://gritcms.com" target="_blank" className="text-muted-foreground hover:text-foreground transition-colors">GritCMS</Link></li>
                 <li><Link href="https://github.com/MUKE-coder/gorm-studio" target="_blank" className="text-muted-foreground hover:text-foreground transition-colors">GORM Studio</Link></li>
                 <li><Link href="/showcase" className="text-muted-foreground hover:text-foreground transition-colors">Showcase</Link></li>
