@@ -6,6 +6,10 @@ import type { ComponentType } from 'react'
 
 /** Keyed by the flat registry name: <category>-<subcategory>-<slug>. */
 export const BLOCK_MAP: Record<string, ComponentType> = {
+  "application-ui-buttons-glow-ring": dynamic(() => import('@/registry/application-ui/buttons/glow-ring').then((m) => ({ default: m.default }))),
+  "application-ui-buttons-solid-default": dynamic(() => import('@/registry/application-ui/buttons/solid-default').then((m) => ({ default: m.default }))),
+  "application-ui-inputs-bordered-default": dynamic(() => import('@/registry/application-ui/inputs/bordered-default').then((m) => ({ default: m.default }))),
+  "application-ui-inputs-soft-filled": dynamic(() => import('@/registry/application-ui/inputs/soft-filled').then((m) => ({ default: m.default }))),
   "marketing-feature-sections-alternating-with-screenshots": dynamic(() => import('@/registry/marketing/feature-sections/alternating-with-screenshots').then((m) => ({ default: m.default }))),
   "marketing-feature-sections-carousel-three-up": dynamic(() => import('@/registry/marketing/feature-sections/carousel-three-up').then((m) => ({ default: m.default }))),
   "marketing-feature-sections-carousel-two-up": dynamic(() => import('@/registry/marketing/feature-sections/carousel-two-up').then((m) => ({ default: m.default }))),
@@ -37,5 +41,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-hero-sections-with-mega-menu": dynamic(() => import('@/registry/marketing/hero-sections/with-mega-menu').then((m) => ({ default: m.default }))),
 }
 
-/** 29 blocks at generation time. */
-export const BLOCK_COUNT: number = 29
+/** 33 blocks at generation time. */
+export const BLOCK_COUNT: number = 33

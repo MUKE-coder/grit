@@ -389,6 +389,68 @@ export const CATALOG: Category[] = [
           { slug: 'calendars', name: 'Calendars', description: 'Month, week, and day views.', blocks: [] },
         ],
       },
+      {
+        // Every block in this group declares a `slot`, which makes it swappable:
+        // `grit swap button glow-ring` overwrites the one canonical file in the
+        // admin so every call site changes at once. They install like any other
+        // block too — the two paths are different operations, not alternatives.
+        name: 'Elements',
+        subcategories: [
+          {
+            slug: 'buttons',
+            name: 'Buttons',
+            description:
+              'Swappable button styles. Installing one adds a file; swapping one replaces the admin’s button everywhere at once.',
+            blocks: [
+              {
+                slug: 'solid-default',
+                name: 'Solid (default)',
+                description:
+                  'The stock Grit button. Published so you can swap back after trying something else.',
+                dependencies: ['lucide-react'],
+                slot: 'button',
+                contract: 'button@1',
+                previewHeight: 320,
+              },
+              {
+                slug: 'glow-ring',
+                name: 'Glow ring',
+                description:
+                  'Fully rounded, with a ring that expands out of the button on hover and settles.',
+                dependencies: ['lucide-react'],
+                slot: 'button',
+                contract: 'button@1',
+                previewHeight: 340,
+              },
+            ],
+          },
+          {
+            slug: 'inputs',
+            name: 'Inputs',
+            description:
+              'Swappable input styles. The class helper is exported too, so textareas and selects follow the swap instead of being left behind.',
+            blocks: [
+              {
+                slug: 'bordered-default',
+                name: 'Bordered (default)',
+                description: 'The stock Grit input. Published so you can swap back.',
+                slot: 'input',
+                contract: 'input@1',
+                previewHeight: 420,
+              },
+              {
+                slug: 'soft-filled',
+                name: 'Soft filled',
+                description:
+                  'Borderless until focused: a filled surface that grows a ring, with the border kept transparent so nothing shifts.',
+                slot: 'input',
+                contract: 'input@1',
+                previewHeight: 420,
+              },
+            ],
+          },
+        ],
+      },
     ],
   },
 ]

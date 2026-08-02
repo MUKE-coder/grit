@@ -38,6 +38,12 @@ type Item struct {
 	Description  string   `json:"description"`
 	Categories   []string `json:"categories"`
 	Dependencies []string `json:"dependencies"`
+
+	// Present only on swappable blocks. Carried in the INDEX so `grit swap
+	// --list` can filter without fetching every item in the registry.
+	Slot     string `json:"slot,omitempty"`
+	Contract string `json:"contract,omitempty"`
+	Pro      bool   `json:"pro,omitempty"`
 }
 
 // Category returns the item's primary category, or "misc".

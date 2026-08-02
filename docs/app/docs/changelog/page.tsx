@@ -28,6 +28,69 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.115.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.115.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 2, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Swappable components. One command restyles the whole admin.</strong>
+                </p>
+                <p>
+                  There is a difference between <em>adding</em> a button and{' '}
+                  <em>swapping</em> the button. Adding gives you a new file to import
+                  wherever you like. Swapping overwrites the one file every call site
+                  already imports — so <code>grit swap button glow-ring</code> restyles
+                  every button in your admin without you editing a single import.
+                </p>
+                <ul>
+                  <li>
+                    <strong>Two slots to start:</strong> <code>button</code> and{' '}
+                    <code>input</code>, at <code>components/ui/</code> in your admin.
+                    Browse the variants on{' '}
+                    <a href="https://ui.gritframework.dev/application-ui/buttons">Grit UI</a>
+                    {' '}— swappable ones carry a <strong>Swappable</strong> badge and show
+                    both commands, because they install like any other block too.
+                  </li>
+                  <li>
+                    <strong>The command refuses more than it accepts.</strong> A variant
+                    whose contract major differs from your slot is rejected rather than
+                    written. A slot file you have edited by hand is never overwritten
+                    without <code>--force</code>. The previous file is always backed up to{' '}
+                    <code>.grit/swaps/</code>, so <code>grit swap button --revert</code> is
+                    a real undo rather than a suggestion to check git.
+                  </li>
+                  <li>
+                    <strong>And it type-checks afterwards, then rolls back on failure.</strong>{' '}
+                    This is the part that makes swapping safe on a real app. A variant that
+                    compiles in isolation can still be incompatible with your call sites —
+                    dropping a variant from a union, say. <code>grit swap</code> runs{' '}
+                    <code>tsc</code> after writing and, if it fails, restores the previous
+                    file byte-for-byte and records nothing. A swap that leaves your app not
+                    compiling is worse than one that refuses.
+                  </li>
+                  <li>
+                    <strong>Admin only, on purpose.</strong> The marketing site and the
+                    admin have different primitives, and a slot that means two different
+                    things in two apps is not a slot.
+                  </li>
+                </ul>
+                <p>
+                  Groundwork shipped with it: the admin now has real <code>Button</code>{' '}
+                  and <code>Input</code> primitives, adopted across the form fields and
+                  form actions. Previously there were 231 hand-rolled{' '}
+                  <code>&lt;button&gt;</code> elements that did not agree with each other
+                  on padding or font weight — which is why a colour bug could appear in
+                  several places independently.
+                </p>
+              </div>
+            </div>
+
             {/* v3.114.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

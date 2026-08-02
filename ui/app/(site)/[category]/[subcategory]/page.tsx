@@ -135,6 +135,13 @@ export default async function SubcategoryPage({
                     category={category.slug}
                     subcategory={subcategory.slug}
                     installs={counts[name]}
+                    // Only swappable blocks get the second command. The slug is
+                    // the variant name the CLI resolves, not the registry name —
+                    // `grit swap button glow-ring` reads better than pasting a
+                    // 40-character flat identifier.
+                    swapCommand={
+                      block.slot ? `grit swap ${block.slot} ${block.slug}` : undefined
+                    }
                     height={block.previewHeight}
                   />
                 </Reveal>

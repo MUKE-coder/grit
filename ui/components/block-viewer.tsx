@@ -1,10 +1,10 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
-import { InstallCommand } from './install-command'
-import { trackBlockCopy } from '@/lib/track'
-import { InstallCount } from './install-count'
+import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { InstallCommand } from "./install-command";
+import { trackBlockCopy } from "@/lib/track";
+import { InstallCount } from "./install-count";
 import {
   Check,
   Code2,
@@ -12,25 +12,27 @@ import {
   Eye,
   Monitor,
   MoonStar,
+  Repeat2,
   Smartphone,
   Sun,
   Tablet,
-} from 'lucide-react'
+} from "lucide-react";
 
-type Tab = 'preview' | 'code'
-type Breakpoint = 'mobile' | 'tablet' | 'desktop'
+type Tab = "preview" | "code";
+type Breakpoint = "mobile" | "tablet" | "desktop";
 
 const WIDTHS: Record<Breakpoint, string> = {
-  mobile: '390px',
-  tablet: '834px',
-  desktop: '100%',
-}
+  mobile: "390px",
+  tablet: "834px",
+  desktop: "100%",
+};
 
-const BREAKPOINTS: { key: Breakpoint; icon: typeof Monitor; label: string }[] = [
-  { key: 'mobile', icon: Smartphone, label: 'iPhone width' },
-  { key: 'tablet', icon: Tablet, label: 'iPad width' },
-  { key: 'desktop', icon: Monitor, label: 'Full width' },
-]
+const BREAKPOINTS: { key: Breakpoint; icon: typeof Monitor; label: string }[] =
+  [
+    { key: "mobile", icon: Smartphone, label: "iPhone width" },
+    { key: "tablet", icon: Tablet, label: "iPad width" },
+    { key: "desktop", icon: Monitor, label: "Full width" },
+  ];
 
 /**
  * iOS-style segmented control.
@@ -45,15 +47,15 @@ function Segmented<T extends string>({
   onChange,
   layoutId,
 }: {
-  options: { key: T; label?: string; icon?: typeof Monitor; title?: string }[]
-  value: T
-  onChange: (v: T) => void
-  layoutId: string
+  options: { key: T; label?: string; icon?: typeof Monitor; title?: string }[];
+  value: T;
+  onChange: (v: T) => void;
+  layoutId: string;
 }) {
   return (
     <div className="relative flex rounded-xl bg-gray-500/[0.08] p-1 dark:bg-white/[0.06]">
       {options.map((o) => {
-        const selected = o.key === value
+        const selected = o.key === value;
         return (
           <button
             key={o.key}
@@ -66,27 +68,32 @@ function Segmented<T extends string>({
             // pointer target — the earlier 32px with a 15px glyph was fiddly to
             // hit and read as an afterthought next to the labelled controls.
             className={`relative z-10 inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] text-[13.5px] font-medium transition-colors duration-200 ${
-              o.icon && !o.label ? 'w-9' : 'px-3.5'
+              o.icon && !o.label ? "w-9" : "px-3.5"
             } ${
               selected
-                ? 'text-gray-900 dark:text-white'
-                : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
+                ? "text-gray-900 dark:text-white"
+                : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
             }`}
           >
             {selected && (
               <motion.span
                 layoutId={layoutId}
-                transition={{ type: 'spring', stiffness: 520, damping: 38, mass: 0.7 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 520,
+                  damping: 38,
+                  mass: 0.7,
+                }}
                 className="absolute inset-0 -z-10 rounded-[10px] bg-white shadow-[0_1px_2px_rgb(15_23_42_/_0.10),0_1px_1px_rgb(15_23_42_/_0.04)] dark:bg-white/[0.14] dark:shadow-none"
               />
             )}
             {o.icon && <o.icon aria-hidden="true" className="size-[17px]" />}
             {o.label}
           </button>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
 export function BlockViewer({
@@ -98,6 +105,7 @@ export function BlockViewer({
   category,
   subcategory,
   installs,
+  swapCommand,
   height = 660,
 }: {
   /**
@@ -105,27 +113,45 @@ export function BlockViewer({
    * "marketing-hero-sections-simple-centered". Also the identifier sent with
    * copy events, because a bare block slug is only unique within a subcategory.
    */
-  name: string
-  title: string
-  source: string
+  name: string;
+  title: string;
+  source: string;
   /** Shiki output, produced at build time. */
-  highlighted: string
-  installCommand: string
-  category: string
-  subcategory: string
-  installs?: number
-  height?: number
+  highlighted: string;
+  installCommand: string;
+  category: string;
+  subcategory: string;
+  installs?: number;
+  /**
+   * Set only on blocks that declare a slot. Its presence is what draws the
+   * Swappable badge and the second command bar — the block is installable
+   * either way, so the badge has to mean "and it can also replace the one in
+   * your admin", not "this is how you install it".
+   */
+  swapCommand?: string;
+  height?: number;
 }) {
-  const [tab, setTab] = useState<Tab>('preview')
-  const [breakpoint, setBreakpoint] = useState<Breakpoint>('desktop')
-  const [dark, setDark] = useState(false)
+  const [tab, setTab] = useState<Tab>("preview");
+  const [breakpoint, setBreakpoint] = useState<Breakpoint>("desktop");
+  const [dark, setDark] = useState(false);
 
   return (
     <section className="scroll-mt-24" id={name}>
       {/* Toolbar */}
       <div className="mb-3.5 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2.5">
-          <h3 className="display text-[15px] text-gray-900 dark:text-white">{title}</h3>
+          <h3 className="display text-[15px] text-gray-900 dark:text-white">
+            {title}
+          </h3>
+          {swapCommand && (
+            <span
+              title="Replaces this component everywhere in your admin"
+              className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 px-2.5 py-1 text-[11.5px] font-semibold text-violet-600 ring-1 ring-violet-500/20 dark:bg-violet-400/10 dark:text-violet-300 dark:ring-violet-400/25"
+            >
+              <Repeat2 aria-hidden="true" className="size-3.5" />
+              Swappable
+            </span>
+          )}
           <InstallCount count={installs} />
         </div>
 
@@ -135,13 +161,13 @@ export function BlockViewer({
             value={tab}
             onChange={setTab}
             options={[
-              { key: 'preview', label: 'Preview', icon: Eye },
-              { key: 'code', label: 'Code', icon: Code2 },
+              { key: "preview", label: "Preview", icon: Eye },
+              { key: "code", label: "Code", icon: Code2 },
             ]}
           />
 
           <AnimatePresence initial={false}>
-            {tab === 'preview' && (
+            {tab === "preview" && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.94 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -163,11 +189,11 @@ export function BlockViewer({
                 </div>
                 <Segmented
                   layoutId={`${name}-theme`}
-                  value={dark ? 'dark' : 'light'}
-                  onChange={(v) => setDark(v === 'dark')}
+                  value={dark ? "dark" : "light"}
+                  onChange={(v) => setDark(v === "dark")}
                   options={[
-                    { key: 'light', icon: Sun, title: 'Preview in light' },
-                    { key: 'dark', icon: MoonStar, title: 'Preview in dark' },
+                    { key: "light", icon: Sun, title: "Preview in light" },
+                    { key: "dark", icon: MoonStar, title: "Preview in dark" },
                   ]}
                 />
               </motion.div>
@@ -178,29 +204,45 @@ export function BlockViewer({
             value={source}
             label="Copy code"
             onCopied={() =>
-              trackBlockCopy({ block: name, category, subcategory, kind: 'code' })
+              trackBlockCopy({
+                block: name,
+                category,
+                subcategory,
+                kind: "code",
+              })
             }
           />
         </div>
       </div>
 
       {/* Install command, above the preview — see InstallCommand for why. */}
-      <div className="mb-3">
+      <div className="mb-3 space-y-2">
         <InstallCommand
           command={installCommand}
           block={name}
           category={category}
           subcategory={subcategory}
+          label="Add as a new component"
         />
+        {swapCommand && (
+          <InstallCommand
+            command={swapCommand}
+            block={name}
+            category={category}
+            subcategory={subcategory}
+            label="Or replace the one in your admin"
+            tone="swap"
+          />
+        )}
       </div>
 
       {/* Body */}
       <div className="hairline overflow-hidden rounded-2xl border bg-white lift dark:bg-gray-900">
-        {tab === 'preview' ? (
+        {tab === "preview" ? (
           <div className="flex justify-center bg-gray-50/70 py-0 dark:bg-black/25">
             <motion.iframe
-              key={`${name}-${dark ? 'dark' : 'light'}`}
-              src={`/preview/${name}?theme=${dark ? 'dark' : 'light'}`}
+              key={`${name}-${dark ? "dark" : "light"}`}
+              src={`/preview/${name}?theme=${dark ? "dark" : "light"}`}
               title={`${title} preview`}
               loading="lazy"
               initial={{ opacity: 0 }}
@@ -222,9 +264,8 @@ export function BlockViewer({
           />
         )}
       </div>
-
     </section>
-  )
+  );
 }
 
 function CopyButton({
@@ -232,22 +273,22 @@ function CopyButton({
   label,
   onCopied,
 }: {
-  value: string
-  label: string
-  onCopied?: () => void
+  value: string;
+  label: string;
+  onCopied?: () => void;
 }) {
-  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle')
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(value)
-      setState('copied')
+      await navigator.clipboard.writeText(value);
+      setState("copied");
       // Only after a successful write — a failed copy is not a download.
-      onCopied?.()
+      onCopied?.();
     } catch {
-      setState('failed')
+      setState("failed");
     }
-    setTimeout(() => setState('idle'), 1900)
+    setTimeout(() => setState("idle"), 1900);
   }
 
   return (
@@ -265,12 +306,12 @@ function CopyButton({
           transition={{ duration: 0.14 }}
           className="inline-flex items-center gap-1.5"
         >
-          {state === 'copied' ? (
+          {state === "copied" ? (
             <>
               <Check className="size-[17px] text-emerald-500" />
               Copied
             </>
-          ) : state === 'failed' ? (
+          ) : state === "failed" ? (
             <>
               <Copy className="size-[17px]" />
               Press &#8984;C
@@ -284,5 +325,5 @@ function CopyButton({
         </motion.span>
       </AnimatePresence>
     </button>
-  )
+  );
 }

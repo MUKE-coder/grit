@@ -36,6 +36,11 @@ export async function GET(
           description: block.description ?? subcategory.description,
           categories: [category.slug, subcategory.slug],
           dependencies: block.dependencies ?? [],
+          // Present only on swappable blocks. `grit swap --list` filters on it,
+          // so it has to be in the INDEX — otherwise listing the variants for
+          // one slot means fetching every item in the registry.
+          ...(block.slot ? { slot: block.slot, contract: block.contract } : {}),
+          ...(block.pro ? { pro: true } : {}),
           url: `${base}/r/${n}.json`,
         })),
       },
@@ -83,6 +88,13 @@ export async function GET(
         category: category.slug,
         subcategory: subcategory.slug,
         docs: `${base}/${category.slug}/${subcategory.slug}#${name}`,
+        // The swap contract. `grit swap` refuses a variant whose contract major
+        // does not match the slot already installed, rather than writing a file
+        // that type-checks against a shape the call sites no longer use.
+        ...(block.slot
+          ? { slot: block.slot, contract: block.contract, swapTarget: `components/ui/${block.slot}.tsx` }
+          : {}),
+        ...(block.pro ? { pro: true } : {}),
       },
     },
     { headers: { 'Cache-Control': 'public, max-age=300, s-maxage=3600' } },
