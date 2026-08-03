@@ -1329,7 +1329,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useState } from "react";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-import { useLogin } from "@/hooks/use-auth";
+import { useLogin, useVerifyTOTP } from "@/hooks/use-auth";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { authInputCls, authInputStyle, AuthSubmit } from "@/components/auth/AuthField";
 
@@ -1347,15 +1347,112 @@ type LoginInput = z.infer<typeof LoginSchema>;
 function LoginPage() {
   const navigate = useNavigate();
   const { mutate: login, isPending, error } = useLogin();
+  const { mutate: verifyTOTP, isPending: verifying, error: verifyError } = useVerifyTOTP();
   const [showPassword, setShowPassword] = useState(false);
+  // Set when the password was right and the account owes a 2FA code.
+  const [pendingToken, setPendingToken] = useState<string | null>(null);
+  const [code, setCode] = useState("");
+  const [useBackup, setUseBackup] = useState(false);
+  const [trustDevice, setTrustDevice] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginInput>({
     resolver: zodResolver(LoginSchema),
   });
 
   const onSubmit = (data: LoginInput) => {
-    login(data, { onSuccess: () => navigate({ to: "/app" }) });
+    login(data, {
+      onSuccess: (res) => {
+        const d = res as { totp_required?: boolean; pending_token?: string };
+        if (d?.totp_required && d.pending_token) {
+          setPendingToken(d.pending_token);
+          return;
+        }
+        navigate({ to: "/app" });
+      },
+    });
   };
+
+  const onVerify = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingToken) return;
+    verifyTOTP(
+      { pending_token: pendingToken, code, trust_device: trustDevice, backup: useBackup },
+      { onSuccess: () => navigate({ to: "/app" }) }
+    );
+  };
+
+  // Replaces the credentials form rather than sitting under it, so there is
+  // one obvious thing to do.
+  if (pendingToken) {
+    const enough = code.trim().length >= (useBackup ? 8 : 6);
+    return (
+      <AuthShell
+        mode="login"
+        title="Two-factor authentication"
+        subtitle={
+          useBackup
+            ? "Enter one of your backup codes"
+            : "Enter the 6-digit code from your authenticator app"
+        }
+        errorMessage={
+          verifyError ? ((verifyError as Error).message || "That code was not accepted") : undefined
+        }
+      >
+        <form onSubmit={onVerify} className="space-y-5">
+          <div className="space-y-1.5">
+            <label htmlFor="totp-code" className="block text-sm font-medium">
+              {useBackup ? "Backup code" : "Authentication code"}
+            </label>
+            <input
+              id="totp-code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className={authInputCls + " text-center tracking-[0.4em] text-lg"}
+              style={authInputStyle}
+              placeholder={useBackup ? "XXXXXXXX" : "000000"}
+              inputMode={useBackup ? "text" : "numeric"}
+              autoComplete="one-time-code"
+              maxLength={useBackup ? 8 : 6}
+              autoFocus
+            />
+          </div>
+
+          {!useBackup && (
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={trustDevice}
+                onChange={(e) => setTrustDevice(e.target.checked)}
+                className="h-4 w-4 rounded"
+              />
+              Trust this device for 30 days
+            </label>
+          )}
+
+          <AuthSubmit disabled={verifying || !enough}>
+            {verifying ? (<><Loader2 className="h-4 w-4 animate-spin" /> Verifying…</>) : "Verify and sign in"}
+          </AuthSubmit>
+
+          <div className="flex items-center justify-between text-sm">
+            <button
+              type="button"
+              onClick={() => { setUseBackup(!useBackup); setCode(""); }}
+              className="text-accent hover:underline"
+            >
+              {useBackup ? "Use your authenticator app" : "Use a backup code"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setPendingToken(null); setCode(""); setUseBackup(false); }}
+              className="text-text-secondary hover:underline"
+            >
+              Back
+            </button>
+          </div>
+        </form>
+      </AuthShell>
+    );
+  }
 
   return (
     <AuthShell
@@ -5066,11 +5163,55 @@ export function useMe() {
   });
 }
 
+// A login ends either signed in, or holding a short-lived pending token
+// because the account has 2FA on and this device is not trusted.
+export interface TOTPChallenge {
+  totp_required: true;
+  pending_token: string;
+}
+
+function isChallenge(d: AuthResponse | TOTPChallenge): d is TOTPChallenge {
+  return (d as TOTPChallenge).totp_required === true;
+}
+
 export function useLogin() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: LoginInput): Promise<AuthResponse> => {
+    mutationFn: async (input: LoginInput): Promise<AuthResponse | TOTPChallenge> => {
       const { data } = await apiClient.post("/auth/login", input);
+      return data.data;
+    },
+    onSuccess: async (data) => {
+      // Reading data.tokens unguarded is what used to break: on a 2FA account
+      // that field does not exist, so the desktop app threw instead of asking
+      // for a code, leaving those users unable to sign in at all.
+      if (isChallenge(data)) return;
+      await setToken("access_token", data.tokens.access_token);
+      await setToken("refresh_token", data.tokens.refresh_token);
+      qc.setQueryData(["me"], data.user);
+    },
+  });
+}
+
+// Completes a login that stopped at the 2FA prompt. An authenticator code and
+// a backup code differ only by endpoint, so one hook covers both.
+export function useVerifyTOTP() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      pending_token: string;
+      code: string;
+      trust_device?: boolean;
+      backup?: boolean;
+    }): Promise<AuthResponse> => {
+      const path = input.backup
+        ? "/auth/totp/backup-codes/verify"
+        : "/auth/totp/verify";
+      const { data } = await apiClient.post(path, {
+        pending_token: input.pending_token,
+        code: input.code.trim(),
+        trust_device: input.trust_device ?? false,
+      });
       return data.data;
     },
     onSuccess: async (data) => {

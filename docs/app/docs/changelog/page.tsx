@@ -28,6 +28,46 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.125.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.125.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>2FA no longer locks you out of the mobile and desktop apps.</strong>
+                </p>
+                <p>
+                  Both clients read <code>res.data.tokens.access_token</code> straight after
+                  login. On an account with two-factor enabled that field does not exist &mdash;
+                  the API returns a pending token instead &mdash; so the app threw rather than
+                  asking for a code. Anyone who turned 2FA on in the admin could then sign in
+                  nowhere else.
+                </p>
+                <ul>
+                  <li>
+                    Expo and the Wails desktop client both handle the challenge now: a code
+                    field, a backup-code toggle, and &ldquo;trust this device for 30 days&rdquo;.
+                  </li>
+                  <li>
+                    <code>login()</code> returns the challenge rather than throwing, and a new{' '}
+                    <code>verifyTOTP</code> completes it &mdash; one function for both
+                    authenticator and backup codes, since only the endpoint differs.
+                  </li>
+                </ul>
+                <p>
+                  Verified by signing in on the desktop app against a 2FA-enabled account with a
+                  live code: challenge shown, code accepted, session established. Enrolment is
+                  still admin-only on these two clients &mdash; they can complete a challenge,
+                  not set 2FA up.
+                </p>
+              </div>
+            </div>
+
             {/* v3.124.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

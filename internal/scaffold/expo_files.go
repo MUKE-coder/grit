@@ -601,11 +601,16 @@ const socialAuthEnabled =
   (process.env.EXPO_PUBLIC_SOCIAL_AUTH_ENABLED ?? "false").toLowerCase() === "true";
 
 export default function LoginScreen() {
-  const { login, loginWithGoogle } = useAuth();
+  const { login, verifyTOTP, loginWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  // Set when the password was right and the account owes a 2FA code.
+  const [pendingToken, setPendingToken] = useState<string | null>(null);
+  const [code, setCode] = useState("");
+  const [useBackup, setUseBackup] = useState(false);
+  const [trustDevice, setTrustDevice] = useState(false);
   const { palette } = useTheme();
 
   const {
@@ -622,11 +627,30 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-      await login(data.email, data.password);
+      const challenge = await login(data.email, data.password);
+      if (challenge) {
+        setPendingToken(challenge.pendingToken);
+        return;
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       setError(err.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onVerify = async () => {
+    if (!pendingToken) return;
+    setError("");
+    setLoading(true);
+    try {
+      await verifyTOTP({ pendingToken, code, trustDevice, backup: useBackup });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    } catch (err: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      setError(err.message || "That code was not accepted");
     } finally {
       setLoading(false);
     }
@@ -643,6 +667,109 @@ export default function LoginScreen() {
       setGoogleLoading(false);
     }
   };
+
+  // The 2FA step replaces the credentials form rather than sitting beneath it,
+  // so there is one obvious thing to do. Same shell, so it inherits the theme.
+  if (pendingToken) {
+    return (
+      <View className="flex-1 bg-[#F4F4F6] dark:bg-[#0a0a0f]">
+        <FaintGrid />
+        <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            className="flex-1"
+          >
+            <ScrollView
+              contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 18 }}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Animated.View
+                entering={FadeInUp.duration(500)}
+                className="rounded-[28px] bg-white dark:bg-[#111118] border border-[#E5E7EB] dark:border-[#1f1f2b] p-6"
+              >
+                <Text className="text-2xl font-bold text-[#111118] dark:text-white mb-1">
+                  Two-factor authentication
+                </Text>
+                <Text className="text-[#6b7280] dark:text-[#9090a8] mb-5">
+                  {useBackup
+                    ? "Enter one of your backup codes."
+                    : "Enter the 6-digit code from your authenticator app."}
+                </Text>
+
+                {error ? (
+                  <View className="mb-4 rounded-xl bg-red-50 dark:bg-red-500/10 px-4 py-3">
+                    <Text className="text-red-600 dark:text-red-400">{error}</Text>
+                  </View>
+                ) : null}
+
+                <TextInput
+                  value={code}
+                  onChangeText={setCode}
+                  placeholder={useBackup ? "XXXXXXXX" : "000000"}
+                  placeholderTextColor="#9090a8"
+                  keyboardType={useBackup ? "default" : "number-pad"}
+                  autoCapitalize="characters"
+                  maxLength={useBackup ? 8 : 6}
+                  autoFocus
+                  className="rounded-2xl border border-[#E5E7EB] dark:border-[#1f1f2b] bg-[#F9FAFB] dark:bg-[#0a0a0f] px-4 py-4 text-center text-xl text-[#111118] dark:text-white"
+                />
+
+                {!useBackup && (
+                  <Pressable
+                    onPress={() => setTrustDevice(!trustDevice)}
+                    className="flex-row items-center mt-4"
+                  >
+                    <View
+                      className={
+                        "h-5 w-5 rounded border items-center justify-center mr-2 " +
+                        (trustDevice
+                          ? "bg-[#6c5ce7] border-[#6c5ce7]"
+                          : "border-[#D1D5DB] dark:border-[#2a2a3a]")
+                      }
+                    >
+                      {trustDevice ? <Ionicons name="checkmark" size={14} color="#ffffff" /> : null}
+                    </View>
+                    <Text className="text-[#6b7280] dark:text-[#9090a8]">
+                      Trust this device for 30 days
+                    </Text>
+                  </Pressable>
+                )}
+
+                <Pressable
+                  onPress={onVerify}
+                  disabled={loading || code.trim().length < (useBackup ? 8 : 6)}
+                  className="mt-6 rounded-2xl bg-[#6c5ce7] py-4 items-center"
+                  style={{ opacity: loading || code.trim().length < (useBackup ? 8 : 6) ? 0.5 : 1 }}
+                >
+                  <Text className="text-white font-semibold text-base">
+                    {loading ? "Verifying..." : "Verify and sign in"}
+                  </Text>
+                </Pressable>
+
+                <View className="flex-row items-center justify-between mt-5">
+                  <Pressable onPress={() => { setUseBackup(!useBackup); setCode(""); }}>
+                    <Text className="text-[#6c5ce7] font-medium">
+                      {useBackup ? "Use your app" : "Use a backup code"}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      setPendingToken(null);
+                      setCode("");
+                      setUseBackup(false);
+                      setError("");
+                    }}
+                  >
+                    <Text className="text-[#6b7280] dark:text-[#9090a8]">Back</Text>
+                  </Pressable>
+                </View>
+              </Animated.View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </View>
+    );
+  }
 
   const emailBorder = errors.email ? "border-[#ff6b6b]" : "border-[#E5E7EB] dark:border-[#2a2a3a]";
   const passwordBorder = errors.password ? "border-[#ff6b6b]" : "border-[#E5E7EB] dark:border-[#2a2a3a]";
@@ -2301,11 +2428,24 @@ interface User {
   avatar?: string;
 }
 
+// A login ends in one of two places: signed in, or holding a short-lived
+// pending token because the account has 2FA on and this device is not trusted.
+export interface TOTPChallenge {
+  totpRequired: true;
+  pendingToken: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<TOTPChallenge | null>;
+  verifyTOTP: (args: {
+    pendingToken: string;
+    code: string;
+    trustDevice?: boolean;
+    backup?: boolean;
+  }) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   register: (firstName: string, lastName: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -2316,7 +2456,8 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   isAuthenticated: false,
   isLoading: true,
-  login: async () => {},
+  login: async () => null,
+  verifyTOTP: async () => {},
   loginWithGoogle: async () => {},
   register: async () => {},
   logout: async () => {},
@@ -2351,9 +2492,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await api.post("/auth/login", { email, password });
+
+    // Reading res.data.tokens straight away is what used to break: on a 2FA
+    // account that field does not exist, so the app threw instead of asking
+    // for a code — leaving anyone with 2FA on unable to sign in at all.
+    if (res.data?.totp_required && res.data?.pending_token) {
+      return { totpRequired: true, pendingToken: res.data.pending_token } as TOTPChallenge;
+    }
+
     await api.setTokens(res.data.tokens.access_token, res.data.tokens.refresh_token);
     setUser(res.data.user);
+    return null;
   }, []);
+
+  // Finishes a login that stopped at the 2FA prompt. An authenticator code and
+  // a backup code differ only by endpoint, so one function covers both.
+  const verifyTOTP = useCallback(
+    async ({ pendingToken, code, trustDevice = false, backup = false }: {
+      pendingToken: string;
+      code: string;
+      trustDevice?: boolean;
+      backup?: boolean;
+    }) => {
+      const path = backup ? "/auth/totp/backup-codes/verify" : "/auth/totp/verify";
+      const res = await api.post(path, {
+        pending_token: pendingToken,
+        code: code.trim(),
+        trust_device: trustDevice,
+      });
+      await api.setTokens(res.data.tokens.access_token, res.data.tokens.refresh_token);
+      setUser(res.data.user);
+    },
+    []
+  );
 
   const loginWithGoogle = useCallback(async () => {
     const callbackUrl = "myapp://callback";
@@ -2405,7 +2576,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext value={{ user, isAuthenticated: !!user, isLoading, login, loginWithGoogle, register, logout, refreshUser }}>
+    <AuthContext value={{ user, isAuthenticated: !!user, isLoading, login, verifyTOTP, loginWithGoogle, register, logout, refreshUser }}>
       {children}
     </AuthContext>
   );

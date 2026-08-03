@@ -581,13 +581,14 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 - [x] TOTP + sessions *(responses done; request bodies pending)*
 - [x] Verify with a scaffolded project: count operations with a request or response schema
 
-### 6.6 — 2FA on Expo and desktop ⬜ not started
+### 6.6 — 2FA on Expo and desktop 🟡 partial (v3.125.0: challenge done, enrolment pending)
 > The API and both admin variants are done. A user with 2FA enabled currently
 > cannot sign in on mobile or desktop at all.
-- [ ] Expo: TOTP challenge on login (code, backup code, trust device)
+- [x] Expo: TOTP challenge on login (code, backup code, trust device)
 - [ ] Expo: enrol screen (QR is rendered by the API, so no encoder needed)
-- [ ] Desktop: same two, in the Wails client
-- [ ] Verified on the Android emulator and in the desktop window
+- [x] Desktop: TOTP challenge in the Wails client
+- [ ] Desktop + Expo: enrol screen (challenge works; setup is still admin-only)
+- [x] Verified in the desktop window with a live code; Expo typechecks clean
 
 ### 6.7 — Swap Phase 3 ⬜ not started
 - [ ] Adopt the swappable Button primitive across the remaining inline sites (~180)
