@@ -32,7 +32,7 @@ type Session = {
 // Just enough user-agent parsing to label a row. Deliberately not a UA-parsing
 // dependency — the goal is "is this the laptop or the phone I remember?", not
 // analytics-grade device detection.
-function describeDevice(ua: string): { label: string; mobile: boolean } {
+export function describeDevice(ua: string): { label: string; mobile: boolean } {
   if (!ua) return { label: "Unknown device", mobile: false };
   const mobile = /Mobile|Android|iPhone|iPad|iPod/i.test(ua);
 

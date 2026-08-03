@@ -490,6 +490,7 @@ import { useUpdateProfile, useChangePassword } from "@/hooks/use-profile";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { DeleteAccountDialog } from "@/components/profile/delete-account-dialog";
 import { ActiveSessions } from "@/components/profile/active-sessions";
+import { TwoFactorCard } from "@/components/profile/two-factor-card";
 import { uploadFile } from "@/lib/api-client";
 import {
   User as UserIcon, Briefcase, Lock, Trash2, Save, Loader2, Upload, ShieldCheck,
@@ -741,6 +742,13 @@ export default function ProfilePage() {
           </div>
         </form>
       </ProfileCard>
+
+      {/* Two-factor — above sessions, because turning it on is what makes
+          those sessions harder to steal. Renders its own card chrome, so it
+          is deliberately not wrapped in a ProfileCard. */}
+      <div className="mt-6">
+        <TwoFactorCard />
+      </div>
 
       {/* Active sessions */}
       <ProfileCard

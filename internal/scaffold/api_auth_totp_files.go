@@ -258,10 +258,12 @@ func totpHandlerGo() string {
 	return `package handlers
 
 import (
+	"encoding/base64"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	qrcode "github.com/skip2/go-qrcode"
 	"gorm.io/gorm"
 
 	"{{MODULE}}/internal/models"
@@ -279,6 +281,11 @@ type TOTPHandler struct {
 type totpSetupResponse struct {
 	Secret string ` + "`" + `json:"secret"` + "`" + `
 	URI    string ` + "`" + `json:"uri"` + "`" + `
+	// QRCode is a data: URI holding a PNG of URI, ready to drop straight into
+	// an <img src>. Rendered here rather than in each client because there are
+	// four of them (admin, web, desktop, Expo) and none should have to ship a
+	// QR encoder — or handle the raw secret — to show a setup screen.
+	QRCode string ` + "`" + `json:"qr_code"` + "`" + `
 }
 
 type totpEnableRequest struct {
@@ -331,10 +338,22 @@ func (h *TOTPHandler) Setup(c *gin.Context) {
 
 	uri := totp.GenerateURI(secret, u.Email, h.Issuer)
 
+	// Medium recovery level: a phone camera reads it reliably at the size a
+	// setup dialog shows it, without the density High produces.
+	qrPNG, err := qrcode.Encode(uri, qrcode.Medium, 256)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "TOTP_ERROR", "message": "Failed to render the QR code"},
+		})
+		return
+	}
+	qrDataURI := "data:image/png;base64," + base64.StdEncoding.EncodeToString(qrPNG)
+
 	c.JSON(http.StatusOK, gin.H{
 		"data": totpSetupResponse{
 			Secret: secret,
 			URI:    uri,
+			QRCode: qrDataURI,
 		},
 		"message": "Scan the QR code with your authenticator app, then verify with a code",
 	})
@@ -669,6 +688,73 @@ func (h *TOTPHandler) RegenerateBackupCodes(c *gin.Context) {
 		},
 		"message": "New backup codes generated. Previous codes are now invalid.",
 	})
+}
+
+// ListTrustedDevices returns the devices allowed to skip the TOTP prompt.
+//
+// The status endpoint only reports a count, which is enough to nag with and
+// useless to act on: "3 trusted devices" tells a user nothing about whether
+// one of them is a laptop they sold. Expired rows are filtered rather than
+// deleted here — the nightly cleanup owns deletion, and a read should not
+// mutate.
+func (h *TOTPHandler) ListTrustedDevices(c *gin.Context) {
+	userID := c.GetString("user_id")
+
+	var devices []models.TrustedDevice
+	if err := h.DB.
+		Where("user_id = ? AND expires_at > ?", userID, time.Now()).
+		Order("created_at desc").
+		Find(&devices).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to load trusted devices"},
+		})
+		return
+	}
+
+	// The caller's own device is marked so the UI can label it rather than
+	// inviting someone to revoke the browser they are sitting in.
+	currentHash := ""
+	if cookie, err := c.Cookie("totp_trusted"); err == nil && cookie != "" {
+		currentHash = totp.HashToken(cookie)
+	}
+
+	out := make([]gin.H, 0, len(devices))
+	for _, d := range devices {
+		out = append(out, gin.H{
+			"id":         d.ID,
+			"user_agent": d.UserAgent,
+			"ip_address": d.IPAddress,
+			"created_at": d.CreatedAt,
+			"expires_at": d.ExpiresAt,
+			"current":    currentHash != "" && d.TokenHash == currentHash,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": out})
+}
+
+// RevokeTrustedDevice removes one trusted device by id.
+func (h *TOTPHandler) RevokeTrustedDevice(c *gin.Context) {
+	userID := c.GetString("user_id")
+
+	// Scoped to the caller: without the user_id predicate this would let any
+	// authenticated user revoke anyone's device by guessing an id.
+	res := h.DB.Where("id = ? AND user_id = ?", c.Param("id"), userID).
+		Delete(&models.TrustedDevice{})
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to revoke the device"},
+		})
+		return
+	}
+	if res.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": gin.H{"code": "NOT_FOUND", "message": "Trusted device not found"},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Device revoked. It will need a code at the next sign-in."})
 }
 
 // RevokeTrustedDevices removes all trusted devices for the current user.

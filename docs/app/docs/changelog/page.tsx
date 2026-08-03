@@ -28,6 +28,59 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.119.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.119.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Two-factor authentication is now something you can click.</strong>
+                </p>
+                <p>
+                  The API has shipped TOTP for a while &mdash; setup, enable, disable, backup
+                  codes, trusted devices, the login challenge. None of it was reachable from the
+                  admin panel, so the feature existed only for people willing to write curl by
+                  hand. Worse, the login page did not understand the challenge: the first person
+                  to enable 2FA would have locked themselves out.
+                </p>
+                <ul>
+                  <li>
+                    <strong>A Two-factor card on the profile page.</strong> Scan a QR, confirm
+                    with a live code, and get ten backup codes shown once &mdash; the panel will
+                    not close until you copy or download them, because the server keeps only
+                    hashes. Regenerate codes, review trusted devices, revoke one or all, and turn
+                    2FA back off with your password.
+                  </li>
+                  <li>
+                    <strong>The login page answers the challenge.</strong> A 6-digit field, a
+                    &ldquo;trust this device for 30 days&rdquo; option, and a fallback to a backup
+                    code.
+                  </li>
+                  <li>
+                    <strong>The QR is rendered by the API</strong> and returned as a data URI on{' '}
+                    <code>POST /auth/totp/setup</code>, so no client ships a QR encoder or handles
+                    the raw secret to draw a setup screen.
+                  </li>
+                  <li>
+                    <strong>Two new endpoints:</strong>{' '}
+                    <code>GET /auth/totp/trusted-devices</code> lists them (the status endpoint
+                    only ever returned a count, which you cannot act on) and{' '}
+                    <code>DELETE /auth/totp/trusted-devices/:id</code> revokes one.
+                  </li>
+                </ul>
+                <p>
+                  Verified end to end against a generated project: enable, sign out, sign back in
+                  through the challenge with a real authenticator code, trust the device, and see
+                  it appear in the list.
+                </p>
+              </div>
+            </div>
+
             {/* v3.118.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
