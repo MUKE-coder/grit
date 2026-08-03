@@ -34,8 +34,45 @@ export default function CreateAProjectPage() {
       content: (
         <div>
           <p className="text-muted-foreground leading-relaxed mb-4">
-            The full stack &mdash; Go API, a Next.js web app, and the Filament-style admin panel.
-            The best place to start.
+            Every target at once &mdash; Go API, Next.js web app, admin panel, Wails desktop
+            app, Expo mobile app, and a docs site. More than most projects need, but the
+            fastest way to see what Grit does.
+          </p>
+          <CodeBlock
+            terminal
+            code={`grit new myapp --full      # api + web + admin + desktop + expo + docs
+cd myapp
+docker compose up -d       # Postgres, Redis, MinIO, Mailhog
+pnpm install               # frontend deps (one-time)
+grit migrate               # create database tables
+grit seed                  # sample data + a demo admin login
+grit start                 # runs every app, Ctrl+C stops them all`}
+          />
+          <WhatYouGet
+            rows={[
+              ['Web app', 'http://localhost:3000'],
+              ['Admin panel', 'http://localhost:3001'],
+              ['Go API + docs', 'http://localhost:8080/docs'],
+              ['GORM Studio', 'http://localhost:8080/studio'],
+              ['Desktop + Expo', 'grit start desktop / grit start expo'],
+            ]}
+          />
+          <p className="text-sm text-muted-foreground/70 mt-3">
+            Six apps is a lot to run at once. If you only want the web stack, use the{' '}
+            <strong>Web + Admin + API</strong> tab &mdash; you can add desktop or mobile later.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: 'triple',
+      label: 'Web + Admin + API',
+      icon: <Layers className="h-4 w-4" />,
+      content: (
+        <div>
+          <p className="text-muted-foreground leading-relaxed mb-4">
+            The recommended starting point. Go API, a Next.js web app and the Filament-style
+            admin panel &mdash; nothing you will not use on day one.
           </p>
           <CodeBlock
             terminal
@@ -55,6 +92,86 @@ grit start                 # run all three, Ctrl+C stops them`}
               ['GORM Studio', 'http://localhost:8080/studio'],
             ]}
           />
+        </div>
+      ),
+    },
+    {
+      id: 'triple-mobile',
+      label: '+ Mobile',
+      icon: <Smartphone className="h-4 w-4" />,
+      content: (
+        <div>
+          <p className="text-muted-foreground leading-relaxed mb-4">
+            The web stack plus an Expo app, all sharing one API and one set of generated
+            types. Generate a resource and it appears on the phone too.
+          </p>
+          <CodeBlock
+            terminal
+            code={`grit new myapp --triple --expo   # api + web + admin + expo
+cd myapp
+docker compose up -d
+pnpm install
+grit migrate
+grit seed
+grit start                       # api + web + admin
+grit start expo                  # second terminal — Expo dev server`}
+          />
+          <WhatYouGet
+            rows={[
+              ['Web app', 'http://localhost:3000'],
+              ['Admin panel', 'http://localhost:3001'],
+              ['Go API + docs', 'http://localhost:8080/docs'],
+              ['Expo (Expo Go / emulator)', 'scan the QR code'],
+            ]}
+          />
+          <p className="text-sm text-muted-foreground/70 mt-3">
+            Expo runs in its own terminal on purpose &mdash; its dev server wants the
+            foreground for the QR code and the keyboard shortcuts. On a physical device, point
+            the app at your machine&apos;s LAN IP: see{' '}
+            <Link href="/docs/mobile/getting-started" className="text-primary hover:underline">
+              Mobile &middot; Getting Started
+            </Link>
+            .
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: 'triple-desktop',
+      label: '+ Desktop',
+      icon: <Monitor className="h-4 w-4" />,
+      content: (
+        <div>
+          <p className="text-muted-foreground leading-relaxed mb-4">
+            The web stack plus a Wails desktop app that shares the same API and models, with a
+            local SQLite mirror so it keeps working with no network.
+          </p>
+          <CodeBlock
+            terminal
+            code={`grit new myapp --triple --desktop   # api + web + admin + desktop
+cd myapp
+docker compose up -d
+pnpm install
+grit migrate
+grit seed
+grit start                          # api + web + admin + desktop`}
+          />
+          <WhatYouGet
+            rows={[
+              ['Web app', 'http://localhost:3000'],
+              ['Admin panel', 'http://localhost:3001'],
+              ['Go API + docs', 'http://localhost:8080/docs'],
+              ['Desktop app', 'opens as a native window'],
+            ]}
+          />
+          <p className="text-sm text-muted-foreground/70 mt-3">
+            Wails needs a C toolchain and a WebView runtime on your machine &mdash; see{' '}
+            <Link href="/docs/desktop" className="text-primary hover:underline">
+              Desktop
+            </Link>{' '}
+            for the per-OS prerequisites. Build an installer later with{' '}
+            <code className="text-foreground/80">grit package</code>.
+          </p>
         </div>
       ),
     },
@@ -246,7 +363,7 @@ grit migrate    # create the new table`}
                     q: 'Which architecture should I pick?',
                     a: (
                       <>
-                        Start with <strong>Everything (Triple)</strong> unless you know you don&apos;t
+                        Start with <strong>Web + Admin + API</strong> unless you know you don&apos;t
                         need a frontend. Pick <strong>API only</strong> for a headless backend,{' '}
                         <strong>Mobile</strong> for Expo, <strong>Desktop</strong> for a native app.
                         You can always add more later. See{' '}
