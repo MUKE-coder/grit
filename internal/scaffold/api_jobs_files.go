@@ -47,6 +47,7 @@ const (
 	TypeUploadsOrphanCleanup  = "uploads:cleanup_orphans" // v3.31.33
 	TypeBackupWeekly          = "backup:weekly"           // v3.31.77 (legacy)
 	TypeBackupScheduled       = "backup:scheduled"        // settings-driven auto backup
+	TypeAuditPrune            = "audit:prune"             // activity-log retention
 )
 
 // Default per-task settings used when a caller doesn't override via
@@ -270,14 +271,18 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/hibiken/asynq"
 	"gorm.io/gorm"
 
+	"{{MODULE}}/internal/audit"
 	"{{MODULE}}/internal/backup"
 	"{{MODULE}}/internal/cache"
 	"{{MODULE}}/internal/mail"
@@ -341,6 +346,7 @@ func StartWorker(redisURL string, deps WorkerDeps) (func(), error) {
 	mux.HandleFunc(TypeEmailSend, handleEmailSend(deps))
 	mux.HandleFunc(TypeImageProcess, handleImageProcess(deps))
 	mux.HandleFunc(TypeTokensCleanup, handleTokensCleanup(deps))
+	mux.HandleFunc(TypeAuditPrune, handleAuditPrune(deps))
 	mux.HandleFunc(TypeUploadsOrphanCleanup, handleUploadsOrphanCleanup(deps))
 	mux.HandleFunc(TypeBackupWeekly, handleBackupWeekly(deps))
 	mux.HandleFunc(TypeBackupScheduled, handleBackupScheduled(deps))
@@ -445,6 +451,76 @@ func handleTokensCleanup(deps WorkerDeps) func(ctx context.Context, task *asynq.
 
 		log.Printf("Token cleanup complete, removed %d records", result.RowsAffected)
 		return nil
+	}
+}
+
+// handleAuditPrune trims the tamper-evident activity log.
+//
+// The chain is what makes this table evidence, so pruning is not a plain
+// DELETE: removing the oldest rows leaves the new first row pointing at a
+// PrevHash nobody can produce any more, and VerifyChain then reports the log
+// as broken for the rest of its life. The fix is to re-anchor — after
+// deleting, the surviving oldest row becomes a genesis row (PrevHash "") and
+// its hash is recomputed, so the remaining chain verifies on its own terms.
+//
+// Retention is AUDIT_RETENTION_DAYS, default 365. Zero or negative disables
+// pruning entirely, which is the right default for anyone who has not thought
+// about it: silently discarding audit history is worse than a large table.
+func handleAuditPrune(deps WorkerDeps) func(ctx context.Context, task *asynq.Task) error {
+	return func(ctx context.Context, task *asynq.Task) error {
+		if deps.DB == nil {
+			return fmt.Errorf("database not configured")
+		}
+
+		days := 365
+		if v := os.Getenv("AUDIT_RETENTION_DAYS"); v != "" {
+			parsed, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("AUDIT_RETENTION_DAYS must be a whole number of days, got %q", v)
+			}
+			days = parsed
+		}
+		if days <= 0 {
+			log.Println("Audit prune skipped: AUDIT_RETENTION_DAYS <= 0 (retain forever)")
+			return nil
+		}
+
+		cutoff := time.Now().AddDate(0, 0, -days)
+
+		return deps.DB.Transaction(func(tx *gorm.DB) error {
+			res := tx.Exec("DELETE FROM activity_logs WHERE created_at < ?", cutoff)
+			if res.Error != nil {
+				return fmt.Errorf("pruning activity log: %w", res.Error)
+			}
+			if res.RowsAffected == 0 {
+				return nil
+			}
+
+			// Re-anchor the chain so what remains verifies standalone.
+			var oldest models.ActivityLog
+			if err := tx.Order("created_at asc, id asc").First(&oldest).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return nil // pruned everything; nothing to anchor
+				}
+				return fmt.Errorf("loading the new first entry: %w", err)
+			}
+
+			canonical, err := audit.Canonical(&oldest)
+			if err != nil {
+				return fmt.Errorf("canonicalising the new first entry: %w", err)
+			}
+			oldest.PrevHash = ""
+			oldest.Hash = audit.ComputeHash("", canonical)
+			if err := tx.Model(&models.ActivityLog{}).
+				Where("id = ?", oldest.ID).
+				Updates(map[string]interface{}{"prev_hash": "", "hash": oldest.Hash}).Error; err != nil {
+				return fmt.Errorf("re-anchoring the chain: %w", err)
+			}
+
+			log.Printf("Audit prune complete: removed %d entries older than %d days, chain re-anchored",
+				res.RowsAffected, days)
+			return nil
+		})
 	}
 }
 
