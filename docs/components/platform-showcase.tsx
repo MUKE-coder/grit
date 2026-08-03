@@ -10,7 +10,8 @@ import { Globe, Monitor, Smartphone, Server } from 'lucide-react'
  * Every image here is a capture of a real generated project:
  *   admin.png       the Next.js admin panel (grit new --triple), Atlas theme
  *   desktop.png     the Wails desktop app, including its own window chrome
- *   mobile.png      the Expo app running on an Android emulator
+ *   mobile.png      the Expo app signed in on an Android emulator, showing
+ *                   live counts from the same API the admin panel uses
  *   api-scalar.png  the Scalar reference the Go API serves at /docs, on the
  *                   POST /products operation so the schemas are visible
  *
@@ -82,7 +83,7 @@ const PLATFORMS: Platform[] = [
     icon: Smartphone,
     headline: 'An Expo app on the same types',
     blurb:
-      'React Native through Expo Router, with NativeWind styling and the same generated client the web app uses. Generate a resource and it is on the phone too.',
+      'React Native through Expo Router, with NativeWind styling and the same generated client the web app uses. The counts here come from the same API the admin panel reads — generate a resource and it is on the phone too.',
     image: '/images/platforms/mobile.png',
     shell: 'phone',
     chromeLabel: 'Expo · Android',

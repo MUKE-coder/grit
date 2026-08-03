@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { DocsShot } from '@/components/docs-shot'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
@@ -215,6 +216,14 @@ grit start expo     # Expo dev server only  (runs \`expo start\` in apps/expo)`}
                   4
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight">
+              <DocsShot
+                src="/images/mobile/users.png"
+                alt="The Users screen of a generated Expo app on an Android emulator, listing five accounts with role badges"
+                label="Expo · Android"
+                caption="A generated resource on the phone, reading the same Go API the admin panel does — same five records, same roles. The generated hook is shared; only the primitives differ."
+                narrow
+              />
+
                   Point the App at the API
                 </h2>
               </div>
