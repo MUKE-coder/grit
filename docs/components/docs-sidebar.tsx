@@ -51,6 +51,10 @@ interface NavItem {
 const navItems: NavItem[] = [
   // Top-level entry points (Expo-style), rendered as prominent iconed links.
   { title: 'Home', href: '/docs', icon: <Home className="h-3.5 w-3.5" /> },
+  // The ordered route through docs that already existed. A reference organised
+  // by subsystem answers "where is X" for someone who knows X exists, and
+  // nothing at all for someone who does not know what to ask.
+  { title: 'Start here', href: '/docs/start', icon: <Rocket className="h-3.5 w-3.5" /> },
   { title: 'Pitch', href: '/pitch', icon: <Megaphone className="h-3.5 w-3.5" /> },
   { title: 'Tutorials', href: '/docs/tutorials', icon: <GraduationCap className="h-3.5 w-3.5" /> },
   // Courses left the top nav to make room for Grit UI; it needs a home here
@@ -63,6 +67,7 @@ const navItems: NavItem[] = [
     items: [
       { title: 'Create a project', href: '/docs/getting-started/create-a-project' },
       { title: 'Coming from Laravel/Django/Next', href: '/docs/getting-started/coming-from' },
+      { title: 'Using with an existing project', href: '/docs/getting-started/existing-projects' },
       { title: 'Performance & Benchmarks', href: '/docs/getting-started/performance' },
       { title: 'Prerequisites', href: '/docs/getting-started/prerequisites' },
     ],

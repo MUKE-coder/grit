@@ -489,6 +489,16 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Database setup in Grit: PostgreSQL for production, SQLite for development, GORM Studio visual browser, and connection configuration.',
   },
+  '/docs/getting-started/existing-projects': {
+    title: 'Using Grit with an existing project',
+    description:
+      'Grit scaffolds new projects rather than converting old ones — but Pulse, Sentinel, GORM Studio and the UI blocks all work standalone. The honest brownfield options.',
+  },
+  '/docs/start': {
+    title: 'Start here',
+    description:
+      'The ordered path from nothing to deployed: create a project, generate a resource, model relationships, secure it, and ship it. About ninety minutes.',
+  },
   '/docs/versioning': {
     title: 'Versioning & breaking changes',
     description:
