@@ -28,6 +28,51 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.120.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.120.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The tamper-evident audit log finally has a screen.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>New page at <code>/system/audit</code>.</strong> The hash chain, the
+                    verify endpoint and the OCSF export have all shipped for a while, and
+                    nothing in the admin called any of them &mdash; so the one thing a
+                    compliance reviewer wants to see was invisible. The page lists every
+                    authenticated write with its method, status, duration and body digest, and
+                    a Verify chain button replays the whole chain. When a row has been edited it
+                    names the position, the id, and both hashes. Verified by editing a row
+                    directly in the database: the check caught that exact row.
+                  </li>
+                  <li>
+                    <strong>Retention for the audit log.</strong> The model has always carried a
+                    comment saying to add this. A weekly <code>audit:prune</code> job trims
+                    entries past <code>AUDIT_RETENTION_DAYS</code> (default 365; set 0 to keep
+                    forever) and <em>re-anchors</em> the chain, so what remains still verifies
+                    &mdash; a plain DELETE would leave the log permanently reporting itself as
+                    broken.
+                  </li>
+                  <li>
+                    <strong>The SSO connection test is reachable.</strong> The endpoint shipped
+                    with no button, so a mistyped issuer URL only surfaced when a customer tried
+                    to sign in.
+                  </li>
+                  <li>
+                    <strong>The System Hub tile said SSO was OIDC.</strong> SAML 2.0 has been
+                    supported for a while.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.119.1 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

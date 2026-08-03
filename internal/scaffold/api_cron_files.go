@@ -90,6 +90,20 @@ func New(redisURL string) (*Scheduler, error) {
 		Type:     "uploads:cleanup_orphans",
 	})
 
+	// Activity-log retention — weekly, Sunday 04:00. The model has always
+	// carried a comment saying to add this; without it the tamper-evident log
+	// grows forever. Pruning re-anchors the hash chain so what remains still
+	// verifies. Disabled by setting AUDIT_RETENTION_DAYS to 0.
+	_, err = scheduler.Register("0 4 * * 0", asynq.NewTask("audit:prune", nil))
+	if err != nil {
+		return nil, fmt.Errorf("registering audit prune: %w", err)
+	}
+	RegisteredTasks = append(RegisteredTasks, Task{
+		Name:     "Prune the activity log",
+		Schedule: "0 4 * * 0",
+		Type:     "audit:prune",
+	})
+
 	// Automatic full-database backup, settings-driven. Instead of a fixed
 	// weekly cron, a lightweight checker runs every 30 minutes and consults the
 	// BackupSchedule row (daily / weekly / monthly / yearly + time-of-day,

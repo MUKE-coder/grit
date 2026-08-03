@@ -75,6 +75,7 @@ export default function SSOPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Connection | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Connection | null>(null);
+  const [testing, setTesting] = useState<string | null>(null);
   const [form, setForm] = useState({ ...BLANK });
 
   const listQ = useQuery({
@@ -116,6 +117,23 @@ export default function SSOPage() {
   });
 
   const rows = listQ.data?.rows ?? [];
+
+  // The API has always exposed this; nothing called it, so a mistyped issuer
+  // only showed up when a customer tried to sign in. "Live" means the
+  // connection is in the running registry, which for OIDC means discovery
+  // succeeded — it is a real check, not a ping.
+  const testConnection = async (c: Connection) => {
+    setTesting(c.id);
+    try {
+      const { data } = await apiClient.get("/api/sso/connections/" + c.id + "/test");
+      const ok = data?.data?.ok;
+      toast[ok ? "success" : "error"](data?.data?.message ?? (ok ? "Connection is live." : "Not live."));
+    } catch {
+      toast.error("Could not reach the API to run the test.");
+    } finally {
+      setTesting(null);
+    }
+  };
 
   const startEdit = (c: Connection) => {
     setEditing(c);
@@ -224,6 +242,13 @@ export default function SSOPage() {
                     {!c.has_secret && <span className="ml-2 text-xs text-danger">no secret</span>}
                   </td>
                   <td className="py-3 text-right">
+                    <button
+                      onClick={() => testConnection(c)}
+                      disabled={testing === c.id}
+                      className="mr-3 text-xs text-text-secondary hover:text-accent disabled:opacity-50"
+                    >
+                      {testing === c.id ? "Testing…" : "Test"}
+                    </button>
                     <button onClick={() => copyCallback(c)} className="mr-3 text-xs text-text-secondary hover:text-accent">
                       <Copy className="mr-1 inline h-3 w-3" />IdP URLs
                     </button>

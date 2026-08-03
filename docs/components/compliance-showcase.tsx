@@ -106,24 +106,12 @@ POST   /api/v1/access-reviews/:id/complete          // freeze it
     points: [
       'Every authenticated POST/PUT/PATCH/DELETE is chained: prev hash, this hash',
       'Bodies are stored as a SHA-256 digest — evidence of what was sent, without the PII',
-      'An integrity endpoint replays the chain and names the first row that fails',
+      'One button replays the chain and names the first row that fails — the screenshot is a real detection, after a row was edited straight in the database',
       'Written by a single goroutine off a buffered channel, so the chain cannot race',
       'GET /audit/ocsf streams newline-delimited OCSF 1.3.0 for Splunk, Sentinel or Panther',
     ],
-    code: `// Prove the chain has not been edited
-GET /api/v1/admin/activity/integrity
-
-{ "valid": true, "total_entries": 12345 }
-
-// Or, when a row was tampered with:
-{
-  "valid": false,
-  "broken_at": 47,
-  "broken_at_id": "019fb4d9-…",
-  "message": "hash mismatch — row was modified after it was written"
-}`,
-    codeFile: 'internal/handlers/activity.go',
-    language: 'go',
+    image: '/images/system/audit.png',
+    imageLabel: 'localhost:3001/system/audit',
   },
 ]
 
