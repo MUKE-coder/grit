@@ -32,7 +32,7 @@ export default function DeploymentIndexPage() {
               </p>
             </div>
 
-            {/* The decision, before the options. A list of nine providers is not
+            {/* The decision, before the options. A list of seven providers is not
                 an answer to "where should I deploy this". */}
             <div className="rounded-xl border border-border/50 bg-card/50 p-6 mb-12">
               <h2 className="text-base font-semibold mb-4">If you have no opinion yet</h2>

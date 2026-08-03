@@ -13,7 +13,7 @@ import {
 /**
  * One page per hosting provider, rendered from config/deployment-providers.ts.
  *
- * A shared template rather than nine files, because the useful thing about these
+ * A shared template rather than seven files, because the useful thing about these
  * pages is that they answer the SAME questions in the same order — cost, effort,
  * who it suits, the steps, what breaks. Hand-written pages diverge, and by the
  * fourth one nobody can tell whether a missing section means "not applicable" or

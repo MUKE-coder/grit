@@ -35,7 +35,7 @@ export default function DeployCommandPage() {
                 { id: 'cmd', lane: 0, row: 1, title: 'grit deploy', sub: 'one command', tone: 'primary' },
                 { id: 'build', lane: 1, row: 0, title: 'Build', sub: 'binary + assets', tone: 'cyan', badge: 1 },
                 { id: 'upload', lane: 1, row: 1, title: 'Upload', sub: 'to the server', tone: 'blue', badge: 2 },
-                { id: 'configure', lane: 1, row: 2, title: 'Configure', sub: 'systemd · nginx', tone: 'amber', badge: 3 },
+                { id: 'configure', lane: 1, row: 2, title: 'Configure', sub: 'systemd · Caddy', tone: 'amber', badge: 3 },
                 { id: 'live', lane: 1, row: 3, title: 'Live', sub: 'running + SSL', tone: 'green', badge: 4 },
               ]}
               edges={[
