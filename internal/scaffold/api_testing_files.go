@@ -32,8 +32,9 @@ func writeTestingFiles(root string, opts Options) error {
 		filepath.Join(root, ".github", "workflows", "security.yml"): securityCIYAML(),
 		// Lint config lives beside the Go module it applies to — that is the
 		// repo root for --single, apps/api otherwise.
-		filepath.Join(opts.APIRoot(root), ".golangci.yml"):          golangciYAML(),
-		filepath.Join(root, ".github", "workflows", "lint.yml"):     lintCIYAML(opts),
+		filepath.Join(opts.APIRoot(root), ".golangci.yml"):         golangciYAML(),
+		filepath.Join(root, ".github", "workflows", "lint.yml"):    lintCIYAML(opts),
+		filepath.Join(root, ".github", "workflows", "release.yml"): releaseCIYAML(),
 	}
 
 	for path, content := range files {

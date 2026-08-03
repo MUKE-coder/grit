@@ -590,16 +590,32 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 - [ ] Desktop + Expo: enrol screen (challenge works; setup is still admin-only)
 - [x] Verified in the desktop window with a live code; Expo typechecks clean
 
-### 6.7 — Swap Phase 3 ⬜ not started
-- [ ] Adopt the swappable Button primitive across the remaining inline sites (~180)
+### 6.7 — Swap Phase 3 ⬜ not started (mechanism verified; adoption is the work)
+> Measured, not estimated: a scaffolded admin has **276** inline `<button>`
+> elements, **185** of them `bg-accent` primary actions, and exactly **2** files
+> import the Button primitive. So `grit swap button glow-ring` today restyles
+> two components rather than the admin.
+>
+> The mechanism itself is verified working end to end (swap → backup →
+> type-check → revert). What remains is the adoption refactor, and its only real
+> verification is visual across ~30 admin pages — do it in a session that can
+> screenshot them, not blind.
+- [ ] Adopt the Button primitive at the 185 `bg-accent` primary-action sites
+- [ ] Decide deliberately which chrome buttons should NOT follow the slot
+      (sidebar toggles, table icon actions — arguably they should not restyle)
 - [ ] Adopt the swappable Input primitive
-- [ ] `grit swap` round-trip still clean afterwards
+- [x] `grit swap` round-trip verified clean (swap + revert, with type-check)
 
-### 6.8 — Release hardening ⬜ not started
-- [ ] Code signing for Windows installers (Authenticode)
-- [ ] Notarization for macOS builds
-- [ ] SBOM generation in the release workflow
-- [ ] Signed release artifacts (cosign)
+### 6.8 — Release hardening 🟡 partial (v3.126.0)
+> Correction: Grit's OWN release.yml already had SBOM, keyless cosign and
+> provenance. The gap was that scaffolded projects had no release workflow at
+> all — the framework met a bar its output could not.
+- [x] SBOM generation in the generated project's release workflow
+- [x] Signed release artifacts (cosign keyless — no secrets required)
+- [x] Build provenance attestation
+- [x] Authenticode + notarization steps, guarded on secrets, warning when absent
+- [ ] Verify a real signed release end to end (needs a tag push and, for the
+      desktop half, certificates)
 
 ---
 
