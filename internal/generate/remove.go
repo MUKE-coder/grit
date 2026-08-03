@@ -172,6 +172,13 @@ func RemoveResource(name string) error {
 		}
 	}
 
+	// 5c. Remove the API-reference entries.
+	if fileExists(routesFile) {
+		if removeDocsRoutes(routesFile, "/api/"+apiVersion+"/"+names.Plural) == nil {
+			fmt.Println("  ✗ Removed the /docs entries")
+		}
+	}
+
 	// 6. Remove role-restricted route group (if present)
 	if fileExists(routesFile) {
 		removeLineBlock(routesFile,
@@ -717,6 +724,49 @@ func removeSchemaExportBlock(filePath, pascal, kebab string) error {
 
 	if !removed {
 		return fmt.Errorf("schema export for %q not found", pascal)
+	}
+
+	return os.WriteFile(filePath, []byte(strings.Join(result, "\n")), 0644)
+}
+
+// removeDocsRoutes deletes the docs.Route(...) chains this resource added to
+// routes.go.
+//
+// The chains are method-call fluent blocks, not brace-delimited, so neither
+// removeLinesContaining nor removeLineBlock can express them: a chain starts at
+// a docs.Route("<METHOD> <base>...") line and runs until the first line that
+// does not end in a dot. Matching includes the closing quote so a resource
+// whose plural prefixes another ("order" vs "orders") cannot take its
+// neighbour's routes with it.
+func removeDocsRoutes(filePath, base string) error {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	lines := strings.Split(string(content), "\n")
+	result := make([]string, 0, len(lines))
+	removed := false
+
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
+		isStart := strings.Contains(line, "docs.Route(\"") &&
+			(strings.Contains(line, base+"\"") || strings.Contains(line, base+"/:id\""))
+		if !isStart {
+			result = append(result, line)
+			continue
+		}
+
+		removed = true
+		// Consume the chain: every line but the last ends with a dot.
+		for i < len(lines) && strings.HasSuffix(strings.TrimRight(lines[i], " 	"), ".") {
+			i++
+		}
+		// i now sits on the chain's final line, which the loop's i++ skips.
+	}
+
+	if !removed {
+		return fmt.Errorf("no docs routes for %q", base)
 	}
 
 	return os.WriteFile(filePath, []byte(strings.Join(result, "\n")), 0644)

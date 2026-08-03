@@ -3,7 +3,7 @@ package scaffold
 // adminQuickAccessComponent is the admin panel's floating quick-access button —
 // the same Windows-Start style grid menu the desktop client ships
 // (desktopClientQuickAccess), with the same localStorage config shape
-// ("grit-quick-access"). A grid button (bottom-left by default) opens a wide
+// ("grit-quick-access"). A grid button (bottom-right by default) opens a wide
 // grid of icon cards: navigation shortcuts, a "New {Resource}" card per
 // registered resource, and a system shortcut. Cards, custom links and the
 // corner are configurable in place.
@@ -25,7 +25,7 @@ interface QuickConfig { position: Corner; hidden: string[]; custom: { label: str
 
 const STORAGE_KEY = "grit-quick-access";
 const MAX_TILES = 10;
-const DEFAULT_CONFIG: QuickConfig = { position: "bottom-left", hidden: [], custom: [] };
+const DEFAULT_CONFIG: QuickConfig = { position: "bottom-right", hidden: [], custom: [] };
 
 const CORNERS: { key: Corner; label: string; cls: string }[] = [
   { key: "bottom-left", label: "Bottom left", cls: "bottom-6 left-6" },
@@ -49,7 +49,7 @@ function loadConfig(): QuickConfig {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const c = { ...DEFAULT_CONFIG, ...JSON.parse(raw) } as QuickConfig;
-      if (!POSITIONS.includes(c.position)) c.position = "bottom-left"; // migrate old top-* corners
+      if (!POSITIONS.includes(c.position)) c.position = "bottom-right"; // migrate old top-* corners
       return c;
     }
   } catch { /* ignore */ }

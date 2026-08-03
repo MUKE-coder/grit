@@ -8,6 +8,14 @@ import (
 )
 
 // injectAll injects code into all existing files that have markers.
+// apiVersion mirrors the APIVersion constant emitted into a scaffolded
+// project's internal/routes/routes.go. It only affects the paths written into
+// docs.Route(...) keys — gindocs matches overrides on the exact gin path, so a
+// mismatch here silently produces an undocumented endpoint rather than an
+// error. If you change APIVersion in internal/scaffold/api_files.go, change
+// this with it.
+const apiVersion = "v1"
+
 func (g *Generator) injectAll(names Names) error {
 	apiRoot := g.APIRoot()
 	sharedRoot := filepath.Join(g.Root, "packages", "shared")
@@ -136,6 +144,55 @@ func (g *Generator) injectAll(names Names) error {
 				return fmt.Errorf("injecting admin routes: %w", err)
 			}
 			fmt.Println("  ✓ Injected admin routes")
+		}
+	}
+
+	// 5a. Document the resource in the API reference.
+	//
+	// gindocs infers paths and status codes from the router but attaches a
+	// schema only where an override hands it a concrete type — so without this
+	// every endpoint renders as "No Body" at /docs. Paths use the gin form
+	// (":id", not "{id}") because that is what applyRouteOverrides matches on.
+	//
+	// Tolerated silently on older projects: a scaffold from before v3.116 has
+	// no grit:docs markers, and failing the whole generate over a missing
+	// reference entry would be a poor trade.
+	if fileExists(routesFile) {
+		if err := injectInline(routesFile, "/* grit:docs:models */",
+			fmt.Sprintf("&models.%s{}, ", names.Pascal)); err == nil {
+			fmt.Println("  ✓ Registered model with the API reference")
+		}
+
+		base := "/api/" + apiVersion + "/" + names.Plural
+		docsRoutes := fmt.Sprintf(`	docs.Route("GET %s").
+		Summary("List %s").
+		Response(200, []models.%s{}, "A page of %s")
+	docs.Route("POST %s").
+		Summary("Create a %s").
+		RequestBody(handlers.Create%sRequest{}).
+		Response(201, models.%s{}, "Created").
+		Response(422, handlers.ErrorResponse{}, "Validation failed")
+	docs.Route("GET %s/:id").
+		Summary("Get one %s").
+		Response(200, models.%s{}, "The %s").
+		Response(404, handlers.ErrorResponse{}, "Not found")
+	docs.Route("PUT %s/:id").
+		Summary("Update a %s").
+		RequestBody(handlers.Update%sRequest{}).
+		Response(200, models.%s{}, "Updated").
+		Response(404, handlers.ErrorResponse{}, "Not found")
+	docs.Route("DELETE %s/:id").
+		Summary("Delete a %s").
+		Response(204, nil, "Deleted").
+		Response(404, handlers.ErrorResponse{}, "Not found")`,
+			base, names.Plural, names.Pascal, names.Plural,
+			base, names.Lower, names.Pascal, names.Pascal,
+			base, names.Lower, names.Pascal, names.Lower,
+			base, names.Lower, names.Pascal, names.Pascal,
+			base, names.Lower)
+
+		if err := injectBefore(routesFile, "// grit:docs:routes:end", docsRoutes); err == nil {
+			fmt.Println("  ✓ Documented the endpoints at /docs")
 		}
 	}
 

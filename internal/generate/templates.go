@@ -758,6 +758,8 @@ func (g *Generator) writeGoHandler(names Names) error {
 		"{{SEARCH_COLS}}", searchCols,
 		"{{EXPORT_COLS}}", exportCols,
 		"{{CREATE_FIELDS}}", createFields,
+		"{{CREATE_FIELDS_TOP}}", dedentOneTab(createFields),
+		"{{UPDATE_FIELDS_TOP}}", dedentOneTab(updateFields),
 		"{{CREATE_ASSIGN}}", createAssignments,
 		"{{UPDATE_FIELDS}}", updateFields,
 		"{{UPDATE_MAP}}", updateMap,
@@ -993,10 +995,23 @@ func (h *{{Pascal}}Handler) PDF(c *gin.Context) {
 	c.Data(http.StatusOK, "application/pdf", out)
 }
 
+// Create{{Pascal}}Request is the JSON body accepted by POST /{{plural}}.
+//
+// Named rather than anonymous so the API reference can document it: gindocs
+// builds a request schema by reflecting over a real type, and an anonymous
+// struct inside a handler gives it nothing to reflect over. routes.go passes
+// this type to docs.Route(...).RequestBody().
+type Create{{Pascal}}Request struct {
+{{CREATE_FIELDS_TOP}}}
+
+// Update{{Pascal}}Request is the JSON body accepted by PUT /{{plural}}/:id.
+// Every field is optional — only what the client sends is applied.
+type Update{{Pascal}}Request struct {
+{{UPDATE_FIELDS_TOP}}}
+
 // Create adds a new {{lower}}.
 func (h *{{Pascal}}Handler) Create(c *gin.Context) {
-	var req struct {
-{{CREATE_FIELDS}}	}
+	var req Create{{Pascal}}Request
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -1046,8 +1061,7 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-{{UPDATE_FIELDS}}	}
+	var req Update{{Pascal}}Request
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -1904,4 +1918,19 @@ func splitPascal(s string) []string {
 	}
 	words = append(words, s[start:])
 	return words
+}
+
+// dedentOneTab strips exactly one leading tab from every line.
+//
+// The create/update field lists are built for a struct declared *inside* a
+// handler (two tabs). Promoting them to a package-level type moves them out one
+// level, and nested blocks — the inline `Items []struct{...}` from --items —
+// have to move with them, which is why this shifts each line by one tab rather
+// than collapsing all leading whitespace.
+func dedentOneTab(s string) string {
+	lines := strings.Split(s, "\n")
+	for i, line := range lines {
+		lines[i] = strings.TrimPrefix(line, "\t")
+	}
+	return strings.Join(lines, "\n")
 }

@@ -509,39 +509,39 @@ export default function HomePage() {
         <div className="absolute top-20 right-10 w-[600px] h-[600px] -z-10 rounded-full bg-primary/[0.04] blur-[120px]" />
 
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-12 items-start">
-            <div className="lg:col-span-4">
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
-                A framework for<br />developers and agents
-              </h2>
-              <p className="text-base text-muted-foreground leading-relaxed mb-6">
-                Grit has opinions on everything: routing, queues, auth, storage, AI.
-                That&apos;s thousands of decisions an AI agent doesn&apos;t have to make.
-                The result? Clean Go code that anyone — human or assistant — can extend.
-              </p>
-              <ul className="space-y-3 mb-7">
-                {[
-                  'Generates Go + React from one CLI command',
-                  'Ships an SKILL.md so agents know the patterns',
-                  'AI Gateway: 100+ models via one API key',
-                  'OWASP 2025 hardened — secure by default',
-                ].map((line) => (
-                  <li key={line} className="flex items-start gap-2.5 text-sm text-foreground/80">
-                    <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" strokeWidth={2.5} />
-                    {line}
-                  </li>
-                ))}
-              </ul>
-              <Button variant="outline" className="border-border/60 text-foreground hover:bg-accent/30 rounded-full" asChild>
-                <Link href="/docs">
-                  Explore the framework <ArrowRight className="ml-2 h-3.5 w-3.5" />
-                </Link>
-              </Button>
-            </div>
+          <div className="max-w-3xl mx-auto text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
+              A framework for developers and agents
+            </h2>
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+              Grit has opinions on everything: routing, queues, auth, storage, AI. That is
+              thousands of decisions an AI agent does not have to make &mdash; and the code it
+              writes lands in the same shape a person would have written.
+            </p>
+          </div>
 
-            <div className="lg:col-span-8">
-              <FeatureTabs />
-            </div>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2.5 mb-10">
+            {[
+              'Generates Go + React from one CLI command',
+              'Ships a SKILL.md so agents know the patterns',
+              'AI Gateway: 100+ models via one API key',
+              'OWASP 2025 hardened — secure by default',
+            ].map((line) => (
+              <span key={line} className="flex items-center gap-2 text-sm text-foreground/80">
+                <Check className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />
+                {line}
+              </span>
+            ))}
+          </div>
+
+          <FeatureTabs />
+
+          <div className="flex justify-center mt-10">
+            <Button variant="outline" className="border-border/60 text-foreground hover:bg-accent/30 rounded-full" asChild>
+              <Link href="/docs">
+                Explore the framework <ArrowRight className="ml-2 h-3.5 w-3.5" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
