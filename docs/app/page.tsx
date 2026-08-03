@@ -1305,139 +1305,50 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
         </div>
       </section>
 
-      {/* ═══ TESTIMONIALS — asymmetric grid with dark accent cards ═══ */}
+      {/* ═══ TESTIMONIALS ═══
+
+          This section previously carried quotes attributed to real, named people
+          and institutions who never gave them — placeholder copy from the design
+          mock that shipped by accident.
+
+          It is deliberately empty until there are real ones. Inventing an
+          endorsement is both legally actionable and, for a framework asking to be
+          trusted with auth and audit logs, self-defeating: nothing else on this
+          page survives being caught doing it.
+
+          Add real quotes here as they arrive, with a link to the source. Never
+          add a name without written permission. */}
       <section className="relative py-24 px-6 border-t border-border/40 overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-card/40 via-background to-background" />
         <div className="absolute top-40 left-1/4 w-[500px] h-[500px] -z-10 rounded-full bg-primary/[0.04] blur-[120px]" />
 
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
-              Trusted by builders<br />all over the world
-            </h2>
-          </div>
-
-          {/* Asymmetric 3-column grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-
-            {/* Tall dark card #1 — Sentinel "logo" treatment */}
-            <div className="md:row-span-2 rounded-2xl bg-slate-950 border border-slate-800/80 p-7 flex flex-col">
-              <div className="flex items-center gap-2 mb-7">
-                <div className="h-7 w-7 rounded-md bg-rose-500/20 flex items-center justify-center">
-                  <Shield className="h-3.5 w-3.5 text-rose-400" />
-                </div>
-                <span className="font-semibold text-white text-sm tracking-tight">sentinel</span>
-              </div>
-              <p className="text-2xl font-medium text-white leading-tight tracking-tight mb-auto">
-                &ldquo;Grit&apos;s code generator and Sentinel
-                integration meant we shipped a secure
-                WAF + audit dashboard the same week
-                we started the project.&rdquo;
-              </p>
-              <div className="flex items-center gap-3 mt-7">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-rose-400 to-orange-500 flex items-center justify-center font-bold text-white">AC</div>
-                <div>
-                  <div className="font-semibold text-white text-sm">Alex Chen</div>
-                  <div className="text-xs text-white/50">Founder, Skywatcher</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Light cards */}
-            <div className="rounded-2xl border border-border/40 bg-card/60 p-6 flex flex-col">
-              <p className="text-base text-foreground/85 leading-relaxed flex-1 mb-5">
-                &ldquo;Grit is our sourdough starter and multitool for full-stack projects
-                large and small. The single-app mode in particular is fresh and useful.&rdquo;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center font-bold text-white">IC</div>
-                <div>
-                  <div className="font-semibold text-foreground text-sm">Ian Callahan</div>
-                  <div className="text-xs text-muted-foreground">Harvard Art Museums</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-border/40 bg-card/60 p-6 flex flex-col">
-              <p className="text-base text-foreground/85 leading-relaxed flex-1 mb-5">
-                &ldquo;Grit takes the pain out of building modern, scalable Go web apps. The
-                tabbed code generator is a love-letter to senior devs.&rdquo;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 flex items-center justify-center font-bold text-white">AF</div>
-                <div>
-                  <div className="font-semibold text-foreground text-sm">Aaron Francis</div>
-                  <div className="text-xs text-muted-foreground">Co-founder, Try Hard Studios</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-border/40 bg-card/60 p-6 flex flex-col">
-              <p className="text-base text-foreground/85 leading-relaxed flex-1 mb-5">
-                &ldquo;Grit&apos;s elegance, performance, and developer experience are unmatched
-                for Go. The generated code is clean enough to teach from.&rdquo;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center font-bold text-white">CP</div>
-                <div>
-                  <div className="font-semibold text-foreground text-sm">Chandresh Patel</div>
-                  <div className="text-xs text-muted-foreground">CEO, Bacancy</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Tall dark card #2 — Pulse "logo" treatment */}
-            <div className="md:row-span-2 rounded-2xl bg-slate-950 border border-slate-800/80 p-7 flex flex-col">
-              <div className="flex items-center gap-2 mb-7">
-                <div className="h-7 w-7 rounded-md bg-sky-500/20 flex items-center justify-center">
-                  <TrendingUp className="h-3.5 w-3.5 text-sky-400" />
-                </div>
-                <span className="font-semibold text-white text-sm tracking-tight">pulse</span>
-              </div>
-              <p className="text-2xl font-medium text-white leading-tight tracking-tight mb-auto">
-                &ldquo;The Grit ecosystem has been
-                integral to the success of our
-                product. The framework lets us
-                move fast and ship regularly
-                without dropping a single SLO.&rdquo;
-              </p>
-              <div className="flex items-center gap-3 mt-7">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-sky-400 to-violet-500 flex items-center justify-center font-bold text-white">JE</div>
-                <div>
-                  <div className="font-semibold text-white text-sm">Jack Ellis</div>
-                  <div className="text-xs text-white/50">Founder, Fathom Analytics</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-border/40 bg-card/60 p-6 flex flex-col">
-              <p className="text-base text-foreground/85 leading-relaxed flex-1 mb-5">
-                &ldquo;Grit is a breath of fresh air in the Go ecosystem, with a brilliant
-                community around it. Generators that actually feel like Rails.&rdquo;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center font-bold text-white">EH</div>
-                <div>
-                  <div className="font-semibold text-foreground text-sm">Erika Heidi</div>
-                  <div className="text-xs text-muted-foreground">Creator, Minicli</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-border/40 bg-card/60 p-6 flex flex-col">
-              <p className="text-base text-foreground/85 leading-relaxed flex-1 mb-5">
-                &ldquo;The framework, the ecosystem, and the community — it&apos;s the perfect
-                package for shipping production Go apps.&rdquo;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center font-bold text-white">ZK</div>
-                <div>
-                  <div className="font-semibold text-foreground text-sm">Zuzana Kunckova</div>
-                  <div className="text-xs text-muted-foreground">Founder, GoBuilders</div>
-                </div>
-              </div>
-            </div>
-
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
+            Built something with Grit?
+          </h2>
+          <p className="mt-5 text-lg text-muted-foreground leading-relaxed">
+            There are no testimonials here yet, and there will not be any invented ones.
+            If Grit is running something of yours in production, tell us about it — the
+            good and the parts that hurt — and it goes on this page with your name and a
+            link back to you.
+          </p>
+          <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="https://github.com/MUKE-coder/grit/issues/new?template=testimonial.yml"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              <Github className="h-4 w-4" />
+              Share your experience
+            </Link>
+            <Link
+              href="/showcase"
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-border/60 px-6 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50"
+            >
+              See what people are building
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>

@@ -1,0 +1,76 @@
+name: Share your experience
+description: Tell us how Grit worked out — good, bad, or mixed. Quotes on the site come from here.
+title: "[Testimonial] "
+labels: ["testimonial"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for this.
+
+        The homepage has no testimonials on it right now, and it will only ever
+        carry ones submitted here by the person who said them. Filing this issue
+        is your permission to quote you; you can withdraw it any time by
+        commenting and we will take it down.
+
+        **Critical feedback is welcome and gets published too.** A page of
+        uniform praise tells a reader nothing. If Grit cost you a weekend on
+        something that should have taken an hour, that is worth more to the next
+        person than another "it just works".
+
+  - type: textarea
+    id: experience
+    attributes:
+      label: What did you build, and how did it go?
+      description: Specifics beat adjectives. What did it save you, and where did it fight you?
+      placeholder: |
+        We built an internal inventory tool for ~40 warehouse staff. `grit generate resource`
+        got the CRUD and admin done in an afternoon. The part that cost us time was …
+    validations:
+      required: true
+
+  - type: input
+    id: quote
+    attributes:
+      label: A line we can quote
+      description: One or two sentences. Leave blank if you would rather we did not quote you.
+      placeholder: "Grit got us from nothing to a working admin panel in a day."
+
+  - type: input
+    id: name
+    attributes:
+      label: Name to credit
+      description: Exactly as you want it shown. Leave blank to stay anonymous.
+
+  - type: input
+    id: role
+    attributes:
+      label: Role and company
+      placeholder: "Engineering lead, Acme Logistics"
+
+  - type: input
+    id: link
+    attributes:
+      label: Link
+      description: Your site, GitHub, or LinkedIn — so readers can verify you are a real person.
+      placeholder: "https://github.com/yourhandle"
+
+  - type: dropdown
+    id: version
+    attributes:
+      label: Roughly which version were you on?
+      options:
+        - "v3.11x (current)"
+        - "v3.10x"
+        - "v3.0x–3.09x"
+        - "Not sure"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: Permission
+      options:
+        - label: I am the person quoted, and Grit may publish this with the name and link above.
+          required: true
