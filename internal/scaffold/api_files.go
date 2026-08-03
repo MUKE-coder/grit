@@ -633,6 +633,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -784,6 +785,8 @@ type Config struct {
 	// TOTP (Two-Factor Authentication)
 	TOTPIssuer string
 	RequireEmailVerification bool
+	LoginMaxAttempts         int
+	LoginLockoutWindow       time.Duration
 
 	// Security (Sentinel)
 	SentinelEnabled        bool
@@ -872,6 +875,8 @@ func Load() (*Config, error) {
 		// project would lock out every user at once, because they all have a
 		// NULL email_verified_at.
 		RequireEmailVerification: getEnv("REQUIRE_EMAIL_VERIFICATION", "false") == "true",
+		LoginMaxAttempts:   getEnvInt("LOGIN_MAX_ATTEMPTS", 10),
+		LoginLockoutWindow: getEnvDuration("LOGIN_LOCKOUT_MINUTES", 15) * time.Minute,
 
 		SentinelEnabled:        getEnv("SENTINEL_ENABLED", "true") == "true",
 		SentinelUsername:       getEnv("SENTINEL_USERNAME", "admin"),
@@ -1036,6 +1041,27 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+// getEnvInt reads a whole-number env var. A malformed value falls back rather
+// than failing the boot: an unparseable LOGIN_MAX_ATTEMPTS should not take the
+// API down, and the fallback is the safe direction.
+func getEnvInt(key string, fallback int) int {
+	if val := os.Getenv(key); val != "" {
+		if n, err := strconv.Atoi(val); err == nil {
+			return n
+		}
+		log.Printf("config: %s=%q is not a number, using %d", key, val, fallback)
+	}
+	return fallback
+}
+
+// getEnvDuration reads a whole number of units; the caller multiplies by the
+// unit it means, which keeps the env var name self-describing
+// (LOGIN_LOCKOUT_MINUTES=15 rather than a duration string nobody formats
+// consistently).
+func getEnvDuration(key string, fallback int) time.Duration {
+	return time.Duration(getEnvInt(key, fallback))
+}
+
 // splitCSV trims and splits a comma-separated env var. Empty strings
 // after trimming are dropped so "a, ,b" yields ["a","b"].
 func splitCSV(s string) []string {
@@ -1173,6 +1199,13 @@ type User struct {
 	GoogleID        string         ` + "`" + `gorm:"size:255" json:"-"` + "`" + `
 	GithubID        string         ` + "`" + `gorm:"size:255" json:"-"` + "`" + `
 	EmailVerifiedAt *time.Time     ` + "`" + `json:"email_verified_at"` + "`" + `
+
+	// Per-account brute-force protection. Sentinel rate-limits by IP, which
+	// does nothing against attempts spread across many addresses at one
+	// account — the shape of every credential-stuffing run. FailedLoginCount
+	// is reset on any successful sign-in.
+	FailedLoginCount int        ` + "`" + `gorm:"default:0" json:"-"` + "`" + `
+	LockedUntil      *time.Time ` + "`" + `json:"locked_until,omitempty"` + "`" + `
 	IPAddress       string         ` + "`" + `gorm:"size:45" json:"ip_address"` + "`" + `
 	MACAddress      string         ` + "`" + `gorm:"size:50" json:"mac_address"` + "`" + `
 	Version         int            ` + "`" + `gorm:"not null;default:1" json:"version"` + "`" + `
@@ -1789,6 +1822,29 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	// Locked accounts are refused before the password is even compared, so a
+	// lockout cannot be probed by timing the comparison.
+	if user.LockedUntil != nil && time.Now().Before(*user.LockedUntil) {
+		remaining := time.Until(*user.LockedUntil).Round(time.Minute)
+		if remaining < time.Minute {
+			remaining = time.Minute
+		}
+		services.LogActivity(h.DB, c, services.ActivityArgs{
+			Action:       "auth.login_locked",
+			Severity:     "warn",
+			Summary:      "Sign-in refused: account is temporarily locked",
+			ResourceType: "user",
+			ResourceID:   user.ID,
+		})
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"error": gin.H{
+				"code":    "ACCOUNT_LOCKED",
+				"message": fmt.Sprintf("Too many failed attempts. Try again in about %d minute(s), or reset your password.", int(remaining.Minutes())),
+			},
+		})
+		return
+	}
+
 	// Opt-in gate. Social and SSO sign-ins are unaffected — the IdP already
 	// proved the address, and those paths set EmailVerifiedAt on first login.
 	if h.Config.RequireEmailVerification && user.EmailVerifiedAt == nil && user.Password != "" {
@@ -1819,6 +1875,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		// Wrong password on a real account — distinct from "unknown email"
 		// because Sentinel's brute-force heuristics weight these higher.
 		services.LogLoginFailed(h.DB, c, req.Email)
+		h.registerFailedLogin(&user)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": gin.H{
 				"code":    "INVALID_CREDENTIALS",
@@ -1826,6 +1883,14 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			},
 		})
 		return
+	}
+
+	// Any successful password check clears the counter, including one that
+	// still has 2FA ahead of it — the password was correct, which is what this
+	// counter measures.
+	if user.FailedLoginCount > 0 || user.LockedUntil != nil {
+		h.DB.Model(&models.User{}).Where("id = ?", user.ID).
+			Updates(map[string]interface{}{"failed_login_count": 0, "locked_until": nil})
 	}
 
 	// Check if user has TOTP enabled
@@ -2131,6 +2196,78 @@ func (h *AuthHandler) deliverPasswordReset(user models.User, clientIP string) {
 	log.Printf("password reset link for %s: %s", user.Email, resetURL)
 }
 
+
+// Unlock clears a lockout early. Waiting out the window is the normal path;
+// this exists for the support call that follows a user locking themselves out
+// five minutes before a demo.
+func (h *UserHandler) Unlock(c *gin.Context) {
+	id := c.Param("id")
+
+	res := h.DB.Model(&models.User{}).Where("id = ?", id).
+		Updates(map[string]interface{}{"locked_until": nil, "failed_login_count": 0})
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to unlock the account"},
+		})
+		return
+	}
+	if res.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": gin.H{"code": "NOT_FOUND", "message": "User not found"},
+		})
+		return
+	}
+
+	services.LogActivity(h.DB, c, services.ActivityArgs{
+		Action:       "user.unlock",
+		Severity:     "warn",
+		Summary:      "Account lockout cleared by an administrator",
+		ResourceType: "user",
+		ResourceID:   id,
+	})
+
+	c.JSON(http.StatusOK, gin.H{"message": "Account unlocked"})
+}
+
+// registerFailedLogin counts a wrong password against the account and locks it
+// once the threshold is reached.
+//
+// Only wrong-password-on-a-real-account is counted. Counting unknown emails
+// would let anyone lock an address they can guess, which turns a defence into
+// a denial-of-service tool.
+//
+// The increment is a single UPDATE rather than read-modify-write, so parallel
+// attempts cannot each read the same count and overwrite one another.
+func (h *AuthHandler) registerFailedLogin(user *models.User) {
+	max := h.Config.LoginMaxAttempts
+	if max <= 0 {
+		return // lockout disabled
+	}
+
+	if err := h.DB.Model(&models.User{}).
+		Where("id = ?", user.ID).
+		UpdateColumn("failed_login_count", gorm.Expr("failed_login_count + 1")).Error; err != nil {
+		log.Printf("lockout: incrementing failed_login_count for %s: %v", user.ID, err)
+		return
+	}
+
+	var fresh models.User
+	if err := h.DB.Select("id", "failed_login_count").First(&fresh, "id = ?", user.ID).Error; err != nil {
+		return
+	}
+	if fresh.FailedLoginCount < max {
+		return
+	}
+
+	until := time.Now().Add(h.Config.LoginLockoutWindow)
+	if err := h.DB.Model(&models.User{}).
+		Where("id = ?", user.ID).
+		Updates(map[string]interface{}{"locked_until": until, "failed_login_count": 0}).Error; err != nil {
+		log.Printf("lockout: locking %s: %v", user.ID, err)
+		return
+	}
+	log.Printf("lockout: %s locked until %s after %d failed attempts", user.Email, until.Format(time.RFC3339), max)
+}
 
 // SendVerificationEmail issues a fresh verification link for the signed-in
 // user. Authenticated on purpose: an unauthenticated "send a link to this
@@ -8263,6 +8400,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		admin.PUT("/roles/:id", middleware.RequireRole("ADMIN", "perm:roles.edit"), roleHandler.Update)
 		admin.DELETE("/roles/:id", middleware.RequireRole("ADMIN", "perm:roles.delete"), roleHandler.Delete)
 		admin.PUT("/users/:id/roles", middleware.RequireRole("ADMIN", "perm:users.edit"), roleHandler.AssignUserRoles)
+		admin.POST("/users/:id/unlock", middleware.RequireRole("ADMIN", "perm:users.edit"), userHandler.Unlock)
 
 		// grit:routes:admin
 	}

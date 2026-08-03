@@ -124,6 +124,18 @@ GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 OAUTH_FRONTEND_URL=http://localhost:3001
 
+# Account lockout. Sentinel rate-limits by IP; this protects a single account
+# from attempts spread across many addresses. Set LOGIN_MAX_ATTEMPTS=0 to
+# disable. Only wrong passwords on real accounts count — an unknown email never
+# locks anything, or anyone could lock an address they guess.
+LOGIN_MAX_ATTEMPTS=10
+LOGIN_LOCKOUT_MINUTES=15
+
+# Require a confirmed email address before a password sign-in is accepted.
+# Leave false on an existing project: every current user has a NULL
+# email_verified_at and would be locked out the moment you switch it on.
+REQUIRE_EMAIL_VERIFICATION=false
+
 # Redis
 REDIS_URL=redis://localhost:6380
 
