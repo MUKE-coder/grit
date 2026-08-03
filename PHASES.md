@@ -522,6 +522,86 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 
 ---
 
+## Phase 6 — Feature Completion (in progress)
+
+> **Read this first when asked "what's remaining".** Tick a box the moment the
+> work is verified and pushed, not when the code is written. Every item here is
+> a real gap found by using the framework, not a wish-list.
+>
+> **Definition of done for every sub-task below:** `go build ./...` passes,
+> `go test ./internal/...` passes, a project is scaffolded fresh, **both admin
+> variants build** (`--triple` with `next build`, `--triple --vite` with
+> `vite build`), the behaviour is driven over HTTP or in a browser, and the
+> release is tagged and pushed. See [Release testing](#) — skipping the
+> both-variants check is what broke v3.119.0.
+
+### 6.1 — Audit log surface ✅ shipped v3.120.0
+- [x] `/system/audit` page listing every chained entry (method, status, duration, digest)
+- [x] Verify-chain button wired to `/admin/activity/integrity`
+- [x] Registered for Next.js **and** TanStack variants + System Hub tile
+- [x] Weekly `audit:prune` retention job that re-anchors the chain
+- [x] Verified by editing a row directly in SQLite — the check named that row
+
+### 6.2 — Email verification ✅ shipped v3.121.0
+- [x] `EmailVerificationToken` model (hash-only, 48h, single-use, records the address)
+- [x] `POST /auth/verify-email` (public) + `POST /auth/verify-email/send` (authenticated)
+- [x] Verification mail on register, sent off the request path
+- [x] `REQUIRE_EMAIL_VERIFICATION` login gate, off by default
+- [x] `/verify-email` page + resend banner, both admin variants
+- [x] 7 generated tests, including the changed-address case
+
+### 6.3 — Account lockout ✅ shipped v3.122.0
+- [x] `failed_login_count` / `locked_until` on the user
+- [x] Lock after `LOGIN_MAX_ATTEMPTS`, checked before the password comparison
+- [x] Unknown emails never count (else it becomes a DoS tool)
+- [x] `POST /users/:id/unlock` for admins, written to the activity log
+- [x] Verified: 3 fails → 401, 4th → 429, unknown email never locks, unlock resets
+
+### 6.4 — API-key authentication ⬜ not started
+- [ ] `APIKey` model: hashed secret, prefix for display, name, last_used_at, expires_at, revoked_at
+- [ ] Issuance endpoint returning the raw key **once** (server keeps only the hash)
+- [ ] `middleware.APIKeyAuth` that coexists with JWT — same `user_id` in context
+- [ ] Scope/permission binding, reusing the existing `perm:<key>` catalogue
+- [ ] Revoke + rotate endpoints
+- [ ] Admin page: list, create (one-time reveal), revoke
+- [ ] Registered for both admin variants
+- [ ] Generated tests: hash-only storage, revoked key rejected, expired key rejected
+- [ ] Verified over HTTP end to end
+
+### 6.5 — OpenAPI coverage for built-in endpoints ⬜ not started
+> The mechanism landed in v3.116.0; auth and generated resources are done.
+> Roughly 240 built-in operations still render "No Body" at `/docs`.
+- [ ] Uploads (presign, complete, list, delete)
+- [ ] Roles + permissions
+- [ ] Backups + backup settings
+- [ ] Notifications
+- [ ] Jobs + cron admin endpoints
+- [ ] Activity / audit / OCSF
+- [ ] GDPR + SSO + access reviews
+- [ ] TOTP + sessions
+- [ ] Verify with a scaffolded project: count operations with a request or response schema
+
+### 6.6 — 2FA on Expo and desktop ⬜ not started
+> The API and both admin variants are done. A user with 2FA enabled currently
+> cannot sign in on mobile or desktop at all.
+- [ ] Expo: TOTP challenge on login (code, backup code, trust device)
+- [ ] Expo: enrol screen (QR is rendered by the API, so no encoder needed)
+- [ ] Desktop: same two, in the Wails client
+- [ ] Verified on the Android emulator and in the desktop window
+
+### 6.7 — Swap Phase 3 ⬜ not started
+- [ ] Adopt the swappable Button primitive across the remaining inline sites (~180)
+- [ ] Adopt the swappable Input primitive
+- [ ] `grit swap` round-trip still clean afterwards
+
+### 6.8 — Release hardening ⬜ not started
+- [ ] Code signing for Windows installers (Authenticode)
+- [ ] Notarization for macOS builds
+- [ ] SBOM generation in the release workflow
+- [ ] Signed release artifacts (cosign)
+
+---
+
 ## Phase Summary
 
 | Phase | Duration | Focus | Key Deliverable |

@@ -25,7 +25,7 @@
 | Document | Location | Purpose |
 |----------|----------|---------|
 | **GRIT.md** | `/GRIT.md` | Master specification — what Grit is, features, architecture, folder structure, tech stack, monetization. THE SOURCE OF TRUTH. |
-| **PHASES.md** | `/PHASES.md` | Development phases with checkboxes. Build one phase at a time. Never skip ahead. |
+| **PHASES.md** | `/PHASES.md` | Development phases with checkboxes. **Phase 6 is the live remaining-work list** — read it before answering "what's left", and tick boxes as you ship. |
 | **This file** | `/CLAUDE.md` | Quick context for AI agents. You're reading it. |
 
 **Before writing ANY code, read GRIT.md and PHASES.md to understand what you're building.**
@@ -36,8 +36,13 @@
 
 <!-- UPDATE THIS SECTION AS PHASES ARE COMPLETED -->
 
-**Current Phase:** Phase 5 — Polish & Launch
-**Status:** In Progress
+**Current Phase:** Phase 6 — Feature Completion
+**Status:** In Progress — see **[PHASES.md § Phase 6](PHASES.md)** for the live checklist
+
+> **When asked "what's remaining?", read Phase 6 in PHASES.md and answer from it.**
+> Do not re-derive the list by searching the codebase — the checklist is the
+> record. Tick a box only once the work is verified and pushed, and say which
+> version shipped it.
 **Last Updated:** 2026-07-24 (v3.86.0 — server-side sessions & revocation)
 
 ### What's Been Built
