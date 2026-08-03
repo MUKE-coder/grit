@@ -28,6 +28,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.115.1 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.115.1
+                </span>
+                <span className="text-sm text-muted-foreground">August 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The Expo app&apos;s web target now runs.</strong>
+                </p>
+                <p>
+                  A scaffolded Expo app declared a <code>web</code> target in{' '}
+                  <code>app.json</code> and shipped a <code>pnpm web</code> script, but not
+                  the two packages that target needs &mdash; so the script failed on a fresh
+                  project with &ldquo;you don&apos;t have the required dependencies
+                  installed&rdquo;.
+                </p>
+                <ul>
+                  <li>
+                    <strong>Added <code>react-native-web</code> and{' '}
+                    <code>@expo/metro-runtime</code></strong> at the versions Expo SDK 54
+                    expects. <code>pnpm web</code> now bundles and serves.
+                  </li>
+                  <li>
+                    <strong>Fixed a React duplication on web.</strong> The Metro resolver
+                    deduped <code>react</code> but not <code>react-dom</code>, on the
+                    reasoning that React Native has no use for it. True on native, false on
+                    web &mdash; where the hoisted Next.js copy (19.2.8) met Expo&apos;s React
+                    (19.1.0) and React refused to start. Both are now pinned to the app&apos;s
+                    own copies.
+                  </li>
+                  <li>
+                    <strong><code>grit new --full</code> help text corrected.</strong> It read
+                    as &ldquo;triple plus docs&rdquo;; it has always also included the Expo and
+                    Wails apps.
+                  </li>
+                </ul>
+                <p>
+                  Existing projects: add the two packages with{' '}
+                  <code>npx expo install react-native-web @expo/metro-runtime</code>, or
+                  re-scaffold.
+                </p>
+              </div>
+            </div>
+
             {/* v3.115.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
