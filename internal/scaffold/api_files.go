@@ -1665,6 +1665,55 @@ type AuthResponse struct {
 	Message string ` + "`" + `json:"message"` + "`" + `
 }
 
+// The types below exist so the API reference can show a body instead of
+// "No Body". The handlers emit gin.H maps, so nothing enforces that these stay
+// in step — if you change what a handler writes, change its type here too.
+// They are documentation with a compiler attached, which is still better than
+// prose nobody updates.
+
+// MessageResponse is the plain acknowledgement shape.
+type MessageResponse struct {
+	Message string ` + "`" + `json:"message"` + "`" + `
+}
+
+// IssuedKeyResponse is returned once, when an API key is created.
+type IssuedKeyResponse struct {
+	Data struct {
+		Key   models.APIKey ` + "`" + `json:"key"` + "`" + `
+		Token string        ` + "`" + `json:"token"` + "`" + `
+	} ` + "`" + `json:"data"` + "`" + `
+	Message string ` + "`" + `json:"message"` + "`" + `
+}
+
+// TOTPStatusResponse describes the caller's two-factor state.
+type TOTPStatusResponse struct {
+	Data struct {
+		Enabled              bool  ` + "`" + `json:"enabled"` + "`" + `
+		BackupCodesRemaining int   ` + "`" + `json:"backup_codes_remaining"` + "`" + `
+		TrustedDevices       int64 ` + "`" + `json:"trusted_devices"` + "`" + `
+	} ` + "`" + `json:"data"` + "`" + `
+}
+
+// PresignResponse carries the URL a browser PUTs to, and the key to send back
+// to /uploads/complete afterwards.
+type PresignResponse struct {
+	Data struct {
+		PresignedURL string ` + "`" + `json:"presigned_url"` + "`" + `
+		Key          string ` + "`" + `json:"key"` + "`" + `
+	} ` + "`" + `json:"data"` + "`" + `
+}
+
+// ChainStatusResponse is the activity-log integrity verdict.
+type ChainStatusResponse struct {
+	Valid        bool   ` + "`" + `json:"valid"` + "`" + `
+	TotalEntries int    ` + "`" + `json:"total_entries"` + "`" + `
+	BrokenAt     int    ` + "`" + `json:"broken_at,omitempty"` + "`" + `
+	BrokenAtID   string ` + "`" + `json:"broken_at_id,omitempty"` + "`" + `
+	Expected     string ` + "`" + `json:"expected,omitempty"` + "`" + `
+	Got          string ` + "`" + `json:"got,omitempty"` + "`" + `
+	Message      string ` + "`" + `json:"message,omitempty"` + "`" + `
+}
+
 // ErrorResponse is the error envelope every endpoint uses.
 type ErrorResponse struct {
 	Error struct {
@@ -7827,6 +7876,10 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		Version:     "1.0.0",
 		UI:          gindocs.UIScalar,
 		ScalarTheme: "kepler",
+		// Pulse, Sentinel and GORM Studio mount their own dashboards and APIs
+		// inside this app. They are not your API, and 111 of their routes in
+		// the reference buries the ~140 that are yours.
+		ExcludePrefixes: []string{"/pulse", "/sentinel", "/studio", "/docs"},
 		Models:      []interface{}{&models.User{}, &models.Upload{}, &models.Blog{} /* grit:docs:models */},
 		Auth: gindocs.AuthConfig{
 			Type:         gindocs.AuthBearer,
@@ -7853,6 +7906,139 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	docs.Route("GET /api/v1/auth/me").
 		Summary("The signed-in user").
 		Response(200, models.User{}, "The current user")
+
+	// Built-in endpoints. Response schemas come from the models, which is why
+	// these are one line each; request bodies appear only where a named type
+	// exists, since gindocs reflects over a type and an anonymous struct
+	// inside a handler gives it nothing to read.
+	docs.Route("POST /api/v1/auth/forgot-password").
+		Summary("Send a password-reset link").
+		RequestBody(handlers.ForgotPasswordRequest{}).
+		Response(200, handlers.MessageResponse{}, "Always the same reply, whether or not the address exists")
+	docs.Route("POST /api/v1/auth/reset-password").
+		Summary("Set a new password with a reset token").
+		RequestBody(handlers.ResetPasswordRequest{}).
+		Response(200, handlers.MessageResponse{}, "Password changed; every other session is signed out")
+	docs.Route("POST /api/v1/auth/verify-email").
+		Summary("Confirm an email address").
+		Response(200, handlers.MessageResponse{}, "Address verified").
+		Response(400, handlers.ErrorResponse{}, "The link is invalid or has expired")
+	docs.Route("POST /api/v1/auth/verify-email/send").
+		Summary("Send a fresh verification link").
+		Response(200, handlers.MessageResponse{}, "Sent")
+	docs.Route("POST /api/v1/auth/logout").
+		Summary("Sign out this device").
+		Response(200, handlers.MessageResponse{}, "Signed out")
+	docs.Route("GET /api/v1/auth/sessions").
+		Summary("Devices signed in to this account").
+		Response(200, []models.Session{}, "One row per active session")
+	docs.Route("DELETE /api/v1/auth/sessions/:id").
+		Summary("Sign one device out").
+		Response(200, handlers.MessageResponse{}, "That device is signed out")
+	docs.Route("POST /api/v1/auth/sessions/revoke-all").
+		Summary("Sign out every other device").
+		Response(200, handlers.MessageResponse{}, "All other sessions revoked")
+	docs.Route("GET /api/v1/auth/totp/status").
+		Summary("Two-factor status for the signed-in user").
+		Response(200, handlers.TOTPStatusResponse{}, "Whether 2FA is on, codes left, trusted devices")
+	docs.Route("GET /api/v1/auth/totp/trusted-devices").
+		Summary("Devices allowed to skip the 2FA prompt").
+		Response(200, []models.TrustedDevice{}, "Trusted devices, newest first")
+
+	docs.Route("GET /api/v1/users").
+		Summary("List users").
+		Response(200, []models.User{}, "A page of users")
+	docs.Route("GET /api/v1/users/:id").
+		Summary("Get one user").
+		Response(200, models.User{}, "The user").
+		Response(404, handlers.ErrorResponse{}, "Not found")
+	docs.Route("GET /api/v1/users/:id/gdpr-export").
+		Summary("Download everything held about a user (GDPR Art. 15)").
+		Response(200, handlers.MessageResponse{}, "A JSON attachment: profile, uploads, sessions, activity")
+	docs.Route("POST /api/v1/users/:id/gdpr-erase").
+		Summary("Erase a user's personal data (GDPR Art. 17)").
+		Response(200, handlers.MessageResponse{}, "Personal records deleted, the account anonymised")
+	docs.Route("POST /api/v1/users/:id/unlock").
+		Summary("Clear a login lockout").
+		Response(200, handlers.MessageResponse{}, "The account can sign in again")
+
+	docs.Route("GET /api/v1/profile").
+		Summary("The signed-in user's profile").
+		Response(200, models.User{}, "The current user")
+
+	docs.Route("GET /api/v1/api-keys").
+		Summary("List your API keys").
+		Response(200, []models.APIKey{}, "Keys, without their secrets — only hashes are stored")
+	docs.Route("POST /api/v1/api-keys").
+		Summary("Create an API key").
+		Response(201, handlers.IssuedKeyResponse{}, "The key, shown for the only time")
+	docs.Route("DELETE /api/v1/api-keys/:id").
+		Summary("Revoke an API key").
+		Response(200, handlers.MessageResponse{}, "Revoked; requests using it are refused from now on")
+
+	docs.Route("GET /api/v1/notifications").
+		Summary("List notifications").
+		Response(200, []models.Notification{}, "A page of notifications")
+
+	docs.Route("GET /api/v1/uploads").
+		Summary("List uploaded files").
+		Response(200, []models.Upload{}, "A page of uploads")
+	docs.Route("POST /api/v1/uploads").
+		Summary("Upload a file (multipart)").
+		Response(201, models.Upload{}, "The stored file").
+		Response(400, handlers.ErrorResponse{}, "The file type is not allowed for this field")
+	docs.Route("POST /api/v1/uploads/presign").
+		Summary("Get a presigned PUT URL for a direct browser upload").
+		Response(200, handlers.PresignResponse{}, "A URL to PUT to, and the key to record afterwards")
+	docs.Route("POST /api/v1/uploads/complete").
+		Summary("Record a file that was uploaded directly to storage").
+		Response(201, models.Upload{}, "The stored file")
+
+	docs.Route("GET /api/v1/roles").
+		Summary("List roles").
+		Response(200, []models.Role{}, "Every role and its grants")
+	docs.Route("GET /api/v1/permissions").
+		Summary("The permission catalogue").
+		Response(200, handlers.MessageResponse{}, "Modules, groups and features a role can be granted")
+
+	docs.Route("GET /api/v1/backups").
+		Summary("List database backups").
+		Response(200, []models.Backup{}, "Archives, newest first")
+	docs.Route("POST /api/v1/backups/generate").
+		Summary("Take a backup now").
+		Response(202, models.Backup{}, "The run, which continues in the background").
+		Response(429, handlers.ErrorResponse{}, "One was already taken in the last 24 hours")
+	docs.Route("GET /api/v1/backup-settings").
+		Summary("The backup schedule").
+		Response(200, models.BackupSchedule{}, "Frequency and time of day")
+
+	docs.Route("GET /api/v1/access-reviews").
+		Summary("List access-review campaigns").
+		Response(200, []models.AccessReview{}, "Campaigns, newest first")
+	docs.Route("GET /api/v1/access-reviews/:id").
+		Summary("One campaign and its items").
+		Response(200, models.AccessReview{}, "The campaign, with a row per role assignment")
+
+	docs.Route("GET /api/v1/sso/connections").
+		Summary("List SSO connections").
+		Response(200, []models.SSOConnection{}, "Connections; secrets are never returned")
+	docs.Route("GET /api/v1/gdpr/journal").
+		Summary("The tamper-evident deletion journal").
+		Response(200, []models.DeletionJournal{}, "Every erasure, hash-chained")
+
+	docs.Route("GET /api/v1/admin/activity").
+		Summary("The tamper-evident activity log").
+		Response(200, []models.ActivityLog{}, "Every authenticated write, newest first")
+	docs.Route("GET /api/v1/admin/activity/integrity").
+		Summary("Verify the activity-log hash chain").
+		Response(200, handlers.ChainStatusResponse{}, "Valid, or the position and id of the first bad row")
+	docs.Route("GET /api/v1/admin/jobs/stats").
+		Summary("Background-queue counts").
+		Response(200, handlers.MessageResponse{}, "Active, pending, completed, failed and retry totals").
+		Response(503, handlers.ErrorResponse{}, "Redis is not configured")
+	docs.Route("GET /api/v1/admin/cron/tasks").
+		Summary("Registered scheduled tasks").
+		Response(200, handlers.MessageResponse{}, "Every cron entry with its schedule")
 
 	// grit:docs:routes — "grit generate resource" registers each resource here.
 	// grit:docs:routes:end
