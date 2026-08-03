@@ -103,6 +103,7 @@ import {
 } from "@/hooks/use-backups";
 import { Database, Download, RefreshCw, Loader2, AlertCircle, Clock, Save } from "@/lib/icons";
 import { buttonClasses } from "@/components/ui/button";
+import { inputClasses } from "@/components/ui/input";
 
 const FREQUENCIES: { key: BackupFrequency; label: string; hint: string }[] = [
   { key: "daily", label: "Daily", hint: "every day" },
@@ -165,7 +166,7 @@ function ScheduleCard() {
         <div className="mt-4 flex items-end gap-3">
           <div>
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-text-muted">Time of day</label>
-            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="rounded-lg border border-border bg-bg-tertiary px-3 py-2 text-sm text-foreground outline-none focus:border-accent" />
+            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className={inputClasses()} />
           </div>
           <span className="pb-2 text-xs text-text-muted">server local time</span>
         </div>

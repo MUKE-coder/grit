@@ -397,6 +397,7 @@ import { RefreshCw, Search, ArrowLeft } from "@/lib/icons";
 import { DarkModeToggle } from "./DarkModeToggle";
 import { UserMenu } from "./UserMenu";
 import { NotificationBell } from "./NotificationBell";
+import { inputClasses } from "@/components/ui/input";
 
 interface PageHeaderProps {
   /** Page title. Required. */
@@ -503,7 +504,7 @@ export function PageHeader({
               value={searchValue ?? ""}
               onChange={(e) => onSearchChange?.(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full rounded-lg border border-border bg-bg-elevated py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className={inputClasses({ className: "pl-9 pr-3" })}
             />
           </div>
         )}

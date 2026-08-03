@@ -590,7 +590,7 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 - [ ] Desktop + Expo: enrol screen (challenge works; setup is still admin-only)
 - [x] Verified in the desktop window with a live code; Expo typechecks clean
 
-### 6.7 — Swap Phase 3 🟡 partial (v3.127.0: button adopted, input pending)
+### 6.7 — Swap Phase 3 ✅ shipped (v3.127.0 button, v3.128.0 input)
 > The earlier count of 185 was wrong — it came from a regex that broke on `=>`
 > inside `onClick`, and it counted `bg-accent/10` badges as buttons. A
 > brace-aware scan finds **142** inline `bg-accent` buttons across all templates,
@@ -617,7 +617,18 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 - [x] Verified visually: `/system/roles` "New role" goes `rounded-lg` → pill
       under `grit swap button glow-ring`, with no layout shift
 - [x] Both variants rebuilt from a fresh scaffold (`next build`, `vite build`)
-- [ ] Adopt the swappable Input primitive
+- [x] Adopt the swappable Input primitive — 40 sites across 13 files (v3.128.0)
+- [x] Decided what does NOT follow the input slot: checkboxes and radios (the
+      slot sets `w-full`, wrong for a 16px box), fields carrying an explicit
+      width that would fight that same `w-full`, and toolbar chrome like the
+      page-size select, which is a control rather than a form field
+- [x] Two conflicts resolved by hand rather than mechanically: a redundant
+      `text-text-primary` next to the slot's `text-foreground` (both resolve to
+      `var(--text-primary)`), and the confirm-to-delete field, which now uses
+      the slot's own `invalid` state instead of `focus:border-danger` fighting
+      `focus:border-accent`
+- [x] Verified visually: every field in the New-form-share modal restyles
+      together under `grit swap input soft-filled`
 - [x] `grit swap` round-trip verified clean (swap + revert, with type-check)
 
 ### 6.8 — Release hardening 🟡 partial (v3.126.0)

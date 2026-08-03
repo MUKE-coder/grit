@@ -1932,6 +1932,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import type { FieldDefinition } from "@/lib/resource";
 import { Calendar, ChevronLeft, ChevronRight } from "@/lib/icons";
+import { inputClasses } from "@/components/ui/input";
 
 interface DateFieldProps {
   field: FieldDefinition;
@@ -2249,7 +2250,7 @@ export function DateField({ field, value, onChange, error }: DateFieldProps) {
               const [h, m] = e.target.value.split(":").map(Number);
               if (!Number.isNaN(h) && !Number.isNaN(m)) setTime(h, m);
             }}
-            className="flex-1 rounded-lg border border-border bg-bg-secondary px-2 py-1.5 text-sm text-foreground outline-none focus:border-accent"
+            className={inputClasses({ inputSize: "sm", className: "flex-1" })}
             style={{ backgroundColor: "var(--bg-secondary, #111118)" }}
           />
         </div>
@@ -3229,6 +3230,7 @@ import { getResourceByEndpoint } from "@/resources";
 import { usePermissions } from "@/hooks/use-permissions";
 import type { FieldDefinition } from "@/lib/resource";
 import { Plus } from "@/lib/icons";
+import { inputClasses } from "@/components/ui/input";
 
 // Lazy on purpose — see the note on adminInlineCreateDialog. A static import
 // here closes a cycle back through form-builder and the nested form silently
@@ -3358,7 +3360,7 @@ export function RelationshipSelectField({ field, value, onChange, error }: Relat
           placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex h-9 w-full rounded-md border border-border bg-bg-secondary px-3 py-1 text-sm text-foreground outline-none placeholder:text-text-secondary"
+          className={inputClasses({ inputSize: "sm", className: "flex" })}
           style={{ backgroundColor: "var(--bg-secondary, #111118)" }}
           autoFocus
         />
@@ -3477,6 +3479,7 @@ import { getResourceByEndpoint } from "@/resources";
 import { usePermissions } from "@/hooks/use-permissions";
 import type { FieldDefinition } from "@/lib/resource";
 import { Plus } from "@/lib/icons";
+import { inputClasses } from "@/components/ui/input";
 
 // Lazy for the same reason as the single select — see adminInlineCreateDialog.
 const InlineCreateDialog = lazy(() =>
@@ -3614,7 +3617,7 @@ export function MultiRelationshipSelectField({ field, value = [], onChange, erro
           placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex h-9 w-full rounded-md border border-border bg-bg-secondary px-3 py-1 text-sm text-foreground outline-none placeholder:text-text-secondary"
+          className={inputClasses({ inputSize: "sm", className: "flex" })}
           style={{ backgroundColor: "var(--bg-secondary, #111118)" }}
           autoFocus
         />

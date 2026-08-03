@@ -23,6 +23,7 @@ import { apiClient } from "@/lib/api-client";
 import { toast } from "sonner";
 import { KeyRound, Plus, Copy, Check, Loader2, Trash2, AlertTriangle } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
+import { inputClasses } from "@/components/ui/input";
 
 interface APIKey {
   id: string;
@@ -189,7 +190,7 @@ export default function APIKeysPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="nightly export"
-                className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-foreground"
+                className={inputClasses()}
               />
             </div>
             <div className="w-40">
@@ -202,7 +203,7 @@ export default function APIKeysPage() {
                 onChange={(e) => setExpiresIn(e.target.value)}
                 placeholder="never"
                 inputMode="numeric"
-                className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-foreground"
+                className={inputClasses()}
               />
             </div>
             <Button
