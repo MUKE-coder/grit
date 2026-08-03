@@ -66,21 +66,21 @@ func writeAPIFiles(root string, opts Options) error {
 		// header sent by the admin/web clients when the TCP peer is
 		// loopback, so dev activity logs show the operator's actual
 		// public IP instead of "::1".
-		filepath.Join(apiRoot, "internal", "services", "clientip.go"):      clientIPHelperGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "user_activity.go"): userActivityHandlerGo(),
-		filepath.Join(apiRoot, "internal", "services", "ocsf.go"):        apiOCSFServiceGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "ocsf.go"):        apiOCSFHandlerGo(),
-		filepath.Join(apiRoot, "internal", "services", "ocsf_test.go"):   apiOCSFTestGo(),
+		filepath.Join(apiRoot, "internal", "services", "clientip.go"):           clientIPHelperGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "user_activity.go"):      userActivityHandlerGo(),
+		filepath.Join(apiRoot, "internal", "services", "ocsf.go"):               apiOCSFServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "ocsf.go"):               apiOCSFHandlerGo(),
+		filepath.Join(apiRoot, "internal", "services", "ocsf_test.go"):          apiOCSFTestGo(),
 		filepath.Join(apiRoot, "internal", "models", "access_review.go"):        apiAccessReviewModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "access_review.go"):      apiAccessReviewServiceGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "access_review.go"):      apiAccessReviewHandlerGo(),
 		filepath.Join(apiRoot, "internal", "services", "access_review_test.go"): apiAccessReviewTestGo(),
-		filepath.Join(apiRoot, "internal", "models", "deletion_journal.go"): apiGDPRModelGo(),
-		filepath.Join(apiRoot, "internal", "services", "gdpr.go"):          apiGDPRServiceGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "gdpr.go"):          apiGDPRHandlerGo(),
-		filepath.Join(apiRoot, "internal", "services", "gdpr_test.go"):     apiGDPRTestGo(),
-		filepath.Join(apiRoot, "internal", "crypto", "field.go"):      apiCryptoFieldGo(),
-		filepath.Join(apiRoot, "internal", "crypto", "field_test.go"): apiCryptoFieldTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "deletion_journal.go"):     apiGDPRModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "gdpr.go"):               apiGDPRServiceGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "gdpr.go"):               apiGDPRHandlerGo(),
+		filepath.Join(apiRoot, "internal", "services", "gdpr_test.go"):          apiGDPRTestGo(),
+		filepath.Join(apiRoot, "internal", "crypto", "field.go"):                apiCryptoFieldGo(),
+		filepath.Join(apiRoot, "internal", "crypto", "field_test.go"):           apiCryptoFieldTestGo(),
 		// v3.31.40 — per-user dashboard customisation
 		filepath.Join(apiRoot, "internal", "models", "dashboard_layout.go"):   dashboardLayoutModelGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "dashboard_layout.go"): strings.ReplaceAll(dashboardLayoutHandlerGo(), "{{MODULE}}", opts.Module()),
@@ -93,16 +93,16 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "routes", "routes.go"):        apiRoutesGo(),
 		filepath.Join(apiRoot, ".air.toml"):                              airConfig(),
 		// Test files — give the generated API a working test suite out of the box
-		filepath.Join(apiRoot, "internal", "handlers", "auth_test.go"):  apiAuthTestGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "sso_test.go"):   apiSSOTestGo(),
-		filepath.Join(apiRoot, "internal", "models", "bool_flags_test.go"): apiBoolFlagTestGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "saml_test.go"):  apiSAMLTestGo(),
-		filepath.Join(apiRoot, "internal", "services", "session_test.go"): apiSessionTestGo(),
-		filepath.Join(apiRoot, "internal", "models", "password_reset.go"):          apiPasswordResetModelGo(),
-		filepath.Join(apiRoot, "internal", "services", "password_reset.go"):        apiPasswordResetServiceGo(),
-		filepath.Join(apiRoot, "internal", "services", "password_reset_test.go"):   apiPasswordResetTestGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "user_test.go"):  apiUserTestGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "bench_test.go"): apiBenchTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "auth_test.go"):           apiAuthTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "sso_test.go"):            apiSSOTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "bool_flags_test.go"):       apiBoolFlagTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "saml_test.go"):           apiSAMLTestGo(),
+		filepath.Join(apiRoot, "internal", "services", "session_test.go"):        apiSessionTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "password_reset.go"):        apiPasswordResetModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "password_reset.go"):      apiPasswordResetServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "password_reset_test.go"): apiPasswordResetTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "user_test.go"):           apiUserTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "bench_test.go"):          apiBenchTestGo(),
 	}
 
 	for path, content := range files {
@@ -251,6 +251,7 @@ require (
 	github.com/markbates/goth v1.80.0
 	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.6.3
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/xuri/excelize/v2 v2.10.0
 	golang.org/x/crypto v0.53.0
 	// Sentinel now ships a proper /v2 module path, so we track real tags.
@@ -7945,6 +7946,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		protected.GET("/auth/totp/status", totpHandler.Status)
 		protected.POST("/auth/totp/backup-codes", totpHandler.RegenerateBackupCodes)
 		protected.DELETE("/auth/totp/trusted-devices", totpHandler.RevokeTrustedDevices)
+		protected.GET("/auth/totp/trusted-devices", totpHandler.ListTrustedDevices)
+		protected.DELETE("/auth/totp/trusted-devices/:id", totpHandler.RevokeTrustedDevice)
 
 		// User routes (authenticated)
 		protected.GET("/users/:id", userHandler.GetByID)

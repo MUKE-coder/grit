@@ -379,6 +379,7 @@ func writeAdminFiles(root string, opts Options) error {
 		// Profile components
 		filepath.Join(adminRoot, "components", "profile", "delete-account-dialog.tsx"): adminDeleteAccountDialog(),
 		filepath.Join(adminRoot, "components", "profile", "active-sessions.tsx"):       adminActiveSessions(),
+		filepath.Join(adminRoot, "components", "profile", "two-factor-card.tsx"):       adminTwoFactorCard(),
 
 		// Hooks
 		filepath.Join(adminRoot, "hooks", "use-auth.ts"):     adminUseAuth(),
@@ -986,6 +987,17 @@ export function useMe() {
   });
 }
 
+// A login can end in two places: signed in, or holding a short-lived pending
+// token because the account has 2FA on and this device is not trusted.
+export interface TOTPChallenge {
+  totp_required: true;
+  pending_token: string;
+}
+
+function isChallenge(d: AuthResponse | TOTPChallenge): d is TOTPChallenge {
+  return (d as TOTPChallenge).totp_required === true;
+}
+
 export function useLogin() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -996,15 +1008,162 @@ export function useLogin() {
       // grit_access + grit_refresh. The 'tokens' field in the JSON body
       // is preserved for native bearer clients (mobile/desktop); the
       // browser ignores it.
-      const { data } = await apiClient.post<ApiResponse<AuthResponse>>(
+      const { data } = await apiClient.post<ApiResponse<AuthResponse | TOTPChallenge>>(
         "/api/auth/login",
         credentials
       );
       return data;
     },
     onSuccess: (data) => {
+      // Reading data.data.user here without the guard is what used to break:
+      // on a 2FA account it is undefined, and the redirect threw instead of
+      // showing the code prompt.
+      if (isChallenge(data.data)) return;
       queryClient.setQueryData(["me"], data.data.user);
       router.push(data.data.user.role === "USER" ? "/profile" : "/dashboard");
+    },
+  });
+}
+
+// Completes a login that stopped at the 2FA prompt. Same shape for an
+// authenticator code and a backup code — only the endpoint differs — so the
+// form can offer both without branching.
+export function useVerifyTOTP() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      pending_token: string;
+      code: string;
+      trust_device?: boolean;
+      backup?: boolean;
+    }) => {
+      const path = payload.backup
+        ? "/api/auth/totp/backup-codes/verify"
+        : "/api/auth/totp/verify";
+      const { data } = await apiClient.post<ApiResponse<AuthResponse>>(path, {
+        pending_token: payload.pending_token,
+        code: payload.code.trim(),
+        trust_device: payload.trust_device ?? false,
+      });
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["me"], data.data.user);
+      router.push(data.data.user.role === "USER" ? "/profile" : "/dashboard");
+    },
+  });
+}
+
+/* ── Two-factor management ─────────────────────────────────────────── */
+
+export interface TOTPStatus {
+  enabled: boolean;
+  backup_codes_remaining: number;
+  trusted_devices: number;
+}
+
+export interface TrustedDevice {
+  id: string;
+  user_agent: string;
+  ip_address: string;
+  created_at: string;
+  expires_at: string;
+  current: boolean;
+}
+
+export function useTOTPStatus() {
+  return useQuery({
+    queryKey: ["totp-status"],
+    queryFn: async () => {
+      const { data } = await apiClient.get<ApiResponse<TOTPStatus>>("/api/auth/totp/status");
+      return data.data;
+    },
+  });
+}
+
+export function useTrustedDevices(enabled: boolean) {
+  return useQuery({
+    queryKey: ["trusted-devices"],
+    // Pointless call when 2FA is off — there can be no trusted devices.
+    enabled,
+    queryFn: async () => {
+      const { data } = await apiClient.get<ApiResponse<TrustedDevice[]>>(
+        "/api/auth/totp/trusted-devices"
+      );
+      return data.data;
+    },
+  });
+}
+
+export function useTOTPSetup() {
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await apiClient.post<
+        ApiResponse<{ secret: string; uri: string; qr_code: string }>
+      >("/api/auth/totp/setup", {});
+      return data.data;
+    },
+  });
+}
+
+export function useEnableTOTP() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { secret: string; code: string }) => {
+      const { data } = await apiClient.post<ApiResponse<{ backup_codes: string[] }>>(
+        "/api/auth/totp/enable",
+        { secret: payload.secret, code: payload.code.trim() }
+      );
+      return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["totp-status"] }),
+  });
+}
+
+export function useDisableTOTP() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (password: string) => {
+      const { data } = await apiClient.post("/api/auth/totp/disable", { password });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["totp-status"] });
+      queryClient.invalidateQueries({ queryKey: ["trusted-devices"] });
+    },
+  });
+}
+
+export function useRegenerateBackupCodes() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await apiClient.post<ApiResponse<{ backup_codes: string[] }>>(
+        "/api/auth/totp/backup-codes",
+        {}
+      );
+      return data.data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["totp-status"] }),
+  });
+}
+
+export function useRevokeTrustedDevice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    // No id revokes every device; an id revokes just that one.
+    mutationFn: async (id?: string) => {
+      const path = id
+        ? "/api/auth/totp/trusted-devices/" + id
+        : "/api/auth/totp/trusted-devices";
+      const { data } = await apiClient.delete(path);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["trusted-devices"] });
+      queryClient.invalidateQueries({ queryKey: ["totp-status"] });
     },
   });
 }
