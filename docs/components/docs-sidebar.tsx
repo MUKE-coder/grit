@@ -236,6 +236,18 @@ const navItems: NavItem[] = [
   // Infrastructure. Nobody looking for "how do I get this on Fly.io" thinks to
   // open something called Infrastructure, and four independent reviews of the
   // site failed to find the deployment docs that already existed.
+  // Trust questions — versioning, maintainer risk — deliberately in the nav
+  // rather than buried. A team evaluating Grit will ask them regardless; the
+  // only choice is whether they get our answer or a stranger's.
+  {
+    title: 'Project',
+    icon: <Shield className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Versioning & breaking changes', href: '/docs/versioning' },
+      { title: 'Governance & risk', href: '/docs/governance' },
+      { title: 'Changelog', href: '/docs/changelog' },
+    ],
+  },
   {
     title: 'Deployment',
     icon: <Rocket className="h-3.5 w-3.5" />,

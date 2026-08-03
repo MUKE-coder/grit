@@ -489,6 +489,16 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Database setup in Grit: PostgreSQL for production, SQLite for development, GORM Studio visual browser, and connection configuration.',
   },
+  '/docs/versioning': {
+    title: 'Versioning & breaking changes',
+    description:
+      'What Grit version numbers mean, what can change in a minor, and why upgrading the CLI cannot break a running application.',
+  },
+  '/docs/governance': {
+    title: 'Governance & risk',
+    description:
+      'Who maintains Grit, what happens if they stop, and how to reduce your exposure — written for the person signing off on adoption.',
+  },
   '/docs/deployment': {
     title: 'Deployment',
     description:
