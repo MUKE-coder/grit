@@ -1587,9 +1587,12 @@ type AuthHandler struct {
 // exists because a reference that says "No Body" is worse than no reference.
 type AuthResponse struct {
 	Data struct {
-		User         models.User ` + "`" + `json:"user"` + "`" + `
-		AccessToken  string      ` + "`" + `json:"access_token"` + "`" + `
-		RefreshToken string      ` + "`" + `json:"refresh_token"` + "`" + `
+		Tokens struct {
+			AccessToken  string ` + "`" + `json:"access_token"` + "`" + `
+			RefreshToken string ` + "`" + `json:"refresh_token"` + "`" + `
+			ExpiresAt    int64  ` + "`" + `json:"expires_at"` + "`" + `
+		} ` + "`" + `json:"tokens"` + "`" + `
+		User models.User ` + "`" + `json:"user"` + "`" + `
 	} ` + "`" + `json:"data"` + "`" + `
 	Message string ` + "`" + `json:"message"` + "`" + `
 }

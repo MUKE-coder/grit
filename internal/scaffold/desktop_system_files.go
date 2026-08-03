@@ -727,7 +727,7 @@ function SystemPerformancePage() {
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <SystemStat label="P95 latency" value={lat ? Math.round(lat.p95) + "ms" : "—"} icon={Gauge} sub={lat ? "avg " + Math.round(lat.avg) + "ms" : undefined} />
         <SystemStat label="Throughput" value={tr ? (tr.throughput > 0 && tr.throughput < 10 ? tr.throughput.toFixed(2) : Math.round(tr.throughput).toLocaleString()) + "/s" : "—"} icon={TrendingUp} tone="info" sub={tr ? tr.total + " total" : undefined} />
-        <SystemStat label="Error rate" value={err ? (err.rate * 100).toFixed(1) + "%" : "—"} icon={AlertCircle} tone={err && err.rate > 0 ? "danger" : "default"} sub={err ? err.active_open + " open" : undefined} />
+        <SystemStat label="Error rate" value={err ? err.rate.toFixed(1) + "%" : "—"} icon={AlertCircle} tone={err && err.rate > 0 ? "danger" : "default"} sub={err ? err.active_open + " open" : undefined} />
         <SystemStat label="Goroutines" value={sat?.goroutines ?? "—"} icon={Cpu} sub={sat ? sat.heap_mb + "MB heap" : undefined} />
       </div>
 
@@ -756,7 +756,7 @@ function SystemPerformancePage() {
                       <td className="px-4 py-2.5 text-foreground-secondary">{Math.round(r.avg)}ms</td>
                       <td className="px-4 py-2.5 text-foreground-secondary">{Math.round(r.p95)}ms</td>
                       <td className="px-4 py-2.5 text-foreground-secondary">{Math.round(r.p99)}ms</td>
-                      <td className={"px-4 py-2.5 " + (r.error_rate > 0 ? "text-danger" : "text-foreground-secondary")}>{(r.error_rate * 100).toFixed(1)}%</td>
+                      <td className={"px-4 py-2.5 " + (r.error_rate > 0 ? "text-danger" : "text-foreground-secondary")}>{r.error_rate.toFixed(1)}%</td>
                     </tr>
                   ))}
                 </tbody>

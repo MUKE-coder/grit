@@ -1907,14 +1907,29 @@ func toCamelCase(s string) string {
 }
 
 // splitPascal splits PascalCase into words: "AuthorId" -> ["Author", "Id"]
+// splitPascal breaks a PascalCase identifier into display words.
+//
+// Runs of capitals stay together, so PortfolioURL reads "Portfolio URL" rather
+// than "Portfolio U R L", and APIKey reads "API Key". A capital that starts a
+// new lowercase run still opens a word, which is what keeps the trailing
+// letter of a run attached to the word it belongs to (PDFExport → PDF Export,
+// not PDFE xport).
 func splitPascal(s string) []string {
 	var words []string
 	start := 0
 	for i := 1; i < len(s); i++ {
-		if s[i] >= 'A' && s[i] <= 'Z' {
-			words = append(words, s[start:i])
-			start = i
+		isUpper := s[i] >= 'A' && s[i] <= 'Z'
+		if !isUpper {
+			continue
 		}
+		prevUpper := s[i-1] >= 'A' && s[i-1] <= 'Z'
+		nextLower := i+1 < len(s) && s[i+1] >= 'a' && s[i+1] <= 'z'
+		// Mid-acronym: only break when this capital begins a new word.
+		if prevUpper && !nextLower {
+			continue
+		}
+		words = append(words, s[start:i])
+		start = i
 	}
 	words = append(words, s[start:])
 	return words

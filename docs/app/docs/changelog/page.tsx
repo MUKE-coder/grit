@@ -28,6 +28,56 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.117.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.117.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Archive uploads work, and three display bugs are gone.</strong>
+                </p>
+                <p>
+                  Found by building the demo forms for the homepage &mdash; every one of these
+                  survived because nothing had driven the feature end to end before.
+                </p>
+                <ul>
+                  <li>
+                    <strong>A field declared <code>file:zip</code> could never be uploaded.</strong>{' '}
+                    The admin uploads via a presigned URL, and the presign endpoint validated
+                    only against a global allow-list that contained no archive types at all
+                    &mdash; while ignoring the field&apos;s own <code>accepts</code>. It was
+                    both too strict (rejecting a field&apos;s declared types) and too loose (a
+                    field declared <code>file:pdf</code> would presign a PNG). Presign now
+                    honours <code>accepts</code>, the allow-list covers zip/tar/gzip/rar/7z and
+                    legacy Office, and the completion step re-checks the type instead of
+                    recording whatever the client claims.
+                  </li>
+                  <li>
+                    <strong>Error rate was shown 100&times; too high.</strong> Pulse reports
+                    error rates as a percentage already; the admin and desktop apps multiplied
+                    by 100 again, so 3 errors in 38 requests rendered as
+                    &ldquo;789.47%&rdquo;.
+                  </li>
+                  <li>
+                    <strong>Acronyms in generated labels are no longer split.</strong>{' '}
+                    <code>portfolio_url</code> read as &ldquo;Portfolio U R L&rdquo;; it now
+                    reads &ldquo;Portfolio URL&rdquo;, and <code>APIKey</code> as &ldquo;API
+                    Key&rdquo;.
+                  </li>
+                  <li>
+                    <strong>The auth response shape in the API reference was wrong</strong>{' '}
+                    &mdash; tokens are nested under <code>data.tokens</code>, not
+                    <code>data</code>.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.116.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
