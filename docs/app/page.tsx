@@ -154,19 +154,24 @@ export default function HomePage() {
           </FadeIn>
 
           <FadeIn delay={0.12}>
-            <h1 className="font-display text-4xl md:text-6xl lg:text-[5.5rem] font-bold tracking-tight text-foreground text-center mb-6 leading-[1.05]">
-              Build full-stack apps<br />
+            {/* "Go + React" is the weakest claim available here — a dozen
+                stacks combine those. The differentiated one is the vertical
+                slice: one command produces the model, the API, the types, the
+                hooks AND the admin screen, which nothing else in Go does. */}
+            <h1 className="font-display text-4xl md:text-6xl lg:text-[5rem] font-bold tracking-tight text-foreground text-center mb-6 leading-[1.05]">
+              Describe a resource.<br />
               <span className="bg-gradient-to-r from-primary via-sky-500 to-primary bg-clip-text text-transparent">
-                with the backend you trust
+                Get the whole stack.
               </span>
             </h1>
           </FadeIn>
 
           <FadeIn delay={0.18}>
             <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto text-center mb-10 leading-relaxed">
-              Scaffold a Go API + React frontend + admin panel in one command.
-              Auth, OAuth, file storage, jobs, AI, observability, OWASP-2025 hardened
-              — meticulously optimized for production. No boilerplate required.
+              One command writes the Go model, migration, service, handler and routes —
+              then the Zod schemas, TypeScript types, React Query hooks and a working
+              admin screen to match. Auth, RBAC, jobs, storage, realtime, observability
+              and one-command deploy are already in the box.
             </p>
           </FadeIn>
 
@@ -307,6 +312,76 @@ export function useProducts() {
             </div>
           </FadeIn>
 
+        </div>
+      </section>
+
+      {/* ═══ WHAT IS ALREADY IN THE BOX ═══
+
+          Added after four independent reviews of this site each recommended
+          building things that shipped months ago — an MCP server, generated
+          tests, an audit log, webhooks, multi-tenancy, backups. All documented,
+          all a thousand lines further down this page, all invisible to someone
+          deciding in ninety seconds whether to keep reading.
+
+          This is not new content. It is the same capabilities, scannable, near
+          the top, each one linking to where it is explained properly. */}
+      <section className="py-16 px-6 border-b border-border/40">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-3">
+              You are not going to build these again
+            </h2>
+            <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Every one of these ships in a generated project. Switch on what you need,
+              leave the rest off.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+            {[
+              { label: 'Auth, OAuth & 2FA', href: '/docs/backend/authentication' },
+              { label: 'Roles & permissions', href: '/docs/backend/rbac' },
+              { label: 'Admin panel', href: '/docs/admin/overview' },
+              { label: 'Background jobs', href: '/docs/batteries' },
+              { label: 'File storage & uploads', href: '/docs/batteries' },
+              { label: 'Realtime WebSockets', href: '/docs/backend/realtime' },
+              { label: 'Email & notifications', href: '/docs/batteries' },
+              { label: 'AI gateway', href: '/docs/ai-integration' },
+              { label: 'Observability (Pulse)', href: '/docs/backend/pulse' },
+              { label: 'WAF & rate limiting', href: '/docs/security' },
+              { label: 'Tamper-evident audit log', href: '/docs/security' },
+              { label: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
+              { label: 'Webhooks', href: '/docs/backend/webhooks' },
+              { label: 'Feature flags', href: '/docs/backend/feature-flags' },
+              { label: 'Generated tests', href: '/docs/testing' },
+              { label: 'Backups & restore', href: '/docs/deployment/checklist' },
+              { label: 'Offline-first desktop', href: '/docs/desktop' },
+              { label: 'Mobile (Expo)', href: '/docs/mobile/getting-started' },
+              { label: 'MCP server for AI agents', href: '/docs/ai-integration' },
+              { label: 'One-command deploy', href: '/docs/deployment' },
+            ].map((cap) => (
+              <Link
+                key={cap.label}
+                href={cap.href}
+                className="group flex items-center gap-2 rounded-lg border border-border/50 bg-card/40 px-3 py-2.5 text-[13px] transition-colors hover:border-border hover:bg-card/70"
+              >
+                <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                <span className="text-muted-foreground group-hover:text-foreground transition-colors leading-snug">
+                  {cap.label}
+                </span>
+              </Link>
+            ))}
+          </div>
+
+          <div className="mt-8 text-center">
+            <Link
+              href="/docs/start"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+            >
+              Start here &mdash; nothing to deployed in seven steps
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </div>
       </section>
 

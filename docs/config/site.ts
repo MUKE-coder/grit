@@ -7,10 +7,13 @@ export const GRIT_VERSION = '3.115.0'
 
 export const siteConfig = {
   name: 'Grit',
-  title: 'Grit — Go + React Full-Stack Framework',
+  // "Go + React Full-Stack Framework" describes the ingredients, which a dozen
+  // stacks share. The title is what shows in a search result and a shared link,
+  // so it states the thing only this does: one command, the whole vertical slice.
+  title: 'Grit — Full-stack Go apps from one command',
   version: GRIT_VERSION,
   description:
-    'The full-stack meta-framework that combines Go, React, and a Filament-like admin panel. Scaffold entire projects, generate full-stack resources, and ship fast.',
+    'Describe a resource; Grit writes the Go model, API, migrations, TypeScript types, React hooks and admin screen. Auth, RBAC, jobs, storage, realtime, observability and one-command deploy included.',
   url: 'https://gritframework.dev',
   ogImage: 'https://gritframework.dev/opengraph-image.png',
   creator: 'MUKE-coder',
