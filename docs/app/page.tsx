@@ -7,6 +7,7 @@ import { CodeBlock } from '@/components/code-block'
 import { HeroCodeTabs, InstallTabs } from '@/components/hero-code-tabs'
 import { OneApiClients } from '@/components/one-api-clients'
 import { ThemeShowcase } from '@/components/theme-showcase'
+import { PlatformShowcase } from '@/components/platform-showcase'
 import { SoftwareApplicationSchema, FAQPageSchema } from '@/components/structured-data'
 import { FeatureTabs } from '@/components/feature-tabs'
 import { CpuArchitecture } from '@/components/ui/cpu-architecture'
@@ -14,7 +15,6 @@ import { MagneticButton, GSAPSection, FadeIn, GlowOrb } from '@/components/motio
 import { GoLogo, ReactLogo, VueLogo, SvelteLogo, NextLogo, TanStackLogo, TypeScriptLogo, TailwindLogo, PostgresLogo, RedisLogo, DockerLogo } from '@/components/framework-logos'
 import { CommunityCTA, WhatsAppIcon, WHATSAPP_COMMUNITY_URL } from '@/components/community-cta'
 import { HubAndSpoke } from '@/components/hub-and-spoke'
-import { ThreePlatforms } from '@/components/three-platforms'
 import { WhatIsGrit } from '@/components/what-is-grit'
 import { GRIT_VERSION } from '@/config/site'
 import { GridFrame } from '@/components/grid-frame'
@@ -310,7 +310,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ FEATURES INTRO + STATS BY NUMBERS ═══ */}
+      {/* ═══ FEATURES INTRO ═══ */}
       <section className="py-20 px-6 border-b border-border/40">
         <div className="max-w-5xl mx-auto text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
@@ -330,8 +330,31 @@ export default function HomePage() {
       {/* ═══ NEW: WHAT IS GRIT (60-second tour) ═══ */}
       <WhatIsGrit />
 
-      {/* ═══ NEW: THREE PLATFORMS, ONE FRAMEWORK (Web · Desktop · Mobile mockups) ═══ */}
-      <ThreePlatforms />
+      {/* ═══ ONE FRAMEWORK, EVERY PLATFORM ═══
+
+          Screenshots of real generated projects — the admin, the Wails window,
+          the Expo app on an emulator, and the Scalar reference the API serves.
+          Each tab pairs the shot with the exact commands that produce it, so
+          the claim and the proof sit in the same frame. */}
+      <section className="py-20 md:py-24 px-6 border-b border-border/40">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-10">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Every platform
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
+              One framework.<br />Every platform.
+            </h2>
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+              Web, desktop, mobile and a documented API &mdash; from one Go backend and one
+              set of generated types. Every screenshot below is a real generated project,
+              next to the commands that produce it.
+            </p>
+          </div>
+
+          <PlatformShowcase />
+        </div>
+      </section>
 
       {/* ═══ THEMES ═══
 

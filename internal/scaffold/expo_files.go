@@ -76,6 +76,14 @@ func writeExpoFiles(root string, opts Options) error {
 	return nil
 }
 
+// expoPackageJSON writes apps/expo/package.json.
+//
+// react-native-web + @expo/metro-runtime are not optional extras here: app.json
+// declares a "web" target and the "web" script runs it, so without them
+// `pnpm web` fails on a fresh scaffold with "you don't have the required
+// dependencies installed". Keep the versions in step with the Expo SDK pin
+// above — `npx expo install react-native-web @expo/metro-runtime` prints the
+// pair the SDK expects.
 func expoPackageJSON(opts Options) string {
 	return fmt.Sprintf(`{
   "name": "%s-expo",
@@ -106,6 +114,9 @@ func expoPackageJSON(opts Options) string {
     "expo-document-picker": "~14.0.7",
     "react": "19.1.0",
     "react-native": "0.81.5",
+    "react-dom": "19.1.0",
+    "react-native-web": "^0.21.0",
+    "@expo/metro-runtime": "~6.1.2",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "@react-navigation/bottom-tabs": "^7.0.0",
@@ -268,12 +279,20 @@ const nwConfig = withNativeWind(config, { input: "./global.css" });
 //
 // Force every "react" import (from app code, react-native,
 // react-native-css-interop, anywhere) to resolve to THIS app's copy, so the
-// Metro bundle contains exactly one React instance. We deliberately dedupe only
-// "react" — React Native ships its own renderer and doesn't use react-dom, so
-// touching react-dom here would just point at the (different) Next.js copy.
+// Metro bundle contains exactly one React instance.
+//
+// react-dom gets the same treatment. Native never loads it, but the web target
+// (react-native-web) does, and React refuses to start when react and react-dom
+// disagree on version — which is exactly what happens when the hoisted
+// Next.js copy wins. Pinning both to projectRoot keeps the pair in step.
 const upstreamResolveRequest = nwConfig.resolver.resolveRequest;
 nwConfig.resolver.resolveRequest = (context, moduleName, platform) => {
-  if (moduleName === "react" || moduleName.startsWith("react/")) {
+  if (
+    moduleName === "react" ||
+    moduleName.startsWith("react/") ||
+    moduleName === "react-dom" ||
+    moduleName.startsWith("react-dom/")
+  ) {
     return { type: "sourceFile", filePath: require.resolve(moduleName, { paths: [projectRoot] }) };
   }
   return (upstreamResolveRequest ?? context.resolveRequest)(context, moduleName, platform);
