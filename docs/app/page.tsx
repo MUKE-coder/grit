@@ -6,6 +6,7 @@ import { SiteHeader } from '@/components/site-header'
 import { CodeBlock } from '@/components/code-block'
 import { HeroCodeTabs, InstallTabs } from '@/components/hero-code-tabs'
 import { OneApiClients } from '@/components/one-api-clients'
+import { ThemeShowcase } from '@/components/theme-showcase'
 import { SoftwareApplicationSchema, FAQPageSchema } from '@/components/structured-data'
 import { FeatureTabs } from '@/components/feature-tabs'
 import { CpuArchitecture } from '@/components/ui/cpu-architecture'
@@ -331,6 +332,33 @@ export default function HomePage() {
 
       {/* ═══ NEW: THREE PLATFORMS, ONE FRAMEWORK (Web · Desktop · Mobile mockups) ═══ */}
       <ThreePlatforms />
+
+      {/* ═══ THEMES ═══
+
+          Real screenshots of a generated admin, not mockups. A mockup proves a
+          designer can draw; a screenshot proves the framework produces it. This
+          is also the one thing on the page no competitor can copy without
+          building the admin first. */}
+      <section className="py-20 md:py-24 px-6 border-b border-border/40">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-10">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Themes
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
+              Four themes.<br />None of them look generated.
+            </h2>
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+              Every scaffolded admin ships with four complete themes &mdash; not palettes, but
+              coordinated typography, auth pages, dashboard and brand colour. Pick one at{' '}
+              <code className="text-foreground/80 text-sm">grit new</code>, or change your mind
+              later with one line in <code className="text-foreground/80 text-sm">.env</code>.
+            </p>
+          </div>
+
+          <ThemeShowcase />
+        </div>
+      </section>
 
       {/* ═══ ONE API, EVERY CLIENT ═══
 
