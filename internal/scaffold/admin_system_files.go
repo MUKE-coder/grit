@@ -299,6 +299,7 @@ func adminFilesPage() string {
 import { useState, useRef } from "react";
 import { useUploads, useUploadFile, useDeleteUpload, useUploadStats } from "@/hooks/use-system";
 import { FolderOpen, Upload, Trash2, Loader2, X, Image as ImageIcon, Play, Music, FileText, FileSpreadsheet, File as FileIcon } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -349,7 +350,7 @@ export default function FilesPage() {
         </div>
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+          className={buttonClasses()}
         >
           <Upload className="h-4 w-4" />
           Upload File

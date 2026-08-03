@@ -22,6 +22,7 @@ import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { apiClient } from "@/lib/api-client";
 import { toast } from "sonner";
 import { KeyRound, Plus, Copy, Check, Loader2, Trash2, AlertTriangle } from "@/lib/icons";
+import { Button } from "@/components/ui/button";
 
 interface APIKey {
   id: string;
@@ -102,15 +103,15 @@ function RevealPanel({ token, onDone }: { token: string; onDone: () => void }) {
         >
           Download
         </button>
-        <button
-          type="button"
+        <Button
+          size="sm"
           onClick={onDone}
           disabled={!saved}
           title={saved ? undefined : "Copy or download it first"}
-          className="ml-auto rounded-lg bg-accent px-3 py-1.5 text-sm text-white disabled:opacity-50"
+          className="ml-auto"
         >
           I have saved it
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -204,15 +205,14 @@ export default function APIKeysPage() {
                 className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-foreground"
               />
             </div>
-            <button
-              type="button"
+            <Button
               onClick={() => create.mutate()}
-              disabled={create.isPending || !name.trim()}
-              className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+              disabled={!name.trim()}
+              loading={create.isPending}
             >
-              {create.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+              {!create.isPending && <Plus className="h-3.5 w-3.5" />}
               Create key
-            </button>
+            </Button>
           </div>
         </div>
 

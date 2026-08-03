@@ -615,6 +615,7 @@ import { SkeletonTable } from "@/components/ui/Skeleton";
 import { useToastedMutation } from "@/hooks/use-toasted-mutation";
 import { apiClient, uploadFile } from "@/lib/api-client";
 import { Plus, Upload, FileText, Loader2 } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 
 interface Blog {
   id: string;
@@ -664,7 +665,7 @@ export default function BlogsPage() {
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover"
+            className={buttonClasses({ className: "mt-4" })}
           >
             <Plus className="h-4 w-4" />
             New Blog
@@ -772,7 +773,7 @@ function NewBlogSheet({ open, onClose }: { open: boolean; onClose: () => void })
             type="button"
             onClick={submit}
             disabled={!title.trim() || create.isPending}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
+            className={buttonClasses()}
           >
             {create.isPending ? "Creating..." : "Continue to editor"}
           </button>

@@ -26,6 +26,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { apiClient } from "@/lib/api-client";
 import { ShieldCheck, AlertTriangle, Loader2, Check, Search } from "@/lib/icons";
+import { Button } from "@/components/ui/button";
 
 interface AuditEntry {
   id: string;
@@ -112,15 +113,9 @@ export default function AuditLogPage() {
                 modified, deleted, or inserted out of order — the result names the first one.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => verify.mutate()}
-              disabled={verify.isPending}
-              className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
-            >
-              {verify.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            <Button onClick={() => verify.mutate()} loading={verify.isPending}>
               {verify.isPending ? "Verifying…" : "Verify chain"}
-            </button>
+            </Button>
           </div>
 
           {result && (

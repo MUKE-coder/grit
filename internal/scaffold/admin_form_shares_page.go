@@ -21,6 +21,7 @@ import { apiClient } from "@/lib/api-client";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { SkeletonCards } from "@/components/ui/Skeleton";
 import { Plus, Copy, Lock, Unlock, Trash2, X, ExternalLink, Activity, Pencil } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 import { toast } from "sonner";
 
 interface FormShare {
@@ -74,7 +75,7 @@ export default function FormSharesPage() {
         actions={
           <button
             onClick={() => setCreateOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white hover:bg-accent-hover"
+            className={buttonClasses()}
           >
             <Plus className="h-4 w-4" />
             New share
@@ -480,7 +481,7 @@ function CreateShareModal({ onClose }: { onClose: () => void }) {
 
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose} className="rounded-lg border border-border bg-bg-elevated px-4 py-2 text-sm font-medium text-foreground hover:bg-bg-hover">Cancel</button>
-            <button type="submit" disabled={isPending || !resourceName} className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-50">
+            <button type="submit" disabled={isPending || !resourceName} className={buttonClasses()}>
               {isPending ? "Creating…" : "Create share"}
             </button>
           </div>
@@ -630,7 +631,7 @@ function EditShareModal({ share, onClose }: { share: FormShare; onClose: () => v
 
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose} className="rounded-lg border border-border bg-bg-elevated px-4 py-2 text-sm font-medium text-foreground hover:bg-bg-hover">Cancel</button>
-            <button type="submit" disabled={isPending} className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-50">
+            <button type="submit" disabled={isPending} className={buttonClasses()}>
               {isPending ? "Saving…" : "Save changes"}
             </button>
           </div>

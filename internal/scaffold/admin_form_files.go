@@ -666,7 +666,7 @@ import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { FieldDefinition, FormDefinition, StepDefinition } from "@/lib/resource";
 import { FieldRenderer, buildDefaults } from "./form-builder";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { Check, ChevronLeft, ChevronRight, Loader2 } from "@/lib/icons";
 
 /**
@@ -936,7 +936,7 @@ export function FormStepper({
                   type="button"
                   onClick={handleFinalSubmit}
                   disabled={isSubmitting}
-                  className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
+                  className={buttonClasses()}
                 >
                   {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   {submitLabel}
@@ -945,7 +945,7 @@ export function FormStepper({
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="flex items-center gap-1.5 rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+                  className={buttonClasses()}
                 >
                   Next
                   <ChevronRight className="h-4 w-4" />
@@ -1204,6 +1204,7 @@ import type { ResourceDefinition, FieldDefinition, GroupDefinition } from "@/lib
 import { FieldRenderer } from "@/components/forms/form-builder";
 import { useResourceItem, usePatchResource } from "@/hooks/use-resource";
 import { ChevronLeft, Loader2 } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 
 interface UpdateGroupsProps {
   resource: ResourceDefinition;
@@ -1328,7 +1329,7 @@ function GroupCard({ resource, group, record, id }: GroupCardProps) {
           <button
             type="submit"
             disabled={!isDirty || isPending}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
+            className={buttonClasses()}
           >
             {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
             Save {group.title.toLowerCase()}

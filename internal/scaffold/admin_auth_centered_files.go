@@ -16,6 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useLogin } from "@/hooks/use-auth";
 import { LoginSchema, type LoginInput } from "@repo/shared/schemas";
 import { Eye, EyeOff, Loader2 } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -135,7 +136,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="w-full h-11 rounded-lg bg-accent text-[14px] font-medium text-white hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className={buttonClasses({ size: "lg", className: "w-full" })}
             >
               {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {isPending ? "Signing in..." : "Sign in"}
@@ -214,6 +215,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRegister } from "@/hooks/use-auth";
 import { RegisterSchema, type RegisterInput } from "@repo/shared/schemas";
 import { Eye, EyeOff, Loader2 } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -355,7 +357,7 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="w-full h-11 rounded-lg bg-accent text-[14px] font-medium text-white hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className={buttonClasses({ size: "lg", className: "w-full" })}
             >
               {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {isPending ? "Creating account..." : "Create account"}
@@ -429,6 +431,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { apiClient } from "@/lib/api-client";
 import { ForgotPasswordSchema, type ForgotPasswordInput } from "@repo/shared/schemas";
 import { ArrowLeft, Loader2, Mail } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
@@ -547,7 +550,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="w-full h-11 rounded-lg bg-accent text-[14px] font-medium text-white hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className={buttonClasses({ size: "lg", className: "w-full" })}
                 >
                   {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                   {isPending ? "Sending..." : "Send reset link"}

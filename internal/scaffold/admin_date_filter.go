@@ -15,6 +15,7 @@ func adminDateFilter() string {
 
 import { useEffect, useRef, useState } from "react";
 import { Calendar, ChevronDown, X } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 
 // DateRange — the shape every consumer holds. A preset short-circuits
 // the API call (?created_since=7d); custom passes explicit
@@ -179,7 +180,7 @@ export function DateFilter({ value, onChange, label = "Date" }: DateFilterProps)
                 });
                 setOpen(false);
               }}
-              className="w-full rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className={buttonClasses({ size: "sm", className: "w-full" })}
             >
               Apply
             </button>

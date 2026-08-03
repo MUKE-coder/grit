@@ -23,6 +23,7 @@ import { FormSheet } from "@/components/forms/form-sheet";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { apiClient } from "@/lib/api-client";
 import { ArrowLeft, Pencil, Trash2, Loader2, Printer, Plus, FileText } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 
 interface ResourceDetailPageProps {
   resource: ResourceDefinition;
@@ -154,7 +155,7 @@ export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
           </button>
           <button
             onClick={() => setEditing(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+            className={buttonClasses()}
           >
             <Pencil className="h-4 w-4" /> Edit
           </button>
@@ -270,7 +271,7 @@ function RelatedTable({
         {createResource && (
           <button
             onClick={() => setCreating(true)}
-            className="no-print inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover transition-colors"
+            className={buttonClasses({ size: "sm", className: "no-print" })}
           >
             <Plus className="h-3.5 w-3.5" /> New {childLabel}
           </button>

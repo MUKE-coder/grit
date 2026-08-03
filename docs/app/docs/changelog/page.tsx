@@ -28,6 +28,63 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.127.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.127.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    <code>grit swap button</code> now restyles the admin, not two stray components.
+                  </strong>
+                </p>
+                <p>
+                  The button slot has shipped for a while, but almost nothing called it &mdash;
+                  admin pages hand-wrote <code>bg-accent px-4 py-2 rounded-lg</code> instead. So
+                  swapping in a variant changed two files and left every real page untouched.
+                  Forty-six call sites across the admin now route their classes through{" "}
+                  <code>buttonClasses()</code>, taking slot reach from <strong>2 to 23</strong>{" "}
+                  emitted files.
+                </p>
+                <ul>
+                  <li>
+                    Only the class string changed. The element, its handlers, spinner logic and
+                    children are untouched &mdash; <code>buttonClasses()</code> is exported by the
+                    slot for exactly this, and it is what keeps links and labels that look like
+                    buttons on the same style after a swap.
+                  </li>
+                  <li>
+                    Sizes are inferred from height, never width. A button that changes height
+                    shifts the row it sits in; a few pixels of horizontal padding go unnoticed.
+                  </li>
+                  <li>
+                    <strong>Themed auth pages deliberately do not follow the slot.</strong> They
+                    style buttons with <code>var(--auth-primary)</code> so atlas, aurora and pulse
+                    can restyle them &mdash; routing those through the slot would fight the theme
+                    system.
+                  </li>
+                  <li>
+                    Two new tests guard it. One catches a page that calls{" "}
+                    <code>buttonClasses()</code> without importing it, <em>and</em> the reverse
+                    &mdash; an import with no call, which is how a template file with several
+                    pages in it puts the import in the wrong one. The other pins the remaining
+                    inline count so it can only go down.
+                  </li>
+                </ul>
+                <p>
+                  Verified visually rather than by type-check alone: under{" "}
+                  <code>grit swap button glow-ring</code>, the &ldquo;New role&rdquo; button on{" "}
+                  <code>/system/roles</code> goes from <code>rounded-lg</code> to a pill with no
+                  layout shift, on a page that had nothing to do with the slot before.
+                </p>
+              </div>
+            </div>
+
             {/* v3.126.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

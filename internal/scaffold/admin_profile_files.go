@@ -11,6 +11,7 @@ import { z } from "zod";
 import { useMe } from "@/hooks/use-auth";
 import { useUpdateProfile, useChangePassword } from "@/hooks/use-profile";
 import { User, Briefcase, Lock, Trash2, Save, Loader2, Upload } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 import { DeleteAccountDialog } from "@/components/profile/delete-account-dialog";
 import { uploadFile } from "@/lib/api-client";
 
@@ -238,7 +239,7 @@ export default function ProfilePage() {
                 <button
                   type="submit"
                   disabled={updateProfile.isPending}
-                  className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
+                  className={buttonClasses()}
                 >
                   {updateProfile.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -283,7 +284,7 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={updateProfile.isPending}
-                className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
+                className={buttonClasses()}
               >
                 {updateProfile.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -338,7 +339,7 @@ export default function ProfilePage() {
                 <button
                   type="submit"
                   disabled={changePassword.isPending}
-                  className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
+                  className={buttonClasses()}
                 >
                   {changePassword.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

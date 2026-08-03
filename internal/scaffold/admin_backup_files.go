@@ -102,6 +102,7 @@ import {
   type Backup, type BackupFrequency,
 } from "@/hooks/use-backups";
 import { Database, Download, RefreshCw, Loader2, AlertCircle, Clock, Save } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 
 const FREQUENCIES: { key: BackupFrequency; label: string; hint: string }[] = [
   { key: "daily", label: "Daily", hint: "every day" },
@@ -175,7 +176,7 @@ function ScheduleCard() {
         <button
           onClick={() => update.mutate({ frequency: freq, time, enabled })}
           disabled={isLoading || update.isPending || !dirty}
-          className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className={buttonClasses()}
         >
           {update.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save schedule
         </button>
@@ -225,7 +226,7 @@ export default function BackupsPage() {
         <button
           onClick={() => generate.mutate()}
           disabled={generate.isPending || running}
-          className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className={buttonClasses()}
         >
           {generate.isPending || running ? (
             <Loader2 className="h-4 w-4 animate-spin" />

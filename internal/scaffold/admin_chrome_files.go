@@ -991,6 +991,7 @@ func adminSessionWatchdogComponent() string {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api-client";
 import { useLogout } from "@/hooks/use-auth";
+import { buttonClasses } from "@/components/ui/button";
 
 // Defaults: 14:30 idle, 30s countdown. The pair sums to a 15-minute
 // session — match this to your API JWT TTL.
@@ -1131,7 +1132,7 @@ export function SessionWatchdog() {
             type="button"
             onClick={stay}
             autoFocus
-            className="inline-flex items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover"
+            className={buttonClasses()}
           >
             Stay signed in
           </button>

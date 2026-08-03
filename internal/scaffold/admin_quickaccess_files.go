@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import {
   LayoutGrid, X, Settings2, Trash2, Home, MessageSquare, Link as LinkIcon, getIcon,
 } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 import { resources } from "@/resources";
 import type { LucideIcon } from "lucide-react";
 
@@ -239,7 +240,7 @@ function QuickAccessConfig({
           <div className="mt-2 flex items-center gap-2">
             <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label" className="w-1/2 rounded-lg border border-border bg-bg-tertiary px-3 py-2 text-[13px] text-foreground outline-none focus:border-accent" />
             <input value={to} onChange={(e) => setTo(e.target.value)} placeholder="/resources/…" className="w-1/2 rounded-lg border border-border bg-bg-tertiary px-3 py-2 text-[13px] text-foreground outline-none focus:border-accent" />
-            <button onClick={addCustom} disabled={!canAdd} className="shrink-0 rounded-lg bg-accent px-3 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50">Add</button>
+            <button onClick={addCustom} disabled={!canAdd} className={buttonClasses()}>Add</button>
           </div>
           {!canAdd && <p className="mt-2 text-[12px] text-warning">Tile limit reached ({MAX_TILES}).</p>}
         </div>

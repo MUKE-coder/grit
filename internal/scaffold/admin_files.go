@@ -1549,6 +1549,7 @@ func adminLoginPage() string {
 import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 import { useLogin } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -1664,7 +1665,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="w-full rounded-lg bg-accent py-3 font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
+              className={buttonClasses({ size: "lg", className: "w-full" })}
             >
               {isPending ? "Signing in..." : "Sign In"}
             </button>
@@ -1695,6 +1696,7 @@ import { useRegister } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RegisterSchema, type RegisterInput } from "@repo/shared/schemas";
+import { buttonClasses } from "@/components/ui/button";
 
 const inputClass = "w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors";
 const errorInputClass = "w-full rounded-lg border border-danger bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-danger focus:outline-none focus:ring-1 focus:ring-danger transition-colors";
@@ -1854,7 +1856,7 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="w-full rounded-lg bg-accent py-3 font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
+              className={buttonClasses({ size: "lg", className: "w-full" })}
             >
               {isPending ? "Creating account..." : "Create Account"}
             </button>
@@ -1884,6 +1886,7 @@ import { apiClient } from "@/lib/api-client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ForgotPasswordSchema, type ForgotPasswordInput } from "@repo/shared/schemas";
+import { buttonClasses } from "@/components/ui/button";
 
 const inputClass = "w-full rounded-lg border border-border bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors";
 const errorInputClass = "w-full rounded-lg border border-danger bg-bg-tertiary px-4 py-3 text-foreground placeholder:text-text-muted focus:border-danger focus:outline-none focus:ring-1 focus:ring-danger transition-colors";
@@ -1982,7 +1985,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-lg bg-accent py-3 font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
+                className={buttonClasses({ size: "lg", className: "w-full" })}
               >
                 {loading ? "Sending..." : "Send Reset Link"}
               </button>
@@ -2006,6 +2009,7 @@ func adminErrorPage() string {
 	return `"use client";
 
 import { useEffect } from "react";
+import { buttonClasses } from "@/components/ui/button";
 
 export default function Error({
   error,
@@ -2042,7 +2046,7 @@ export default function Error({
           </button>
           <button
             onClick={reset}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+            className={buttonClasses()}
           >
             Try Again
           </button>

@@ -616,6 +616,7 @@ import { TablePagination } from "@/components/tables/table-pagination";
 import { TableFilters } from "@/components/tables/table-filters";
 // grit:resource:imports
 import { dateRangeToQueryParams, type DateRange } from "@/components/tables/date-filter";
+import { buttonClasses } from "@/components/ui/button";
 
 // v3.31.34 -- read date filter state from URL search params so a
 // refresh or shared link rehydrates the same view.
@@ -957,7 +958,7 @@ function ResourceListView({ resource }: ResourcePageProps) {
   const headerActions = actions.includes("create") ? (
     <button
       onClick={handleCreate}
-      className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 h-9 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+      className={buttonClasses({ size: "sm" })}
     >
       <span className="text-base leading-none">+</span>
       New {singularName}

@@ -20,6 +20,7 @@ import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { apiClient } from "@/lib/api-client";
 import { toast } from "sonner";
 import { ShieldCheck, Plus, Trash2, Loader2, Check, AlertTriangle, Copy } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 
 interface Connection {
   id: string;
@@ -185,7 +186,7 @@ export default function SSOPage() {
           <button
             type="button"
             onClick={() => { setEditing(null); setForm({ ...BLANK }); setOpen(true); }}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover"
+            className={buttonClasses()}
           >
             <Plus className="h-4 w-4" /> New connection
           </button>
@@ -297,7 +298,7 @@ export default function SSOPage() {
             <button
               onClick={() => saveM.mutate()}
               disabled={saveM.isPending}
-              className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
+              className={buttonClasses()}
             >
               {saveM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {editing ? "Save" : "Create"}
