@@ -28,6 +28,50 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.126.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.126.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Your releases get the same supply-chain guarantees Grit&apos;s do.</strong>
+                </p>
+                <p>
+                  Grit signs its own releases &mdash; SBOM, keyless cosign signature, provenance
+                  attestation &mdash; and gave the projects it scaffolds none of that. Generated
+                  projects now ship <code>.github/workflows/release.yml</code>, which does the
+                  same on any <code>v*</code> tag.
+                </p>
+                <ul>
+                  <li>
+                    Cross-compiled API binaries (linux and darwin, amd64 and arm64), checksums,
+                    an SPDX SBOM, a keyless cosign signature over the checksums, and a build
+                    provenance attestation.
+                  </li>
+                  <li>
+                    <strong>No secrets to configure.</strong> Keyless signing uses the
+                    workflow&apos;s GitHub OIDC identity, so there is no private key to store or
+                    leak, and the signature is logged publicly in Rekor.
+                  </li>
+                  <li>
+                    A desktop job builds Wails installers on Windows and macOS, with
+                    Authenticode and notarization steps that activate when you add the
+                    certificates and otherwise emit a build warning rather than failing. The job
+                    only runs if the repo actually has a desktop app.
+                  </li>
+                </ul>
+                <p>
+                  The generated YAML is parse-checked as part of verifying this &mdash; a
+                  workflow that only fails when you cut a release is worse than no workflow.
+                </p>
+              </div>
+            </div>
+
             {/* v3.125.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
