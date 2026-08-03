@@ -557,16 +557,16 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 - [x] `POST /users/:id/unlock` for admins, written to the activity log
 - [x] Verified: 3 fails → 401, 4th → 429, unknown email never locks, unlock resets
 
-### 6.4 — API-key authentication ⬜ not started
-- [ ] `APIKey` model: hashed secret, prefix for display, name, last_used_at, expires_at, revoked_at
-- [ ] Issuance endpoint returning the raw key **once** (server keeps only the hash)
-- [ ] `middleware.APIKeyAuth` that coexists with JWT — same `user_id` in context
-- [ ] Scope/permission binding, reusing the existing `perm:<key>` catalogue
-- [ ] Revoke + rotate endpoints
-- [ ] Admin page: list, create (one-time reveal), revoke
-- [ ] Registered for both admin variants
-- [ ] Generated tests: hash-only storage, revoked key rejected, expired key rejected
-- [ ] Verified over HTTP end to end
+### 6.4 — API-key authentication ✅ shipped v3.123.0
+- [x] `APIKey` model: hashed secret, prefix for display, name, last_used_at, expires_at, revoked_at
+- [x] Issuance endpoint returning the raw key **once** (server keeps only the hash)
+- [x] `middleware.APIKeyAuth` that coexists with JWT — same `user_id` in context
+- [x] Scope/permission binding, reusing the existing `perm:<key>` catalogue
+- [x] Revoke + rotate endpoints
+- [x] Admin page: list, create (one-time reveal), revoke
+- [x] Registered for both admin variants
+- [x] Generated tests: hash-only storage, revoked key rejected, expired key rejected
+- [x] Verified over HTTP end to end
 
 ### 6.5 — OpenAPI coverage for built-in endpoints ⬜ not started
 > The mechanism landed in v3.116.0; auth and generated resources are done.

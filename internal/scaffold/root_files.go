@@ -124,6 +124,10 @@ GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 OAUTH_FRONTEND_URL=http://localhost:3001
 
+# API keys are created from the admin at /system/api-keys — there is no env
+# var for them. A key is sent as "X-API-Key: grit_..." or
+# "Authorization: Bearer grit_...", and acts as the user who created it.
+
 # Account lockout. Sentinel rate-limits by IP; this protects a single account
 # from attempts spread across many addresses. Set LOGIN_MAX_ATTEMPTS=0 to
 # disable. Only wrong passwords on real accounts count — an unknown email never

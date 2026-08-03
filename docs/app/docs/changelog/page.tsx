@@ -28,6 +28,56 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.123.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.123.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>API keys.</strong>
+                </p>
+                <p>
+                  The JWT flow is built for a human at a browser &mdash; short-lived tokens, a
+                  refresh cookie, rotation. A cron job on someone else&apos;s server wants one
+                  long-lived credential in a header. Now it has one.
+                </p>
+                <ul>
+                  <li>
+                    Create keys at <code>/system/api-keys</code>. The key is shown once; the
+                    server stores only a SHA-256 hash, so the panel refuses to close until you
+                    have copied or downloaded it.
+                  </li>
+                  <li>
+                    Send it as <code>X-API-Key: grit_&hellip;</code> or{' '}
+                    <code>Authorization: Bearer grit_&hellip;</code>. The middleware populates
+                    exactly what the JWT middleware does, so every existing handler and{' '}
+                    <code>RequireRole</code> check works unchanged &mdash; including the
+                    admin-guarded routes.
+                  </li>
+                  <li>
+                    The token is <code>grit_&lt;prefix&gt;_&lt;secret&gt;</code>. The prefix is
+                    indexed, so verification is one lookup rather than a scan, and the secret is
+                    compared in constant time.
+                  </li>
+                  <li>
+                    Optional expiry, revocation, and <code>last_used_at</code> tracking. Revoked
+                    keys stay in the list &mdash; &ldquo;which key did this?&rdquo; is a question
+                    people ask about keys turned off months ago.
+                  </li>
+                </ul>
+                <p>
+                  Seven generated tests cover hash-only storage, wrong secrets, revoked and
+                  expired keys, malformed tokens, and owner-scoped revocation. The flow was then
+                  driven over HTTP against a running API and through the admin in a browser.
+                </p>
+              </div>
+            </div>
+
             {/* v3.122.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

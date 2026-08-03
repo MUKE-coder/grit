@@ -159,6 +159,7 @@ func adminIconMap() string {
   Clock,
   Gauge,
   Copy,
+  KeyRound,
   Unlock,
   FileSpreadsheet,
   Music,
@@ -360,6 +361,8 @@ export {
   Gauge,
   // v3.31.20 — form-shares admin page
   Copy,
+  // v3.123 — API keys page + System Hub tile
+  KeyRound,
   Unlock,
   // v3.31.31 — type-aware FilePreview icons (excel, audio).
   FileSpreadsheet,
