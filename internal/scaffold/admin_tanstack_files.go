@@ -515,6 +515,7 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		// Profile
 		filepath.Join(adminRoot, "src", "components", "profile", "delete-account-dialog.tsx"): nextToTanStack(adminDeleteAccountDialog()),
 		filepath.Join(adminRoot, "src", "components", "profile", "active-sessions.tsx"):       nextToTanStack(adminActiveSessions()),
+		filepath.Join(adminRoot, "src", "components", "profile", "two-factor-card.tsx"):       nextToTanStack(adminTwoFactorCard()),
 
 		filepath.Join(adminRoot, "public", ".gitkeep"): "",
 	}
