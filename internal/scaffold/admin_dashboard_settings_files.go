@@ -376,6 +376,7 @@ func adminDashboardSettingsPageTS() string {
 
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, ChevronUp, ChevronDown, Plus, Pencil, Trash2 } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 import { resources } from "@/resources";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import {
@@ -499,7 +500,7 @@ export default function DashboardSettingsPage() {
         <button
           onClick={handleSave}
           disabled={save.isPending}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className={buttonClasses()}
         >
           {save.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
           Save preferences

@@ -492,6 +492,7 @@ import { DeleteAccountDialog } from "@/components/profile/delete-account-dialog"
 import { ActiveSessions } from "@/components/profile/active-sessions";
 import { TwoFactorCard } from "@/components/profile/two-factor-card";
 import { uploadFile } from "@/lib/api-client";
+import { buttonClasses } from "@/components/ui/button";
 import {
   User as UserIcon, Briefcase, Lock, Trash2, Save, Loader2, Upload, ShieldCheck,
 } from "@/lib/icons";
@@ -627,7 +628,7 @@ export default function ProfilePage() {
               type="button"
               onClick={() => avatarInputRef.current?.click()}
               disabled={avatarUploading}
-              className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-hover disabled:opacity-50"
+              className={buttonClasses({ className: "shadow-sm" })}
             >
               {avatarUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               Upload new
@@ -831,7 +832,7 @@ function SubmitButton({ pending, children }: { pending: boolean; children: React
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+      className={buttonClasses()}
     >
       {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : children}
     </button>

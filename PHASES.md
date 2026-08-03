@@ -590,19 +590,33 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 - [ ] Desktop + Expo: enrol screen (challenge works; setup is still admin-only)
 - [x] Verified in the desktop window with a live code; Expo typechecks clean
 
-### 6.7 — Swap Phase 3 ⬜ not started (mechanism verified; adoption is the work)
-> Measured, not estimated: a scaffolded admin has **276** inline `<button>`
-> elements, **185** of them `bg-accent` primary actions, and exactly **2** files
-> import the Button primitive. So `grit swap button glow-ring` today restyles
-> two components rather than the admin.
+### 6.7 — Swap Phase 3 🟡 partial (v3.127.0: button adopted, input pending)
+> The earlier count of 185 was wrong — it came from a regex that broke on `=>`
+> inside `onClick`, and it counted `bg-accent/10` badges as buttons. A
+> brace-aware scan finds **142** inline `bg-accent` buttons across all templates,
+> **91** with a literal class string, and **46** of those in the admin.
 >
-> The mechanism itself is verified working end to end (swap → backup →
-> type-check → revert). What remains is the adoption refactor, and its only real
-> verification is visual across ~30 admin pages — do it in a session that can
-> screenshot them, not blind.
-- [ ] Adopt the Button primitive at the 185 `bg-accent` primary-action sites
-- [ ] Decide deliberately which chrome buttons should NOT follow the slot
-      (sidebar toggles, table icon actions — arguably they should not restyle)
+> The refactor routes class strings through `buttonClasses()` rather than
+> restructuring call sites into `<Button>`. The slot exports it for exactly this
+> reason, and it leaves the element, handlers, spinner logic and children alone —
+> so the diff is one attribute per site instead of a rewrite.
+>
+> Sizes are inferred from height, never width: a button that changes height
+> shifts the row it sits in, while a few pixels of horizontal padding go
+> unnoticed.
+- [x] Adopt the slot at the 46 literal-className `bg-accent` sites in the admin
+- [x] Slot reach measured, not assumed: **2 → 23** emitted files call `buttonClasses()`
+- [x] Decided deliberately what does NOT follow the slot — themed auth pages
+      (they use `var(--auth-primary)` so atlas/aurora/pulse can restyle them;
+      routing those through the slot would fight the theme system), accent-tint
+      badges, and buttons whose className is a runtime expression
+- [x] Regression guard: `TestButtonClassesImportsMatchUsage` catches a call with
+      no import *and* an import with no call (the wrong-emitted-file failure),
+      across both admin variants
+- [x] Budget test pins the remaining inline count at 13 so it can only go down
+- [x] Verified visually: `/system/roles` "New role" goes `rounded-lg` → pill
+      under `grit swap button glow-ring`, with no layout shift
+- [x] Both variants rebuilt from a fresh scaffold (`next build`, `vite build`)
 - [ ] Adopt the swappable Input primitive
 - [x] `grit swap` round-trip verified clean (swap + revert, with type-check)
 

@@ -857,6 +857,7 @@ import { Search, Plus, Trash2, Download, Upload, Columns3 } from "@/lib/icons";
 import { DateFilter, type DateRange } from "./date-filter";
 import { ExportMenu } from "./export-menu";
 import { exportToFile } from "@/lib/excel-utils";
+import { buttonClasses } from "@/components/ui/button";
 
 interface TableToolbarProps {
   resource: ResourceDefinition;
@@ -1031,7 +1032,7 @@ export function TableToolbar({
       {onCreate && (
         <button
           onClick={onCreate}
-          className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-1.5 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+          className={buttonClasses({ size: "sm" })}
         >
           <Plus className="h-3.5 w-3.5" />
           New {resource.label?.singular ?? resource.name}

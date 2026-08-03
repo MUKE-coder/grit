@@ -20,6 +20,7 @@ import {
   Upload,
   X,
 } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 import type { ResourceDefinition } from "@/lib/resource";
 import {
   downloadImportTemplate,
@@ -191,7 +192,7 @@ export function ImportModal({ resource, onClose }: ImportModalProps) {
               <button
                 onClick={handleSubmit}
                 disabled={validCount === 0}
-                className="rounded-lg bg-accent px-4 py-1.5 text-sm font-medium text-white hover:bg-accent-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className={buttonClasses({ size: "sm" })}
               >
                 Import {validCount} row{validCount === 1 ? "" : "s"}
               </button>

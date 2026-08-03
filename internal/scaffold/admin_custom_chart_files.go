@@ -246,6 +246,7 @@ import {
   type ChartViz,
 } from "@/lib/dashboard-catalog";
 import type { ResourceDefinition, ColumnDefinition } from "@/lib/resource";
+import { buttonClasses } from "@/components/ui/button";
 
 interface Props {
   resources: ResourceDefinition[];
@@ -489,7 +490,7 @@ export function ChartBuilderForm({ resources, initial, onSubmit, onCancel }: Pro
           type="button"
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-1.5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
+          className={buttonClasses({ size: "sm" })}
         >
           {initial ? "Save chart" : "Add chart"}
         </button>

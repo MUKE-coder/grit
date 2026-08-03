@@ -44,6 +44,7 @@ import {
 } from "@/hooks/use-roles";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { ShieldCheck, Lock, Users, Plus, ArrowLeft, Save, Trash2, Search, Copy } from "@/lib/icons";
+import { buttonClasses } from "@/components/ui/button";
 
 const ACTIONS: PermAction[] = ["create", "view", "edit", "delete"];
 
@@ -102,7 +103,7 @@ function RolesList({
 				</p>
 				<button
 					onClick={onNew}
-					className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+					className={buttonClasses({ className: "transition-opacity hover:opacity-90" })}
 				>
 					<Plus className="h-4 w-4" />
 					New role
@@ -435,7 +436,7 @@ function RoleEditor({
 					<button
 						onClick={save}
 						disabled={saving}
-						className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+						className={buttonClasses({ className: "transition-opacity hover:opacity-90" })}
 					>
 						<Save className="h-4 w-4" />
 						{saving ? "Saving..." : "Save role"}

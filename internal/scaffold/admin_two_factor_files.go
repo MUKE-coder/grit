@@ -32,6 +32,7 @@ import {
 } from "@/hooks/use-auth";
 import { ShieldCheck, Loader2, Copy, Check, Monitor, X } from "@/lib/icons";
 import { describeDevice } from "@/components/profile/active-sessions";
+import { Button, buttonClasses } from "@/components/ui/button";
 
 /** Recovery codes are unrecoverable once dismissed — see the file header. */
 function BackupCodes({ codes, onDone }: { codes: string[]; onDone: () => void }) {
@@ -96,7 +97,7 @@ function BackupCodes({ codes, onDone }: { codes: string[]; onDone: () => void })
           type="button"
           onClick={onDone}
           disabled={!saved}
-          className="ml-auto rounded-lg bg-accent px-3 py-1.5 text-sm text-white disabled:opacity-50"
+          className={buttonClasses({ size: "sm", className: "ml-auto" })}
           title={saved ? undefined : "Copy or download them first"}
         >
           I have saved them
@@ -205,15 +206,9 @@ export function TwoFactorCard() {
 
         {/* ── Off, and not mid-setup ── */}
         {!status?.enabled && !secret && !codes && (
-          <button
-            type="button"
-            onClick={startSetup}
-            disabled={setup.isPending}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
-          >
-            {setup.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+          <Button onClick={startSetup} loading={setup.isPending}>
             Turn on two-factor
-          </button>
+          </Button>
         )}
 
         {/* ── Mid-setup: scan, then confirm with a live code ── */}
@@ -243,15 +238,13 @@ export function TwoFactorCard() {
                   maxLength={6}
                   className="w-32 rounded-lg border border-border bg-bg-primary px-3 py-2 text-center font-mono tracking-[0.3em] text-foreground"
                 />
-                <button
-                  type="button"
+                <Button
                   onClick={confirmEnable}
-                  disabled={enable.isPending || code.trim().length !== 6}
-                  className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+                  disabled={code.trim().length !== 6}
+                  loading={enable.isPending}
                 >
-                  {enable.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   Verify and turn on
-                </button>
+                </Button>
                 <button
                   type="button"
                   onClick={() => { setSecret(null); setQr(null); setCode(""); }}

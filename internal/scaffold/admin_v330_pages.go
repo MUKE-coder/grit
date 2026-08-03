@@ -232,6 +232,7 @@ import { ResponsiveSheet } from "@/components/ui/ResponsiveSheet";
 import { IconButton } from "@/components/ui/IconButton";
 import { Plus, MessageSquare, AlertCircle } from "@/lib/icons";
 import { apiClient } from "@/lib/api-client";
+import { buttonClasses } from "@/components/ui/button";
 
 interface Ticket {
   id: string;
@@ -331,7 +332,7 @@ export default function SupportPage() {
             <button
               type="button"
               onClick={() => setOpenSheet(true)}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover"
+              className={buttonClasses({ className: "mt-4" })}
             >
               <Plus className="h-4 w-4" />
               New ticket
@@ -418,7 +419,7 @@ function NewTicketSheet({ open, onClose }: { open: boolean; onClose: () => void 
             type="button"
             onClick={submit}
             disabled={create.isPending}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
+            className={buttonClasses()}
           >
             {create.isPending ? "Opening..." : "Open ticket"}
           </button>
@@ -506,6 +507,7 @@ import { PageHeader } from "@/components/chrome/PageHeader";
 import { IconButton } from "@/components/ui/IconButton";
 import { Check, ArrowLeft } from "@/lib/icons";
 import { apiClient } from "@/lib/api-client";
+import { buttonClasses } from "@/components/ui/button";
 
 interface Reply {
   id: string;
@@ -703,7 +705,7 @@ export default function TicketThreadPage() {
             <button
               type="submit"
               disabled={replyM.isPending || !reply.trim()}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
+              className={buttonClasses()}
             >
               {replyM.isPending ? "Sending..." : "Send reply"}
             </button>
