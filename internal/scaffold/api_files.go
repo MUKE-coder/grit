@@ -93,16 +93,19 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "routes", "routes.go"):        apiRoutesGo(),
 		filepath.Join(apiRoot, ".air.toml"):                              airConfig(),
 		// Test files — give the generated API a working test suite out of the box
-		filepath.Join(apiRoot, "internal", "handlers", "auth_test.go"):           apiAuthTestGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "sso_test.go"):            apiSSOTestGo(),
-		filepath.Join(apiRoot, "internal", "models", "bool_flags_test.go"):       apiBoolFlagTestGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "saml_test.go"):           apiSAMLTestGo(),
-		filepath.Join(apiRoot, "internal", "services", "session_test.go"):        apiSessionTestGo(),
-		filepath.Join(apiRoot, "internal", "models", "password_reset.go"):        apiPasswordResetModelGo(),
-		filepath.Join(apiRoot, "internal", "services", "password_reset.go"):      apiPasswordResetServiceGo(),
-		filepath.Join(apiRoot, "internal", "services", "password_reset_test.go"): apiPasswordResetTestGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "user_test.go"):           apiUserTestGo(),
-		filepath.Join(apiRoot, "internal", "handlers", "bench_test.go"):          apiBenchTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "auth_test.go"):               apiAuthTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "sso_test.go"):                apiSSOTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "bool_flags_test.go"):           apiBoolFlagTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "saml_test.go"):               apiSAMLTestGo(),
+		filepath.Join(apiRoot, "internal", "services", "session_test.go"):            apiSessionTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "password_reset.go"):            apiPasswordResetModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "password_reset.go"):          apiPasswordResetServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "password_reset_test.go"):     apiPasswordResetTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "email_verification.go"):        apiEmailVerifyModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "email_verification.go"):      apiEmailVerifyServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "email_verification_test.go"): apiEmailVerifyTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "user_test.go"):               apiUserTestGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "bench_test.go"):              apiBenchTestGo(),
 	}
 
 	for path, content := range files {
@@ -780,6 +783,7 @@ type Config struct {
 
 	// TOTP (Two-Factor Authentication)
 	TOTPIssuer string
+	RequireEmailVerification bool
 
 	// Security (Sentinel)
 	SentinelEnabled        bool
@@ -864,6 +868,10 @@ func Load() (*Config, error) {
 		AIGatewayURL:    getEnv("AI_GATEWAY_URL", "https://ai-gateway.vercel.sh/v1"),
 
 		TOTPIssuer: getEnv("TOTP_ISSUER", getEnv("APP_NAME", "grit-app")),
+		// Off by default and deliberately so: switching it on for an existing
+		// project would lock out every user at once, because they all have a
+		// NULL email_verified_at.
+		RequireEmailVerification: getEnv("REQUIRE_EMAIL_VERIFICATION", "false") == "true",
 
 		SentinelEnabled:        getEnv("SENTINEL_ENABLED", "true") == "true",
 		SentinelUsername:       getEnv("SENTINEL_USERNAME", "admin"),
@@ -1221,6 +1229,7 @@ func Models() []interface{} {
 		// Server-side refresh sessions — must exist before anything logs in.
 		&Session{},
 		&PasswordResetToken{},
+		&EmailVerificationToken{},
 		// Role/UserRole must migrate before anything authorises a request.
 		&Role{},
 		&UserRole{},
@@ -1698,6 +1707,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
+	// Off the request path: signup should not wait on SMTP, and a mail failure
+	// must not fail an account that was created successfully.
+	go h.deliverVerificationEmail(user)
+
 	tokens, err := h.AuthService.GenerateTokenPair(user.ID, user.Email, user.Role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -1771,6 +1784,18 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			"error": gin.H{
 				"code":    "ACCOUNT_DISABLED",
 				"message": "Your account has been disabled",
+			},
+		})
+		return
+	}
+
+	// Opt-in gate. Social and SSO sign-ins are unaffected — the IdP already
+	// proved the address, and those paths set EmailVerifiedAt on first login.
+	if h.Config.RequireEmailVerification && user.EmailVerifiedAt == nil && user.Password != "" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": gin.H{
+				"code":    "EMAIL_NOT_VERIFIED",
+				"message": "Confirm your email address before signing in. Check your inbox for the link.",
 			},
 		})
 		return
@@ -2106,6 +2131,106 @@ func (h *AuthHandler) deliverPasswordReset(user models.User, clientIP string) {
 	log.Printf("password reset link for %s: %s", user.Email, resetURL)
 }
 
+
+// SendVerificationEmail issues a fresh verification link for the signed-in
+// user. Authenticated on purpose: an unauthenticated "send a link to this
+// address" endpoint is a spam cannon aimed at whoever you name.
+func (h *AuthHandler) SendVerificationEmail(c *gin.Context) {
+	userID := c.GetString("user_id")
+
+	var user models.User
+	if err := h.DB.First(&user, "id = ?", userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": gin.H{"code": "NOT_FOUND", "message": "User not found"},
+		})
+		return
+	}
+
+	if user.EmailVerifiedAt != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{"code": "ALREADY_VERIFIED", "message": "This email is already verified"},
+		})
+		return
+	}
+
+	go h.deliverVerificationEmail(user)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Verification email sent. The link is valid for 48 hours.",
+	})
+}
+
+// VerifyEmail consumes a verification token. Public — the user clicks this
+// from their mail client, where they are usually not signed in.
+func (h *AuthHandler) VerifyEmail(c *gin.Context) {
+	var req struct {
+		Token string ` + "`" + `json:"token" binding:"required"` + "`" + `
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
+		})
+		return
+	}
+
+	if _, err := services.ConsumeEmailVerificationToken(h.DB, req.Token); err != nil {
+		// One message for expired, spent, unknown and address-changed. Telling
+		// them apart tells an attacker which tokens once existed.
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{
+				"code":    "INVALID_TOKEN",
+				"message": "That verification link is invalid or has expired. Request a new one.",
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Email verified"})
+}
+
+// deliverVerificationEmail mints a token and sends the link, off the request
+// path so a slow SMTP call cannot hold the response open.
+func (h *AuthHandler) deliverVerificationEmail(user models.User) {
+	token, err := services.GenerateVerificationToken()
+	if err != nil {
+		log.Printf("email verification: generating token for %s: %v", user.Email, err)
+		return
+	}
+
+	if _, err := services.CreateEmailVerificationToken(h.DB, user.ID, user.Email, token); err != nil {
+		log.Printf("email verification: storing token for %s: %v", user.Email, err)
+		return
+	}
+
+	verifyURL := strings.TrimSuffix(h.Config.OAuthFrontendURL, "/") + "/verify-email?token=" + url.QueryEscape(token)
+
+	if h.Mailer != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		if err := h.Mailer.Send(ctx, mail.SendOptions{
+			To:       user.Email,
+			Subject:  "Confirm your email address",
+			Template: "email-verification",
+			Data: map[string]interface{}{
+				"AppName":   h.Config.AppName,
+				"Title":     "Confirm your email address",
+				"Message":   "Click the button below to confirm this address. The link expires in 48 hours and can only be used once.",
+				"VerifyURL": verifyURL,
+				"Year":      time.Now().Year(),
+			},
+		}); err != nil {
+			log.Printf("email verification: sending to %s: %v", user.Email, err)
+		}
+		return
+	}
+
+	if h.Config.AppEnv == "production" {
+		log.Printf("email verification: NO MAILER CONFIGURED — %s cannot receive a link. Set RESEND_API_KEY.", user.Email)
+		return
+	}
+
+	log.Printf("email verification link for %s: %s", user.Email, verifyURL)
+}
 
 // ResetPassword resets a user's password with a valid token.
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
@@ -7875,6 +8000,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		auth.POST("/refresh", authHandler.Refresh)
 		auth.POST("/forgot-password", authHandler.ForgotPassword)
 		auth.POST("/reset-password", authHandler.ResetPassword)
+		auth.POST("/verify-email", authHandler.VerifyEmail)
 	}
 
 	// OAuth2 social login
@@ -7946,6 +8072,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		protected.GET("/auth/totp/status", totpHandler.Status)
 		protected.POST("/auth/totp/backup-codes", totpHandler.RegenerateBackupCodes)
 		protected.DELETE("/auth/totp/trusted-devices", totpHandler.RevokeTrustedDevices)
+		protected.POST("/auth/verify-email/send", authHandler.SendVerificationEmail)
 		protected.GET("/auth/totp/trusted-devices", totpHandler.ListTrustedDevices)
 		protected.DELETE("/auth/totp/trusted-devices/:id", totpHandler.RevokeTrustedDevice)
 

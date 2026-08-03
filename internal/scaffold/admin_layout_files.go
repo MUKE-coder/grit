@@ -381,6 +381,7 @@ import { useMe } from "@/hooks/use-auth";
 import { CollapsibleSidebar } from "@/components/chrome/CollapsibleSidebar";
 import { SessionWatchdog } from "@/components/chrome/SessionWatchdog";
 import { QuickAccess } from "@/components/chrome/QuickAccess";
+import { EmailVerifiedBanner } from "@/components/chrome/EmailVerifiedBanner";
 import { Menu } from "@/lib/icons";
 // grit:layout:imports
 
@@ -471,6 +472,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </button>
 
         {/* grit:layout:banner */}
+        <EmailVerifiedBanner />
         <main className="flex-1 px-4 py-6 md:px-8">{children}</main>
       </div>
 

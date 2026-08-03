@@ -296,6 +296,7 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "pages", "login.tsx"):                    nextToTanStack(adminThemedLoginPage()),
 		filepath.Join(adminRoot, "src", "pages", "sign-up.tsx"):                  nextToTanStack(adminThemedSignUpPage()),
 		filepath.Join(adminRoot, "src", "pages", "forgot-password.tsx"):          nextToTanStack(adminThemedForgotPasswordPage()),
+		filepath.Join(adminRoot, "src", "pages", "verify-email.tsx"):             nextToTanStack(adminVerifyEmailPage()),
 		filepath.Join(adminRoot, "src", "pages", "reset-password.tsx"):           nextToTanStack(adminThemedResetPasswordPage()),
 		filepath.Join(adminRoot, "src", "pages", "callback.tsx"):                 nextToTanStack(adminAuthCallbackPage()),
 		filepath.Join(adminRoot, "src", "pages", "not-found.tsx"):                nextToTanStack(adminNotFoundPage()),
@@ -334,6 +335,7 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "routes", "_auth", "login.tsx"):                            adminTanStackPageRoute("/_auth/login", "@/pages/login"),
 		filepath.Join(adminRoot, "src", "routes", "_auth", "sign-up.tsx"):                          adminTanStackPageRoute("/_auth/sign-up", "@/pages/sign-up"),
 		filepath.Join(adminRoot, "src", "routes", "_auth", "forgot-password.tsx"):                  adminTanStackPageRoute("/_auth/forgot-password", "@/pages/forgot-password"),
+		filepath.Join(adminRoot, "src", "routes", "_auth", "verify-email.tsx"):                     adminTanStackPageRoute("/_auth/verify-email", "@/pages/verify-email"),
 		filepath.Join(adminRoot, "src", "routes", "_auth", "reset-password.tsx"):                   adminTanStackPageRoute("/_auth/reset-password", "@/pages/reset-password"),
 		filepath.Join(adminRoot, "src", "routes", "_auth", "callback.tsx"):                         adminTanStackPageRoute("/_auth/callback", "@/pages/callback"),
 		filepath.Join(adminRoot, "src", "routes", "_dashboard.tsx"):                                adminTanStackDashboardLayout(),
@@ -518,6 +520,7 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "components", "profile", "delete-account-dialog.tsx"): nextToTanStack(adminDeleteAccountDialog()),
 		filepath.Join(adminRoot, "src", "components", "profile", "active-sessions.tsx"):       nextToTanStack(adminActiveSessions()),
 		filepath.Join(adminRoot, "src", "components", "profile", "two-factor-card.tsx"):       nextToTanStack(adminTwoFactorCard()),
+		filepath.Join(adminRoot, "src", "components", "chrome", "EmailVerifiedBanner.tsx"):    nextToTanStack(adminEmailVerifiedBanner()),
 
 		filepath.Join(adminRoot, "public", ".gitkeep"): "",
 	}

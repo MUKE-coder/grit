@@ -28,6 +28,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.121.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.121.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Email verification.</strong>
+                </p>
+                <p>
+                  The <code>User</code> model has carried <code>email_verified_at</code> since
+                  the beginning, and only social sign-in ever set it &mdash; a field that looks
+                  like a feature and was not one. Now a password signup can prove its address.
+                </p>
+                <ul>
+                  <li>
+                    A verification mail goes out on register, off the request path so signup
+                    never waits on SMTP. <code>POST /auth/verify-email</code> consumes the
+                    token; <code>POST /auth/verify-email/send</code> re-sends for the
+                    signed-in user (authenticated on purpose &mdash; an open
+                    &ldquo;mail this address&rdquo; endpoint is a spam cannon).
+                  </li>
+                  <li>
+                    Tokens are single-use, 48-hour, and stored only as a SHA-256 hash. Issuing
+                    a new one burns the old. The address is recorded with the token, so a stale
+                    link cannot verify an address the user switched to afterwards.
+                  </li>
+                  <li>
+                    <strong>Optional enforcement:</strong> set{' '}
+                    <code>REQUIRE_EMAIL_VERIFICATION=true</code> to refuse password sign-ins
+                    until confirmed. Off by default &mdash; turning it on for an existing
+                    project would lock out every user at once. Social and SSO logins are
+                    unaffected.
+                  </li>
+                  <li>
+                    Admin UI: a <code>/verify-email</code> page for the link to land on, and a
+                    banner with a resend button for anyone who has not clicked it.
+                  </li>
+                </ul>
+                <p>
+                  Seven generated tests cover the token rules, including the changed-address
+                  case. The whole flow was driven over HTTP, and the gate tested in both
+                  directions.
+                </p>
+              </div>
+            </div>
+
             {/* v3.120.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
