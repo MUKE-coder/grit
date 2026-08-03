@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { CodeBlock } from '@/components/code-block'
 import { HeroCodeTabs, InstallTabs } from '@/components/hero-code-tabs'
+import { OneApiClients } from '@/components/one-api-clients'
 import { SoftwareApplicationSchema, FAQPageSchema } from '@/components/structured-data'
 import { FeatureTabs } from '@/components/feature-tabs'
 import { CpuArchitecture } from '@/components/ui/cpu-architecture'
@@ -337,12 +338,15 @@ export default function HomePage() {
               </div>
             </div>
             {[
-              { number: '5', label: 'ARCHITECTURE MODES' },
-              { number: '100+', label: 'UI COMPONENTS' },
-              { number: `v${GRIT_VERSION}`, label: 'LATEST RELEASE' },
+              { number: '9', label: 'FILES PER RESOURCE', sub: 'model to admin screen' },
+              { number: '20+', label: 'BATTERIES INCLUDED', sub: 'not plugins to find' },
+              { number: '0', label: 'GRIT IN YOUR BINARY', sub: 'it generates, then leaves' },
             ].map((stat) => (
               <div key={stat.label} className="text-center md:text-left">
                 <div className="text-4xl md:text-5xl font-bold text-foreground mb-1 tracking-tight">{stat.number}</div>
+                {stat.sub && (
+                  <div className="text-[11px] text-muted-foreground/70 mt-1">{stat.sub}</div>
+                )}
                 <div className="text-[10px] font-mono font-medium text-muted-foreground tracking-widest">{stat.label}</div>
               </div>
             ))}
@@ -355,6 +359,35 @@ export default function HomePage() {
 
       {/* ═══ NEW: THREE PLATFORMS, ONE FRAMEWORK (Web · Desktop · Mobile mockups) ═══ */}
       <ThreePlatforms />
+
+      {/* ═══ ONE API, EVERY CLIENT ═══
+
+          The argument nothing else in this space can make, and it is invisible
+          unless the four are side by side and clickable. A framework that
+          scaffolds a backend is common; one where the same generated types and
+          hooks drive Next.js, TanStack, Expo and an offline desktop binary is
+          not. The left pane deliberately never changes. */}
+      <section className="py-20 md:py-24 px-6 border-b border-border/40">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-12">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> One backend
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
+              Write the API once.<br />Ship it to every client.
+            </h2>
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+              The generator emits the Go handler <em>and</em> the typed client — schemas,
+              TypeScript types and React Query hooks. The same hook then works in a Next.js
+              app, a TanStack SPA, an Expo phone app and an offline-capable desktop binary.
+              Rename a field in the Go struct and every one of them stops compiling until
+              you fix it.
+            </p>
+          </div>
+
+          <OneApiClients />
+        </div>
+      </section>
 
       {/* ═══ CPU ARCHITECTURE — Grit as the central chip ═══ */}
       <section className="relative py-24 px-6 overflow-hidden border-t border-border/40">
