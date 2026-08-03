@@ -274,6 +274,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "access-reviews", "page.tsx"): adminAccessReviewPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "gdpr", "page.tsx"):           adminGDPRPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "audit", "page.tsx"):          adminAuditPage(),
+		filepath.Join(adminRoot, "app", "(dashboard)", "system", "api-keys", "page.tsx"):       adminAPIKeysPage(),
 		filepath.Join(adminRoot, "app", "(dashboard)", "system", "sso", "page.tsx"):            adminSSOPage(),
 		// Roles & permissions. The SAME component is used by the Vite admin — a
 		// permission editor that disagreed between the two would be a security

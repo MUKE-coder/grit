@@ -104,6 +104,11 @@ func writeAPIFiles(root string, opts Options) error {
 		filepath.Join(apiRoot, "internal", "models", "email_verification.go"):        apiEmailVerifyModelGo(),
 		filepath.Join(apiRoot, "internal", "services", "email_verification.go"):      apiEmailVerifyServiceGo(),
 		filepath.Join(apiRoot, "internal", "services", "email_verification_test.go"): apiEmailVerifyTestGo(),
+		filepath.Join(apiRoot, "internal", "models", "api_key.go"):          apiAPIKeyModelGo(),
+		filepath.Join(apiRoot, "internal", "services", "api_key.go"):        apiAPIKeyServiceGo(),
+		filepath.Join(apiRoot, "internal", "services", "api_key_test.go"):   apiAPIKeyTestGo(),
+		filepath.Join(apiRoot, "internal", "middleware", "api_key.go"):      apiAPIKeyMiddlewareGo(),
+		filepath.Join(apiRoot, "internal", "handlers", "api_key.go"):        apiAPIKeyHandlerGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "user_test.go"):               apiUserTestGo(),
 		filepath.Join(apiRoot, "internal", "handlers", "bench_test.go"):              apiBenchTestGo(),
 	}
@@ -1263,6 +1268,7 @@ func Models() []interface{} {
 		&Session{},
 		&PasswordResetToken{},
 		&EmailVerificationToken{},
+		&APIKey{},
 		// Role/UserRole must migrate before anything authorises a request.
 		&Role{},
 		&UserRole{},
@@ -7912,6 +7918,8 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		Config:      cfg,
 		Mailer:      svc.Mailer,
 	}
+	apiKeyHandler := &handlers.APIKeyHandler{DB: db}
+
 	userHandler := &handlers.UserHandler{
 		DB:          db,
 		AuthService: authService,
@@ -8178,7 +8186,11 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 
 	// Protected routes
 	protected := v1.Group("")
-	protected.Use(middleware.Auth(db, authService))
+	// Accepts an API key OR the usual JWT. With no key header present this
+	// delegates straight to middleware.Auth, so browser sessions behave
+	// exactly as before; with one, it sets the same context values so every
+	// downstream handler and RequireRole check works unchanged.
+	protected.Use(middleware.APIKeyOrAuth(db, middleware.Auth(db, authService)))
 	// Activity logger writes one row per successful authenticated mutation.
 	// Records who/what/when/where for audit. Read-only — see admin/activity.
 	protected.Use(middleware.ActivityLogger(db))
@@ -8210,6 +8222,9 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 		protected.POST("/auth/totp/backup-codes", totpHandler.RegenerateBackupCodes)
 		protected.DELETE("/auth/totp/trusted-devices", totpHandler.RevokeTrustedDevices)
 		protected.POST("/auth/verify-email/send", authHandler.SendVerificationEmail)
+		protected.GET("/api-keys", apiKeyHandler.List)
+		protected.POST("/api-keys", apiKeyHandler.Create)
+		protected.DELETE("/api-keys/:id", apiKeyHandler.Revoke)
 		protected.GET("/auth/totp/trusted-devices", totpHandler.ListTrustedDevices)
 		protected.DELETE("/auth/totp/trusted-devices/:id", totpHandler.RevokeTrustedDevice)
 
@@ -8280,7 +8295,7 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 
 	// Admin routes
 	admin := v1.Group("")
-	admin.Use(middleware.Auth(db, authService))
+	admin.Use(middleware.APIKeyOrAuth(db, middleware.Auth(db, authService)))
 	admin.Use(middleware.RequireRole("ADMIN"))
 	{
 		admin.GET("/users", userHandler.List)

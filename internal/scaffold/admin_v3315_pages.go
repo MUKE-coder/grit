@@ -29,7 +29,7 @@ import { SYSTEM_NAV, INTERNAL_ICON } from "@/components/chrome/CollapsibleSideba
 import {
   Activity, Bell, Calendar, Database, FileText, Mail,
   MessageSquare, Shield, ShieldCheck, TrendingUp, Upload, Link as LinkIcon,
-  UserCheck, Settings, LayoutGrid,
+  UserCheck, Settings, LayoutGrid, KeyRound,
 } from "@/lib/icons";
 
 // Every operational surface is grouped under one of these tabs. The whole
@@ -77,6 +77,7 @@ const TILES: SystemTile[] = [
   { href: "/system/roles",          category: "Security & Access", title: "Roles & permissions", description: "Define what each role can see and do, and assign roles to users.",           icon: <ShieldCheck className="h-5 w-5" /> },
   { href: "/system/access-reviews", category: "Security & Access", title: "Access Reviews",      description: "Point-in-time snapshots of who holds which role — for audits and attestations.", icon: <UserCheck className="h-5 w-5" /> },
   { href: "/system/gdpr",           category: "Security & Access", title: "GDPR",                description: "Export or erase a user's data, with a tamper-evident deletion journal.",     icon: <Shield className="h-5 w-5" /> },
+  { href: "/system/api-keys",       category: "Security & Access", title: "API keys",            description: "Long-lived credentials for scripts and integrations, instead of a login.", icon: <KeyRound className="h-5 w-5" /> },
   { href: "/system/audit",          category: "Security & Access", title: "Audit log",           description: "Every authenticated write, hash-chained so a changed row can be detected.", icon: <ShieldCheck className="h-5 w-5" /> },
   { href: "/system/sso",            category: "Security & Access", title: "Single sign-on",      description: "Let a customer's team sign in with their own identity provider — OIDC or SAML.",     icon: <ShieldCheck className="h-5 w-5" /> },
   // ── Data & Files ────────────────────────────────────────────────────────
