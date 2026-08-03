@@ -28,6 +28,32 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.119.1 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.119.1
+                </span>
+                <span className="text-sm text-muted-foreground">August 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Fixes the Vite admin build, broken by v3.119.0.</strong>
+                </p>
+                <p>
+                  The two-factor card shipped to the Next.js admin only. The profile page is
+                  shared between both front-ends, so a project scaffolded with{' '}
+                  <code>--vite</code> imported a component that was never written and failed to
+                  build. The component is now generated for both.
+                </p>
+                <p>
+                  Caught by scaffolding <code>--triple --vite</code> and building it &mdash; the
+                  step that was skipped before releasing 3.119.0.
+                </p>
+              </div>
+            </div>
+
             {/* v3.119.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
