@@ -489,6 +489,26 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Database setup in Grit: PostgreSQL for production, SQLite for development, GORM Studio visual browser, and connection configuration.',
   },
+  '/docs/deployment': {
+    title: 'Deployment',
+    description:
+      'Where to deploy a Grit app: Railway, Render, Fly.io, Dokploy, Coolify, a plain VPS or Docker Compose — with cost, effort and trade-offs for each.',
+  },
+  '/docs/deployment/environment': {
+    title: 'Environment variables',
+    description:
+      'Required and conditional environment variables for a Grit deployment, and the build-time vs runtime distinction that fails silently.',
+  },
+  '/docs/deployment/build-locally': {
+    title: 'Test the production build locally',
+    description:
+      'Reproduce a deployment on your own machine before shipping it. Catches type errors, missing build-time variables and cgo problems in two minutes.',
+  },
+  '/docs/deployment/checklist': {
+    title: 'Go-live checklist',
+    description:
+      'Secrets, access, data and operations checks to work through before a Grit app takes real traffic.',
+  },
   '/docs/infrastructure/deployment': {
     title: 'Deployment',
     description:

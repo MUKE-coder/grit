@@ -228,9 +228,29 @@ const navItems: NavItem[] = [
       { title: 'Docker Setup', href: '/docs/infrastructure/docker' },
       { title: 'Docker Cheat Sheet', href: '/docs/infrastructure/docker-cheatsheet' },
       { title: 'Database & Migrations', href: '/docs/infrastructure/database' },
-      { title: 'Deployment', href: '/docs/infrastructure/deployment' },
+      { title: 'VPS Walkthrough', href: '/docs/infrastructure/deployment' },
       { title: 'Deploy Command', href: '/docs/infrastructure/deploy-command' },
-      { title: 'Deploy with Dokploy', href: '/docs/infrastructure/dokploy' },
+    ],
+  },
+  // Deployment is its own top-level section rather than a page under
+  // Infrastructure. Nobody looking for "how do I get this on Fly.io" thinks to
+  // open something called Infrastructure, and four independent reviews of the
+  // site failed to find the deployment docs that already existed.
+  {
+    title: 'Deployment',
+    icon: <Rocket className="h-3.5 w-3.5" />,
+    items: [
+      { title: 'Choosing a host', href: '/docs/deployment' },
+      { title: 'Environment variables', href: '/docs/deployment/environment' },
+      { title: 'Test the build locally', href: '/docs/deployment/build-locally' },
+      { title: 'Go-live checklist', href: '/docs/deployment/checklist' },
+      { title: 'Railway', href: '/docs/deployment/railway' },
+      { title: 'Render', href: '/docs/deployment/render' },
+      { title: 'Fly.io', href: '/docs/deployment/fly-io' },
+      { title: 'Dokploy', href: '/docs/deployment/dokploy' },
+      { title: 'Coolify', href: '/docs/deployment/coolify' },
+      { title: 'VPS (systemd + Caddy)', href: '/docs/deployment/vps' },
+      { title: 'Docker Compose', href: '/docs/deployment/docker-compose' },
     ],
   },
   {
