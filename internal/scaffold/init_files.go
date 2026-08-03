@@ -59,7 +59,7 @@ func agentsDocContent() string {
 ## Data
 
 - All list endpoints return the standard envelope: ` + "`{ data, meta: { total, page, page_size, pages } }`" + `. Use ` + "`paginate.List[T]`" + ` from the API side — don't hand-roll page math.
-- Search is ILIKE across the columns declared in ` + "`Config.Searchable`" + `. Only text-like fields are searchable by default — never include FK UUID columns.
+- Search is a portable case-insensitive LIKE across the columns declared in ` + "`Config.Searchable`" + `. Only text-like fields are searchable by default — never include FK UUID columns.
 - Sort whitelist via ` + "`Config.Sortable`" + `. Out-of-whitelist values fall back to ` + "`created_at desc`" + `.
 
 ## Backend

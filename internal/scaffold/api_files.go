@@ -645,6 +645,21 @@ type StorageConfig struct {
 	Bucket    string
 	Region    string
 	UseSSL    bool
+
+	// PublicURL is the origin a BROWSER loads stored objects from, which is
+	// not always the origin the SDK talks to.
+	//
+	// MinIO serves objects from the same host it takes API calls on, so this
+	// can stay empty in development. R2 cannot: its S3 endpoint
+	// (<account>.r2.cloudflarestorage.com) only answers SigV4-signed requests,
+	// so an <img src> pointed at it gets a 401 — the upload succeeds and
+	// nothing ever renders, which looks like a CORS problem and is not one.
+	// Set this to the bucket's public origin: an r2.dev subdomain, a custom
+	// domain, or a CDN in front of S3.
+	//
+	// When set, object URLs become <PublicURL>/<key> — public origins are
+	// already scoped to one bucket, so the bucket segment is not repeated.
+	PublicURL string
 }
 
 // Config holds all application configuration.
@@ -958,6 +973,7 @@ func resolveStorage(driver string) StorageConfig {
 			Bucket:    getEnv("S3_BUCKET", "uploads"),
 			Region:    firstNonEmpty(os.Getenv("S3_REGION"), os.Getenv("AWS_REGION"), "us-east-1"),
 			UseSSL:    true,
+			PublicURL: firstNonEmpty(os.Getenv("S3_PUBLIC_URL"), os.Getenv("STORAGE_PUBLIC_URL")),
 		}
 	case "r2":
 		return StorageConfig{
@@ -967,6 +983,7 @@ func resolveStorage(driver string) StorageConfig {
 			Bucket:    getEnv("R2_BUCKET", "uploads"),
 			Region:    getEnv("R2_REGION", "auto"),
 			UseSSL:    true,
+			PublicURL: firstNonEmpty(os.Getenv("R2_PUBLIC_URL"), os.Getenv("STORAGE_PUBLIC_URL")),
 		}
 	case "b2":
 		return StorageConfig{
@@ -976,6 +993,7 @@ func resolveStorage(driver string) StorageConfig {
 			Bucket:    getEnv("B2_BUCKET", "uploads"),
 			Region:    getEnv("B2_REGION", "us-west-004"),
 			UseSSL:    true,
+			PublicURL: firstNonEmpty(os.Getenv("B2_PUBLIC_URL"), os.Getenv("STORAGE_PUBLIC_URL")),
 		}
 	default: // minio
 		return StorageConfig{
@@ -985,6 +1003,7 @@ func resolveStorage(driver string) StorageConfig {
 			Bucket:    getEnv("MINIO_BUCKET", "uploads"),
 			Region:    getEnv("MINIO_REGION", "us-east-1"),
 			UseSSL:    getEnv("MINIO_USE_SSL", "false") == "true",
+			PublicURL: firstNonEmpty(os.Getenv("MINIO_PUBLIC_URL"), os.Getenv("STORAGE_PUBLIC_URL")),
 		}
 	}
 }
@@ -2407,7 +2426,9 @@ func (h *UserHandler) List(c *gin.Context) {
 
 	// Search
 	if search != "" {
-		query = query.Where("first_name ILIKE ? OR last_name ILIKE ? OR email ILIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%")
+		// LOWER(...) LIKE LOWER(...) rather than ILIKE: ILIKE is Postgres-only
+		// and this API also runs on SQLite.
+		query = query.Where("LOWER(first_name) LIKE LOWER(?) OR LOWER(last_name) LIKE LOWER(?) OR LOWER(email) LIKE LOWER(?)", "%"+search+"%", "%"+search+"%", "%"+search+"%")
 	}
 
 	// Count total
@@ -3274,7 +3295,7 @@ func Logger() gin.HandlerFunc {
 
 // apiPaginateGo returns the generic pagination/sort/search helper.
 // Every generated resource's List endpoint uses paginate.List so that
-// page-clamping, sort whitelisting, and search ILIKE construction live
+// page-clamping, sort whitelisting, and search-clause construction live
 // in exactly one place. Addresses issue #14.
 func apiPaginateGo() string {
 	return `// Package paginate provides a generic list/sort/search/paginate helper
@@ -3375,7 +3396,7 @@ func (p Params) With(key string, value any) Params {
 // Config describes which columns the caller has declared searchable / sortable
 // for a particular resource. Anything not in Sortable falls back to DefaultSort.
 type Config struct {
-	Searchable   []string        // columns included in ILIKE search
+	Searchable   []string        // columns included in case-insensitive search
 	Sortable     map[string]bool // whitelist for sort_by values
 	DefaultSort  string          // fallback sort column (defaults to "created_at")
 	DefaultOrder string          // fallback sort order (defaults to "desc")
@@ -3551,7 +3572,7 @@ func isSafeDateColumn(col string, cfg Config) bool {
 //   - page >= 1, 1 <= page_size <= MaxPageSize
 //   - sort_by must be in cfg.Sortable, else cfg.DefaultSort (or DefaultSortColumn)
 //   - sort_order must be "asc" or "desc", else cfg.DefaultOrder (or DefaultSortOrder)
-//   - search is applied as ILIKE across cfg.Searchable columns (nothing if empty)
+//   - search is applied case-insensitively across cfg.Searchable columns (nothing if empty)
 func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 	// Normalize sort_by against the whitelist.
 	sortBy := p.SortBy
@@ -3751,7 +3772,7 @@ func snakeToPascal(s string) string {
 	return strings.Join(parts, "")
 }
 
-// buildSearchClause builds "col1 ILIKE ? OR col2 ILIKE ? OR ..." with the
+// buildSearchClause builds "LOWER(col1) LIKE LOWER(?) OR ..." with the
 // same wildcard-wrapped search term repeated as each arg.
 func buildSearchClause(cols []string, term string) (string, []any) {
 	clause := ""
@@ -3761,7 +3782,7 @@ func buildSearchClause(cols []string, term string) (string, []any) {
 		if i > 0 {
 			clause += " OR "
 		}
-		clause += col + " ILIKE ?"
+		clause += "LOWER(" + col + ") LIKE LOWER(?)"
 		args = append(args, wild)
 	}
 	return clause, args

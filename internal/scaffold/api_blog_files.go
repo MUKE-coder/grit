@@ -113,7 +113,8 @@ func (s *BlogService) List(page, pageSize int, search, sortKey, sortDir string) 
 	query := s.DB.Model(&models.Blog{})
 
 	if search != "" {
-		query = query.Where("title ILIKE ? OR content ILIKE ?", "%"+search+"%", "%"+search+"%")
+		// Portable case-insensitive search — ILIKE is Postgres-only.
+		query = query.Where("LOWER(title) LIKE LOWER(?) OR LOWER(content) LIKE LOWER(?)", "%"+search+"%", "%"+search+"%")
 	}
 
 	var total int64

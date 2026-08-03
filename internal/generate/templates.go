@@ -387,11 +387,12 @@ func (g *Generator) buildServiceSearchWhere() string {
 	var searchFields []string
 	for _, f := range g.Definition.Fields {
 		if f.GoType() == "string" {
-			searchFields = append(searchFields, toSnakeCase(f.Name)+" ILIKE ?")
+			searchFields = append(searchFields, "LOWER("+toSnakeCase(f.Name)+") LIKE LOWER(?)")
 		}
 	}
 	if len(searchFields) == 0 {
-		searchFields = []string{"id::text ILIKE ?"}
+		// CAST(... AS TEXT) rather than ::text — the latter is Postgres-only.
+		searchFields = []string{"LOWER(CAST(id AS TEXT)) LIKE LOWER(?)"}
 	}
 
 	clause := strings.Join(searchFields, " OR ")
@@ -854,7 +855,7 @@ func (h *{{Pascal}}Handler) Export(c *gin.Context) {
 			if i > 0 {
 				clause += " OR "
 			}
-			clause += col + " ILIKE ?"
+			clause += "LOWER(" + col + ") LIKE LOWER(?)"
 			args = append(args, wild)
 		}
 		query = query.Where(clause, args...)
@@ -1230,7 +1231,7 @@ func pickIdentifierExpr(fields []Field) string {
 // buildHandlerSearchCols returns the comma-separated quoted column names for
 // the paginate.Config.Searchable slice literal. Only text-like field types are
 // included — FK UUID columns (which happen to be Go string) are skipped so
-// search doesn't ILIKE against opaque identifiers.
+// search doesn't match against opaque identifiers.
 func (g *Generator) buildHandlerSearchCols() string {
 	var cols []string
 	for _, f := range g.Definition.Fields {

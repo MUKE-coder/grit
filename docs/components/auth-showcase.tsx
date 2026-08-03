@@ -103,11 +103,12 @@ OAUTH_FRONTEND_URL=http://localhost:3001
     icon: ShieldCheck,
     headline: 'TOTP with backup codes and trusted devices',
     blurb:
-      'Authenticator-app 2FA end to end: setup with a QR code, enable, disable, ten single-use backup codes, and devices a user can trust for 30 days so they are not prompted every login.',
+      'Authenticator-app 2FA on the API: setup, enable, disable, ten single-use backup codes, and devices a user can trust for 30 days. The endpoints and the login challenge are complete — the admin panel does not yet ship a screen to drive them, so this is wiring you call rather than a page you click.',
     points: [
       'Login returns a short-lived pending token instead of a session when 2FA is due',
       'Ten backup codes, hashed at rest and consumed on use',
       'Trusted devices last 30 days, revocable in one call',
+      'setup returns an otpauth:// URI and the secret — render the QR wherever you want it',
       'TOTP_ISSUER controls the name shown in the authenticator app',
     ],
     code: `// Endpoints the scaffold registers
@@ -242,8 +243,9 @@ export function AuthShowcase() {
       {/* Stating the gaps costs one line and buys the rest of the page. */}
       <p className="text-[11.5px] text-muted-foreground/70 mt-8 pt-5 border-t border-border/40 leading-relaxed max-w-3xl">
         Not included, so you are not surprised later: there is no email-verification flow (the
-        field exists and social sign-in sets it, but nothing sends a verification mail), and no
-        API-key authentication — machine callers use the same JWT flow.
+        field exists and social sign-in sets it, but nothing sends a verification mail), no
+        API-key authentication (machine callers use the same JWT flow), and no 2FA screen in
+        the admin yet &mdash; the TOTP endpoints are there, the UI to drive them is not.
       </p>
     </div>
   )

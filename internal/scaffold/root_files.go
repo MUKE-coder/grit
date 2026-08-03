@@ -166,13 +166,33 @@ S3_ACCESS_KEY=
 S3_SECRET_KEY=
 S3_BUCKET=
 S3_REGION=us-east-1
+# Optional. Set to a CloudFront/CDN domain, or to
+# https://<bucket>.s3.<region>.amazonaws.com if the bucket is public.
+S3_PUBLIC_URL=
 
 # Cloudflare R2 (used when STORAGE_DRIVER=r2)
+#
+# R2_PUBLIC_URL is REQUIRED for images to display. The R2 endpoint below is
+# the S3 API host and only answers signed requests, so an <img> pointed at it
+# gets 401 — uploads succeed and nothing renders. Get a public origin by
+# either enabling r2.dev on the bucket (Settings -> Public Development URL)
+# or binding a custom domain, then paste it here WITHOUT the bucket name.
+#
+# R2 also needs a CORS rule for the presigned upload itself:
+#   AllowedOrigins: your admin/web origins  AllowedMethods: GET, PUT
+#   AllowedHeaders: *                       ExposeHeaders: ETag
 R2_ENDPOINT=
 R2_ACCESS_KEY=
 R2_SECRET_KEY=
 R2_BUCKET=
 R2_REGION=auto
+R2_PUBLIC_URL=
+
+# Browser-facing origin for any driver. Per-driver vars
+# (S3_PUBLIC_URL / R2_PUBLIC_URL / B2_PUBLIC_URL / MINIO_PUBLIC_URL) win over
+# this one. Leave empty for MinIO in dev — it serves objects from the same
+# host it takes API calls on.
+STORAGE_PUBLIC_URL=
 
 # Backblaze B2 (used when STORAGE_DRIVER=b2)
 B2_ENDPOINT=

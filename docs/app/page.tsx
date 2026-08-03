@@ -17,7 +17,7 @@ import { SoftwareApplicationSchema, FAQPageSchema } from '@/components/structure
 import { FeatureTabs } from '@/components/feature-tabs'
 import { CpuArchitecture } from '@/components/ui/cpu-architecture'
 import { MagneticButton, GSAPSection, FadeIn, GlowOrb } from '@/components/motion-primitives'
-import { GoLogo, ReactLogo, VueLogo, SvelteLogo, NextLogo, TanStackLogo, TypeScriptLogo, TailwindLogo, PostgresLogo, RedisLogo, DockerLogo } from '@/components/framework-logos'
+import { GoLogo, ReactLogo, NextLogo, TanStackLogo, TypeScriptLogo, TailwindLogo, PostgresLogo, RedisLogo, DockerLogo } from '@/components/framework-logos'
 import { CommunityCTA, WhatsAppIcon, WHATSAPP_COMMUNITY_URL } from '@/components/community-cta'
 import { HubAndSpoke } from '@/components/hub-and-spoke'
 import { WhatIsGrit } from '@/components/what-is-grit'
@@ -222,11 +222,11 @@ export default function HomePage() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src="/images/icons/Next.js.svg" alt="Next.js" className="h-4 w-4 object-contain" />
                     </div>
-                    <div className="h-7 w-7 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center" title="Vue">
-                      <VueLogo className="h-4 w-4" />
+                    <div className="h-7 w-7 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center" title="TanStack Router">
+                      <TanStackLogo className="h-4 w-4" />
                     </div>
-                    <div className="h-7 w-7 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center" title="Svelte">
-                      <SvelteLogo className="h-4 w-4" />
+                    <div className="h-7 w-7 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center" title="Expo (React Native)">
+                      <Smartphone className="h-4 w-4 text-slate-800" strokeWidth={2} />
                     </div>
                   </div>
                 </div>
@@ -785,9 +785,10 @@ export default function HomePage() {
                 The best partner to any front-end
               </h2>
               <p className="text-base text-muted-foreground leading-relaxed mb-5">
-                Easily craft frontend experiences with React, TanStack Router, Vue, or
-                Svelte alongside the Grit API. Or accelerate development with a generated
-                Next.js admin panel.
+                Grit scaffolds Next.js and TanStack Router front-ends, and generates the
+                typed client for both. The API itself is plain REST with an OpenAPI
+                document, so anything that speaks HTTP can call it &mdash; but these are the
+                ones we generate and test.
               </p>
               <Button variant="outline" className="border-border/60 text-foreground hover:bg-accent/30 rounded-full mb-12" asChild>
                 <Link href="/docs/frontend">
@@ -799,9 +800,9 @@ export default function HomePage() {
               <div className="relative h-[280px]">
                 {[
                   {
-                    name: 'users.svelte',
-                    color: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
-                    icon: <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><path d="M19.6 5.2C17.6 2.6 14.1 2.1 11.4 4l-4.5 2.9c-1.3.8-2.2 2.1-2.5 3.6-.3 1.2-.1 2.4.4 3.5-.4.5-.6 1.2-.8 1.8-.3 1.4-.1 2.8.6 4 1.9 2.6 5.4 3.2 8.1 1.3l4.5-2.9c1.3-.8 2.2-2.1 2.5-3.6.3-1.2.1-2.4-.4-3.5.4-.5.6-1.2.8-1.8.3-1.4.1-2.8-.6-4Z" /></svg>,
+                    name: 'users.expo.tsx',
+                    color: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+                    icon: <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="7" y="2" width="10" height="20" rx="2.5" /><path d="M11 18.5h2" /></svg>,
                     style: { top: '0%', right: '0%', width: '78%' },
                   },
                   {
@@ -811,9 +812,9 @@ export default function HomePage() {
                     style: { top: '24%', right: '4%', width: '74%' },
                   },
                   {
-                    name: 'users.vue',
+                    name: 'users.desktop.tsx',
                     color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-                    icon: <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><path d="M12 2 2 22h6l4-7 4 7h6L12 2Zm0 4 6 10h-3l-3-5-3 5H6L12 6Z" /></svg>,
+                    icon: <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="2.5" y="4" width="19" height="13" rx="2" /><path d="M9 20h6" /></svg>,
                     style: { top: '48%', right: '8%', width: '70%' },
                   },
                   {

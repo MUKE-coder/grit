@@ -374,7 +374,7 @@ func TestWriteGoService_BasicFields(t *testing.T) {
 		"func (s *PostService) Create(",
 		"func (s *PostService) Update(",
 		"func (s *PostService) Delete(",
-		"title ILIKE ?", // search on string field
+		"LOWER(title) LIKE LOWER(?)", // search on string field, portable across Postgres + SQLite
 	}
 	for _, want := range checks {
 		if !strings.Contains(got, want) {
