@@ -28,6 +28,49 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.122.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.122.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Per-account lockout.</strong>
+                </p>
+                <p>
+                  Sentinel rate-limits by IP, which does nothing against attempts spread across
+                  many addresses at one account &mdash; the shape of every credential-stuffing
+                  run. Ten wrong passwords now lock an account for fifteen minutes
+                  (<code>LOGIN_MAX_ATTEMPTS</code>, <code>LOGIN_LOCKOUT_MINUTES</code>; set the
+                  first to 0 to disable).
+                </p>
+                <ul>
+                  <li>
+                    <strong>Only wrong passwords on real accounts count.</strong> An unknown
+                    email never locks anything &mdash; counting those would let anyone lock an
+                    address they can guess, turning a defence into a denial-of-service tool.
+                  </li>
+                  <li>
+                    Locked accounts are refused <em>before</em> the password comparison, so the
+                    lockout cannot be probed by timing.
+                  </li>
+                  <li>
+                    The counter increments with a single SQL expression, so parallel attempts
+                    cannot overwrite each other&apos;s count.
+                  </li>
+                  <li>
+                    <code>POST /users/:id/unlock</code> (ADMIN) clears a lockout early, for the
+                    support call five minutes before a demo. The action is written to the
+                    activity log.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* v3.121.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
