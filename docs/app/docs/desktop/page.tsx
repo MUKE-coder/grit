@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { DocsShot } from '@/components/docs-shot'
 import { getDocMetadata } from '@/config/docs-metadata'
 
 export const metadata = getDocMetadata('/docs/desktop')
@@ -176,6 +177,13 @@ wails dev`} className="mb-0 glow-purple-sm" />
               {/* Features */}
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold tracking-tight mb-4">
+              <DocsShot
+                src="/images/forms/offline.png"
+                alt="The desktop app's sync page showing status, last sync, pending changes and a Work offline switch"
+                label="myapp — desktop"
+                caption="The sync surface in a generated desktop app. Reads are answered from a local SQLite mirror, writes queue while offline and push when the connection returns; the Work offline switch lets you exercise that path deliberately rather than by unplugging your router."
+              />
+
                   Built-in Features
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">

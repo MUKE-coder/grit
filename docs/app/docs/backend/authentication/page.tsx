@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { DocsShot } from '@/components/docs-shot'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
@@ -102,6 +103,13 @@ export default function AuthenticationPage() {
     | <--------------------------------|
     |                                  |
 `} />
+
+              <DocsShot
+                src="/images/auth/login.png"
+                alt="The generated sign-in page in a Grit admin panel"
+                label="localhost:3001/login"
+                caption="The sign-in page every scaffold ships with — themed with the rest of the admin, wired to POST /api/v1/auth/login, and rate-limited to 5 attempts per 15 minutes in production."
+              />
 
               {/* ── JWT Tokens ─────────────────────────────── */}
               <h2 id="jwt-tokens">JWT Tokens</h2>
@@ -751,6 +759,13 @@ services.SessionAbsoluteTimeout = 7 * 24 * time.Hour`} />
                 <code>JWT_ACCESS_EXPIRY</code> — that number is exactly your worst-case
                 revocation lag.
               </p>
+
+              <DocsShot
+                src="/images/auth/sessions.png"
+                alt="Active sessions list on the admin profile page, each with a Sign out button"
+                label="localhost:3001/profile"
+                caption="Every refresh token is backed by a session row, so each device can be signed out individually. Changing your password revokes the rest automatically."
+              />
 
               {/* ── Password Hashing ─────────────────────────────── */}
               <h2 id="password-hashing">Password Hashing</h2>

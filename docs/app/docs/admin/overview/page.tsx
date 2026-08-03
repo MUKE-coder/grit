@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { DocsShot } from '@/components/docs-shot'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
@@ -225,6 +226,13 @@ export const postsResource = defineResource({
                 pages for managing infrastructure concerns:
               </p>
 
+              <DocsShot
+                src="/images/system/jobs.png"
+                alt="The background jobs dashboard showing completed image:process jobs"
+                label="localhost:3001/system/jobs"
+                caption="Active, pending, completed, failed and retry counts across your asynq queues, with the dead-letter queue one click away. The image:process jobs here were enqueued by uploading five images."
+              />
+
               <h3>Jobs Dashboard</h3>
               <p>
                 Monitor your Redis-backed background job queue. The jobs dashboard shows live
@@ -233,6 +241,13 @@ export const postsResource = defineResource({
                 Queue stats update in real time via polling.
               </p>
 
+              <DocsShot
+                src="/images/system/files.png"
+                alt="The file storage browser with thumbnails and storage totals"
+                label="localhost:3001/system/files"
+                caption="Totals, a per-type breakdown and thumbnails served back from your bucket. Uploads go browser-to-storage through a presigned URL, so files never pass through the API."
+              />
+
               <h3>File Browser</h3>
               <p>
                 Browse and manage all files uploaded to your S3-compatible storage (AWS S3,
@@ -240,6 +255,13 @@ export const postsResource = defineResource({
                 with file metadata &mdash; name, size, MIME type, upload date. You can delete
                 files, copy URLs, and preview images directly in the admin panel.
               </p>
+
+              <DocsShot
+                src="/images/system/cron.png"
+                alt="The cron scheduler page listing recurring tasks with their schedules"
+                label="localhost:3001/system/cron"
+                caption="Every registered scheduled task with its cron expression — token cleanup hourly, orphaned uploads nightly, backups every 30 minutes. Your own registrations appear here alongside them."
+              />
 
               <h3>Cron Viewer</h3>
               <p>
