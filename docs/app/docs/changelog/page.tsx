@@ -28,6 +28,42 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.124.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.124.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The API reference stops burying your API.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>Third-party mounts are out of the spec.</strong> Pulse, Sentinel and
+                    GORM Studio each mount their own dashboards inside your app, and{' '}
+                    <strong>111</strong> of their routes were being listed at{' '}
+                    <code>/docs</code> alongside the ~134 that are actually yours.
+                  </li>
+                  <li>
+                    <strong>Documented operations went from 4 to 41,</strong> and the schema
+                    catalogue from 9 to 33. Sessions, API keys, uploads, backups, roles,
+                    notifications, users, the GDPR journal, the activity log and its integrity
+                    check now show a typed response instead of &ldquo;No Body&rdquo;.
+                  </li>
+                </ul>
+                <p>
+                  93 operations are still undocumented &mdash; mostly mutations, which need a
+                  named request type before the reference can describe them (the handlers bind
+                  anonymous structs, and there is nothing for the generator to reflect over).
+                  That work continues in Phase 6.5.
+                </p>
+              </div>
+            </div>
+
             {/* v3.123.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

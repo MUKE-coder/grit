@@ -568,18 +568,18 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 - [x] Generated tests: hash-only storage, revoked key rejected, expired key rejected
 - [x] Verified over HTTP end to end
 
-### 6.5 — OpenAPI coverage for built-in endpoints ⬜ not started
+### 6.5 — OpenAPI coverage for built-in endpoints 🟡 partial (v3.124.0: 4 → 41 of 134)
 > The mechanism landed in v3.116.0; auth and generated resources are done.
 > Roughly 240 built-in operations still render "No Body" at `/docs`.
-- [ ] Uploads (presign, complete, list, delete)
-- [ ] Roles + permissions
-- [ ] Backups + backup settings
-- [ ] Notifications
+- [x] Uploads (presign, complete, list, delete) *(responses done; request bodies pending)*
+- [x] Roles + permissions *(responses done; request bodies pending)*
+- [x] Backups + backup settings *(responses done; request bodies pending)*
+- [x] Notifications *(responses done; request bodies pending)*
 - [ ] Jobs + cron admin endpoints
-- [ ] Activity / audit / OCSF
+- [x] Activity / audit / OCSF *(responses done; request bodies pending)*
 - [ ] GDPR + SSO + access reviews
-- [ ] TOTP + sessions
-- [ ] Verify with a scaffolded project: count operations with a request or response schema
+- [x] TOTP + sessions *(responses done; request bodies pending)*
+- [x] Verify with a scaffolded project: count operations with a request or response schema
 
 ### 6.6 — 2FA on Expo and desktop ⬜ not started
 > The API and both admin variants are done. A user with 2FA enabled currently
