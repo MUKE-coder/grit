@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { ArrowRight, Github, Terminal, Layers, Zap, Shield, Database, Bot, Server, Smartphone, ChevronDown, Check, AlertCircle, Upload, TrendingUp, Heart } from 'lucide-react'
+import { Activity, AlertCircle, ArrowRight, Bot, Building2, Check, ChevronDown, Database, FileCheck, Flag, Github, HardDrive, Heart, Layers, LayoutDashboard, Lock, Mail, Monitor, Radio, Rocket, Server, Shield, Smartphone, Terminal, TestTube2, TrendingUp, Upload, UploadCloud, UserCheck, Webhook, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { CodeBlock } from '@/components/code-block'
+import { HeroCodeTabs, InstallTabs } from '@/components/hero-code-tabs'
 import { SoftwareApplicationSchema, FAQPageSchema } from '@/components/structured-data'
 import { FeatureTabs } from '@/components/feature-tabs'
 import { CpuArchitecture } from '@/components/ui/cpu-architecture'
@@ -99,219 +100,139 @@ export default function HomePage() {
         <GlowOrb className="-top-32 left-1/4 h-[400px] w-[400px] bg-sky-400/30" duration={18} />
         <GlowOrb className="top-40 right-1/4 h-[300px] w-[300px] bg-cyan-300/20" delay={2} duration={16} />
 
-        <div className="relative max-w-6xl mx-auto pt-20 pb-16 md:pt-28 md:pb-20 px-6">
+        <div className="relative max-w-7xl mx-auto pt-14 pb-16 md:pt-20 md:pb-24 px-6">
+          {/* Two-column, left-aligned — the shape Nuxt, Wasp and Encore all use.
+              A centred hero sends the eye back to the middle for every line; an
+              asymmetric split lets the copy read as a paragraph and gives the
+              code somewhere permanent to sit. */}
+          <div className="grid lg:grid-cols-[1.15fr_1fr] gap-12 lg:gap-14 items-center">
 
-          {/* GLASS PILL ROW — backend stack → arrow → frontend stack */}
-          <FadeIn delay={0.05}>
-            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-12">
-              {/* Backend pill */}
-              <div className="pill-pulse flex items-center gap-1.5 rounded-full border border-border bg-card/70 backdrop-blur-xl px-2 py-1.5 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.25)]">
-                {[
-                  { src: '/images/icons/go.svg', alt: 'Go' },
-                  { src: '/images/icons/postgressql.png', alt: 'Postgres' },
-                  { src: '/images/icons/redis-logo-svgrepo-com.svg', alt: 'Redis' },
-                  { src: '/images/icons/docker-svgrepo-com.svg', alt: 'Docker' },
-                ].map((logo) => (
-                  <div
-                    key={logo.alt}
-                    title={logo.alt}
-                    className="h-8 w-8 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.15),inset_0_-1px_0_rgba(0,0,0,0.05)] flex items-center justify-center"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={logo.src} alt={logo.alt} className="h-5 w-5 object-contain" />
-                  </div>
-                ))}
-              </div>
-
-              {/* Dotted connector with arrowhead */}
-              <svg className="h-3 w-12 hidden sm:block text-muted-foreground" viewBox="0 0 48 12" fill="none">
-                <line x1="0" y1="6" x2="40" y2="6" stroke="currentColor" strokeOpacity="0.6" strokeWidth="1.5" strokeDasharray="3 3" className="dash-animate" />
-                <path d="M40 2 L46 6 L40 10" stroke="currentColor" strokeOpacity="0.9" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-
-              {/* Frontend pill */}
-              <div className="pill-pulse flex items-center gap-1.5 rounded-full border border-border bg-card/70 backdrop-blur-xl px-2 py-1.5 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.25)]">
-                {[
-                  { node: <ReactLogo className="h-5 w-5" />, alt: 'React' },
-                  { img: '/images/icons/Next.js.svg', alt: 'Next.js' },
-                  { node: <VueLogo className="h-5 w-5" />, alt: 'Vue' },
-                  { node: <SvelteLogo className="h-5 w-5" />, alt: 'Svelte' },
-                  { img: '/images/icons/tanstack-seeklogo.svg', alt: 'TanStack' },
-                ].map((logo, i) => (
-                  <div
-                    key={i}
-                    title={logo.alt}
-                    className="h-8 w-8 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.15),inset_0_-1px_0_rgba(0,0,0,0.05)] flex items-center justify-center"
-                  >
-                    {logo.node ?? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={logo.img} alt={logo.alt} className="h-5 w-5 object-contain" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </FadeIn>
-
-          <FadeIn delay={0.12}>
-            {/* "Go + React" is the weakest claim available here — a dozen
-                stacks combine those. The differentiated one is the vertical
-                slice: one command produces the model, the API, the types, the
-                hooks AND the admin screen, which nothing else in Go does. */}
-            <h1 className="font-display text-4xl md:text-6xl lg:text-[5rem] font-bold tracking-tight text-foreground text-center mb-6 leading-[1.05]">
-              Describe a resource.<br />
-              <span className="bg-gradient-to-r from-primary via-sky-500 to-primary bg-clip-text text-transparent">
-                Get the whole stack.
-              </span>
-            </h1>
-          </FadeIn>
-
-          <FadeIn delay={0.18}>
-            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto text-center mb-10 leading-relaxed">
-              One command writes the Go model, migration, service, handler and routes —
-              then the Zod schemas, TypeScript types, React Query hooks and a working
-              admin screen to match. Auth, RBAC, jobs, storage, realtime, observability
-              and one-command deploy are already in the box.
-            </p>
-          </FadeIn>
-
-          {/* Premium CTAs — magnetic + glass */}
-          <FadeIn delay={0.24}>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
-              <MagneticButton>
+            {/* ── Left: the pitch ─────────────────────────────────────── */}
+            <div className="text-left">
+              <FadeIn>
                 <Link
-                  href="/docs/getting-started/quick-start"
-                  className="group relative inline-flex items-center justify-center gap-2 h-12 px-7 rounded-full bg-primary text-primary-foreground font-semibold text-sm glow-primary-sm hover:bg-primary/90 transition-all"
+                  href="/docs/changelog"
+                  className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-mono font-medium text-primary hover:bg-primary/15 transition-colors mb-7"
                 >
-                  Get started
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  Grit v{GRIT_VERSION} is out
+                  <ArrowRight className="h-3 w-3" />
                 </Link>
-              </MagneticButton>
-              <MagneticButton>
-                <Link
-                  href="/docs"
-                  className="inline-flex items-center justify-center h-12 px-7 rounded-full border border-border bg-card/60 backdrop-blur-xl text-foreground font-medium text-sm hover:bg-accent/40 transition-all"
-                >
-                  Read docs
-                </Link>
-              </MagneticButton>
+              </FadeIn>
+
+              {/* Says what it IS, in the words the audience already uses.
+                  "Opinionated" and "batteries-included" are what people search
+                  for once they are tired of assembling a stack themselves. */}
+              <FadeIn delay={0.08}>
+                <h1 className="font-display text-4xl md:text-5xl lg:text-[3.4rem] xl:text-[3.75rem] font-bold tracking-tight text-foreground mb-6 leading-[1.08]">
+                  <span className="lg:whitespace-nowrap">The Batteries-Included</span>
+                  <br />
+                  <span className="lg:whitespace-nowrap">Full-Stack Framework</span>
+                  <br />
+                  <span className="bg-gradient-to-r from-primary via-sky-500 to-primary bg-clip-text text-transparent">
+                    for Go &amp; React
+                  </span>
+                </h1>
+              </FadeIn>
+
+              <FadeIn delay={0.14}>
+                <p className="text-base md:text-lg text-muted-foreground mb-8 leading-relaxed max-w-xl">
+                  Opinionated by design. Describe a resource and Grit writes the Go model,
+                  API, migrations, TypeScript types, React hooks and admin screen. Auth,
+                  RBAC, jobs, storage, realtime, observability and deploy &mdash; all
+                  configured out of the box.
+                </p>
+              </FadeIn>
+
+              <FadeIn delay={0.2}>
+                <div className="flex flex-wrap items-center gap-3 mb-8">
+                  <MagneticButton>
+                    <Link
+                      href="/docs/start"
+                      className="group relative inline-flex items-center justify-center gap-2 h-12 px-7 rounded-full bg-primary text-primary-foreground font-semibold text-sm glow-primary-sm hover:bg-primary/90 transition-all"
+                    >
+                      Get started
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                  </MagneticButton>
+                  <MagneticButton>
+                    <Link
+                      href="/docs/getting-started/philosophy"
+                      className="inline-flex items-center justify-center h-12 px-7 rounded-full border border-border bg-card/60 backdrop-blur-xl text-foreground font-medium text-sm hover:bg-accent/40 transition-all"
+                    >
+                      Our philosophy
+                    </Link>
+                  </MagneticButton>
+                </div>
+              </FadeIn>
+
+              {/* Platform-tabbed, Windows first — see InstallTabs. */}
+              <FadeIn delay={0.26}>
+                <InstallTabs />
+                <p className="text-xs text-muted-foreground mt-2.5">
+                  Detects an existing install and runs{' '}
+                  <code className="text-foreground/80">grit update</code>, otherwise pulls the
+                  right binary for your OS.{' '}
+                  <Link
+                    href="/docs/getting-started/installation"
+                    className="text-foreground/80 hover:text-primary underline underline-offset-2"
+                  >
+                    All install options
+                  </Link>
+                </p>
+              </FadeIn>
+
+              {/* The stack, stated rather than implied. Small on purpose — it is
+                  reassurance, not the headline. */}
+              <FadeIn delay={0.3}>
+                <div className="flex items-center gap-4 mt-9 pt-7 border-t border-border/40">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground/70 shrink-0">
+                    Built on
+                  </span>
+                  <div className="flex items-center gap-2.5">
+                    {[
+                      { src: '/images/icons/go.svg', alt: 'Go' },
+                      { src: '/images/icons/postgressql.png', alt: 'Postgres' },
+                      { src: '/images/icons/redis-logo-svgrepo-com.svg', alt: 'Redis' },
+                      { src: '/images/icons/docker-svgrepo-com.svg', alt: 'Docker' },
+                    ].map((logo) => (
+                      <div
+                        key={logo.alt}
+                        title={logo.alt}
+                        className="h-7 w-7 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={logo.src} alt={logo.alt} className="h-4 w-4 object-contain" />
+                      </div>
+                    ))}
+                    <span aria-hidden className="mx-0.5 text-muted-foreground/40">
+                      +
+                    </span>
+                    <div className="h-7 w-7 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center" title="React">
+                      <ReactLogo className="h-4 w-4" />
+                    </div>
+                    <div className="h-7 w-7 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center" title="Next.js">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/images/icons/Next.js.svg" alt="Next.js" className="h-4 w-4 object-contain" />
+                    </div>
+                    <div className="h-7 w-7 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center" title="Vue">
+                      <VueLogo className="h-4 w-4" />
+                    </div>
+                    <div className="h-7 w-7 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center" title="Svelte">
+                      <SvelteLogo className="h-4 w-4" />
+                    </div>
+                  </div>
+                </div>
+              </FadeIn>
             </div>
-          </FadeIn>
 
-          {/* INSTALL pills — install-or-update one-liners, lives right above the editor.
-              One command works whether you already have grit or not: it detects an existing
-              install and runs `grit update` (idempotent), otherwise downloads the matching
-              release binary for your OS / arch. */}
-          <FadeIn delay={0.28}>
-            <div className="max-w-2xl mx-auto mb-10 mt-2 space-y-2.5">
-              <div className="rounded-xl border border-border bg-card/40 backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.25)]">
-                <CodeBlock
-                  terminal
-                  filename="Install or update — macOS / Linux"
-                  code={`curl -fsSL https://gritframework.dev/install.sh | sh`}
-                  className="!border-0 !rounded-xl !bg-transparent dark:!bg-transparent !m-0"
-                />
-              </div>
-              <div className="rounded-xl border border-border bg-card/40 backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.25)]">
-                <CodeBlock
-                  terminal
-                  filename="Install or update — Windows (PowerShell)"
-                  code={`iwr -useb https://gritframework.dev/install.ps1 | iex`}
-                  className="!border-0 !rounded-xl !bg-transparent dark:!bg-transparent !m-0"
-                />
-              </div>
-              <p className="text-center text-xs text-muted-foreground pt-1">
-                Detects an existing install and runs <code className="text-foreground/80">grit update</code>; otherwise pulls the right binary for your OS/arch.
-                Prefer Go? <code className="text-foreground/80">go install github.com/MUKE-coder/grit/v3/cmd/grit@latest</code>
-              </p>
-            </div>
-          </FadeIn>
+            {/* ── Right: four tabs, because "batteries included" is a claim
+                   until someone sees the batteries ──────────────────── */}
+            <FadeIn delay={0.34}>
+              <HeroCodeTabs />
+            </FadeIn>
 
-          {/* SIDE-BY-SIDE GITHUB EDITOR — bold border, layered shadow, file tabs row at top */}
-          <FadeIn delay={0.32}>
-            <div className="relative rounded-2xl overflow-hidden bg-[#ffffff] dark:bg-[#0d1117] border border-border shadow-[0_24px_64px_-16px_rgba(2,6,23,0.5)]">
-              {/* Editor chrome — file tab strip */}
-              <div className="flex items-center gap-0 bg-[#f6f8fa] dark:bg-[#161b22] border-b border-[#d0d7de] dark:border-white/[0.08]">
-                {/* Window dots */}
-                <div className="flex items-center gap-1.5 px-4 py-2.5 border-r border-[#d0d7de]/60 dark:border-white/[0.06]">
-                  <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                  <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                  <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                </div>
-                {/* Active file tabs */}
-                <div className="flex items-center gap-2 px-3 py-2.5 border-r border-[#d0d7de]/60 dark:border-white/[0.06] bg-white dark:bg-[#0d1117] -mb-px">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/images/icons/go.svg" alt="" className="h-3.5 w-3.5" />
-                  <span className="text-[12px] font-mono text-[#24292f] dark:text-slate-300">internal/handlers/product.go</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2.5">
-                  <ReactLogo className="h-3.5 w-3.5" />
-                  <span className="text-[12px] font-mono text-[#57606a] dark:text-slate-500">frontend/src/hooks/use-products.ts</span>
-                  <span className="ml-1 text-[9px] font-mono text-[#57606a]/70 dark:text-slate-500/70 uppercase tracking-wider">tsx</span>
-                </div>
-                <div className="ml-auto text-[10px] font-mono text-[#57606a] dark:text-slate-500 px-4 hidden md:block">
-                  generated · 2 files
-                </div>
-              </div>
-
-              {/* Two-pane code body — GitHub theme, light/dark aware */}
-              <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#d0d7de] dark:divide-white/[0.06] bg-white dark:bg-[#0d1117]">
-                <div className="text-left">
-                  <CodeBlock
-                    code={`package handlers
-
-import (
-    "net/http"
-    "github.com/gin-gonic/gin"
-    "myapp/internal/authz"
-)
-
-func (h *ProductHandler) List(c *gin.Context) {
-    var products []models.Product
-    h.DB.
-        Where("user_id = ?", c.GetString("user_id")).
-        Find(&products)
-
-    c.JSON(http.StatusOK, gin.H{
-        "data": products,
-    })
-}`}
-                    language="go"
-                    className="!border-0 !rounded-none !shadow-none !bg-transparent dark:!bg-transparent !m-0"
-                  />
-                </div>
-                <div className="text-left">
-                  <CodeBlock
-                    code={`import { useQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api'
-
-export function useProducts() {
-  return useQuery({
-    queryKey: ['products'],
-    queryFn: async () => {
-      const res = await api
-        .get('/api/products')
-      return res.data.data
-    },
-  })
-}`}
-                    language="tsx"
-                    className="!border-0 !rounded-none !shadow-none !bg-transparent dark:!bg-transparent !m-0"
-                  />
-                </div>
-              </div>
-
-              {/* Footer attribution strip */}
-              <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#f6f8fa] dark:bg-[#161b22] border-t border-[#d0d7de] dark:border-white/[0.08]">
-                <Terminal className="h-3 w-3 text-[#57606a] dark:text-slate-500" />
-                <span className="text-[11px] font-mono text-[#57606a] dark:text-slate-400">
-                  Both files generated by{' '}
-                  <span className="text-sky-700 dark:text-sky-400 font-semibold">grit generate resource Product</span>
-                </span>
-              </div>
-            </div>
-          </FadeIn>
-
+          </div>
         </div>
       </section>
 
@@ -339,33 +260,35 @@ export function useProducts() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
             {[
-              { label: 'Auth, OAuth & 2FA', href: '/docs/backend/authentication' },
-              { label: 'Roles & permissions', href: '/docs/backend/rbac' },
-              { label: 'Admin panel', href: '/docs/admin/overview' },
-              { label: 'Background jobs', href: '/docs/batteries' },
-              { label: 'File storage & uploads', href: '/docs/batteries' },
-              { label: 'Realtime WebSockets', href: '/docs/backend/realtime' },
-              { label: 'Email & notifications', href: '/docs/batteries' },
-              { label: 'AI gateway', href: '/docs/ai-integration' },
-              { label: 'Observability (Pulse)', href: '/docs/backend/pulse' },
-              { label: 'WAF & rate limiting', href: '/docs/security' },
-              { label: 'Tamper-evident audit log', href: '/docs/security' },
-              { label: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
-              { label: 'Webhooks', href: '/docs/backend/webhooks' },
-              { label: 'Feature flags', href: '/docs/backend/feature-flags' },
-              { label: 'Generated tests', href: '/docs/testing' },
-              { label: 'Backups & restore', href: '/docs/deployment/checklist' },
-              { label: 'Offline-first desktop', href: '/docs/desktop' },
-              { label: 'Mobile (Expo)', href: '/docs/mobile/getting-started' },
-              { label: 'MCP server for AI agents', href: '/docs/ai-integration' },
-              { label: 'One-command deploy', href: '/docs/deployment' },
+              { icon: Lock, label: 'Auth, OAuth & 2FA', href: '/docs/backend/authentication' },
+              { icon: UserCheck, label: 'Roles & permissions', href: '/docs/backend/rbac' },
+              { icon: LayoutDashboard, label: 'Admin panel', href: '/docs/admin/overview' },
+              { icon: Zap, label: 'Background jobs', href: '/docs/batteries' },
+              { icon: UploadCloud, label: 'File storage & uploads', href: '/docs/batteries' },
+              { icon: Radio, label: 'Realtime WebSockets', href: '/docs/backend/realtime' },
+              { icon: Mail, label: 'Email & notifications', href: '/docs/batteries' },
+              { icon: Bot, label: 'AI gateway', href: '/docs/ai-integration' },
+              { icon: Activity, label: 'Observability (Pulse)', href: '/docs/backend/pulse' },
+              { icon: Shield, label: 'WAF & rate limiting', href: '/docs/security' },
+              { icon: FileCheck, label: 'Tamper-evident audit log', href: '/docs/security' },
+              { icon: Building2, label: 'Multi-tenancy', href: '/docs/plugins/multitenant' },
+              { icon: Webhook, label: 'Webhooks', href: '/docs/backend/webhooks' },
+              { icon: Flag, label: 'Feature flags', href: '/docs/backend/feature-flags' },
+              { icon: TestTube2, label: 'Generated tests', href: '/docs/testing' },
+              { icon: HardDrive, label: 'Backups & restore', href: '/docs/deployment/checklist' },
+              { icon: Monitor, label: 'Offline-first desktop', href: '/docs/desktop' },
+              { icon: Smartphone, label: 'Mobile (Expo)', href: '/docs/mobile/getting-started' },
+              { icon: Bot, label: 'MCP server for AI agents', href: '/docs/ai-integration' },
+              { icon: Rocket, label: 'One-command deploy', href: '/docs/deployment' },
             ].map((cap) => (
               <Link
                 key={cap.label}
                 href={cap.href}
-                className="group flex items-center gap-2 rounded-lg border border-border/50 bg-card/40 px-3 py-2.5 text-[13px] transition-colors hover:border-border hover:bg-card/70"
+                className="group flex items-center gap-2.5 rounded-lg border border-border/50 bg-card/40 px-3 py-2.5 text-[13px] transition-colors hover:border-border hover:bg-card/70"
               >
-                <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+                  <cap.icon className="h-3.5 w-3.5" />
+                </span>
                 <span className="text-muted-foreground group-hover:text-foreground transition-colors leading-snug">
                   {cap.label}
                 </span>
