@@ -26,9 +26,11 @@ interface Feature {
   headline: string
   blurb: string
   points: string[]
-  /** Either a screenshot or a code sample carries each tab. */
+  /** A tab carries screenshots or a code sample. */
   image?: string
   imageLabel?: string
+  /** Several shots, switched by sub-tabs, for features that are a flow. */
+  shots?: { src: string; label: string; chrome: string }[]
   code?: string
   language?: string
   codeFile?: string
@@ -103,32 +105,19 @@ OAUTH_FRONTEND_URL=http://localhost:3001
     icon: ShieldCheck,
     headline: 'TOTP with backup codes and trusted devices',
     blurb:
-      'Authenticator-app 2FA on the API: setup, enable, disable, ten single-use backup codes, and devices a user can trust for 30 days. The endpoints and the login challenge are complete — the admin panel does not yet ship a screen to drive them, so this is wiring you call rather than a page you click.',
+      'Scan a QR, confirm with a live code, and save ten backup codes. From then on a sign-in from an untrusted device asks for a code — or a backup code, if the phone is gone. All of it in the generated admin, not a wiring exercise.',
     points: [
+      'The QR is rendered by the API, so no client ships an encoder or touches the raw secret',
+      'Ten backup codes, hashed at rest and consumed on use — shown exactly once',
+      'Trust a device for 30 days; list them, revoke one, or revoke all',
       'Login returns a short-lived pending token instead of a session when 2FA is due',
-      'Ten backup codes, hashed at rest and consumed on use',
-      'Trusted devices last 30 days, revocable in one call',
-      'setup returns an otpauth:// URI and the secret — render the QR wherever you want it',
       'TOTP_ISSUER controls the name shown in the authenticator app',
     ],
-    code: `// Endpoints the scaffold registers
-
-// Public — used while holding a pending token
-POST   /api/v1/auth/totp/verify
-POST   /api/v1/auth/totp/backup-codes/verify
-
-// Authenticated
-POST   /api/v1/auth/totp/setup            // returns the QR payload
-POST   /api/v1/auth/totp/enable
-POST   /api/v1/auth/totp/disable
-GET    /api/v1/auth/totp/status
-POST   /api/v1/auth/totp/backup-codes     // regenerate
-DELETE /api/v1/auth/totp/trusted-devices
-
-// Login response when 2FA is on and the device is not trusted:
-// { "totp_required": true, "pending_token": "…" }`,
-    language: 'go',
-    codeFile: 'internal/routes/routes.go',
+    shots: [
+      { src: '/images/auth/2fa-setup.png', label: 'Enrol', chrome: 'localhost:3001/profile' },
+      { src: '/images/auth/2fa-challenge.png', label: 'Challenge', chrome: 'localhost:3001/login' },
+      { src: '/images/auth/2fa-on.png', label: 'Manage', chrome: 'localhost:3001/profile' },
+    ],
   },
   {
     key: 'rbac',
@@ -161,7 +150,16 @@ USER   → []`,
 
 export function AuthShowcase() {
   const [active, setActive] = useState(FEATURES[0].key)
+  const [shot, setShot] = useState(0)
   const feature = FEATURES.find((f) => f.key === active) ?? FEATURES[0]
+  // Guard the index: switching tabs leaves it pointing past a shorter list.
+  const shots = feature.shots ?? []
+  const current = shots[Math.min(shot, shots.length - 1)]
+
+  const pick = (key: string) => {
+    setActive(key)
+    setShot(0)
+  }
 
   return (
     <div>
@@ -174,7 +172,7 @@ export function AuthShowcase() {
               type="button"
               role="tab"
               aria-selected={selected}
-              onClick={() => setActive(f.key)}
+              onClick={() => pick(f.key)}
               className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                 selected
                   ? 'border-primary/40 bg-primary/10 text-foreground'
@@ -190,7 +188,55 @@ export function AuthShowcase() {
 
       <div className="grid lg:grid-cols-[1fr_20rem] gap-8 lg:gap-10 items-start">
         <div>
-          {feature.image ? (
+          {shots.length > 0 ? (
+            <>
+              <div role="tablist" aria-label="Two-factor step" className="flex gap-1.5 mb-3">
+                {shots.map((sh, i) => {
+                  const on = i === Math.min(shot, shots.length - 1)
+                  return (
+                    <button
+                      key={sh.src}
+                      type="button"
+                      role="tab"
+                      aria-selected={on}
+                      onClick={() => setShot(i)}
+                      className={`rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                        on
+                          ? 'border-primary/40 bg-primary/10 text-foreground'
+                          : 'border-border/50 text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <span className="font-mono text-[10px] text-muted-foreground/60 mr-1.5">
+                        {i + 1}
+                      </span>
+                      {sh.label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div className="rounded-xl overflow-hidden border border-border bg-card/40 shadow-[0_24px_64px_-16px_rgba(2,6,23,0.5)]">
+                <div className="flex items-center gap-2 px-3.5 py-2.5 bg-card/70 border-b border-border/60">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                  </div>
+                  <span className="mx-auto text-[11px] font-mono text-muted-foreground">
+                    {current.chrome}
+                  </span>
+                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  key={current.src}
+                  src={current.src}
+                  alt={`${feature.label}: ${current.label}`}
+                  className="w-full h-auto block"
+                  loading="lazy"
+                />
+              </div>
+            </>
+          ) : feature.image ? (
             <div className="rounded-xl overflow-hidden border border-border bg-card/40 shadow-[0_24px_64px_-16px_rgba(2,6,23,0.5)]">
               <div className="flex items-center gap-2 px-3.5 py-2.5 bg-card/70 border-b border-border/60">
                 <div className="flex items-center gap-1.5">
@@ -243,9 +289,8 @@ export function AuthShowcase() {
       {/* Stating the gaps costs one line and buys the rest of the page. */}
       <p className="text-[11.5px] text-muted-foreground/70 mt-8 pt-5 border-t border-border/40 leading-relaxed max-w-3xl">
         Not included, so you are not surprised later: there is no email-verification flow (the
-        field exists and social sign-in sets it, but nothing sends a verification mail), no
-        API-key authentication (machine callers use the same JWT flow), and no 2FA screen in
-        the admin yet &mdash; the TOTP endpoints are there, the UI to drive them is not.
+        field exists and social sign-in sets it, but nothing sends a verification mail), and no
+        API-key authentication &mdash; machine callers use the same JWT flow.
       </p>
     </div>
   )

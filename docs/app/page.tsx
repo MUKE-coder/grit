@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { Activity, AlertCircle, ArrowRight, Bot, Building2, Check, ChevronDown, Database, FileCheck, Flag, Github, HardDrive, Heart, Layers, LayoutDashboard, Lock, Mail, Monitor, Radio, Rocket, Server, Shield, Smartphone, Terminal, TestTube2, TrendingUp, Upload, UploadCloud, UserCheck, Webhook, Zap } from 'lucide-react'
+import { Activity, ArrowRight, Bot, Building2, Check, ChevronDown, Database, FileCheck, Flag, Github, HardDrive, Heart, Layers, LayoutDashboard, Lock, Mail, Monitor, Radio, Rocket, Server, Shield, Smartphone, Terminal, TestTube2, TrendingUp, UploadCloud, UserCheck, Webhook, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { CodeBlock } from '@/components/code-block'
@@ -13,11 +13,13 @@ import { FormShowcase } from '@/components/form-showcase'
 import { AuthShowcase } from '@/components/auth-showcase'
 import { ResourceDefinitionShowcase } from '@/components/resource-definition-showcase'
 import { InfraShowcase } from '@/components/infra-showcase'
+import { ComplianceShowcase } from '@/components/compliance-showcase'
+import { DeployShowcase } from '@/components/deploy-showcase'
 import { SoftwareApplicationSchema, FAQPageSchema } from '@/components/structured-data'
 import { FeatureTabs } from '@/components/feature-tabs'
 import { CpuArchitecture } from '@/components/ui/cpu-architecture'
 import { MagneticButton, GSAPSection, FadeIn, GlowOrb } from '@/components/motion-primitives'
-import { GoLogo, ReactLogo, NextLogo, TanStackLogo, TypeScriptLogo, TailwindLogo, PostgresLogo, RedisLogo, DockerLogo } from '@/components/framework-logos'
+import { ReactLogo, TanStackLogo } from '@/components/framework-logos'
 import { CommunityCTA, WhatsAppIcon, WHATSAPP_COMMUNITY_URL } from '@/components/community-cta'
 import { HubAndSpoke } from '@/components/hub-and-spoke'
 import { WhatIsGrit } from '@/components/what-is-grit'
@@ -449,6 +451,31 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ═══ COMPLIANCE & ENTERPRISE ═══
+
+          The section a buyer's security reviewer reads. Every claim is one the
+          code backs — "tamper-evident" is a real hash chain with a verify
+          endpoint, not a turn of phrase. */}
+      <section className="py-20 md:py-24 px-6 border-b border-border/40">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-10">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Compliance
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
+              The questions enterprise<br />buyers ask first.
+            </h2>
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+              GDPR export and erasure with a tamper-evident journal, SSO per customer over OIDC
+              or SAML, access-review campaigns for SOC 2, and a hash-chained audit trail that
+              exports to your SIEM. Built in, not bought later.
+            </p>
+          </div>
+
+          <ComplianceShowcase />
+        </div>
+      </section>
+
       {/* ═══ RESOURCE DEFINITION ═══ */}
       <section className="py-20 md:py-24 px-6 border-b border-border/40">
         <div className="max-w-6xl mx-auto">
@@ -489,6 +516,30 @@ export default function HomePage() {
           </div>
 
           <InfraShowcase />
+        </div>
+      </section>
+
+      {/* ═══ DEPLOYMENT ═══
+
+          Reads DEPLOYMENT_PROVIDERS, the same config the docs pages use, so
+          the two cannot drift. */}
+      <section className="py-20 md:py-24 px-6 border-b border-border/40">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-10">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Deployment
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
+              It is a Go binary<br />and some containers.
+            </h2>
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+              Which means it runs anywhere &mdash; a $5 VPS, a managed platform, or your own
+              Docker host. Pick a target for the actual steps, what it costs, and the thing that
+              catches people out.
+            </p>
+          </div>
+
+          <DeployShowcase />
         </div>
       </section>
 
@@ -844,352 +895,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ 3-COLUMN FEATURE GRID — illustrated cards ═══ */}
-      <section className="py-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-            {/* Multi-architecture */}
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">5 architectures, one CLI</h3>
-              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
-                Pick the scaffold that fits — embed your SPA in the binary, or split web /
-                admin / API into a monorepo. Same generators across all of them.
-              </p>
-              <div className="rounded-xl border border-border/40 bg-card/50 p-6">
-                <div className="flex items-center justify-center h-32 relative">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="grid grid-cols-3 gap-2.5">
-                      {['single', 'double', 'triple', 'api', 'mobile', 'desktop'].map((name, i) => (
-                        <div key={name} className={`h-10 w-10 rounded-xl border ${i === 2 ? 'border-primary/40 bg-primary/15 ring-2 ring-primary/20' : 'border-border/40 bg-background'} flex items-center justify-center`}>
-                          {i === 0 && <Zap className="h-4 w-4 text-sky-400" />}
-                          {i === 1 && <Layers className="h-4 w-4 text-violet-400" />}
-                          {i === 2 && <Server className="h-4 w-4 text-emerald-400" />}
-                          {i === 3 && <Database className="h-4 w-4 text-amber-400" />}
-                          {i === 4 && <Smartphone className="h-4 w-4 text-rose-400" />}
-                          {i === 5 && <Terminal className="h-4 w-4 text-cyan-400" />}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* More than just Go */}
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">More than just Go</h3>
-              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
-                Grit works with Gin, GORM, asynq, Resend, Sentinel, Pulse, and a curated
-                stack designed to play together — so you always have what your team adores.
-              </p>
-              <div className="rounded-xl border border-border/40 bg-card/50 p-6">
-                <div className="grid grid-cols-3 gap-2.5">
-                  {[
-                    { c: 'bg-sky-500/15 text-sky-400', l: 'Go' },
-                    { c: 'bg-cyan-500/15 text-cyan-400', l: 'Gin' },
-                    { c: 'bg-rose-500/15 text-rose-400', l: 'GORM' },
-                    { c: 'bg-violet-500/15 text-violet-400', l: 'PG' },
-                    { c: 'bg-red-500/15 text-red-400', l: 'Redis' },
-                    { c: 'bg-amber-500/15 text-amber-400', l: 'R2' },
-                    { c: 'bg-emerald-500/15 text-emerald-400', l: 'JWT' },
-                    { c: 'bg-pink-500/15 text-pink-400', l: 'Resend' },
-                    { c: 'bg-indigo-500/15 text-indigo-400', l: 'AI' },
-                  ].map((t) => (
-                    <div key={t.l} className={`h-12 rounded-xl ${t.c} flex items-center justify-center font-mono font-bold text-xs`}>
-                      {t.l}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Flexible frontend */}
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">Flexible frontend</h3>
-              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
-                Ship a Next.js SaaS or a Vite + TanStack Router SPA. Generated hooks +
-                types match either, so swapping the frontend never rewrites your API.
-              </p>
-              <div className="rounded-xl border border-border/40 bg-card/50 p-6">
-                <div className="space-y-2.5">
-                  {[
-                    { name: 'users.tsx', sel: false, ico: '⚛' },
-                    { name: 'use-users.ts', sel: false, ico: '⚛' },
-                    { name: 'products.tsx', sel: true, ico: '⚛' },
-                  ].map((f, i) => (
-                    <div key={i} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-mono ${f.sel ? 'bg-primary/10 border border-primary/30 text-primary' : 'bg-background border border-border/40 text-muted-foreground'}`}>
-                      <span className={f.sel ? 'text-primary' : 'text-cyan-400/60'}>{f.ico}</span>
-                      {f.name}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ FORMS / SECURITY / PERFORMANCE — Inertia-style mockup cards ═══ */}
-      <section className="py-12 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            {/* Forms */}
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">Form Builder</h3>
-              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
-                Grit streamlines form management with simple submissions, intuitive slots
-                and props, and fully typed event handlers for a seamless experience.
-              </p>
-              <div className="rounded-xl border border-border/40 bg-card/50 p-6">
-                <div className="space-y-2">
-                  {[
-                    { icon: <Check className="h-3.5 w-3.5 text-emerald-400" />, label: 'Validation' },
-                    { icon: <Upload className="h-3.5 w-3.5 text-sky-400" />, label: 'File Uploads' },
-                    { icon: <AlertCircle className="h-3.5 w-3.5 text-rose-400" />, label: 'Error Handling' },
-                    { icon: <Check className="h-3.5 w-3.5 text-emerald-400" />, label: '16+ Field Types' },
-                  ].map((row) => (
-                    <div key={row.label} className="flex items-center gap-3 rounded-lg border border-border/40 bg-background px-4 py-2.5">
-                      <span className="h-5 w-5 rounded-full bg-card flex items-center justify-center">{row.icon}</span>
-                      <span className="text-sm text-foreground/80">{row.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Security / Performance / Observability — three score circles */}
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">Production-grade by default</h3>
-              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
-                Enjoy out-of-the-box security headers, percentile latency tracking, and a
-                Lighthouse-ready frontend the moment you run <code>grit new</code>.
-              </p>
-              <div className="rounded-xl border border-border/40 bg-card/50 p-6">
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: 'SECURITY', score: '100', tone: 'text-emerald-400', ring: 'stroke-emerald-400', sub: 'OWASP 2025' },
-                    { label: 'PERFORMANCE', score: '98', tone: 'text-amber-400', ring: 'stroke-amber-400', sub: 'Pulse SLO' },
-                    { label: 'OBSERVABILITY', score: '100', tone: 'text-sky-400', ring: 'stroke-sky-400', sub: 'p50/p95/p99' },
-                  ].map((s) => (
-                    <div key={s.label} className="flex flex-col items-center">
-                      <div className="relative h-16 w-16 mb-2">
-                        <svg className="h-16 w-16 -rotate-90" viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="15.9" fill="none" className="stroke-border/40" strokeWidth="2.5" />
-                          <circle cx="18" cy="18" r="15.9" fill="none" className={s.ring} strokeWidth="2.5" strokeDasharray={`${s.score}, 100`} strokeLinecap="round" />
-                        </svg>
-                        <div className={`absolute inset-0 flex items-center justify-center font-bold text-base ${s.tone}`}>{s.score}</div>
-                      </div>
-                      <div className="text-[9px] font-mono font-medium text-foreground/80 tracking-wider">{s.label}</div>
-                      <div className="text-[9px] text-muted-foreground mt-0.5">{s.sub}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ 6-CELL TEXT FEATURE LIST — Inertia 3×2 ═══ */}
-      <section className="py-12 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-8">
-            {[
-              { title: 'Background jobs', desc: 'Redis-backed asynq queue. Image processing, email sending, scheduled cleanup — wired in.' },
-              { title: 'Realtime hub', desc: 'WebSocket fan-out at /api/ws. SendToUser and Broadcast helpers; useRealtimeEvent hook on the client.' },
-              { title: 'Idempotency-Key', desc: 'Auto-attached on unsafe methods. Replay the original 2xx response for 24h — safe retries everywhere.' },
-              { title: 'CSV / Excel export', desc: 'Every generated resource ships /export?format=xlsx. Streaming CSV, chunked XLSX, constant memory.' },
-              { title: 'PDF generation', desc: 'internal/pdf with a worked Invoice template — typeset, branded, ready to email or download.' },
-              { title: 'Feature flags', desc: 'In-memory engine, sticky bucketing, percentage rollouts, allow/blocklists, realtime admin push.' },
-            ].map((item) => (
-              <div key={item.title}>
-                <h4 className="font-semibold text-foreground text-sm mb-2">{item.title}</h4>
-                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ 3-COLUMN VISUAL FEATURE CARDS — Inertia bottom row ═══ */}
-      <section className="py-12 px-6 mb-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-            {/* Offline-first */}
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">Offline-first sync</h3>
-              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
-                Local SQLite mirror + outbox with squash semantics. Click Sync, resolve
-                field-level conflicts, push.
-              </p>
-              <div className="rounded-xl border border-border/40 bg-card/50 p-6">
-                <Button className="w-full rounded-full bg-primary/90 hover:bg-primary text-primary-foreground" size="sm">
-                  Sync now
-                </Button>
-                <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>Last synced</span>
-                  <span className="font-mono">12s ago</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Audit chain */}
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">Tamper-evident audit log</h3>
-              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
-                Every mutation is appended to a SHA-256 hash chain. Verify integrity from
-                the admin in one click.
-              </p>
-              <div className="rounded-xl border border-border/40 bg-card/50 p-6 space-y-2">
-                {[
-                  { hash: 'a3f1...c92', user: 'maya@acme.com', action: 'POST /api/invoices' },
-                  { hash: 'b9d2...44e', user: 'jb@grit.dev', action: 'PUT /api/users/42' },
-                  { hash: 'c1e7...8af', user: 'maya@acme.com', action: 'DELETE /api/blogs/9' },
-                ].map((row) => (
-                  <div key={row.hash} className="flex items-center justify-between text-[11px]">
-                    <code className="text-emerald-400/80 font-mono">{row.hash}</code>
-                    <span className="text-muted-foreground/70 truncate">{row.action}</span>
-                  </div>
-                ))}
-                <div className="mt-2 pt-2 border-t border-border/30 flex items-center gap-1.5 text-[10px] text-emerald-400 font-mono">
-                  <Check className="h-3 w-3" /> integrity verified
-                </div>
-              </div>
-            </div>
-
-            {/* Infinite scrolling / pagination */}
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">Cursor pagination</h3>
-              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
-                Sticky-page pagination on every generated list endpoint. No skipped rows
-                when data shifts mid-scroll.
-              </p>
-              <div className="rounded-xl border border-border/40 bg-card/50 p-6 space-y-2">
-                {[
-                  { id: '#1284', name: 'Invoice — Acme Inc', tone: 'text-emerald-400 bg-emerald-400/10', tag: 'Paid' },
-                  { id: '#1283', name: 'Invoice — Globex', tone: 'text-amber-400 bg-amber-400/10', tag: 'Pending' },
-                  { id: '#1282', name: 'Invoice — Initech', tone: 'text-rose-400 bg-rose-400/10', tag: 'Overdue' },
-                ].map((row) => (
-                  <div key={row.id} className="flex items-center justify-between text-[11px]">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-muted-foreground/70">{row.id}</span>
-                      <span className="text-foreground/80 truncate">{row.name}</span>
-                    </div>
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${row.tone}`}>{row.tag}</span>
-                  </div>
-                ))}
-                <div className="mt-2 pt-2 border-t border-border/30 text-[10px] text-muted-foreground font-mono">
-                  has_more · cursor: eyJ0ID...
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ BENTO GRID — original auth/admin/AI/storage/codegen ═══ */}
-      <section className="py-24 px-6 border-t border-border/40">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">Everything Included</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Batteries-included framework</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Every Grit project ships with production-ready features out of the box.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
-            {/* Large card — Auth */}
-            <div className="lg:col-span-2 rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center icon-animated">
-                  <Shield className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Authentication + 2FA</h3>
-                  <p className="text-xs text-muted-foreground">JWT, OAuth2, TOTP, backup codes, trusted devices</p>
-                </div>
-              </div>
-              <CodeBlock language="bash" filename="Terminal" className="mb-0" code={`POST /api/auth/register    → JWT tokens
-POST /api/auth/login       → JWT tokens (or totp_required + pending_token)
-POST /api/auth/totp/verify  → Exchange TOTP code for JWT
-GET  /api/auth/me          → Current user (protected)
-GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
-            </div>
-
-            {/* Small card — Admin */}
-            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
-              <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-4 icon-animated">
-                <Layers className="h-5 w-5 text-emerald-400" />
-              </div>
-              <h3 className="font-semibold text-foreground mb-2">Admin Panel</h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                DataTable, FormBuilder, dashboard widgets, resource definitions.
-              </p>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>- Sort, filter, paginate, search</li>
-                <li>- 16+ form field types</li>
-                <li>- Multi-step form wizards</li>
-                <li>- 4 style variants</li>
-              </ul>
-            </div>
-
-            {/* Small card — AI */}
-            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
-              <div className="h-10 w-10 rounded-lg bg-violet-500/10 flex items-center justify-center mb-4 icon-animated">
-                <Bot className="h-5 w-5 text-violet-400" />
-              </div>
-              <h3 className="font-semibold text-foreground mb-2">AI Gateway</h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                One API key, hundreds of models via Vercel AI Gateway.
-              </p>
-              <code className="text-xs font-mono text-primary/80 bg-primary/5 px-2 py-1 rounded">
-                anthropic/claude-sonnet-4-6
-              </code>
-            </div>
-
-            {/* Small card — Storage */}
-            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
-              <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center mb-4 icon-animated">
-                <Database className="h-5 w-5 text-amber-400" />
-              </div>
-              <h3 className="font-semibold text-foreground mb-2">File Storage</h3>
-              <p className="text-sm text-muted-foreground">
-                Presigned URL uploads to S3, R2, or MinIO. Image processing. Progress tracking.
-              </p>
-            </div>
-
-            {/* Large card — Code Gen */}
-            <div className="lg:col-span-2 rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-10 w-10 rounded-lg bg-cyan-500/10 flex items-center justify-center icon-animated">
-                  <Terminal className="h-5 w-5 text-cyan-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Full-Stack Code Generation</h3>
-                  <p className="text-xs text-muted-foreground">One command generates Go + React + admin in seconds</p>
-                </div>
-              </div>
-              <CodeBlock language="bash" filename="Terminal" className="mb-0" code={`$ grit generate resource Product --fields "name:string,price:float,stock:int"
-
-  ✓ internal/models/product.go
-  ✓ internal/services/product.go
-  ✓ internal/handlers/product.go
-  ✓ apps/admin/src/routes/_dashboard/resources/products.tsx
-  ✓ Injected model, handler, routes, resource registry
-
-  ✅ Resource Product generated successfully!`} />
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ═══ ARCHITECTURE ═══ */}
       <section className="py-24 px-6 border-t border-border/40 bg-card/30">
         <div className="max-w-6xl mx-auto">
@@ -1274,131 +979,6 @@ GET  /api/auth/oauth/:provider → Google, GitHub social login`} />
 
   ✓ Deployment successful!
   Live at: https://myapp.com`} />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ BATTERIES GRID ═══ */}
-      <section className="py-24 px-6 border-t border-border/40 bg-card/30">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">What Ships With Every Project</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Production-ready from day one</h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
-            {[
-              { title: 'JWT Authentication', desc: 'Register, login, refresh, OAuth2 social login (Google, GitHub). Role-based access control.', color: 'text-sky-400', bg: 'bg-sky-400/10', icon: <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /><circle cx="12" cy="16" r="1" /></svg> },
-              { title: 'Two-Factor Auth', desc: 'TOTP authenticator app, 10 backup codes, trusted devices with 30-day sliding cookie.', color: 'text-violet-400', bg: 'bg-violet-400/10', icon: <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9 12l2 2 4-4" /></svg> },
-              { title: 'File Storage', desc: 'Presigned URL uploads to S3, R2, or MinIO. Image processing. Progress tracking.', color: 'text-amber-400', bg: 'bg-amber-400/10', icon: <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg> },
-              { title: 'Email (Resend)', desc: 'Transactional emails with Go HTML templates. Dev uses Mailhog.', color: 'text-pink-400', bg: 'bg-pink-400/10', icon: <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg> },
-              { title: 'Background Jobs', desc: 'Redis-backed job queue via asynq. Image processing, email sending.', color: 'text-orange-400', bg: 'bg-orange-400/10', icon: <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg> },
-              { title: 'Redis Cache', desc: 'Cache middleware for any route. Set/Get/Delete. Configurable TTL.', color: 'text-red-400', bg: 'bg-red-400/10', icon: <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg> },
-            ].map((feature) => (
-              <div key={feature.title} className="rounded-xl border border-border/40 bg-background card-gradient grid-pattern p-5 card-grit hover:border-primary/40">
-                <div className={`h-10 w-10 rounded-lg ${feature.bg} ${feature.color} flex items-center justify-center mb-4 icon-animated`}>
-                  {feature.icon}
-                </div>
-                <h3 className="font-semibold text-foreground mb-1.5 text-sm">{feature.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{feature.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ OPS-GRADE PRIMITIVES ═══ */}
-      <section className="py-24 px-6 border-t border-border/40">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <p className="text-sm font-mono font-medium text-primary mb-3 tracking-wide uppercase">Security &amp; Reliability</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">OWASP 2025 hardened</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Reliability, auditability, and security — usually a year of integration work — wired into every scaffolded project.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Offline-first */}
-            <div className="lg:col-span-2 rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-10 w-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-                  <svg className="h-5 w-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><line x1="12" y1="20" x2="12.01" y2="20" /></svg>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Offline-first desktop sync</h3>
-                  <p className="text-xs text-muted-foreground">Git-style: work locally → click Sync → resolve conflicts → push</p>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                Local SQLite mirror + outbox with squash semantics. Manual Sync button.
-                Field-level conflict dialog when the server moved on. Versioned writes with
-                optimistic-lock. <Link href="/docs/desktop/offline" className="text-primary hover:underline">Read the guide →</Link>
-              </p>
-              <code className="text-xs text-primary/80 font-mono bg-primary/5 px-2 py-1 rounded">
-                grit new app --triple --vite --desktop
-              </code>
-            </div>
-
-            {/* Audit + chain */}
-            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
-              <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-4">
-                <svg className="h-5 w-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /><ellipse cx="12" cy="5" rx="9" ry="3" /></svg>
-              </div>
-              <h3 className="font-semibold text-foreground mb-2">Tamper-evident audit log</h3>
-              <p className="text-sm text-muted-foreground mb-2">
-                Every authenticated mutation auto-logged. SHA-256 hash chain proves the log
-                wasn&apos;t edited via SQL.
-              </p>
-              <code className="text-[11px] text-primary/80 font-mono">GET /admin/activity/integrity</code>
-            </div>
-
-            {/* SSRF defence */}
-            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
-              <div className="h-10 w-10 rounded-lg bg-rose-500/10 flex items-center justify-center mb-4">
-                <Shield className="h-5 w-5 text-rose-400" />
-              </div>
-              <h3 className="font-semibold text-foreground mb-2">SSRF + IDOR closed</h3>
-              <p className="text-sm text-muted-foreground mb-2">
-                <code className="text-primary text-xs">safefetch.Get</code> blocks private/IMDS IPs with DNS-rebind defence.{' '}
-                <code className="text-primary text-xs">authz.MustOwn</code> returns 404 to prevent enumeration.
-              </p>
-              <code className="text-[11px] text-primary/80 font-mono">OWASP A01 closed</code>
-            </div>
-
-            {/* Feature flags */}
-            <div className="rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
-              <div className="h-10 w-10 rounded-lg bg-violet-500/10 flex items-center justify-center mb-4">
-                <svg className="h-5 w-5 text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></svg>
-              </div>
-              <h3 className="font-semibold text-foreground mb-2">Feature flags + A/B</h3>
-              <p className="text-sm text-muted-foreground mb-2">
-                In-memory engine, sticky bucketing, percentage rollouts, allow/blocklists,
-                realtime push when admin toggles.
-              </p>
-              <code className="text-[11px] text-primary/80 font-mono">flags.IsEnabled(c, &quot;new_ui&quot;)</code>
-            </div>
-
-            {/* Realtime + idempotency — wider card */}
-            <div className="lg:col-span-2 rounded-xl border border-border/40 bg-card/50 card-gradient grid-pattern p-6 card-grit hover:border-primary/40">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <svg className="h-5 w-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Webhook receiver + k6 load test suite + security CI</h3>
-                  <p className="text-xs text-muted-foreground">The &quot;every business app needs this&quot; primitives, baked in</p>
-                </div>
-              </div>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                <li>• <strong className="text-foreground/80">Stripe / GitHub / HMAC verifiers</strong> with auto-dedup on (provider, external_id)</li>
-                <li>• <strong className="text-foreground/80">k6 test suite</strong> — smoke / load / stress / spike / soak / breakpoint</li>
-                <li>• <strong className="text-foreground/80">Dependabot + govulncheck + CodeQL</strong> CI on every PR</li>
-                <li>• <strong className="text-foreground/80">CSRF middleware</strong> double-submit cookie for OAuth flows</li>
-                <li>• <strong className="text-foreground/80">Security event log</strong> with typed events + hash chain</li>
-                <li>• <strong className="text-foreground/80">CSP / COOP / CORP</strong> headers strict by default</li>
-              </ul>
             </div>
           </div>
         </div>

@@ -350,7 +350,7 @@ Ports exposed:    8080`,
       {
         title: 'Let the CLI do it',
         body: '`grit deploy` cross-compiles for linux/amd64, uploads over SSH, writes a systemd unit and configures Caddy with automatic TLS. It is the shortest path from a laptop to a live URL that Grit has.',
-        code: { language: 'bash', code: 'grit deploy --host your-server.com --user deploy --domain app.example.com' },
+        code: { language: 'bash', code: 'grit deploy --host deploy@your-server.com --domain app.example.com' },
       },
       {
         title: 'Or do it by hand',
