@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { DocsShot } from '@/components/docs-shot'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
@@ -499,6 +500,13 @@ export default function SecurityGuidePage() {
                   {row.defence}
                 </section>
               ))}
+
+              <DocsShot
+                src="/images/system/security.png"
+                alt="The admin security page showing banned IPs and the escalating auto-ban policy"
+                label="localhost:3001/system/security"
+                caption="Sentinel's view inside the admin: currently banned IPs, addresses hitting rate limits, and the escalation ladder — 5 hours, 8 hours, 24 hours, then a week — so a re-offending bot cannot wait out a fixed cooldown."
+              />
 
               <h2 id="supply-chain" className="mt-12">Supply chain</h2>
               <p>

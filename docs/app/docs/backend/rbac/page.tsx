@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { DocsShot } from '@/components/docs-shot'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
@@ -175,6 +176,13 @@ type User struct {
 } as const;`}
                 />
               </div>
+
+              <DocsShot
+                src="/images/system/roles.png"
+                alt="The roles and permissions editor with a per-resource create/view/edit/delete matrix"
+                label="localhost:3001/system/roles"
+                caption="Permissions are grouped by module and expand to a create / view / edit / delete matrix per resource. Granting a whole resource keeps any action added to it later, so generating a new resource never silently changes an existing role."
+              />
 
               {/* RequireRole Middleware */}
               <div className="mb-12">

@@ -10,6 +10,9 @@ import { ThemeShowcase } from '@/components/theme-showcase'
 import { PlatformShowcase } from '@/components/platform-showcase'
 import { SystemShowcase } from '@/components/system-showcase'
 import { FormShowcase } from '@/components/form-showcase'
+import { AuthShowcase } from '@/components/auth-showcase'
+import { ResourceDefinitionShowcase } from '@/components/resource-definition-showcase'
+import { InfraShowcase } from '@/components/infra-showcase'
 import { SoftwareApplicationSchema, FAQPageSchema } from '@/components/structured-data'
 import { FeatureTabs } from '@/components/feature-tabs'
 import { CpuArchitecture } from '@/components/ui/cpu-architecture'
@@ -418,6 +421,74 @@ export default function HomePage() {
           </div>
 
           <SystemShowcase />
+        </div>
+      </section>
+
+      {/* ═══ AUTHENTICATION ═══
+
+          Screenshots plus the env/route detail, because "auth included" means
+          nothing until you can see which parts. The closing paragraph names
+          what is absent on purpose. */}
+      <section className="py-20 md:py-24 px-6 border-b border-border/40">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-10">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Authentication
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
+              Auth you would otherwise<br />spend a month on.
+            </h2>
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+              Sign-in pages, a JWT pair, revocable server-side sessions, Google and GitHub,
+              TOTP with backup codes, database-backed roles, and enterprise SSO over OIDC or
+              SAML. Working on the first run, not a tutorial to follow.
+            </p>
+          </div>
+
+          <AuthShowcase />
+        </div>
+      </section>
+
+      {/* ═══ RESOURCE DEFINITION ═══ */}
+      <section className="py-20 md:py-24 px-6 border-b border-border/40">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-10">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Customisation
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
+              One file describes<br />the whole screen.
+            </h2>
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+              The generator writes a resource definition; after that it is ordinary TypeScript
+              you own. Columns, filters, row and bulk actions, twenty field types, wizards,
+              dropzone variants &mdash; changed by editing a file, not by fighting a generator
+              that wants to overwrite it.
+            </p>
+          </div>
+
+          <ResourceDefinitionShowcase />
+        </div>
+      </section>
+
+      {/* ═══ INFRASTRUCTURE ═══ */}
+      <section className="py-20 md:py-24 px-6 border-b border-border/40">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-10">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Infrastructure
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
+              Your database.<br />Your bucket. Your Redis.
+            </h2>
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+              Grit is opinionated about structure, not about who you rent from. Each of these
+              is one environment variable, with a local default that works before you have any
+              cloud account at all.
+            </p>
+          </div>
+
+          <InfraShowcase />
         </div>
       </section>
 
