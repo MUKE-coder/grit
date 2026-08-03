@@ -28,6 +28,50 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.118.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.118.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Search was broken on SQLite. So were R2 image previews.</strong>
+                </p>
+                <ul>
+                  <li>
+                    <strong>Every search box returned a 500 on SQLite.</strong> Search clauses
+                    were built with <code>ILIKE</code>, which is Postgres-only — on SQLite it is
+                    a syntax error, and SQLite is what the quick start and the generated Go tests
+                    use. One generated resource also searched <code>id::text</code>, another
+                    Postgres-only form. Both are now{' '}
+                    <code>LOWER(col) LIKE LOWER(?)</code>, which behaves identically on both
+                    drivers.
+                  </li>
+                  <li>
+                    <strong>Images uploaded to R2 never displayed.</strong> Object URLs were
+                    built from the configured S3 endpoint, and R2&apos;s endpoint only answers
+                    SigV4-signed requests &mdash; so every <code>&lt;img&gt;</code> got a 401
+                    while uploads succeeded. It reads like a CORS problem and is not one. Storage
+                    now takes a browser-facing origin: <code>R2_PUBLIC_URL</code> (or{' '}
+                    <code>S3_PUBLIC_URL</code>, <code>B2_PUBLIC_URL</code>,{' '}
+                    <code>MINIO_PUBLIC_URL</code>, or a shared{' '}
+                    <code>STORAGE_PUBLIC_URL</code>). Set it to the bucket&apos;s public origin —
+                    an r2.dev subdomain, a custom domain, or a CDN — and stored URLs point there
+                    instead. Every scaffold now ships a test that pins this behaviour.
+                  </li>
+                </ul>
+                <p>
+                  Existing projects: re-run the search fix by regenerating resources, or replace{' '}
+                  <code>x ILIKE ?</code> with <code>LOWER(x) LIKE LOWER(?)</code> in your
+                  services. For R2, add <code>R2_PUBLIC_URL</code> to <code>.env</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.117.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

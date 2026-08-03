@@ -13,6 +13,7 @@ func writeStorageFiles(root string, opts Options) error {
 	files := map[string]string{
 		filepath.Join(apiRoot, "internal", "storage", "storage.go"):      storageServiceGo(),
 		filepath.Join(apiRoot, "internal", "storage", "image.go"):        storageImageGo(),
+		filepath.Join(apiRoot, "internal", "storage", "url_test.go"):     storageURLTestGo(module),
 		filepath.Join(apiRoot, "internal", "handlers", "upload.go"):      uploadHandlerGo(),
 		filepath.Join(apiRoot, "internal", "files", "file_ref.go"):       filesFileRefGo(),
 		filepath.Join(apiRoot, "internal", "files", "accepts.go"):        filesAcceptsGo(),
@@ -175,14 +176,33 @@ func (s *Storage) Delete(ctx context.Context, key string) error {
 }
 
 // GetURL returns the public URL for a stored file.
+// GetURL returns the URL a browser should load this object from.
+//
+// The SDK endpoint and the browser-facing origin are not always the same host.
+// MinIO serves objects from the host it takes API calls on, so the default
+// (<endpoint>/<bucket>/<key>) is right there. Cloudflare R2 is the case that
+// breaks: <account>.r2.cloudflarestorage.com only answers SigV4-signed
+// requests, so an <img> pointed at it gets a 401 — the upload succeeds and
+// nothing ever renders, which reads like a CORS problem and is not one.
+//
+// Setting R2_PUBLIC_URL (or STORAGE_PUBLIC_URL) switches this to
+// <PublicURL>/<key>. Public origins — an r2.dev subdomain, a custom domain, a
+// CDN in front of S3 — are already scoped to one bucket, so the bucket
+// segment is deliberately not repeated.
 func (s *Storage) GetURL(key string) string {
-	endpoint := strings.TrimRight(s.cfg.Endpoint, "/")
 	// Encode each path segment individually to preserve forward slashes
 	segments := strings.Split(key, "/")
 	for i, seg := range segments {
 		segments[i] = url.PathEscape(seg)
 	}
-	return fmt.Sprintf("%s/%s/%s", endpoint, s.bucket, strings.Join(segments, "/"))
+	escaped := strings.Join(segments, "/")
+
+	if public := strings.TrimRight(s.cfg.PublicURL, "/"); public != "" {
+		return fmt.Sprintf("%s/%s", public, escaped)
+	}
+
+	endpoint := strings.TrimRight(s.cfg.Endpoint, "/")
+	return fmt.Sprintf("%s/%s/%s", endpoint, s.bucket, escaped)
 }
 
 // GetSignedURL returns a pre-signed URL valid for the given duration.
@@ -859,4 +879,70 @@ func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 	})
 }
 `
+}
+
+// storageURLTestGo guards the object-URL rule that makes images actually
+// render.
+//
+// The failure it exists for is quiet: point object URLs at R2's S3 endpoint
+// and every upload succeeds while every <img> gets a 401, which reads like a
+// CORS problem and sends people to the wrong setting for an afternoon.
+func storageURLTestGo(module string) string {
+	return fmt.Sprintf(`package storage
+
+import (
+	"testing"
+
+	"%s/internal/config"
+)
+
+func TestGetURL(t *testing.T) {
+	cases := []struct {
+		name string
+		cfg  config.StorageConfig
+		key  string
+		want string
+	}{
+		{
+			name: "no public origin keeps the bucket segment (MinIO)",
+			cfg:  config.StorageConfig{Endpoint: "http://localhost:9002", Bucket: "uploads"},
+			key:  "uploads/2026/08/a.png",
+			want: "http://localhost:9002/uploads/uploads/2026/08/a.png",
+		},
+		{
+			// R2's S3 endpoint only answers signed requests, so object URLs
+			// must come from the bucket's public origin instead.
+			name: "public origin replaces endpoint and drops the bucket",
+			cfg: config.StorageConfig{
+				Endpoint:  "https://acct.r2.cloudflarestorage.com",
+				Bucket:    "uploads",
+				PublicURL: "https://pub-abc123.r2.dev",
+			},
+			key:  "uploads/2026/08/a.png",
+			want: "https://pub-abc123.r2.dev/uploads/2026/08/a.png",
+		},
+		{
+			name: "trailing slash on the public origin is not doubled",
+			cfg:  config.StorageConfig{PublicURL: "https://cdn.example.com/"},
+			key:  "uploads/a.png",
+			want: "https://cdn.example.com/uploads/a.png",
+		},
+		{
+			name: "spaces in a key stay escaped",
+			cfg:  config.StorageConfig{PublicURL: "https://cdn.example.com"},
+			key:  "uploads/my file.png",
+			want: "https://cdn.example.com/uploads/my%%20file.png",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			s := &Storage{bucket: c.cfg.Bucket, cfg: c.cfg}
+			if got := s.GetURL(c.key); got != c.want {
+				t.Errorf("GetURL(%%q) = %%q, want %%q", c.key, got, c.want)
+			}
+		})
+	}
+}
+`, module)
 }
