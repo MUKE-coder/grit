@@ -8,6 +8,8 @@ import { HeroCodeTabs, InstallTabs } from '@/components/hero-code-tabs'
 import { OneApiClients } from '@/components/one-api-clients'
 import { ThemeShowcase } from '@/components/theme-showcase'
 import { PlatformShowcase } from '@/components/platform-showcase'
+import { SystemShowcase } from '@/components/system-showcase'
+import { FormShowcase } from '@/components/form-showcase'
 import { SoftwareApplicationSchema, FAQPageSchema } from '@/components/structured-data'
 import { FeatureTabs } from '@/components/feature-tabs'
 import { CpuArchitecture } from '@/components/ui/cpu-architecture'
@@ -310,23 +312,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ FEATURES INTRO ═══ */}
-      <section className="py-20 px-6 border-b border-border/40">
-        <div className="max-w-5xl mx-auto text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Features
-          </span>
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground mb-5">
-            Elevate your stack<br />
-            with the modern Go monolith
-          </h2>
-          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Grit ships with production-ready features that accelerate development
-            and make building full-stack apps in Go a breeze.
-          </p>
-        </div>
-      </section>
-
       {/* ═══ NEW: WHAT IS GRIT (60-second tour) ═══ */}
       <WhatIsGrit />
 
@@ -356,6 +341,33 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ═══ WHAT ONE COMMAND GENERATES ═══
+
+          Screenshots of the forms Grit produced from the field definitions
+          shown beside them. "It generates a form for you" is a cheap claim;
+          the uploads, the searchable FK with inline-create, the line-items
+          table with live totals and the wizard are not. */}
+      <section className="py-20 md:py-24 px-6 border-b border-border/40">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-10">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Code generation
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
+              One command.<br />The whole form.
+            </h2>
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+              Not a scaffold you finish by hand. Uploads that know what they accept, foreign
+              keys you can fill without leaving the page, line-item tables that total
+              themselves, wizards that save a step at a time &mdash; and a desktop app that
+              keeps taking input with the network off.
+            </p>
+          </div>
+
+          <FormShowcase />
+        </div>
+      </section>
+
       {/* ═══ THEMES ═══
 
           Real screenshots of a generated admin, not mockups. A mockup proves a
@@ -380,6 +392,32 @@ export default function HomePage() {
           </div>
 
           <ThemeShowcase />
+        </div>
+      </section>
+
+      {/* ═══ THE SYSTEM HUB ═══
+
+          The batteries, one screenshot at a time. Several of these needed real
+          infrastructure to capture — the jobs page shows work that five actual
+          uploads enqueued through Redis. */}
+      <section className="py-20 md:py-24 px-6 border-b border-border/40">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-10">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-mono font-medium text-primary mb-6">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Batteries included
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
+              The parts you always end up<br />building anyway.
+            </h2>
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+              Permissions, brute-force protection, golden-signal metrics, an audit timeline,
+              scheduled backups, S3 uploads, a job queue and a cron scheduler &mdash; each with
+              a real screen, not a config file and a README. This is what{' '}
+              <code className="text-foreground/80 text-sm">grit new</code> gives you on day one.
+            </p>
+          </div>
+
+          <SystemShowcase />
         </div>
       </section>
 

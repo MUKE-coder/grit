@@ -1246,14 +1246,27 @@ apiClient.interceptors.response.use(
  */
 export async function uploadFile(
   file: File,
-  _endpoint = "/api/uploads",
-  onProgress?: (percent: number) => void
+  endpoint = "/api/uploads",
+  onProgress?: (percent: number) => void,
+  accepts?: string[]
 ): Promise<{ data: Record<string, unknown>; message: string }> {
+  // The endpoint carries the field's metadata as query params — see
+  // buildUploadEndpoint(). This function presigns rather than POSTing to it,
+  // so read the accepts back out instead of dropping them: without that, a
+  // field declared file:zip could never upload (the API falls back to its
+  // global allow-list) and a field declared file:pdf would happily take a PNG.
+  let fieldAccepts = accepts;
+  if (!fieldAccepts?.length && endpoint.includes("?")) {
+    const q = new URLSearchParams(endpoint.slice(endpoint.indexOf("?") + 1)).get("accepts");
+    if (q) fieldAccepts = q.split(",").map((a) => a.trim()).filter(Boolean);
+  }
+
   // Step 1: Get presigned URL from API
   const { data: presignRes } = await apiClient.post("/api/uploads/presign", {
     filename: file.name,
     content_type: file.type,
     file_size: file.size,
+    ...(fieldAccepts?.length ? { accepts: fieldAccepts } : {}),
   });
   const { presigned_url, key } = presignRes.data;
 
@@ -1281,6 +1294,7 @@ export async function uploadFile(
     filename: file.name,
     content_type: file.type,
     size: file.size,
+    ...(fieldAccepts?.length ? { accepts: fieldAccepts } : {}),
   });
   return completeRes;
 }

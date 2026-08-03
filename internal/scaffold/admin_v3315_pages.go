@@ -796,9 +796,13 @@ function fmtRate(n: number | undefined): string {
   return Math.round(n).toLocaleString() + "/s";
 }
 
+// Both callers pass a Pulse error rate, and Pulse already reports those as a
+// percentage (errCount / total * 100 — see storage_memory.go). Multiplying by
+// 100 here scaled every value by 100 again: 3 errors in 38 requests rendered as
+// "789.47%". Takes a percentage, prints a percentage.
 function fmtPct(n: number | undefined): string {
   if (n === undefined || n === null || Number.isNaN(n)) return "—";
-  return (n * 100).toFixed(2) + "%";
+  return n.toFixed(2) + "%";
 }
 `
 }

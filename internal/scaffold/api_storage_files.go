@@ -332,6 +332,18 @@ var AllowedMimeTypes = map[string]bool{
 	"application/json": true,
 	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": true,
 	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": true,
+	// Legacy Office, still what "doc"/"excel" resolve to for older files.
+	"application/msword":     true,
+	"application/vnd.ms-excel": true,
+	// Archives. The accept-aliases "zip" and "archive" have always resolved to
+	// these; leaving them out of the fallback made those fields impossible to
+	// upload through the admin, which presigns before it knows the field.
+	"application/zip":              true,
+	"application/x-zip-compressed": true,
+	"application/gzip":             true,
+	"application/x-tar":            true,
+	"application/x-rar-compressed": true,
+	"application/x-7z-compressed":  true,
 }
 
 // MaxUploadSize is the maximum file size (50 MB).
@@ -730,9 +742,10 @@ func (h *UploadHandler) Presign(c *gin.Context) {
 	}
 
 	var req struct {
-		Filename    string ` + "`" + `json:"filename" binding:"required"` + "`" + `
-		ContentType string ` + "`" + `json:"content_type" binding:"required"` + "`" + `
-		FileSize    int64  ` + "`" + `json:"file_size" binding:"required"` + "`" + `
+		Filename    string   ` + "`" + `json:"filename" binding:"required"` + "`" + `
+		ContentType string   ` + "`" + `json:"content_type" binding:"required"` + "`" + `
+		FileSize    int64    ` + "`" + `json:"file_size" binding:"required"` + "`" + `
+		Accepts     []string ` + "`" + `json:"accepts"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -741,7 +754,13 @@ func (h *UploadHandler) Presign(c *gin.Context) {
 		return
 	}
 
-	if !AllowedMimeTypes[req.ContentType] {
+	// Mirror the multipart path: when the caller names the field's accept
+	// aliases, honour them; otherwise fall back to the global allow-list.
+	allowed := AllowedMimeTypes[req.ContentType]
+	if len(req.Accepts) > 0 {
+		allowed = files.AllowsMIME(req.Accepts, req.ContentType)
+	}
+	if !allowed {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "File type not allowed"},
 		})
@@ -779,14 +798,29 @@ func (h *UploadHandler) Presign(c *gin.Context) {
 // CompleteUpload records a file that was uploaded directly to storage via presigned URL.
 func (h *UploadHandler) CompleteUpload(c *gin.Context) {
 	var req struct {
-		Key         string ` + "`" + `json:"key" binding:"required"` + "`" + `
-		Filename    string ` + "`" + `json:"filename" binding:"required"` + "`" + `
-		ContentType string ` + "`" + `json:"content_type" binding:"required"` + "`" + `
-		Size        int64  ` + "`" + `json:"size" binding:"required"` + "`" + `
+		Key         string   ` + "`" + `json:"key" binding:"required"` + "`" + `
+		Filename    string   ` + "`" + `json:"filename" binding:"required"` + "`" + `
+		ContentType string   ` + "`" + `json:"content_type" binding:"required"` + "`" + `
+		Size        int64    ` + "`" + `json:"size" binding:"required"` + "`" + `
+		Accepts     []string ` + "`" + `json:"accepts"` + "`" + `
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
+		})
+		return
+	}
+
+	// The presign gated the PUT; this call decides what gets recorded. Check
+	// the type again so a client cannot presign a PDF and then file the row as
+	// something else.
+	allowed := AllowedMimeTypes[req.ContentType]
+	if len(req.Accepts) > 0 {
+		allowed = files.AllowsMIME(req.Accepts, req.ContentType)
+	}
+	if !allowed {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{"code": "INVALID_FILE_TYPE", "message": "File type not allowed"},
 		})
 		return
 	}
