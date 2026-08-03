@@ -1,7 +1,7 @@
 package scaffold
 
 // desktopClientQuickAccess is the floating quick-access button — a Windows-Start
-// style grid button (bottom-left by default) that opens a wide, centered grid
+// style grid button (bottom-right by default) that opens a wide, centered grid
 // menu of icon cards: navigation shortcuts, a "New {Resource}" card for every
 // generated resource, and system shortcuts. Custom links, the enabled cards and
 // the button corner are configurable in place and stored per-device in
@@ -36,12 +36,12 @@ interface QuickConfig {
 const STORAGE_KEY = "grit-quick-access";
 const CHANGE_EVENT = "grit-quick-access-changed";
 const MAX_TILES = 10;
-const DEFAULT_CONFIG: QuickConfig = { position: "bottom-left", hidden: [], custom: [] };
+const DEFAULT_CONFIG: QuickConfig = { position: "bottom-right", hidden: [], custom: [] };
 
 const CORNERS: { key: Corner; label: string; hint: string; cls: string; icon: LucideIcon }[] = [
-  { key: "bottom-left", label: "Bottom left", hint: "Default", cls: "bottom-6 left-6", icon: AlignLeft },
+  { key: "bottom-left", label: "Bottom left", hint: "Overlaps the sidebar", cls: "bottom-6 left-6", icon: AlignLeft },
   { key: "bottom-center", label: "Bottom center", hint: "Centered", cls: "bottom-6 left-1/2 -translate-x-1/2", icon: AlignCenter },
-  { key: "bottom-right", label: "Bottom right", hint: "Right side", cls: "bottom-6 right-6", icon: AlignRight },
+  { key: "bottom-right", label: "Bottom right", hint: "Default", cls: "bottom-6 right-6", icon: AlignRight },
 ];
 const POSITIONS = CORNERS.map((c) => c.key);
 
@@ -62,7 +62,7 @@ function loadConfig(): QuickConfig {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const c = { ...DEFAULT_CONFIG, ...JSON.parse(raw) } as QuickConfig;
-      if (!POSITIONS.includes(c.position)) c.position = "bottom-left"; // migrate old top-* corners
+      if (!POSITIONS.includes(c.position)) c.position = "bottom-right"; // migrate old top-* corners
       return c;
     }
   } catch { /* ignore */ }

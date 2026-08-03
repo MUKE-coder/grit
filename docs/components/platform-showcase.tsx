@@ -11,7 +11,8 @@ import { Globe, Monitor, Smartphone, Server } from 'lucide-react'
  *   admin.png       the Next.js admin panel (grit new --triple), Atlas theme
  *   desktop.png     the Wails desktop app, including its own window chrome
  *   mobile.png      the Expo app running on an Android emulator
- *   api-scalar.png  the Scalar reference the Go API serves at /docs
+ *   api-scalar.png  the Scalar reference the Go API serves at /docs, on the
+ *                   POST /products operation so the schemas are visible
  *
  * That distinction is the whole argument of the section. Anyone can draw a
  * dashboard; only a framework that actually ships these can screenshot them.
@@ -99,7 +100,7 @@ const PLATFORMS: Platform[] = [
     icon: Server,
     headline: 'Documented the moment it exists',
     blurb:
-      'The Go API serves a Scalar reference at /docs, built from your routes and models. Add a resource and its endpoints show up — no annotations to write, no spec to maintain by hand.',
+      'The Go API serves a Scalar reference at /docs with typed request bodies, response schemas and a runnable curl for every endpoint. Generate a resource and its endpoints document themselves — no annotations to write, no spec to maintain by hand.',
     image: '/images/platforms/api-scalar.png',
     shell: 'browser',
     chromeLabel: 'localhost:8080/docs',

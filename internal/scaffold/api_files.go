@@ -1580,7 +1580,30 @@ type AuthHandler struct {
 	Mailer *mail.Mailer
 }
 
-type registerRequest struct {
+// AuthResponse documents the body returned by register, login and refresh.
+//
+// The handlers emit gin.H rather than this struct, so nothing enforces the two
+// agree — if you change what an auth handler writes, change this with it. It
+// exists because a reference that says "No Body" is worse than no reference.
+type AuthResponse struct {
+	Data struct {
+		User         models.User ` + "`" + `json:"user"` + "`" + `
+		AccessToken  string      ` + "`" + `json:"access_token"` + "`" + `
+		RefreshToken string      ` + "`" + `json:"refresh_token"` + "`" + `
+	} ` + "`" + `json:"data"` + "`" + `
+	Message string ` + "`" + `json:"message"` + "`" + `
+}
+
+// ErrorResponse is the error envelope every endpoint uses.
+type ErrorResponse struct {
+	Error struct {
+		Code    string            ` + "`" + `json:"code"` + "`" + `
+		Message string            ` + "`" + `json:"message"` + "`" + `
+		Details map[string]string ` + "`" + `json:"details,omitempty"` + "`" + `
+	} ` + "`" + `json:"error"` + "`" + `
+}
+
+type RegisterRequest struct {
 	FirstName  string ` + "`" + `json:"first_name" binding:"required,min=2"` + "`" + `
 	LastName   string ` + "`" + `json:"last_name" binding:"required,min=2"` + "`" + `
 	Email      string ` + "`" + `json:"email" binding:"required,email"` + "`" + `
@@ -1588,27 +1611,27 @@ type registerRequest struct {
 	MACAddress string ` + "`" + `json:"mac_address"` + "`" + ` // optional — provided by client if available
 }
 
-type loginRequest struct {
+type LoginRequest struct {
 	Email    string ` + "`" + `json:"email" binding:"required,email"` + "`" + `
 	Password string ` + "`" + `json:"password" binding:"required"` + "`" + `
 }
 
-type refreshRequest struct {
+type RefreshRequest struct {
 	RefreshToken string ` + "`" + `json:"refresh_token" binding:"required"` + "`" + `
 }
 
-type forgotPasswordRequest struct {
+type ForgotPasswordRequest struct {
 	Email string ` + "`" + `json:"email" binding:"required,email"` + "`" + `
 }
 
-type resetPasswordRequest struct {
+type ResetPasswordRequest struct {
 	Token    string ` + "`" + `json:"token" binding:"required"` + "`" + `
 	Password string ` + "`" + `json:"password" binding:"required,min=8"` + "`" + `
 }
 
 // Register creates a new user account.
 func (h *AuthHandler) Register(c *gin.Context) {
-	var req registerRequest
+	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{
@@ -1687,7 +1710,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 // Login authenticates a user and returns tokens.
 func (h *AuthHandler) Login(c *gin.Context) {
-	var req loginRequest
+	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{
@@ -1834,7 +1857,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	if cookieValue, err := c.Cookie("grit_refresh"); err == nil && cookieValue != "" {
 		refreshToken = cookieValue
 	} else {
-		var req refreshRequest
+		var req RefreshRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{
 				"error": gin.H{
@@ -1975,7 +1998,7 @@ func (h *AuthHandler) Me(c *gin.Context) {
 
 // ForgotPassword initiates a password reset.
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {
-	var req forgotPasswordRequest
+	var req ForgotPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{
@@ -2063,7 +2086,7 @@ func (h *AuthHandler) deliverPasswordReset(user models.User, clientIP string) {
 
 // ResetPassword resets a user's password with a valid token.
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
-	var req resetPasswordRequest
+	var req ResetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{
@@ -7498,18 +7521,48 @@ func Setup(db *gorm.DB, cfg *config.Config, svc *Services) *gin.Engine {
 	}
 
 	// API Documentation (gin-docs — auto-generated from routes + models)
-	gindocs.Mount(r, db, gindocs.Config{
+	//
+	// Route introspection alone gives paths and status codes but no bodies:
+	// gindocs only attaches a request or response schema when a route override
+	// hands it a concrete type. Without the docs.Route(...) calls below, every
+	// operation renders as "No Body" and the copy-paste curl snippets are
+	// unusable. The spec is assembled lazily on the first /docs request, so
+	// overrides registered after Mount are picked up.
+	docs := gindocs.Mount(r, db, gindocs.Config{
 		Title:       cfg.AppName + " API",
 		Description: "REST API built with [Grit](https://gritframework.dev) — Go + React meta-framework.",
 		Version:     "1.0.0",
 		UI:          gindocs.UIScalar,
 		ScalarTheme: "kepler",
-		Models:      []interface{}{&models.User{}, &models.Upload{}, &models.Blog{}},
+		Models:      []interface{}{&models.User{}, &models.Upload{}, &models.Blog{} /* grit:docs:models */},
 		Auth: gindocs.AuthConfig{
 			Type:         gindocs.AuthBearer,
 			BearerFormat: "JWT",
 		},
 	})
+
+	// Core endpoints. The generated summaries are derived from the path, which
+	// turns POST /auth/login into "Create a new login" — worth overriding for
+	// the handful of routes every reader hits first.
+	docs.Route("POST /api/v1/auth/register").
+		Summary("Register a new account").
+		RequestBody(handlers.RegisterRequest{}).
+		Response(201, handlers.AuthResponse{}, "Account created").
+		Response(422, handlers.ErrorResponse{}, "Validation failed")
+	docs.Route("POST /api/v1/auth/login").
+		Summary("Sign in").
+		RequestBody(handlers.LoginRequest{}).
+		Response(200, handlers.AuthResponse{}, "Signed in").
+		Response(401, handlers.ErrorResponse{}, "Invalid credentials")
+	docs.Route("POST /api/v1/auth/refresh").
+		Summary("Exchange a refresh token for a new access token").
+		Response(200, handlers.AuthResponse{}, "New token pair")
+	docs.Route("GET /api/v1/auth/me").
+		Summary("The signed-in user").
+		Response(200, models.User{}, "The current user")
+
+	// grit:docs:routes — "grit generate resource" registers each resource here.
+	// grit:docs:routes:end
 	log.Println("API docs available at /docs")
 
 	// Mount Pulse observability (request tracing, DB monitoring, runtime metrics, error tracking)

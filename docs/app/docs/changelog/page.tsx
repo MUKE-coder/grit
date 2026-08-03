@@ -28,6 +28,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.116.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.116.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 3, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The API reference now documents request and response bodies.</strong>
+                </p>
+                <p>
+                  Every operation at <code>/docs</code> used to render as &ldquo;No Body&rdquo;.
+                  Route introspection gave gin-docs paths and status codes, but it only
+                  attaches a schema where an override hands it a concrete type &mdash; and the
+                  scaffold registered none. The result was a reference with 250+ endpoints and
+                  not one example payload, plus copy-paste curl commands with nothing to post.
+                </p>
+                <ul>
+                  <li>
+                    <strong>Generated resources document themselves.</strong>{' '}
+                    <code>grit generate resource Product</code> now also registers list, create,
+                    read, update and delete with typed request bodies and response schemas.
+                    <code>grit remove resource</code> takes them back out.
+                  </li>
+                  <li>
+                    <strong>Named request types.</strong> Handlers bound to anonymous structs,
+                    which gave the reference nothing to reflect over. Create and update bodies
+                    are now <code>CreateProductRequest</code> / <code>UpdateProductRequest</code>{' '}
+                    &mdash; the same fields, with a name.
+                  </li>
+                  <li>
+                    <strong>Auth endpoints documented by hand,</strong> including readable
+                    summaries. The inferred ones read as &ldquo;Create a new login&rdquo;.
+                  </li>
+                  <li>
+                    <strong>The quick-access button moved to the bottom right</strong> in the
+                    admin and desktop apps. Bottom-left parked it on top of the sidebar&apos;s
+                    user footer at every sidebar width.
+                  </li>
+                </ul>
+                <p>
+                  Existing projects keep working &mdash; the new documentation is added by the
+                  generator, so re-running <code>grit generate resource</code> on a fresh
+                  scaffold is the way to pick it up.
+                </p>
+              </div>
+            </div>
+
             {/* v3.115.1 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
