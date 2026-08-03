@@ -270,7 +270,10 @@ func newCmd() *cobra.Command {
 	// Shorthand architecture flags
 	cmd.Flags().BoolVar(&apiOnly, "api", false, "Shorthand for --arch=api")
 	cmd.Flags().BoolVar(&mobileOnly, "mobile", false, "Shorthand for --arch=mobile")
-	cmd.Flags().BoolVar(&full, "full", false, "Shorthand for --arch=triple with docs")
+	// Not "triple with docs" — scaffold.go turns Full on for Expo (IncludeExpo),
+	// Wails (IncludeDesktop) AND the docs site, so it is every target at once.
+	// The old string undersold it by two whole apps.
+	cmd.Flags().BoolVar(&full, "full", false, "Everything: API + web + admin + desktop + Expo + docs site")
 	cmd.Flags().BoolVar(&includeExpo, "expo", false, "Include Expo mobile app")
 	cmd.Flags().BoolVar(&includeDesktop, "desktop", false, "Include a Wails desktop app that shares the monorepo API")
 
@@ -1123,9 +1126,10 @@ const airVersion = "v1.65.3"
 
 // apiHotReloadArgv returns the command to run the Go API from apiDir with Go
 // hot-reload, and a one-line note describing which path was chosen. Order:
-//   1. a globally-installed `air` on PATH (fastest — respects the user's own)
-//   2. air via `go run github.com/air-verse/air@<pinned>` — no install needed;
-//      compiled once, then served from the build cache
+//  1. a globally-installed `air` on PATH (fastest — respects the user's own)
+//  2. air via `go run github.com/air-verse/air@<pinned>` — no install needed;
+//     compiled once, then served from the build cache
+//
 // Both read the .air.toml that every Grit API ships with. There's no
 // no-hot-reload fallback anymore: `go run` air always works when Go is present
 // (the first run downloads air, which needs network — same as any first build).
