@@ -226,11 +226,13 @@ func writeAdminFiles(root string, opts Options) error {
 		// dispatcher renders the right layout at runtime based on THEME env,
 		// so pages stay thin and the legacy style switches are bypassed when
 		// a theme is set.
-		filepath.Join(adminRoot, "app", "(auth)", "login", "page.tsx"):           adminThemedLoginPage(),
-		filepath.Join(adminRoot, "app", "(auth)", "sign-up", "page.tsx"):         adminThemedSignUpPage(),
-		filepath.Join(adminRoot, "app", "(auth)", "forgot-password", "page.tsx"): adminThemedForgotPasswordPage(),
-		filepath.Join(adminRoot, "app", "(auth)", "reset-password", "page.tsx"):  adminThemedResetPasswordPage(),
-		filepath.Join(adminRoot, "app", "(auth)", "callback", "page.tsx"):        adminAuthCallbackPage(),
+		filepath.Join(adminRoot, "app", "(auth)", "login", "page.tsx"):              adminThemedLoginPage(),
+		filepath.Join(adminRoot, "app", "(auth)", "sign-up", "page.tsx"):            adminThemedSignUpPage(),
+		filepath.Join(adminRoot, "app", "(auth)", "forgot-password", "page.tsx"):    adminThemedForgotPasswordPage(),
+		filepath.Join(adminRoot, "app", "(auth)", "verify-email", "page.tsx"):       adminVerifyEmailPage(),
+		filepath.Join(adminRoot, "components", "chrome", "EmailVerifiedBanner.tsx"): adminEmailVerifiedBanner(),
+		filepath.Join(adminRoot, "app", "(auth)", "reset-password", "page.tsx"):     adminThemedResetPasswordPage(),
+		filepath.Join(adminRoot, "app", "(auth)", "callback", "page.tsx"):           adminAuthCallbackPage(),
 
 		// Theme-aware auth shells (v3.28)
 		filepath.Join(adminRoot, "components", "auth", "AuthShell.tsx"):         adminAuthShellDispatcher(),
