@@ -326,34 +326,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* "BY NUMBERS" stats row — Inertia-style minimal */}
-      <section className="border-b border-border/40">
-        <div className="max-w-6xl mx-auto px-6 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center">
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2 mb-1">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/grit_logo.png" alt="Grit" className="h-7 w-7 rounded-md" />
-                <span className="text-xs font-mono font-medium text-foreground/70 tracking-wider">GRIT<br className="hidden lg:block" /> BY NUMBERS</span>
-              </div>
-            </div>
-            {[
-              { number: '9', label: 'FILES PER RESOURCE', sub: 'model to admin screen' },
-              { number: '20+', label: 'BATTERIES INCLUDED', sub: 'not plugins to find' },
-              { number: '0', label: 'GRIT IN YOUR BINARY', sub: 'it generates, then leaves' },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center md:text-left">
-                <div className="text-4xl md:text-5xl font-bold text-foreground mb-1 tracking-tight">{stat.number}</div>
-                {stat.sub && (
-                  <div className="text-[11px] text-muted-foreground/70 mt-1">{stat.sub}</div>
-                )}
-                <div className="text-[10px] font-mono font-medium text-muted-foreground tracking-widest">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ═══ NEW: WHAT IS GRIT (60-second tour) ═══ */}
       <WhatIsGrit />
 
