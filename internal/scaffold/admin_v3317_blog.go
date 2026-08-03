@@ -341,6 +341,7 @@ import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { useToastedMutation } from "@/hooks/use-toasted-mutation";
 import { apiClient, uploadFile } from "@/lib/api-client";
 import { ArrowLeft, Save, Trash2, Upload, Check } from "@/lib/icons";
+import { inputClasses } from "@/components/ui/input";
 
 interface Blog {
   id: string;
@@ -529,7 +530,7 @@ export default function BlogDetailPage() {
               onChange={(e) => setTitle(e.target.value)}
               onBlur={() => { if (title !== blog.title) save.mutate({ title }); }}
               placeholder="Article title..."
-              className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2.5 text-base font-semibold text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className={inputClasses({ className: "text-base font-semibold" })}
             />
           </Field>
           <Field label="Excerpt">
@@ -539,7 +540,7 @@ export default function BlogDetailPage() {
               onBlur={() => { if (excerpt !== blog.excerpt) save.mutate({ excerpt }); }}
               rows={3}
               placeholder="A short summary readers see in lists and social previews."
-              className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2.5 text-sm text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className={inputClasses({ multiline: true })}
             />
           </Field>
         </div>
@@ -616,6 +617,7 @@ import { useToastedMutation } from "@/hooks/use-toasted-mutation";
 import { apiClient, uploadFile } from "@/lib/api-client";
 import { Plus, Upload, FileText, Loader2 } from "@/lib/icons";
 import { buttonClasses } from "@/components/ui/button";
+import { inputClasses } from "@/components/ui/input";
 
 interface Blog {
   id: string;
@@ -788,7 +790,7 @@ function NewBlogSheet({ open, onClose }: { open: boolean; onClose: () => void })
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Your article's headline"
             autoFocus
-            className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2.5 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className={inputClasses()}
           />
         </Field>
 
@@ -822,7 +824,7 @@ function NewBlogSheet({ open, onClose }: { open: boolean; onClose: () => void })
             onChange={(e) => setExcerpt(e.target.value)}
             rows={3}
             placeholder="A short summary readers see in lists and social previews."
-            className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2.5 text-sm text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className={inputClasses({ multiline: true })}
           />
         </Field>
       </form>

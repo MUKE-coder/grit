@@ -247,6 +247,7 @@ import {
 } from "@/lib/dashboard-catalog";
 import type { ResourceDefinition, ColumnDefinition } from "@/lib/resource";
 import { buttonClasses } from "@/components/ui/button";
+import { inputClasses } from "@/components/ui/input";
 
 interface Props {
   resources: ResourceDefinition[];
@@ -366,7 +367,7 @@ export function ChartBuilderForm({ resources, initial, onSubmit, onCancel }: Pro
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Orders by status"
-          className="w-full rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          className={inputClasses()}
         />
       </Field>
 
@@ -374,7 +375,7 @@ export function ChartBuilderForm({ resources, initial, onSubmit, onCancel }: Pro
         <select
           value={resourceSlug}
           onChange={(e) => setResourceSlug(e.target.value)}
-          className="w-full rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          className={inputClasses()}
         >
           {resources.map((r) => (
             <option key={r.slug} value={r.slug}>
@@ -426,7 +427,7 @@ export function ChartBuilderForm({ resources, initial, onSubmit, onCancel }: Pro
             <select
               value={field}
               onChange={(e) => setField(e.target.value)}
-              className="w-full rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className={inputClasses()}
             >
               {fieldList.map((c) => (
                 <option key={c.key} value={c.key}>

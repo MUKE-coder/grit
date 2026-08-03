@@ -714,6 +714,7 @@ func adminTableFilters() string {
 	return `"use client";
 
 import type { FilterDefinition } from "@/lib/resource";
+import { inputClasses } from "@/components/ui/input";
 
 interface TableFiltersProps {
   filters: FilterDefinition[];
@@ -762,7 +763,7 @@ function FilterControl({
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="rounded-lg border border-border bg-bg-tertiary px-3 py-1.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          className={inputClasses({ inputSize: "sm" })}
         >
           <option value="">{filter.placeholder ?? ` + "`" + `All ${filter.label}` + "`" + `}</option>
           {filter.options?.map((opt) => (
@@ -778,7 +779,7 @@ function FilterControl({
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="rounded-lg border border-border bg-bg-tertiary px-3 py-1.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          className={inputClasses({ inputSize: "sm" })}
         >
           <option value="">{filter.placeholder ?? ` + "`" + `All ${filter.label}` + "`" + `}</option>
           <option value="true">Yes</option>
@@ -825,7 +826,7 @@ function FilterControl({
               const end = value.split(",")[1] ?? "";
               onChange([e.target.value, end].join(","));
             }}
-            className="rounded-lg border border-border bg-bg-tertiary px-2 py-1.5 text-sm text-foreground focus:border-accent focus:outline-none"
+            className={inputClasses({ inputSize: "sm" })}
           />
           <span className="text-text-muted">to</span>
           <input
@@ -835,7 +836,7 @@ function FilterControl({
               const start = value.split(",")[0] ?? "";
               onChange([start, e.target.value].join(","));
             }}
-            className="rounded-lg border border-border bg-bg-tertiary px-2 py-1.5 text-sm text-foreground focus:border-accent focus:outline-none"
+            className={inputClasses({ inputSize: "sm" })}
           />
         </div>
       );
@@ -1074,6 +1075,8 @@ export function TablePagination({
         <p className="text-sm text-text-muted">
           Showing {start}–{end} of {total}
         </p>
+        {/* Toolbar chrome, not a form field — the input slot sets w-full,
+            which would stretch this to fill the row. */}
         <select
           value={pageSize}
           onChange={(e) => onPageSizeChange(Number(e.target.value))}

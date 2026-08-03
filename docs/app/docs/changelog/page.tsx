@@ -28,6 +28,60 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.128.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.128.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    <code>grit swap input</code> now restyles your forms, finishing what v3.127.0
+                    started for buttons.
+                  </strong>
+                </p>
+                <p>
+                  Forty form fields across thirteen files route their classes through{" "}
+                  <code>inputClasses()</code>. Swap in <code>soft-filled</code> and every field in
+                  a modal changes together, instead of one or two while the rest keep the old
+                  border.
+                </p>
+                <ul>
+                  <li>
+                    Field surfaces unify. Some inputs were on{" "}
+                    <code>bg-bg-elevated</code>, some on <code>bg-bg-secondary</code>, some on{" "}
+                    <code>bg-bg-tertiary</code> &mdash; accidents, not decisions. The slot owns the
+                    surface now, so the whole form matches.
+                  </li>
+                  <li>
+                    <strong>Checkboxes and radios deliberately stay out.</strong> The slot sets{" "}
+                    <code>w-full</code>, which is right for a text field and wrong for a 16px box.
+                    Fields carrying an explicit width stay out for the same reason &mdash; two
+                    width utilities would fight, and which one wins depends on Tailwind&apos;s
+                    internal ordering rather than the order you wrote them.
+                  </li>
+                  <li>
+                    The table&apos;s page-size <code>&lt;select&gt;</code> stays out too. It is
+                    toolbar chrome, not a form field, and <code>w-full</code> would stretch it
+                    across the row.
+                  </li>
+                  <li>
+                    The confirm-to-delete field now uses the slot&apos;s own <code>invalid</code>{" "}
+                    state rather than carrying <code>focus:border-danger</code> alongside the
+                    slot&apos;s <code>focus:border-accent</code>.
+                  </li>
+                </ul>
+                <p>
+                  The import test from v3.127.0 now covers both slots, and a second budget test
+                  pins the count of hand-styled fields so it can only go down.
+                </p>
+              </div>
+            </div>
+
             {/* v3.127.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

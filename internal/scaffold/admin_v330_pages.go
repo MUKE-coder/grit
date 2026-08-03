@@ -233,6 +233,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { Plus, MessageSquare, AlertCircle } from "@/lib/icons";
 import { apiClient } from "@/lib/api-client";
 import { buttonClasses } from "@/components/ui/button";
+import { inputClasses } from "@/components/ui/input";
 
 interface Ticket {
   id: string;
@@ -440,7 +441,7 @@ function NewTicketSheet({ open, onClose }: { open: boolean; onClose: () => void 
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="One-line summary of the problem"
-            className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2.5 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className={inputClasses()}
           />
         </Field>
 
@@ -449,7 +450,7 @@ function NewTicketSheet({ open, onClose }: { open: boolean; onClose: () => void 
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value as Ticket["priority"])}
-              className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2.5 text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className={inputClasses()}
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -463,7 +464,7 @@ function NewTicketSheet({ open, onClose }: { open: boolean; onClose: () => void 
               value={labels}
               onChange={(e) => setLabels(e.target.value)}
               placeholder="bug, billing, mobile"
-              className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2.5 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className={inputClasses()}
             />
           </Field>
         </div>
@@ -474,7 +475,7 @@ function NewTicketSheet({ open, onClose }: { open: boolean; onClose: () => void 
             onChange={(e) => setDescription(e.target.value)}
             rows={5}
             placeholder="Steps to reproduce, expected vs. actual behaviour, anything that helps."
-            className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2.5 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className={inputClasses({ multiline: true })}
           />
         </Field>
       </form>
@@ -508,6 +509,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { Check, ArrowLeft } from "@/lib/icons";
 import { apiClient } from "@/lib/api-client";
 import { buttonClasses } from "@/components/ui/button";
+import { inputClasses } from "@/components/ui/input";
 
 interface Reply {
   id: string;
@@ -699,7 +701,7 @@ export default function TicketThreadPage() {
             onChange={(e) => setReply(e.target.value)}
             rows={4}
             placeholder="Write a reply..."
-            className="w-full rounded-lg border border-border bg-bg-secondary px-3 py-2.5 text-foreground placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className={inputClasses({ multiline: true })}
           />
           <div className="mt-3 flex justify-end">
             <button

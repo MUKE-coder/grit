@@ -855,6 +855,7 @@ import { SkeletonCards, Skeleton } from "@/components/ui/Skeleton";
 import { ResponsiveSheet } from "@/components/ui/ResponsiveSheet";
 import { apiClient } from "@/lib/api-client";
 import { exportToExcel } from "@/lib/export";
+import { inputClasses } from "@/components/ui/input";
 import {
   Activity as ActivityIcon, AlertCircle, AlertTriangle, Flag, Download,
   LogIn, LogOut, UserPlus, ShoppingCart, FileText, Settings as SettingsIcon, Shield,
@@ -1031,7 +1032,7 @@ export default function ActivityPage() {
             type="date"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
-            className="w-full rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className={inputClasses()}
           />
         </Field>
         <Field label="To">
@@ -1039,7 +1040,7 @@ export default function ActivityPage() {
             type="date"
             value={to}
             onChange={(e) => setTo(e.target.value)}
-            className="w-full rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className={inputClasses()}
           />
         </Field>
         <IconButton

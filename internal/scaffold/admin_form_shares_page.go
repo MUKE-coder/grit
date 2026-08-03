@@ -23,6 +23,7 @@ import { SkeletonCards } from "@/components/ui/Skeleton";
 import { Plus, Copy, Lock, Unlock, Trash2, X, ExternalLink, Activity, Pencil } from "@/lib/icons";
 import { buttonClasses } from "@/components/ui/button";
 import { toast } from "sonner";
+import { inputClasses } from "@/components/ui/input";
 
 interface FormShare {
   id: string;
@@ -406,7 +407,7 @@ function CreateShareModal({ onClose }: { onClose: () => void }) {
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground">Resource</label>
             <select value={resourceName} onChange={(e) => setResourceName(e.target.value)} required autoFocus
-              className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30">
+              className={inputClasses()}>
               <option value="">{resourcesLoading ? "Loading…" : "Select a resource…"}</option>
               {(resources ?? []).map((r) => (<option key={r} value={r}>{r}</option>))}
             </select>
@@ -458,24 +459,24 @@ function CreateShareModal({ onClose }: { onClose: () => void }) {
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground">Form title <span className="text-text-muted">(optional)</span></label>
-            <input type="text" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} placeholder={resourceName ? "New " + resourceName : "Heading shown on the public form"} className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+            <input type="text" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} placeholder={resourceName ? "New " + resourceName : "Heading shown on the public form"} className={inputClasses()} />
             <p className="text-xs text-text-muted">Shown as the heading on the public form. Blank = falls back to the label, then to the resource name.</p>
           </div>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground">Description <span className="text-text-muted">(optional)</span></label>
-            <textarea value={customDescription} onChange={(e) => setCustomDescription(e.target.value)} placeholder="One-line subtitle shown under the heading" rows={2} className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+            <textarea value={customDescription} onChange={(e) => setCustomDescription(e.target.value)} placeholder="One-line subtitle shown under the heading" rows={2} className={inputClasses({ multiline: true })} />
           </div>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground">Internal label <span className="text-text-muted">(optional)</span></label>
-            <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Q3 lead form" className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+            <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Q3 lead form" className={inputClasses()} />
             <p className="text-xs text-text-muted">Operator-facing tag (the visitor never sees this).</p>
           </div>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground">Password <span className="text-text-muted">(optional)</span></label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Leave blank for open access" className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Leave blank for open access" className={inputClasses()} />
             <p className="text-xs text-text-muted">Stored as bcrypt. Visitors must enter this before the form is shown.</p>
           </div>
 
@@ -593,17 +594,17 @@ function EditShareModal({ share, onClose }: { share: FormShare; onClose: () => v
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground">Form title <span className="text-text-muted">(optional)</span></label>
-            <input type="text" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} placeholder={"New " + share.resource_name} className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+            <input type="text" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} placeholder={"New " + share.resource_name} className={inputClasses()} />
           </div>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground">Description <span className="text-text-muted">(optional)</span></label>
-            <textarea value={customDescription} onChange={(e) => setCustomDescription(e.target.value)} rows={2} className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+            <textarea value={customDescription} onChange={(e) => setCustomDescription(e.target.value)} rows={2} className={inputClasses({ multiline: true })} />
           </div>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground">Internal label <span className="text-text-muted">(optional)</span></label>
-            <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Q3 lead form" className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+            <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Q3 lead form" className={inputClasses()} />
           </div>
 
           <div className="space-y-2">
@@ -620,7 +621,7 @@ function EditShareModal({ share, onClose }: { share: FormShare; onClose: () => v
               })}
             </div>
             {passwordMode === "set" && (
-              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" className="w-full rounded-lg border border-border bg-bg-elevated px-3 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30" />
+              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" className={inputClasses()} />
             )}
             {passwordMode === "remove" && (
               <p className="rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning">

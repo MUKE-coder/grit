@@ -73,32 +73,45 @@ func isSlot(path string) bool {
 	return strings.HasSuffix(path, "components/ui/button.tsx")
 }
 
-func TestButtonClassesImportsMatchUsage(t *testing.T) {
+// slots maps each swappable slot's class helper to the module it comes from.
+var slots = map[string]string{
+	"buttonClasses": "@/components/ui/button",
+	"inputClasses":  "@/components/ui/input",
+}
+
+func TestSlotHelperImportsMatchUsage(t *testing.T) {
 	for _, frontend := range []Frontend{FrontendNext, FrontendTanStack} {
 		t.Run(string(frontend), func(t *testing.T) {
-			for path, src := range adminTSX(t, frontend) {
-				if isSlot(path) {
-					continue
-				}
+			files := adminTSX(t, frontend)
+			for helper, module := range slots {
+				// components/ui/button.tsx from "@/components/ui/button"
+				slotFile := strings.TrimPrefix(module, "@/") + ".tsx"
 
-				imported := false
-				for _, line := range strings.Split(src, "\n") {
-					if strings.Contains(line, `from "@/components/ui/button"`) &&
-						strings.Contains(line, "buttonClasses") {
-						imported = true
-						break
+				for path, src := range files {
+					// The slot that defines the helper must not import it.
+					if strings.HasSuffix(path, slotFile) {
+						continue
 					}
-				}
 
-				// Count calls, not mentions — the import line mentions the name
-				// too, so a substring check would call every import a use.
-				used := strings.Contains(src, "buttonClasses(")
+					imported := false
+					for _, line := range strings.Split(src, "\n") {
+						if strings.Contains(line, `from "`+module+`"`) &&
+							strings.Contains(line, helper) {
+							imported = true
+							break
+						}
+					}
 
-				switch {
-				case used && !imported:
-					t.Errorf("%s calls buttonClasses() but does not import it — the admin build will fail", path)
-				case imported && !used:
-					t.Errorf("%s imports buttonClasses but never calls it — the import probably belongs in a sibling file", path)
+					// Count calls, not mentions — the import line mentions the
+					// name too, so a substring check would call every import a use.
+					used := strings.Contains(src, helper+"(")
+
+					switch {
+					case used && !imported:
+						t.Errorf("%s calls %s() but does not import it — the admin build will fail", path, helper)
+					case imported && !used:
+						t.Errorf("%s imports %s but never calls it — the import probably belongs in a sibling file", path, helper)
+					}
 				}
 			}
 		})
@@ -149,13 +162,61 @@ func TestInlineAccentButtonsDoNotGrow(t *testing.T) {
 	}
 }
 
-// inlineButtonTags returns each <button ...> opening tag in src. It tracks
-// braces and quotes because `onClick={() => x}` contains a > that a naive scan
+// The same guard for form fields. A field that hand-writes its border and
+// surface is invisible to `grit swap input`.
+//
+// The remaining sites are ones the slot cannot express: checkboxes and radios
+// (the slot sets w-full, which is wrong for a 16px box), fields carrying an
+// explicit width that would fight that same w-full, and toolbar chrome like
+// the page-size select that is a control rather than a form field.
+func TestInlineFormFieldsDoNotGrow(t *testing.T) {
+	// 24 at the time of writing, all in the categories above.
+	const budget = 28
+
+	for _, frontend := range []Frontend{FrontendNext, FrontendTanStack} {
+		t.Run(string(frontend), func(t *testing.T) {
+			count := 0
+			worst := ""
+			worstN := 0
+
+			for path, src := range adminTSX(t, frontend) {
+				if strings.HasSuffix(path, "components/ui/input.tsx") {
+					continue
+				}
+				n := 0
+				for _, el := range []string{"input", "textarea", "select"} {
+					for _, tag := range inlineTags(src, el) {
+						if strings.Contains(tag, "border-border") && strings.Contains(tag, `className="`) {
+							n++
+						}
+					}
+				}
+				count += n
+				if n > worstN {
+					worstN, worst = n, path
+				}
+			}
+
+			if count > budget {
+				t.Errorf("inline bordered form fields: %d, budget %d (worst: %s with %d).\n"+
+					"New fields should call inputClasses() so `grit swap input` reaches them.",
+					count, budget, worst, worstN)
+			}
+			t.Logf("inline bordered form fields: %d (budget %d)", count, budget)
+		})
+	}
+}
+
+func inlineButtonTags(src string) []string { return inlineTags(src, "button") }
+
+// inlineTags returns each <element ...> opening tag in src. It tracks braces
+// and quotes because `onClick={() => x}` contains a > that a naive scan
 // mistakes for the end of the tag.
-func inlineButtonTags(src string) []string {
+func inlineTags(src, element string) []string {
+	open := "<" + element
 	var tags []string
 	for i := 0; ; {
-		start := strings.Index(src[i:], "<button")
+		start := strings.Index(src[i:], open)
 		if start < 0 {
 			return tags
 		}
@@ -163,7 +224,7 @@ func inlineButtonTags(src string) []string {
 
 		depth := 0
 		var quote byte
-		j := start + len("<button")
+		j := start + len(open)
 		for ; j < len(src); j++ {
 			ch := src[j]
 			switch {

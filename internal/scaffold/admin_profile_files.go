@@ -457,6 +457,7 @@ func adminDeleteAccountDialog() string {
 import { useState } from "react";
 import { useDeleteAccount } from "@/hooks/use-profile";
 import { AlertTriangle, Loader2, X } from "@/lib/icons";
+import { inputClasses } from "@/components/ui/input";
 
 interface DeleteAccountDialogProps {
   open: boolean;
@@ -510,7 +511,7 @@ export function DeleteAccountDialog({ open, onClose }: DeleteAccountDialogProps)
               value={confirmation}
               onChange={(e) => setConfirmation(e.target.value)}
               placeholder="DELETE"
-              className="w-full rounded-lg border border-border bg-bg-tertiary px-3 py-2 text-sm text-foreground placeholder:text-text-muted focus:border-danger focus:outline-none focus:ring-1 focus:ring-danger"
+              className={inputClasses({ invalid: true })}
             />
           </div>
         </div>

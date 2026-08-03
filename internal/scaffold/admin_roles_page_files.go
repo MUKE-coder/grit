@@ -45,6 +45,7 @@ import {
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { ShieldCheck, Lock, Users, Plus, ArrowLeft, Save, Trash2, Search, Copy } from "@/lib/icons";
 import { buttonClasses } from "@/components/ui/button";
+import { inputClasses } from "@/components/ui/input";
 
 const ACTIONS: PermAction[] = ["create", "view", "edit", "delete"];
 
@@ -460,7 +461,7 @@ function RoleEditor({
 						onChange={(e) => setName(e.target.value)}
 						disabled={role ? role.is_system : false}
 						placeholder="e.g. Support"
-						className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary disabled:opacity-60"
+						className={inputClasses()}
 					/>
 				</div>
 				<div>
@@ -471,7 +472,7 @@ function RoleEditor({
 						value={description}
 						onChange={(e) => setDescription(e.target.value)}
 						placeholder="What is this role for?"
-						className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary"
+						className={inputClasses()}
 					/>
 				</div>
 			</div>
