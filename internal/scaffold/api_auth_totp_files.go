@@ -288,22 +288,22 @@ type totpSetupResponse struct {
 	QRCode string ` + "`" + `json:"qr_code"` + "`" + `
 }
 
-type totpEnableRequest struct {
+type EnableTOTPRequest struct {
 	Secret string ` + "`" + `json:"secret" binding:"required"` + "`" + `
 	Code   string ` + "`" + `json:"code" binding:"required"` + "`" + `
 }
 
-type totpVerifyRequest struct {
+type VerifyTOTPRequest struct {
 	PendingToken string ` + "`" + `json:"pending_token" binding:"required"` + "`" + `
 	Code         string ` + "`" + `json:"code" binding:"required"` + "`" + `
 	TrustDevice  bool   ` + "`" + `json:"trust_device"` + "`" + `
 }
 
-type totpDisableRequest struct {
+type DisableTOTPRequest struct {
 	Password string ` + "`" + `json:"password" binding:"required"` + "`" + `
 }
 
-type backupCodeVerifyRequest struct {
+type VerifyBackupCodeRequest struct {
 	PendingToken string ` + "`" + `json:"pending_token" binding:"required"` + "`" + `
 	Code         string ` + "`" + `json:"code" binding:"required"` + "`" + `
 	TrustDevice  bool   ` + "`" + `json:"trust_device"` + "`" + `
@@ -364,7 +364,7 @@ func (h *TOTPHandler) Setup(c *gin.Context) {
 func (h *TOTPHandler) Enable(c *gin.Context) {
 	userID := c.GetString("user_id")
 
-	var req totpEnableRequest
+	var req EnableTOTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
@@ -420,7 +420,7 @@ func (h *TOTPHandler) Enable(c *gin.Context) {
 // Verify validates a TOTP code during the login flow (after password check).
 // Exchanges a pending token + valid TOTP code for real JWT tokens.
 func (h *TOTPHandler) Verify(c *gin.Context) {
-	var req totpVerifyRequest
+	var req VerifyTOTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
@@ -503,7 +503,7 @@ func (h *TOTPHandler) Verify(c *gin.Context) {
 
 // VerifyBackupCode validates a backup code during login (alternative to TOTP).
 func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
-	var req backupCodeVerifyRequest
+	var req VerifyBackupCodeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
@@ -588,7 +588,7 @@ func (h *TOTPHandler) VerifyBackupCode(c *gin.Context) {
 func (h *TOTPHandler) Disable(c *gin.Context) {
 	userID := c.GetString("user_id")
 
-	var req totpDisableRequest
+	var req DisableTOTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},

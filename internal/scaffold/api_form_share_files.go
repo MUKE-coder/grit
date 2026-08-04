@@ -422,18 +422,22 @@ func (h *FormShareHandler) List(c *gin.Context) {
 	})
 }
 
+// A new public form share.
+type CreateFormShareRequest struct {
+	ResourceName      string   ` + "`" + `json:"resource_name" binding:"required"` + "`" + `
+	Label             string   ` + "`" + `json:"label"` + "`" + `
+	Password          string   ` + "`" + `json:"password"` + "`" + `
+	CustomTitle       string   ` + "`" + `json:"custom_title"` + "`" + `
+	CustomDescription string   ` + "`" + `json:"custom_description"` + "`" + `
+	HiddenFields      []string ` + "`" + `json:"hidden_fields"` + "`" + `
+}
+
 // Create generates a new share for a resource. Optional password is
 // bcrypt-hashed before storage. A 32-char URL-safe token is generated
 // automatically.
+
 func (h *FormShareHandler) Create(c *gin.Context) {
-	var req struct {
-		ResourceName      string   ` + "`" + `json:"resource_name" binding:"required"` + "`" + `
-		Label             string   ` + "`" + `json:"label"` + "`" + `
-		Password          string   ` + "`" + `json:"password"` + "`" + `
-		CustomTitle       string   ` + "`" + `json:"custom_title"` + "`" + `
-		CustomDescription string   ` + "`" + `json:"custom_description"` + "`" + `
-		HiddenFields      []string ` + "`" + `json:"hidden_fields"` + "`" + `
-	}
+	var req CreateFormShareRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
@@ -487,8 +491,19 @@ func (h *FormShareHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"data": share, "message": "Share created"})
 }
 
+// Changes to a share.
+type UpdateFormShareRequest struct {
+	Label             *string   ` + "`" + `json:"label"` + "`" + `
+	Enabled           *bool     ` + "`" + `json:"enabled"` + "`" + `
+	Password          *string   ` + "`" + `json:"password"` + "`" + `
+	CustomTitle       *string   ` + "`" + `json:"custom_title"` + "`" + `
+	CustomDescription *string   ` + "`" + `json:"custom_description"` + "`" + `
+	HiddenFields      *[]string ` + "`" + `json:"hidden_fields"` + "`" + `
+}
+
 // Update toggles enabled/label/password. Pass password="" to leave
 // unchanged; pass password="-" to remove an existing password.
+
 func (h *FormShareHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 	var share models.FormShare
@@ -499,14 +514,7 @@ func (h *FormShareHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		Label             *string   ` + "`" + `json:"label"` + "`" + `
-		Enabled           *bool     ` + "`" + `json:"enabled"` + "`" + `
-		Password          *string   ` + "`" + `json:"password"` + "`" + `
-		CustomTitle       *string   ` + "`" + `json:"custom_title"` + "`" + `
-		CustomDescription *string   ` + "`" + `json:"custom_description"` + "`" + `
-		HiddenFields      *[]string ` + "`" + `json:"hidden_fields"` + "`" + `
-	}
+	var req UpdateFormShareRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
@@ -613,9 +621,16 @@ func (h *FormShareHandler) PublicGet(c *gin.Context) {
 	})
 }
 
+// A submission through a public share.
+type PublicFormSubmitRequest struct {
+	Password string                 ` + "`" + `json:"_password"` + "`" + `
+	Fields   map[string]interface{} ` + "`" + `json:"fields" binding:"required"` + "`" + `
+}
+
 // PublicSubmit accepts the form payload, verifies the password (when
 // required), and dispatches to the resource's create service. Returns
 // the new record's ID + an opaque label.
+
 func (h *FormShareHandler) PublicSubmit(c *gin.Context) {
 	token := c.Param("token")
 	var share models.FormShare
@@ -626,10 +641,7 @@ func (h *FormShareHandler) PublicSubmit(c *gin.Context) {
 		return
 	}
 
-	var body struct {
-		Password string                 ` + "`" + `json:"_password"` + "`" + `
-		Fields   map[string]interface{} ` + "`" + `json:"fields" binding:"required"` + "`" + `
-	}
+	var body PublicFormSubmitRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},

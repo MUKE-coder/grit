@@ -23,15 +23,34 @@ import (
 	"{{MODULE}}/internal/services"
 )
 
-// newTestDB opens a fresh in-memory SQLite database and migrates the User model.
-// It accepts testing.TB so both tests and benchmarks can call it.
+// newTestDB opens a fresh in-memory SQLite database and migrates what the auth
+// handlers write to. It accepts testing.TB so both tests and benchmarks can
+// call it.
+//
+// Registering does more than insert a user: it opens a session and writes an
+// activity row. Those writes are best-effort and only logged, so a missing
+// table does not fail the request outright — it surfaces later as a wrong
+// status code, which is a confusing way to learn the test database was
+// incomplete.
+//
+// email_verification_tokens is deliberately NOT migrated. That write happens on
+// a goroutine (deliverVerificationEmail, so a slow SMTP call cannot hold the
+// response open), and this connection is a single in-memory SQLite database.
+// Creating the table turns a harmless early return into a background writer
+// racing whatever the test does next. If you are testing verification itself,
+// migrate it in that test and call the service directly rather than through the
+// register handler.
 func newTestDB(tb testing.TB) *gorm.DB {
 	tb.Helper()
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	require.NoError(tb, err)
-	require.NoError(tb, db.AutoMigrate(&models.User{}))
+	require.NoError(tb, db.AutoMigrate(
+		&models.User{},
+		&models.Session{},
+		&models.UserActivity{},
+	))
 	return db
 }
 

@@ -752,7 +752,16 @@ func (h *UploadHandler) Delete(c *gin.Context) {
 	})
 }
 
+// What the browser intends to upload.
+type PresignRequest struct {
+	Filename    string   ` + "`" + `json:"filename" binding:"required"` + "`" + `
+	ContentType string   ` + "`" + `json:"content_type" binding:"required"` + "`" + `
+	FileSize    int64    ` + "`" + `json:"file_size" binding:"required"` + "`" + `
+	Accepts     []string ` + "`" + `json:"accepts"` + "`" + `
+}
+
 // Presign generates a presigned PUT URL for direct browser-to-storage upload.
+
 func (h *UploadHandler) Presign(c *gin.Context) {
 	if h.Storage == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
@@ -761,12 +770,7 @@ func (h *UploadHandler) Presign(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		Filename    string   ` + "`" + `json:"filename" binding:"required"` + "`" + `
-		ContentType string   ` + "`" + `json:"content_type" binding:"required"` + "`" + `
-		FileSize    int64    ` + "`" + `json:"file_size" binding:"required"` + "`" + `
-		Accepts     []string ` + "`" + `json:"accepts"` + "`" + `
-	}
+	var req PresignRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
@@ -815,15 +819,19 @@ func (h *UploadHandler) Presign(c *gin.Context) {
 	})
 }
 
+// A file that was PUT straight to storage.
+type CompleteUploadRequest struct {
+	Key         string   ` + "`" + `json:"key" binding:"required"` + "`" + `
+	Filename    string   ` + "`" + `json:"filename" binding:"required"` + "`" + `
+	ContentType string   ` + "`" + `json:"content_type" binding:"required"` + "`" + `
+	Size        int64    ` + "`" + `json:"size" binding:"required"` + "`" + `
+	Accepts     []string ` + "`" + `json:"accepts"` + "`" + `
+}
+
 // CompleteUpload records a file that was uploaded directly to storage via presigned URL.
+
 func (h *UploadHandler) CompleteUpload(c *gin.Context) {
-	var req struct {
-		Key         string   ` + "`" + `json:"key" binding:"required"` + "`" + `
-		Filename    string   ` + "`" + `json:"filename" binding:"required"` + "`" + `
-		ContentType string   ` + "`" + `json:"content_type" binding:"required"` + "`" + `
-		Size        int64    ` + "`" + `json:"size" binding:"required"` + "`" + `
-		Accepts     []string ` + "`" + `json:"accepts"` + "`" + `
-	}
+	var req CompleteUploadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},

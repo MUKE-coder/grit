@@ -523,6 +523,11 @@ func NewSSOHandler(db *gorm.DB, auth *services.AuthService, cfg *config.Config,
 
 // ── Public: discovery ────────────────────────────────────────────────────────
 
+// An email address, to find its SSO connection.
+type SSODiscoverRequest struct {
+	Email string ~json:"email" binding:"required,email"~
+}
+
 // Discover answers "should this email address use SSO, and if so where?".
 //
 // The login form calls it as the user submits their address. A miss is a normal
@@ -530,10 +535,9 @@ func NewSSOHandler(db *gorm.DB, auth *services.AuthService, cfg *config.Config,
 //
 //	POST /api/auth/sso/discover  {"email": "bob@acme.com"}
 //	200 {"data": {"sso": true, "slug": "acme", "name": "Acme Okta", "redirect_url": "..."}}
+
 func (h *SSOHandler) Discover(c *gin.Context) {
-	var req struct {
-		Email string ~json:"email" binding:"required,email"~
-	}
+	var req SSODiscoverRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respond.BadRequest(c, "a valid email address is required")
 		return
@@ -856,7 +860,7 @@ func (h *SSOHandler) failLogin(c *gin.Context, message string) {
 
 // ── Admin CRUD ───────────────────────────────────────────────────────────────
 
-type ssoConnectionInput struct {
+type SSOConnectionRequest struct {
 	Slug            string ~json:"slug"~
 	Name            string ~json:"name"~
 	Domains         string ~json:"domains"~
@@ -894,7 +898,7 @@ func (h *SSOHandler) List(c *gin.Context) {
 }
 
 func (h *SSOHandler) Create(c *gin.Context) {
-	var in ssoConnectionInput
+	var in SSOConnectionRequest
 	if err := c.ShouldBindJSON(&in); err != nil {
 		respond.BadRequest(c, err.Error())
 		return
@@ -961,7 +965,7 @@ func (h *SSOHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var in ssoConnectionInput
+	var in SSOConnectionRequest
 	if err := c.ShouldBindJSON(&in); err != nil {
 		respond.BadRequest(c, err.Error())
 		return
