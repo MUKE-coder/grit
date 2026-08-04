@@ -224,6 +224,7 @@ const navItems: NavItem[] = [
       { title: 'Privacy & Compliance (GDPR)', href: '/docs/security/compliance' },
       { title: "Defender's Handbook ↔ Grit", href: '/docs/security/defenders-handbook' },
       { title: 'Performance & Pentest Testing', href: '/docs/testing' },
+      { title: 'Benchmarks — Grit vs Laravel', href: '/docs/benchmarks' },
     ],
   },
   {

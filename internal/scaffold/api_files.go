@@ -1092,6 +1092,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -1148,13 +1149,52 @@ func Connect(dsn string) (*gorm.DB, error) {
 	// Connection pool settings. SQLite ignores most of these — single-writer
 	// semantics mean MaxOpenConns above 1 only helps concurrent reads, and
 	// SQLite serialises writes internally. Postgres uses every knob.
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(100)
+	//
+	// Idle defaults to Open, and that default matters more than it looks. When
+	// idle is lower, a request past the idle limit returns its connection to a
+	// full pool, so the connection is CLOSED — and the next request opens a new
+	// one, which makes Postgres fork a backend process. Under concurrency that
+	// is a connection storm, and it surfaces as database CPU rather than as
+	// anything you would think to look for in the application.
+	//
+	// Measured with k6 at 50 VUs, 4 CPUs per container, single-row reads:
+	// idle=10 gave ~810 req/s with Postgres pinned near 840% while the API used
+	// 196%; idle=100 gave ~2,720 req/s with both around 300%. Same binary, same
+	// query.
+	//
+	// Both are tunable because the right answer depends on the workload. If
+	// your queries are heavy enough to saturate the database — an unindexed
+	// COUNT over a large table on every request, say — a smaller pool acts as
+	// admission control and can measure faster, because queueing in the app is
+	// cheaper than thrashing in Postgres. Start here, then measure.
+	maxOpen := getEnvInt("DB_MAX_OPEN_CONNS", 100)
+	if maxOpen < 1 {
+		maxOpen = 1
+	}
+	maxIdle := getEnvInt("DB_MAX_IDLE_CONNS", maxOpen)
+	if maxIdle < 1 || maxIdle > maxOpen {
+		maxIdle = maxOpen
+	}
+	sqlDB.SetMaxIdleConns(maxIdle)
+	sqlDB.SetMaxOpenConns(maxOpen)
 	sqlDB.SetConnMaxLifetime(30 * time.Minute)
 	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
 
 	log.Println("Database connected successfully")
 	return db, nil
+}
+
+// getEnvInt reads a whole-number env var. A malformed value falls back rather
+// than failing the boot — a typo in DB_MAX_OPEN_CONNS should not stop the app
+// from starting.
+func getEnvInt(key string, fallback int) int {
+	if raw := os.Getenv(key); raw != "" {
+		if n, err := strconv.Atoi(raw); err == nil {
+			return n
+		}
+		log.Printf("warning: %s=%q is not a number, using %d", key, raw, fallback)
+	}
+	return fallback
 }
 `
 }

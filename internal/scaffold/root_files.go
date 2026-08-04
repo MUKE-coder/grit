@@ -108,6 +108,18 @@ POSTGRES_PORT=5434
 #   DATABASE_URL=sqlite::memory:           # gone on restart, great for tests
 # DATABASE_URL=
 
+# Connection pool. Idle defaults to Open, which is what you want: when idle is
+# lower, connections returned to a full pool get closed and Postgres forks a new
+# backend for the next request. Under load that is a connection storm, and it
+# shows up as database CPU rather than as anything obvious in the app.
+#
+# Measured at 50 concurrent users, 4 CPUs a side: idle=10 gave ~810 req/s on a
+# single-row read; idle=100 gave ~2,720. Lower them only if your queries are
+# heavy enough to saturate the database, where a smaller pool acts as admission
+# control — then queueing happens in the app instead of thrashing in Postgres.
+# DB_MAX_OPEN_CONNS=100
+# DB_MAX_IDLE_CONNS=100
+
 # JWT — generated at scaffold time. Rotate with: openssl rand -hex 32
 JWT_SECRET=%s
 # Field-level encryption (optional). Set a base64 32-byte key to enable AES-256-GCM
