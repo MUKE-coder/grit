@@ -20,7 +20,7 @@ from collections import defaultdict
 RESULTS = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                        os.environ.get("RESULTS_DIR", "results/final"))
 SCENARIOS = ["list", "show", "mixed", "write"]
-APPS = ["grit", "grit-pooled", "laravel"]
+APPS = ["grit", "encore", "bun", "express", "nextjs", "laravel", "django"]
 
 
 def metric(summary, name, field):
@@ -67,7 +67,7 @@ def load():
     runs = defaultdict(list)
     for path in sorted(glob.glob(os.path.join(RESULTS, "*.log"))):
         base = os.path.basename(path)[: -len(".log")]
-        m = re.match(r"^(grit|grit-pooled|laravel)-(list|show|mixed|write)-(\d+)$", base)
+        m = re.match(r"^(grit|encore|bun|express|nextjs|laravel|django)-(list|show|mixed|write)-(\d+)$", base)
         if not m:
             continue
         app, scenario, _rep = m.groups()

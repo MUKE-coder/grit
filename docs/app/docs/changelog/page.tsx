@@ -28,6 +28,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.133.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.133.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    GORM now caches prepared statements, and the implicit write transaction is
+                    finally something you can turn off.
+                  </strong>
+                </p>
+                <p>
+                  Found by benchmarking Grit against Express: Express was winning on inserts, and
+                  the reason was not the framework. Every GORM write was{' '}
+                  <code>BEGIN</code> + <code>INSERT</code> + <code>COMMIT</code> — three round
+                  trips where one would do — with the statement re-planned by Postgres each time.
+                </p>
+                <ul>
+                  <li>
+                    <code>PrepareStmt</code> is on by default. A query that runs a thousand times
+                    is planned once per connection instead of a thousand times. Disable with{' '}
+                    <code>DB_PREPARED_STATEMENTS=false</code> if you run pgbouncer in transaction
+                    mode, where server-side prepared statements do not survive.
+                  </li>
+                  <li>
+                    <code>DB_SKIP_DEFAULT_TRANSACTION=true</code> drops GORM&apos;s implicit
+                    transaction around single writes &mdash; worth roughly a third of write
+                    throughput.
+                  </li>
+                </ul>
+                <p>
+                  <strong>That second one is off by default, and that is deliberate.</strong>{' '}
+                  The resource generator emits models with relations, and saving a parent with
+                  children is several INSERTs. Without the wrapping transaction, a failure halfway
+                  leaves an invoice holding some of its line items and no error anyone notices
+                  until the numbers stop adding up. It would have made the benchmark look better;
+                  it is not worth that.
+                </p>
+                <p>
+                  The full comparison &mdash; Grit against Bun, Encore.ts and Express, every
+                  framework on its own ORM, with the harness and raw results &mdash; is at{' '}
+                  <a href="/docs/benchmarks">/docs/benchmarks</a>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.132.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

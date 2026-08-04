@@ -1,0 +1,33 @@
+// Mapped onto the canonical products table from seed/schema.sql — the same
+// table every framework in this benchmark shares.
+//
+// Nothing here creates or migrates anything: the table already exists, and
+// letting Prisma emit its own would mean comparing schemas instead of
+// frameworks. Every column is pinned to the exact Postgres type in that file so
+// Prisma reads and writes what GORM, Eloquent and Django do.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          String    @id @db.VarChar(36)
+  name        String?   @db.VarChar(255)
+  sku         String?   @db.VarChar(255)
+  description String?
+  price       Decimal?  @db.Decimal(12, 2)
+  stock       BigInt?
+  active      Boolean?
+  version     BigInt    @default(1)
+  createdAt   DateTime? @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime? @map("updated_at") @db.Timestamptz()
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz()
+
+  @@map("products")
+  @@index([deletedAt], map: "idx_products_deleted_at")
+}

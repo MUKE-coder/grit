@@ -1,19 +1,27 @@
-# Grit vs Laravel — benchmark harness.
+# Grit vs everyone — benchmark harness.
 #
-# The whole point of this file is that neither side gets an advantage:
+# The point of this file is that nobody gets an advantage:
 #
-#   - one Postgres, shared, so the database is a constant rather than a variable
-#   - identical CPU and memory limits on both app containers
-#   - both built as production images (Go binary; nginx + php-fpm + opcache),
-#     never a dev server
-#   - both reachable on the host over plain HTTP with no proxy in between
+#   - one Postgres, shared, tuned once, with more CPU than any app so the
+#     database is never the thing that gives out first
+#   - identical CPU and memory limits on every app container
+#   - every app in production shape, never a dev server
+#   - one database per framework, all created from seed/schema.sql, so the
+#     table is byte-identical rather than whatever each ORM's migration emits
 #
-# Run one app at a time. An idle container still schedules, and on a 14-core
-# box the difference is small but it is not nothing.
+# Run one app at a time — an idle container still schedules. ./final.sh handles
+# the start/stop and the per-run dataset reset itself.
 #
 #   docker compose up -d postgres
-#   docker compose up -d grit          # bench, then: docker compose stop grit
-#   docker compose up -d laravel       # bench, then: docker compose stop laravel
+#   ./final.sh
+
+x-app-limits: &app-limits
+  # Change this and you change it for everyone. That is the point.
+  deploy:
+    resources:
+      limits:
+        cpus: "4"
+        memory: 2G
 
 services:
   postgres:
@@ -22,22 +30,21 @@ services:
       POSTGRES_USER: bench
       POSTGRES_PASSWORD: bench
       POSTGRES_DB: bench
-      # bench_grit and bench_laravel are created on first run; see README.
     ports:
       - "5499:5432"
-    # Enough headroom that the database is never the bottleneck. If Postgres
-    # saturates, the benchmark measures Postgres and both frameworks converge
-    # on the same number — which looks like a tie and means nothing.
     command:
       - postgres
       - -c
-      - max_connections=300
+      - max_connections=400
       - -c
       - shared_buffers=1GB
       - -c
       - effective_cache_size=3GB
       - -c
       - work_mem=16MB
+      # Durability off. This is a framework benchmark, not a storage benchmark —
+      # leaving fsync on would put disk in the critical path of every write and
+      # compress the difference between the frameworks.
       - -c
       - fsync=off
       - -c
@@ -47,11 +54,9 @@ services:
     deploy:
       resources:
         limits:
-          # Deliberately more than either app gets. At 4 CPUs Postgres pegged
-          # during the Laravel run, which means the number being measured was
-          # Postgres, not Laravel. The database has to have headroom to spare or
-          # both frameworks converge on the database's ceiling and the result
-          # looks like a tie.
+          # Deliberately more than any app gets. When the database saturates
+          # first, every framework converges on its ceiling and the result looks
+          # like a tie that means nothing.
           cpus: "8"
           memory: 4G
     healthcheck:
@@ -60,7 +65,9 @@ services:
       timeout: 3s
       retries: 20
 
+  # ── Grit ────────────────────────────────────────────────────────────
   grit:
+    <<: *app-limits
     build:
       context: ./grit-bench/apps/api
       dockerfile: Dockerfile
@@ -69,27 +76,26 @@ services:
       PORT: "8080"
       DATABASE_URL: postgres://bench:bench@postgres:5432/bench_grit?sslmode=disable
       JWT_SECRET: benchmark-only-not-a-real-secret
-      # Everything optional is off. Each of these would add work to Grit's
-      # request path that Laravel is not doing, which would flatter Laravel.
+      LOG_LEVEL: error
+      # Off: each of these would be work the others are not doing.
       STUDIO_ENABLED: "false"
       PULSE_ENABLED: "false"
       SENTINEL_ENABLED: "false"
-      LOG_LEVEL: error
-      # v3.132.0 made this actually work: empty disables cache, jobs, worker and
-      # cron. Laravel runs QUEUE_CONNECTION=sync, so neither side processes jobs.
+      # Empty genuinely disables cache, jobs, worker and cron as of v3.132.0.
       REDIS_URL: ""
+      # Passed through so gorm-ab.sh can toggle them without a rebuild. The
+      # defaults here match what the scaffold ships.
+      DB_PREPARED_STATEMENTS: "${DB_PREPARED_STATEMENTS:-true}"
+      DB_SKIP_DEFAULT_TRANSACTION: "${DB_SKIP_DEFAULT_TRANSACTION:-false}"
     ports:
       - "8091:8080"
     depends_on:
       postgres:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: "4"
-          memory: 2G
 
+  # ── Laravel ─────────────────────────────────────────────────────────
   laravel:
+    <<: *app-limits
     build:
       context: ./laravel-bench
       dockerfile: Dockerfile
@@ -113,9 +119,105 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    # Same limits as grit above. If you change one, change both.
-    deploy:
-      resources:
-        limits:
-          cpus: "4"
-          memory: 2G
+
+  # ── Node / Express ──────────────────────────────────────────────────
+  express:
+    <<: *app-limits
+    build:
+      context: ./express-bench
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: "8080"
+      DATABASE_URL: postgres://bench:bench@postgres:5432/bench_express
+      DB_MAX_OPEN_CONNS: "100"
+      # One worker per CPU. A single-threaded Node process on a 4-CPU box would
+      # be a strawman, not a comparison.
+      NODE_CLUSTER_WORKERS: "4"
+    ports:
+      - "8094:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Next.js route handlers ──────────────────────────────────────────
+  nextjs:
+    <<: *app-limits
+    build:
+      context: ./nextjs-bench
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: "8080"
+      HOSTNAME: 0.0.0.0
+      DATABASE_URL: postgres://bench:bench@postgres:5432/bench_nextjs
+      DB_MAX_OPEN_CONNS: "100"
+      NODE_CLUSTER_WORKERS: "4"
+    ports:
+      - "8095:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Bun ─────────────────────────────────────────────────────────────
+  bun:
+    <<: *app-limits
+    build:
+      context: ./bun-bench
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: "8080"
+      DATABASE_URL: postgres://bench:bench@postgres:5432/bench_bun
+      DB_MAX_OPEN_CONNS: "100"
+      # Bun.serve is one thread per process; these share the socket via
+      # reusePort so Bun gets all four CPUs too.
+      BUN_WORKERS: "4"
+    ports:
+      - "8096:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Encore.ts ───────────────────────────────────────────────────────
+  # Built by Encore's own CLI (see encore-build.sh) rather than a Dockerfile —
+  # there is no plain `tsc && node` path, because the framework compiles your
+  # handlers into a Rust-backed runtime. That runtime is most of why Encore is
+  # fast, so building it any other way would not be benchmarking Encore.
+  encore:
+    <<: *app-limits
+    image: benchmarks-encore:latest
+    environment:
+      # Encore reads its infrastructure from this file at boot: which database
+      # to use, which services to host, what to listen on.
+      ENCORE_INFRA_CONFIG_PATH: /infra.json
+      ENCORE_RUNTIME_LOG: error
+      PORT: "8080"
+      DB_PASSWORD: bench
+    volumes:
+      - ./encore-bench/infra.json:/infra.json:ro
+    ports:
+      - "8098:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Django + DRF ────────────────────────────────────────────────────
+  django:
+    <<: *app-limits
+    build:
+      context: ./django-bench
+      dockerfile: Dockerfile
+    environment:
+      DJANGO_SETTINGS_MODULE: bench.settings
+      DB_NAME: bench_django
+      DB_USER: bench
+      DB_PASSWORD: bench
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_MAX_OPEN_CONNS: "25"
+    ports:
+      - "8097:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy

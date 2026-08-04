@@ -1,0 +1,11 @@
+{
+  "name": "bun-bench",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run start.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2"
+  }
+}

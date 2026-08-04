@@ -1,0 +1,16 @@
+{
+  "name": "express-bench",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node cluster.js",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.2.1",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.2.1"
+  }
+}

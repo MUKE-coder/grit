@@ -1,0 +1,21 @@
+{
+  "$schema": "https://encore.dev/schemas/infra.schema.json",
+  "metadata": { "app_id": "encore-bench", "env_name": "bench", "env_type": "production", "cloud": "local" },
+  "hosted_services": ["products"],
+  "gateways": [{ "name": "api", "base_url": "http://encore:8080" }],
+  "sql_servers": [
+    {
+      "host": "postgres:5432",
+      "tls_config": { "disabled": true },
+      "databases": {
+        "bench": {
+          "name": "bench_encore",
+          "max_connections": 100,
+          "min_connections": 10,
+          "username": "bench",
+          "password": { "$env": "DB_PASSWORD" }
+        }
+      }
+    }
+  ]
+}
