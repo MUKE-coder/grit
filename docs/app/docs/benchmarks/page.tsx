@@ -56,9 +56,10 @@ export default function BenchmarksPage() {
                   </h2>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     Grit&apos;s single-row read measured <strong>6,600</strong> req/s in the Bun
-                    pair, <strong>4,392</strong> in the Encore pair and <strong>1,635</strong> in
-                    the Express pair &mdash; from an identical binary, as hours of write scenarios
-                    accumulated in Postgres. The machine drifts across a session. Within a pair
+                    pair, <strong>4,392</strong> in the Encore pair, <strong>1,911</strong> in the
+                    Next.js pair and <strong>1,635</strong> in the Express pair &mdash; from an
+                    identical binary, as hours of write scenarios accumulated in Postgres and the
+                    machine drifted across the session. Within a pair
                     both sides ran minutes apart under the same conditions, so the ratio survives;
                     lining Bun&apos;s 3,196 up against Encore&apos;s 438 would imply a shared
                     baseline that does not exist. Every table below is grouped by pair for that

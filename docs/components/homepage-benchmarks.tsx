@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { FrameworkLogo } from '@/components/framework-logo'
 import { BenchmarkChart, type BenchScenario } from '@/components/benchmark-chart'
-import { FRAMEWORKS, SCENARIOS, ranked, ratio, isAppBound } from '@/config/benchmarks'
+import { FRAMEWORKS, UNMEASURED, SCENARIOS, ranked, ratio, isAppBound } from '@/config/benchmarks'
 
 /*
  * The homepage benchmark block, sat directly under the hero.
@@ -47,7 +47,7 @@ export function HomepageBenchmarks() {
           <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             One Postgres, identical container limits, the same 10,000 rows, the same k6 script,
             every framework in production shape and on its own ORM. Each has a page showing
-            exactly how to reproduce it &mdash; including the scenario Grit loses, and the two
+            exactly how to reproduce it &mdash; including the scenario Grit loses, and the three
             bugs this benchmark found in Grit itself.
           </p>
         </div>
@@ -69,6 +69,31 @@ export function HomepageBenchmarks() {
               />
               vs {f.name}
               <span className="text-muted-foreground/50">{f.orm}</span>
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          ))}
+
+          {/* Frameworks with a published method but no numbers yet. Leaving them
+              off entirely reads as "we did not dare" — a dashed pill saying the
+              run is pending is the honest version, and it links to the guide so
+              anyone can run it before we do. */}
+          {UNMEASURED.map((f) => (
+            <Link
+              key={f.slug}
+              href={`/docs/benchmarks/${f.slug}`}
+              className="inline-flex items-center gap-2 rounded-full border border-dashed border-border/40 px-3.5 py-1.5 text-xs text-muted-foreground/60 hover:border-primary/40 hover:text-foreground transition-colors"
+              title={`Grit vs ${f.name} — method published, numbers pending`}
+            >
+              <span className="opacity-60">
+                <FrameworkLogo
+                  src={f.logo}
+                  alt=""
+                  onLight={f.invertOnDark}
+                  className="h-3.5 max-w-[36px]"
+                />
+              </span>
+              vs {f.name}
+              <span className="text-muted-foreground/40">measuring</span>
               <ArrowRight className="h-3 w-3" />
             </Link>
           ))}
