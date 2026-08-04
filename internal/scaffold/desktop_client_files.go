@@ -2045,10 +2045,18 @@ func desktopClientProfileRoute() string {
 	return `import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { User as UserIcon, Briefcase, Lock, Upload, Loader2, Save, Trash2 } from "lucide-react";
+import { User as UserIcon, Briefcase, Lock, Upload, Loader2, Save, Trash2, ShieldCheck, Copy, Check } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { useConfirm } from "@/components/confirm-dialog";
-import { useMe, useLogout } from "@/hooks/use-auth";
+import {
+  useMe,
+  useLogout,
+  useTOTPStatus,
+  useTOTPSetup,
+  useEnableTOTP,
+  useDisableTOTP,
+  useRegenerateBackupCodes,
+} from "@/hooks/use-auth";
 import { apiClient, uploadFile } from "@/lib/api-client";
 
 export const Route = createFileRoute("/app/profile")({
@@ -2071,6 +2079,234 @@ function Section({ icon: Icon, title, description, children }: { icon: any; titl
       </div>
       {children}
     </div>
+  );
+}
+
+/* Recovery codes exist for exactly one render - the server keeps only hashes.
+   The panel therefore refuses to close until they have been copied or saved,
+   because "grab them later" is not something the API can honour. */
+function BackupCodes({ codes, onDone }: { codes: string[]; onDone: () => void }) {
+  const [saved, setSaved] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(codes.join("\n"));
+    } catch {
+      // Clipboard access can be refused. Mark them saved anyway - refusing
+      // would trap the user in a panel with no exit, and Download still works.
+    }
+    setSaved(true);
+  };
+
+  const download = () => {
+    const blob = new Blob([codes.join("\n") + "\n"], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "backup-codes.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+    setSaved(true);
+  };
+
+  return (
+    <div className="rounded-lg border border-warning/40 bg-warning/[0.06] p-4">
+      <p className="mb-1 text-[13px] font-semibold text-foreground">Save your backup codes</p>
+      <p className="mb-3 text-[12px] text-foreground-muted">
+        Each code works once, if you lose your authenticator. This is the only time they are
+        shown.
+      </p>
+      <div className="mb-3 grid grid-cols-2 gap-2 font-mono text-[13px]">
+        {codes.map((c) => (
+          <div key={c} className="rounded bg-surface-2 px-3 py-1.5 text-center tracking-wider">
+            {c}
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <button onClick={copy} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[13px] hover:bg-surface-hover">
+          {saved ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy
+        </button>
+        <button onClick={download} className="rounded-lg border border-border px-3 py-1.5 text-[13px] hover:bg-surface-hover">
+          Download
+        </button>
+        <button
+          onClick={onDone}
+          disabled={!saved}
+          title={saved ? undefined : "Copy or download them first"}
+          className="ml-auto rounded-lg bg-accent px-3 py-1.5 text-[13px] font-semibold text-white disabled:opacity-50"
+        >
+          I have saved them
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TwoFactorSection() {
+  const { data: status, isLoading } = useTOTPStatus();
+  const setup = useTOTPSetup();
+  const enable = useEnableTOTP();
+  const disable = useDisableTOTP();
+  const regenerate = useRegenerateBackupCodes();
+
+  const [secret, setSecret] = useState<string | null>(null);
+  const [qr, setQr] = useState<string | null>(null);
+  const [code, setCode] = useState("");
+  const [codes, setCodes] = useState<string[] | null>(null);
+  const [password, setPassword] = useState("");
+  const [disabling, setDisabling] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const errText = (e: unknown) =>
+    (e as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+      ?.message ?? "Something went wrong";
+
+  const startSetup = () => {
+    setError(null);
+    setup.mutate(undefined, {
+      onSuccess: (d) => { setSecret(d.secret); setQr(d.qr_code); },
+      onError: (e) => setError(errText(e)),
+    });
+  };
+
+  const confirmEnable = () => {
+    if (!secret) return;
+    setError(null);
+    enable.mutate({ secret, code }, {
+      onSuccess: (d) => { setCodes(d.backup_codes); setSecret(null); setQr(null); setCode(""); },
+      onError: (e) => setError(errText(e)),
+    });
+  };
+
+  return (
+    <Section
+      icon={ShieldCheck}
+      title="Two-factor authentication"
+      description={
+        isLoading
+          ? "Checking..."
+          : status?.enabled
+            ? "On - a code from your authenticator app is required to sign in."
+            : "Off - your password alone signs you in."
+      }
+    >
+      <div className="space-y-4">
+        {error && <p className="rounded-lg bg-danger/10 px-3 py-2 text-[12px] text-danger">{error}</p>}
+
+        {codes && <BackupCodes codes={codes} onDone={() => setCodes(null)} />}
+
+        {!isLoading && !status?.enabled && !secret && !codes && (
+          <button
+            onClick={startSetup}
+            disabled={setup.isPending}
+            className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
+          >
+            {setup.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+            Turn on two-factor
+          </button>
+        )}
+
+        {secret && qr && (
+          <div className="grid gap-5 sm:grid-cols-[auto_1fr]">
+            {/* Rendered by the API, so no QR encoder ships in this bundle. */}
+            <div className="rounded-lg border border-border bg-white p-3">
+              <img src={qr} alt="Two-factor setup QR code" width={168} height={168} />
+            </div>
+            <div className="min-w-0 space-y-3">
+              <p className="text-[12px] text-foreground-muted">
+                Scan this with Google Authenticator, 1Password, Authy or similar. Cannot scan?
+                Enter this key by hand:
+              </p>
+              <code className="block break-all rounded bg-surface-2 px-3 py-2 font-mono text-[11px] text-foreground">
+                {secret}
+              </code>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="000000"
+                  inputMode="numeric"
+                  maxLength={6}
+                  className="w-32 rounded-lg border border-border bg-surface-2 px-3 py-2 text-center font-mono tracking-[0.3em] text-foreground outline-none focus:border-accent"
+                />
+                <button
+                  onClick={confirmEnable}
+                  disabled={enable.isPending || code.trim().length !== 6}
+                  className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
+                >
+                  {enable.isPending && <Loader2 className="h-4 w-4 animate-spin" />} Verify and turn on
+                </button>
+                <button
+                  onClick={() => { setSecret(null); setQr(null); setCode(""); }}
+                  className="rounded-lg border border-border px-4 py-2 text-[13px] hover:bg-surface-hover"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {status?.enabled && !codes && (
+          <>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-[12px] text-foreground-muted">
+                {status.backup_codes_remaining} backup code
+                {status.backup_codes_remaining === 1 ? "" : "s"} left
+              </span>
+              <button
+                onClick={() => regenerate.mutate(undefined, {
+                  onSuccess: (d) => setCodes(d.backup_codes),
+                  onError: (e) => setError(errText(e)),
+                })}
+                disabled={regenerate.isPending}
+                className="rounded-lg border border-border px-3 py-1.5 text-[13px] hover:bg-surface-hover disabled:opacity-50"
+              >
+                Generate new codes
+              </button>
+            </div>
+
+            <div className="border-t border-border pt-4">
+              {disabling ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Confirm your password"
+                    className="w-56 rounded-lg border border-border bg-surface-2 px-3 py-2 text-[13px] text-foreground outline-none focus:border-accent"
+                  />
+                  <button
+                    onClick={() => {
+                      setError(null);
+                      disable.mutate(password, {
+                        onSuccess: () => { setDisabling(false); setPassword(""); },
+                        onError: (e) => setError(errText(e)),
+                      });
+                    }}
+                    disabled={disable.isPending || !password}
+                    className="rounded-lg bg-danger px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50"
+                  >
+                    Turn off two-factor
+                  </button>
+                  <button
+                    onClick={() => { setDisabling(false); setPassword(""); }}
+                    className="rounded-lg border border-border px-4 py-2 text-[13px] hover:bg-surface-hover"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => setDisabling(true)} className="text-[13px] text-danger hover:underline">
+                  Turn off two-factor authentication
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </Section>
   );
 }
 
@@ -2218,6 +2454,8 @@ function ProfilePage() {
             </div>
           </div>
         </Section>
+
+        <TwoFactorSection />
 
         {/* Delete account */}
         <div className="rounded-xl border border-danger/30 bg-danger/5 p-6">
@@ -5219,6 +5457,76 @@ export function useVerifyTOTP() {
       await setToken("refresh_token", data.tokens.refresh_token);
       qc.setQueryData(["me"], data.user);
     },
+  });
+}
+
+/* ── Two-factor enrolment ──────────────────────────────────────────────
+   The challenge half shipped first, which left desktop users able to sign in
+   with 2FA but only able to turn it on from the admin panel. These close that.
+
+   The QR is rendered server-side as a PNG data URI, so no QR encoder ships in
+   the desktop bundle. */
+
+export interface TOTPStatus {
+  enabled: boolean;
+  backup_codes_remaining: number;
+  trusted_devices: number;
+}
+
+export function useTOTPStatus() {
+  return useQuery({
+    queryKey: ["totp-status"],
+    queryFn: async (): Promise<TOTPStatus> => {
+      const { data } = await apiClient.get("/auth/totp/status");
+      return data.data;
+    },
+  });
+}
+
+export function useTOTPSetup() {
+  return useMutation({
+    mutationFn: async (): Promise<{ secret: string; uri: string; qr_code: string }> => {
+      const { data } = await apiClient.post("/auth/totp/setup", {});
+      return data.data;
+    },
+  });
+}
+
+export function useEnableTOTP() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { secret: string; code: string }): Promise<{ backup_codes: string[] }> => {
+      const { data } = await apiClient.post("/auth/totp/enable", {
+        secret: input.secret,
+        code: input.code.trim(),
+      });
+      return data.data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["totp-status"] }),
+  });
+}
+
+export function useDisableTOTP() {
+  const qc = useQueryClient();
+  return useMutation({
+    // Re-authenticating with a password is the point: an unlocked machine
+    // should not be enough to take the second factor off an account.
+    mutationFn: async (password: string) => {
+      const { data } = await apiClient.post("/auth/totp/disable", { password });
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["totp-status"] }),
+  });
+}
+
+export function useRegenerateBackupCodes() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (): Promise<{ backup_codes: string[] }> => {
+      const { data } = await apiClient.post("/auth/totp/backup-codes", {});
+      return data.data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["totp-status"] }),
   });
 }
 

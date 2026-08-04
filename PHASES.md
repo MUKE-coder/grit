@@ -581,14 +581,23 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 - [x] TOTP + sessions *(responses done; request bodies pending)*
 - [x] Verify with a scaffolded project: count operations with a request or response schema
 
-### 6.6 — 2FA on Expo and desktop 🟡 partial (v3.125.0: challenge done, enrolment pending)
-> The API and both admin variants are done. A user with 2FA enabled currently
-> cannot sign in on mobile or desktop at all.
+### 6.6 — 2FA on Expo and desktop ✅ shipped (v3.125.0 challenge, v3.129.0 enrolment)
+> The QR arrives as a PNG data URI from the API, so neither client ships a QR
+> encoder — `<img>` and React Native `<Image>` both render it directly.
 - [x] Expo: TOTP challenge on login (code, backup code, trust device)
-- [ ] Expo: enrol screen (QR is rendered by the API, so no encoder needed)
+- [x] Expo: enrol screen at `app/two-factor.tsx`, reached from Settings → Security
 - [x] Desktop: TOTP challenge in the Wails client
-- [ ] Desktop + Expo: enrol screen (challenge works; setup is still admin-only)
-- [x] Verified in the desktop window with a live code; Expo typechecks clean
+- [x] Desktop: enrol section on the profile page, between Password and Delete
+- [x] Backup codes on both: shown once, and the panel will not close until they
+      have been saved. Mobile offers Share rather than the clipboard — it is the
+      affordance phones actually have for getting text into a password manager,
+      and it avoids adding expo-clipboard for one screen
+- [x] Verified end to end in both running clients with live TOTP codes: setup →
+      QR → verify → enabled → backup codes, and the disable path
+- [x] Fixed en route: `expo-secure-store` has no web implementation, so every
+      scaffolded Expo app threw `getValueWithKeyAsync is not a function` on the
+      first render under `pnpm web`. `lib/secure-store.ts` now wraps it —
+      unchanged on native, localStorage on web
 
 ### 6.7 — Swap Phase 3 ✅ shipped (v3.127.0 button, v3.128.0 input)
 > The earlier count of 185 was wrong — it came from a regex that broke on `=>`
