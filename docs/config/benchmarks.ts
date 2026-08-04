@@ -12,8 +12,8 @@
  *
  * That structure is not decoration. Across runs this machine drifts a long way:
  * Grit's single-row read measured 6,600 req/s in the Bun pair, 4,392 in the
- * Encore pair and 1,635 in the Express pair — from an identical binary, as
- * hours of write scenarios accumulated in Postgres. So the absolute figures are
+ * Encore pair, 1,911 in the Next.js pair and 1,635 in the Express pair — from an
+ * identical binary, as hours of write scenarios accumulated in Postgres. So the absolute figures are
  * only meaningful next to the Grit baseline measured beside them, and the RATIO
  * is what survives comparison. Putting Bun's 3,196 on the same axis as Encore's
  * 438 would imply a shared baseline that does not exist.
@@ -182,6 +182,30 @@ export const FRAMEWORKS: Framework[] = [
     },
   },
   {
+    slug: 'nextjs',
+    logo: '/logos/nextjs.png',
+    color: '#ffffff',
+    // Near-black on transparent, so it needs a light backing on this theme.
+    invertOnDark: true,
+    name: 'Next.js',
+    version: 'v15.5 + Prisma',
+    orm: 'Prisma',
+    tagline: 'App Router route handlers, standalone production build, Prisma over Postgres',
+    /*
+     * Measured a day after the other pairs, on a machine that had drifted: Grit's
+     * single-row read came in at 1,911 here against 6,600 in the Bun pair, from
+     * the same binary. Next.js saturated its own container in all four scenarios
+     * (406-412% of a 400% allowance), so its figures are genuine ceilings.
+     */
+    stack: 'Node 22, Next.js 15.5 App Router, standalone output, Prisma',
+    results: {
+      show:  { rps: 183, gritRps: 1911, median: '258.7 ms', gritMedian: '18.6 ms', appCpu: 411, dbCpu: 21,  gritAppCpu: 296, gritDbCpu: 235 },
+      write: { rps: 336, gritRps: 1142, median: '132.7 ms', gritMedian: '38.0 ms', appCpu: 406, dbCpu: 19,  gritAppCpu: 314, gritDbCpu: 482 },
+      list:  { rps: 169, gritRps: 550,  median: '284.0 ms', gritMedian: '74.8 ms', appCpu: 412, dbCpu: 172, gritAppCpu: 114, gritDbCpu: 846 },
+      mixed: { rps: 186, gritRps: 533,  median: '258.6 ms', gritMedian: '75.5 ms', appCpu: 408, dbCpu: 125, gritAppCpu: 128, gritDbCpu: 842 },
+    },
+  },
+  {
     slug: 'laravel',
     logo: '/logos/laravel.png',
     color: '#FF2D20',
@@ -218,18 +242,6 @@ export const UNMEASURED: {
   invertOnDark?: boolean
   reason: string
 }[] = [
-  {
-    slug: 'nextjs',
-    name: 'Next.js',
-    logo: '/logos/nextjs.png',
-    color: '#ffffff',
-    // The Next.js mark is black on transparent and disappears on this theme.
-    invertOnDark: true,
-    reason:
-      'the run was interrupted eight measurements in when the Docker daemon started ' +
-      'returning 500s, and a partial run is not a result. The guide is complete and ' +
-      'reproducible; the numbers will follow.',
-  },
   {
     slug: 'django',
     name: 'Django',

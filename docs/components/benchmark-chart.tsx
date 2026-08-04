@@ -15,9 +15,9 @@ import { FrameworkLogo } from '@/components/framework-logo'
  * decision rather than a stylistic one. Every framework was measured against
  * Grit in its own back-to-back run, and across those runs the machine drifts a
  * long way — Grit's single-row read measured 6,600 req/s in the Bun pair, 4,392
- * in the Encore pair and 1,635 in the Express pair, from an identical binary, as
- * hours of write scenarios accumulated in Postgres. Putting all eight bars on
- * one shared axis would say those three Grits were the same Grit. They were not,
+ * in the Encore pair, 1,911 in the Next.js pair and 1,635 in the Express pair,
+ * from an identical binary, as hours of write scenarios accumulated in Postgres.
+ * Putting every bar on one shared axis would say those were the same Grit. They were not,
  * and Encore would look far worse than it is.
  *
  * So the taller bar in each pair is full height and the other is drawn in

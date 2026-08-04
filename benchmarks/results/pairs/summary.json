@@ -232,5 +232,83 @@
         "db_cpu": 51.12
       }
     }
+  },
+  "nextjs": {
+    "grit": {
+      "list": {
+        "n": 3,
+        "rps": 549.883974,
+        "med_ms": 74.79,
+        "p95_ms": 209.5,
+        "worst_fail": 0,
+        "app_cpu": 114.32,
+        "db_cpu": 845.89
+      },
+      "mixed": {
+        "n": 3,
+        "rps": 533.076589,
+        "med_ms": 75.47,
+        "p95_ms": 228.39,
+        "worst_fail": 0,
+        "app_cpu": 128.26,
+        "db_cpu": 842.32
+      },
+      "show": {
+        "n": 3,
+        "rps": 1911.494421,
+        "med_ms": 18.65,
+        "p95_ms": 60.41,
+        "worst_fail": 0,
+        "app_cpu": 296.4,
+        "db_cpu": 235.28
+      },
+      "write": {
+        "n": 3,
+        "rps": 1141.626841,
+        "med_ms": 38.0,
+        "p95_ms": 83.45,
+        "worst_fail": 0,
+        "app_cpu": 313.47,
+        "db_cpu": 481.84
+      }
+    },
+    "nextjs": {
+      "list": {
+        "n": 3,
+        "rps": 168.935503,
+        "med_ms": 284.04,
+        "p95_ms": 456.73,
+        "worst_fail": 0,
+        "app_cpu": 411.88,
+        "db_cpu": 171.93
+      },
+      "mixed": {
+        "n": 3,
+        "rps": 185.704432,
+        "med_ms": 258.62,
+        "p95_ms": 407.18,
+        "worst_fail": 0,
+        "app_cpu": 407.46,
+        "db_cpu": 124.66
+      },
+      "show": {
+        "n": 3,
+        "rps": 182.996293,
+        "med_ms": 258.7,
+        "p95_ms": 431.91,
+        "worst_fail": 0,
+        "app_cpu": 410.51,
+        "db_cpu": 20.79
+      },
+      "write": {
+        "n": 3,
+        "rps": 336.110859,
+        "med_ms": 132.65,
+        "p95_ms": 245.81,
+        "worst_fail": 0,
+        "app_cpu": 406.4,
+        "db_cpu": 18.81
+      }
+    }
   }
 }
