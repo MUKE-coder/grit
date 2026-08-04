@@ -667,8 +667,21 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 - [x] Signed release artifacts (cosign keyless — no secrets required)
 - [x] Build provenance attestation
 - [x] Authenticode + notarization steps, guarded on secrets, warning when absent
-- [ ] Verify a real signed release end to end (needs a tag push and, for the
-      desktop half, certificates)
+- [x] Verified a real signed release end to end on the v3.130.0 tag: the
+      workflow published binaries, `SHA256SUMS`, an SPDX SBOM, a certificate and
+      a signature, and `cosign verify-blob` returns **Verified OK** against the
+      exact workflow identity and tag:
+
+      cosign verify-blob SHA256SUMS \
+        --certificate SHA256SUMS.pem --signature SHA256SUMS.sig \
+        --certificate-identity-regexp \
+          "https://github.com/MUKE-coder/grit/.github/workflows/release.yml@refs/tags/v3.130.0" \
+        --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+
+- [ ] Desktop installers signed end to end — needs Authenticode and Apple
+      Developer certificates this project does not own. The steps are written
+      and guarded, so a repo with the secrets gets signed installers and one
+      without gets a build warning instead of a failure.
 
 ---
 
