@@ -36,6 +36,7 @@ func writeExpoFiles(root string, opts Options) error {
 		filepath.Join(expoRoot, "app", "explore", "content.tsx"):                  expoExploreContent(),
 		filepath.Join(expoRoot, "app", "explore", "integrations.tsx"):             expoExploreIntegrations(),
 		filepath.Join(expoRoot, "app", "change-password.tsx"):                     expoChangePasswordScreen(),
+		filepath.Join(expoRoot, "app", "two-factor.tsx"):                          expoTwoFactorScreen(),
 		filepath.Join(expoRoot, "app", "blogs", "index.tsx"):                      expoBlogListScreen(),
 		filepath.Join(expoRoot, "app", "blogs", "new.tsx"):                        expoBlogCreateScreen(),
 		filepath.Join(expoRoot, "app", "users", "new.tsx"):                        expoUserCreateScreen(),
@@ -54,6 +55,7 @@ func writeExpoFiles(root string, opts Options) error {
 		filepath.Join(expoRoot, "components", "ui", "import-progress-banner.tsx"): ExpoImportBanner(),
 		filepath.Join(expoRoot, "components", "ui", "image-picker-sheet.tsx"):     ExpoImagePickerSheet(),
 		filepath.Join(expoRoot, "components", "ui", "relation-select.tsx"):        ExpoRelationSelect(),
+		filepath.Join(expoRoot, "lib", "secure-store.ts"):                         expoSecureStore(),
 		filepath.Join(expoRoot, "lib", "api.ts"):                                  expoAPIClient(),
 		filepath.Join(expoRoot, "lib", "auth.tsx"):                                expoAuthProvider(),
 		filepath.Join(expoRoot, "lib", "theme.tsx"):                               expoThemeProvider(),
@@ -2038,6 +2040,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
@@ -2057,6 +2060,7 @@ interface SettingSection {
 }
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const { logout } = useAuth();
   const { scheme, setMode } = useTheme();
   const [notifications, setNotifications] = useState(true);
@@ -2118,6 +2122,12 @@ export default function SettingsScreen() {
       ],
     },
     {
+      title: "Security",
+      data: [
+        { id: "two_factor", title: "Two-Factor Authentication", icon: "shield-checkmark-outline", type: "action" },
+      ],
+    },
+    {
       title: "Data",
       data: [
         { id: "clear_cache", title: "Clear Cache", icon: "trash-outline", type: "action" },
@@ -2142,6 +2152,7 @@ export default function SettingsScreen() {
     const onPress = () => {
       if (item.id === "language") handleLanguage();
       if (item.id === "clear_cache") handleClearCache();
+      if (item.id === "two_factor") router.push("/two-factor");
       if (item.id === "logout") handleLogout();
     };
 
@@ -2219,8 +2230,54 @@ export default function SettingsScreen() {
 `
 }
 
+// A SecureStore that also works on web.
+//
+// expo-secure-store has no web implementation - it is the iOS keychain and the
+// Android keystore, neither of which a browser has. Calling it from a web
+// bundle throws "getValueWithKeyAsync is not a function" on the first render,
+// which took down `pnpm web` at boot for every scaffolded app.
+//
+// On native this re-exports the real thing, unchanged. On web it falls back to
+// localStorage, which is NOT equivalent: anything stored there is readable by
+// any script on the origin, so an XSS bug reaches the tokens. That is the
+// ordinary tradeoff every browser SPA already makes, and web here is a preview
+// and debugging target rather than where you ship credentials. Native builds
+// keep real secure storage.
+func expoSecureStore() string {
+	return `import { Platform } from "react-native";
+import * as SecureStore from "expo-secure-store";
+
+const isWeb = Platform.OS === "web";
+
+// localStorage is absent during static rendering and in a private-mode Safari
+// that has refused it, so every access is guarded rather than assumed.
+function webStore(): Storage | null {
+  try {
+    return typeof localStorage === "undefined" ? null : localStorage;
+  } catch {
+    return null;
+  }
+}
+
+export async function getItemAsync(key: string): Promise<string | null> {
+  if (!isWeb) return SecureStore.getItemAsync(key);
+  return webStore()?.getItem(key) ?? null;
+}
+
+export async function setItemAsync(key: string, value: string): Promise<void> {
+  if (!isWeb) return SecureStore.setItemAsync(key, value);
+  webStore()?.setItem(key, value);
+}
+
+export async function deleteItemAsync(key: string): Promise<void> {
+  if (!isWeb) return SecureStore.deleteItemAsync(key);
+  webStore()?.removeItem(key);
+}
+`
+}
+
 func expoAPIClient() string {
-	return `import * as SecureStore from "expo-secure-store";
+	return `import * as SecureStore from "@/lib/secure-store";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 
@@ -2589,7 +2646,7 @@ export const useAuth = () => useContext(AuthContext);
 func expoThemeProvider() string {
 	return `import { createContext, useContext, useEffect, useState } from "react";
 import { useColorScheme, colorScheme as nwColorScheme } from "nativewind";
-import * as SecureStore from "expo-secure-store";
+import * as SecureStore from "@/lib/secure-store";
 
 export type ThemeMode = "light" | "dark" | "system";
 

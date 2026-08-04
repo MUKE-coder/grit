@@ -28,6 +28,66 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.129.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.129.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    Turn on two-factor from your phone or the desktop app, not just the admin
+                    panel.
+                  </strong>
+                </p>
+                <p>
+                  v3.125.0 taught both clients to <em>answer</em> a 2FA challenge. Enrolling still
+                  meant opening the admin panel, which is an odd thing to require of someone
+                  holding the phone the authenticator lives on. Both clients now do the whole
+                  thing: setup, QR, verify, backup codes, regenerate and disable.
+                </p>
+                <ul>
+                  <li>
+                    <strong>Expo:</strong> a new <code>two-factor</code> screen, reached from
+                    Settings → Security.
+                  </li>
+                  <li>
+                    <strong>Desktop:</strong> a section on the profile page, between Password and
+                    Delete account.
+                  </li>
+                  <li>
+                    No QR encoder ships in either bundle. The API returns the QR as a PNG data
+                    URI, which <code>&lt;img&gt;</code> and React Native{" "}
+                    <code>&lt;Image&gt;</code> both render directly.
+                  </li>
+                  <li>
+                    Backup codes are shown once and the panel will not close until they are
+                    saved. On mobile that is Share rather than the clipboard &mdash; it is the
+                    affordance a phone actually has for getting text into a password manager, and
+                    it avoids adding <code>expo-clipboard</code> for one screen.
+                  </li>
+                </ul>
+
+                <p>
+                  <strong>Also fixed: Expo apps crashed on the web target.</strong>{" "}
+                  <code>expo-secure-store</code> is the iOS keychain and the Android keystore,
+                  neither of which a browser has, so <code>pnpm web</code> died on the first
+                  render with <code>getValueWithKeyAsync is not a function</code>. A new{" "}
+                  <code>lib/secure-store.ts</code> wraps it: unchanged on native, localStorage on
+                  web. That is not equivalent storage, and the file says so &mdash; web is a
+                  preview and debugging target, and native builds keep real secure storage.
+                </p>
+                <p>
+                  Verified by driving both running clients with live TOTP codes rather than by
+                  type-check alone.
+                </p>
+              </div>
+            </div>
+
             {/* v3.128.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
