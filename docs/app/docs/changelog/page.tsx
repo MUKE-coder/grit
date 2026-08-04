@@ -28,6 +28,57 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.131.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.131.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    A connection-pool default was costing 3.4x on read throughput. Found by
+                    benchmarking, fixed here.
+                  </strong>
+                </p>
+                <p>
+                  The scaffold shipped <code>SetMaxIdleConns(10)</code> next to{" "}
+                  <code>SetMaxOpenConns(100)</code>. Past ten concurrent requests, every
+                  connection handed back to a full idle pool is <em>closed</em> &mdash; and the
+                  next request makes Postgres fork a fresh backend. Under load that is a
+                  connection storm, and it surfaces as <em>database</em> CPU, which is the last
+                  place you would look for an application bug.
+                </p>
+                <p>
+                  Measured with k6 at 50 concurrent users, 4 CPUs per container, on a single-row
+                  read:
+                </p>
+                <ul>
+                  <li>
+                    <code>idle=10</code> &mdash; ~810 req/s, Postgres pinned near 840% CPU while
+                    the API used 196%
+                  </li>
+                  <li>
+                    <code>idle=100</code> &mdash; ~2,720 req/s, both containers around 300%
+                  </li>
+                  <li>Writes went from ~690 to ~1,310 req/s on the same change</li>
+                </ul>
+                <p>
+                  Idle now defaults to Open, and both are tunable via{" "}
+                  <code>DB_MAX_OPEN_CONNS</code> and <code>DB_MAX_IDLE_CONNS</code>. Tunable
+                  rather than hard-coded because it is not a free win everywhere: on a query
+                  heavy enough to saturate the database &mdash; an unindexed{" "}
+                  <code>COUNT</code> over a large table on every request &mdash; a smaller pool
+                  acts as admission control and measured about 20% <em>faster</em>, since
+                  queueing in the app is cheaper than thrashing in Postgres. The default suits
+                  the common case; the knob is there for the other one.
+                </p>
+              </div>
+            </div>
+
             {/* v3.130.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
