@@ -28,6 +28,51 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.132.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.132.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>You can now actually run without Redis.</strong>
+                </p>
+                <p>
+                  Setting <code>REDIS_URL=</code> in <code>.env</code> looked like it should
+                  disable Redis and silently did not. <code>getEnv</code> treats an empty value
+                  as unset and hands back the default, so the asynq worker and the cron
+                  scheduler started anyway, failed to dial, and retried in a tight loop — a
+                  process burning CPU on reconnects with nothing in the logs but a wall of dial
+                  errors. On a machine with no Redis, simply running the API cost real cycles.
+                </p>
+                <p>The three cases are now distinguished properly:</p>
+                <ul>
+                  <li>
+                    <code>REDIS_URL</code> unset — the local default, which is what most dev
+                    setups want
+                  </li>
+                  <li>
+                    <code>REDIS_URL=</code> — no Redis. Cache, background jobs, worker and cron
+                    all stay off, and the app says so once at boot rather than leaving you to
+                    wonder why your jobs never run.
+                  </li>
+                  <li>
+                    <code>REDIS_URL=redis://…</code> — use it
+                  </li>
+                </ul>
+                <p>
+                  Found while benchmarking, where the retry storm was polluting the
+                  measurements. Verified on a scaffolded project: with{" "}
+                  <code>REDIS_URL=</code> the log contains zero dial errors and the API serves
+                  normally.
+                </p>
+              </div>
+            </div>
+
             {/* v3.131.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
