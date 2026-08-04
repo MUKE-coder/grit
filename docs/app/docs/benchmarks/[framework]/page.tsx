@@ -1,13 +1,24 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import type { Metadata } from 'next'
 import { ArrowLeft, ArrowRight, AlertTriangle, Scale, Video, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { FrameworkLogo } from '@/components/framework-logo'
 import { GUIDES, guideFor } from '@/config/benchmark-guides'
-import { bySlug, SCENARIOS, isAppBound, isDbBound, ratio, gritCpu, UNMEASURED } from '@/config/benchmarks'
+import {
+  bySlug,
+  GRIT,
+  SCENARIOS,
+  UNMEASURED,
+  isAppBound,
+  isDbBound,
+  ratio,
+  gritCpu,
+} from '@/config/benchmarks'
 import { siteConfig } from '@/config/site'
 
 export function generateStaticParams() {
@@ -46,6 +57,8 @@ export default async function FrameworkBenchmarkPage({
   const guide = guideFor(framework)
   const fw = bySlug(framework)
   const unmeasured = UNMEASURED.find((u) => u.slug === framework)
+  // The 'grit' guide has no opponent, so it gets no lockup.
+  const logo = fw ?? unmeasured
   if (!guide) notFound()
 
 
@@ -58,6 +71,28 @@ export default async function FrameworkBenchmarkPage({
           <div className="max-w-3xl">
             <div className="mb-10">
               <span className="tag-mono text-primary/80 mb-3 block">Benchmark methodology</span>
+
+              {/* The two marks, side by side — it is a head-to-head and the page
+                  should look like one before you read a word of it. */}
+              {logo && (
+                <div className="flex items-center gap-4 mb-5">
+                  <Image
+                    src={GRIT.logo}
+                    alt="Grit"
+                    width={44}
+                    height={44}
+                    className="h-11 w-11 rounded-xl"
+                  />
+                  <span className="text-xl font-light text-muted-foreground/50">vs</span>
+                  <FrameworkLogo
+                    src={logo.logo}
+                    alt={logo.name}
+                    onLight={logo.invertOnDark}
+                    className="h-10 max-w-[150px]"
+                  />
+                </div>
+              )}
+
               <h1 className="text-4xl font-bold tracking-tight mb-4">
                 {fw ? `Grit vs ${fw.name}` : guide.videoTitle}
               </h1>
@@ -242,17 +277,30 @@ export default async function FrameworkBenchmarkPage({
               <div className="grid gap-2 sm:grid-cols-2">
                 {GUIDES.filter((g) => g.slug !== guide.slug).map((g) => {
                   const other = bySlug(g.slug)
+                  const mark = other ?? UNMEASURED.find((u) => u.slug === g.slug)
                   return (
                     <Link
                       key={g.slug}
                       href={`/docs/benchmarks/${g.slug}`}
-                      className="rounded-lg border border-border/40 px-4 py-3 hover:border-primary/40 hover:bg-muted/30 transition-colors"
+                      className="flex items-center gap-3 rounded-lg border border-border/40 px-4 py-3 hover:border-primary/40 hover:bg-muted/30 transition-colors"
                     >
-                      <div className="font-medium text-foreground">
-                        {other ? `Grit vs ${other.name}` : g.slug}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                        {other?.tagline ?? 'Methodology'}
+                      {mark && (
+                        <span className="w-11 shrink-0 flex justify-center">
+                          <FrameworkLogo
+                            src={mark.logo}
+                            alt=""
+                            onLight={mark.invertOnDark}
+                            className="h-6 max-w-[44px]"
+                          />
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <div className="font-medium text-foreground">
+                          {mark ? `Grit vs ${mark.name}` : g.slug}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                          {other?.tagline ?? 'Method published, numbers pending'}
+                        </div>
                       </div>
                     </Link>
                   )

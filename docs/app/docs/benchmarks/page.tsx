@@ -1,12 +1,15 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowLeft, ArrowRight, Gauge, AlertTriangle, ScrollText, Scale } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/site-header'
 import { DocsSidebar } from '@/components/docs-sidebar'
 import { CodeBlock } from '@/components/code-block'
+import { FrameworkLogo } from '@/components/framework-logo'
 import { getDocMetadata } from '@/config/docs-metadata'
 import {
   FRAMEWORKS,
+  GRIT,
   SCENARIOS,
   UNMEASURED,
   ratio,
@@ -80,9 +83,22 @@ export default function BenchmarksPage() {
               <div className="space-y-8">
                 {FRAMEWORKS.map((fw) => (
                   <div key={fw.slug}>
-                    <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2.5">
-                      <h3 className="text-lg font-semibold">
-                        Grit vs{' '}
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                      <h3 className="flex items-center gap-2.5 text-lg font-semibold">
+                        <Image
+                          src={GRIT.logo}
+                          alt=""
+                          width={22}
+                          height={22}
+                          className="rounded-[5px]"
+                        />
+                        Grit vs
+                        <FrameworkLogo
+                          src={fw.logo}
+                          alt=""
+                          onLight={fw.invertOnDark}
+                          className="h-6 max-w-[76px]"
+                        />
                         <Link
                           href={`/docs/benchmarks/${fw.slug}`}
                           className="text-primary hover:underline"
@@ -420,11 +436,21 @@ python pair-report.py bun`}
                   <Link
                     key={f.slug}
                     href={`/docs/benchmarks/${f.slug}`}
-                    className="rounded-lg border border-border/40 px-4 py-3 hover:border-primary/40 hover:bg-muted/30 transition-colors"
+                    className="flex items-center gap-3 rounded-lg border border-border/40 px-4 py-3 hover:border-primary/40 hover:bg-muted/30 transition-colors"
                   >
-                    <div className="font-medium text-foreground">Grit vs {f.name}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                      {'tagline' in f ? f.tagline : 'Method published, numbers pending'}
+                    <span className="w-11 shrink-0 flex justify-center">
+                      <FrameworkLogo
+                        src={f.logo}
+                        alt=""
+                        onLight={f.invertOnDark}
+                        className="h-6 max-w-[44px]"
+                      />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="font-medium text-foreground">Grit vs {f.name}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                        {'tagline' in f ? f.tagline : 'Method published, numbers pending'}
+                      </div>
                     </div>
                   </Link>
                 ))}

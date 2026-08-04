@@ -1,38 +1,44 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
+import { FrameworkLogo } from '@/components/framework-logo'
 
 /*
- * The homepage benchmark chart.
+ * The homepage benchmark chart: one group per head-to-head pair, Grit's bar
+ * beside its opponent's, both labelled with the requests per second actually
+ * measured.
  *
- * Plots the RATIO within each head-to-head pair, not raw requests per second,
- * and that is a correctness decision rather than a stylistic one.
+ * Bar heights are normalised WITHIN each pair, and that is a correctness
+ * decision rather than a stylistic one. Every framework was measured against
+ * Grit in its own back-to-back run, and across those runs the machine drifts a
+ * long way — Grit's single-row read measured 6,600 req/s in the Bun pair, 4,392
+ * in the Encore pair and 1,635 in the Express pair, from an identical binary, as
+ * hours of write scenarios accumulated in Postgres. Putting all eight bars on
+ * one shared axis would say those three Grits were the same Grit. They were not,
+ * and Encore would look far worse than it is.
  *
- * Every framework was measured against Grit in its own back-to-back run. Across
- * those runs the machine drifted a long way — Grit's single-row read measured
- * 6,600 req/s in the Bun pair, 4,392 in the Encore pair and 1,635 in the Express
- * pair, from an identical binary. Putting Bun's 3,196 next to Encore's 438 on
- * one axis would imply they faced the same Grit. They did not, and Encore would
- * look far worse than it is.
- *
- * The ratio is the part that survives: within a pair, both sides ran minutes
- * apart under the same conditions. Absolute numbers and their Grit baseline live
- * on each framework's own page, where the pairing is stated.
+ * So the taller bar in each pair is full height and the other is drawn in
+ * proportion to it. Compare the two bars inside a group; do not compare heights
+ * across groups. The printed req/s figures are the real measurements either way.
  */
 
 export type BenchRow = {
   framework: string
   slug: string
   version: string
+  logo: string
+  color: string
+  invertOnDark?: boolean
   /** how many times faster Grit was in this pair; below 1 means Grit lost */
   ratio: number
-  /** what Grit measured in this pair, for the tooltip */
+  /** what Grit measured in this pair */
   gritRps: number
   /** what the opponent measured in the same pair */
   rps: number
-  /** true when the app container saturated — a real ceiling, not a DB limit */
+  /** true when the opponent's own container saturated — a real ceiling */
   appBound: boolean
 }
 
@@ -44,23 +50,50 @@ export type BenchScenario = {
   rows: BenchRow[]
 }
 
+const GRIT_COLOR = '#3BB4F5'
+
+function Bar({
+  value,
+  pct,
+  color,
+  label,
+  faded,
+}: {
+  value: number
+  pct: number
+  color: string
+  label: string
+  faded?: boolean
+}) {
+  return (
+    <div className="flex h-full flex-1 flex-col justify-end items-center min-w-0">
+      <span
+        className="mb-1.5 text-[11px] sm:text-xs font-bold tabular-nums whitespace-nowrap"
+        style={{ color }}
+      >
+        {value.toLocaleString()}
+      </span>
+      {/* Top-lit rather than bottom-lit: fading toward the base keeps the pale
+          brand colours (Bun's and Encore's creams) from reading as grey. */}
+      <div
+        className="w-full rounded-t-[5px] transition-all duration-500"
+        style={{
+          height: `${pct}%`,
+          background: `linear-gradient(to bottom, ${color}, ${color}bb)`,
+          opacity: faded ? 0.95 : 1,
+        }}
+      />
+      <span className="mt-1.5 text-[10px] text-muted-foreground/70 whitespace-nowrap">
+        {label}
+      </span>
+    </div>
+  )
+}
+
 export function BenchmarkChart({ scenarios }: { scenarios: BenchScenario[] }) {
   const [active, setActive] = useState(scenarios[0]?.id)
   const scenario = scenarios.find((s) => s.id === active) ?? scenarios[0]
   if (!scenario) return null
-
-  const max = Math.max(...scenario.rows.map((r) => r.ratio), 1)
-
-  /*
-   * Square-root heights. Grit is 41.8x Laravel on a single-row read and 2.07x
-   * Bun; on a linear axis the Bun column would be a 5% stub you cannot read, and
-   * the chart would say "Bun is roughly as slow as Laravel", which is the
-   * opposite of the truth. Sqrt keeps every column legible and the ordering
-   * exact. The printed figure on each bar is the real ratio, and the footnote
-   * says the axis is compressed — a reader is never left to infer scale from
-   * bar height alone.
-   */
-  const height = (ratio: number) => (Math.sqrt(ratio) / Math.sqrt(max)) * 100
 
   return (
     <div className="rounded-2xl border border-border/40 bg-[#0d0d12] p-5 sm:p-8">
@@ -89,71 +122,88 @@ export function BenchmarkChart({ scenarios }: { scenarios: BenchScenario[] }) {
 
       <div className="text-center mb-2">
         <h3 className="text-xl sm:text-2xl font-semibold text-foreground">
-          How many times faster Grit is
+          Requests per second &mdash; {scenario.title}
         </h3>
         <p className="text-sm text-muted-foreground mt-1">{scenario.subtitle}</p>
       </div>
 
-      <div className="flex items-center justify-center gap-5 mb-8 text-xs text-muted-foreground">
+      <div className="flex items-center justify-center gap-4 mb-8 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-primary" />
-          Grit ahead
+          <Image
+            src="/logos/grit.png"
+            alt=""
+            width={16}
+            height={16}
+            className="rounded-[4px]"
+          />
+          <span className="font-medium text-foreground">Grit</span>
         </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-[#f5a623]" />
-          Grit behind
-        </span>
+        <span className="text-muted-foreground/50">vs</span>
+        <span>each framework in its own colour</span>
       </div>
 
-      {/* Vertical columns, value inside, framework and version beneath. Scrolls
-          sideways on a phone rather than crushing six columns into 320px. */}
-      <div className="overflow-x-auto -mx-2 px-2">
+      {/* Scrolls sideways on a phone rather than crushing four groups into 320px. */}
+      <div className="overflow-x-auto -mx-2 px-2 pb-1">
         <div
-          className="flex items-end justify-center gap-2 sm:gap-3"
-          style={{ minHeight: 300, minWidth: scenario.rows.length * 82 }}
+          className="flex items-end justify-center gap-4 sm:gap-7"
+          style={{ minWidth: scenario.rows.length * 126 }}
         >
           {scenario.rows.map((row) => {
-            const pct = Math.max(4, height(row.ratio))
+            // Normalised inside the pair: the winner is full height, the other
+            // is drawn against it. Never against another pair's numbers.
+            const peak = Math.max(row.gritRps, row.rps)
             const behind = row.ratio < 1
 
             return (
               <Link
                 key={row.slug}
                 href={`/docs/benchmarks/${row.slug}`}
-                className="group flex flex-1 flex-col items-center min-w-[74px] max-w-[130px]"
+                className="group flex flex-1 flex-col items-center min-w-[112px] max-w-[190px]"
                 title={`Grit ${row.gritRps.toLocaleString()} req/s vs ${row.framework} ${row.rps.toLocaleString()} req/s, measured back to back`}
               >
-                <div className="flex h-[240px] w-full flex-col justify-end items-center">
-                  {/* Label above the bar, not inside it — a short column has no
-                      room for text, and that is exactly where the number matters. */}
-                  <span
-                    className={
-                      'mb-1.5 text-[13px] font-bold tabular-nums ' +
-                      (behind ? 'text-[#f5a623]' : 'text-primary')
-                    }
-                  >
-                    {row.ratio.toFixed(2)}&times;
-                  </span>
-                  <div
-                    className={
-                      'w-full rounded-t-md transition-all duration-500 group-hover:brightness-110 ' +
-                      (behind
-                        ? 'bg-[#f5a623]'
-                        : 'bg-gradient-to-t from-primary/70 to-primary')
-                    }
-                    style={{ height: `${pct}%` }}
+                {/* A fixed 44px box, so a square mark and a wide wordmark carry
+                    the same visual weight instead of the wordmark shrinking. */}
+                <div className="h-11 flex items-center justify-center mb-3.5 opacity-95 transition-opacity group-hover:opacity-100">
+                  <FrameworkLogo
+                    src={row.logo}
+                    alt={row.framework}
+                    onLight={row.invertOnDark}
+                    className="h-11 max-w-[140px]"
+                  />
+                </div>
+
+                <div className="flex h-[230px] w-full items-end justify-center gap-1.5 px-1">
+                  <Bar
+                    value={row.gritRps}
+                    pct={(row.gritRps / peak) * 100}
+                    color={GRIT_COLOR}
+                    label="Grit"
+                  />
+                  <Bar
+                    value={row.rps}
+                    pct={Math.max(1.5, (row.rps / peak) * 100)}
+                    color={row.color}
+                    label={row.framework}
+                    faded
                   />
                 </div>
 
                 <div className="mt-3 text-center px-0.5">
-                  <div className="text-[13px] font-medium leading-tight text-muted-foreground group-hover:text-primary transition-colors">
+                  <div
+                    className={
+                      'text-sm font-bold tabular-nums ' +
+                      (behind ? 'text-[#f5a623]' : 'text-primary')
+                    }
+                  >
+                    {behind
+                      ? `${(1 / row.ratio).toFixed(2)}× slower`
+                      : `${row.ratio.toFixed(2)}× faster`}
+                  </div>
+                  <div className="text-[11px] font-medium leading-tight text-muted-foreground group-hover:text-primary transition-colors mt-1">
                     vs {row.framework}
                   </div>
                   <div className="text-[10px] font-mono text-muted-foreground/60 leading-tight mt-0.5">
                     {row.version}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground/50 leading-tight mt-0.5 tabular-nums">
-                    {row.gritRps.toLocaleString()} v {row.rps.toLocaleString()}
                   </div>
                 </div>
               </Link>
@@ -168,10 +218,9 @@ export function BenchmarkChart({ scenarios }: { scenarios: BenchScenario[] }) {
           reported, zero failed requests. 50 concurrent users, 4 CPUs and 2&nbsp;GB per container,
           one shared Postgres, the same 10,000 rows, every framework on its own ORM.{' '}
           <span className="text-muted-foreground/70">
-            Ratios are only comparable <em>within</em> a pair &mdash; the two figures under each
-            bar are that pair&rsquo;s own measurements. Bar heights use a square-root scale so a
-            42&times; result does not flatten a 2&times; one into an unreadable stub; the printed
-            figures are the real ratios.
+            Bar heights are scaled <em>within</em> each pair, because each pair is a separate run
+            &mdash; compare the two bars inside a group, not heights across groups. The printed
+            figures are the real measurements.
           </span>
         </p>
         <Link
