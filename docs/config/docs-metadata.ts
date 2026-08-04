@@ -254,9 +254,9 @@ export const docsMetadata: Record<string, DocPage> = {
       'Run k6 load tests (smoke / average-load / stress / spike / soak / breakpoint) and methodology-driven penetration tests against a Grit app. Includes the 5-phase pentest methodology, the attack catalogue, CVSS scoring, and the audit-report structure that justifies a $2k–$10k engagement.',
   },
   '/docs/benchmarks': {
-    title: 'Benchmarks — Grit vs Laravel',
+    title: 'Benchmarks — Grit vs Laravel, Express, Bun and Encore.ts',
     description:
-      'A reproducible k6 benchmark of Grit against Laravel 13: the same public CRUD resource, the same Postgres, identical container limits, 10,000 identical rows, three repetitions, medians reported. Includes the full harness, the CPU evidence for which results are framework-bound and which are database-bound, and what the numbers do not tell you.',
+      'Reproducible k6 benchmarks of Grit against Laravel 13, Express 5, Bun and Encore.ts: the same public CRUD resource, the same Postgres, identical container limits, 10,000 identical rows restored before every run, three repetitions, medians reported, every framework on its own ORM. Includes the full harness, the CPU evidence for which results are framework-bound and which are database-bound, the scenario Grit loses, and the three bugs the benchmark found in Grit itself.',
   },
   '/docs/demo': {
     title: 'Demo Application — Grit Motors',

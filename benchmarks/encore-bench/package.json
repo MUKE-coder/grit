@@ -1,0 +1,17 @@
+{
+  "name": "encore-bench",
+  "private": true,
+  "version": "1.0.0",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "encore.dev": "^1.57.13",
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "@types/pg": "^8.11.10"
+  }
+}

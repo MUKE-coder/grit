@@ -1,0 +1,20 @@
+{
+  "name": "nextjs-bench",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "start": "next start -H 0.0.0.0 -p 8080"
+  },
+  "dependencies": {
+    "next": "^15.5.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "@prisma/client": "^6.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "typescript": "^5.7.2",
+    "prisma": "^6.2.1"
+  }
+}

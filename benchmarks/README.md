@@ -72,14 +72,7 @@ Everything in `results/` is container-to-container.
 ## Running it
 
 ```bash
-# The Grit side is regenerated rather than committed — it is scaffold output,
-# and pinning a copy here would let it drift from what `grit new` actually emits.
-grit new grit-bench --api
-cd grit-bench && grit generate resource Product   --fields "name:string,sku:string,description:text,price:float,stock:int,active:bool"
-# then move the product routes out of the `protected` group into a public
-# v1.Group("/products") — see the note below.
-
-docker compose up -d postgres
+docker compose up -d postgres redis
 docker compose exec -T postgres psql -U bench -d bench \
   -c "CREATE DATABASE bench_grit;" -c "CREATE DATABASE bench_laravel;"
 
@@ -96,7 +89,7 @@ for db in bench_grit bench_laravel; do
   docker compose exec -T postgres psql -q -U bench -d $db < seed/products.sql
 done
 
-./final.sh            # 3 reps x 4 scenarios x 2 apps, one app at a time
+./run.sh              # 3 reps x 4 scenarios x 2 apps
 python aggregate.py   # medians + which rows are DB-bound
 ```
 
@@ -122,22 +115,3 @@ two is wider than the row shows.
 
 Do not quote a DB-bound row as "framework X does N req/s". Quote it as "at least
 N req/s, with the database as the limit".
-
-## Results as published
-
-From `results/final`, medians of three repetitions, zero failed requests:
-
-| Scenario | Grit | Laravel 13 | Ratio | Bound by |
-|---|---|---|---|---|
-| `show` | 4,722 req/s (8.4 ms) | 113 req/s (136.3 ms) | 41.8x | app — a true ceiling |
-| `write` | 2,425 req/s (18.2 ms) | 96 req/s (119.3 ms) | 25.4x | app — a true ceiling |
-| `list` | 821 req/s (52.2 ms) | 96 req/s (149.5 ms) | 8.6x | database — Grit is a floor |
-| `mixed` | 748 req/s (58.2 ms) | 95 req/s (119.5 ms) | 7.9x | database — Grit is a floor |
-
-Laravel saturated its own container in every run (412–419% of a 400% allowance),
-so those are its real numbers on this hardware. Grit only saturated on `show`
-and `write`; on `list` and `mixed` it sat near 130% while Postgres sat near 850%,
-which is why those two rows are floors rather than ceilings.
-
-Both defaults these runs exposed are fixed in the framework: connection-pool
-churn in v3.131.0, and `REDIS_URL=` not disabling Redis in v3.132.0.

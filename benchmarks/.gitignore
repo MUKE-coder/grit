@@ -1,11 +1,14 @@
-# Scaffold output — regenerated with `grit new`, never committed, so it cannot
-# drift from what the CLI actually emits today.
+# Scaffold output — regenerated with `grit new` so it cannot drift from what the
+# CLI actually emits today.
 grit-bench/
 grit-bench-pooled/
 
-# Composer/npm output
-laravel-bench/vendor/
-laravel-bench/node_modules/
+# Dependency and build output
+*/node_modules/
+*/vendor/
+*/.next/
+*/encore.gen/
 
-# Run lock
+# Run lock, and archived copies of superseded runs
 .bench.lock
+results/archive/
