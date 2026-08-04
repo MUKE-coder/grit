@@ -1,0 +1,121 @@
+# Grit vs Laravel — benchmark harness.
+#
+# The whole point of this file is that neither side gets an advantage:
+#
+#   - one Postgres, shared, so the database is a constant rather than a variable
+#   - identical CPU and memory limits on both app containers
+#   - both built as production images (Go binary; nginx + php-fpm + opcache),
+#     never a dev server
+#   - both reachable on the host over plain HTTP with no proxy in between
+#
+# Run one app at a time. An idle container still schedules, and on a 14-core
+# box the difference is small but it is not nothing.
+#
+#   docker compose up -d postgres
+#   docker compose up -d grit          # bench, then: docker compose stop grit
+#   docker compose up -d laravel       # bench, then: docker compose stop laravel
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: bench
+      POSTGRES_PASSWORD: bench
+      POSTGRES_DB: bench
+      # bench_grit and bench_laravel are created on first run; see README.
+    ports:
+      - "5499:5432"
+    # Enough headroom that the database is never the bottleneck. If Postgres
+    # saturates, the benchmark measures Postgres and both frameworks converge
+    # on the same number — which looks like a tie and means nothing.
+    command:
+      - postgres
+      - -c
+      - max_connections=300
+      - -c
+      - shared_buffers=1GB
+      - -c
+      - effective_cache_size=3GB
+      - -c
+      - work_mem=16MB
+      - -c
+      - fsync=off
+      - -c
+      - synchronous_commit=off
+      - -c
+      - full_page_writes=off
+    deploy:
+      resources:
+        limits:
+          # Deliberately more than either app gets. At 4 CPUs Postgres pegged
+          # during the Laravel run, which means the number being measured was
+          # Postgres, not Laravel. The database has to have headroom to spare or
+          # both frameworks converge on the database's ceiling and the result
+          # looks like a tie.
+          cpus: "8"
+          memory: 4G
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bench -d bench"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  grit:
+    build:
+      context: ./grit-bench/apps/api
+      dockerfile: Dockerfile
+    environment:
+      GIN_MODE: release
+      PORT: "8080"
+      DATABASE_URL: postgres://bench:bench@postgres:5432/bench_grit?sslmode=disable
+      JWT_SECRET: benchmark-only-not-a-real-secret
+      # Everything optional is off. Each of these would add work to Grit's
+      # request path that Laravel is not doing, which would flatter Laravel.
+      STUDIO_ENABLED: "false"
+      PULSE_ENABLED: "false"
+      SENTINEL_ENABLED: "false"
+      LOG_LEVEL: error
+      # v3.132.0 made this actually work: empty disables cache, jobs, worker and
+      # cron. Laravel runs QUEUE_CONNECTION=sync, so neither side processes jobs.
+      REDIS_URL: ""
+    ports:
+      - "8091:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 2G
+
+  laravel:
+    build:
+      context: ./laravel-bench
+      dockerfile: Dockerfile
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: base64:0000000000000000000000000000000000000000000=
+      LOG_CHANNEL: stderr
+      LOG_LEVEL: error
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_DATABASE: bench_laravel
+      DB_USERNAME: bench
+      DB_PASSWORD: bench
+      CACHE_STORE: file
+      SESSION_DRIVER: file
+      QUEUE_CONNECTION: sync
+    ports:
+      - "8092:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Same limits as grit above. If you change one, change both.
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 2G

@@ -1,0 +1,11 @@
+# Scaffold output — regenerated with `grit new`, never committed, so it cannot
+# drift from what the CLI actually emits today.
+grit-bench/
+grit-bench-pooled/
+
+# Composer/npm output
+laravel-bench/vendor/
+laravel-bench/node_modules/
+
+# Run lock
+.bench.lock
