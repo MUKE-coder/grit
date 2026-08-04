@@ -36,14 +36,20 @@
 
 <!-- UPDATE THIS SECTION AS PHASES ARE COMPLETED -->
 
-**Current Phase:** Phase 6 — Feature Completion
-**Status:** In Progress — see **[PHASES.md § Phase 6](PHASES.md)** for the live checklist
+**Current Phase:** Phase 6 — Feature Completion ✅ complete (v3.120.0 → v3.130.0)
+**Status:** All eight workstreams shipped — see **[PHASES.md § Phase 6](PHASES.md)**
 
 > **When asked "what's remaining?", read Phase 6 in PHASES.md and answer from it.**
 > Do not re-derive the list by searching the codebase — the checklist is the
 > record. Tick a box only once the work is verified and pushed, and say which
 > version shipped it.
-**Last Updated:** 2026-07-24 (v3.86.0 — server-side sessions & revocation)
+>
+> Phase 6 is closed. The one sub-item deliberately left open is verifying a
+> signed **desktop** release end to end, which needs Authenticode and Apple
+> Developer certificates the project does not own. Anything new belongs in a
+> Phase 7 section rather than reopened here.
+
+**Last Updated:** 2026-08-04 (v3.130.0 — OpenAPI coverage 134/134, generated tests green)
 
 ### What's Been Built
 - [x] CLI Scaffolder (`grit new <project-name>` with `--api` flag, name validation, ASCII art)

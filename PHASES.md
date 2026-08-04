@@ -522,11 +522,16 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 
 ---
 
-## Phase 6 — Feature Completion (in progress)
+## Phase 6 — Feature Completion ✅ complete (v3.120.0 → v3.130.0)
 
 > **Read this first when asked "what's remaining".** Tick a box the moment the
 > work is verified and pushed, not when the code is written. Every item here is
 > a real gap found by using the framework, not a wish-list.
+>
+> All eight workstreams are shipped. The only sub-item still open is 6.8's
+> end-to-end check of a *desktop* signed release, which needs Authenticode and
+> Apple Developer certificates the project does not own — the workflow is
+> written and the API half signs on every tag.
 >
 > **Definition of done for every sub-task below:** `go build ./...` passes,
 > `go test ./internal/...` passes, a project is scaffolded fresh, **both admin
