@@ -427,8 +427,13 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 
 ### 5.1 Documentation Site
 
-- [ ] Documentation website (Nextra or Mintlify or custom)
-- [ ] Pages:
+> **Shipped.** These boxes were stale — the site has been live at
+> gritframework.dev for a long time and covers considerably more than the list
+> below (desktop, mobile, plugins, governance, security, tech kits, tutorials,
+> a stack selector and a changelog, none of which were planned here).
+
+- [x] Documentation website — custom Next.js app in `docs/`
+- [x] Pages:
   - Getting Started (5-minute quick start)
   - Installation
   - Project Structure
@@ -447,10 +452,10 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
   - API Reference
   - Contributing Guide
   - FAQ
-- [ ] Interactive examples
-- [ ] Copy-paste code blocks
-- [ ] Search functionality
-- [ ] Dark theme docs site
+- [x] Interactive examples (live showcases: auth, theme, resource definitions, dropzone)
+- [x] Copy-paste code blocks (`components/code-block.tsx`)
+- [x] Search functionality (`components/search-dialog.tsx`)
+- [x] Dark theme docs site (`components/theme-provider.tsx`)
 
 ### 5.2 Testing
 
