@@ -504,7 +504,7 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 ### 5.4 Launch Preparation
 
 - [ ] README.md with GIF demo
-- [ ] Landing page at `gritframework.dev`
+- [x] Landing page at `gritframework.dev` (`docs/app/page.tsx`)
 - [ ] YouTube tutorial: "Build a SaaS in 10 Minutes with Grit"
 - [ ] Blog post: "Why I Built Grit — Go + React Framework with Admin Panels"
 - [ ] Product Hunt listing
