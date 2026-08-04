@@ -108,18 +108,18 @@ type TicketHandler struct {
 	Mail *mail.Mailer // can be nil — handler logs instead of emailing
 }
 
-type createTicketRequest struct {
+type CreateTicketRequest struct {
 	Subject     string ` + "`" + `json:"subject" binding:"required,min=3,max=200"` + "`" + `
 	Description string ` + "`" + `json:"description" binding:"required,min=10"` + "`" + `
 	Priority    string ` + "`" + `json:"priority"` + "`" + `
 	Labels      string ` + "`" + `json:"labels"` + "`" + `
 }
 
-type replyRequest struct {
+type TicketReplyRequest struct {
 	Body string ` + "`" + `json:"body" binding:"required,min=1"` + "`" + `
 }
 
-type assignRequest struct {
+type AssignTicketRequest struct {
 	AssigneeID string ` + "`" + `json:"assignee_id" binding:"required"` + "`" + `
 }
 
@@ -129,7 +129,7 @@ type assignRequest struct {
 //
 //	POST /api/tickets
 func (h *TicketHandler) Create(c *gin.Context) {
-	var req createTicketRequest
+	var req CreateTicketRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
@@ -258,7 +258,7 @@ func (h *TicketHandler) Get(c *gin.Context) {
 //	POST /api/tickets/:id/reply
 func (h *TicketHandler) Reply(c *gin.Context) {
 	id := c.Param("id")
-	var req replyRequest
+	var req TicketReplyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
@@ -340,7 +340,7 @@ func (h *TicketHandler) Assign(c *gin.Context) {
 		})
 		return
 	}
-	var req assignRequest
+	var req AssignTicketRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},

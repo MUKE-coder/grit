@@ -272,13 +272,13 @@ type AIHandler struct {
 	AI *ai.AI
 }
 
-type completionRequest struct {
+type CompleteRequest struct {
 	Prompt      string  ` + "`" + `json:"prompt" binding:"required"` + "`" + `
 	MaxTokens   int     ` + "`" + `json:"max_tokens"` + "`" + `
 	Temperature float64 ` + "`" + `json:"temperature"` + "`" + `
 }
 
-type chatRequest struct {
+type ChatRequest struct {
 	Messages    []ai.Message ` + "`" + `json:"messages" binding:"required"` + "`" + `
 	MaxTokens   int          ` + "`" + `json:"max_tokens"` + "`" + `
 	Temperature float64      ` + "`" + `json:"temperature"` + "`" + `
@@ -296,7 +296,7 @@ func (h *AIHandler) Complete(c *gin.Context) {
 		return
 	}
 
-	var req completionRequest
+	var req CompleteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{
@@ -339,7 +339,7 @@ func (h *AIHandler) Chat(c *gin.Context) {
 		return
 	}
 
-	var req chatRequest
+	var req ChatRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{
@@ -382,7 +382,7 @@ func (h *AIHandler) Stream(c *gin.Context) {
 		return
 	}
 
-	var req chatRequest
+	var req ChatRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{

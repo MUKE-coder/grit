@@ -473,15 +473,19 @@ func (h *APIKeyHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": keys})
 }
 
+// What a caller sends to mint an API key.
+type CreateAPIKeyRequest struct {
+	Name      string   ` + "`" + `json:"name" binding:"required,min=1,max=120"` + "`" + `
+	Scopes    []string ` + "`" + `json:"scopes"` + "`" + `
+	ExpiresIn int      ` + "`" + `json:"expires_in_days"` + "`" + `
+}
+
 // Create issues a key and returns it once.
+
 func (h *APIKeyHandler) Create(c *gin.Context) {
 	userID := c.GetString("user_id")
 
-	var req struct {
-		Name      string   ` + "`" + `json:"name" binding:"required,min=1,max=120"` + "`" + `
-		Scopes    []string ` + "`" + `json:"scopes"` + "`" + `
-		ExpiresIn int      ` + "`" + `json:"expires_in_days"` + "`" + `
-	}
+	var req CreateAPIKeyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},

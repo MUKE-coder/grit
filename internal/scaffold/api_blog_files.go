@@ -359,15 +359,19 @@ func (h *BlogHandler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": blog})
 }
 
+// A new post.
+type CreateBlogRequest struct {
+	Title     string ` + "`" + `json:"title" binding:"required"` + "`" + `
+	Content   string ` + "`" + `json:"content"` + "`" + `
+	Image     string ` + "`" + `json:"image"` + "`" + `
+	Excerpt   string ` + "`" + `json:"excerpt"` + "`" + `
+	Published *bool  ` + "`" + `json:"published"` + "`" + `
+}
+
 // Create adds a new blog (admin).
+
 func (h *BlogHandler) Create(c *gin.Context) {
-	var req struct {
-		Title     string ` + "`" + `json:"title" binding:"required"` + "`" + `
-		Content   string ` + "`" + `json:"content"` + "`" + `
-		Image     string ` + "`" + `json:"image"` + "`" + `
-		Excerpt   string ` + "`" + `json:"excerpt"` + "`" + `
-		Published *bool  ` + "`" + `json:"published"` + "`" + `
-	}
+	var req CreateBlogRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -408,7 +412,17 @@ func (h *BlogHandler) Create(c *gin.Context) {
 	})
 }
 
+// Changes to a post.
+type UpdateBlogRequest struct {
+	Title     string ` + "`" + `json:"title"` + "`" + `
+	Content   string ` + "`" + `json:"content"` + "`" + `
+	Image     string ` + "`" + `json:"image"` + "`" + `
+	Excerpt   string ` + "`" + `json:"excerpt"` + "`" + `
+	Published *bool  ` + "`" + `json:"published"` + "`" + `
+}
+
 // Update modifies an existing blog (admin).
+
 func (h *BlogHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 
@@ -424,13 +438,7 @@ func (h *BlogHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		Title     string ` + "`" + `json:"title"` + "`" + `
-		Content   string ` + "`" + `json:"content"` + "`" + `
-		Image     string ` + "`" + `json:"image"` + "`" + `
-		Excerpt   string ` + "`" + `json:"excerpt"` + "`" + `
-		Published *bool  ` + "`" + `json:"published"` + "`" + `
-	}
+	var req UpdateBlogRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{

@@ -137,6 +137,32 @@ func (h *DashboardLayoutHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": layout})
 }
 
+// CustomChartRequest is one custom chart entry in a saved layout. It is a
+// named top-level type rather than an inline one so DashboardLayoutRequest can
+// be reflected over for the API docs.
+type CustomChartRequest struct {
+	ID       string ` + "`json:\"id\"`" + `
+	Title    string ` + "`json:\"title\"`" + `
+	Resource string ` + "`json:\"resource\"`" + `
+	Preset   string ` + "`json:\"preset\"`" + `
+	Field    string ` + "`json:\"field\"`" + `
+	Viz      string ` + "`json:\"viz\"`" + `
+	Limit    int    ` + "`json:\"limit\"`" + `
+	Grain    string ` + "`json:\"grain\"`" + `
+}
+
+// DashboardLayoutRequest is the widget order and visibility a user saves.
+type DashboardLayoutRequest struct {
+	Cards           []string          ` + "`json:\"cards\"`" + `
+	Charts          []string          ` + "`json:\"charts\"`" + `
+	Tables          []string          ` + "`json:\"tables\"`" + `
+	Resources       []string          ` + "`json:\"resources\"`" + `
+	SectionOrder    []string          ` + "`json:\"section_order\"`" + `
+	ResourceLayouts map[string]string ` + "`json:\"resource_layouts\"`" + `
+	CustomCharts    []CustomChartRequest  ` + "`json:\"custom_charts\"`" + `
+	DatePreset      string            ` + "`json:\"date_preset\"`" + `
+}
+
 // Put replaces the current user's dashboard layout. Whole-resource
 // replace (not patch) because the layout payload is small (typically
 // under a few KB even with hundreds of widgets) and the semantics are
@@ -150,28 +176,7 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 		return
 	}
 
-	// v3.31.47 -- inline struct for one custom chart entry.
-	type customChartReq struct {
-		ID       string ` + "`json:\"id\"`" + `
-		Title    string ` + "`json:\"title\"`" + `
-		Resource string ` + "`json:\"resource\"`" + `
-		Preset   string ` + "`json:\"preset\"`" + `
-		Field    string ` + "`json:\"field\"`" + `
-		Viz      string ` + "`json:\"viz\"`" + `
-		Limit    int    ` + "`json:\"limit\"`" + `
-		Grain    string ` + "`json:\"grain\"`" + `
-	}
-
-	var req struct {
-		Cards           []string          ` + "`json:\"cards\"`" + `
-		Charts          []string          ` + "`json:\"charts\"`" + `
-		Tables          []string          ` + "`json:\"tables\"`" + `
-		Resources       []string          ` + "`json:\"resources\"`" + `
-		SectionOrder    []string          ` + "`json:\"section_order\"`" + `
-		ResourceLayouts map[string]string ` + "`json:\"resource_layouts\"`" + `
-		CustomCharts    []customChartReq  ` + "`json:\"custom_charts\"`" + `
-		DatePreset      string            ` + "`json:\"date_preset\"`" + `
-	}
+	var req DashboardLayoutRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
@@ -226,7 +231,7 @@ func (h *DashboardLayoutHandler) Put(c *gin.Context) {
 		"pie":   true,
 		"donut": true,
 	}
-	cleanCharts := make([]customChartReq, 0, len(req.CustomCharts))
+	cleanCharts := make([]CustomChartRequest, 0, len(req.CustomCharts))
 	for _, ch := range req.CustomCharts {
 		if ch.ID == "" || ch.Resource == "" {
 			continue

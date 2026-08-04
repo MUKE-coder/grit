@@ -987,14 +987,18 @@ func (h *BackupHandler) GetSettings(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": sc})
 }
 
+// The automatic-backup schedule.
+type BackupSettingsRequest struct {
+	Frequency string ~json:"frequency"~
+	Time      string ~json:"time"~
+	Enabled   bool   ~json:"enabled"~
+}
+
 // UpdateSettings changes the automatic-backup schedule. The scheduler picks up
 // the new period on its next tick — no restart needed.
+
 func (h *BackupHandler) UpdateSettings(c *gin.Context) {
-	var req struct {
-		Frequency string ~json:"frequency"~
-		Time      string ~json:"time"~
-		Enabled   bool   ~json:"enabled"~
-	}
+	var req BackupSettingsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "INVALID_BODY", "message": err.Error()}})
 		return

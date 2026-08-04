@@ -858,14 +858,14 @@ func (h *AccessReviewHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": review})
 }
 
-type openReviewRequest struct {
+type OpenReviewRequest struct {
 	Name string ~json:"name" binding:"required"~
 	Note string ~json:"note"~
 }
 
 // Open starts a campaign, snapshotting all current role assignments.
 func (h *AccessReviewHandler) Open(c *gin.Context) {
-	var req openReviewRequest
+	var req OpenReviewRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},
@@ -885,14 +885,14 @@ func (h *AccessReviewHandler) Open(c *gin.Context) {
 	})
 }
 
-type decideRequest struct {
+type ReviewDecisionRequest struct {
 	Decision string ~json:"decision" binding:"required"~
 	Note     string ~json:"note"~
 }
 
 // Decide records an approve/revoke on one item. A revoke removes the grant.
 func (h *AccessReviewHandler) Decide(c *gin.Context) {
-	var req decideRequest
+	var req ReviewDecisionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()},

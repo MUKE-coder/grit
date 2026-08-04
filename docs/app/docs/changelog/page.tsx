@@ -28,6 +28,54 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.130.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.130.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 4, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    Every endpoint at <code>/docs</code> now shows what it returns.
+                  </strong>
+                </p>
+                <p>
+                  Most built-in operations rendered &ldquo;No Body&rdquo; &mdash; you could see
+                  the URL and nothing else. Measured against a live spec from a scaffolded
+                  project: <strong>134 of 134</strong> operations now carry a response schema, up
+                  from 29. Request bodies cover 117 of 134.
+                </p>
+                <ul>
+                  <li>
+                    The other 17 are right as they stand. Fourteen are bodyless action POSTs
+                    (logout, revoke-all, retry, unlock, close, reopen&hellip;),{" "}
+                    <code>POST /uploads</code> is multipart rather than JSON,{" "}
+                    <code>POST /webhooks/:provider</code> takes whatever the third party sends,
+                    and the SAML callback is form-encoded.
+                  </li>
+                  <li>
+                    Sixteen handlers that bound <code>var req struct&#123;&hellip;&#125;</code>{" "}
+                    inline now bind named exported types. gindocs reflects over a type, and{" "}
+                    <code>routes.go</code> is a different package &mdash; an anonymous or
+                    unexported struct gives it nothing to read. Sixteen already-named types were
+                    exported for the same reason.
+                  </li>
+                </ul>
+
+                <p>
+                  <strong>Also fixed: a new project&apos;s own tests failed.</strong>{" "}
+                  <code>newTestDB</code> migrated only <code>models.User</code>, so registering
+                  could not write its session or activity row &mdash; and the duplicate-email
+                  case surfaced as a 500 instead of a 409. <code>go test ./...</code> is now
+                  green across all ten packages of a freshly scaffolded API.
+                </p>
+              </div>
+            </div>
+
             {/* v3.129.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

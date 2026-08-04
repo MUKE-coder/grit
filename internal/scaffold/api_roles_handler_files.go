@@ -124,7 +124,7 @@ func (h *RoleHandler) Get(c *gin.Context) {
 	respond.OK(c, h.toDTO(role, n))
 }
 
-type roleInput struct {
+type RoleRequest struct {
 	Name        string   ~json:"name" binding:"required"~
 	Description string   ~json:"description"~
 	Grants      []string ~json:"grants"~
@@ -153,7 +153,7 @@ func validateGrants(grants []string) (bad []string) {
 }
 
 func (h *RoleHandler) Create(c *gin.Context) {
-	var in roleInput
+	var in RoleRequest
 	if err := c.ShouldBindJSON(&in); err != nil {
 		respond.BadRequest(c, "Name is required")
 		return
@@ -194,7 +194,7 @@ func (h *RoleHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var in roleInput
+	var in RoleRequest
 	if err := c.ShouldBindJSON(&in); err != nil {
 		respond.BadRequest(c, "Name is required")
 		return
@@ -277,7 +277,7 @@ func (h *RoleHandler) Delete(c *gin.Context) {
 	respond.OK(c, gin.H{"id": role.ID}, "Role deleted")
 }
 
-type assignInput struct {
+type AssignRolesRequest struct {
 	RoleIDs []string ~json:"role_ids"~
 }
 
@@ -291,7 +291,7 @@ func (h *RoleHandler) AssignUserRoles(c *gin.Context) {
 		return
 	}
 
-	var in assignInput
+	var in AssignRolesRequest
 	if err := c.ShouldBindJSON(&in); err != nil {
 		respond.BadRequest(c, "role_ids is required")
 		return

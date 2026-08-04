@@ -354,7 +354,7 @@ func (h *GDPRHandler) Export(c *gin.Context) {
 	c.JSON(http.StatusOK, bundle)
 }
 
-type eraseRequest struct {
+type EraseRequest struct {
 	Reason string ~json:"reason"~
 }
 
@@ -371,7 +371,7 @@ func (h *GDPRHandler) Erase(c *gin.Context) {
 		return
 	}
 
-	var req eraseRequest
+	var req EraseRequest
 	_ = c.ShouldBindJSON(&req)
 
 	journal, err := services.EraseUser(h.DB, targetID, fmt.Sprint(callerID), fmt.Sprint(callerEmail), req.Reason)

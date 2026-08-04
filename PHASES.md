@@ -568,18 +568,32 @@ This document breaks the Grit framework development into 5 phases. Each phase bu
 - [x] Generated tests: hash-only storage, revoked key rejected, expired key rejected
 - [x] Verified over HTTP end to end
 
-### 6.5 — OpenAPI coverage for built-in endpoints 🟡 partial (v3.124.0: 4 → 41 of 134)
-> The mechanism landed in v3.116.0; auth and generated resources are done.
-> Roughly 240 built-in operations still render "No Body" at `/docs`.
-- [x] Uploads (presign, complete, list, delete) *(responses done; request bodies pending)*
-- [x] Roles + permissions *(responses done; request bodies pending)*
-- [x] Backups + backup settings *(responses done; request bodies pending)*
-- [x] Notifications *(responses done; request bodies pending)*
-- [ ] Jobs + cron admin endpoints
-- [x] Activity / audit / OCSF *(responses done; request bodies pending)*
-- [ ] GDPR + SSO + access reviews
-- [x] TOTP + sessions *(responses done; request bodies pending)*
-- [x] Verify with a scaffolded project: count operations with a request or response schema
+### 6.5 — OpenAPI coverage for built-in endpoints ✅ shipped (v3.130.0)
+> Measured against a live `/docs/openapi.json` from a scaffolded project, not
+> estimated: **134 of 134** operations now carry a response schema, up from 29.
+> Request bodies: 117 of 134, and the other 17 are exactly the operations that
+> have no JSON body to describe.
+- [x] Every operation has a response schema (134/134)
+- [x] Request bodies wherever there is one to describe (117/134)
+- [x] The 17 without one are correct as they stand: 14 bodyless action POSTs
+      (logout, revoke-all, totp/setup, retry, replay, unlock, close, reopen,
+      read, read-all, generate, backup-codes, verify-email/send, review
+      complete), `POST /uploads` (multipart, not JSON), `POST /webhooks/:provider`
+      (an arbitrary third-party payload) and the SAML ACS callback (form-encoded)
+- [x] 16 handlers that bound `var req struct{…}` inline now bind named exported
+      types — gindocs reflects over a type, and routes.go is a different package,
+      so an anonymous or unexported struct gives it nothing to read
+- [x] 16 already-named request types exported for the same reason
+- [x] Verified by compiling a scaffolded project and counting the live spec
+
+> Fixed while verifying: the generated project's own auth tests failed on
+> `grit new`. `newTestDB` migrated only `models.User`, so registering could not
+> write its session or activity row, and the duplicate-email case surfaced as a
+> 500 instead of a 409. `email_verification_tokens` is deliberately still not
+> migrated there — that write happens on a goroutine, and creating the table
+> turns a harmless early return into a background writer racing the test on one
+> in-memory SQLite connection.
+- [x] Generated project: `go test ./...` is green across all ten packages
 
 ### 6.6 — 2FA on Expo and desktop ✅ shipped (v3.125.0 challenge, v3.129.0 enrolment)
 > The QR arrives as a PNG data URI from the API, so neither client ships a QR
