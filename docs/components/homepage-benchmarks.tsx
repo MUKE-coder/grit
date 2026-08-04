@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
+import { FrameworkLogo } from '@/components/framework-logo'
 import { BenchmarkChart, type BenchScenario } from '@/components/benchmark-chart'
 import { FRAMEWORKS, SCENARIOS, ranked, ratio, isAppBound } from '@/config/benchmarks'
 
@@ -24,6 +25,9 @@ export function HomepageBenchmarks() {
         framework: f.name,
         slug: f.slug,
         version: f.version,
+        logo: f.logo,
+        color: f.color,
+        invertOnDark: f.invertOnDark,
         ratio: ratio(r),
         gritRps: Math.round(r.gritRps),
         rps: Math.round(r.rps),
@@ -55,8 +59,14 @@ export function HomepageBenchmarks() {
             <Link
               key={f.slug}
               href={`/docs/benchmarks/${f.slug}`}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border/40 px-3.5 py-1.5 text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-2 rounded-full border border-border/40 px-3.5 py-1.5 text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors"
             >
+              <FrameworkLogo
+                src={f.logo}
+                alt=""
+                onLight={f.invertOnDark}
+                className="h-3.5 max-w-[36px]"
+              />
               vs {f.name}
               <span className="text-muted-foreground/50">{f.orm}</span>
               <ArrowRight className="h-3 w-3" />

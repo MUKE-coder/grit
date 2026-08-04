@@ -56,7 +56,25 @@ export interface Framework {
   orm: string
   tagline: string
   stack: string
+  /** under /public/logos — the official mark, used on the chart and the guides */
+  logo: string
+  /** the framework's own brand colour, so its bar is recognisable at a glance */
+  color: string
+  /**
+   * Some marks are near-black and vanish on a dark background. Setting this
+   * inverts the image in dark mode rather than shipping a recoloured logo,
+   * which would be someone else's trademark redrawn by us.
+   */
+  invertOnDark?: boolean
   results: Record<ScenarioId, ScenarioResult>
+}
+
+/** Grit's own side of every pair. */
+export const GRIT = {
+  name: 'Grit',
+  logo: '/logos/grit.png',
+  color: '#3BB4F5',
+  stack: 'Go 1.22, Gin, GORM',
 }
 
 export const SCENARIOS: {
@@ -109,6 +127,8 @@ export const SCENARIOS: {
 export const FRAMEWORKS: Framework[] = [
   {
     slug: 'bun',
+    logo: '/logos/bun.png',
+    color: '#FBF0DF',
     name: 'Bun',
     version: 'v1.3 + Drizzle',
     orm: 'Drizzle',
@@ -123,6 +143,8 @@ export const FRAMEWORKS: Framework[] = [
   },
   {
     slug: 'encore',
+    logo: '/logos/encore.png',
+    color: '#EEEBE0',
     name: 'Encore.ts',
     version: 'v1.57 + Drizzle',
     orm: 'Drizzle',
@@ -145,6 +167,8 @@ export const FRAMEWORKS: Framework[] = [
   },
   {
     slug: 'express',
+    logo: '/logos/express.png',
+    color: '#5FA04E',
     name: 'Express',
     version: 'v5 + Prisma',
     orm: 'Prisma',
@@ -159,6 +183,8 @@ export const FRAMEWORKS: Framework[] = [
   },
   {
     slug: 'laravel',
+    logo: '/logos/laravel.png',
+    color: '#FF2D20',
     name: 'Laravel',
     version: 'v13 + Eloquent',
     orm: 'Eloquent',
@@ -184,10 +210,21 @@ export const FRAMEWORKS: Framework[] = [
  * out loud is the point — a missing column otherwise reads as a framework that
  * was too slow to mention.
  */
-export const UNMEASURED: { slug: string; name: string; reason: string }[] = [
+export const UNMEASURED: {
+  slug: string
+  name: string
+  logo: string
+  color: string
+  invertOnDark?: boolean
+  reason: string
+}[] = [
   {
     slug: 'nextjs',
     name: 'Next.js',
+    logo: '/logos/nextjs.png',
+    color: '#ffffff',
+    // The Next.js mark is black on transparent and disappears on this theme.
+    invertOnDark: true,
     reason:
       'the run was interrupted eight measurements in when the Docker daemon started ' +
       'returning 500s, and a partial run is not a result. The guide is complete and ' +
@@ -196,6 +233,8 @@ export const UNMEASURED: { slug: string; name: string; reason: string }[] = [
   {
     slug: 'django',
     name: 'Django',
+    logo: '/logos/django.svg',
+    color: '#44B78B',
     reason:
       'measured before the harness enforced a verified database reset between runs, ' +
       'so those figures cannot be trusted and were not kept. It needs re-running under ' +
