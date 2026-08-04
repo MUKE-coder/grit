@@ -153,6 +153,8 @@ LOGIN_LOCKOUT_MINUTES=15
 REQUIRE_EMAIL_VERIFICATION=false
 
 # Redis
+# Set this to empty (REDIS_URL=) to run without Redis at all — cache,
+# background jobs and cron then stay off instead of retrying a dial in a loop.
 REDIS_URL=redis://localhost:6380
 
 # Public API URL — baked into Next.js bundles at build time
@@ -369,6 +371,8 @@ GITHUB_CLIENT_SECRET=                # GitHub OAuth App Client Secret
 OAUTH_FRONTEND_URL=http://localhost:3001  # Where to redirect after OAuth
 
 # Redis — Cache and job queue
+# Set this to empty (REDIS_URL=) to run without Redis at all — cache,
+# background jobs and cron then stay off instead of retrying a dial in a loop.
 REDIS_URL=redis://localhost:6380
 
 # Public API URL — baked into Next.js bundles at build time

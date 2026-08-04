@@ -838,7 +838,7 @@ func Load() (*Config, error) {
 		DatabaseURL: resolveDatabaseURL(),
 		JWTSecret:   getEnv("JWT_SECRET", ""),
 		FieldEncryptionKey: getEnv("FIELD_ENCRYPTION_KEY", ""),
-		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6380"),
+		RedisURL:    resolveRedisURL(),
 
 		StorageDriver: storageDriver,
 		Storage:       resolveStorage(storageDriver),
@@ -957,6 +957,36 @@ func (c *Config) IsDevelopment() bool {
 //     from the parts above. Defaults match docker-compose.yml's
 //     ${VAR:-grit} fallbacks so a fresh project boots even before the
 //     user touches .env.
+// resolveRedisURL decides whether this process talks to Redis at all.
+//
+// It cannot use getEnv, because getEnv treats an empty value as "unset" and
+// hands back the default. That made Redis impossible to turn off: setting
+// REDIS_URL= in .env looked like it should disable it and silently did not, so
+// the asynq worker and the cron scheduler started anyway, failed to dial, and
+// retried in a tight loop. The result was a process burning CPU on reconnects
+// with nothing in the logs but a wall of dial errors — on a box with no Redis,
+// simply running the API cost real cycles.
+//
+// So the three cases are distinguished explicitly:
+//
+//	REDIS_URL unset      → the local default, which is what most dev setups want
+//	REDIS_URL=           → no Redis. Cache, jobs, worker and cron all stay off.
+//	REDIS_URL=redis://…  → use it
+//
+// The empty case is a deliberate configuration, not a mistake, so it says so
+// once at boot rather than leaving someone to wonder why their jobs never run.
+func resolveRedisURL() string {
+	v, ok := os.LookupEnv("REDIS_URL")
+	if !ok {
+		return "redis://localhost:6380"
+	}
+	if strings.TrimSpace(v) == "" {
+		log.Println("REDIS_URL is empty — cache, background jobs and cron are disabled")
+		return ""
+	}
+	return v
+}
+
 func resolveDatabaseURL() string {
 	if v := os.Getenv("DATABASE_URL"); v != "" {
 		return v
