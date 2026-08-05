@@ -32,7 +32,7 @@ export function LessonComingSoon({ courseSlug, courseName, lessonTitle }: Props)
       <p className="text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed mb-6">
         This lesson is part of the <strong>{courseName}</strong> course and
         is being written. The structure (chapters / modules / lesson
-        order) is final — the prose is being polished. While you wait, the{' '}
+        order) is final. The prose is being polished. While you wait, the{' '}
         <Link href="/courses/concepts" className="text-primary hover:underline">
           Grit Concepts course
         </Link>{' '}
@@ -52,7 +52,7 @@ export function LessonComingSoon({ courseSlug, courseName, lessonTitle }: Props)
       </div>
       <div className="mt-6 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
         <Bell className="h-3 w-3" />
-        Bookmark — drop a star on the{' '}
+        Bookmark, drop a star on the{' '}
         <Link
           href="https://github.com/MUKE-coder/grit"
           target="_blank"

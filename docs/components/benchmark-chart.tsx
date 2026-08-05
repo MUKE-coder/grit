@@ -122,7 +122,7 @@ export function BenchmarkChart({ scenarios }: { scenarios: BenchScenario[] }) {
 
       <div className="text-center mb-2">
         <h3 className="text-xl sm:text-2xl font-semibold text-foreground">
-          Requests per second &mdash; {scenario.title}
+          Requests per second, {scenario.title}
         </h3>
         <p className="text-sm text-muted-foreground mt-1">{scenario.subtitle}</p>
       </div>
@@ -218,8 +218,8 @@ export function BenchmarkChart({ scenarios }: { scenarios: BenchScenario[] }) {
           reported, zero failed requests. 50 concurrent users, 4 CPUs and 2&nbsp;GB per container,
           one shared Postgres, the same 10,000 rows, every framework on its own ORM.{' '}
           <span className="text-muted-foreground/70">
-            Bar heights are scaled <em>within</em> each pair, because each pair is a separate run
-            &mdash; compare the two bars inside a group, not heights across groups. The printed
+            Bar heights are scaled <em>within</em> each pair, because each pair is a separate run.
+            Compare the two bars inside a group, not heights across groups. The printed
             figures are the real measurements.
           </span>
         </p>

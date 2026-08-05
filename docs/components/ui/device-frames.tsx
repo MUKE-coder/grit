@@ -100,7 +100,7 @@ export function DesktopFrame({
         </div>
         <div className="flex items-center gap-1.5 text-muted-foreground/50">
           {/* Minimize / maximize / close hint glyphs */}
-          <span className="text-[10px]">—</span>
+          <span className="text-[10px]">, </span>
           <span className="text-[10px]">▢</span>
           <span className="text-[10px]">✕</span>
         </div>

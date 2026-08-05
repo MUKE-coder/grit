@@ -45,7 +45,7 @@ export function PageHelp({ faqs, title = 'Frequently asked questions' }: PageHel
             Something wrong, unclear, or missing on this page?
           </p>
           <p className="text-sm text-muted-foreground">
-            Open an issue &mdash; your feedback shapes Grit, and we fix docs fast.
+            Open an issue: your feedback shapes Grit, and we fix docs fast.
           </p>
         </div>
         <a

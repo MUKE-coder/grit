@@ -10,7 +10,7 @@ export const siteConfig = {
   // "Go + React Full-Stack Framework" describes the ingredients, which a dozen
   // stacks share. The title is what shows in a search result and a shared link,
   // so it states the thing only this does: one command, the whole vertical slice.
-  title: 'Grit — Full-stack Go apps from one command',
+  title: 'Grit: Full-stack Go apps from one command',
   version: GRIT_VERSION,
   description:
     'Describe a resource; Grit writes the Go model, API, migrations, TypeScript types, React hooks and admin screen. Auth, RBAC, jobs, storage, realtime, observability and one-command deploy included.',

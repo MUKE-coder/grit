@@ -40,7 +40,7 @@ const PAGES: Page[] = [
     body:
       'Every resource you generate registers its own create / view / edit / delete permissions automatically. Roles are rows in your database, not constants in a file, so the people running the app can change them without a deploy.',
     detail:
-      'Grant a whole resource and it keeps any action added to it later — so generating a new resource never silently widens or narrows an existing role.',
+      'Grant a whole resource and it keeps any action added to it later, so generating a new resource never silently widens or narrows an existing role.',
     image: '/images/system/roles.png',
   },
   {
@@ -50,7 +50,7 @@ const PAGES: Page[] = [
     route: '/system/security',
     headline: 'Brute force gets expensive, automatically',
     body:
-      'Sentinel watches auth endpoints and bans IPs that trip the rate limit. Re-offenders escalate — 5 hours, then 8, then 24, then a week — so a bot cannot simply wait out a fixed cooldown.',
+      'Sentinel watches auth endpoints and bans IPs that trip the rate limit. Re-offenders escalate &ndash; 5 hours, then 8, then 24, then a week) so a bot cannot simply wait out a fixed cooldown.',
     detail:
       'Active bans, IPs currently hitting limits, and recent threats are all on one page, with the escalation policy stated rather than buried in config.',
     image: '/images/system/security.png',
@@ -62,7 +62,7 @@ const PAGES: Page[] = [
     route: '/system/performance',
     headline: 'The four golden signals, already wired',
     body:
-      'Latency, traffic, errors and saturation — the SRE signals — measured by Pulse from the moment your API starts. No agent to install, no dashboard to build.',
+      'Latency, traffic, errors and saturation, the SRE signals, measured by Pulse from the moment your API starts. No agent to install, no dashboard to build.',
     detail:
       'p50/p95/p99 rather than an average, because the average hides the tail. The slowest-routes table names the actual endpoint and its error rate.',
     image: '/images/system/performance.png',
@@ -76,7 +76,7 @@ const PAGES: Page[] = [
     body:
       'Sign-ins, writes and operator actions land in one timeline, grouped by day and tagged by severity. Filter to flagged, critical, or after-hours events, then export the range.',
     detail:
-      'Each row carries the event name (auth.login), the host and the IP — the three things you actually want when someone asks what happened on Tuesday.',
+      'Each row carries the event name (auth.login), the host and the IP: the three things you actually want when someone asks what happened on Tuesday.',
     image: '/images/system/activity.png',
   },
   {
@@ -86,7 +86,7 @@ const PAGES: Page[] = [
     route: '/system/backups',
     headline: 'Backups that are not your problem yet',
     body:
-      'A full backup runs on a schedule you pick — daily, weekly, monthly, yearly — or on demand. The four most recent are kept and downloadable from the panel.',
+      'A full backup runs on a schedule you pick (daily, weekly, monthly, yearly) or on demand. The four most recent are kept and downloadable from the panel.',
     detail:
       'Each archive is a ZIP: one CSV per table, a dump.sql of INSERTs, and a metadata.json manifest. Restore with grit restore backup.',
     image: '/images/system/backups.png',
@@ -98,7 +98,7 @@ const PAGES: Page[] = [
     route: '/system/files',
     headline: 'S3 storage with the plumbing done',
     body:
-      'Uploads go browser-to-storage through a presigned URL, so files never travel through your API. MinIO locally, S3 or R2 or B2 in production — same code, one env var.',
+      'Uploads go browser-to-storage through a presigned URL, so files never travel through your API. MinIO locally, S3 or R2 or B2 in production: same code, one env var.',
     detail:
       'Totals, a per-type breakdown and thumbnails served back from storage. These five files were uploaded through the panel while this screenshot was taken.',
     image: '/images/system/files.png',
@@ -112,7 +112,7 @@ const PAGES: Page[] = [
     body:
       'Redis-backed jobs via asynq, with active / pending / completed / failed / retry all visible, and a dead-letter queue for the ones that never made it.',
     detail:
-      'The five image:process jobs here were enqueued by uploading five images — the queue is wired into the framework, not something you bolt on.',
+      'The five image:process jobs here were enqueued by uploading five images, the queue is wired into the framework, not something you bolt on.',
     image: '/images/system/jobs.png',
   },
   {
@@ -122,7 +122,7 @@ const PAGES: Page[] = [
     route: '/system/cron',
     headline: 'Recurring work, declared and visible',
     body:
-      'The scheduler ships with the jobs a real app needs — expiring tokens, orphaned uploads, database backups — and shows every task with its cron expression and next run.',
+      'The scheduler ships with the jobs a real app needs (expiring tokens, orphaned uploads, database backups) and shows every task with its cron expression and next run.',
     detail:
       'Adding your own is a registration call, and it appears here with the rest instead of living only in a crontab someone forgot about.',
     image: '/images/system/cron.png',

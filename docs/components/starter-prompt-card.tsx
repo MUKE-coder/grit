@@ -60,7 +60,7 @@ export function StarterPromptCard({ kitLabel, command, prompt }: StarterPromptCa
             <span className="h-2 w-2 rounded-full bg-amber-400/70" />
             <span className="h-2 w-2 rounded-full bg-emerald-400/70" />
             <span className="ml-2 text-[11px] font-mono text-muted-foreground truncate">
-              prompt — {kitLabel}
+              prompt, {kitLabel}
             </span>
           </div>
           <CopyButton

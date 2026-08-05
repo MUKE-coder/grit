@@ -29,7 +29,7 @@ import { GridFrame } from '@/components/grid-frame'
 import { HomeSponsors } from '@/components/sponsors'
 
 export const metadata: Metadata = {
-  title: 'Grit — Go + React Full-Stack Framework',
+  title: 'Grit: Go + React Full-Stack Framework',
   description: 'Build production-ready full-stack applications with Go and React. One CLI, 5 architectures, batteries included.',
   alternates: { canonical: 'https://gritframework.dev' },
 }
@@ -155,7 +155,7 @@ export default function HomePage() {
                 <p className="text-base md:text-lg text-muted-foreground mb-8 leading-relaxed max-w-xl">
                   Opinionated by design. Describe a resource and Grit writes the Go model,
                   API, migrations, TypeScript types, React hooks and admin screen. Auth,
-                  RBAC, jobs, storage, realtime, observability and deploy &mdash; all
+                  RBAC, jobs, storage, realtime, observability and deploy: all
                   configured out of the box.
                 </p>
               </FadeIn>
@@ -325,7 +325,7 @@ export default function HomePage() {
               href="/docs/start"
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
             >
-              Start here &mdash; nothing to deployed in seven steps
+              Start here: nothing to deployed in seven steps
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -351,7 +351,7 @@ export default function HomePage() {
               One framework.<br />Every platform.
             </h2>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-              Web, desktop, mobile and a documented API &mdash; from one Go backend and one
+              Web, desktop, mobile and a documented API, from one Go backend and one
               set of generated types. Every screenshot below is a real generated project,
               next to the commands that produce it.
             </p>
@@ -379,7 +379,7 @@ export default function HomePage() {
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
               Not a scaffold you finish by hand. Uploads that know what they accept, foreign
               keys you can fill without leaving the page, line-item tables that total
-              themselves, wizards that save a step at a time &mdash; and a desktop app that
+              themselves, wizards that save a step at a time, and a desktop app that
               keeps taking input with the network off.
             </p>
           </div>
@@ -404,7 +404,7 @@ export default function HomePage() {
               Four themes.<br />None of them look generated.
             </h2>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-              Every scaffolded admin ships with four complete themes &mdash; not palettes, but
+              Every scaffolded admin ships with four complete themes: not palettes, but
               coordinated typography, auth pages, dashboard and brand colour. Pick one at{' '}
               <code className="text-foreground/80 text-sm">grit new</code>, or change your mind
               later with one line in <code className="text-foreground/80 text-sm">.env</code>.
@@ -431,7 +431,7 @@ export default function HomePage() {
             </h2>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
               Permissions, brute-force protection, golden-signal metrics, an audit timeline,
-              scheduled backups, S3 uploads, a job queue and a cron scheduler &mdash; each with
+              scheduled backups, S3 uploads, a job queue and a cron scheduler: each with
               a real screen, not a config file and a README. This is what{' '}
               <code className="text-foreground/80 text-sm">grit new</code> gives you on day one.
             </p>
@@ -504,7 +504,7 @@ export default function HomePage() {
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
               The generator writes a resource definition; after that it is ordinary TypeScript
               you own. Columns, filters, row and bulk actions, twenty field types, wizards,
-              dropzone variants &mdash; changed by editing a file, not by fighting a generator
+              dropzone variants, changed by editing a file, not by fighting a generator
               that wants to overwrite it.
             </p>
           </div>
@@ -548,7 +548,7 @@ export default function HomePage() {
               It is a Go binary<br />and some containers.
             </h2>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-              Which means it runs anywhere &mdash; a $5 VPS, a managed platform, or your own
+              Which means it runs anywhere: a $5 VPS, a managed platform, or your own
               Docker host. Pick a target for the actual steps, what it costs, and the thing that
               catches people out.
             </p>
@@ -575,7 +575,7 @@ export default function HomePage() {
               Write the API once.<br />Ship it to every client.
             </h2>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-              The generator emits the Go handler <em>and</em> the typed client — schemas,
+              The generator emits the Go handler <em>and</em> the typed client: schemas,
               TypeScript types and React Query hooks. The same hook then works in a Next.js
               app, a TanStack SPA, an Expo phone app and an offline-capable desktop binary.
               Rename a field in the Go struct and every one of them stops compiling until
@@ -609,7 +609,7 @@ export default function HomePage() {
                 <span className="h-1.5 w-1.5 rounded-full bg-primary" /> The Grit Core
               </span>
               <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground mb-5 leading-[1.1]">
-                One CLI &mdash; eight production<br />primitives wired together
+                One CLI: eight production<br />primitives wired together
               </h2>
               <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                 Grit is the chip on the board. Auth, jobs, storage, AI, observability,
@@ -690,7 +690,7 @@ export default function HomePage() {
             </h2>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
               Grit has opinions on everything: routing, queues, auth, storage, AI. That is
-              thousands of decisions an AI agent does not have to make &mdash; and the code it
+              thousands of decisions an AI agent does not have to make, and the code it
               writes lands in the same shape a person would have written.
             </p>
           </div>
@@ -700,7 +700,7 @@ export default function HomePage() {
               'Generates Go + React from one CLI command',
               'Ships a SKILL.md so agents know the patterns',
               'AI Gateway: 100+ models via one API key',
-              'OWASP 2025 hardened — secure by default',
+              'OWASP 2025 hardened: secure by default',
             ].map((line) => (
               <span key={line} className="flex items-center gap-2 text-sm text-foreground/80">
                 <Check className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />
@@ -732,7 +732,7 @@ export default function HomePage() {
                 Monitor and fix issues with Pulse
               </h2>
               <p className="text-base text-muted-foreground leading-relaxed mb-5">
-                Pulse gives full observability — find errors and performance issues
+                Pulse gives full observability: find errors and performance issues
                 before your team does. Mounted at <code className="text-primary text-sm bg-primary/5 px-1.5 py-0.5 rounded">/pulse/ui</code> on every Grit project.
               </p>
               <ul className="space-y-2.5 mb-6">
@@ -829,7 +829,7 @@ export default function HomePage() {
                     <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-between">
                       <div>
                         <div className="text-[10px] text-muted-foreground/70 font-mono uppercase tracking-wider">Duration</div>
-                        <div className="text-sm font-semibold text-foreground">125ms — 2.2s</div>
+                        <div className="text-sm font-semibold text-foreground">125ms &ndash; 2.2s</div>
                       </div>
                       <svg className="h-8 w-32" viewBox="0 0 120 30">
                         <polyline
@@ -853,7 +853,7 @@ export default function HomePage() {
               <p className="text-base text-muted-foreground leading-relaxed mb-5">
                 Grit scaffolds Next.js and TanStack Router front-ends, and generates the
                 typed client for both. The API itself is plain REST with an OpenAPI
-                document, so anything that speaks HTTP can call it &mdash; but these are the
+                document, so anything that speaks HTTP can call it, but these are the
                 ones we generate and test.
               </p>
               <Button variant="outline" className="border-border/60 text-foreground hover:bg-accent/30 rounded-full mb-12" asChild>
@@ -1087,8 +1087,8 @@ export default function HomePage() {
           </h2>
           <p className="mt-5 text-lg text-muted-foreground leading-relaxed">
             There are no testimonials here yet, and there will not be any invented ones.
-            If Grit is running something of yours in production, tell us about it — the
-            good and the parts that hurt — and it goes on this page with your name and a
+            If Grit is running something of yours in production, tell us about it (the
+            good and the parts that hurt) and it goes on this page with your name and a
             link back to you.
           </p>
           <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -1152,7 +1152,7 @@ export default function HomePage() {
           />
           <blockquote className="text-xl md:text-2xl font-medium text-foreground leading-relaxed mb-6">
             &ldquo;I built Grit because I was tired of spending weeks setting up the same boilerplate for every project.
-            Auth, admin panels, file uploads, background jobs — they should just work. Now they do.
+            Auth, admin panels, file uploads, background jobs. They should just work. Now they do.
             One command, and you have a production-ready app. That{"'"}s the framework I wanted to use.&rdquo;
           </blockquote>
           <div>
@@ -1173,7 +1173,7 @@ export default function HomePage() {
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Backed by developers like you</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Grit is free and MIT licensed. Sponsors fund the features, docs and
-              releases &mdash; and get their name in front of everyone who builds with it.
+              releases, and get their name in front of everyone who builds with it.
             </p>
           </div>
 
@@ -1209,9 +1209,9 @@ export default function HomePage() {
               { q: 'Do I need to know Go to use Grit?', a: 'Basic Go knowledge helps, but Grit generates most of the code for you. The generated code follows clear patterns (handler → service → model) that are easy to extend. If you know any backend language, you\'ll pick it up fast.' },
               { q: 'Can I use Grit with an existing project?', a: 'Grit is designed for greenfield projects. It scaffolds the full project structure. However, you can use grit generate resource in existing Grit projects to add new features incrementally.' },
               { q: 'Is Grit production-ready?', a: 'Yes. Every scaffolded project includes JWT auth, RBAC, rate limiting (Sentinel), observability (Pulse), error handling, CORS, gzip compression, connection pooling, and graceful shutdown. It\'s designed for production from day one.' },
-              { q: 'What\'s the difference between Single and Triple architecture?', a: 'Single embeds the React SPA into the Go binary via go:embed — one file to deploy. Triple is a Turborepo monorepo with separate web app, admin panel, and API — ideal for teams and complex products.' },
+              { q: 'What\'s the difference between Single and Triple architecture?', a: 'Single embeds the React SPA into the Go binary via go:embed, leaving one file to deploy. Triple is a Turborepo monorepo with separate web app, admin panel, and API, and is the better fit for teams and complex products.' },
               { q: 'Can I switch from Next.js to TanStack Router later?', a: 'The backend (Go API) is identical regardless of frontend choice. You\'d need to rebuild the frontend pages, but all hooks, types, and API patterns are the same. The admin panel components are also framework-agnostic React.' },
-              { q: 'How does grit deploy work? Is it like Vercel?', a: 'grit deploy is for self-hosted deployments. It SSHs to your server, uploads the binary, configures systemd, and sets up Caddy with auto-TLS. For Vercel/Railway, just push to git — the Dockerfile is included.' },
+              { q: 'How does grit deploy work? Is it like Vercel?', a: 'grit deploy is for self-hosted deployments. It SSHs to your server, uploads the binary, configures systemd, and sets up Caddy with auto-TLS. For Vercel/Railway, just push to git and the Dockerfile is included.' },
               { q: 'Is Grit open source?', a: 'Yes, Grit is fully open source under the MIT license. The CLI, all plugins, and the documentation are on GitHub.' },
             ].map((faq) => (
               <details key={faq.q} className="group rounded-xl border border-border/40 bg-card/50 overflow-hidden">

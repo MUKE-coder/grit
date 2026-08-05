@@ -68,7 +68,7 @@ export function CommunityCTA({
             Build alongside other Grit developers
           </h3>
           <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
-            Join the WhatsApp community for questions, tutorials, and guidance — from
+            Join the WhatsApp community for questions, tutorials, and guidance from
             people shipping Grit apps, and from the person who builds it. No question
             is too small.
           </p>

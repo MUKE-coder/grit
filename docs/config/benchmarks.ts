@@ -82,7 +82,7 @@ export const SCENARIOS: {
     id: 'show',
     label: 'Read by ID',
     title: 'GET /products/:id',
-    subtitle: 'One indexed lookup and a JSON encode — the cleanest read of framework overhead',
+    subtitle: 'One indexed lookup and a JSON encode: the cleanest read of framework overhead',
     request: 'GET /api/v1/products/:id',
     exercises: 'routing, a single primary-key lookup, JSON encoding',
   },

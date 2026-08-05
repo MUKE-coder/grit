@@ -140,7 +140,7 @@ const conceptsCourse: Course = {
   slug: 'concepts',
   name: 'Grit Concepts You Need to Know',
   shortName: 'Grit Concepts',
-  tagline: 'The non-negotiables that make every Grit project click — start here.',
+  tagline: 'The non-negotiables that make every Grit project click: start here.',
   description:
     "Every other course assumes this one. We cover what Grit is, the directory shape every project uses, the conventions you'll see hundreds of times, and the code generator that does 80% of the typing for you. By the end you can scaffold a project, add a resource, and explain what every folder is for.",
   level: 'absolute-beginner',
@@ -148,14 +148,14 @@ const conceptsCourse: Course = {
   prerequisites: [
     'Comfortable in a terminal (cd, ls, running commands)',
     'Have used Git at least once',
-    'Know what HTTP and JSON are — no need to be an expert',
+    'Know what HTTP and JSON are: no need to be an expert',
   ],
   whatYoullBuild:
     "A working monorepo with Go API + Next.js web + admin panel, a Product resource you scaffolded with one command, and confidence to navigate any Grit codebase.",
   whatYoullLearn: [
     'What Grit is and when to reach for it',
     'How to install Grit and scaffold a project',
-    'The folder structure every project uses — and why',
+    'The folder structure every project uses, and why',
     'Grit\'s naming conventions for files, routes, models, and types',
     'The standard API response envelope',
     'The code generator: grit generate resource',
@@ -263,7 +263,7 @@ const conceptsCourse: Course = {
             {
               slug: 'project-tour',
               title: 'Tour of your project',
-              tagline: 'apps/, packages/, root config — what every folder is for.',
+              tagline: 'apps/, packages/, root config: what every folder is for.',
               minutes: 8,
               difficulty: 'easy',
               status: 'available',
@@ -289,7 +289,7 @@ const conceptsCourse: Course = {
             {
               slug: 'dev-servers',
               title: 'Starting the dev servers',
-              tagline: 'docker compose up, the API, web, admin — running everything together.',
+              tagline: 'docker compose up, the API, web, admin: running everything together.',
               minutes: 6,
               difficulty: 'easy',
               status: 'available',
@@ -320,7 +320,7 @@ const conceptsCourse: Course = {
       slug: 'conventions',
       number: 3,
       title: 'The Convention Surface',
-      tagline: 'The naming, structure, and response patterns Grit assumes — saving you decision fatigue.',
+      tagline: 'The naming, structure, and response patterns Grit assumes: saving you decision fatigue.',
       learningGoals: [
         'Predict where a file should live before you create it',
         'Name things the way Grit expects (and why)',
@@ -334,7 +334,7 @@ const conceptsCourse: Course = {
             {
               slug: 'folder-conventions',
               title: 'Folder conventions',
-              tagline: 'internal/, packages/shared, apps/ — the rules and the rationale.',
+              tagline: 'internal/, packages/shared, apps/: the rules and the rationale.',
               minutes: 7,
               difficulty: 'easy',
               status: 'available',
@@ -355,7 +355,7 @@ const conceptsCourse: Course = {
             {
               slug: 'api-response-format',
               title: 'The API response envelope',
-              tagline: '{ data, message } / { data, meta } / { error } — and HTTP status codes.',
+              tagline: '{ data, message } / { data, meta } / { error }, and HTTP status codes.',
               minutes: 6,
               difficulty: 'easy',
               status: 'available',
@@ -403,14 +403,14 @@ const conceptsCourse: Course = {
             {
               slug: 'what-is-a-resource',
               title: 'What is a resource?',
-              tagline: 'Model + handler + service + types + routes — the standard slice.',
+              tagline: 'Model + handler + service + types + routes: the standard slice.',
               minutes: 5,
               difficulty: 'easy',
               status: 'available',
             },
             {
               slug: 'grit-generate',
-              title: 'Anatomy of grit generate — Contact end-to-end',
+              title: 'Anatomy of grit generate: Contact end-to-end',
               tagline: 'Every token of the command, the full field-type table, the three ways to run it.',
               minutes: 10,
               difficulty: 'easy',
@@ -431,8 +431,8 @@ const conceptsCourse: Course = {
           lessons: [
             {
               slug: 'field-types',
-              title: 'Field types deep dive — slug, images, video, tags, defaults',
-              tagline: 'The patterns you reach for once a plain string isn\'t enough — with cookbook recipes.',
+              title: 'Field types deep dive: slug, images, video, tags, defaults',
+              tagline: 'The patterns you reach for once a plain string isn\'t enough, with cookbook recipes.',
               minutes: 12,
               difficulty: 'medium',
               status: 'available',
@@ -448,7 +448,7 @@ const conceptsCourse: Course = {
             },
             {
               slug: 'relationships',
-              title: 'Relationships — one-to-one, one-to-many, many-to-many',
+              title: 'Relationships: one-to-one, one-to-many, many-to-many',
               tagline: 'belongs_to + many_to_many cover every cardinality. Three runnable examples.',
               minutes: 12,
               difficulty: 'medium',
@@ -469,7 +469,7 @@ const conceptsCourse: Course = {
           lessons: [
             {
               slug: 'grit-sync',
-              title: 'grit sync — Go to TypeScript',
+              title: 'grit sync: Go to TypeScript',
               tagline: 'Why it exists, when to run it, what it does and doesn\'t handle.',
               minutes: 6,
               difficulty: 'medium',
@@ -477,7 +477,7 @@ const conceptsCourse: Course = {
             },
             {
               slug: 'remove-resource',
-              title: 'grit remove resource — clean undo',
+              title: 'grit remove resource: clean undo',
               tagline: 'Reverse the 8 files + 10 injection points in one command.',
               minutes: 5,
               difficulty: 'easy',
@@ -499,7 +499,7 @@ const conceptsCourse: Course = {
             {
               slug: 'customising-tables',
               title: 'Customising admin tables (incl. column packing)',
-              tagline: 'Formats, badges, filters, and the new cell() render — fit 5 fields into 2 columns.',
+              tagline: 'Formats, badges, filters, and the new cell() render: fit 5 fields into 2 columns.',
               minutes: 12,
               difficulty: 'medium',
               status: 'available',
@@ -507,14 +507,14 @@ const conceptsCourse: Course = {
             {
               slug: 'using-api-from-web',
               title: 'Using the generated API from the web app',
-              tagline: 'The auto-generated React Query hook + shared Zod schemas — list, create, update, delete.',
+              tagline: 'The auto-generated React Query hook + shared Zod schemas: list, create, update, delete.',
               minutes: 10,
               difficulty: 'medium',
               status: 'available',
             },
             {
               slug: 'public-catalog-endpoints',
-              title: 'Public catalog cheatsheet — Category + Product',
+              title: 'Public catalog cheatsheet: Category + Product',
               tagline: 'Move catalog reads out of the protected group; cheatsheet for list, detail, by-category, related products.',
               minutes: 13,
               difficulty: 'medium',
@@ -527,7 +527,7 @@ const conceptsCourse: Course = {
           lessons: [
             {
               slug: 'grit-expose',
-              title: 'grit expose form / table — surfacing resources outside the admin',
+              title: 'grit expose form / table: surfacing resources outside the admin',
               tagline: 'One command per resource emits a Next.js page wired to the shared schema + React Query hook.',
               minutes: 11,
               difficulty: 'medium',
@@ -535,7 +535,7 @@ const conceptsCourse: Course = {
             },
             {
               slug: 'public-form-sharing',
-              title: 'Public form sharing — token-gated submissions',
+              title: 'Public form sharing: token-gated submissions',
               tagline: 'Generate a shareable link for any resource. Optional bcrypt password. No new endpoints.',
               minutes: 11,
               difficulty: 'medium',
@@ -543,7 +543,7 @@ const conceptsCourse: Course = {
             },
             {
               slug: 'form-share-schema',
-              title: 'Form-share schema + editable shares — v3.31.43',
+              title: 'Form-share schema + editable shares: v3.31.43',
               tagline: "Public form now renders the resource's actual fields; admin can edit label + password after creation.",
               minutes: 8,
               difficulty: 'medium',
@@ -551,7 +551,7 @@ const conceptsCourse: Course = {
             },
             {
               slug: 'protecting-web-pages',
-              title: 'Protecting web pages — middleware + ProtectedWebRoute',
+              title: 'Protecting web pages: middleware + ProtectedWebRoute',
               tagline: 'Two patterns, one command. SSR cookie gate for whole sections, client wrapper for role gates.',
               minutes: 10,
               difficulty: 'medium',
@@ -575,7 +575,7 @@ const conceptsCourse: Course = {
       slug: 'frameworks-patterns',
       number: 5,
       title: 'Frameworks & Patterns',
-      tagline: 'The Go side demystified — Gin, GORM, CRUD, and the Handler → Service pattern that every resource follows.',
+      tagline: 'The Go side demystified: Gin, GORM, CRUD, and the Handler → Service pattern that every resource follows.',
       learningGoals: [
         'Explain what Gin and GORM are, in one sentence each',
         'Walk a request from URL → handler → service → DB → response',
@@ -590,7 +590,7 @@ const conceptsCourse: Course = {
             {
               slug: 'gin-basics',
               title: 'What is Gin?',
-              tagline: 'The HTTP router behind every Grit API — routes, context, middleware.',
+              tagline: 'The HTTP router behind every Grit API: routes, context, middleware.',
               minutes: 8,
               difficulty: 'easy',
               status: 'available',
@@ -598,7 +598,7 @@ const conceptsCourse: Course = {
             {
               slug: 'gorm-basics',
               title: 'What is GORM?',
-              tagline: 'The ORM that turns Go structs into SQL — models, queries, relations.',
+              tagline: 'The ORM that turns Go structs into SQL: models, queries, relations.',
               minutes: 9,
               difficulty: 'medium',
               status: 'available',
@@ -619,7 +619,7 @@ const conceptsCourse: Course = {
             {
               slug: 'crud-walkthrough',
               title: 'CRUD end-to-end',
-              tagline: 'GET / POST / PATCH / DELETE — written by hand, line by line.',
+              tagline: 'GET / POST / PATCH / DELETE: written by hand, line by line.',
               minutes: 10,
               difficulty: 'medium',
               status: 'available',
@@ -630,7 +630,7 @@ const conceptsCourse: Course = {
       assignment: {
         title: 'Hand-write a Note resource',
         brief:
-          "Without using `grit generate`, hand-write a Note resource: model, service, handler, routes. List notes, create one, update, delete. Then run `grit generate resource Note` in a fresh project and DIFF the two — note where your code differs from the generated. One paragraph in notes.md on what you learned.",
+          "Without using `grit generate`, hand-write a Note resource: model, service, handler, routes. List notes, create one, update, delete. Then run `grit generate resource Note` in a fresh project and DIFF the two, note where your code differs from the generated. One paragraph in notes.md on what you learned.",
         successCriteria: [
           'All 4 CRUD endpoints work via curl/Postman',
           'Handler is thin (no DB calls)',
@@ -643,7 +643,7 @@ const conceptsCourse: Course = {
       slug: 'batteries',
       number: 6,
       title: 'The Batteries',
-      tagline: 'Redis, S3, Mail, Jobs, AI — what each one does, where it lives, and how to modify it.',
+      tagline: 'Redis, S3, Mail, Jobs, AI: what each one does, where it lives, and how to modify it.',
       learningGoals: [
         'Identify each battery, what it does, and when you need it',
         'Find the file you would edit to change each battery\'s behaviour',
@@ -694,7 +694,7 @@ const conceptsCourse: Course = {
             {
               slug: 'async-jobs',
               title: 'Background jobs (asynq)',
-              tagline: 'Queue work, retry on failure, schedule with cron — without blocking requests.',
+              tagline: 'Queue work, retry on failure, schedule with cron: without blocking requests.',
               minutes: 9,
               difficulty: 'medium',
               status: 'available',
@@ -711,7 +711,7 @@ const conceptsCourse: Course = {
         },
       ],
       assignment: {
-        title: 'Cache + email + job — a real use of three batteries',
+        title: 'Cache + email + job: a real use of three batteries',
         brief:
           "Build a small feature using three batteries: when a new Order is created, (1) cache the order total in Redis with a 5-min TTL, (2) enqueue a job that sends a confirmation email via Resend, (3) the job worker actually sends it. Test the whole loop with a real Resend test key.",
         successCriteria: [
@@ -726,7 +726,7 @@ const conceptsCourse: Course = {
       slug: 'architecture-modes',
       number: 7,
       title: 'Architecture Modes',
-      tagline: 'The five shapes a Grit project can take — pick the right one for your idea.',
+      tagline: 'The five shapes a Grit project can take: pick the right one for your idea.',
       learningGoals: [
         'Explain each architecture mode in one sentence',
         'Pick the right kit for a given product idea',
@@ -739,7 +739,7 @@ const conceptsCourse: Course = {
           lessons: [
             {
               slug: 'single-mode',
-              title: 'Single — one Go binary',
+              title: 'Single: one Go binary',
               tagline: 'The smallest deploy: Go + embedded React. When less infra wins.',
               minutes: 5,
               difficulty: 'easy',
@@ -747,7 +747,7 @@ const conceptsCourse: Course = {
             },
             {
               slug: 'triple-mode',
-              title: 'Triple — web + admin + API',
+              title: 'Triple: web + admin + API',
               tagline: 'The SaaS shape. The recommended starter for most products.',
               minutes: 6,
               difficulty: 'easy',
@@ -756,7 +756,7 @@ const conceptsCourse: Course = {
             {
               slug: 'specialized-modes',
               title: 'Specialized: API, Mobile, Desktop',
-              tagline: 'When you want one slice — backend only, Expo mobile, or Wails desktop.',
+              tagline: 'When you want one slice: backend only, Expo mobile, or Wails desktop.',
               minutes: 6,
               difficulty: 'easy',
               status: 'available',
@@ -806,7 +806,7 @@ const goApiCourse: Course = {
   prerequisites: ['Completed Grit Concepts', 'Comfortable writing a basic Go function'],
   whatYoullBuild: 'A multi-tenant SaaS API with auth, role-based access, file uploads, background jobs, transactional email, and a Pulse + Sentinel admin.',
   whatYoullLearn: [
-    'Modeling with GORM — relations, constraints, soft-deletes',
+    'Modeling with GORM: relations, constraints, soft-deletes',
     'JWT auth with refresh tokens + OAuth2 + 2FA',
     'Background jobs with Asynq',
     'File storage with S3 / R2',
@@ -904,7 +904,7 @@ const goApiCourse: Course = {
           'Add a `/api/admin/stats` endpoint that returns user counts. Protect it with the Auth middleware AND `RequireRoles("admin")`. Verify a regular user gets 404 and an admin gets 200.',
         successCriteria: [
           'Endpoint exists and is reachable from the admin role',
-          'Non-admin users receive 404 (not 403 — see lesson 3.4)',
+          'Non-admin users receive 404 (not 403: see lesson 3.4)',
           'You can paste both responses (curl) into notes.md',
         ],
       },
@@ -942,7 +942,7 @@ const goApiCourse: Course = {
       slug: 'security-observability',
       number: 5,
       title: 'Security + Observability',
-      tagline: 'Sentinel WAF + Pulse + audit log — the production safety net.',
+      tagline: 'Sentinel WAF + Pulse + audit log: the production safety net.',
       learningGoals: ['Configure Sentinel', 'Read Pulse', 'Wire the audit log'],
       status: 'available',
       modules: [
@@ -978,7 +978,7 @@ const goApiCourse: Course = {
           title: 'Shipping',
           lessons: [
             { slug: 'grit-deploy', title: 'grit deploy', tagline: 'The deploy command, end to end.', minutes: 8, difficulty: 'medium', status: 'available' },
-            { slug: 'env-config', title: 'Production env vars', tagline: 'Secrets, JWT, database — the must-set list.', minutes: 5, difficulty: 'easy', status: 'available' },
+            { slug: 'env-config', title: 'Production env vars', tagline: 'Secrets, JWT, database, the must-set list.', minutes: 5, difficulty: 'easy', status: 'available' },
           ],
         },
       ],
@@ -1000,7 +1000,7 @@ const mobileCourse: Course = {
   slug: 'mobile',
   name: 'Building Mobile with Go API',
   shortName: 'Mobile',
-  tagline: 'Expo + React Native + your own Grit API — shipping to iOS and Android.',
+  tagline: 'Expo + React Native + your own Grit API: shipping to iOS and Android.',
   description:
     'Build a production-grade mobile app powered by a Grit API. Expo Router, type-safe API client from grit sync, secure JWT storage, push notifications, and EAS Build for the App Store + Play Store.',
   level: 'intermediate',
@@ -1165,7 +1165,7 @@ const webNextCourse: Course = {
   slug: 'web-nextjs',
   name: 'Building Web with Next.js + Go API',
   shortName: 'Web (Next.js)',
-  tagline: 'The Triple kit — Next.js public site, Filament-style admin, Grit API.',
+  tagline: 'The Triple kit: Next.js public site, Filament-style admin, Grit API.',
   description:
     'Build the full SaaS shape: a marketing site + product surface on Next.js, an admin panel for staff, and a Go API behind both. The combination most products ship with.',
   level: 'intermediate',
@@ -1189,7 +1189,7 @@ const webNextCourse: Course = {
       slug: 'scaffold',
       number: 1,
       title: 'Scaffold + Tour',
-      tagline: 'grit new --triple — three apps at once.',
+      tagline: 'grit new --triple: three apps at once.',
       learningGoals: ['Scaffold the triple kit', 'Understand the monorepo wiring', 'Run all three apps together'],
       status: 'available',
       modules: [
@@ -1224,7 +1224,7 @@ const webNextCourse: Course = {
         {
           title: 'Marketing',
           lessons: [
-            { slug: 'landing', title: 'Landing page', tagline: 'Hero, features, CTA — the standard parts.', minutes: 9, difficulty: 'easy', status: 'available' },
+            { slug: 'landing', title: 'Landing page', tagline: 'Hero, features, CTA, the standard parts.', minutes: 9, difficulty: 'easy', status: 'available' },
             { slug: 'seo', title: 'SEO + OG', tagline: 'Metadata + sitemap + robots.', minutes: 6, difficulty: 'easy', status: 'available' },
           ],
         },
@@ -1232,7 +1232,7 @@ const webNextCourse: Course = {
       assignment: {
         title: 'Ship a marketing site',
         brief:
-          'Build a landing page for your product with a hero, three features, and a CTA. Add OG image + metadata + sitemap. Verify with Lighthouse — performance + SEO both 90+.',
+          'Build a landing page for your product with a hero, three features, and a CTA. Add OG image + metadata + sitemap. Verify with Lighthouse: performance + SEO both 90+.',
         successCriteria: [
           'Landing page renders with hero/features/CTA',
           'Lighthouse SEO score >= 90',
@@ -1253,7 +1253,7 @@ const webNextCourse: Course = {
           lessons: [
             { slug: 'signup', title: 'Signup + login forms', tagline: 'Server actions + Zod.', minutes: 8, difficulty: 'medium', status: 'available' },
             { slug: 'dashboard-widgets', title: 'Dashboard widgets', tagline: 'Stats, charts, activity feed.', minutes: 9, difficulty: 'medium', status: 'available' },
-            { slug: 'per-resource-widgets', title: 'Per-resource dashboard widgets — v3.31.44', tagline: 'Auto-generated Total + 30-day sparkline + Latest N per resource, scoped by DateFilter.', minutes: 9, difficulty: 'medium', status: 'available' },
+            { slug: 'per-resource-widgets', title: 'Per-resource dashboard widgets, v3.31.44', tagline: 'Auto-generated Total + 30-day sparkline + Latest N per resource, scoped by DateFilter.', minutes: 9, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
@@ -1331,7 +1331,7 @@ const webTanstackCourse: Course = {
   slug: 'web-tanstack',
   name: 'Building Web with TanStack + Go API',
   shortName: 'Web (TanStack)',
-  tagline: 'The Vite + TanStack Router path — pure SPA, sub-second cold starts.',
+  tagline: 'The Vite + TanStack Router path: pure SPA, sub-second cold starts.',
   description:
     'When SEO doesn\'t matter and dashboard performance does. Vite + TanStack Router + Grit API, with file-based routing, type-safe links, and search params as data.',
   level: 'intermediate',
@@ -1355,7 +1355,7 @@ const webTanstackCourse: Course = {
       slug: 'scaffold',
       number: 1,
       title: 'Scaffold + Tour',
-      tagline: 'grit new --single --vite — Go binary + Vite SPA.',
+      tagline: 'grit new --single --vite: Go binary + Vite SPA.',
       learningGoals: ['Scaffold the Vite single kit', 'Understand the embed pattern', 'Run dev mode'],
       status: 'coming-soon',
       modules: [
@@ -1588,8 +1588,8 @@ const desktopCourse: Course = {
         {
           title: 'NSIS',
           lessons: [
-            { slug: 'project-nsi', title: 'project.nsi (full)', tagline: 'Bundled WebView2 — no internet needed.', minutes: 8, difficulty: 'hard', status: 'available' },
-            { slug: 'project-slim', title: 'project-slim.nsi', tagline: 'Online bootstrapper — small download.', minutes: 6, difficulty: 'medium', status: 'available' },
+            { slug: 'project-nsi', title: 'project.nsi (full)', tagline: 'Bundled WebView2, no internet needed.', minutes: 8, difficulty: 'hard', status: 'available' },
+            { slug: 'project-slim', title: 'project-slim.nsi', tagline: 'Online bootstrapper, small download.', minutes: 6, difficulty: 'medium', status: 'available' },
             { slug: 'bitmaps', title: 'Branded bitmaps', tagline: 'header.bmp + welcome.bmp from icon.ico.', minutes: 5, difficulty: 'easy', status: 'available' },
           ],
         },
@@ -1612,7 +1612,7 @@ const multiplatformCourse: Course = {
   slug: 'multiplatform',
   name: 'Building Web + Desktop + Mobile',
   shortName: 'Multi-Platform',
-  tagline: 'One Go API powering all three surfaces — the kitchen-sink kit.',
+  tagline: 'One Go API powering all three surfaces: the kitchen-sink kit.',
   description:
     'Build a product that ships on the web, desktop, and mobile from a single Go API. The triple kit + desktop + mobile, shared types, sync engines, and one release pipeline coordinating it all.',
   level: 'advanced',
@@ -1675,7 +1675,7 @@ const multiplatformCourse: Course = {
         {
           title: 'Types',
           lessons: [
-            { slug: 'grit-sync-multi', title: 'grit sync — multi-surface', tagline: 'One Go model, three TS frontends.', minutes: 7, difficulty: 'medium', status: 'available' },
+            { slug: 'grit-sync-multi', title: 'grit sync, multi-surface', tagline: 'One Go model, three TS frontends.', minutes: 7, difficulty: 'medium', status: 'available' },
             { slug: 'shared-zod', title: 'Shared Zod schemas', tagline: 'Validate input on every surface.', minutes: 7, difficulty: 'medium', status: 'available' },
           ],
         },
@@ -1696,7 +1696,7 @@ const multiplatformCourse: Course = {
       slug: 'feature-implementation',
       number: 3,
       title: 'Building a Feature Across All Three',
-      tagline: 'Pick a real feature — implement it everywhere.',
+      tagline: 'Pick a real feature: implement it everywhere.',
       learningGoals: ['Build a feature in web', 'Implement on mobile', 'Add to desktop'],
       status: 'available',
       modules: [
@@ -1800,7 +1800,7 @@ const loadTestingCourse: Course = {
     "A k6 test suite for your Grit API with 6 scenario types, run locally and in CI, that catches regressions before they ship.",
   whatYoullLearn: [
     'When to load-test (and when not)',
-    'k6 fundamentals — VUs, iterations, scenarios, thresholds',
+    'k6 fundamentals: VUs, iterations, scenarios, thresholds',
     'The 5 test types: smoke, load, stress, spike, soak',
     'Reading p50/p95/p99 and what each tells you',
     'Finding the bottleneck: API, DB, network, or your test rig',
@@ -1826,7 +1826,7 @@ const loadTestingCourse: Course = {
         {
           title: 'Setup',
           lessons: [
-            { slug: 'why-load-test', title: 'Why load test?', tagline: 'When it pays for itself — and when it\'s premature.', minutes: 5, difficulty: 'easy', status: 'available' },
+            { slug: 'why-load-test', title: 'Why load test?', tagline: 'When it pays for itself, and when it\'s premature.', minutes: 5, difficulty: 'easy', status: 'available' },
             { slug: 'install-k6', title: 'Install k6', tagline: 'One binary, no Node, no deps.', minutes: 3, difficulty: 'easy', status: 'available' },
             { slug: 'first-script', title: 'Your first k6 script', tagline: 'A 20-line script that hits /healthz with 10 VUs.', minutes: 8, difficulty: 'easy', status: 'available' },
           ],
@@ -1842,7 +1842,7 @@ const loadTestingCourse: Course = {
       slug: 'scenarios',
       number: 2,
       title: 'The Five Test Types',
-      tagline: 'Smoke, load, stress, spike, soak — when to run each.',
+      tagline: 'Smoke, load, stress, spike, soak: when to run each.',
       learningGoals: ['Pick the right test for the question being asked', 'Define thresholds that fail the build on regression'],
       status: 'available',
       modules: [
@@ -1872,9 +1872,9 @@ const loadTestingCourse: Course = {
         {
           title: 'Diagnosis',
           lessons: [
-            { slug: 'reading-metrics', title: 'Reading the numbers', tagline: 'p50 vs p95 vs p99 — what each tells you.', minutes: 7, difficulty: 'medium', status: 'available' },
+            { slug: 'reading-metrics', title: 'Reading the numbers', tagline: 'p50 vs p95 vs p99, what each tells you.', minutes: 7, difficulty: 'medium', status: 'available' },
             { slug: 'common-bottlenecks', title: 'Common bottlenecks', tagline: 'DB connection pool, N+1, cold caches, GC pauses.', minutes: 9, difficulty: 'medium', status: 'available' },
-            { slug: 'fix-and-prove', title: 'Fix and prove it', tagline: 'Make a change, re-run, compare — disciplined performance work.', minutes: 7, difficulty: 'medium', status: 'available' },
+            { slug: 'fix-and-prove', title: 'Fix and prove it', tagline: 'Make a change, re-run, compare, disciplined performance work.', minutes: 7, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
@@ -1912,7 +1912,7 @@ const securityCourse: Course = {
   slug: 'security',
   name: 'Security & Pen Testing for Grit APIs',
   shortName: 'Security',
-  tagline: 'OWASP Top 10, hands-on — attack your own API, then defend it.',
+  tagline: 'OWASP Top 10, hands-on: attack your own API, then defend it.',
   description:
     "Walk the OWASP Top 10 against your own Grit API. Each lesson: how the attack works, exploit it on a deliberately-vulnerable endpoint, then ship the fix. Plus the defensive stack Grit gives you out of the box (Sentinel rate-limit, safefetch, authz, CSRF, audit logs).",
   level: 'advanced',
@@ -1925,7 +1925,7 @@ const securityCourse: Course = {
     'Exploit your own endpoint to feel the risk',
     'Ship the fix and verify the exploit no longer works',
     'The Grit defensive stack: Sentinel, safefetch, authz, CSRF, security headers',
-    'Threat modelling — what to worry about, what not to',
+    'Threat modelling: what to worry about, what not to',
   ],
   whoThisIsFor: [
     'Devs shipping public APIs',
@@ -1948,7 +1948,7 @@ const securityCourse: Course = {
           title: 'Foundation',
           lessons: [
             { slug: 'threat-model', title: 'A threat model in 15 minutes', tagline: 'What you protect, from whom, with what.', minutes: 6, difficulty: 'easy', status: 'available' },
-            { slug: 'owasp-tour', title: 'OWASP Top 10 — the speedrun tour', tagline: 'One sentence per category, in plain English.', minutes: 8, difficulty: 'easy', status: 'available' },
+            { slug: 'owasp-tour', title: 'OWASP Top 10, the speedrun tour', tagline: 'One sentence per category, in plain English.', minutes: 8, difficulty: 'easy', status: 'available' },
           ],
         },
       ],
@@ -1969,14 +1969,14 @@ const securityCourse: Course = {
         {
           title: 'Attack + defend',
           lessons: [
-            { slug: 'idor', title: 'IDOR — the most common bug in the wild', tagline: 'Cross-account access by guessing IDs.', minutes: 8, difficulty: 'medium', status: 'available' },
+            { slug: 'idor', title: 'IDOR, the most common bug in the wild', tagline: 'Cross-account access by guessing IDs.', minutes: 8, difficulty: 'medium', status: 'available' },
             { slug: 'authz-package', title: 'The authz package', tagline: 'Centralized authorization in Grit and how to use it.', minutes: 7, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
       assignment: {
         title: 'Exploit + patch an IDOR',
-        brief: 'In a fresh Grit project, create two users (A and B), one note owned by A. As B, attempt to PATCH and DELETE A\'s note. Document the exploit, then add the authorization check. Re-test — must return 403.',
+        brief: 'In a fresh Grit project, create two users (A and B), one note owned by A. As B, attempt to PATCH and DELETE A\'s note. Document the exploit, then add the authorization check. Re-test, must return 403.',
         successCriteria: ['Exploit works initially (proves the bug)', 'After patch, returns 403', 'Test added so a regression fails CI'],
       },
     },
@@ -2014,13 +2014,13 @@ const securityCourse: Course = {
           title: 'Hardening',
           lessons: [
             { slug: 'jwt-pitfalls', title: 'JWT pitfalls', tagline: 'alg=none, missing expiry, leaked secrets.', minutes: 8, difficulty: 'medium', status: 'available' },
-            { slug: 'secrets', title: 'Where do your secrets live?', tagline: '.env, vaults, KMS — what to use when.', minutes: 6, difficulty: 'medium', status: 'available' },
+            { slug: 'secrets', title: 'Where do your secrets live?', tagline: '.env, vaults, KMS, what to use when.', minutes: 6, difficulty: 'medium', status: 'available' },
           ],
         },
       ],
       assignment: {
         title: 'Audit your tokens + secrets',
-        brief: 'Document where every secret lives. Rotate JWT_SECRET in dev — what breaks? Add audience + expiry validation to your JWT verify. Add one Sentinel rate-limit rule to /api/auth/login.',
+        brief: 'Document where every secret lives. Rotate JWT_SECRET in dev: what breaks? Add audience + expiry validation to your JWT verify. Add one Sentinel rate-limit rule to /api/auth/login.',
         successCriteria: ['Token rotation works without downtime', 'No secrets in committed .env', 'Rate limit verified by k6 test'],
       },
     },
@@ -2028,7 +2028,7 @@ const securityCourse: Course = {
       slug: 'defensive-stack',
       number: 5,
       title: 'The Grit Defensive Stack',
-      tagline: 'Sentinel, security headers, CSRF, audit log — wire them all.',
+      tagline: 'Sentinel, security headers, CSRF, audit log: wire them all.',
       learningGoals: ['Enable + tune each defence', 'Understand what each blocks and what it doesn\'t'],
       status: 'available',
       modules: [
@@ -2054,7 +2054,7 @@ const benchmarkingCourse: Course = {
   slug: 'benchmarking',
   name: 'Benchmarking Your Go Code',
   shortName: 'Benchmarking',
-  tagline: 'Go\'s built-in microbenchmarks — measure first, optimise second.',
+  tagline: 'Go\'s built-in microbenchmarks, measure first, optimise second.',
   description:
     "Go has world-class benchmarking built in. This short course teaches you to write `BenchmarkXxx` functions, read the output, profile with pprof, and refuse to optimise without data. Antidote to vibes-based performance work.",
   level: 'intermediate',
@@ -2065,7 +2065,7 @@ const benchmarkingCourse: Course = {
   whatYoullLearn: [
     'Write a Benchmark function in 10 lines',
     'Read ns/op, B/op, allocs/op',
-    'Profile with pprof — CPU + heap',
+    'Profile with pprof: CPU + heap',
     'Make ONE measured change and prove the win',
     'Compare two implementations with benchstat',
   ],
@@ -2090,7 +2090,7 @@ const benchmarkingCourse: Course = {
           title: 'The basics',
           lessons: [
             { slug: 'first-bench', title: 'Your first benchmark', tagline: 'A `BenchmarkPluralize` in 10 lines.', minutes: 7, difficulty: 'easy', status: 'available' },
-            { slug: 'reading-output', title: 'Reading the output', tagline: 'ns/op, B/op, allocs/op — what each tells you.', minutes: 6, difficulty: 'easy', status: 'available' },
+            { slug: 'reading-output', title: 'Reading the output', tagline: 'ns/op, B/op, allocs/op, what each tells you.', minutes: 6, difficulty: 'easy', status: 'available' },
           ],
         },
       ],
@@ -2133,7 +2133,7 @@ const benchmarkingCourse: Course = {
         {
           title: 'Disciplined optimisation',
           lessons: [
-            { slug: 'benchstat', title: 'benchstat — compare two runs', tagline: 'Statistical significance, not vibes.', minutes: 6, difficulty: 'medium', status: 'available' },
+            { slug: 'benchstat', title: 'benchstat, compare two runs', tagline: 'Statistical significance, not vibes.', minutes: 6, difficulty: 'medium', status: 'available' },
             { slug: 'one-optimisation', title: 'Ship one measured optimisation', tagline: 'Pick, change, re-run, decide.', minutes: 8, difficulty: 'medium', status: 'available' },
           ],
         },

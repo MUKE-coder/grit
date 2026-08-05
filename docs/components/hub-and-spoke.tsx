@@ -112,7 +112,7 @@ export function HubAndSpoke() {
           </h2>
           <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             From <code className="text-foreground/90 font-mono">git push</code> to a running
-            app with auth, storage, jobs, realtime, and AI all on the same wire — no glue
+            app with auth, storage, jobs, realtime, and AI all on the same wire: no glue
             code, no dashboard tabs to hunt through.
           </p>
         </div>

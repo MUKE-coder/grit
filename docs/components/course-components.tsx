@@ -112,7 +112,7 @@ export function CourseFooter() {
       <div className="rounded-lg border border-border/40 bg-card/30 p-6 text-center">
         <p className="text-sm font-semibold text-foreground mb-2">Enjoying the course?</p>
         <p className="text-xs text-muted-foreground mb-4">
-          Help us grow — star us on GitHub, subscribe on YouTube, and follow on LinkedIn.
+          Help us grow, star us on GitHub, subscribe on YouTube, and follow on LinkedIn.
         </p>
         <div className="flex items-center justify-center gap-3 flex-wrap">
           <a

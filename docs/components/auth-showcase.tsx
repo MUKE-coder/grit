@@ -61,7 +61,7 @@ const FEATURES: Feature[] = [
     blurb:
       'A JWT you cannot revoke is a liability. Every refresh token is backed by a session record storing only a SHA-256 hash, so signing a device out actually signs it out.',
     points: [
-      'Refresh rotation with replay detection — a reused token kills the session',
+      'Refresh rotation with replay detection: a reused token kills the session',
       'Idle timeout of 7 days, absolute timeout of 30 days',
       'Per-device sign-out, plus revoke-all that spares the device you are on',
       'Changing your password signs out every other device automatically',
@@ -75,7 +75,7 @@ const FEATURES: Feature[] = [
     icon: KeySquare,
     headline: 'Google and GitHub, off by default',
     blurb:
-      'OAuth via goth, finding-or-creating by email and linking the provider to an existing local account. The buttons stay hidden until you set the credentials — a provider button that no provider backs is worse than none.',
+      'OAuth via goth, finding-or-creating by email and linking the provider to an existing local account. The buttons stay hidden until you set the credentials: a provider button that no provider backs is worse than none.',
     points: [
       'Google and GitHub are the two providers the scaffold ships',
       'Registers a provider only when its client ID is present',
@@ -105,10 +105,10 @@ OAUTH_FRONTEND_URL=http://localhost:3001
     icon: ShieldCheck,
     headline: 'TOTP with backup codes and trusted devices',
     blurb:
-      'Scan a QR, confirm with a live code, and save ten backup codes. From then on a sign-in from an untrusted device asks for a code — or a backup code, if the phone is gone. All of it in the generated admin, not a wiring exercise.',
+      'Scan a QR, confirm with a live code, and save ten backup codes. From then on a sign-in from an untrusted device asks for a code, or a backup code if the phone is gone. All of it in the generated admin, not a wiring exercise.',
     points: [
       'The QR is rendered by the API, so no client ships an encoder or touches the raw secret',
-      'Ten backup codes, hashed at rest and consumed on use — shown exactly once',
+      'Ten backup codes, hashed at rest and consumed on use: shown exactly once',
       'Trust a device for 30 days; list them, revoke one, or revoke all',
       'Login returns a short-lived pending token instead of a session when 2FA is due',
       'TOTP_ISSUER controls the name shown in the authenticator app',
@@ -125,9 +125,9 @@ OAUTH_FRONTEND_URL=http://localhost:3001
     icon: Building2,
     headline: 'Permissions in the database, SSO per customer',
     blurb:
-      'Roles are rows with a grants array, so they change without a deploy. Every generated resource registers its own permissions. For enterprise buyers, SSO connections are rows too — OIDC or SAML, one per customer.',
+      'Roles are rows with a grants array, so they change without a deploy. Every generated resource registers its own permissions. For enterprise buyers, SSO connections are rows too: OIDC or SAML, one per customer.',
     points: [
-      'ADMIN / EDITOR / USER seeded, then editable — ADMIN holds the "*" wildcard',
+      'ADMIN / EDITOR / USER seeded, then editable: ADMIN holds the "*" wildcard',
       'Permission keys are <feature>.<action>: products.create, users.view',
       'Middleware takes either a role or perm:<key>, so both styles work',
       'SSO connections live in the database: OIDC or SAML 2.0, added per customer from the admin',
@@ -290,7 +290,7 @@ export function AuthShowcase() {
       <p className="text-[11.5px] text-muted-foreground/70 mt-8 pt-5 border-t border-border/40 leading-relaxed max-w-3xl">
         Not included, so you are not surprised later: there is no email-verification flow (the
         field exists and social sign-in sets it, but nothing sends a verification mail), and no
-        API-key authentication &mdash; machine callers use the same JWT flow.
+        API-key authentication; machine callers use the same JWT flow.
       </p>
     </div>
   )

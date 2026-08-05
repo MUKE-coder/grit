@@ -49,7 +49,7 @@ export interface Provider {
    three end up wrong. */
 
 const MIGRATE_NOTE =
-  'Grit does not auto-migrate on boot in production — a process that rewrites the schema every time it restarts is a bad idea when the platform can restart it for its own reasons. Run migrations as an explicit step.'
+  'Grit does not auto-migrate on boot in production: a process that rewrites the schema every time it restarts is a bad idea when the platform can restart it for its own reasons. Run migrations as an explicit step.'
 
 const HEALTHCHECK = '/api/health'
 
@@ -65,7 +65,7 @@ export const DEPLOYMENT_PROVIDERS: Provider[] = [
     bestFor:
       'A single Go binary you want in several regions without running servers. The best fit for Grit’s single-binary mode.',
     notFor:
-      'Teams that want a click-through dashboard for everything — Fly is CLI-first and expects you to read a TOML file.',
+      'Teams that want a click-through dashboard for everything: Fly is CLI-first and expects you to read a TOML file.',
     managedPostgres: true,
     managedRedis: true,
     persistentDisk: true,
@@ -73,7 +73,7 @@ export const DEPLOYMENT_PROVIDERS: Provider[] = [
     steps: [
       {
         title: 'Launch without deploying',
-        body: 'Let Fly detect the Dockerfile and write a fly.toml, but stop before it ships anything — the defaults need two changes first.',
+        body: 'Let Fly detect the Dockerfile and write a fly.toml, but stop before it ships anything: the defaults need two changes first.',
         code: { language: 'bash', code: 'fly launch --no-deploy' },
       },
       {
@@ -129,9 +129,9 @@ fly ssh console -C "/app/migrate"`,
       },
     ],
     gotchas: [
-      'Machines suspend on idle by default. The first request after a quiet period pays the wake-up cost — set `min_machines_running = 1` for anything user-facing.',
+      'Machines suspend on idle by default. The first request after a quiet period pays the wake-up cost: set `min_machines_running = 1` for anything user-facing.',
       'A volume is attached to one machine in one region. Scale past one machine and each gets its own empty disk, so uploads must go to S3/R2 rather than local storage.',
-      'Fly Postgres is an unmanaged Postgres you own, not a managed service. Backups are your job — `fly postgres` will not do point-in-time recovery for you.',
+      'Fly Postgres is an unmanaged Postgres you own, not a managed service. Backups are your job: `fly postgres` will not do point-in-time recovery for you.',
     ],
   },
   {
@@ -144,7 +144,7 @@ fly ssh console -C "/app/migrate"`,
     bestFor:
       'Getting something in front of people today. Postgres and Redis are one click and wire themselves into your service.',
     notFor:
-      'Cost-sensitive workloads that run hot — usage billing is generous until it is not, and there is no hard spend cap.',
+      'Cost-sensitive workloads that run hot: usage billing is generous until it is not, and there is no hard spend cap.',
     managedPostgres: true,
     managedRedis: true,
     persistentDisk: true,
@@ -157,7 +157,7 @@ fly ssh console -C "/app/migrate"`,
       },
       {
         title: 'Add Postgres and Redis',
-        body: 'Add them from the same project canvas. Railway exposes them as variables you reference rather than copy — so a rotated password propagates instead of silently breaking the app.',
+        body: 'Add them from the same project canvas. Railway exposes them as variables you reference rather than copy, so a rotated password propagates instead of silently breaking the app.',
         code: {
           language: 'bash',
           code: `DATABASE_URL=\${{Postgres.DATABASE_URL}}
@@ -166,7 +166,7 @@ REDIS_URL=\${{Redis.REDIS_URL}}`,
       },
       {
         title: 'Bind to the port Railway gives you',
-        body: 'Railway injects PORT. Grit reads APP_PORT, so map one to the other rather than hardcoding 8080 — the assigned port is not stable.',
+        body: 'Railway injects PORT. Grit reads APP_PORT, so map one to the other rather than hardcoding 8080: the assigned port is not stable.',
         code: { language: 'bash', code: 'APP_PORT=${{PORT}}' },
       },
       {
@@ -191,7 +191,7 @@ REDIS_URL=\${{Redis.REDIS_URL}}`,
     bestFor:
       'Teams that want managed Postgres with point-in-time recovery without thinking about it, and a blueprint file checked into the repo.',
     notFor:
-      'Anything latency-sensitive on the free tier — free services spin down after inactivity and cold starts run to tens of seconds.',
+      'Anything latency-sensitive on the free tier: free services spin down after inactivity and cold starts run to tens of seconds.',
     managedPostgres: true,
     managedRedis: true,
     persistentDisk: true,
@@ -231,7 +231,7 @@ databases:
     ],
     gotchas: [
       'Free Postgres instances expire after 90 days. Fine for a demo, quietly fatal for anything you forgot about.',
-      'Health check failures roll the deploy back rather than leaving it half-live — good behaviour, but it means a wrong `healthCheckPath` looks like "my deploy never finishes".',
+      'Health check failures roll the deploy back rather than leaving it half-live: good behaviour, but it means a wrong `healthCheckPath` looks like "my deploy never finishes".',
       'Free web services sleep. The first request wakes them, and the wake is slow enough that a health check can time out first.',
     ],
   },
@@ -245,7 +245,7 @@ databases:
     costFrom: 'Cost of the VPS (~$5)',
     effort: 'Medium',
     bestFor:
-      'Running several apps on one box with a UI, automatic TLS and Git deploys — without paying per service.',
+      'Running several apps on one box with a UI, automatic TLS and Git deploys: without paying per service.',
     notFor:
       'Anyone who does not want to own an operating system. You are the one patching it.',
     managedPostgres: false,
@@ -255,7 +255,7 @@ databases:
     steps: [
       {
         title: 'Install on a fresh VPS',
-        body: 'One command on a clean Ubuntu box. Give it 2 GB of RAM minimum — Dokploy plus a Go API plus Postgres will not fit comfortably in 1 GB.',
+        body: 'One command on a clean Ubuntu box. Give it 2 GB of RAM minimum: Dokploy plus a Go API plus Postgres will not fit comfortably in 1 GB.',
         code: { language: 'bash', code: 'curl -sSL https://dokploy.com/install.sh | sh' },
       },
       {
@@ -271,7 +271,7 @@ Watch paths:          apps/api/**`,
       },
       {
         title: 'Know which variables are build-time',
-        body: 'Anything read while the frontend compiles — NEXT_PUBLIC_*, and anything baked into prerendered HTML — must be a Build Argument. Set only at runtime, it is simply absent from the built output, and nothing warns you.',
+        body: 'Anything read while the frontend compiles (NEXT_PUBLIC_*, and anything baked into prerendered HTML) must be a Build Argument. Set only at runtime, it is simply absent from the built output, and nothing warns you.',
         code: {
           language: 'text',
           code: `Build arguments:  NEXT_PUBLIC_API_URL
@@ -280,11 +280,11 @@ Environment:      DATABASE_URL, REDIS_URL, JWT_SECRET`,
       },
       {
         title: 'Add the domain',
-        body: 'Dokploy provisions TLS through Traefik. If Cloudflare sits in front with the orange cloud on, set SSL/TLS to Full (strict) — Flexible produces a redirect loop that looks like an application bug.',
+        body: 'Dokploy provisions TLS through Traefik. If Cloudflare sits in front with the orange cloud on, set SSL/TLS to Full (strict): Flexible produces a redirect loop that looks like an application bug.',
       },
     ],
     gotchas: [
-      'Postgres and Redis run as containers you own. Backups, upgrades and disk pressure are yours — see the backup page.',
+      'Postgres and Redis run as containers you own. Backups, upgrades and disk pressure are yours: see the backup page.',
       'The server is a single point of failure. Fine for internal tools, a real decision for anything customer-facing.',
       'Dokploy updates itself in place. Snapshot the volume before a major upgrade.',
     ],
@@ -298,7 +298,7 @@ Environment:      DATABASE_URL, REDIS_URL, JWT_SECRET`,
     effort: 'Medium',
     bestFor:
       'Self-hosting with a big library of one-click services alongside your app, and multi-server support once one box is not enough.',
-    notFor: 'Minimal setups — it carries more moving parts than a plain Docker Compose file.',
+    notFor: 'Minimal setups: it carries more moving parts than a plain Docker Compose file.',
     managedPostgres: false,
     managedRedis: false,
     persistentDisk: true,
@@ -339,7 +339,7 @@ Ports exposed:    8080`,
     costFrom: '~$5',
     effort: 'Medium',
     bestFor:
-      'The cheapest and fastest production setup for a single-binary Grit app. No Docker, no daemon, no control plane — one binary under systemd behind Caddy.',
+      'The cheapest and fastest production setup for a single-binary Grit app. No Docker, no daemon, no control plane: one binary under systemd behind Caddy.',
     notFor:
       'Teams that need rollbacks, several environments, or more than one machine without building that themselves.',
     managedPostgres: false,
@@ -354,7 +354,7 @@ Ports exposed:    8080`,
       },
       {
         title: 'Or do it by hand',
-        body: 'The full manual walkthrough — user creation, hardening, Postgres, systemd unit, Caddyfile, log rotation — is its own page.',
+        body: 'The full manual walkthrough (user creation, hardening, Postgres, systemd unit, Caddyfile, log rotation) is its own page.',
       },
     ],
     gotchas: [
@@ -365,7 +365,7 @@ Ports exposed:    8080`,
   {
     slug: 'docker-compose',
     name: 'Docker Compose',
-    tagline: 'The whole stack — API, Postgres, Redis, MinIO — on one machine.',
+    tagline: 'The whole stack (API, Postgres, Redis, MinIO) on one machine.',
     kind: 'container',
     costFrom: 'Cost of the host',
     effort: 'Medium',
@@ -392,7 +392,7 @@ Ports exposed:    8080`,
       },
     ],
     gotchas: [
-      'The development compose file publishes Postgres on a host port so you can connect a GUI. The production one must not — that is how a database ends up on the public internet.',
+      'The development compose file publishes Postgres on a host port so you can connect a GUI. The production one must not: that is how a database ends up on the public internet.',
       'Named volumes survive `down`, but not `down -v`. That single flag is the difference between a restart and losing the database.',
     ],
   },
