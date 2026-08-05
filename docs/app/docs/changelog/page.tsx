@@ -50,6 +50,12 @@ export default function ChangelogPage() {
                   <code>BEGIN</code> + <code>INSERT</code> + <code>COMMIT</code> — three round
                   trips where one would do — with the statement re-planned by Postgres each time.
                 </p>
+                <p>
+                  The Bun pair was re-run afterwards to measure it rather than assert it. Inserts
+                  went from <strong>1,568</strong> to <strong>2,686</strong> req/s on the same
+                  hardware, closing most of the gap to Bun without touching the default that keeps
+                  multi-row writes safe.
+                </p>
                 <ul>
                   <li>
                     <code>PrepareStmt</code> is on by default. A query that runs a thousand times

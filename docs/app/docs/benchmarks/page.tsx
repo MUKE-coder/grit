@@ -55,13 +55,13 @@ export default function BenchmarksPage() {
                     Read the ratios, not the raw numbers
                   </h2>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Grit&apos;s single-row read measured <strong>6,600</strong> req/s in the Bun
+                    Grit&apos;s single-row read measured <strong>10,655</strong> req/s in the Bun
                     pair, <strong>4,392</strong> in the Encore pair, <strong>1,911</strong> in the
                     Next.js pair and <strong>1,635</strong> in the Express pair, from an
                     identical binary, as hours of write scenarios accumulated in Postgres and the
                     machine drifted across the session. Within a pair
                     both sides ran minutes apart under the same conditions, so the ratio survives;
-                    lining Bun&apos;s 3,196 up against Encore&apos;s 438 would imply a shared
+                    lining Bun&apos;s 5,358 up against Encore&apos;s 438 would imply a shared
                     baseline that does not exist. Every table below is grouped by pair for that
                     reason.
                   </p>
@@ -200,8 +200,8 @@ export default function BenchmarksPage() {
                 Where Grit loses
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                <strong>Bun inserts faster than Grit</strong>: 3,274 req/s against 1,568, a
-                bit over twice. That row is on this page for the same reason the others are.
+                <strong>Bun inserts faster than Grit</strong>: 3,311 req/s against 2,686, about
+                a quarter quicker. That row is on this page for the same reason the others are.
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 The cause is GORM&apos;s implicit transaction: every single write is{' '}
@@ -297,6 +297,13 @@ export default function BenchmarksPage() {
                   connection. Turn it off with <code>DB_PREPARED_STATEMENTS=false</code> if you run
                   pgbouncer in transaction mode, where server-side prepared statements do not
                   survive between requests.
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed mt-3">
+                  Re-running the Bun pair afterwards is what put a number on it. Inserts went from
+                  1,568 to <strong>2,686</strong> req/s on the same hardware, which took Grit from
+                  2.09&times; slower than Bun to 1.23&times;. Bun still wins that scenario, and the
+                  withdrawn figures are gone from this page rather than left standing because they
+                  flattered the fix.
                 </p>
               </div>
             </section>
