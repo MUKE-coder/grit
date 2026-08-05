@@ -39,13 +39,6 @@ export interface ScenarioResult {
   dbCpu: number
   gritAppCpu: number
   gritDbCpu: number
-  /**
-   * Explicit ceiling classification, for older runs where the classification was
-   * recorded but the raw Postgres CPU sample was not kept. Set only where the
-   * numbers above cannot speak for themselves — never to overrule them.
-   */
-  bound?: 'app' | 'db'
-  gritBound?: 'app' | 'db'
 }
 
 export interface Framework {
@@ -233,19 +226,23 @@ export const FRAMEWORKS: Framework[] = [
     name: 'Laravel',
     version: 'v13 + Eloquent',
     orm: 'Eloquent',
-    tagline: 'nginx + php-fpm in production shape, OPcache on, Eloquent over Postgres',
+    tagline: 'nginx + php-fpm, opcache with a tracing JIT, production-only vendor, Eloquent',
     /*
-     * The earliest pair, and the only one whose Postgres CPU samples were lost —
-     * the classification survives in `bound`, the raw percentages do not. Laravel
-     * saturated its own container in all four scenarios (412-419% of 400%), so
-     * every figure here is a genuine ceiling for it, not a database limit.
+     * Re-measured after three setup faults were found and fixed. The first
+     * published figures had Laravel at 113 req/s on a single-row read; corrected,
+     * it does 175. See the guide page for what was wrong — dev dependencies in
+     * the autoloader, a fresh Postgres connection per request while every other
+     * framework pooled, and an SSL handshake attempt on each of those.
+     *
+     * Laravel saturated its own container in all four scenarios (428-437% of a
+     * 400% allowance) with Postgres at 47-193%, so these are genuine ceilings.
      */
-    stack: 'PHP 8.3, Laravel 13, nginx + php-fpm, OPcache, Eloquent',
+    stack: 'PHP 8.4, Laravel 13, nginx + php-fpm, OPcache + JIT, Eloquent',
     results: {
-      show:  { rps: 113, gritRps: 4722, median: '136.3 ms', gritMedian: '8.4 ms',  appCpu: 412, dbCpu: 0, gritAppCpu: 267, gritDbCpu: 0, bound: 'app', gritBound: 'app' },
-      write: { rps: 96,  gritRps: 2425, median: '119.3 ms', gritMedian: '18.2 ms', appCpu: 419, dbCpu: 0, gritAppCpu: 291, gritDbCpu: 0, bound: 'app', gritBound: 'app' },
-      list:  { rps: 96,  gritRps: 821,  median: '149.5 ms', gritMedian: '52.2 ms', appCpu: 415, dbCpu: 0, gritAppCpu: 130, gritDbCpu: 0, bound: 'app', gritBound: 'db'  },
-      mixed: { rps: 95,  gritRps: 748,  median: '119.5 ms', gritMedian: '58.2 ms', appCpu: 412, dbCpu: 0, gritAppCpu: 126, gritDbCpu: 0, bound: 'app', gritBound: 'db'  },
+      show:  { rps: 175, gritRps: 4340, median: '92.1 ms',  gritMedian: '8.6 ms',  appCpu: 434, dbCpu: 47,  gritAppCpu: 300, gritDbCpu: 248 },
+      write: { rps: 146, gritRps: 1118, median: '56.7 ms',  gritMedian: '40.5 ms', appCpu: 428, dbCpu: 47,  gritAppCpu: 316, gritDbCpu: 531 },
+      list:  { rps: 125, gritRps: 523,  median: '93.3 ms',  gritMedian: '81.4 ms', appCpu: 437, dbCpu: 193, gritAppCpu: 173, gritDbCpu: 950 },
+      mixed: { rps: 101, gritRps: 585,  median: '151.7 ms', gritMedian: '70.4 ms', appCpu: 433, dbCpu: 183, gritAppCpu: 178, gritDbCpu: 981 },
     },
   },
 ]
@@ -288,16 +285,14 @@ export function ranked(scenario: ScenarioId): Framework[] {
  *
  * A zero means the sample was not captured for that run, so nothing is claimed.
  */
-type Cpu = { appCpu: number; dbCpu: number; bound?: 'app' | 'db' }
+type Cpu = { appCpu: number; dbCpu: number }
 
 export function isAppBound(r: Cpu): boolean {
-  if (r.bound) return r.bound === 'app'
   if (!r.appCpu && !r.dbCpu) return false
   return r.appCpu > 350
 }
 
 export function isDbBound(r: Cpu): boolean {
-  if (r.bound) return r.bound === 'db'
   return r.dbCpu > 700 && r.appCpu > 0 && r.appCpu < 350
 }
 
@@ -305,5 +300,4 @@ export function isDbBound(r: Cpu): boolean {
 export const gritCpu = (r: ScenarioResult): Cpu => ({
   appCpu: r.gritAppCpu,
   dbCpu: r.gritDbCpu,
-  bound: r.gritBound,
 })

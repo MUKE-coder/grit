@@ -1,0 +1,14 @@
+# The host's build artifacts must never reach the image. vendor/ here is
+# whatever was last installed locally — usually with dev dependencies — and
+# bootstrap/cache holds a package manifest naming providers that the production
+# vendor does not contain, which makes the container fail to boot.
+vendor/
+bootstrap/cache/*.php
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+node_modules/
+.env
+.git/
+tests/

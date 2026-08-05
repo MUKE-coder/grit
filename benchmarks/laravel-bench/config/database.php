@@ -97,6 +97,16 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+
+            // Parity with every other framework in this benchmark, all of which
+            // hold a pool open: Grit, Express and Next.js pool through their
+            // drivers, Django through psycopg. Without ATTR_PERSISTENT, php-fpm
+            // opens a brand new Postgres connection on every single request —
+            // TCP, auth and a backend fork per request — and that cost lands in
+            // Laravel's column while nobody else pays it.
+            'options' => extension_loaded('pdo_pgsql') ? [
+                PDO::ATTR_PERSISTENT => env('DB_PERSISTENT', true),
+            ] : [],
         ],
 
         'sqlsrv' => [

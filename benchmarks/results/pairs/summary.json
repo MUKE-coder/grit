@@ -388,5 +388,83 @@
         "db_cpu": 58.04
       }
     }
+  },
+  "laravel": {
+    "grit": {
+      "list": {
+        "n": 3,
+        "rps": 523.117728,
+        "med_ms": 81.4,
+        "p95_ms": 202.57,
+        "worst_fail": 0,
+        "app_cpu": 172.49,
+        "db_cpu": 949.66
+      },
+      "mixed": {
+        "n": 3,
+        "rps": 585.164401,
+        "med_ms": 70.38,
+        "p95_ms": 198.16,
+        "worst_fail": 0,
+        "app_cpu": 178.27,
+        "db_cpu": 981.23
+      },
+      "show": {
+        "n": 3,
+        "rps": 4340.347498,
+        "med_ms": 8.55,
+        "p95_ms": 24.73,
+        "worst_fail": 0,
+        "app_cpu": 300.3,
+        "db_cpu": 247.94
+      },
+      "write": {
+        "n": 3,
+        "rps": 1118.407919,
+        "med_ms": 40.51,
+        "p95_ms": 79.07,
+        "worst_fail": 0,
+        "app_cpu": 315.65,
+        "db_cpu": 530.46
+      }
+    },
+    "laravel": {
+      "list": {
+        "n": 3,
+        "rps": 124.631784,
+        "med_ms": 93.34,
+        "p95_ms": 197.48,
+        "worst_fail": 0,
+        "app_cpu": 437.37,
+        "db_cpu": 193.09
+      },
+      "mixed": {
+        "n": 3,
+        "rps": 101.10909,
+        "med_ms": 151.66,
+        "p95_ms": 331.42,
+        "worst_fail": 0,
+        "app_cpu": 432.61,
+        "db_cpu": 183.14
+      },
+      "show": {
+        "n": 3,
+        "rps": 174.998473,
+        "med_ms": 92.07,
+        "p95_ms": 189.19,
+        "worst_fail": 0,
+        "app_cpu": 434.05,
+        "db_cpu": 47.16
+      },
+      "write": {
+        "n": 3,
+        "rps": 145.535769,
+        "med_ms": 56.69,
+        "p95_ms": 98.6,
+        "worst_fail": 0,
+        "app_cpu": 428.33,
+        "db_cpu": 46.79
+      }
+    }
   }
 }

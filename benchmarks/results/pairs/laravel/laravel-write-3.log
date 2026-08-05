@@ -1,0 +1,177 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: k6/bench.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 50 max VUs, 40s max duration (incl. graceful stop):
+              * write: 50 looping VUs for 30s (exec: write, gracefulStop: 10s)
+
+
+running (01.0s), 50/50 VUs, 220 complete and 0 interrupted iterations
+write   [   3% ] 50 VUs  01.0s/30s
+
+running (02.0s), 50/50 VUs, 461 complete and 0 interrupted iterations
+write   [   7% ] 50 VUs  02.0s/30s
+
+running (03.0s), 50/50 VUs, 720 complete and 0 interrupted iterations
+write   [  10% ] 50 VUs  03.0s/30s
+
+running (04.0s), 50/50 VUs, 960 complete and 0 interrupted iterations
+write   [  13% ] 50 VUs  04.0s/30s
+
+running (05.0s), 50/50 VUs, 1207 complete and 0 interrupted iterations
+write   [  17% ] 50 VUs  05.0s/30s
+
+running (06.0s), 50/50 VUs, 1476 complete and 0 interrupted iterations
+write   [  20% ] 50 VUs  06.0s/30s
+
+running (07.0s), 50/50 VUs, 1711 complete and 0 interrupted iterations
+write   [  23% ] 50 VUs  07.0s/30s
+
+running (08.0s), 50/50 VUs, 1924 complete and 0 interrupted iterations
+write   [  27% ] 50 VUs  08.0s/30s
+
+running (09.0s), 50/50 VUs, 2058 complete and 0 interrupted iterations
+write   [  30% ] 50 VUs  09.0s/30s
+
+running (10.0s), 50/50 VUs, 2182 complete and 0 interrupted iterations
+write   [  33% ] 50 VUs  10.0s/30s
+
+running (11.0s), 50/50 VUs, 2302 complete and 0 interrupted iterations
+write   [  37% ] 50 VUs  11.0s/30s
+
+running (12.0s), 50/50 VUs, 2411 complete and 0 interrupted iterations
+write   [  40% ] 50 VUs  12.0s/30s
+
+running (13.0s), 50/50 VUs, 2509 complete and 0 interrupted iterations
+write   [  43% ] 50 VUs  13.0s/30s
+
+running (14.0s), 50/50 VUs, 2626 complete and 0 interrupted iterations
+write   [  47% ] 50 VUs  14.0s/30s
+
+running (15.0s), 50/50 VUs, 2793 complete and 0 interrupted iterations
+write   [  50% ] 50 VUs  15.0s/30s
+
+running (16.0s), 50/50 VUs, 2937 complete and 0 interrupted iterations
+write   [  53% ] 50 VUs  16.0s/30s
+
+running (17.0s), 50/50 VUs, 3085 complete and 0 interrupted iterations
+write   [  57% ] 50 VUs  17.0s/30s
+
+running (18.0s), 50/50 VUs, 3277 complete and 0 interrupted iterations
+write   [  60% ] 50 VUs  18.0s/30s
+
+running (19.0s), 50/50 VUs, 3491 complete and 0 interrupted iterations
+write   [  63% ] 50 VUs  19.0s/30s
+
+running (20.0s), 50/50 VUs, 3664 complete and 0 interrupted iterations
+write   [  67% ] 50 VUs  20.0s/30s
+
+running (21.0s), 50/50 VUs, 3870 complete and 0 interrupted iterations
+write   [  70% ] 50 VUs  21.0s/30s
+
+running (22.0s), 50/50 VUs, 4041 complete and 0 interrupted iterations
+write   [  73% ] 50 VUs  22.0s/30s
+
+running (23.0s), 50/50 VUs, 4210 complete and 0 interrupted iterations
+write   [  77% ] 50 VUs  23.0s/30s
+
+running (24.0s), 50/50 VUs, 4374 complete and 0 interrupted iterations
+write   [  80% ] 50 VUs  24.0s/30s
+
+running (25.0s), 50/50 VUs, 4496 complete and 0 interrupted iterations
+write   [  83% ] 50 VUs  25.0s/30s
+
+running (26.0s), 50/50 VUs, 4627 complete and 0 interrupted iterations
+write   [  87% ] 50 VUs  26.0s/30s
+
+running (27.0s), 50/50 VUs, 4748 complete and 0 interrupted iterations
+write   [  90% ] 50 VUs  27.0s/30s
+
+running (28.0s), 50/50 VUs, 4878 complete and 0 interrupted iterations
+write   [  93% ] 50 VUs  28.0s/30s
+
+running (29.0s), 50/50 VUs, 5004 complete and 0 interrupted iterations
+write   [  97% ] 50 VUs  29.0s/30s
+
+running (30.0s), 50/50 VUs, 5123 complete and 0 interrupted iterations
+write   [ 100% ] 50 VUs  30.0s/30s
+
+running (31.0s), 41/50 VUs, 5132 complete and 0 interrupted iterations
+write ↓ [ 100% ] 50 VUs  30s
+
+running (32.0s), 41/50 VUs, 5132 complete and 0 interrupted iterations
+write ↓ [ 100% ] 50 VUs  30s
+
+running (33.0s), 41/50 VUs, 5132 complete and 0 interrupted iterations
+write ↓ [ 100% ] 50 VUs  30s
+
+running (34.0s), 41/50 VUs, 5132 complete and 0 interrupted iterations
+write ↓ [ 100% ] 50 VUs  30s
+
+running (35.0s), 41/50 VUs, 5132 complete and 0 interrupted iterations
+write ↓ [ 100% ] 50 VUs  30s
+
+running (36.0s), 41/50 VUs, 5132 complete and 0 interrupted iterations
+write ↓ [ 100% ] 50 VUs  30s
+
+running (37.0s), 41/50 VUs, 5132 complete and 0 interrupted iterations
+write ↓ [ 100% ] 50 VUs  30s
+
+running (38.0s), 41/50 VUs, 5132 complete and 0 interrupted iterations
+write ↓ [ 100% ] 50 VUs  30s
+
+running (39.0s), 41/50 VUs, 5132 complete and 0 interrupted iterations
+write ↓ [ 100% ] 50 VUs  30s
+
+running (40.0s), 41/50 VUs, 5132 complete and 0 interrupted iterations
+write ↓ [ 100% ] 50 VUs  30s
+
+
+  █ THRESHOLDS 
+
+    failed_requests
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 10264   256.607417/s
+    checks_succeeded...: 100.00% 10264 out of 10264
+    checks_failed......: 0.00%   0 out of 10264
+
+    ✓ status ok
+    ✓ has data
+
+    CUSTOM
+    failed_requests................: 0.00%  0 out of 5132
+    ttfb...........................: avg=51.64ms min=8.78ms med=56.42ms max=222.96ms p(90)=91.9ms  p(95)=98.55ms
+
+    HTTP
+    http_req_duration..............: avg=51.96ms min=8.92ms med=56.69ms max=223.15ms p(90)=92.22ms p(95)=98.94ms
+      { expected_response:true }...: avg=51.96ms min=8.92ms med=56.69ms max=223.15ms p(90)=92.22ms p(95)=98.94ms
+    http_req_failed................: 0.00%  0 out of 5132
+    http_reqs......................: 5132   128.303709/s
+
+    EXECUTION
+    iteration_duration.............: avg=52.6ms  min=9.16ms med=57.25ms max=225.43ms p(90)=93.01ms p(95)=99.62ms
+    iterations.....................: 5132   128.303709/s
+    vus............................: 41     min=41        max=50
+    vus_max........................: 50     min=50        max=50
+
+    NETWORK
+    data_received..................: 3.0 MB 76 kB/s
+    data_sent......................: 1.6 MB 39 kB/s
+
+
+
+
+running (40.0s), 00/50 VUs, 5132 complete and 41 interrupted iterations
+write ✓ [ 100% ] 50 VUs  30s
