@@ -115,7 +115,13 @@ export default function HomePage() {
               A centred hero sends the eye back to the middle for every line; an
               asymmetric split lets the copy read as a paragraph and gives the
               code somewhere permanent to sit. */}
-          <div className="grid lg:grid-cols-[1.15fr_1fr] gap-12 lg:gap-14 items-center">
+          {/* minmax(0, …) on every track, at every breakpoint. A bare `grid`
+              creates one auto-sized column that grows to its max-content width,
+              and a grid item defaults to min-width:auto so it will not shrink
+              below that. Together those made this hero 542px wide inside a
+              370px phone and pushed the whole page into horizontal scroll —
+              the headline read "The Batteries-Include" with the rest off-screen. */}
+          <div className="grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] gap-12 lg:gap-14 items-center">
 
             {/* ── Left: the pitch ─────────────────────────────────────── */}
             <div className="text-left">
