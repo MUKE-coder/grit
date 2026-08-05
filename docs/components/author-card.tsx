@@ -15,7 +15,7 @@ export function AuthorCard() {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={AVATAR}
-        alt="JB — Creator of Grit"
+        alt="JB, Creator of Grit"
         className="h-16 w-16 rounded-full object-cover ring-2 ring-primary/20 shrink-0"
       />
 
@@ -23,9 +23,9 @@ export function AuthorCard() {
         <div className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground/70 mb-1">
           Written &amp; published by
         </div>
-        <div className="font-semibold text-foreground">JB — Creator of Grit</div>
+        <div className="font-semibold text-foreground">JB, Creator of Grit</div>
         <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-          Founder of Grit and author of <span className="text-foreground">The Daily Grit</span> — a
+          Founder of Grit and author of <span className="text-foreground">The Daily Grit</span>. A
           5-minute morning read on building full-stack apps with Go + React.
         </p>
         <div className="mt-3 flex items-center gap-2">

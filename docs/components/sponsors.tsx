@@ -233,7 +233,7 @@ export function FoundingSponsorCTA({ className }: { className?: string }) {
         This spot is open
       </h3>
       <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-        Grit has no sponsors yet. Be the first — your logo goes at the top of this
+        Grit has no sponsors yet. Be the first, your logo goes at the top of this
         page, on the home page, in the README, and inside the CLI.
       </p>
       <Link

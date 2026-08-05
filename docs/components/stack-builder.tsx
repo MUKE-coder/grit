@@ -30,9 +30,9 @@ interface ArchOption {
 
 const ARCHITECTURES: ArchOption[] = [
   { id: 'triple', name: 'Triple', desc: 'Web + Admin + API in a Turborepo. The full-stack default.', icon: Layers, hasFrontend: true, hasAdmin: true, badge: 'Popular' },
-  { id: 'full', name: 'Full', desc: 'Triple plus a docs site, an Expo mobile app, and a desktop app — everything.', icon: Boxes, hasFrontend: true, hasAdmin: true },
+  { id: 'full', name: 'Full', desc: 'Triple plus a docs site, an Expo mobile app, and a desktop app, everything.', icon: Boxes, hasFrontend: true, hasAdmin: true },
   { id: 'double', name: 'Double', desc: 'Web + API. A public site with no admin panel.', icon: Globe, hasFrontend: true, hasAdmin: false },
-  { id: 'single', name: 'Single', desc: 'Go API with an embedded React SPA — one deployable binary.', icon: Server, hasFrontend: true, hasAdmin: false },
+  { id: 'single', name: 'Single', desc: 'Go API with an embedded React SPA, one deployable binary.', icon: Server, hasFrontend: true, hasAdmin: false },
   { id: 'api', name: 'API only', desc: 'Just the Go API. No frontend.', icon: Terminal, hasFrontend: false, hasAdmin: false },
   { id: 'mobile', name: 'Mobile', desc: 'Go API paired with an Expo mobile app.', icon: Smartphone, hasFrontend: false, hasAdmin: false },
 ]
@@ -389,7 +389,7 @@ export function StackBuilder() {
         </button>
 
         <p className="rounded-lg border border-border bg-muted/30 p-3 text-[12px] leading-relaxed text-muted-foreground">
-          Run the command, then pick your database in <code className="text-foreground">.env</code> —
+          Run the command, then pick your database in <code className="text-foreground">.env</code>:
           Postgres by default, or SQLite for a zero-setup start. Optional modules (AI, jobs,
           storage, 2FA…) toggle via <code className="text-foreground">MODULE_*</code> flags.
         </p>
@@ -513,7 +513,7 @@ export function StackBuilder() {
           <Section label="Add-ons" hint="Included with Full">
             <div className="rounded-xl border border-border bg-card/40 p-4 text-[13px] text-muted-foreground">
               <span className="font-medium text-foreground">Full</span> already bundles the docs
-              site, an Expo mobile app, and a Wails desktop app — no extra flags needed.
+              site, an Expo mobile app, and a Wails desktop app: no extra flags needed.
             </div>
           </Section>
         )}

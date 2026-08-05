@@ -39,8 +39,8 @@ export function NoAITip({ children }: Props) {
                 AI mid-completion robs you of the small mistakes that make
                 concepts stick. You&apos;ll be a faster, more independent
                 developer at the end of the course if you type every
-                character yourself. Re-enable AI for your real work after
-                — never during a lesson.
+                character yourself. Re-enable AI for your real work afterwards, never
+                during a lesson.
               </p>
             </div>
           )}

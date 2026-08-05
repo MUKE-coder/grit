@@ -35,7 +35,7 @@ const TABS: Tab[] = [
     icon: Boxes,
     file: 'internal/handlers/product.go',
     language: 'go',
-    caption: 'grit generate resource Product — model, API, types, hooks and admin screen',
+    caption: 'grit generate resource Product: model, API, types, hooks and admin screen',
     code: `package handlers
 
 // Written for you, along with the model, migration,
@@ -59,7 +59,7 @@ func (h *ProductHandler) List(c *gin.Context) {
     icon: Lock,
     file: 'internal/routes/routes.go',
     language: 'go',
-    caption: 'JWT, OAuth, 2FA and role checks — already mounted',
+    caption: 'JWT, OAuth, 2FA and role checks: already mounted',
     code: `// Auth ships working. This is all you write to use it.
 
 protected := r.Group("/api/v1")

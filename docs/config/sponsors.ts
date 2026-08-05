@@ -75,7 +75,7 @@ export const SPONSOR_TIERS: SponsorTier[] = [
       'Everything in Special Sponsor',
       'Hero placement on the home page',
       '“Sponsored by” credit on the docs site',
-      'Roadmap input — a direct line to the maintainer',
+      'Roadmap input: a direct line to the maintainer',
       'Priority support',
     ],
   },

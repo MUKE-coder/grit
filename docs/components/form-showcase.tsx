@@ -38,12 +38,12 @@ const DEMOS: Demo[] = [
     icon: Upload,
     headline: 'Four kinds of upload, four words',
     body:
-      'Declare a field as file or files and add what it accepts — image, pdf, zip, doc, video, or a bracketed list. You get a dropzone with the right filter, image previews, per-type icons, size caps and progress, on both create and edit.',
+      'Declare a field as file or files and add what it accepts: image, pdf, zip, doc, video, or a bracketed list. You get a dropzone with the right filter, image previews, per-type icons, size caps and progress, on both create and edit.',
     command:
       'grit generate resource Product --fields \\\n  "name:string,category:belongs_to:Category,price:float,\\\n   cover:file:image,gallery:files:image,\\\n   spec_sheet:file:pdf,downloads:files:[zip,doc],\\\n   description:richtext,published:bool"',
-    commandNote: 'One command — model, migration, API, types, hooks and this form.',
+    commandNote: 'One command: model, migration, API, types, hooks and this form.',
     detail:
-      'Uploads go browser-to-storage through a presigned URL, and the field’s accept list is enforced on the server too — a field declared file:pdf will not take a PNG even if the client asks nicely.',
+      'Uploads go browser-to-storage through a presigned URL, and the field’s accept list is enforced on the server too: a field declared file:pdf will not take a PNG even if the client asks nicely.',
     image: '/images/forms/uploads.png',
   },
   {
@@ -52,7 +52,7 @@ const DEMOS: Demo[] = [
     icon: Link2,
     headline: 'A foreign key you can fill without leaving the form',
     body:
-      'A belongs_to field becomes a searchable select fed by the related resource. If the record you need does not exist yet, create it inline — the related resource’s own form opens, and the new record is selected when it closes.',
+      'A belongs_to field becomes a searchable select fed by the related resource. If the record you need does not exist yet, create it inline: the related resource’s own form opens, and the new record is selected when it closes.',
     command: 'category:belongs_to:Category',
     commandNote: 'One field. The select, the search, and New Category all follow.',
     detail:
@@ -79,12 +79,12 @@ const DEMOS: Demo[] = [
     icon: ListOrdered,
     headline: 'Long forms, broken into steps',
     body:
-      'Group the fields into steps and the same generated form becomes a wizard — on a page or in a modal, with validation per step so someone cannot skip past a required field.',
+      'Group the fields into steps and the same generated form becomes a wizard: on a page or in a modal, with validation per step so someone cannot skip past a required field.',
     command:
       'formView: "page-steps",\nform: {\n  steps: [\n    { title: "Applicant",    fields: ["full_name", "email", "phone"] },\n    { title: "Experience",   fields: ["role_applied", "years_experience", "portfolio_url", "resume"] },\n    { title: "Availability", fields: ["available_from", "expected_salary", "cover_letter", "notes"] },\n  ],\n}',
     commandNote: 'Added to the generated resource file. The fields are unchanged.',
     detail:
-      'On edit, each step gets its own Update button that saves only that step, and stays disabled until that step actually changes — so fixing a phone number does not rewrite the whole record.',
+      'On edit, each step gets its own Update button that saves only that step, and stays disabled until that step actually changes, so fixing a phone number does not rewrite the whole record.',
     image: '/images/forms/multi-step.png',
   },
   {
@@ -93,7 +93,7 @@ const DEMOS: Demo[] = [
     icon: WifiOff,
     headline: 'The desktop app keeps working with no network',
     body:
-      'The Wails app mirrors your data into local SQLite. Reads keep answering, writes queue, and everything pushes automatically when the connection returns — including file uploads, which hold their bytes until storage is reachable.',
+      'The Wails app mirrors your data into local SQLite. Reads keep answering, writes queue, and everything pushes automatically when the connection returns: including file uploads, which hold their bytes until storage is reachable.',
     command: 'grit new myapp --triple --desktop',
     commandNote: 'The mirror, the queue and this page come with the app.',
     detail:
@@ -140,7 +140,7 @@ export function FormShowcase() {
               <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
             </div>
             <span className="mx-auto text-[11px] font-mono text-muted-foreground">
-              {demo.key === 'offline' ? 'myapp — desktop' : 'localhost:3001'}
+              {demo.key === 'offline' ? 'myapp: desktop' : 'localhost:3001'}
             </span>
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}

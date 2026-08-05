@@ -82,7 +82,7 @@ function buildCourseSearchItems(): SearchItem[] {
 const searchIndex: SearchItem[] = [
   // Getting Started
   { title: 'Introduction', href: '/docs', section: 'Getting Started', keywords: 'overview what is grit start begin home introduction welcome' },
-  { title: 'Stack Selector — Pick a Combo', href: '/docs/stack-selector', section: 'Getting Started', keywords: 'choose stack combo architecture which what should I pick build single double triple api mobile desktop offline web portal saas internal tool dashboard kitchen sink multi-platform decision tree recommendation capability matrix vite next nextjs tanstack' },
+  { title: 'Stack Selector, Pick a Combo', href: '/docs/stack-selector', section: 'Getting Started', keywords: 'choose stack combo architecture which what should I pick build single double triple api mobile desktop offline web portal saas internal tool dashboard kitchen sink multi-platform decision tree recommendation capability matrix vite next nextjs tanstack' },
   { title: 'Philosophy & Inspiration', href: '/docs/getting-started/philosophy', section: 'Getting Started', keywords: 'why design decisions laravel rails inspiration manifesto principles' },
   { title: 'Quick Start', href: '/docs/getting-started/quick-start', section: 'Getting Started', keywords: 'setup first project tutorial begin hello new install run dev' },
   { title: 'Installation', href: '/docs/getting-started/installation', section: 'Getting Started', keywords: 'install go node pnpm setup requirements prerequisites cli go install brew' },
@@ -155,14 +155,14 @@ const searchIndex: SearchItem[] = [
   { title: 'Performance & Pentest Testing', href: '/docs/testing', section: 'Security & Testing', keywords: 'testing k6 load test smoke average stress spike soak breakpoint pentest penetration test methodology burp ffuf nmap sqlmap nuclei cvss audit report vulnerability scan govulncheck pnpm audit codeql ptes owasp wstg' },
 
   // Demo
-  { title: 'Demo Application — Grit Motors', href: '/docs/demo', section: 'Demo', keywords: 'demo application grit motors kayula motorcycle dealership pos sales loans repayments borrowers spares stock multi-tenant rbac sentinel pulse security observability self host live demo source code' },
+  { title: 'Demo Application, Grit Motors', href: '/docs/demo', section: 'Demo', keywords: 'demo application grit motors kayula motorcycle dealership pos sales loans repayments borrowers spares stock multi-tenant rbac sentinel pulse security observability self host live demo source code' },
 
   // Tech Kits
-  { title: 'Tech Kits — All', href: '/docs/tech-kits', section: 'Tech Kits', keywords: 'tech kits starter kits starter pack scaffold templates single double triple api mobile desktop wails expo nextjs vite tanstack architecture modes' },
+  { title: 'Tech Kits, All', href: '/docs/tech-kits', section: 'Tech Kits', keywords: 'tech kits starter kits starter pack scaffold templates single double triple api mobile desktop wails expo nextjs vite tanstack architecture modes' },
   { title: 'AI Integration Helper', href: '/docs/ai-integration', section: 'Tech Kits', keywords: 'ai integration helper wizard claude code cursor lovable bolt v0 windsurf copilot aider cline prompt generator starter prompt project description phases design style guide planning files coding agent' },
 
   // Learnings — engineering journal
-  { title: 'Learnings — Overview', href: '/docs/learnings', section: 'Learnings', keywords: 'learnings journal engineering challenges write-ups load testing security performance tuning grit framework experiments' },
+  { title: 'Learnings, Overview', href: '/docs/learnings', section: 'Learnings', keywords: 'learnings journal engineering challenges write-ups load testing security performance tuning grit framework experiments' },
   { title: 'Stateless Service + k6 Load Test', href: '/docs/learnings/stateless-service-load-test', section: 'Learnings', keywords: 'k6 load test stateless service health check api p50 p95 p99 latency percentile grafana autocannon throughput rps requests per second chart milestone benchmark performance smoke spike soak threshold vus virtual users iterations http duration ttfb tls connecting blocked sending waiting receiving' },
   { title: 'Single Tech Kit', href: '/docs/tech-kits/single', section: 'Tech Kits', keywords: 'single binary embedded spa nextjs go embed single file deploy fastest small monolith' },
   { title: 'Single + Vite Tech Kit', href: '/docs/tech-kits/single-vite', section: 'Tech Kits', keywords: 'single vite tanstack router spa fast cold start refresh on 401 auth refresh' },

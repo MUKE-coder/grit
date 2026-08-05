@@ -81,7 +81,7 @@ export function LessonShell({ course, chapter, lesson, prev, next, children }: P
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-3">
               Help us improve this lesson. One click opens a GitHub issue with
-              the lesson URL pre-filled — suggest clearer wording, report a
+              the lesson URL pre-filled, suggest clearer wording, report a
               bug, or request more depth. The course keeps improving thanks
               to learners like you.
             </p>

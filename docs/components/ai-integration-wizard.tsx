@@ -25,11 +25,11 @@ import {
 } from '@/lib/framework-prompt'
 
 const CLIENTS: { id: ClientId; label: string; desc: string; icon: typeof Server }[] = [
-  { id: 'api', label: 'API', desc: 'Go backend (Gin + GORM) — the base every client talks to.', icon: Server },
-  { id: 'website', label: 'Website', desc: 'Public web frontend — marketing, storefront, SaaS, dashboard.', icon: Globe },
-  { id: 'admin', label: 'Admin panel', desc: 'Generated Filament-like dashboard — tables, forms, roles.', icon: LayoutDashboard },
-  { id: 'mobile', label: 'Mobile app', desc: 'Expo / React Native — iOS + Android, shared API.', icon: Smartphone },
-  { id: 'desktop', label: 'Desktop app', desc: 'Native Wails window — offline-first with local SQLite.', icon: Monitor },
+  { id: 'api', label: 'API', desc: 'Go backend (Gin + GORM), the base every client talks to.', icon: Server },
+  { id: 'website', label: 'Website', desc: 'Public web frontend: marketing, storefront, SaaS, dashboard.', icon: Globe },
+  { id: 'admin', label: 'Admin panel', desc: 'Generated Filament-like dashboard: tables, forms, roles.', icon: LayoutDashboard },
+  { id: 'mobile', label: 'Mobile app', desc: 'Expo / React Native: iOS + Android, shared API.', icon: Smartphone },
+  { id: 'desktop', label: 'Desktop app', desc: 'Native Wails window: offline-first with local SQLite.', icon: Monitor },
 ]
 
 const PLUGINS: { id: PluginId; label: string; desc: string }[] = [
@@ -131,7 +131,7 @@ export function AIIntegrationWizard() {
           <div>
             <h2 className="mb-2 text-xl font-semibold tracking-tight">What are you building?</h2>
             <p className="mb-6 text-sm text-muted-foreground">
-              Pick every surface you need — the API is the base, the rest are clients that share it.
+              Pick every surface you need. The API is the base; the rest are clients that share it.
               Select as many as apply.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -174,7 +174,7 @@ export function AIIntegrationWizard() {
           <div>
             <h2 className="mb-2 text-xl font-semibold tracking-tight">Assemble your stack</h2>
             <p className="mb-6 text-sm text-muted-foreground">
-              Based on your clients, here&apos;s the command to scaffold it — plus a few variants.
+              Based on your clients, here&apos;s the command to scaffold it, plus a few variants.
             </p>
 
             <div className="mb-6 grid gap-4 sm:grid-cols-2">
@@ -231,8 +231,8 @@ export function AIIntegrationWizard() {
             <p className="mb-2 text-sm font-medium text-foreground">
               Choose your scaffold command
               {commands.options.length > 1 && (
-                <span className="ml-1 font-normal text-muted-foreground">
-                  — the selected one is used in your prompt.
+                <span className="ml-1 font-normal text-muted-foreground">,
+                  the selected one is used in your prompt.
                 </span>
               )}
             </p>
@@ -348,7 +348,7 @@ export function AIIntegrationWizard() {
               <div>
                 <h2 className="text-xl font-semibold tracking-tight">Your Grit prompt is ready</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  A full brief that teaches an AI agent Grit from zero — paste it into Claude Code,
+                  A full brief that teaches an AI agent Grit from zero: paste it into Claude Code,
                   Cursor, or any coding agent, or download it as <code>grit-llm-prompt.md</code>.
                 </p>
               </div>

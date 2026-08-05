@@ -16,14 +16,14 @@ const STEPS = [
     n: '01',
     icon: Sparkles,
     title: 'Scaffold a real project',
-    body: 'Pick your architecture (single binary, monorepo, mobile, desktop) and one command scaffolds the entire repo — Go API, React frontend, admin panel, Docker, CI, all wired together.',
+    body: 'Pick your architecture (single binary, monorepo, mobile, desktop) and one command scaffolds the entire repo: Go API, React frontend, admin panel, Docker, CI, all wired together.',
     code: 'grit new my-app --triple',
   },
   {
     n: '02',
     icon: Wand2,
     title: 'Generate full-stack features',
-    body: "Describe a resource (Product · Order · Invoice). Grit emits the Go model, service, handler, routes, Zod schema, React hooks, and admin page — typed end-to-end, no glue code.",
+    body: "Describe a resource (Product · Order · Invoice). Grit emits the Go model, service, handler, routes, Zod schema, React hooks, and admin page: typed end-to-end, no glue code.",
     code: 'grit generate resource Product',
   },
   {
@@ -36,7 +36,7 @@ const STEPS = [
 ]
 
 const HIGHLIGHTS = [
-  'No glue code between backend and frontend — generated together, always in sync',
+  'No glue code between backend and frontend: generated together, always in sync',
   'Production batteries: auth + 2FA, OAuth, storage, jobs, AI, observability',
   'Secure-by-default headers; OWASP Top 10:2025 hardened out of the box',
 ]
@@ -67,7 +67,7 @@ export function WhatIsGrit() {
           </h2>
           <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             A full-stack meta-framework that turns one CLI command into a working Go API,
-            React frontend, and admin panel — with everything you usually wire up by hand
+            React frontend, and admin panel, with everything you usually wire up by hand
             already wired up.
           </p>
         </div>

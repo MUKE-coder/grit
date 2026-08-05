@@ -68,7 +68,7 @@ const PLATFORMS: Platform[] = [
       'A Wails binary with its own title bar and a local SQLite mirror. Reads keep working with no network, writes queue, and the sync indicator tells the user which state they are in.',
     image: '/images/platforms/desktop.png',
     shell: 'window',
-    chromeLabel: 'myapp — desktop',
+    chromeLabel: 'myapp: desktop',
     steps: [
       { cmd: 'grit new myapp --triple --desktop', note: 'adds apps/desktop (Wails + TanStack Router)' },
       { cmd: 'cd myapp && docker compose up -d', note: 'same infrastructure as the web stack' },
@@ -83,7 +83,7 @@ const PLATFORMS: Platform[] = [
     icon: Smartphone,
     headline: 'An Expo app on the same types',
     blurb:
-      'React Native through Expo Router, with NativeWind styling and the same generated client the web app uses. The counts here come from the same API the admin panel reads — generate a resource and it is on the phone too.',
+      'React Native through Expo Router, with NativeWind styling and the same generated client the web app uses. The counts here come from the same API the admin panel reads: generate a resource and it is on the phone too.',
     image: '/images/platforms/mobile.png',
     shell: 'phone',
     chromeLabel: 'Expo · Android',
@@ -101,7 +101,7 @@ const PLATFORMS: Platform[] = [
     icon: Server,
     headline: 'Documented the moment it exists',
     blurb:
-      'The Go API serves a Scalar reference at /docs with typed request bodies, response schemas and a runnable curl for every endpoint. Generate a resource and its endpoints document themselves — no annotations to write, no spec to maintain by hand.',
+      'The Go API serves a Scalar reference at /docs with typed request bodies, response schemas and a runnable curl for every endpoint. Generate a resource and its endpoints document themselves: no annotations to write, no spec to maintain by hand.',
     image: '/images/platforms/api-scalar.png',
     shell: 'browser',
     chromeLabel: 'localhost:8080/docs',

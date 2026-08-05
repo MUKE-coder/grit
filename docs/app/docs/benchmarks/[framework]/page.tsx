@@ -172,8 +172,8 @@ export default async function FrameworkBenchmarkPage({
                 </div>
                 <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
                   Both figures come from the same run, minutes apart. Your absolute numbers
-                  will differ &mdash; different CPU, different disk, different background load
-                  &mdash; and so will ours: Grit&apos;s single-row read measured 6,600 req/s in
+                  will differ (different CPU, different disk, different background load)
+                  and so will ours: Grit&apos;s single-row read measured 6,600 req/s in
                   the Bun pair and 1,635 in the Express pair from an identical binary, as hours
                   of write scenarios accumulated in Postgres. The <em>ratio</em> is what should
                   survive. If it does not, something in the setup differs and the steps below are
@@ -264,7 +264,7 @@ export default async function FrameworkBenchmarkPage({
                   <code>aggregate.py</code> prints the app container&apos;s CPU and Postgres&apos;s
                   CPU next to every row. That pair is what tells you whether a number is a real
                   ceiling. If the app is pinned near 400% then you are seeing its limit. If the app
-                  is idling while Postgres is near 800%, the database gave out first &mdash; that
+                  is idling while Postgres is near 800%, the database gave out first. That
                   row is a floor, the framework would go faster on a bigger database, and quoting
                   it as &ldquo;X does N req/s&rdquo; overstates what you measured.
                 </p>

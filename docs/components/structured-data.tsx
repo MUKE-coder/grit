@@ -110,7 +110,7 @@ export function FAQPageSchema() {
             name: 'Can Grit generate full-stack resources?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'Yes. Running "grit generate resource Product --fields name:string,price:float,active:bool" creates the Go model, service, handler, routes, Zod schemas, TypeScript types, React Query hooks, and admin panel resource definition — all wired together and ready to use.',
+              text: 'Yes. Running "grit generate resource Product --fields name:string,price:float,active:bool" creates the Go model, service, handler, routes, Zod schemas, TypeScript types, React Query hooks, and admin panel resource definition, all wired together and ready to use.',
             },
           },
           {

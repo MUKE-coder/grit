@@ -205,7 +205,7 @@ export function ResourceDefinitionShowcase() {
 
   const file =
     active === 'uploads'
-      ? 'apps/admin/resources/products.ts — form.fields'
+      ? 'apps/admin/resources/products.ts: form.fields'
       : 'apps/admin/resources/products.ts'
 
   return (
@@ -255,7 +255,7 @@ export function ResourceDefinitionShowcase() {
               <Chips title="Filter types" items={['select', 'date-range', 'number-range', 'boolean']} />
               <p className="text-[11.5px] text-muted-foreground/80 leading-relaxed">
                 A column can also take <code className="text-foreground/70">cell</code> and render
-                anything you like &mdash; <code className="text-foreground/70">format</code> is the
+                anything you like, <code className="text-foreground/70">format</code> is the
                 shortcut, not the ceiling.
               </p>
             </>
@@ -292,7 +292,7 @@ export function ResourceDefinitionShowcase() {
               <Chips title="Table actions" items={['create', 'view', 'edit', 'delete', 'export']} />
               <p className="text-[11.5px] text-muted-foreground/80 leading-relaxed">
                 <code className="text-foreground/70">grit generate resource</code> writes this file
-                for you. Everything past that point is ordinary TypeScript you own &mdash; there is
+                for you. Everything past that point is ordinary TypeScript you own. There is
                 no regeneration step that overwrites your edits.
               </p>
             </>

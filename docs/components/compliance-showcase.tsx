@@ -47,7 +47,7 @@ const TOPICS: Topic[] = [
       'Export returns one JSON file: profile, uploads, sessions, activity, 2FA state',
       'Erase hard-deletes personal records across nine tables and anonymises the account',
       'The user id survives as a tombstone, so the audit trail stays readable',
-      'The journal stores no PII — just ids, counts, actor and a SHA-256 chain',
+      'The journal stores no PII: just ids, counts, actor and a SHA-256 chain',
       'A verify pass replays the chain and names the row where it breaks',
     ],
     image: '/images/system/gdpr.png',
@@ -59,7 +59,7 @@ const TOPICS: Topic[] = [
     icon: Building2,
     headline: 'One connection per customer, added from the admin',
     blurb:
-      'OIDC or SAML 2.0, stored as database rows rather than environment variables — so onboarding an enterprise customer is a form, not a deploy.',
+      'OIDC or SAML 2.0, stored as database rows rather than environment variables, so onboarding an enterprise customer is a form, not a deploy.',
     points: [
       'Routed by email domain: acme.com signs in through Acme’s identity provider',
       'OIDC via discovery, or SAML with a metadata URL or pasted XML',
@@ -80,7 +80,7 @@ const TOPICS: Topic[] = [
     points: [
       'Targets SOC 2 CC6.2 / CC6.3 and ISO 27001 A.9.2.5',
       'Each item copies the user’s email and role at open time, so the record survives deletion',
-      'Revoking removes the grant there and then — not a ticket for someone else',
+      'Revoking removes the grant there and then: not a ticket for someone else',
       'Completed reviews cannot be reopened, which is what makes them evidence',
     ],
     code: `// A campaign is a snapshot plus a decision per row.
@@ -105,8 +105,8 @@ POST   /api/v1/access-reviews/:id/complete          // freeze it
       'A hash-chained record of every authenticated mutation for evidence, and a readable event timeline for operators. Both export to a SIEM in OCSF.',
     points: [
       'Every authenticated POST/PUT/PATCH/DELETE is chained: prev hash, this hash',
-      'Bodies are stored as a SHA-256 digest — evidence of what was sent, without the PII',
-      'One button replays the chain and names the first row that fails — the screenshot is a real detection, after a row was edited straight in the database',
+      'Bodies are stored as a SHA-256 digest: evidence of what was sent, without the PII',
+      'One button replays the chain and names the first row that fails: the screenshot is a real detection, after a row was edited straight in the database',
       'Written by a single goroutine off a buffered channel, so the chain cannot race',
       'GET /audit/ocsf streams newline-delimited OCSF 1.3.0 for Splunk, Sentinel or Panther',
     ],
@@ -201,7 +201,7 @@ export function ComplianceShowcase() {
       <p className="text-[11.5px] text-muted-foreground/70 mt-8 pt-5 border-t border-border/40 leading-relaxed max-w-3xl">
         What Grit does not ship: a cookie-consent banner, a signed SBOM, or data-residency
         controls. Field-level encryption, a go-live checklist and dependency scanning in CI are
-        included &mdash; but the paperwork side of a certification is still yours.
+        included, but the paperwork side of a certification is still yours.
       </p>
     </div>
   )

@@ -58,7 +58,7 @@ export function RightSideBanners() {
           </div>
           <p className="text-[11px] leading-relaxed text-muted-foreground/60">
             The self-hostable creator platform. Website builder, email marketing,
-            courses, community &mdash; all in one.
+            courses, community. All in one.
           </p>
           <span className="mt-2 inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-mono font-medium text-primary/80">
             Built with Grit

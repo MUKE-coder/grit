@@ -40,7 +40,7 @@ export default function BenchmarksPage() {
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 One products table, four scenarios, one shared Postgres, identical container
-                limits, and every framework on its own ecosystem&apos;s ORM &mdash; GORM, Eloquent,
+                limits, and every framework on its own ecosystem&apos;s ORM: GORM, Eloquent,
                 Prisma, Drizzle. Each framework was run head to head against Grit, back to back,
                 three times, and each has a page showing exactly how to reproduce it.
               </p>
@@ -57,7 +57,7 @@ export default function BenchmarksPage() {
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     Grit&apos;s single-row read measured <strong>6,600</strong> req/s in the Bun
                     pair, <strong>4,392</strong> in the Encore pair, <strong>1,911</strong> in the
-                    Next.js pair and <strong>1,635</strong> in the Express pair &mdash; from an
+                    Next.js pair and <strong>1,635</strong> in the Express pair, from an
                     identical binary, as hours of write scenarios accumulated in Postgres and the
                     machine drifted across the session. Within a pair
                     both sides ran minutes apart under the same conditions, so the ratio survives;
@@ -77,7 +77,7 @@ export default function BenchmarksPage() {
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-6">
                 50 concurrent users, 30 seconds per run, 4 CPUs and 2 GB per app container. Every
-                app shares one Postgres on 8 CPUs &mdash; deliberately more than any of them gets.
+                app shares one Postgres on 8 CPUs, deliberately more than any of them gets.
                 Medians of three repetitions, never a best run.
               </p>
 
@@ -185,8 +185,8 @@ export default function BenchmarksPage() {
                           className="font-medium text-foreground hover:text-primary"
                         >
                           {u.name}
-                        </Link>{' '}
-                        &mdash; {u.reason}
+                        </Link>{' '}:
+                        {u.reason}
                       </li>
                     ))}
                   </ul>
@@ -200,7 +200,7 @@ export default function BenchmarksPage() {
                 Where Grit loses
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                <strong>Bun inserts faster than Grit</strong> &mdash; 3,274 req/s against 1,568, a
+                <strong>Bun inserts faster than Grit</strong>: 3,274 req/s against 1,568, a
                 bit over twice. That row is on this page for the same reason the others are.
               </p>
               <p className="text-muted-foreground leading-relaxed">
@@ -208,7 +208,7 @@ export default function BenchmarksPage() {
                 <code>BEGIN</code> + <code>INSERT</code> + <code>COMMIT</code>, three round trips
                 where Drizzle sends one. v3.133.0 adds{' '}
                 <code>DB_SKIP_DEFAULT_TRANSACTION=true</code> to turn it off, worth roughly a third
-                of write throughput &mdash; and leaves it <em>off</em> by default. The generator
+                of write throughput, and leaves it <em>off</em> by default. The generator
                 emits models with relations, and saving a parent with children is several INSERTs;
                 without the wrapping transaction a failure halfway leaves an invoice holding some
                 of its line items. It would make this table look better. It is not worth that.
@@ -222,24 +222,24 @@ export default function BenchmarksPage() {
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 A throughput number only means something when you know what stopped it. Where a
-                framework&apos;s own container saturated &mdash; Laravel at 428&ndash;437% of its
+                framework&apos;s own container saturated, Laravel at 428&ndash;437% of its
                 400% allowance, Django at 404&ndash;426%, Next.js at 406&ndash;412%, Express at
-                435&ndash;476%, Bun at 403&ndash;405% &mdash; the figure is that framework&apos;s
+                435&ndash;476%, Bun at 403&ndash;405%. The figure is that framework&apos;s
                 genuine ceiling on this hardware.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 The read-heavy rows are different. On <code>list</code> and <code>mixed</code> Grit
                 used about 120&ndash;155% while Postgres sat near 900%: the database ran out first,
                 not the framework. Those rows are a <strong>floor</strong>, and the real gap is
-                wider than the ratio shows. Encore.ts is the mirror image &mdash; it never
+                wider than the ratio shows. Encore.ts is the mirror image: it never
                 saturated anything, sitting at 155&ndash;211% with Postgres at 30&ndash;200%, so
                 something else bounded it (most likely the Drizzle / node-postgres path rather than
                 its Rust HTTP layer) and its numbers are a floor for Encore too.
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 The <code>list</code> endpoint runs a <code>COUNT(*)</code> over the whole table on
-                every request, on every framework. That is a fair comparison &mdash; they all do
-                the same work &mdash; but at 50 concurrent users it is mostly a measurement of
+                every request, on every framework. That is a fair comparison (they all do
+                the same work) but at 50 concurrent users it is mostly a measurement of
                 Postgres. For the cleanest read of framework overhead, look at <code>show</code>:
                 one indexed lookup, one JSON encode, nothing else in the way.
               </p>
@@ -262,7 +262,7 @@ export default function BenchmarksPage() {
                 <p className="text-sm text-muted-foreground leading-relaxed mb-3">
                   The scaffold shipped <code>SetMaxIdleConns(10)</code> alongside{' '}
                   <code>SetMaxOpenConns(100)</code>. Past ten concurrent requests, a connection
-                  handed back to a full idle pool is <em>closed</em> &mdash; and the next request
+                  handed back to a full idle pool is <em>closed</em>, and the next request
                   makes Postgres fork a new backend. Under load that is a connection storm, and it
                   shows up as database CPU rather than as anything you would think to look for in
                   the application.
@@ -280,8 +280,8 @@ export default function BenchmarksPage() {
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   <code>getEnv</code> treated an empty value as unset and returned the default, so
-                  the asynq worker started anyway, failed to dial, and retried in a tight loop
-                  &mdash; burning CPU on reconnects with nothing in the logs but dial errors.
+                  the asynq worker started anyway, failed to dial, and retried in a tight loop,
+                  burning CPU on reconnects with nothing in the logs but dial errors.
                   Setting it empty now genuinely turns cache, jobs, worker and cron off, and says
                   so once at boot.
                 </p>
@@ -313,7 +313,7 @@ export default function BenchmarksPage() {
               </p>
               <ul className="space-y-2.5 text-muted-foreground leading-relaxed list-disc pl-5">
                 <li>
-                  <strong>Every framework uses its ecosystem&apos;s ORM</strong> &mdash; GORM,
+                  <strong>Every framework uses its ecosystem&apos;s ORM</strong>: GORM,
                   Eloquent, Prisma, Drizzle. Not raw SQL. Hand-written SQL on one side against an
                   ORM on the other measures the ORM, and nobody ships the framework that way.
                 </li>
@@ -327,7 +327,7 @@ export default function BenchmarksPage() {
                   A benchmark where one side has an index the other lacks measures the index.
                 </li>
                 <li>
-                  <strong>The handlers match</strong> &mdash; same default page size and cap, same
+                  <strong>The handlers match</strong>: same default page size and cap, same
                   searchable columns, same sortable allow-list, same{' '}
                   <code>{'{data, meta}'}</code> envelope, same version bump on update.
                 </li>
@@ -359,7 +359,7 @@ export default function BenchmarksPage() {
 
               <p className="text-muted-foreground leading-relaxed mb-4">
                 All four are worth knowing if you build one of these yourself, because none of
-                them announces itself &mdash; you get plausible numbers that are simply wrong.
+                them announces itself. You get plausible numbers that are simply wrong.
                 Three hurt whichever framework was being measured; the fourth hurt only Laravel,
                 and it was published for a day before it was caught.
               </p>
@@ -395,7 +395,7 @@ export default function BenchmarksPage() {
                 <h3 className="font-semibold mb-2">The write scenario poisoned the read ones</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Inserts persist. So <code>list</code> was running <code>COUNT(*)</code> against a
-                  table that grew for the whole session &mdash; 345,680 rows on the Grit side
+                  table that grew for the whole session: 345,680 rows on the Grit side
                   against 30,255 on Laravel&apos;s, because Grit writes faster and therefore
                   polluted its own table harder, then paid for it on every read. Grit&apos;s{' '}
                   <code>list</code> measured 20 req/s that way. With a verified reset before every
@@ -431,7 +431,7 @@ export default function BenchmarksPage() {
             <section className="mb-12">
               <h2 className="text-2xl font-semibold tracking-tight mb-4">Reproduce it</h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                The whole harness is in <code>benchmarks/</code> in the Grit repository &mdash;
+                The whole harness is in <code>benchmarks/</code> in the Grit repository,
                 compose file, seed data, k6 script and every bench app. One pair per invocation, by
                 design: running two at once means they share a Postgres under load and both sets of
                 numbers are worthless.

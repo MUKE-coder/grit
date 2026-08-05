@@ -47,7 +47,7 @@ MINIO_BUCKET=myapp-uploads
 MINIO_REGION=us-east-1
 MINIO_USE_SSL=false`,
     steps: [
-      'Nothing to sign up for — docker compose up -d starts MinIO on port 9002.',
+      'Nothing to sign up for: docker compose up -d starts MinIO on port 9002.',
       'The bucket is created on first boot; the console is at localhost:9003 (minioadmin / minioadmin).',
       'Uploads work immediately. MinIO serves objects from the same host it takes API calls on, so no public-URL setting is needed.',
     ],
@@ -69,7 +69,7 @@ R2_PUBLIC_URL=https://pub-<hash>.r2.dev`,
     steps: [
       'Cloudflare dashboard → R2 → Create bucket. Location "Automatic" is fine.',
       'R2 → API → Manage R2 API tokens → Create API token, with Object Read & Write on that bucket.',
-      'Copy the Access Key ID, Secret Access Key and the S3 endpoint it shows you — that endpoint is R2_ENDPOINT.',
+      'Copy the Access Key ID, Secret Access Key and the S3 endpoint it shows you: that endpoint is R2_ENDPOINT.',
       'Bucket → Settings → Public Development URL → Enable. Copy the pub-<hash>.r2.dev origin into R2_PUBLIC_URL. (A custom domain works too, and is what you want in production.)',
       'Bucket → Settings → CORS policy → add the rule opposite, with your real origins.',
     ],
@@ -113,7 +113,7 @@ S3_PUBLIC_URL=https://cdn.yourdomain.com`,
       'IAM → Users → Create user, attach a policy scoped to that bucket, and create an access key.',
       'Bucket → Permissions → CORS → paste the rule opposite with your real origins.',
       'If you want plain public reads, turn off "Block all public access" and add the bucket policy opposite, then set S3_PUBLIC_URL.',
-      'On EC2/ECS/Lambda you can skip the keys entirely — the config falls back to AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION, so an IAM role is enough.',
+      'On EC2/ECS/Lambda you can skip the keys entirely: the config falls back to AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION, so an IAM role is enough.',
     ],
     policy: {
       title: 'S3 CORS + public-read policy',
@@ -160,7 +160,7 @@ B2_PUBLIC_URL=`,
     steps: [
       'Backblaze → B2 Cloud Storage → Create a Bucket. Choose Public if you want browsers to read objects directly.',
       'App Keys → Add a New Application Key, scoped to that bucket. Save the keyID and applicationKey.',
-      'Copy the S3-compatible endpoint shown on the bucket — it encodes the region, and B2_REGION must match it.',
+      'Copy the S3-compatible endpoint shown on the bucket: it encodes the region, and B2_REGION must match it.',
       'Bucket → CORS Rules → allow GET and PUT from your origins.',
       'For a public bucket, set B2_PUBLIC_URL to the friendly URL Backblaze shows (or your CDN domain).',
     ],
@@ -252,7 +252,7 @@ const TOPICS: Topic[] = [
         name: 'PostgreSQL',
         detail: 'The default, and what docker compose brings up locally.',
         env: ['DATABASE_URL=postgres://user:pass@host:5432/db?sslmode=require'],
-        note: 'Any Postgres-compatible host works — it is a standard DSN, not a per-vendor integration.',
+        note: 'Any Postgres-compatible host works: it is a standard DSN, not a per-vendor integration.',
         recommended: true,
       },
       {
@@ -270,7 +270,7 @@ const TOPICS: Topic[] = [
       'Sessions, roles, permissions and the audit log are all ordinary tables',
     ],
     footnote:
-      'MySQL is not supported. The connector picks SQLite or Postgres by DSN prefix — there is no third dialector to fall back to.',
+      'MySQL is not supported. The connector picks SQLite or Postgres by DSN prefix: there is no third dialector to fall back to.',
   },
   {
     key: 'storage',
@@ -278,7 +278,7 @@ const TOPICS: Topic[] = [
     icon: HardDrive,
     headline: 'S3-compatible, so the bill is yours to choose',
     blurb:
-      'Uploads go browser-to-storage through a presigned URL — files never travel through your API. Switching provider is one env var; nothing in your handlers or components changes. Pick a provider below for the exact setup steps.',
+      'Uploads go browser-to-storage through a presigned URL: files never travel through your API. Switching provider is one env var; nothing in your handlers or components changes. Pick a provider below for the exact setup steps.',
     selector: { env: 'STORAGE_DRIVER', values: 'minio · s3 · r2 · b2' },
     uses: [
       'Presigned direct upload, then a completion call that records the row',
@@ -295,29 +295,29 @@ const TOPICS: Topic[] = [
     icon: Zap,
     headline: 'One URL, five jobs',
     blurb:
-      'Redis is not a checkbox in Grit — four subsystems depend on it and a fifth reports on it. All of them read the same REDIS_URL, and all of them keep working without it, minus the feature.',
+      'Redis is not a checkbox in Grit: four subsystems depend on it and a fifth reports on it. All of them read the same REDIS_URL, and all of them keep working without it, minus the feature.',
     selector: { env: 'REDIS_URL', values: 'redis://… or rediss://… for TLS' },
     providers: [
       {
         name: 'Local Redis',
         detail: 'docker compose runs redis:7-alpine on host port 6380.',
         env: ['REDIS_URL=redis://localhost:6380'],
-        note: 'Port 6380 rather than 6379 on purpose — it avoids clashing with a Redis you already have installed.',
+        note: 'Port 6380 rather than 6379 on purpose: it avoids clashing with a Redis you already have installed.',
         recommended: true,
       },
       {
         name: 'Any managed Redis',
-        detail: 'Upstash, Redis Cloud, ElastiCache, Railway — a URL is a URL.',
+        detail: 'Upstash, Redis Cloud, ElastiCache, Railway: a URL is a URL.',
         env: ['REDIS_URL=rediss://default:<password>@<host>:6379'],
         note: 'Use the rediss:// scheme for TLS. There is no provider-specific code to configure.',
       },
     ],
     code: REDIS_CODE,
     uses: [
-      'Response cache — GET responses keyed by URL, 5-minute default TTL, X-Cache: HIT/MISS',
-      'Idempotency — replays an Idempotency-Key request instead of double-charging, 24-hour window',
-      'Job queue — asynq, 10 workers, critical/default/low priorities, exponential backoff',
-      'Cron scheduler — token cleanup hourly, orphan uploads nightly, backups every 30 minutes',
+      'Response cache: GET responses keyed by URL, 5-minute default TTL, X-Cache: HIT/MISS',
+      'Idempotency: replays an Idempotency-Key request instead of double-charging, 24-hour window',
+      'Job queue: asynq, 10 workers, critical/default/low priorities, exponential backoff',
+      'Cron scheduler: token cleanup hourly, orphan uploads nightly, backups every 30 minutes',
       'The admin job inspector and the Redis health check',
     ],
     footnote:

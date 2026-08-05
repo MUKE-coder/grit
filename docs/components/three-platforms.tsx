@@ -31,7 +31,7 @@ function DashboardMockup({ variant }: { variant: 'web' | 'desktop' | 'mobile' })
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Good morning</p>
-            <p className="text-sm font-semibold text-foreground">Acme — Sales</p>
+            <p className="text-sm font-semibold text-foreground">Acme, Sales</p>
           </div>
           <div className="h-7 w-7 rounded-full bg-primary/15 flex items-center justify-center">
             <Bell className="h-3 w-3 text-primary" />
@@ -271,7 +271,7 @@ export function ThreePlatforms() {
           {/* Browser (largest) */}
           <div>
             <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2 ml-1">
-              Web — built via <span className="text-foreground">grit new --triple --vite</span>
+              Web, built via <span className="text-foreground">grit new --triple --vite</span>
             </p>
             <BrowserFrame url="acme.app" glow>
               <div className="h-[260px]">
@@ -283,9 +283,9 @@ export function ThreePlatforms() {
           {/* Desktop (medium) */}
           <div>
             <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2 ml-1">
-              Desktop — <span className="text-foreground">grit new-desktop</span>
+              Desktop, <span className="text-foreground">grit new-desktop</span>
             </p>
-            <DesktopFrame title="Acme — Desktop" glow>
+            <DesktopFrame title="Acme: Desktop" glow>
               <div className="h-[260px]">
                 <DashboardMockup variant="desktop" />
               </div>
@@ -295,7 +295,7 @@ export function ThreePlatforms() {
           {/* Mobile (smallest, scaled down) */}
           <div className="flex flex-col items-center lg:items-start">
             <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2 self-start ml-1">
-              Mobile — <span className="text-foreground">--mobile</span>
+              Mobile, <span className="text-foreground">--mobile</span>
             </p>
             <MobileFrame glow className="scale-[0.85] origin-top-left">
               <div className="h-[280px]">
@@ -313,7 +313,7 @@ export function ThreePlatforms() {
             </div>
             <div>
               <p className="font-semibold text-foreground">Same Go backend. Same generated React. Same auth.</p>
-              <p className="text-sm text-muted-foreground">Pick the targets you need — the API doesn&apos;t change.</p>
+              <p className="text-sm text-muted-foreground">Pick the targets you need: the API doesn&apos;t change.</p>
             </div>
           </div>
           <Button asChild variant="outline" className="border-border/60 rounded-full">

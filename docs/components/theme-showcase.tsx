@@ -31,7 +31,7 @@ const THEMES: Theme[] = [
   {
     key: 'atlas',
     name: 'Atlas',
-    tagline: 'The default. Professional blue on white — teams, dashboards, internal tools.',
+    tagline: 'The default. Professional blue on white: teams, dashboards, internal tools.',
     accent: '#2563eb',
     image: '/images/themes/atlas.png',
     scaffoldFlag: true,
@@ -56,7 +56,7 @@ const THEMES: Theme[] = [
     key: 'midnight',
     name: 'Midnight',
     tagline:
-      'The legacy dark palette, violet accent. A runtime variant rather than a full theme — it repaints the dashboard, but reuses the Atlas fonts and auth pages.',
+      'The legacy dark palette, violet accent. A runtime variant rather than a full theme: it repaints the dashboard, but reuses the Atlas fonts and auth pages.',
     accent: '#6c5ce7',
     image: '/images/themes/midnight.png',
     scaffoldFlag: false,
@@ -161,8 +161,8 @@ export function ThemeShowcase() {
                 </>
               ) : (
                 <>
-                  Midnight has no <code className="text-foreground/70">--theme</code> flag &mdash;
-                  it is a runtime variant, so <code className="text-foreground/70">.env</code> is
+                  Midnight has no <code className="text-foreground/70">--theme</code> flag.
+                  It is a runtime variant, so <code className="text-foreground/70">.env</code> is
                   the only way in.
                 </>
               )}
@@ -172,7 +172,7 @@ export function ThemeShowcase() {
       </div>
 
       <p className="text-xs text-muted-foreground/70 mt-5">
-        Real screenshots of a generated admin — same resources, same seeded data, same
+        Real screenshots of a generated admin: same resources, same seeded data, same
         viewport. Only the theme changes.
       </p>
     </div>
