@@ -232,8 +232,31 @@ func formatCUDSummary(verb, entityType, identifier, detail string) string {
 	return summary
 }
 
+// hasActor reports whether the request carries an authenticated identity.
+//
+// The resource helpers below record "who changed what". With no actor there is
+// no who, so the row answers nothing anyone can audit — and on a public
+// endpoint it is worse than useless: every anonymous write turns into two
+// inserts in two transactions, which is write amplification an attacker
+// controls for free.
+//
+// Auth events are deliberately different. LogLoginFailed records an empty
+// actor on purpose, because a failed sign-in matters precisely when the
+// account is unknown. Only the CRUD helpers guard.
+func hasActor(c *gin.Context) bool {
+	v, ok := c.Get("user_id")
+	if !ok {
+		return false
+	}
+	s, ok := v.(string)
+	return ok && s != ""
+}
+
 // LogCreate writes a "Created X Y[: detail]" row.
 func LogCreate(db *gorm.DB, c *gin.Context, entityType, identifier, resourceID, detail string) {
+	if !hasActor(c) {
+		return
+	}
 	LogActivity(db, c, ActivityArgs{
 		Action:       strings.ToLower(entityType) + ".create",
 		Severity:     "info",
@@ -247,6 +270,9 @@ func LogCreate(db *gorm.DB, c *gin.Context, entityType, identifier, resourceID, 
 // caller-built diff string (e.g. ` + "`name \"old\" → \"new\"`" + `); pass "" if
 // you only want to record that a touch happened.
 func LogUpdate(db *gorm.DB, c *gin.Context, entityType, identifier, resourceID, detail string) {
+	if !hasActor(c) {
+		return
+	}
 	LogActivity(db, c, ActivityArgs{
 		Action:       strings.ToLower(entityType) + ".update",
 		Severity:     "info",
@@ -259,6 +285,9 @@ func LogUpdate(db *gorm.DB, c *gin.Context, entityType, identifier, resourceID, 
 // LogDelete writes a "Deleted X Y" row. No detail -- by the time you
 // log a delete the snippet is the only thing left.
 func LogDelete(db *gorm.DB, c *gin.Context, entityType, identifier, resourceID string) {
+	if !hasActor(c) {
+		return
+	}
 	LogActivity(db, c, ActivityArgs{
 		Action:       strings.ToLower(entityType) + ".delete",
 		Severity:     "info",
