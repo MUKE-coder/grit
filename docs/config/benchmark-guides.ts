@@ -432,8 +432,11 @@ docker compose logs bun | head -3`,
     ],
     expect:
       'Bun is the fastest JavaScript runtime in this comparison by a clear margin, which matches ' +
-      'its reputation. Whether it closes the gap to Go is exactly the question the chart answers: ' +
-      'and it is a more interesting result than either camp usually admits.',
+      'its reputation, and it is the one framework here that beats Grit at something: inserts, by ' +
+      'about a quarter. Watch the CPU column on the single-row read, because it changes what the ' +
+      'numbers mean. Bun pins its container at 407% of a 400% allowance while Grit sits at 306% ' +
+      'with Postgres at 262%, so Bun is at its ceiling there and Grit is not. On list and mixed ' +
+      'both sides are waiting on Postgres, which is why those two ratios sit close to 1.',
   },
 
   /* ── Encore.ts ───────────────────────────────────────────────────── */

@@ -11,11 +11,11 @@
  * apart, three repetitions, medians reported, zero failed requests.
  *
  * That structure is not decoration. Across runs this machine drifts a long way:
- * Grit's single-row read measured 6,600 req/s in the Bun pair, 4,392 in the
+ * Grit's single-row read measured 10,655 req/s in the Bun pair, 4,392 in the
  * Encore pair, 1,911 in the Next.js pair and 1,635 in the Express pair — from an
  * identical binary, as hours of write scenarios accumulated in Postgres. So the absolute figures are
  * only meaningful next to the Grit baseline measured beside them, and the RATIO
- * is what survives comparison. Putting Bun's 3,196 on the same axis as Encore's
+ * is what survives comparison. Putting Bun's 5,358 on the same axis as Encore's
  * 438 would imply a shared baseline that does not exist.
  *
  * Filled in by hand from `python pair-report.py`. A build step that silently
@@ -126,12 +126,23 @@ export const FRAMEWORKS: Framework[] = [
     version: 'v1.3 + Drizzle',
     orm: 'Drizzle',
     tagline: 'Bun.serve with reusePort workers, Drizzle over Bun’s native SQL client',
+    /*
+     * Re-measured after v3.133.0 turned GORM's prepared-statement cache on. The
+     * original run predated it and had Grit at 1,568 req/s on inserts against
+     * Bun's 3,274, a bit over twice as slow. Planning each statement once per
+     * connection instead of on every request took Grit to 2,686 and cut the
+     * gap to 1.23x. Bun still wins that scenario.
+     *
+     * Note what saturated: on the single-row read Bun pinned its container at
+     * 407% of a 400% allowance while Grit sat at 306% with Postgres at 262%.
+     * Bun's figure there is its ceiling; Grit's is not.
+     */
     stack: 'Bun 1.3, Bun.serve, Drizzle ORM',
     results: {
-      show:  { rps: 3196, gritRps: 6600, median: '13.6 ms', gritMedian: '5.8 ms',  appCpu: 403, dbCpu: 156, gritAppCpu: 289, gritDbCpu: 246 },
-      write: { rps: 3274, gritRps: 1568, median: '13.1 ms', gritMedian: '28.2 ms', appCpu: 405, dbCpu: 185, gritAppCpu: 307, gritDbCpu: 491 },
-      list:  { rps: 707,  gritRps: 769,  median: '61.3 ms', gritMedian: '55.5 ms', appCpu: 285, dbCpu: 825, gritAppCpu: 118, gritDbCpu: 823 },
-      mixed: { rps: 778,  gritRps: 831,  median: '54.7 ms', gritMedian: '51.6 ms', appCpu: 301, dbCpu: 779, gritAppCpu: 131, gritDbCpu: 868 },
+      show:  { rps: 5358, gritRps: 10655, median: '8.4 ms',  gritMedian: '3.7 ms',  appCpu: 407, dbCpu: 157, gritAppCpu: 306, gritDbCpu: 262 },
+      write: { rps: 3311, gritRps: 2686,  median: '12.8 ms', gritMedian: '17.1 ms', appCpu: 386, dbCpu: 202, gritAppCpu: 312, gritDbCpu: 504 },
+      list:  { rps: 1048, gritRps: 1206,  median: '41.8 ms', gritMedian: '34.6 ms', appCpu: 244, dbCpu: 809, gritAppCpu: 117, gritDbCpu: 801 },
+      mixed: { rps: 1111, gritRps: 1206,  median: '39.4 ms', gritMedian: '36.1 ms', appCpu: 246, dbCpu: 801, gritAppCpu: 109, gritDbCpu: 808 },
     },
   },
   {
@@ -186,7 +197,7 @@ export const FRAMEWORKS: Framework[] = [
     tagline: 'App Router route handlers, standalone production build, Prisma over Postgres',
     /*
      * Measured a day after the other pairs, on a machine that had drifted: Grit's
-     * single-row read came in at 1,911 here against 6,600 in the Bun pair, from
+     * single-row read came in at 1,911 here against 10,655 in the Bun pair, from
      * the same binary. Next.js saturated its own container in all four scenarios
      * (406-412% of a 400% allowance), so its figures are genuine ceilings.
      */
