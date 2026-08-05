@@ -310,5 +310,83 @@
         "db_cpu": 18.81
       }
     }
+  },
+  "django": {
+    "grit": {
+      "list": {
+        "n": 3,
+        "rps": 736.001806,
+        "med_ms": 55.98,
+        "p95_ms": 154.15,
+        "worst_fail": 0,
+        "app_cpu": 121.47,
+        "db_cpu": 679.46
+      },
+      "mixed": {
+        "n": 3,
+        "rps": 662.120345,
+        "med_ms": 64.71,
+        "p95_ms": 170.37,
+        "worst_fail": 0,
+        "app_cpu": 120.58,
+        "db_cpu": 813.88
+      },
+      "show": {
+        "n": 3,
+        "rps": 4650.638389,
+        "med_ms": 8.03,
+        "p95_ms": 23.16,
+        "worst_fail": 0,
+        "app_cpu": 279.35,
+        "db_cpu": 237.87
+      },
+      "write": {
+        "n": 3,
+        "rps": 1582.823818,
+        "med_ms": 26.79,
+        "p95_ms": 62.37,
+        "worst_fail": 0,
+        "app_cpu": 302.77,
+        "db_cpu": 497.93
+      }
+    },
+    "django": {
+      "list": {
+        "n": 3,
+        "rps": 273.517717,
+        "med_ms": 147.79,
+        "p95_ms": 404.32,
+        "worst_fail": 0,
+        "app_cpu": 406.5,
+        "db_cpu": 258.64
+      },
+      "mixed": {
+        "n": 3,
+        "rps": 248.743995,
+        "med_ms": 191.44,
+        "p95_ms": 415.18,
+        "worst_fail": 0,
+        "app_cpu": 426.24,
+        "db_cpu": 249.75
+      },
+      "show": {
+        "n": 3,
+        "rps": 607.974424,
+        "med_ms": 87.04,
+        "p95_ms": 162.66,
+        "worst_fail": 0,
+        "app_cpu": 403.71,
+        "db_cpu": 50.45
+      },
+      "write": {
+        "n": 3,
+        "rps": 796.579645,
+        "med_ms": 68.13,
+        "p95_ms": 111.55,
+        "worst_fail": 0,
+        "app_cpu": 407.05,
+        "db_cpu": 58.04
+      }
+    }
   }
 }
