@@ -104,6 +104,41 @@
  * background — AAA in both themes, where the primary blue only reaches 3.8:1 in
  * light mode (large-text only). */
 
+/* ── Horizontal-overflow safety net ──────────────────────────────────────
+ *
+ * One element wider than the viewport drags the whole page sideways, and on a
+ * phone that reads as a broken site rather than as one wide element. `clip`
+ * rather than `hidden`: `hidden` on html/body silently kills `position: sticky`
+ * descendants, which this site relies on for the docs sidebar and the header.
+ *
+ * This is a backstop, not a licence to ship overflowing elements. Anything wide
+ * on purpose — tables, code blocks, the benchmark chart — still needs its own
+ * `overflow-x: auto` container so it scrolls independently instead of being
+ * quietly cut off here. */
+html,
+body {
+  overflow-x: clip;
+}
+
+/* Long unbroken words in display type — a package name, a URL, a compound like
+ * "Batteries-Included" — otherwise establish a max-content floor that no amount
+ * of flex or grid sizing can pull below. */
+h1,
+h2,
+h3,
+.font-display {
+  overflow-wrap: anywhere;
+}
+
+/* Grid and flex children default to min-width:auto, meaning "never shrink below
+ * my content". That default is what let the hero size itself to 542px inside a
+ * 370px phone. */
+main,
+section,
+article {
+  min-width: 0;
+}
+
 /* Glow effects */
 .glow-purple {
   box-shadow: 0 0 60px -12px rgba(108, 92, 231, 0.3);
