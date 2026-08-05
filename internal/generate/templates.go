@@ -576,6 +576,51 @@ func (g *Generator) writeGoHandler(names Names) error {
 		reloadLine = fmt.Sprintf("\th.DB%s.First(&item, \"id = ?\", item.ID)", preloadChain)
 	}
 
+	// A write that is exactly one statement needs neither the reload nor the
+	// transaction GORM wraps writes in.
+	//
+	// The reload existed to pick up columns the database fills in — defaults,
+	// values assigned in a hook. RETURNING gets those from the INSERT itself,
+	// so the follow-up SELECT is a second round trip buying nothing. Where the
+	// model has relations it still earns its place, because RETURNING cannot
+	// populate a preloaded association.
+	//
+	// The transaction is the same argument. GORM wraps every write because a
+	// Create expands into several INSERTs once a model has children, and a
+	// half-written parent is worse than a slow one. When the generator can see
+	// there are no children, no join rows and no sequence hook writing
+	// alongside, the statement is already atomic in Postgres and BEGIN/COMMIT
+	// costs two round trips for a guarantee that is already held.
+	//
+	// The global DB_SKIP_DEFAULT_TRANSACTION stays off. This is decided per
+	// resource, from the definition, where it can be known rather than assumed.
+	hasAutoField := false
+	for _, f := range g.Definition.Fields {
+		if f.Auto {
+			hasAutoField = true
+			break
+		}
+	}
+	singleStatementWrite := preloadChain == "" &&
+		itemsBuild == "" &&
+		m2mCreateCode == "" &&
+		!hasAutoField
+
+	createCall := "h.DB.Create(&item)"
+	updateCall := "h.DB.Model(&item).Updates(updates)"
+	createReload := reloadLine
+	updateReload := reloadLine
+	clauseImport := ""
+	if singleStatementWrite {
+		createCall = "h.DB.Session(&gorm.Session{SkipDefaultTransaction: true})." +
+			"Clauses(clause.Returning{}).Create(&item)"
+		updateCall = "h.DB.Session(&gorm.Session{SkipDefaultTransaction: true})." +
+			"Model(&item).Clauses(clause.Returning{}).Updates(updates)"
+		createReload = ""
+		updateReload = ""
+		clauseImport = "\n\t\"gorm.io/gorm/clause\""
+	}
+
 	// Build allowed sort columns (skip relationship fields)
 	sortCols := `"id": true, "created_at": true`
 	for _, f := range g.Definition.Fields {
@@ -771,6 +816,11 @@ func (g *Generator) writeGoHandler(names Names) error {
 		"{{ITEMS_BUILD}}", itemsBuild,
 		"{{ITEMS_UPDATE}}", itemsUpdate,
 		"{{RELOAD}}", reloadLine,
+		"{{CREATE_CALL}}", createCall,
+		"{{UPDATE_CALL}}", updateCall,
+		"{{CREATE_RELOAD}}", createReload,
+		"{{UPDATE_RELOAD}}", updateReload,
+		"{{CLAUSE_IMPORT}}", clauseImport,
 		"{{TIME_IMPORT}}", timeImport,
 		"{{DATATYPES_IMPORT}}", datatypesImport,
 		"{{FILES_IMPORT}}", filesImport,
@@ -787,7 +837,7 @@ import (
 	"net/http"{{TIME_IMPORT}}
 
 	"github.com/gin-gonic/gin"{{DATATYPES_IMPORT}}
-	"gorm.io/gorm"
+	"gorm.io/gorm"{{CLAUSE_IMPORT}}
 
 	"{{MODULE}}/internal/export"{{FILES_IMPORT}}
 	"{{MODULE}}/internal/models"
@@ -1027,7 +1077,7 @@ func (h *{{Pascal}}Handler) Create(c *gin.Context) {
 	item := models.{{Pascal}}{
 {{CREATE_ASSIGN}}	}
 {{ITEMS_BUILD}}
-	if err := h.DB.Create(&item).Error; err != nil {
+	if err := {{CREATE_CALL}}.Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"code":    "INTERNAL_ERROR",
@@ -1037,7 +1087,7 @@ func (h *{{Pascal}}Handler) Create(c *gin.Context) {
 		return
 	}
 {{M2M_CREATE}}
-{{RELOAD}}{{CREATE_CLAIM}}
+{{CREATE_RELOAD}}{{CREATE_CLAIM}}
 
 	services.LogCreate(h.DB, c, "{{Pascal}}", {{IDENT_EXPR}}, item.ID, "")
 
@@ -1076,7 +1126,7 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 {{UPDATE_SNAPSHOT}}
 	updates := map[string]interface{}{}
 {{UPDATE_MAP}}
-	if err := h.DB.Model(&item).Updates(updates).Error; err != nil {
+	if err := {{UPDATE_CALL}}.Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
 				"code":    "INTERNAL_ERROR",
@@ -1086,7 +1136,7 @@ func (h *{{Pascal}}Handler) Update(c *gin.Context) {
 		return
 	}
 {{M2M_UPDATE}}{{ITEMS_UPDATE}}
-{{RELOAD}}{{UPDATE_CLEANUP}}
+{{UPDATE_RELOAD}}{{UPDATE_CLEANUP}}
 
 	services.LogUpdate(h.DB, c, "{{Pascal}}", {{IDENT_EXPR}}, item.ID, services.DiffSummary(updates))
 

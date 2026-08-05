@@ -28,6 +28,68 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.134.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.134.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 6, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    A generated write was sending seven statements to Postgres. It now sends one.
+                  </strong>
+                </p>
+                <p>
+                  Turning on Postgres statement logging during a benchmark run showed what a single{' '}
+                  <code>POST /products</code> actually cost:
+                </p>
+                <pre>
+                  <code>{`begin
+INSERT INTO "products" (...)
+commit
+SELECT * FROM "products" WHERE id = $1
+begin
+INSERT INTO "user_activities" (...)
+commit`}</code>
+                </pre>
+                <p>Three separate problems, all fixed.</p>
+                <p>
+                  <strong>An audit row was written for requests with no authenticated user.</strong>{' '}
+                  The CRUD helpers record who changed what. With no actor there is no who, so the
+                  row answers nothing, and on a public endpoint every anonymous write became two
+                  inserts in two transactions, which is write amplification an attacker controls
+                  for free. <code>LogCreate</code>, <code>LogUpdate</code> and{' '}
+                  <code>LogDelete</code> now return early without an actor. Auth events are
+                  deliberately unchanged, because <code>LogLoginFailed</code> records an empty
+                  actor on purpose.
+                </p>
+                <p>
+                  <strong>The handler re-read the row it had just written.</strong> That{' '}
+                  <code>SELECT</code> existed to pick up columns the database fills in. The
+                  generator now emits <code>Clauses(clause.Returning{'{}'})</code>, so the INSERT
+                  brings them back itself. Resources with relations keep the re-read, because
+                  RETURNING cannot populate a preloaded association.
+                </p>
+                <p>
+                  <strong>GORM wrapped a single INSERT in a transaction.</strong> One statement is
+                  already atomic in Postgres, so BEGIN and COMMIT bought a guarantee that was
+                  already held and cost two round trips for it. Where the generator can see there
+                  are no children, no join rows and no sequence hook writing alongside, it now
+                  emits the write with <code>SkipDefaultTransaction</code> for that call only.
+                </p>
+                <p>
+                  That last one is decided per resource, from the definition. The global{' '}
+                  <code>DB_SKIP_DEFAULT_TRANSACTION</code> stays off, because it cannot know
+                  whether your model has children and a half-written invoice is worse than a slow
+                  one.
+                </p>
+              </div>
+            </div>
+
             {/* v3.133.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
