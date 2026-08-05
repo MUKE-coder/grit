@@ -206,6 +206,27 @@ export const FRAMEWORKS: Framework[] = [
     },
   },
   {
+    slug: 'django',
+    logo: '/logos/django.svg',
+    color: '#44B78B',
+    name: 'Django',
+    version: 'v5.1 + Django ORM',
+    orm: 'Django ORM',
+    tagline: 'gunicorn with gevent workers, DRF-shaped views, Django ORM with connection pooling',
+    /*
+     * Django saturated its own container in all four scenarios (404-426% of a
+     * 400% allowance) while Postgres sat at 50-259%, so every figure here is a
+     * genuine ceiling for Django rather than a database limit.
+     */
+    stack: 'Python 3.12, Django 5.1, gunicorn + gevent (9 workers), psycopg pool',
+    results: {
+      show:  { rps: 608, gritRps: 4651, median: '87.0 ms',  gritMedian: '8.0 ms',  appCpu: 404, dbCpu: 51,  gritAppCpu: 279, gritDbCpu: 238 },
+      write: { rps: 797, gritRps: 1583, median: '68.1 ms',  gritMedian: '26.8 ms', appCpu: 407, dbCpu: 58,  gritAppCpu: 303, gritDbCpu: 498 },
+      list:  { rps: 274, gritRps: 736,  median: '147.8 ms', gritMedian: '56.0 ms', appCpu: 407, dbCpu: 259, gritAppCpu: 122, gritDbCpu: 680 },
+      mixed: { rps: 249, gritRps: 662,  median: '191.4 ms', gritMedian: '64.7 ms', appCpu: 426, dbCpu: 250, gritAppCpu: 121, gritDbCpu: 814 },
+    },
+  },
+  {
     slug: 'laravel',
     logo: '/logos/laravel.png',
     color: '#FF2D20',
@@ -242,16 +263,9 @@ export const UNMEASURED: {
   invertOnDark?: boolean
   reason: string
 }[] = [
-  {
-    slug: 'django',
-    name: 'Django',
-    logo: '/logos/django.svg',
-    color: '#44B78B',
-    reason:
-      'measured before the harness enforced a verified database reset between runs, ' +
-      'so those figures cannot be trusted and were not kept. It needs re-running under ' +
-      'the current harness.',
-  },
+  // Empty, and that is the goal: every framework with a guide now has a
+  // measured pair behind it. Add an entry here rather than quietly shipping a
+  // guide with no numbers.
 ]
 
 export const bySlug = (slug: string) => FRAMEWORKS.find((f) => f.slug === slug)
