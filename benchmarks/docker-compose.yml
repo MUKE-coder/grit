@@ -111,6 +111,10 @@ services:
       DB_DATABASE: bench_laravel
       DB_USERNAME: bench
       DB_PASSWORD: bench
+      # Same as every other app here: plaintext to a container on the same
+      # network. 'prefer' makes PDO attempt an SSL handshake on every connection
+      # and fall back, which nobody else in this comparison is paying for.
+      DB_SSLMODE: disable
       CACHE_STORE: file
       SESSION_DRIVER: file
       QUEUE_CONNECTION: sync

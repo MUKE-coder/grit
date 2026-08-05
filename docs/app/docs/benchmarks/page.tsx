@@ -222,9 +222,10 @@ export default function BenchmarksPage() {
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 A throughput number only means something when you know what stopped it. Where a
-                framework&apos;s own container saturated &mdash; Laravel at 412&ndash;419% of its
-                400% allowance, Express at 435&ndash;476%, Bun at 403&ndash;405% &mdash; the figure
-                is that framework&apos;s genuine ceiling on this hardware.
+                framework&apos;s own container saturated &mdash; Laravel at 428&ndash;437% of its
+                400% allowance, Django at 404&ndash;426%, Next.js at 406&ndash;412%, Express at
+                435&ndash;476%, Bun at 403&ndash;405% &mdash; the figure is that framework&apos;s
+                genuine ceiling on this hardware.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 The read-heavy rows are different. On <code>list</code> and <code>mixed</code> Grit
@@ -353,13 +354,42 @@ export default function BenchmarksPage() {
             <section className="mb-12">
               <h2 className="text-2xl font-semibold tracking-tight mb-4 flex items-center gap-2">
                 <ScrollText className="h-5 w-5 text-primary" />
-                Three ways this benchmark lied before it was fixed
+                Four ways this benchmark lied before it was fixed
               </h2>
 
               <p className="text-muted-foreground leading-relaxed mb-4">
-                All three are worth knowing if you build one of these yourself, because none of
+                All four are worth knowing if you build one of these yourself, because none of
                 them announces itself &mdash; you get plausible numbers that are simply wrong.
+                Three hurt whichever framework was being measured; the fourth hurt only Laravel,
+                and it was published for a day before it was caught.
               </p>
+
+              <div className="rounded-xl border border-warning/30 bg-warning/[0.04] p-5 mb-4">
+                <h3 className="font-semibold mb-2">
+                  Laravel was measured with its dev dependencies loaded
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                  <code>composer install</code> had run without <code>--no-dev</code>, so{' '}
+                  <code>laravel/pail</code> and <code>nunomaduro/collision</code> were registered
+                  as service providers on every request. A route touching no database at all took
+                  27&nbsp;ms. With a production-only vendor it takes 7&nbsp;ms.
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                  Two more, found alongside it: Laravel was opening a fresh Postgres connection on
+                  every request while every other framework here held a pool open, and
+                  Laravel&apos;s default <code>sslmode=prefer</code> made each of those
+                  connections attempt an SSL handshake and fall back. Nobody else was paying
+                  either cost.
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Corrected, Laravel&apos;s single-row read went from <strong>113</strong> to{' '}
+                  <strong>175</strong> req/s and the ratio on that scenario fell from 41.8&times;
+                  to <strong>24.8&times;</strong>. The published figures now come from the
+                  corrected run. A benchmark that flatters you because the other side was
+                  misconfigured is not a benchmark, and this one said out loud that{' '}
+                  <code>artisan optimize</code> had been run when the harness never ran it.
+                </p>
+              </div>
 
               <div className="rounded-xl border border-border/40 p-5 mb-4">
                 <h3 className="font-semibold mb-2">The write scenario poisoned the read ones</h3>
@@ -369,7 +399,7 @@ export default function BenchmarksPage() {
                   against 30,255 on Laravel&apos;s, because Grit writes faster and therefore
                   polluted its own table harder, then paid for it on every read. Grit&apos;s{' '}
                   <code>list</code> measured 20 req/s that way. With a verified reset before every
-                  run it measures 821.
+                  run it measures in the hundreds.
                 </p>
               </div>
 

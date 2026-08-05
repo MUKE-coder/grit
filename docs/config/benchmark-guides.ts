@@ -179,7 +179,11 @@ export const GUIDES: FrameworkGuide[] = [
     fairness: [
       'nginx + php-fpm with 32 workers, not `artisan serve` — that is a single-threaded dev server and benchmarking it would be a strawman.',
       'opcache on with tracing JIT and validate_timestamps off. Without opcache PHP recompiles every file on every request, and that is not a number anyone would ship.',
-      'APP_DEBUG=false, APP_ENV=production, and `artisan optimize` run so config, routes, events and views are all cached.',
+      'composer install --no-dev, so laravel/pail, collision, phpunit, mockery, faker and pint stay out of the autoloader and out of package discovery. This matters more than it sounds: shipping them cost about 20 ms of bootstrap on every single request.',
+      'An authoritative, optimised classmap generated in the image with the application code present — not in a stage holding only composer.json, which produces a classmap containing no App classes at all.',
+      'Persistent PDO connections. Every other framework here holds a pool open; without PDO::ATTR_PERSISTENT, php-fpm opens a fresh Postgres connection on every request and Laravel alone pays the TCP handshake, auth and backend fork.',
+      'sslmode=disable, the same as every other app in the comparison. Laravel’s default of `prefer` makes PDO attempt an SSL handshake on each connection and fall back, which nobody else was paying for.',
+      'APP_DEBUG=false, APP_ENV=production, and `artisan optimize` run at container start — after the environment exists, so the cached config holds the real database settings rather than build-time defaults.',
       'Deliberately not Octane. Octane keeps the framework booted between requests and is considerably faster — but it is opt-in and not what most Laravel apps run. Benchmarking it and calling the result "Laravel" would be dishonest.',
       'The controller is plain Eloquent, not API Resources. Resources would add a transformation layer Grit’s handler has no equivalent of, and that cost would look like a Laravel tax when it is really a difference in what the two are doing.',
     ],
@@ -197,18 +201,46 @@ export const GUIDES: FrameworkGuide[] = [
       {
         title: 'Build and start it',
         body:
-          'The Dockerfile installs nginx and php-fpm, enables opcache with a JIT, and sets a static ' +
-          'pool of 32 workers sized against the container’s 4 CPUs.',
+          'The Dockerfile installs nginx and php-fpm, enables opcache with a JIT, sets a static ' +
+          'pool of 32 workers sized against the container’s 4 CPUs, and builds vendor/ in its own ' +
+          'composer stage with --no-dev. The entrypoint warms the config, route, view and event ' +
+          'caches at start rather than at build time, because the database environment does not ' +
+          'exist while the image is being built and a build-time config cache would freeze the ' +
+          'wrong settings in.',
         language: 'bash',
         code: `docker compose build laravel
 docker compose up -d laravel
 
-# migrate Laravel's own tables, then warm every production cache
-docker compose exec -T laravel php artisan migrate --force
-docker compose exec -T laravel php artisan optimize`,
+# the entrypoint has already run artisan optimize — this is the proof
+docker compose exec -T laravel ls bootstrap/cache/
+# expect: config.php  events.php  packages.php  routes-v7.php  services.php`,
         warning:
-          'Skipping `artisan optimize` costs Laravel roughly a third of its throughput. Leaving it ' +
-          'out would make this benchmark worthless — show the command running.',
+          'Skipping artisan optimize costs Laravel roughly a third of its throughput. It now runs ' +
+          'automatically in the entrypoint. The first version of this benchmark relied on a manual ' +
+          'step the harness never actually performed, so Laravel was measured without it — show ' +
+          'the ls output rather than trusting that it happened.',
+      },
+      {
+        title: 'Verify the production vendor and the connection settings',
+        body:
+          'These are the three faults that made the first published Laravel figures too low. Worth ' +
+          'showing on camera, because none of them announces itself — you get a slow framework and ' +
+          'no indication why.',
+        language: 'bash',
+        code: `# 1. no dev packages discovered — expect only tinker, carbon, termwind
+docker compose exec -T laravel php -r \
+  'echo implode(" ", array_keys(require "bootstrap/cache/packages.php")), PHP_EOL;'
+
+# 2. bootstrap cost on a route that touches no database — expect ~7 ms, not ~27 ms
+docker compose exec -T laravel sh -c \
+  'for i in 1 2 3; do curl -s -o /dev/null -w "%{time_total}\n" http://127.0.0.1:8080/up; done'
+
+# 3. connections are held open rather than re-opened per request
+docker compose exec -T postgres psql -U bench -d postgres -tAc \
+  "select count(*) from pg_stat_activity where datname = 'bench_laravel';"`,
+        warning:
+          'If step 2 shows around 27 ms, dev dependencies are still in the autoloader and every ' +
+          'number you go on to measure will be about 20 ms per request too slow.',
       },
       {
         title: 'Confirm opcache is really on',
@@ -220,10 +252,14 @@ docker compose exec -T laravel php artisan optimize`,
       },
     ],
     expect:
-      'Laravel lands around 95–115 req/s across all four scenarios, and — importantly — it ' +
-      'saturates its own container every time, sitting at 412–419% of its 400% allowance. That ' +
-      'means these are Laravel’s genuine numbers on this hardware, not an artefact of something ' +
-      'else running out first.',
+      'Laravel lands around 100–175 req/s across the four scenarios and saturates its own ' +
+      'container every time, sitting at 428–437% of its 400% allowance while Postgres stays ' +
+      'between 47% and 193%. That combination is what makes these Laravel’s genuine ceilings on ' +
+      'this hardware rather than an artefact of something else running out first. If you see ' +
+      'figures nearer 90–115, check the three faults listed above — dev dependencies in the ' +
+      'autoloader, no persistent connections, and sslmode=prefer. Together they were costing ' +
+      'Laravel roughly a third of its throughput, and the first version of this benchmark ' +
+      'published the lower numbers before they were found.',
   },
 
   /* ── Express ─────────────────────────────────────────────────────── */
