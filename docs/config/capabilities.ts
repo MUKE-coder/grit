@@ -310,7 +310,7 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
           'and dates by locale but ships no translation system, which is a real gap next to the ' +
           'two frameworks that have had one for twenty years.',
         cells: {
-          grit: N('Locale-aware formatting only, no translation catalogue'),
+          grit: O('grit add i18n: next-intl plus translated API messages. The generated admin chrome is not translated yet, so this is a foundation rather than a finished feature'),
           laravel: B('Translation files, helpers and pluralisation are core'),
           django: B('gettext, locale middleware and translated admin'),
           nextjs: C('next-intl or similar'),

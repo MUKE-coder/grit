@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.135.0"
+var version = "3.136.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -128,7 +128,7 @@ after a major framework upgrade to refresh the rules.`,
 func newCmd() *cobra.Command {
 	// New architecture/frontend flags
 	var archFlag, frontendFlag, style, theme string
-	var inPlace, force, includeDesktop bool
+	var inPlace, force, includeDesktop, withI18n bool
 
 	// Legacy flags (backward compatibility)
 	var apiOnly, includeExpo, mobileOnly, full bool
@@ -256,6 +256,24 @@ func newCmd() *cobra.Command {
 				return err
 			}
 
+			// i18n is layered on afterwards by the same function `grit add i18n`
+			// calls, rather than by a second set of conditional templates. One
+			// implementation means the flag and the command cannot drift, and a
+			// project that does not ask for it carries none of it.
+			if withI18n {
+				root := projectName
+				if inPlace {
+					root = "."
+				}
+				res, err := scaffold.AddI18n(root, false)
+				if err != nil {
+					color.Red("\n  Error adding i18n: %v\n", err)
+					return err
+				}
+				fmt.Printf("  ✓ Internationalisation added (%d files, %d wirings)\n",
+					len(res.Written), len(res.Wired))
+			}
+
 			printSuccess(projectName, opts)
 			return nil
 		},
@@ -276,6 +294,7 @@ func newCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&full, "full", false, "Everything: API + web + admin + desktop + Expo + docs site")
 	cmd.Flags().BoolVar(&includeExpo, "expo", false, "Include Expo mobile app")
 	cmd.Flags().BoolVar(&includeDesktop, "desktop", false, "Include a Wails desktop app that shares the monorepo API")
+	cmd.Flags().BoolVar(&withI18n, "i18n", false, "Add internationalisation (next-intl, translated API messages, en/fr/sw)")
 
 	// Shorthand frontend flags
 	cmd.Flags().Bool("vite", false, "Shorthand for --frontend=vite (TanStack Router)")
@@ -543,6 +562,7 @@ func addCmd() *cobra.Command {
 
 	cmd.AddCommand(addRoleCmd())
 	cmd.AddCommand(addWebAuthCmd())
+	cmd.AddCommand(addI18nCmd())
 
 	return cmd
 }
