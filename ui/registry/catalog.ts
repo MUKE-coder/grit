@@ -301,7 +301,70 @@ export const CATALOG: Category[] = [
             ],
           },
           { slug: 'bento-grids', name: 'Bento Grids', description: 'Mixed-size tiles that show several features at once.', blocks: [] },
-          { slug: 'pricing-sections', name: 'Pricing Sections', description: 'Tiers, toggles, and comparison tables.', blocks: [] },
+          {
+            slug: 'pricing-sections',
+            name: 'Pricing Sections',
+            description:
+              'Tiers, toggles and comparison tables. The billing switches are real radio inputs in a fieldset rather than two buttons, so arrow keys work and the group announces itself; the comparison tables label every tick, because a check icon alone leaves an empty cell for anyone not looking at it.',
+            blocks: [
+              {
+                slug: 'three-tiers-with-toggle',
+                dependencies: ['lucide-react'],
+                name: 'Three tiers with toggle',
+                description:
+                  'The standard three-up with a monthly and annual switch. The annual price is derived from the monthly one, so a discount change is a single edit.',
+                previewHeight: 1180,
+              },
+              {
+                slug: 'three-tiers-with-enterprise-band',
+                dependencies: ['lucide-react'],
+                name: 'Three tiers with enterprise band',
+                description:
+                  'The same three-up plus a band for the plan that has no price. Enterprise is not a fourth column: nothing to compare, and a different ask.',
+                previewHeight: 1420,
+              },
+              {
+                slug: 'single-plan-with-feature-grid',
+                name: 'Single plan with feature grid',
+                description:
+                  'One price, with what you get listed below the card so the button is never pushed past ten bullet points.',
+                previewHeight: 1120,
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'two-tiers-overlapping',
+                name: 'Two tiers overlapping',
+                description:
+                  'Two cards with the featured one lifted out of the page. Move the featured flag and the emphasis follows it.',
+                previewHeight: 900,
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'lifetime-split-card',
+                name: 'Lifetime split card',
+                description:
+                  'A one-off purchase: what you get on the left, what it costs on the right. No period to switch, no tier to compare.',
+                previewHeight: 780,
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'comparison-table',
+                name: 'Comparison table',
+                description:
+                  'The full feature matrix as a real table, which becomes one labelled stack per plan on a phone rather than something you scroll sideways.',
+                previewHeight: 1500,
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'dark-cards-over-comparison',
+                name: 'Dark cards over comparison',
+                description:
+                  'Plan cards straddling the edge of a dark band, with the full comparison below. The straddle is flow, not absolute positioning, so a longer card cannot land on the table.',
+                previewHeight: 1900,
+                dependencies: ['lucide-react'],
+              },
+            ],
+          },
           { slug: 'header-sections', name: 'Header Sections', description: 'Page headers with a title and supporting copy.', blocks: [] },
           { slug: 'newsletter-sections', name: 'Newsletter Sections', description: 'Email capture that does not feel like a popup.', blocks: [] },
           { slug: 'stats', name: 'Stats', description: 'Numbers worth putting on the page.', blocks: [] },
