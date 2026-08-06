@@ -98,7 +98,7 @@ function ChatArtifact() {
         I am having trouble with my account.
       </div>
       <div className="ml-auto max-w-[80%] rounded-lg bg-indigo-600 px-3 py-2 text-xs text-white">
-        Let me pull that up — one moment.
+        Let me pull that up, one moment.
       </div>
     </div>
   )

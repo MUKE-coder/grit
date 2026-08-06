@@ -260,7 +260,7 @@ export default function PricingDarkCardsOverComparison({
                 }`}
               >
                 {plan.cta ?? 'Buy this plan'}
-                <span className="sr-only"> — the {plan.name} plan</span>
+                <span className="sr-only">, the {plan.name} plan</span>
               </a>
 
               <ul role="list" className="mt-6 space-y-3">
