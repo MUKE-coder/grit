@@ -258,6 +258,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Reproducible k6 benchmarks of Grit against Laravel 13, Django 5.1, Next.js 15, Express 5, Bun and Encore.ts: the same public CRUD resource, the same Postgres, identical container limits, 10,000 identical rows restored before every run, three repetitions, medians reported, every framework on its own ORM. Includes the full harness, the CPU evidence for which results are framework-bound and which are database-bound, the scenario Grit loses, and the three bugs the benchmark found in Grit itself.',
   },
+  '/docs/deployment/from-github': {
+    title: 'Deploy from GitHub',
+    description:
+      'The production Docker Compose file explained line by line, how to get a Grit project onto GitHub without committing secrets, and how the deployment platforms differ: some run the real Compose engine, others translate your file into their own model, which changes hostnames and drops depends_on ordering.',
+  },
   '/docs/demo': {
     title: 'Demo Application: Grit Motors',
     description:
