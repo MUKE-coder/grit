@@ -11,12 +11,12 @@
  * apart, three repetitions, medians reported, zero failed requests.
  *
  * That structure is not decoration. Across runs this machine drifts a long way:
- * Grit's single-row read measured 4,536 req/s in the Bun pair, 4,392 in the
- * Encore pair, 1,911 in the Next.js pair and 1,635 in the Express pair — from an
- * identical binary, as hours of write scenarios accumulated in Postgres. So the absolute figures are
- * only meaningful next to the Grit baseline measured beside them, and the RATIO
- * is what survives comparison. Putting Bun's 2,717 on the same axis as Encore's
- * 438 would imply a shared baseline that does not exist.
+ * Grit's single-row read measured 4,536 req/s in the Bun pair and 8,509 in the
+ * Express pair — from an identical binary, in the same sitting, because the
+ * machine drifts as write scenarios accumulate in Postgres. So the absolute
+ * figures are only meaningful next to the Grit baseline measured beside them,
+ * and the RATIO is what survives comparison. Putting Bun's 2,717 on the same
+ * axis as Encore's 663 would imply a shared baseline that does not exist.
  *
  * Filled in by hand from `python pair-report.py`. A build step that silently
  * rewrote published performance claims would be worse than an edit you can see
@@ -160,7 +160,6 @@ export const FRAMEWORKS: Framework[] = [
   },
   {
     slug: 'encore',
-    preV3134: true,
     logo: '/logos/encore.png',
     color: '#EEEBE0',
     name: 'Encore.ts',
@@ -169,7 +168,7 @@ export const FRAMEWORKS: Framework[] = [
     tagline: 'Rust HTTP runtime, compiled by Encore’s own CLI, Drizzle over its SQLDatabase',
     /*
      * Worth stating plainly: Encore never saturated anything. Its container sat
-     * at 155-211% of a 400% allowance and Postgres at 30-200%, so neither was
+     * at 142-195% of a 400% allowance and Postgres at 26-176%, so neither was
      * the limit. Something else bounded it — most likely the Drizzle /
      * node-postgres path rather than the Rust HTTP layer, which is the part
      * Encore is fast at. Its figures here are a floor for Encore, and a tuned
@@ -177,15 +176,14 @@ export const FRAMEWORKS: Framework[] = [
      */
     stack: 'Encore.ts 1.57, Rust runtime, Drizzle ORM',
     results: {
-      show:  { rps: 438, gritRps: 4392, median: '103.8 ms', gritMedian: '8.7 ms',  appCpu: 165, dbCpu: 32,  gritAppCpu: 317, gritDbCpu: 248 },
-      write: { rps: 633, gritRps: 1063, median: '73.7 ms',  gritMedian: '41.5 ms', appCpu: 206, dbCpu: 70,  gritAppCpu: 334, gritDbCpu: 514 },
-      list:  { rps: 247, gritRps: 548,  median: '184.7 ms', gritMedian: '78.4 ms', appCpu: 159, dbCpu: 190, gritAppCpu: 156, gritDbCpu: 897 },
-      mixed: { rps: 257, gritRps: 523,  median: '190.0 ms', gritMedian: '80.3 ms', appCpu: 162, dbCpu: 177, gritAppCpu: 146, gritDbCpu: 975 },
+      show:  { rps: 663, gritRps: 6646, median: '71.9 ms',  gritMedian: '5.3 ms',  appCpu: 142, dbCpu: 26,  gritAppCpu: 300, gritDbCpu: 249 },
+      write: { rps: 854, gritRps: 4345, median: '51.9 ms',  gritMedian: '8.7 ms',  appCpu: 195, dbCpu: 67,  gritAppCpu: 312, gritDbCpu: 247 },
+      list:  { rps: 249, gritRps: 617,  median: '166.0 ms', gritMedian: '67.0 ms', appCpu: 147, dbCpu: 176, gritAppCpu: 170, gritDbCpu: 1084 },
+      mixed: { rps: 363, gritRps: 834,  median: '138.0 ms', gritMedian: '50.7 ms', appCpu: 148, dbCpu: 175, gritAppCpu: 112, gritDbCpu: 820 },
     },
   },
   {
     slug: 'express',
-    preV3134: true,
     logo: '/logos/express.png',
     color: '#5FA04E',
     name: 'Express',
@@ -194,15 +192,14 @@ export const FRAMEWORKS: Framework[] = [
     tagline: 'Express 5 on Node 22, one cluster worker per CPU, Prisma ORM',
     stack: 'Node 22, Express 5, cluster, Prisma',
     results: {
-      show:  { rps: 306, gritRps: 1635, median: '154.9 ms', gritMedian: '22.6 ms', appCpu: 476, dbCpu: 59,  gritAppCpu: 401, gritDbCpu: 324 },
-      write: { rps: 415, gritRps: 513,  median: '105.1 ms', gritMedian: '88.5 ms', appCpu: 435, dbCpu: 51,  gritAppCpu: 482, gritDbCpu: 629 },
-      list:  { rps: 233, gritRps: 448,  median: '205.7 ms', gritMedian: '95.3 ms', appCpu: 452, dbCpu: 374, gritAppCpu: 138, gritDbCpu: 940 },
-      mixed: { rps: 177, gritRps: 458,  median: '272.9 ms', gritMedian: '93.5 ms', appCpu: 458, dbCpu: 312, gritAppCpu: 127, gritDbCpu: 900 },
+      show:  { rps: 982, gritRps: 8509, median: '55.1 ms',  gritMedian: '4.5 ms',  appCpu: 420, dbCpu: 45,  gritAppCpu: 288, gritDbCpu: 255 },
+      write: { rps: 748, gritRps: 5126, median: '72.8 ms',  gritMedian: '7.5 ms',  appCpu: 416, dbCpu: 46,  gritAppCpu: 288, gritDbCpu: 246 },
+      list:  { rps: 280, gritRps: 861,  median: '168.7 ms', gritMedian: '46.8 ms', appCpu: 434, dbCpu: 311, gritAppCpu: 124, gritDbCpu: 820 },
+      mixed: { rps: 297, gritRps: 763,  median: '151.5 ms', gritMedian: '51.5 ms', appCpu: 425, dbCpu: 303, gritAppCpu: 114, gritDbCpu: 816 },
     },
   },
   {
     slug: 'nextjs',
-    preV3134: true,
     logo: '/logos/nextjs.png',
     color: '#ffffff',
     // Near-black on transparent, so it needs a light backing on this theme.
@@ -219,15 +216,14 @@ export const FRAMEWORKS: Framework[] = [
      */
     stack: 'Node 22, Next.js 15.5 App Router, standalone output, Prisma',
     results: {
-      show:  { rps: 183, gritRps: 1911, median: '258.7 ms', gritMedian: '18.6 ms', appCpu: 411, dbCpu: 21,  gritAppCpu: 296, gritDbCpu: 235 },
-      write: { rps: 336, gritRps: 1142, median: '132.7 ms', gritMedian: '38.0 ms', appCpu: 406, dbCpu: 19,  gritAppCpu: 314, gritDbCpu: 482 },
-      list:  { rps: 169, gritRps: 550,  median: '284.0 ms', gritMedian: '74.8 ms', appCpu: 412, dbCpu: 172, gritAppCpu: 114, gritDbCpu: 846 },
-      mixed: { rps: 186, gritRps: 533,  median: '258.6 ms', gritMedian: '75.5 ms', appCpu: 408, dbCpu: 125, gritAppCpu: 128, gritDbCpu: 842 },
+      show:  { rps: 433, gritRps: 6822, median: '103.0 ms', gritMedian: '5.5 ms',  appCpu: 403, dbCpu: 25,  gritAppCpu: 287, gritDbCpu: 246 },
+      write: { rps: 499, gritRps: 6157, median: '93.0 ms',  gritMedian: '6.2 ms',  appCpu: 400, dbCpu: 24,  gritAppCpu: 310, gritDbCpu: 260 },
+      list:  { rps: 247, gritRps: 1186, median: '189.7 ms', gritMedian: '35.6 ms', appCpu: 405, dbCpu: 206, gritAppCpu: 123, gritDbCpu: 818 },
+      mixed: { rps: 271, gritRps: 1053, median: '181.0 ms', gritMedian: '38.5 ms', appCpu: 411, dbCpu: 167, gritAppCpu: 108, gritDbCpu: 799 },
     },
   },
   {
     slug: 'django',
-    preV3134: true,
     logo: '/logos/django.svg',
     color: '#44B78B',
     name: 'Django',
@@ -241,15 +237,14 @@ export const FRAMEWORKS: Framework[] = [
      */
     stack: 'Python 3.12, Django 5.1, gunicorn + gevent (9 workers), psycopg pool',
     results: {
-      show:  { rps: 608, gritRps: 4651, median: '87.0 ms',  gritMedian: '8.0 ms',  appCpu: 404, dbCpu: 51,  gritAppCpu: 279, gritDbCpu: 238 },
-      write: { rps: 797, gritRps: 1583, median: '68.1 ms',  gritMedian: '26.8 ms', appCpu: 407, dbCpu: 58,  gritAppCpu: 303, gritDbCpu: 498 },
-      list:  { rps: 274, gritRps: 736,  median: '147.8 ms', gritMedian: '56.0 ms', appCpu: 407, dbCpu: 259, gritAppCpu: 122, gritDbCpu: 680 },
-      mixed: { rps: 249, gritRps: 662,  median: '191.4 ms', gritMedian: '64.7 ms', appCpu: 426, dbCpu: 250, gritAppCpu: 121, gritDbCpu: 814 },
+      show:  { rps: 811, gritRps: 5983, median: '73.4 ms',  gritMedian: '6.0 ms',  appCpu: 400, dbCpu: 47,  gritAppCpu: 251, gritDbCpu: 211 },
+      write: { rps: 913, gritRps: 5901, median: '65.1 ms',  gritMedian: '6.2 ms',  appCpu: 405, dbCpu: 42,  gritAppCpu: 290, gritDbCpu: 242 },
+      list:  { rps: 379, gritRps: 1094, median: '118.5 ms', gritMedian: '36.9 ms', appCpu: 408, dbCpu: 290, gritAppCpu: 137, gritDbCpu: 815 },
+      mixed: { rps: 481, gritRps: 1163, median: '77.4 ms',  gritMedian: '36.2 ms', appCpu: 398, dbCpu: 289, gritAppCpu: 111, gritDbCpu: 805 },
     },
   },
   {
     slug: 'laravel',
-    preV3134: true,
     logo: '/logos/laravel.png',
     color: '#FF2D20',
     name: 'Laravel',
@@ -268,10 +263,10 @@ export const FRAMEWORKS: Framework[] = [
      */
     stack: 'PHP 8.4, Laravel 13, nginx + php-fpm, OPcache + JIT, Eloquent',
     results: {
-      show:  { rps: 175, gritRps: 4340, median: '92.1 ms',  gritMedian: '8.6 ms',  appCpu: 434, dbCpu: 47,  gritAppCpu: 300, gritDbCpu: 248 },
-      write: { rps: 146, gritRps: 1118, median: '56.7 ms',  gritMedian: '40.5 ms', appCpu: 428, dbCpu: 47,  gritAppCpu: 316, gritDbCpu: 531 },
-      list:  { rps: 125, gritRps: 523,  median: '93.3 ms',  gritMedian: '81.4 ms', appCpu: 437, dbCpu: 193, gritAppCpu: 173, gritDbCpu: 950 },
-      mixed: { rps: 101, gritRps: 585,  median: '151.7 ms', gritMedian: '70.4 ms', appCpu: 433, dbCpu: 183, gritAppCpu: 178, gritDbCpu: 981 },
+      show:  { rps: 275, gritRps: 7167, median: '68.8 ms', gritMedian: '5.2 ms',  appCpu: 402, dbCpu: 44,  gritAppCpu: 287, gritDbCpu: 253 },
+      write: { rps: 318, gritRps: 4497, median: '23.9 ms', gritMedian: '8.0 ms',  appCpu: 403, dbCpu: 38,  gritAppCpu: 295, gritDbCpu: 248 },
+      list:  { rps: 220, gritRps: 1130, median: '71.7 ms', gritMedian: '37.6 ms', appCpu: 404, dbCpu: 189, gritAppCpu: 119, gritDbCpu: 819 },
+      mixed: { rps: 210, gritRps: 1180, median: '78.7 ms', gritMedian: '34.7 ms', appCpu: 420, dbCpu: 204, gritAppCpu: 121, gritDbCpu: 820 },
     },
   },
 ]
