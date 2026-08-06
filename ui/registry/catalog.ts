@@ -257,7 +257,56 @@ export const CATALOG: Category[] = [
           { slug: 'testimonials', name: 'Testimonials', description: 'Quotes, avatars, and logos.', blocks: [] },
           { slug: 'blog-sections', name: 'Blog Sections', description: 'Post grids and featured article layouts.', blocks: [] },
           { slug: 'contact-sections', name: 'Contact Sections', description: 'Forms, addresses, and support links.', blocks: [] },
-          { slug: 'team-sections', name: 'Team Sections', description: 'The people behind the product.', blocks: [] },
+          {
+            slug: 'team-sections',
+            name: 'Team Sections',
+            description:
+              'The people behind the product. Every block here takes photos as data and draws a monogram or a labelled placeholder when one is missing, so a demo never ships stock faces under invented names.',
+            blocks: [
+              {
+                slug: 'card-grid',
+                name: 'Card grid',
+                description:
+                  'Three columns of bordered cards, portrait above the name and role. The workhorse layout.',
+                previewHeight: 900,
+              },
+              {
+                slug: 'overlay-grid',
+                name: 'Overlay grid',
+                description:
+                  'Four columns of full-bleed portraits with the name and role over a bottom gradient.',
+                previewHeight: 860,
+              },
+              {
+                slug: 'circular-centered',
+                name: 'Circular centered',
+                description:
+                  'Centred heading over circular portraits. The most forgiving option when the photos were not taken as a matched set.',
+                previewHeight: 820,
+              },
+              {
+                slug: 'bento-collage',
+                name: 'Bento collage',
+                description:
+                  'A statement beside an uneven photo grid: one tall frame, one wide, two small.',
+                previewHeight: 720,
+              },
+              {
+                slug: 'stats-with-polaroids',
+                name: 'Stats with polaroids',
+                description:
+                  'A culture claim, the numbers behind it, and tilted polaroid frames of moments rather than headshots.',
+                previewHeight: 900,
+              },
+              {
+                slug: 'timeline-journey',
+                name: 'Timeline journey',
+                description:
+                  'The company story as an alternating timeline. Stacks into one column on a phone rather than zig-zagging.',
+                previewHeight: 1100,
+              },
+            ],
+          },
           { slug: 'content-sections', name: 'Content Sections', description: 'Long-form prose with headings and figures.', blocks: [] },
           { slug: 'logo-clouds', name: 'Logo Clouds', description: 'Customer and partner logos.', blocks: [] },
           { slug: 'faqs', name: 'FAQs', description: 'Accordions and question grids.', blocks: [] },
