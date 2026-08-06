@@ -39,6 +39,17 @@ export interface ScenarioResult {
   dbCpu: number
   gritAppCpu: number
   gritDbCpu: number
+  /**
+   * Set where repeated measurement could not separate the two frameworks.
+   *
+   * Both sides queue behind the same saturated Postgres in these rows, so what
+   * varies between runs is database state rather than framework speed. Bun's
+   * mixed scenario was measured four times and came out 0.91x, 1.21x, 1.19x and
+   * 0.91x; across seven repetitions Grit ranged 329 to 643 req/s and Bun 445 to
+   * 694. Publishing any single one of those as a result would be picking a
+   * number, so the ratio is shown but not claimed.
+   */
+  inconclusive?: boolean
 }
 
 export interface Framework {
@@ -154,8 +165,8 @@ export const FRAMEWORKS: Framework[] = [
     results: {
       show:  { rps: 2717, gritRps: 4536, median: '16.2 ms', gritMedian: '8.2 ms',  appCpu: 399, dbCpu: 153, gritAppCpu: 294, gritDbCpu: 249 },
       write: { rps: 2224, gritRps: 4959, median: '18.0 ms', gritMedian: '7.7 ms',  appCpu: 412, dbCpu: 195, gritAppCpu: 311, gritDbCpu: 249 },
-      list:  { rps: 590,  gritRps: 615,  median: '70.8 ms', gritMedian: '65.6 ms', appCpu: 267, dbCpu: 798, gritAppCpu: 125, gritDbCpu: 803 },
-      mixed: { rps: 621,  gritRps: 568,  median: '65.8 ms', gritMedian: '70.9 ms', appCpu: 327, dbCpu: 825, gritAppCpu: 125, gritDbCpu: 764 },
+      list:  { rps: 590,  gritRps: 615,  median: '70.8 ms', gritMedian: '65.6 ms', appCpu: 267, dbCpu: 798, gritAppCpu: 125, gritDbCpu: 803, inconclusive: true },
+      mixed: { rps: 621,  gritRps: 568,  median: '65.8 ms', gritMedian: '70.9 ms', appCpu: 327, dbCpu: 825, gritAppCpu: 125, gritDbCpu: 764, inconclusive: true },
     },
   },
   {

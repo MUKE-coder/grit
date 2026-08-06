@@ -166,10 +166,22 @@ export default function BenchmarksPage() {
                                 <td
                                   className={
                                     'px-4 py-2.5 text-right font-semibold tabular-nums ' +
-                                    (ratio(r) < 1 ? 'text-warning' : 'text-primary')
+                                    (r.inconclusive
+                                      ? 'text-muted-foreground'
+                                      : ratio(r) < 1
+                                        ? 'text-warning'
+                                        : 'text-primary')
                                   }
                                 >
                                   {ratio(r).toFixed(2)}&times;
+                                  {r.inconclusive && (
+                                    <span
+                                      className="block text-[11px] font-normal text-muted-foreground/70"
+                                      title="Measured four times with results on both sides of 1. Both frameworks queue behind the same saturated Postgres here."
+                                    >
+                                      within noise
+                                    </span>
+                                  )}
                                 </td>
                               </tr>
                             )
@@ -207,30 +219,29 @@ export default function BenchmarksPage() {
                 Where Grit loses
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                <strong>Bun edges Grit on the mixed workload</strong>: 621 req/s against 568.
-                That row is on this page for the same reason the others are, but read it with the
-                CPU column beside it. Postgres ran at 764&ndash;825% of its 800% allowance for
-                both sides while Grit&apos;s own container sat at 125%. Neither framework was the
-                limit; they were both queueing behind the same database, and a scenario decided
-                by the database can land either side of 1 between runs. It was 1.08&times; to Grit
-                in the previous pair.
+                <strong>Against Bun, two rows cannot be called.</strong> The paginated list and
+                the mixed workload were measured four separate times. Mixed came out 0.91&times;,
+                1.21&times;, 1.19&times; and 0.91&times;, on both sides of even. Across seven
+                repetitions Grit ranged from 329 to 643 req/s and Bun from 445 to 694. Any one of
+                those numbers could be published as a result, which is exactly why none of them
+                should be.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                <strong>The insert scenario used to be here too, and it was real.</strong> Bun was
-                a quarter quicker at it. Turning on Postgres statement logging showed why: a single{' '}
-                <code>POST</code> was sending <strong>seven</strong> statements where Bun sent one.
-                A transaction wrapped around an INSERT that Postgres already makes atomic, a{' '}
-                <code>SELECT</code> re-reading the row just written, and an audit row written even
-                for requests with no authenticated user.
+                The reason is in the CPU column. Postgres sits at 764&ndash;825% of its 800%
+                allowance for both sides while Grit&apos;s own container idles at 125%. Neither
+                framework is the limit; they are both waiting on the same database, so what moves
+                between runs is database state rather than framework speed. Those two rows are
+                marked <em>within noise</em> in the table above and no winner is claimed.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                v3.134.0 fixed all three. Inserts went from 2,686 to <strong>4,959</strong> req/s
-                and the scenario reversed from a 0.81&times; loss to a{' '}
-                <strong>2.23&times;</strong> win. The global{' '}
-                <code>DB_SKIP_DEFAULT_TRANSACTION</code> is still off, because it cannot know
-                whether your model has children and a half-written invoice is worse than a slow
-                one. Instead the generator decides per resource, from the definition, where it can
-                see there are no children to lose.
+                <strong>The insert scenario used to be a real loss, and it is not any more.</strong>{' '}
+                Bun was a quarter quicker at it. Postgres statement logging showed a single{' '}
+                <code>POST</code> sending <strong>seven</strong> statements where Bun sent one: a
+                transaction around an INSERT that Postgres already makes atomic, a{' '}
+                <code>SELECT</code> re-reading the row just written, and an audit row written even
+                for requests with no authenticated user. v3.134.0 fixed all three, inserts went
+                from 2,686 to <strong>4,959</strong> req/s, and the scenario reversed from a
+                0.81&times; loss to a <strong>2.23&times;</strong> win.
               </p>
             </section>
 

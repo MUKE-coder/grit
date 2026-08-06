@@ -32,6 +32,7 @@ export function HomepageBenchmarks() {
         gritRps: Math.round(r.gritRps),
         rps: Math.round(r.rps),
         appBound: isAppBound(r),
+        inconclusive: r.inconclusive,
       }
     }),
   }))
@@ -47,8 +48,9 @@ export function HomepageBenchmarks() {
           <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             One Postgres, identical container limits, the same 10,000 rows, the same k6 script,
             every framework in production shape and on its own ORM. Each has a page showing
-            exactly how to reproduce it, including the scenario Grit loses, and the three
-            bugs this benchmark found in Grit itself.
+            exactly how to reproduce it, including the two rows against Bun that repeated
+            measurement could not separate, and the three bugs this benchmark found in Grit
+            itself.
           </p>
         </div>
 
