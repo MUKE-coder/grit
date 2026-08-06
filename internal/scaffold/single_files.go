@@ -83,7 +83,7 @@ func writeSingleFrontendFiles(root string, opts Options) error {
 		filepath.Join(shared, "brand.config.ts"):        sharedBrandConfig(opts),
 		filepath.Join(shared, "themes.ts"):              singleSharedThemes(opts),
 
-		filepath.Join(feRoot, "package.json"): singleFrontendPackageJSON(opts),
+		filepath.Join(feRoot, "package.json"):       singleFrontendPackageJSON(opts),
 		filepath.Join(feRoot, "vite.config.ts"):     singleFrontendViteConfig(),
 		filepath.Join(feRoot, "index.html"):         webTanStackIndexHTML(opts),
 		filepath.Join(feRoot, "tailwind.config.ts"): webTanStackTailwindConfig(),

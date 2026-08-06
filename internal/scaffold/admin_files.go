@@ -206,13 +206,22 @@ func writeAdminFiles(root string, opts Options) error {
 
 	files := map[string]string{
 		// Config files
-		filepath.Join(adminRoot, "package.json"):       adminPackageJSON(opts),
-		filepath.Join(adminRoot, "next.config.ts"):     adminNextConfig(),
-		filepath.Join(adminRoot, "tailwind.config.ts"): adminTailwindConfig(),
-		filepath.Join(adminRoot, "postcss.config.js"):  adminPostCSSConfig(),
-		filepath.Join(adminRoot, "tsconfig.json"):      adminTSConfig(),
-		filepath.Join(adminRoot, "app", "globals.css"): adminGlobalCSS(),
-		filepath.Join(adminRoot, "app", "layout.tsx"):  adminRootLayout(opts),
+		filepath.Join(adminRoot, "package.json"):   adminPackageJSON(opts),
+		filepath.Join(adminRoot, "next.config.ts"): adminNextConfig(),
+
+		// v3.136 — i18n. Cookie-based with no locale prefix, so routes stay the
+		// same in every language and the cookie travels to the Go API too.
+		filepath.Join(adminRoot, "i18n", "request.ts"):                  i18nRequestTS(),
+		filepath.Join(adminRoot, "lib", "locale.ts"):                    i18nLocaleLibTS(),
+		filepath.Join(adminRoot, "components", "language-switcher.tsx"): i18nSwitcherTSX(),
+		filepath.Join(adminRoot, "messages", "en.json"):                 i18nMessagesEN(),
+		filepath.Join(adminRoot, "messages", "fr.json"):                 i18nMessagesFR(),
+		filepath.Join(adminRoot, "messages", "sw.json"):                 i18nMessagesSW(),
+		filepath.Join(adminRoot, "tailwind.config.ts"):                  adminTailwindConfig(),
+		filepath.Join(adminRoot, "postcss.config.js"):                   adminPostCSSConfig(),
+		filepath.Join(adminRoot, "tsconfig.json"):                       adminTSConfig(),
+		filepath.Join(adminRoot, "app", "globals.css"):                  adminGlobalCSS(),
+		filepath.Join(adminRoot, "app", "layout.tsx"):                   adminRootLayout(opts),
 
 		// Root redirect page
 		filepath.Join(adminRoot, "app", "page.tsx"): adminRedirectPage(),
