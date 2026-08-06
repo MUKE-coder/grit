@@ -1,5 +1,3 @@
-import { SCENES, scene } from './photos'
-
 /*
  * The company story as an alternating timeline.
  *
@@ -22,27 +20,34 @@ export interface Milestone {
   photo?: string
 }
 
+/* Demo photography from Unsplash, free for commercial use with no attribution
+   required. Every URL was checked to return 200. The width, height and crop are
+   in the query string so the browser fetches roughly what it paints rather than
+   a 4000px original the layout then scales down.
+
+   These are people and places that have nothing to do with your company.
+   Replace them: every block here takes its content as a prop for that reason. */
 const MILESTONES: Milestone[] = [
   {
     year: '2021',
     title: 'The beginning',
     body: 'Three founders, one vision, and a cramped garage office.',
     caption: 'Where it all began, 2021',
-    photo: scene(SCENES[0]),
+    photo: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=600&fit=crop&q=80',
   },
   {
     year: '2022',
     title: 'Growing pains',
     body: 'Moved into our first office. The team grew to fifteen.',
     caption: 'First real office, 2022',
-    photo: scene(SCENES[4]),
+    photo: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800&h=600&fit=crop&q=80',
   },
   {
     year: '2024',
     title: 'Today',
     body: 'Fifty or so people across twelve countries, still shipping every week.',
     caption: 'Global team, 2024',
-    photo: scene(SCENES[2]),
+    photo: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&h=600&fit=crop&q=80',
   },
 ]
 
