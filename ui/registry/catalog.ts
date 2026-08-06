@@ -302,6 +302,63 @@ export const CATALOG: Category[] = [
           },
           { slug: 'bento-grids', name: 'Bento Grids', description: 'Mixed-size tiles that show several features at once.', blocks: [] },
           {
+            slug: 'how-it-works',
+            name: 'How It Works',
+            description:
+              'Ordered steps, from a three-across summary to a long-form walkthrough. Every one of these is a real <ol>, so a screen reader announces "2 of 3" rather than reading three unrelated headings, and the arrows and rails that say the same thing visually are marked decorative.',
+            blocks: [
+              {
+                slug: 'three-steps-with-arrows',
+                name: 'Three steps with arrows',
+                description:
+                  'The summary version: three steps across with arrows in the gutters, which disappear once the layout stacks.',
+                previewHeight: 780,
+              },
+              {
+                slug: 'vertical-centered-steps',
+                name: 'Vertical centered steps',
+                description:
+                  'The same steps run down the page. A vertical sequence reads as a process you go through; a horizontal one reads as three things that exist.',
+                previewHeight: 1400,
+              },
+              {
+                slug: 'numbered-with-artifacts',
+                name: 'Numbered with artifacts',
+                description:
+                  'Each step above a piece of the thing you actually do, faded out with a mask rather than a gradient overlay so it works on any background.',
+                previewHeight: 720,
+              },
+              {
+                slug: 'framed-columns-with-previews',
+                name: 'Framed columns with previews',
+                description:
+                  'Previews above the copy in a divided frame. One line between neighbours rather than two borders meeting.',
+                previewHeight: 720,
+              },
+              {
+                slug: 'sticky-title-with-steps',
+                name: 'Sticky title with steps',
+                description:
+                  'The heading stays put while the steps scroll past it, so a long sequence never loses what it was for.',
+                previewHeight: 1500,
+              },
+              {
+                slug: 'timeline-with-panels',
+                name: 'Timeline with panels',
+                description:
+                  'The long-form walkthrough: a rail that grows with the content, with room for a screenshot, a stat pair or a quote per step.',
+                previewHeight: 1900,
+              },
+              {
+                slug: 'split-heading-with-numbered-list',
+                name: 'Split heading with numbered list',
+                description:
+                  'The undecorated one, for when three steps are genuinely one sentence each. Numbers come from CSS counters, so reordering renumbers.',
+                previewHeight: 640,
+              },
+            ],
+          },
+          {
             slug: 'pricing-sections',
             name: 'Pricing Sections',
             description:
