@@ -537,6 +537,50 @@ export const CATALOG: Category[] = [
           { slug: 'content-sections', name: 'Content Sections', description: 'Long-form prose with headings and figures.', blocks: [] },
           { slug: 'logo-clouds', name: 'Logo Clouds', description: 'Customer and partner logos.', blocks: [] },
           {
+            slug: 'integrations',
+            name: 'Integrations',
+            description:
+              'Answers to a practical question: will this work with the tools my team already depends on? Every block here ships lettered placeholder tiles and takes a logo slot — a component library should not bundle trademarks it does not own on your behalf, and an honest placeholder beats one you forget to replace.',
+            blocks: [
+              {
+                slug: 'cards-grid',
+                name: 'Cards grid',
+                description:
+                  'Six bordered cards. Only the name is the link, with a stretched hit area, so the card is not announced as one enormous link name.',
+                previewHeight: 780,
+                dependencies: [],
+              },
+              {
+                slug: 'framed-grid',
+                name: 'Framed grid',
+                description:
+                  'The same six in one divided frame. Six cards read as six things; one frame reads as one set.',
+                previewHeight: 760,
+              },
+              {
+                slug: 'split-with-logo-cluster',
+                name: 'Split with logo cluster',
+                description:
+                  'Copy beside a loose cluster of tiles. The offsets are declared per item, because a random scatter renders differently on the server and the client.',
+                previewHeight: 620,
+              },
+              {
+                slug: 'grouped-by-category',
+                name: 'Grouped by category',
+                description:
+                  'Grouped the way people search: does it work with my database, my model provider, my host. Each group is a labelled region.',
+                previewHeight: 640,
+              },
+              {
+                slug: 'orbit-ring',
+                name: 'Orbit ring',
+                description:
+                  'Tiles arranged on a ring by trigonometry, so adding a ninth redistributes all nine. Becomes a wrapped row on a phone.',
+                previewHeight: 820,
+              },
+            ],
+          },
+          {
             slug: 'faqs',
             name: 'FAQs',
             description:
