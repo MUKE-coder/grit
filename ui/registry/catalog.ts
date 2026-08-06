@@ -424,7 +424,63 @@ export const CATALOG: Category[] = [
           },
           { slug: 'header-sections', name: 'Header Sections', description: 'Page headers with a title and supporting copy.', blocks: [] },
           { slug: 'newsletter-sections', name: 'Newsletter Sections', description: 'Email capture that does not feel like a popup.', blocks: [] },
-          { slug: 'stats', name: 'Stats', description: 'Numbers worth putting on the page.', blocks: [] },
+          {
+            slug: 'stats',
+            name: 'Stats',
+            description:
+              'Numbers worth putting on the page. Every one of these is a description list with the value before the label, so a screen reader hears each figure paired with its caption rather than an orphan number followed by an unrelated sentence.',
+            blocks: [
+              {
+                slug: 'inline-with-copy',
+                name: 'Inline with copy',
+                description:
+                  'Two figures and a sentence in one row. For numbers that support a claim made elsewhere rather than being the claim.',
+                previewHeight: 260,
+              },
+              {
+                slug: 'boxed-three-up',
+                name: 'Boxed three up',
+                description:
+                  'Three figures in a bordered row with crosshair corners, drawn with pseudo-elements so they cost nothing in the DOM.',
+                previewHeight: 560,
+              },
+              {
+                slug: 'heading-with-ruled-stats',
+                name: 'Heading with ruled stats',
+                description:
+                  'A claim on the left, the figures that back it on the right, each with a rule exactly as tall as its text.',
+                previewHeight: 520,
+              },
+              {
+                slug: 'single-giant-number',
+                name: 'Single giant number',
+                description:
+                  'One figure as large as it will go, scaled with a clamp. Only use it when the number really is the headline.',
+                previewHeight: 480,
+              },
+              {
+                slug: 'stats-with-quote',
+                name: 'Stats with quote',
+                description:
+                  'Figures beside someone saying why they matter. Numbers alone are assertion; a quote alone is anecdote.',
+                previewHeight: 480,
+              },
+              {
+                slug: 'map-above-three-up',
+                name: 'Map above three up',
+                description:
+                  'A dotted world map drawn from a coarse land mask rather than an image, with the figures on a card below it.',
+                previewHeight: 640,
+              },
+              {
+                slug: 'card-over-world-map',
+                name: 'Card over world map',
+                description:
+                  'The same map behind a card of four figures. Deliberately low resolution: a dot map is a texture that says everywhere, not a reference.',
+                previewHeight: 640,
+              },
+            ],
+          },
           { slug: 'testimonials', name: 'Testimonials', description: 'Quotes, avatars, and logos.', blocks: [] },
           { slug: 'blog-sections', name: 'Blog Sections', description: 'Post grids and featured article layouts.', blocks: [] },
           { slug: 'contact-sections', name: 'Contact Sections', description: 'Forms, addresses, and support links.', blocks: [] },
