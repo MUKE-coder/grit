@@ -1,5 +1,3 @@
-import { FACES, portrait } from './photos'
-
 /*
  * A team grid: portrait, name, role. The workhorse layout.
  *
@@ -16,13 +14,20 @@ export interface TeamMember {
   photo?: string
 }
 
+/* Demo photography from Unsplash, free for commercial use with no attribution
+   required. Every URL was checked to return 200. The width, height and crop are
+   in the query string so the browser fetches roughly what it paints rather than
+   a 4000px original the layout then scales down.
+
+   These are people and places that have nothing to do with your company.
+   Replace them: every block here takes its content as a prop for that reason. */
 const MEMBERS: TeamMember[] = [
-  { name: 'Alexander Chee', role: 'Co-Founder, CEO', photo: portrait(FACES[1]) },
-  { name: 'Sarah Johnson', role: 'Co-Founder, CTO', photo: portrait(FACES[0]) },
-  { name: 'Michael Chen', role: 'Head of Engineering', photo: portrait(FACES[3]) },
-  { name: 'Emily Rodriguez', role: 'Head of Design', photo: portrait(FACES[2]) },
-  { name: 'David Kim', role: 'Head of Product', photo: portrait(FACES[7]) },
-  { name: 'Lisa Wang', role: 'Head of Marketing', photo: portrait(FACES[4]) },
+  { name: 'Alexander Chee', role: 'Co-Founder, CEO', photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=480&h=480&fit=crop&crop=faces&q=80' },
+  { name: 'Sarah Johnson', role: 'Co-Founder, CTO', photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=480&h=480&fit=crop&crop=faces&q=80' },
+  { name: 'Michael Chen', role: 'Head of Engineering', photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=480&h=480&fit=crop&crop=faces&q=80' },
+  { name: 'Emily Rodriguez', role: 'Head of Design', photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=480&h=480&fit=crop&crop=faces&q=80' },
+  { name: 'David Kim', role: 'Head of Product', photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=480&h=480&fit=crop&crop=faces&q=80' },
+  { name: 'Lisa Wang', role: 'Head of Marketing', photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=480&h=480&fit=crop&crop=faces&q=80' },
 ]
 
 /* Deterministic tint per person, so a monogram is not a grey box and the same

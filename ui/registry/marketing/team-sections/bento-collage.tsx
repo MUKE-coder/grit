@@ -1,5 +1,3 @@
-import { SCENES, scene } from './photos'
-
 /*
  * A statement about the team beside a bento collage of them at work.
  *
@@ -18,11 +16,18 @@ export interface CollageItem {
   photo?: string
 }
 
+/* Demo photography from Unsplash, free for commercial use with no attribution
+   required. Every URL was checked to return 200. The width, height and crop are
+   in the query string so the browser fetches roughly what it paints rather than
+   a 4000px original the layout then scales down.
+
+   These are people and places that have nothing to do with your company.
+   Replace them: every block here takes its content as a prop for that reason. */
 const ITEMS: CollageItem[] = [
-  { alt: 'Two engineers pairing at a laptop in the studio', photo: scene(SCENES[5], 600) },
-  { alt: 'The team on the annual hike, taking a group photo', photo: scene(SCENES[3], 1200) },
-  { alt: 'A product review in the meeting room', photo: scene(SCENES[1], 600) },
-  { alt: 'The open-plan office on a working afternoon', photo: scene(SCENES[6], 600) },
+  { alt: 'Two engineers pairing at a laptop in the studio', photo: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=600&h=450&fit=crop&q=80' },
+  { alt: 'The team on the annual hike, taking a group photo', photo: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=1200&h=900&fit=crop&q=80' },
+  { alt: 'A product review in the meeting room', photo: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=600&h=450&fit=crop&q=80' },
+  { alt: 'The open-plan office on a working afternoon', photo: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=600&h=450&fit=crop&q=80' },
 ]
 
 export default function TeamBentoCollage({

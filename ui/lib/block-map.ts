@@ -10,6 +10,10 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "application-ui-buttons-solid-default": dynamic(() => import('@/registry/application-ui/buttons/solid-default').then((m) => ({ default: m.default }))),
   "application-ui-inputs-bordered-default": dynamic(() => import('@/registry/application-ui/inputs/bordered-default').then((m) => ({ default: m.default }))),
   "application-ui-inputs-soft-filled": dynamic(() => import('@/registry/application-ui/inputs/soft-filled').then((m) => ({ default: m.default }))),
+  "marketing-faqs-bordered-split": dynamic(() => import('@/registry/marketing/faqs/bordered-split').then((m) => ({ default: m.default }))),
+  "marketing-faqs-category-nav": dynamic(() => import('@/registry/marketing/faqs/category-nav').then((m) => ({ default: m.default }))),
+  "marketing-faqs-split-with-contact": dynamic(() => import('@/registry/marketing/faqs/split-with-contact').then((m) => ({ default: m.default }))),
+  "marketing-faqs-stacked-grouped": dynamic(() => import('@/registry/marketing/faqs/stacked-grouped').then((m) => ({ default: m.default }))),
   "marketing-feature-sections-alternating-with-screenshots": dynamic(() => import('@/registry/marketing/feature-sections/alternating-with-screenshots').then((m) => ({ default: m.default }))),
   "marketing-feature-sections-carousel-three-up": dynamic(() => import('@/registry/marketing/feature-sections/carousel-three-up').then((m) => ({ default: m.default }))),
   "marketing-feature-sections-carousel-two-up": dynamic(() => import('@/registry/marketing/feature-sections/carousel-two-up').then((m) => ({ default: m.default }))),
@@ -47,5 +51,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-team-sections-timeline-journey": dynamic(() => import('@/registry/marketing/team-sections/timeline-journey').then((m) => ({ default: m.default }))),
 }
 
-/** 39 blocks at generation time. */
-export const BLOCK_COUNT: number = 39
+/** 43 blocks at generation time. */
+export const BLOCK_COUNT: number = 43

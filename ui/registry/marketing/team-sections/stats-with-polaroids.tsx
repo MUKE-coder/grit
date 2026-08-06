@@ -1,5 +1,3 @@
-import { SCENES, scene } from './photos'
-
 /*
  * Culture section: a claim, the numbers behind it, and photographs of the team
  * actually doing something.
@@ -30,10 +28,17 @@ const STATS: Stat[] = [
   { value: '4', label: 'Offices' },
 ]
 
+/* Demo photography from Unsplash, free for commercial use with no attribution
+   required. Every URL was checked to return 200. The width, height and crop are
+   in the query string so the browser fetches roughly what it paints rather than
+   a 4000px original the layout then scales down.
+
+   These are people and places that have nothing to do with your company.
+   Replace them: every block here takes its content as a prop for that reason. */
 const MOMENTS: Moment[] = [
-  { caption: 'Strategy offsite, Austin 2024', photo: scene(SCENES[0]) },
-  { caption: 'Product launch day, NYC 2024', photo: scene(SCENES[1]) },
-  { caption: 'Annual retreat, Tokyo 2024', photo: scene(SCENES[3]) },
+  { caption: 'Strategy offsite, Austin 2024', photo: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=600&fit=crop&q=80' },
+  { caption: 'Product launch day, NYC 2024', photo: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&h=600&fit=crop&q=80' },
+  { caption: 'Annual retreat, Tokyo 2024', photo: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&h=600&fit=crop&q=80' },
 ]
 
 /* Fixed, deliberately uneven, and small. Past about three degrees a polaroid

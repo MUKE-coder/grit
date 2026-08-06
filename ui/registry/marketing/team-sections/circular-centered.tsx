@@ -1,5 +1,3 @@
-import { FACES, portrait } from './photos'
-
 /*
  * Circular portraits, centred, name and role beneath.
  *
@@ -17,15 +15,22 @@ export interface TeamMember {
   photo?: string
 }
 
+/* Demo photography from Unsplash, free for commercial use with no attribution
+   required. Every URL was checked to return 200. The width, height and crop are
+   in the query string so the browser fetches roughly what it paints rather than
+   a 4000px original the layout then scales down.
+
+   These are people and places that have nothing to do with your company.
+   Replace them: every block here takes its content as a prop for that reason. */
 const MEMBERS: TeamMember[] = [
-  { name: 'Sarah Mitchell', role: 'Co-Founder, CEO', photo: portrait(FACES[0], 256) },
-  { name: 'Marcus Chen', role: 'Co-Founder, CTO', photo: portrait(FACES[2], 256) },
-  { name: 'David Thompson', role: 'Chief Operating Officer', photo: portrait(FACES[5], 256) },
-  { name: 'James Rodriguez', role: 'VP of Engineering', photo: portrait(FACES[9], 256) },
-  { name: 'Emily Watson', role: 'Head of Product', photo: portrait(FACES[6], 256) },
-  { name: 'Rachel Kim', role: 'Chief Marketing Officer', photo: portrait(FACES[4], 256) },
-  { name: 'Michael Foster', role: 'Chief Financial Officer', photo: portrait(FACES[3], 256) },
-  { name: 'Amanda Patel', role: 'Head of Design', photo: portrait(FACES[8], 256) },
+  { name: 'Sarah Mitchell', role: 'Co-Founder, CEO', photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=256&h=256&fit=crop&crop=faces&q=80' },
+  { name: 'Marcus Chen', role: 'Co-Founder, CTO', photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces&q=80' },
+  { name: 'David Thompson', role: 'Chief Operating Officer', photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=256&h=256&fit=crop&crop=faces&q=80' },
+  { name: 'James Rodriguez', role: 'VP of Engineering', photo: 'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?w=256&h=256&fit=crop&crop=faces&q=80' },
+  { name: 'Emily Watson', role: 'Head of Product', photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=256&h=256&fit=crop&crop=faces&q=80' },
+  { name: 'Rachel Kim', role: 'Chief Marketing Officer', photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=256&h=256&fit=crop&crop=faces&q=80' },
+  { name: 'Michael Foster', role: 'Chief Financial Officer', photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=256&h=256&fit=crop&crop=faces&q=80' },
+  { name: 'Amanda Patel', role: 'Head of Design', photo: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=256&h=256&fit=crop&crop=faces&q=80' },
 ]
 
 const TINTS = [

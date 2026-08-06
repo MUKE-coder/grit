@@ -309,7 +309,42 @@ export const CATALOG: Category[] = [
           },
           { slug: 'content-sections', name: 'Content Sections', description: 'Long-form prose with headings and figures.', blocks: [] },
           { slug: 'logo-clouds', name: 'Logo Clouds', description: 'Customer and partner logos.', blocks: [] },
-          { slug: 'faqs', name: 'FAQs', description: 'Accordions and question grids.', blocks: [] },
+          {
+            slug: 'faqs',
+            name: 'FAQs',
+            description:
+              'Grouped, expandable questions. All four are built on native details and summary, so they are keyboard operable, announce their own state, and open when Ctrl+F matches text inside a closed answer.',
+            blocks: [
+              {
+                slug: 'split-with-contact',
+                name: 'Split with contact',
+                description:
+                  'A sticky title column beside grouped questions, with a support link that stays in view while you scroll.',
+                previewHeight: 820,
+              },
+              {
+                slug: 'stacked-grouped',
+                name: 'Stacked grouped',
+                description:
+                  'One readable column, grouped by category, with the contact line at the end. For when the FAQ is the whole page.',
+                previewHeight: 900,
+              },
+              {
+                slug: 'bordered-split',
+                name: 'Bordered split',
+                description:
+                  'The split layout inside a rounded card, divided by a rule that spans exactly the shared height.',
+                previewHeight: 800,
+              },
+              {
+                slug: 'category-nav',
+                name: 'Category nav',
+                description:
+                  'A sticky category rail beside the questions. Anchor links rather than tabs, so nothing is hidden from search.',
+                previewHeight: 1000,
+              },
+            ],
+          },
           { slug: 'footers', name: 'Footers', description: 'Link columns, newsletter, and legal.', blocks: [] },
         ],
       },
