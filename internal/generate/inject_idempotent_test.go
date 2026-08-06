@@ -67,3 +67,56 @@ func TestInjectInline_Idempotent(t *testing.T) {
 		t.Fatalf("expected model registered exactly once, got %d\n%s", n, got)
 	}
 }
+
+// The case that actually broke a running app: routes moved out of the group the
+// generator wrote them into, then the resource regenerated. The text no longer
+// matches so alreadyInjected says no, and the second registration makes Gin
+// panic at startup on a duplicate path.
+func TestRoutesAlreadyWired_SurvivesRewriting(t *testing.T) {
+	cases := []struct {
+		name    string
+		content string
+		want    bool
+	}{
+		{
+			name:    "exactly as generated",
+			content: "\t\tprotected.GET(\"/products\", productHandler.List)\n",
+			want:    true,
+		},
+		{
+			name: "moved to its own unauthenticated group",
+			content: "\tproducts := v1.Group(\"/products\")\n" +
+				"\t{\n\t\tproducts.GET(\"\", productHandler.List)\n\t}\n",
+			want: true,
+		},
+		{
+			name:    "moved to a role-restricted group",
+			content: "\t\tproductsGroup.GET(\"\", productHandler.List)\n",
+			want:    true,
+		},
+		{
+			name:    "only constructed, never routed",
+			content: "\tproductHandler := handlers.NewProductHandler(db, svc)\n",
+			want:    false,
+		},
+		{
+			name:    "a different resource is wired",
+			content: "\t\tprotected.GET(\"/orders\", orderHandler.List)\n",
+			want:    false,
+		},
+		{
+			name:    "named in a docs registration but not routed",
+			content: "\tdocs.Route(\"GET /api/v1/products\").Summary(\"List products\")\n",
+			want:    false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, _ := routesAlreadyWired(tc.content, "productHandler")
+			if got != tc.want {
+				t.Fatalf("routesAlreadyWired = %v, want %v\ncontent:\n%s", got, tc.want, tc.content)
+			}
+		})
+	}
+}

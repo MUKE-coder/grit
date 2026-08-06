@@ -77,8 +77,24 @@ func (g *Generator) injectAll(names Names) error {
 	}
 
 	// 4. Inject routes (role-restricted or default split)
+	//
+	// Skipped entirely when this resource is already wired, however it was
+	// written. Restoring routes somebody deliberately moved is not a favour:
+	// the app stops booting, and the panic names Gin rather than the generator.
 	if fileExists(routesFile) {
-		if len(g.Roles) > 0 {
+		wired := false
+		if data, err := os.ReadFile(routesFile); err == nil {
+			var where string
+			wired, where = routesAlreadyWired(string(data), names.Camel+"Handler")
+			if wired {
+				fmt.Printf("  • Routes for %s already registered, leaving them alone\n", names.Plural)
+				fmt.Printf("    found: %s\n", where)
+				fmt.Printf("    Delete them from internal/routes/routes.go to have them regenerated.\n")
+			}
+		}
+		if wired {
+			// fall through to the rest of injectAll
+		} else if len(g.Roles) > 0 {
 			// Role-restricted: inject all routes into // grit:routes:custom as a group
 			roleArgs := make([]string, len(g.Roles))
 			for i, r := range g.Roles {
@@ -407,6 +423,42 @@ func alreadyInjected(content, code string) bool {
 		return false
 	}
 	return strings.Contains(norm(content), needle)
+}
+
+// routesAlreadyWired reports whether this resource's handler is already
+// registered on any route, in any form.
+//
+// alreadyInjected compares the emitted text, which makes a second
+// `grit generate resource` a no-op as long as the routes still look the way the
+// generator wrote them. They often do not. Moving a resource to a different
+// group is a normal thing to do:
+//
+//	// generated
+//	protected.GET("/products", productHandler.List)
+//	// hand-moved, so a load test measures the request path and not JWT parsing
+//	products := v1.Group("/products")
+//	products.GET("", productHandler.List)
+//
+// The text no longer matches, so the generator re-injects, and Gin panics at
+// startup with a duplicate-path error pointing at its own tree.go. The cause is
+// nowhere in that stack trace.
+//
+// Matching on the handler instead of the text catches every rewriting of the
+// same registration. It looks only at lines that register a route, so the
+// handler's own construction line does not count as being wired.
+func routesAlreadyWired(content, handlerVar string) (bool, string) {
+	needle := handlerVar + "."
+	for _, line := range strings.Split(content, "\n") {
+		if !strings.Contains(line, needle) {
+			continue
+		}
+		for _, verb := range []string{".GET(", ".POST(", ".PUT(", ".PATCH(", ".DELETE(", ".HEAD(", ".OPTIONS("} {
+			if strings.Contains(line, verb) {
+				return true, strings.TrimSpace(line)
+			}
+		}
+	}
+	return false, ""
 }
 
 // injectInline inserts code directly before a marker on the same line.
