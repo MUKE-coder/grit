@@ -300,7 +300,35 @@ export const CATALOG: Category[] = [
               },
             ],
           },
-          { slug: 'bento-grids', name: 'Bento Grids', description: 'Mixed-size tiles that show several features at once.', blocks: [] },
+          {
+            slug: 'bento-grids',
+            name: 'Bento Grids',
+            description:
+              'Mixed-size tiles, because not every feature deserves the same box. The spans only exist above lg; below it everything is one column in source order, so the order of the array is the reading order on a phone. Every artifact is markup rather than a screenshot, and aria-hidden, since it illustrates the sentence above it and holds invented data.',
+            blocks: [
+              {
+                slug: 'three-up-with-feature-row',
+                name: 'Three up with feature row',
+                description:
+                  'Three supporting tiles above a wide pair, copy first. The wide tile carries the feature you actually want read.',
+                previewHeight: 900,
+              },
+              {
+                slug: 'artifact-first',
+                name: 'Artifact first',
+                description:
+                  'The picture on top and the sentence as its caption, for a product people already understand. Artifacts are boxed to a fixed height so the headings line up across the row.',
+                previewHeight: 880,
+              },
+              {
+                slug: 'divided-frame',
+                name: 'Divided frame',
+                description:
+                  'Six regions on one surface, separated by hairlines drawn with 1px gaps over a background — the one approach that survives a cell spanning two columns.',
+                previewHeight: 1000,
+              },
+            ],
+          },
           {
             slug: 'how-it-works',
             name: 'How It Works',
