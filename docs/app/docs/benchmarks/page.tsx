@@ -55,15 +55,14 @@ export default function BenchmarksPage() {
                     Read the ratios, not the raw numbers
                   </h2>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Grit&apos;s single-row read measured <strong>4,536</strong> req/s in the Bun
-                    pair, <strong>4,392</strong> in the Encore pair, <strong>1,911</strong> in the
-                    Next.js pair and <strong>1,635</strong> in the Express pair, from an
-                    identical binary, as hours of write scenarios accumulated in Postgres and the
-                    machine drifted across the session. Within a pair
-                    both sides ran minutes apart under the same conditions, so the ratio survives;
-                    lining Bun&apos;s 2,717 up against Encore&apos;s 438 would imply a shared
-                    baseline that does not exist. Every table below is grouped by pair for that
-                    reason.
+                    All six pairs below were measured back to back in one sitting on
+                    v3.134.0, and even so Grit&apos;s single-row read ranged from{' '}
+                    <strong>4,536</strong> req/s in the Bun pair to <strong>8,509</strong> in the
+                    Express pair, from an identical binary, because the machine drifts as write
+                    scenarios accumulate in Postgres. Within a pair both sides ran minutes apart
+                    under the same conditions, so the ratio survives; lining Bun&apos;s 2,717 up
+                    against Encore&apos;s 663 would imply a shared baseline that does not exist.
+                    Every table below is grouped by pair for that reason.
                   </p>
                 </div>
               </div>
@@ -242,10 +241,12 @@ export default function BenchmarksPage() {
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 A throughput number only means something when you know what stopped it. Where a
-                framework&apos;s own container saturated, Laravel at 428&ndash;437% of its
-                400% allowance, Django at 404&ndash;426%, Next.js at 406&ndash;412%, Express at
-                435&ndash;476%, Bun at 403&ndash;405%. The figure is that framework&apos;s
-                genuine ceiling on this hardware.
+                framework&apos;s own container saturated, Laravel at 402&ndash;420% of its
+                400% allowance, Django at 398&ndash;408%, Next.js at 400&ndash;411%, Express at
+                416&ndash;434%, Bun at 399&ndash;411%. The figure is that framework&apos;s
+                genuine ceiling on this hardware. Encore is the one exception: it never
+                saturated anything, sitting at 142&ndash;195% with Postgres at 26&ndash;176%,
+                so something else bounded it and its figures are a floor.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 The read-heavy rows are different. On <code>list</code> and <code>mixed</code> Grit

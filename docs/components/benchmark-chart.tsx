@@ -14,9 +14,9 @@ import { FrameworkLogo } from '@/components/framework-logo'
  * Bar heights are normalised WITHIN each pair, and that is a correctness
  * decision rather than a stylistic one. Every framework was measured against
  * Grit in its own back-to-back run, and across those runs the machine drifts a
- * long way — Grit's single-row read measured 4,536 req/s in the Bun pair, 4,392
- * in the Encore pair, 1,911 in the Next.js pair and 1,635 in the Express pair,
- * from an identical binary, as hours of write scenarios accumulated in Postgres.
+ * long way — Grit's single-row read measured 4,536 req/s in the Bun pair and
+ * 8,509 in the Express pair, from an identical binary in the same sitting, as
+ * write scenarios accumulated in Postgres.
  * Putting every bar on one shared axis would say those were the same Grit. They were not,
  * and Encore would look far worse than it is.
  *

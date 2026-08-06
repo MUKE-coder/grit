@@ -14,94 +14,94 @@
               * show: 50 looping VUs for 30s (exec: show, gracefulStop: 10s)
 
 
-running (01.0s), 50/50 VUs, 322 complete and 0 interrupted iterations
+running (01.0s), 50/50 VUs, 867 complete and 0 interrupted iterations
 show   [   3% ] 50 VUs  01.0s/30s
 
-running (02.0s), 50/50 VUs, 642 complete and 0 interrupted iterations
+running (02.0s), 50/50 VUs, 1695 complete and 0 interrupted iterations
 show   [   7% ] 50 VUs  02.0s/30s
 
-running (03.0s), 50/50 VUs, 977 complete and 0 interrupted iterations
+running (03.0s), 50/50 VUs, 2519 complete and 0 interrupted iterations
 show   [  10% ] 50 VUs  03.0s/30s
 
-running (04.0s), 50/50 VUs, 1274 complete and 0 interrupted iterations
+running (04.0s), 50/50 VUs, 3413 complete and 0 interrupted iterations
 show   [  13% ] 50 VUs  04.0s/30s
 
-running (05.0s), 50/50 VUs, 1553 complete and 0 interrupted iterations
+running (05.0s), 50/50 VUs, 4212 complete and 0 interrupted iterations
 show   [  17% ] 50 VUs  05.0s/30s
 
-running (06.0s), 50/50 VUs, 1875 complete and 0 interrupted iterations
+running (06.0s), 50/50 VUs, 5154 complete and 0 interrupted iterations
 show   [  20% ] 50 VUs  06.0s/30s
 
-running (07.0s), 50/50 VUs, 2306 complete and 0 interrupted iterations
+running (07.0s), 50/50 VUs, 6010 complete and 0 interrupted iterations
 show   [  23% ] 50 VUs  07.0s/30s
 
-running (08.0s), 50/50 VUs, 2720 complete and 0 interrupted iterations
+running (08.0s), 50/50 VUs, 6973 complete and 0 interrupted iterations
 show   [  27% ] 50 VUs  08.0s/30s
 
-running (09.0s), 50/50 VUs, 3075 complete and 0 interrupted iterations
+running (09.0s), 50/50 VUs, 7988 complete and 0 interrupted iterations
 show   [  30% ] 50 VUs  09.0s/30s
 
-running (10.0s), 50/50 VUs, 3390 complete and 0 interrupted iterations
+running (10.0s), 50/50 VUs, 8848 complete and 0 interrupted iterations
 show   [  33% ] 50 VUs  10.0s/30s
 
-running (11.0s), 50/50 VUs, 3730 complete and 0 interrupted iterations
+running (11.0s), 50/50 VUs, 9734 complete and 0 interrupted iterations
 show   [  37% ] 50 VUs  11.0s/30s
 
-running (12.0s), 50/50 VUs, 4119 complete and 0 interrupted iterations
+running (12.0s), 50/50 VUs, 10825 complete and 0 interrupted iterations
 show   [  40% ] 50 VUs  12.0s/30s
 
-running (13.0s), 50/50 VUs, 4474 complete and 0 interrupted iterations
+running (13.0s), 50/50 VUs, 11843 complete and 0 interrupted iterations
 show   [  43% ] 50 VUs  13.0s/30s
 
-running (14.0s), 50/50 VUs, 4829 complete and 0 interrupted iterations
+running (14.0s), 50/50 VUs, 12782 complete and 0 interrupted iterations
 show   [  47% ] 50 VUs  14.0s/30s
 
-running (15.0s), 50/50 VUs, 5227 complete and 0 interrupted iterations
+running (15.0s), 50/50 VUs, 13879 complete and 0 interrupted iterations
 show   [  50% ] 50 VUs  15.0s/30s
 
-running (16.0s), 50/50 VUs, 5587 complete and 0 interrupted iterations
+running (16.0s), 50/50 VUs, 14970 complete and 0 interrupted iterations
 show   [  53% ] 50 VUs  16.0s/30s
 
-running (17.0s), 50/50 VUs, 5963 complete and 0 interrupted iterations
+running (17.0s), 50/50 VUs, 16032 complete and 0 interrupted iterations
 show   [  57% ] 50 VUs  17.0s/30s
 
-running (18.0s), 50/50 VUs, 6379 complete and 0 interrupted iterations
+running (18.0s), 50/50 VUs, 17161 complete and 0 interrupted iterations
 show   [  60% ] 50 VUs  18.0s/30s
 
-running (19.0s), 50/50 VUs, 6762 complete and 0 interrupted iterations
+running (19.0s), 50/50 VUs, 18247 complete and 0 interrupted iterations
 show   [  63% ] 50 VUs  19.0s/30s
 
-running (20.0s), 50/50 VUs, 7061 complete and 0 interrupted iterations
+running (20.0s), 50/50 VUs, 19330 complete and 0 interrupted iterations
 show   [  67% ] 50 VUs  20.0s/30s
 
-running (21.0s), 50/50 VUs, 7344 complete and 0 interrupted iterations
+running (21.0s), 50/50 VUs, 20430 complete and 0 interrupted iterations
 show   [  70% ] 50 VUs  21.0s/30s
 
-running (22.0s), 50/50 VUs, 7671 complete and 0 interrupted iterations
+running (22.0s), 50/50 VUs, 21579 complete and 0 interrupted iterations
 show   [  73% ] 50 VUs  22.0s/30s
 
-running (23.0s), 50/50 VUs, 7991 complete and 0 interrupted iterations
+running (23.0s), 50/50 VUs, 22627 complete and 0 interrupted iterations
 show   [  77% ] 50 VUs  23.0s/30s
 
-running (24.0s), 50/50 VUs, 8293 complete and 0 interrupted iterations
+running (24.0s), 50/50 VUs, 23775 complete and 0 interrupted iterations
 show   [  80% ] 50 VUs  24.0s/30s
 
-running (25.0s), 50/50 VUs, 8595 complete and 0 interrupted iterations
+running (25.0s), 50/50 VUs, 24898 complete and 0 interrupted iterations
 show   [  83% ] 50 VUs  25.0s/30s
 
-running (26.0s), 50/50 VUs, 8899 complete and 0 interrupted iterations
+running (26.0s), 50/50 VUs, 26004 complete and 0 interrupted iterations
 show   [  87% ] 50 VUs  26.0s/30s
 
-running (27.0s), 50/50 VUs, 9147 complete and 0 interrupted iterations
+running (27.0s), 50/50 VUs, 27085 complete and 0 interrupted iterations
 show   [  90% ] 50 VUs  27.0s/30s
 
-running (28.0s), 50/50 VUs, 9401 complete and 0 interrupted iterations
+running (28.0s), 50/50 VUs, 28212 complete and 0 interrupted iterations
 show   [  93% ] 50 VUs  28.0s/30s
 
-running (29.0s), 50/50 VUs, 9729 complete and 0 interrupted iterations
+running (29.0s), 50/50 VUs, 29363 complete and 0 interrupted iterations
 show   [  97% ] 50 VUs  29.0s/30s
 
-running (30.0s), 50/50 VUs, 9954 complete and 0 interrupted iterations
+running (30.0s), 50/50 VUs, 30521 complete and 0 interrupted iterations
 show   [ 100% ] 50 VUs  30.0s/30s
 
 
@@ -113,35 +113,35 @@ show   [ 100% ] 50 VUs  30.0s/30s
 
   █ TOTAL RESULTS 
 
-    checks_total.......: 20048   665.68872/s
-    checks_succeeded...: 100.00% 20048 out of 20048
-    checks_failed......: 0.00%   0 out of 20048
+    checks_total.......: 61142   2036.001263/s
+    checks_succeeded...: 100.00% 61142 out of 61142
+    checks_failed......: 0.00%   0 out of 61142
 
     ✓ status ok
     ✓ has data
 
     CUSTOM
-    failed_requests................: 0.00%  0 out of 10024
-    ttfb...........................: avg=148.8ms  min=7.51ms  med=134.68ms max=816.76ms p(90)=228.47ms p(95)=274.74ms
+    failed_requests................: 0.00%  0 out of 30571
+    ttfb...........................: avg=48.65ms min=3.86ms med=42.23ms max=201.32ms p(90)=80.92ms p(95)=86.07ms
 
     HTTP
-    http_req_duration..............: avg=149.19ms min=9.77ms  med=135.09ms max=816.99ms p(90)=228.81ms p(95)=275.37ms
-      { expected_response:true }...: avg=149.19ms min=9.77ms  med=135.09ms max=816.99ms p(90)=228.81ms p(95)=275.37ms
-    http_req_failed................: 0.00%  0 out of 10024
-    http_reqs......................: 10024  332.84436/s
+    http_req_duration..............: avg=48.79ms min=3.99ms med=42.39ms max=201.39ms p(90)=81.05ms p(95)=86.29ms
+      { expected_response:true }...: avg=48.79ms min=3.99ms med=42.39ms max=201.39ms p(90)=81.05ms p(95)=86.29ms
+    http_req_failed................: 0.00%  0 out of 30571
+    http_reqs......................: 30571  1018.000631/s
 
     EXECUTION
-    iteration_duration.............: avg=149.94ms min=10.16ms med=135.84ms max=817.41ms p(90)=230.48ms p(95)=275.85ms
-    iterations.....................: 10024  332.84436/s
+    iteration_duration.............: avg=49.08ms min=4.28ms med=42.81ms max=201.58ms p(90)=81.36ms p(95)=86.66ms
+    iterations.....................: 30571  1018.000631/s
     vus............................: 50     min=50         max=50
     vus_max........................: 50     min=50         max=50
 
     NETWORK
-    data_received..................: 5.1 MB 171 kB/s
-    data_sent......................: 1.8 MB 59 kB/s
+    data_received..................: 16 MB  523 kB/s
+    data_sent......................: 5.4 MB 181 kB/s
 
 
 
 
-running (30.1s), 00/50 VUs, 10024 complete and 0 interrupted iterations
+running (30.0s), 00/50 VUs, 30571 complete and 0 interrupted iterations
 show ✓ [ 100% ] 50 VUs  30s
