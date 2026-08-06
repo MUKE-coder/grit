@@ -36,6 +36,7 @@ export async function GET(
           description: block.description ?? subcategory.description,
           categories: [category.slug, subcategory.slug],
           dependencies: block.dependencies ?? [],
+          registryDependencies: block.registryDependencies ?? [],
           // Present only on swappable blocks. `grit swap --list` filters on it,
           // so it has to be in the INDEX — otherwise listing the variants for
           // one slot means fetching every item in the registry.
@@ -70,7 +71,12 @@ export async function GET(
       description: block.description ?? subcategory.description,
       author: 'Grit Framework (https://gritframework.dev)',
       dependencies: block.dependencies ?? [],
-      registryDependencies: [],
+      // Bare names resolve against shadcn's own registry, so `shadcn add` writes
+      // components/ui/button.tsx into the installing project before it writes
+      // this block. Blocks that import a primitive MUST declare it here: the
+      // alternative is a file that references a component nobody installed,
+      // which fails in someone else's build rather than in ours.
+      registryDependencies: block.registryDependencies ?? [],
       files: [
         {
           // Nested by subcategory so the path stays readable AND unique:
