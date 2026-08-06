@@ -281,7 +281,35 @@ Environment:      DATABASE_URL, REDIS_URL, JWT_SECRET`,
         },
       },
       {
-        title: 'Add the domain',
+        title: 'Or deploy the whole stack as Compose',
+        body: 'The steps above deploy the API as a single Dockerfile application. To bring up API, web, Postgres and Redis together, add a Compose service instead and point it at the production compose file. Choose Compose rather than Stack: Stack targets Docker Swarm and does not support the build key, and three of the services build from a Dockerfile.',
+        code: {
+          language: 'text',
+          code: `Add Service:    Compose
+Provider:       GitHub -> your repository
+Compose Path:   ./docker-compose.prod.yml
+Compose Type:   docker-compose`,
+        },
+      },
+      {
+        title: 'Give the containers their environment',
+        body: 'Dokploy writes dashboard variables into a .env beside the compose file, and does not inject them into containers. That file only reaches a container if the compose file asks for it, so either keep the ${VAR} substitution in every environment block or add env_file to each service. Skipping this is why a stack boots with an empty DATABASE_URL despite the dashboard being full.',
+        code: {
+          language: 'yaml',
+          code: `services:
+  api:
+    env_file:
+      - .env        # or keep \${VAR} in the environment block
+    environment:
+      DATABASE_URL: \${DATABASE_URL}`,
+        },
+      },
+      {
+        title: 'Attach domains per service',
+        body: 'On a Compose deployment the Domains tab asks which service a domain belongs to, so web and api each get their own. Dokploy generates the Traefik labels; you do not write them. Preview Compose shows exactly what it will inject before you deploy, which is worth reading once.',
+      },
+      {
+        title: 'Add the domain and TLS',
         body: 'Dokploy provisions TLS through Traefik. If Cloudflare sits in front with the orange cloud on, set SSL/TLS to Full (strict): Flexible produces a redirect loop that looks like an application bug.',
       },
     ],
@@ -291,6 +319,66 @@ Environment:      DATABASE_URL, REDIS_URL, JWT_SECRET`,
       'Dokploy updates itself in place. Snapshot the volume before a major upgrade.',
       'Remove explicit container_name values from the compose file. Dokploy suffixes names so two projects can share a server, and an explicit container_name overrides that, which means a staging copy of the same stack on the same box collides with production.',
       'Keep using ${VAR} substitution in the environment blocks. Dashboard variables are written to a .env beside the compose file, so they reach a running container through Compose substitution rather than being injected directly.',
+      'Auto-deploy re-clones the repository on every deploy, which wipes the working directory. Anything written there at runtime, uploads included, is gone on the next push. Use a named volume or Dokploy File Mounts, never a path inside the repo.',
+      'A custom deploy command replaces the default rather than adding to it. The default is docker compose -p <name> -f <path> up -d --build --remove-orphans, so anything you drop from it stops happening.',
+    ],
+  },
+  {
+    slug: 'orbita',
+    name: 'Orbita',
+    tagline: 'A multi-tenant PaaS for your own VPS, with zero-config deploys for Grit apps.',
+    kind: 'self-hosted',
+    costFrom: 'Cost of the VPS (~$5)',
+    effort: 'Medium',
+    bestFor:
+      'Freelancers and agencies hosting several clients on one server. Every organisation gets its own Docker network, its own encryption keys, its own resource quota and its own dashboard, which is the part general-purpose panels do not do.',
+    notFor:
+      'Anything where you need a large community to have hit your problem first. Orbita is early: it is built by the same author as Grit, which is why Grit apps deploy with no configuration, and it has nothing like the operational history of Dokploy or Coolify.',
+    managedPostgres: false,
+    managedRedis: false,
+    persistentDisk: true,
+    docsUrl: 'https://github.com/MUKE-coder/orbita',
+    steps: [
+      {
+        title: 'Point a domain at a fresh Ubuntu server',
+        body: 'Orbita expects Ubuntu 24.04 with ports 80, 443 and 8080 open, and an A record already resolving to the box. It provisions TLS on first boot, so the DNS has to be in place before you start rather than after.',
+      },
+      {
+        title: 'Initialise the server',
+        body: 'One interactive command does the whole server setup: it hardens the box, creates a deploy user with SSH keys, disables root and password login, installs Docker with Swarm and Traefik, and creates your admin credentials. It is a single binary of about 30 MB that idles under 50 MB of RAM, which is why it fits on the same small VPS as the apps it runs.',
+        code: { language: 'bash', code: 'orbita init' },
+      },
+      {
+        title: 'Describe the deployment once',
+        body: 'orbita.yaml names the repository, the add-ons to provision and the domains to route. Postgres, Redis and MinIO are created for you rather than being services you write into a compose file, which is the difference between this and pointing Dokploy at docker-compose.prod.yml.',
+        code: {
+          language: 'yaml',
+          code: `app: my-app
+repo: you/my-app
+addons: [postgres, redis]
+domains:
+  web: app.example.com
+  api: api.app.example.com
+migrate: true
+env:
+  from: .env.production`,
+        },
+      },
+      {
+        title: 'Deploy',
+        body: 'Run from a directory containing grit.json. Orbita reads the Grit project layout directly, so there is no build configuration to fill in: it knows where the API is, where the web app is, and which one needs the database. ' + MIGRATE_NOTE,
+        code: { language: 'bash', code: 'orbita deploy' },
+      },
+      {
+        title: 'Deploy on push',
+        body: 'Add a GitHub token and Orbita will deploy from a webhook on every push to the tracked branch, the same way the other panels here do.',
+      },
+    ],
+    gotchas: [
+      'Early software. At the time of writing the repository is around a hundred commits old with a handful of stars, so you are an early adopter rather than a user of a settled product. That is a reasonable trade for the multi-tenancy and a bad one if this is a client deadline.',
+      'It is the control plane behind Grit Cloud, so its Grit support is genuinely first class and its support for everything else is younger. Deploying a non-Grit app is possible via Dockerfile, Compose or Nixpacks, but you are on the less-travelled path.',
+      'Ubuntu 24.04 specifically. The init script hardens and configures a known base; running it on a different distribution is not a supported combination.',
+      'Postgres, Redis and MinIO run as add-ons on your box. Backups and upgrades are yours exactly as they are on Dokploy or Coolify: see the backup page.',
     ],
   },
   {

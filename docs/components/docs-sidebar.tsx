@@ -265,6 +265,7 @@ const navItems: NavItem[] = [
     icon: <Rocket className="h-3.5 w-3.5" />,
     items: [
       { title: 'Choosing a host', href: '/docs/deployment' },
+      { title: 'Deploy from GitHub', href: '/docs/deployment/from-github' },
       { title: 'Environment variables', href: '/docs/deployment/environment' },
       { title: 'Test the build locally', href: '/docs/deployment/build-locally' },
       { title: 'Go-live checklist', href: '/docs/deployment/checklist' },
