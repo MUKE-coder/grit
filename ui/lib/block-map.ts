@@ -63,6 +63,13 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-pricing-sections-three-tiers-with-enterprise-band": dynamic(() => import('@/registry/marketing/pricing-sections/three-tiers-with-enterprise-band').then((m) => ({ default: m.default }))),
   "marketing-pricing-sections-three-tiers-with-toggle": dynamic(() => import('@/registry/marketing/pricing-sections/three-tiers-with-toggle').then((m) => ({ default: m.default }))),
   "marketing-pricing-sections-two-tiers-overlapping": dynamic(() => import('@/registry/marketing/pricing-sections/two-tiers-overlapping').then((m) => ({ default: m.default }))),
+  "marketing-stats-boxed-three-up": dynamic(() => import('@/registry/marketing/stats/boxed-three-up').then((m) => ({ default: m.default }))),
+  "marketing-stats-card-over-world-map": dynamic(() => import('@/registry/marketing/stats/card-over-world-map').then((m) => ({ default: m.default }))),
+  "marketing-stats-heading-with-ruled-stats": dynamic(() => import('@/registry/marketing/stats/heading-with-ruled-stats').then((m) => ({ default: m.default }))),
+  "marketing-stats-inline-with-copy": dynamic(() => import('@/registry/marketing/stats/inline-with-copy').then((m) => ({ default: m.default }))),
+  "marketing-stats-map-above-three-up": dynamic(() => import('@/registry/marketing/stats/map-above-three-up').then((m) => ({ default: m.default }))),
+  "marketing-stats-single-giant-number": dynamic(() => import('@/registry/marketing/stats/single-giant-number').then((m) => ({ default: m.default }))),
+  "marketing-stats-stats-with-quote": dynamic(() => import('@/registry/marketing/stats/stats-with-quote').then((m) => ({ default: m.default }))),
   "marketing-team-sections-bento-collage": dynamic(() => import('@/registry/marketing/team-sections/bento-collage').then((m) => ({ default: m.default }))),
   "marketing-team-sections-card-grid": dynamic(() => import('@/registry/marketing/team-sections/card-grid').then((m) => ({ default: m.default }))),
   "marketing-team-sections-circular-centered": dynamic(() => import('@/registry/marketing/team-sections/circular-centered').then((m) => ({ default: m.default }))),
@@ -71,5 +78,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-team-sections-timeline-journey": dynamic(() => import('@/registry/marketing/team-sections/timeline-journey').then((m) => ({ default: m.default }))),
 }
 
-/** 63 blocks at generation time. */
-export const BLOCK_COUNT: number = 63
+/** 70 blocks at generation time. */
+export const BLOCK_COUNT: number = 70
