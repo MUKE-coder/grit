@@ -39,7 +39,13 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-hero-sections-with-ai-chat": dynamic(() => import('@/registry/marketing/hero-sections/with-ai-chat').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-with-app-screenshot": dynamic(() => import('@/registry/marketing/hero-sections/with-app-screenshot').then((m) => ({ default: m.default }))),
   "marketing-hero-sections-with-mega-menu": dynamic(() => import('@/registry/marketing/hero-sections/with-mega-menu').then((m) => ({ default: m.default }))),
+  "marketing-team-sections-bento-collage": dynamic(() => import('@/registry/marketing/team-sections/bento-collage').then((m) => ({ default: m.default }))),
+  "marketing-team-sections-card-grid": dynamic(() => import('@/registry/marketing/team-sections/card-grid').then((m) => ({ default: m.default }))),
+  "marketing-team-sections-circular-centered": dynamic(() => import('@/registry/marketing/team-sections/circular-centered').then((m) => ({ default: m.default }))),
+  "marketing-team-sections-overlay-grid": dynamic(() => import('@/registry/marketing/team-sections/overlay-grid').then((m) => ({ default: m.default }))),
+  "marketing-team-sections-stats-with-polaroids": dynamic(() => import('@/registry/marketing/team-sections/stats-with-polaroids').then((m) => ({ default: m.default }))),
+  "marketing-team-sections-timeline-journey": dynamic(() => import('@/registry/marketing/team-sections/timeline-journey').then((m) => ({ default: m.default }))),
 }
 
-/** 33 blocks at generation time. */
-export const BLOCK_COUNT: number = 33
+/** 39 blocks at generation time. */
+export const BLOCK_COUNT: number = 39
