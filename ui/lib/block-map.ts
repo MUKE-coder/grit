@@ -10,6 +10,9 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "application-ui-buttons-solid-default": dynamic(() => import('@/registry/application-ui/buttons/solid-default').then((m) => ({ default: m.default }))),
   "application-ui-inputs-bordered-default": dynamic(() => import('@/registry/application-ui/inputs/bordered-default').then((m) => ({ default: m.default }))),
   "application-ui-inputs-soft-filled": dynamic(() => import('@/registry/application-ui/inputs/soft-filled').then((m) => ({ default: m.default }))),
+  "marketing-code-blocks-code-with-preview": dynamic(() => import('@/registry/marketing/code-blocks/code-with-preview').then((m) => ({ default: m.default }))),
+  "marketing-code-blocks-json-viewer": dynamic(() => import('@/registry/marketing/code-blocks/json-viewer').then((m) => ({ default: m.default }))),
+  "marketing-code-blocks-tabbed-window": dynamic(() => import('@/registry/marketing/code-blocks/tabbed-window').then((m) => ({ default: m.default }))),
   "marketing-cta-sections-dark-card-centered": dynamic(() => import('@/registry/marketing/cta-sections/dark-card-centered').then((m) => ({ default: m.default }))),
   "marketing-cta-sections-dark-panel-with-screenshot": dynamic(() => import('@/registry/marketing/cta-sections/dark-panel-with-screenshot').then((m) => ({ default: m.default }))),
   "marketing-cta-sections-full-bleed-glow": dynamic(() => import('@/registry/marketing/cta-sections/full-bleed-glow').then((m) => ({ default: m.default }))),
@@ -83,5 +86,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-team-sections-timeline-journey": dynamic(() => import('@/registry/marketing/team-sections/timeline-journey').then((m) => ({ default: m.default }))),
 }
 
-/** 75 blocks at generation time. */
-export const BLOCK_COUNT: number = 75
+/** 78 blocks at generation time. */
+export const BLOCK_COUNT: number = 78

@@ -535,6 +535,35 @@ export const CATALOG: Category[] = [
             ],
           },
           { slug: 'content-sections', name: 'Content Sections', description: 'Long-form prose with headings and figures.', blocks: [] },
+          {
+            slug: 'code-blocks',
+            name: 'Code Blocks',
+            description:
+              'Windows, viewers and a code-beside-preview split. These highlight with about thirty lines of regex rather than shipping Shiki or Prism, because the smallest real highlighter outweighs the rest of a marketing page. The trade is stated in every file: use them for samples you control, not for code someone else submits.',
+            blocks: [
+              {
+                slug: 'tabbed-window',
+                name: 'Tabbed window',
+                description:
+                  'A tab per language, wired as a real tablist with arrow-key navigation. Line numbers sit outside the text so copying does not copy them.',
+                previewHeight: 560,
+              },
+              {
+                slug: 'json-viewer',
+                name: 'JSON viewer',
+                description:
+                  'A response capped at a readable height and scrolling inside it. The scroll region is focusable, without which its content cannot be reached from the keyboard at all.',
+                previewHeight: 620,
+              },
+              {
+                slug: 'code-with-preview',
+                name: 'Code with preview',
+                description:
+                  'Source on the left, what it renders on the right, as real markup rather than a screenshot that goes stale the moment you restyle a button.',
+                previewHeight: 860,
+              },
+            ],
+          },
           { slug: 'logo-clouds', name: 'Logo Clouds', description: 'Customer and partner logos.', blocks: [] },
           {
             slug: 'integrations',
