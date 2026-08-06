@@ -120,7 +120,7 @@ function PlanHeader({ plan }: { plan: Plan }) {
         }`}
       >
         {plan.cta ?? 'Buy plan'}
-        <span className="sr-only"> — the {plan.name} plan</span>
+        <span className="sr-only">, the {plan.name} plan</span>
       </a>
     </>
   )

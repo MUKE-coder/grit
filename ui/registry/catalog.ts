@@ -764,7 +764,21 @@ export const CATALOG: Category[] = [
       {
         name: 'Page Examples',
         subcategories: [
-          { slug: 'landing-pages', name: 'Landing Pages', description: 'Complete pages assembled from the sections above.', blocks: [] },
+          {
+            slug: 'landing-pages',
+            name: 'Landing Pages',
+            description:
+              'Complete pages assembled from the sections above. These install as a single file because the registry ships one file per block, so treat them as a starting point you own rather than a component to configure: the first thing to do is split it into the sections you actually want.',
+            blocks: [
+              {
+                slug: 'saas-product',
+                name: 'SaaS product',
+                description:
+                  'Nav, hero, logo cloud, features, bento, results and a closing ask. The section order is the argument: claim, proof, what it does, what it costs to try.',
+                previewHeight: 2400,
+              },
+            ],
+          },
           { slug: 'pricing-pages', name: 'Pricing Pages', description: 'Full pricing pages with FAQ and comparison.', blocks: [] },
           { slug: 'about-pages', name: 'About Pages', description: 'Story, team, and values in one page.', blocks: [] },
         ],
