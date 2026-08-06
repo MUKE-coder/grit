@@ -40,6 +40,8 @@ export type BenchRow = {
   rps: number
   /** true when the opponent's own container saturated — a real ceiling */
   appBound: boolean
+  /** repeated measurement could not separate the two; show no winner */
+  inconclusive?: boolean
 }
 
 export type BenchScenario = {
@@ -192,12 +194,18 @@ export function BenchmarkChart({ scenarios }: { scenarios: BenchScenario[] }) {
                   <div
                     className={
                       'text-sm font-bold tabular-nums ' +
-                      (behind ? 'text-[#f5a623]' : 'text-primary')
+                      (row.inconclusive
+                        ? 'text-muted-foreground'
+                        : behind
+                          ? 'text-[#f5a623]'
+                          : 'text-primary')
                     }
                   >
-                    {behind
-                      ? `${(1 / row.ratio).toFixed(2)}× slower`
-                      : `${row.ratio.toFixed(2)}× faster`}
+                    {row.inconclusive
+                      ? 'too close to call'
+                      : behind
+                        ? `${(1 / row.ratio).toFixed(2)}× slower`
+                        : `${row.ratio.toFixed(2)}× faster`}
                   </div>
                   <div className="text-[11px] font-medium leading-tight text-muted-foreground group-hover:text-primary transition-colors mt-1">
                     vs {row.framework}

@@ -6,6 +6,7 @@ import { SiteHeader } from '@/components/site-header'
 import { CodeBlock } from '@/components/code-block'
 import { HeroCodeTabs, InstallTabs } from '@/components/hero-code-tabs'
 import { HomepageBenchmarks } from '@/components/homepage-benchmarks'
+import { HomepageCapabilities } from '@/components/homepage-capabilities'
 import { OneApiClients } from '@/components/one-api-clients'
 import { ThemeShowcase } from '@/components/theme-showcase'
 import { PlatformShowcase } from '@/components/platform-showcase'
@@ -259,6 +260,9 @@ export default function HomePage() {
           argument this project has. Numbers live in config/benchmarks.ts so the
           chart cannot drift from the methodology pages behind it. */}
       <HomepageBenchmarks />
+
+      {/* The benchmark answers how fast. This answers how much you assemble. */}
+      <HomepageCapabilities />
 
       {/* ═══ WHAT IS ALREADY IN THE BOX ═══
 
