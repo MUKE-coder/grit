@@ -10,6 +10,12 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "application-ui-buttons-solid-default": dynamic(() => import('@/registry/application-ui/buttons/solid-default').then((m) => ({ default: m.default }))),
   "application-ui-inputs-bordered-default": dynamic(() => import('@/registry/application-ui/inputs/bordered-default').then((m) => ({ default: m.default }))),
   "application-ui-inputs-soft-filled": dynamic(() => import('@/registry/application-ui/inputs/soft-filled').then((m) => ({ default: m.default }))),
+  "marketing-cta-sections-dark-card-centered": dynamic(() => import('@/registry/marketing/cta-sections/dark-card-centered').then((m) => ({ default: m.default }))),
+  "marketing-cta-sections-dark-panel-with-screenshot": dynamic(() => import('@/registry/marketing/cta-sections/dark-panel-with-screenshot').then((m) => ({ default: m.default }))),
+  "marketing-cta-sections-full-bleed-glow": dynamic(() => import('@/registry/marketing/cta-sections/full-bleed-glow').then((m) => ({ default: m.default }))),
+  "marketing-cta-sections-join-the-team": dynamic(() => import('@/registry/marketing/cta-sections/join-the-team').then((m) => ({ default: m.default }))),
+  "marketing-cta-sections-simple-centered": dynamic(() => import('@/registry/marketing/cta-sections/simple-centered').then((m) => ({ default: m.default }))),
+  "marketing-cta-sections-simple-left-aligned": dynamic(() => import('@/registry/marketing/cta-sections/simple-left-aligned').then((m) => ({ default: m.default }))),
   "marketing-faqs-bordered-split": dynamic(() => import('@/registry/marketing/faqs/bordered-split').then((m) => ({ default: m.default }))),
   "marketing-faqs-category-nav": dynamic(() => import('@/registry/marketing/faqs/category-nav').then((m) => ({ default: m.default }))),
   "marketing-faqs-split-with-contact": dynamic(() => import('@/registry/marketing/faqs/split-with-contact').then((m) => ({ default: m.default }))),
@@ -51,5 +57,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-team-sections-timeline-journey": dynamic(() => import('@/registry/marketing/team-sections/timeline-journey').then((m) => ({ default: m.default }))),
 }
 
-/** 43 blocks at generation time. */
-export const BLOCK_COUNT: number = 43
+/** 49 blocks at generation time. */
+export const BLOCK_COUNT: number = 49
