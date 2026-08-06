@@ -248,7 +248,58 @@ export const CATALOG: Category[] = [
               },
             ],
           },
-          { slug: 'cta-sections', name: 'CTA Sections', description: 'A single, unmissable ask.', blocks: [] },
+          {
+            slug: 'cta-sections',
+            name: 'CTA Sections',
+            description:
+              'A single, unmissable ask. Each of these gives the primary action one visual owner and demotes everything beside it to a link, because two buttons of equal weight is not a choice, it is a decision handed back to the visitor.',
+            blocks: [
+              {
+                slug: 'simple-centered',
+                name: 'Simple centered',
+                description:
+                  'Heading, one supporting line, two actions. Nothing competes with the button, which is why it converts.',
+                previewHeight: 460,
+              },
+              {
+                slug: 'simple-left-aligned',
+                name: 'Simple left aligned',
+                description:
+                  'The same ask with the paragraph dropped, for a page that has already made its case further up.',
+                previewHeight: 400,
+              },
+              {
+                slug: 'dark-card-centered',
+                name: 'Dark card centered',
+                description:
+                  'A dark card in a light page, lit by a radial glow rather than a background image. Dark in both themes by design.',
+                previewHeight: 620,
+              },
+              {
+                slug: 'full-bleed-glow',
+                name: 'Full bleed glow',
+                description:
+                  'The same treatment run edge to edge, for a CTA that sits directly above a dark footer.',
+                previewHeight: 600,
+              },
+              {
+                slug: 'dark-panel-with-screenshot',
+                dependencies: ['lucide-react'],
+                name: 'Dark panel with screenshot',
+                description:
+                  'Copy beside a slice of the product, built from markup rather than a PNG so it stays sharp and never goes stale.',
+                previewHeight: 640,
+              },
+              {
+                slug: 'join-the-team',
+                dependencies: ['lucide-react'],
+                name: 'Join the team',
+                description:
+                  'A recruiting card: photo, the pitch, and the perks as a real list a screen reader can count.',
+                previewHeight: 680,
+              },
+            ],
+          },
           { slug: 'bento-grids', name: 'Bento Grids', description: 'Mixed-size tiles that show several features at once.', blocks: [] },
           { slug: 'pricing-sections', name: 'Pricing Sections', description: 'Tiers, toggles, and comparison tables.', blocks: [] },
           { slug: 'header-sections', name: 'Header Sections', description: 'Page headers with a title and supporting copy.', blocks: [] },
