@@ -22,6 +22,24 @@ export interface Block {
   /** npm packages the block imports beyond react */
   dependencies?: string[]
   /**
+   * shadcn registry items the block imports, e.g. ['button', 'input'].
+   *
+   * A bare name resolves against shadcn's own registry, so `shadcn add` pulls
+   * `components/ui/button.tsx` into the installing project before writing this
+   * block. Use it for blocks that genuinely want the primitives — forms, auth
+   * screens, data tables — where hand-rolling a validated input is worse than
+   * depending on one.
+   *
+   * Marketing blocks should stay empty. A hero that drags four Radix packages
+   * into a project to render a heading and a link is a bad trade, and it is the
+   * reason every block in Marketing is plain markup.
+   *
+   * This must list EVERY `@/components/ui/*` the block imports. Miss one and
+   * the block installs against a file that is not there, which fails at build
+   * time in someone else's project rather than in ours.
+   */
+  registryDependencies?: string[]
+  /**
    * Preview frame height in px. Defaults to the viewer's 660, which suits a
    * full-viewport section. Set it lower for a short block — a header or a banner
    * in a 660px frame is mostly empty space, and padding the block with a fake
@@ -797,6 +815,33 @@ export const CATALOG: Category[] = [
           { slug: 'stacked-layouts', name: 'Stacked Layouts', description: 'Top navigation with the content below it.', blocks: [] },
           { slug: 'sidebar-layouts', name: 'Sidebar Layouts', description: 'Persistent left navigation.', blocks: [] },
           { slug: 'multi-column-layouts', name: 'Multi-Column Layouts', description: 'Sidebar, content, and a secondary column.', blocks: [] },
+        ],
+      },
+      {
+        // The only group whose blocks depend on the shadcn primitives. A form
+        // that validates needs a real field wiring layer, and hand-rolling one
+        // per block is how you get inputs that look right and report nothing.
+        // Marketing blocks stay self-contained; see the note on
+        // `registryDependencies` in the Block interface.
+        name: 'Forms',
+        subcategories: [
+          {
+            slug: 'authentication',
+            name: 'Authentication',
+            description:
+              'Sign in, register, reset and verify. These declare the shadcn form primitives rather than hand-rolling inputs, so every field gets a label tied to it, an error tied to it, and aria-invalid that actually flips.',
+            blocks: [
+              {
+                slug: 'sign-in-card-with-oauth',
+                name: 'Sign in card with OAuth',
+                description:
+                  'Providers above, email and password below. Carries the autocomplete attributes a password manager needs, and announces a failed sign-in rather than only showing it.',
+                previewHeight: 760,
+                dependencies: ['react-hook-form', 'zod', '@hookform/resolvers'],
+                registryDependencies: ['button', 'input', 'form'],
+              },
+            ],
+          },
         ],
       },
       {

@@ -39,6 +39,11 @@ type Item struct {
 	Categories   []string `json:"categories"`
 	Dependencies []string `json:"dependencies"`
 
+	// shadcn primitives the block imports, e.g. ["button", "input"]. Named
+	// rather than installed, same as Dependencies: see the note in `grit ui
+	// add`.
+	RegistryDependencies []string `json:"registryDependencies"`
+
 	// Present only on swappable blocks. Carried in the INDEX so `grit swap
 	// --list` can filter without fetching every item in the registry.
 	Slot     string `json:"slot,omitempty"`
@@ -73,7 +78,11 @@ type Component struct {
 	Title        string   `json:"title"`
 	Description  string   `json:"description"`
 	Dependencies []string `json:"dependencies"`
-	Files        []File   `json:"files"`
+	// shadcn primitives this block imports from components/ui. A block that
+	// declares none is self-contained; one that declares "button" will not
+	// compile until components/ui/button.tsx exists in the project.
+	RegistryDependencies []string `json:"registryDependencies"`
+	Files                []File   `json:"files"`
 	CSSVars      struct {
 		Theme map[string]string `json:"theme"`
 	} `json:"cssVars"`

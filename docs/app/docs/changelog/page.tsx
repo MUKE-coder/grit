@@ -28,6 +28,61 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.137.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.137.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 7, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    Grit UI blocks can now declare the shadcn primitives they use, and{' '}
+                    <code>grit ui add</code> tells you about them.
+                  </strong>
+                </p>
+                <p>
+                  Every block in the registry so far has been self-contained markup: install it and
+                  it renders, with nothing else to add. That works for a hero section. It does not
+                  work for a login form, where the thing worth having is the field wiring — a label
+                  tied to its input, an error tied to it by <code>aria-describedby</code>, and{' '}
+                  <code>aria-invalid</code> that actually flips. Hand-rolling that per block is how
+                  you end up with forms that look right and report nothing.
+                </p>
+                <p>
+                  So blocks can now declare <code>registryDependencies</code>, and the registry
+                  serves them. Installing one pulls its primitives in:
+                </p>
+                <pre>
+                  <code>{`$ grit ui add application-ui-authentication-sign-in-card-with-oauth
+
+  ✓ Sign in card with OAuth  components/grit-ui/authentication/sign-in-card-with-oauth.tsx
+
+  Requires: @hookform/resolvers, react-hook-form, zod
+  Install with: pnpm add @hookform/resolvers react-hook-form zod
+
+  Uses shadcn primitives: button, form, input
+  Add any you do not have: npx shadcn@latest add button form input`}</code>
+                </pre>
+                <p>
+                  The primitives are named rather than installed, the same way npm packages already
+                  were: your package manager and workspace layout are your call. But naming them
+                  matters more here than it does for npm packages, because the failure mode is
+                  worse. A block that imports <code>components/ui/button</code> does not fail at
+                  install — it fails at your next build, in a file you did not write. That is the
+                  difference between a one-line fix and half an hour reading a module-not-found
+                  trace.
+                </p>
+                <p>
+                  Marketing blocks are unchanged and stay dependency-free. A hero that drags four
+                  Radix packages into a project to render a heading and a link is a bad trade.
+                </p>
+              </div>
+            </div>
+
             {/* v3.134.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

@@ -130,6 +130,7 @@ func uiAddCmd() *cobra.Command {
 			purple.Printf("\n  Installing into %s\n\n", label)
 
 			deps := map[string]bool{}
+			primitives := map[string]bool{}
 			installed := 0
 
 			for _, name := range args {
@@ -143,6 +144,9 @@ func uiAddCmd() *cobra.Command {
 				}
 				for _, d := range component.Dependencies {
 					deps[d] = true
+				}
+				for _, p := range component.RegistryDependencies {
+					primitives[p] = true
 				}
 
 				// Report the path Write actually used, not a reconstruction of
@@ -171,6 +175,21 @@ func uiAddCmd() *cobra.Command {
 				// you what to run.
 				dim.Printf("  Requires: %s\n", strings.Join(names, ", "))
 				dim.Printf("  Install with: pnpm add %s\n\n", strings.Join(names, " "))
+			}
+
+			// Primitives are named too, and for a sharper reason than npm
+			// packages: a block that imports components/ui/button does not
+			// fail at install, it fails at the next build, in a file the user
+			// did not write. Saying so here is the difference between a
+			// one-line fix and half an hour reading a module-not-found trace.
+			if len(primitives) > 0 {
+				names := make([]string, 0, len(primitives))
+				for p := range primitives {
+					names = append(names, p)
+				}
+				sort.Strings(names)
+				dim.Printf("  Uses shadcn primitives: %s\n", strings.Join(names, ", "))
+				dim.Printf("  Add any you do not have: npx shadcn@latest add %s\n\n", strings.Join(names, " "))
 			}
 
 			dim.Printf("  The components use Grit's design tokens. If this app was not\n")
