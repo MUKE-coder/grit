@@ -173,7 +173,7 @@ export default async function FrameworkBenchmarkPage({
                 <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
                   Both figures come from the same run, minutes apart. Your absolute numbers
                   will differ (different CPU, different disk, different background load)
-                  and so will ours: Grit&apos;s single-row read measured 10,655 req/s in
+                  and so will ours: Grit&apos;s single-row read measured 4,536 req/s in
                   the Bun pair and 1,635 in the Express pair from an identical binary, as hours
                   of write scenarios accumulated in Postgres. The <em>ratio</em> is what should
                   survive. If it does not, something in the setup differs and the steps below are

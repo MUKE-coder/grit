@@ -55,13 +55,13 @@ export default function BenchmarksPage() {
                     Read the ratios, not the raw numbers
                   </h2>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Grit&apos;s single-row read measured <strong>10,655</strong> req/s in the Bun
+                    Grit&apos;s single-row read measured <strong>4,536</strong> req/s in the Bun
                     pair, <strong>4,392</strong> in the Encore pair, <strong>1,911</strong> in the
                     Next.js pair and <strong>1,635</strong> in the Express pair, from an
                     identical binary, as hours of write scenarios accumulated in Postgres and the
                     machine drifted across the session. Within a pair
                     both sides ran minutes apart under the same conditions, so the ratio survives;
-                    lining Bun&apos;s 5,358 up against Encore&apos;s 438 would imply a shared
+                    lining Bun&apos;s 2,717 up against Encore&apos;s 438 would imply a shared
                     baseline that does not exist. Every table below is grouped by pair for that
                     reason.
                   </p>
@@ -109,6 +109,14 @@ export default function BenchmarksPage() {
                       </h3>
                       <span className="text-xs font-mono text-muted-foreground">{fw.version}</span>
                     </div>
+
+                    {fw.preV3134 && (
+                      <p className="text-xs text-warning/90 leading-relaxed mb-2 -mt-1">
+                        Measured before v3.134.0, when a generated write still sent seven
+                        statements to Postgres instead of one. This pair understates Grit and is
+                        being re-run. The Bun pair above is the corrected shape.
+                      </p>
+                    )}
 
                     <div className="overflow-x-auto rounded-xl border border-border/40">
                       <table className="w-full text-sm border-collapse">
@@ -200,18 +208,30 @@ export default function BenchmarksPage() {
                 Where Grit loses
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                <strong>Bun inserts faster than Grit</strong>: 3,311 req/s against 2,686, about
-                a quarter quicker. That row is on this page for the same reason the others are.
+                <strong>Bun edges Grit on the mixed workload</strong>: 621 req/s against 568.
+                That row is on this page for the same reason the others are, but read it with the
+                CPU column beside it. Postgres ran at 764&ndash;825% of its 800% allowance for
+                both sides while Grit&apos;s own container sat at 125%. Neither framework was the
+                limit; they were both queueing behind the same database, and a scenario decided
+                by the database can land either side of 1 between runs. It was 1.08&times; to Grit
+                in the previous pair.
+              </p>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                <strong>The insert scenario used to be here too, and it was real.</strong> Bun was
+                a quarter quicker at it. Turning on Postgres statement logging showed why: a single{' '}
+                <code>POST</code> was sending <strong>seven</strong> statements where Bun sent one.
+                A transaction wrapped around an INSERT that Postgres already makes atomic, a{' '}
+                <code>SELECT</code> re-reading the row just written, and an audit row written even
+                for requests with no authenticated user.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                The cause is GORM&apos;s implicit transaction: every single write is{' '}
-                <code>BEGIN</code> + <code>INSERT</code> + <code>COMMIT</code>, three round trips
-                where Drizzle sends one. v3.133.0 adds{' '}
-                <code>DB_SKIP_DEFAULT_TRANSACTION=true</code> to turn it off, worth roughly a third
-                of write throughput, and leaves it <em>off</em> by default. The generator
-                emits models with relations, and saving a parent with children is several INSERTs;
-                without the wrapping transaction a failure halfway leaves an invoice holding some
-                of its line items. It would make this table look better. It is not worth that.
+                v3.134.0 fixed all three. Inserts went from 2,686 to <strong>4,959</strong> req/s
+                and the scenario reversed from a 0.81&times; loss to a{' '}
+                <strong>2.23&times;</strong> win. The global{' '}
+                <code>DB_SKIP_DEFAULT_TRANSACTION</code> is still off, because it cannot know
+                whether your model has children and a half-written invoice is worse than a slow
+                one. Instead the generator decides per resource, from the definition, where it can
+                see there are no children to lose.
               </p>
             </section>
 
