@@ -56,6 +56,11 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-how-it-works-three-steps-with-arrows": dynamic(() => import('@/registry/marketing/how-it-works/three-steps-with-arrows').then((m) => ({ default: m.default }))),
   "marketing-how-it-works-timeline-with-panels": dynamic(() => import('@/registry/marketing/how-it-works/timeline-with-panels').then((m) => ({ default: m.default }))),
   "marketing-how-it-works-vertical-centered-steps": dynamic(() => import('@/registry/marketing/how-it-works/vertical-centered-steps').then((m) => ({ default: m.default }))),
+  "marketing-integrations-cards-grid": dynamic(() => import('@/registry/marketing/integrations/cards-grid').then((m) => ({ default: m.default }))),
+  "marketing-integrations-framed-grid": dynamic(() => import('@/registry/marketing/integrations/framed-grid').then((m) => ({ default: m.default }))),
+  "marketing-integrations-grouped-by-category": dynamic(() => import('@/registry/marketing/integrations/grouped-by-category').then((m) => ({ default: m.default }))),
+  "marketing-integrations-orbit-ring": dynamic(() => import('@/registry/marketing/integrations/orbit-ring').then((m) => ({ default: m.default }))),
+  "marketing-integrations-split-with-logo-cluster": dynamic(() => import('@/registry/marketing/integrations/split-with-logo-cluster').then((m) => ({ default: m.default }))),
   "marketing-pricing-sections-comparison-table": dynamic(() => import('@/registry/marketing/pricing-sections/comparison-table').then((m) => ({ default: m.default }))),
   "marketing-pricing-sections-dark-cards-over-comparison": dynamic(() => import('@/registry/marketing/pricing-sections/dark-cards-over-comparison').then((m) => ({ default: m.default }))),
   "marketing-pricing-sections-lifetime-split-card": dynamic(() => import('@/registry/marketing/pricing-sections/lifetime-split-card').then((m) => ({ default: m.default }))),
@@ -78,5 +83,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-team-sections-timeline-journey": dynamic(() => import('@/registry/marketing/team-sections/timeline-journey').then((m) => ({ default: m.default }))),
 }
 
-/** 70 blocks at generation time. */
-export const BLOCK_COUNT: number = 70
+/** 75 blocks at generation time. */
+export const BLOCK_COUNT: number = 75
