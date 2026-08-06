@@ -11,11 +11,11 @@
  * apart, three repetitions, medians reported, zero failed requests.
  *
  * That structure is not decoration. Across runs this machine drifts a long way:
- * Grit's single-row read measured 10,655 req/s in the Bun pair, 4,392 in the
+ * Grit's single-row read measured 4,536 req/s in the Bun pair, 4,392 in the
  * Encore pair, 1,911 in the Next.js pair and 1,635 in the Express pair — from an
  * identical binary, as hours of write scenarios accumulated in Postgres. So the absolute figures are
  * only meaningful next to the Grit baseline measured beside them, and the RATIO
- * is what survives comparison. Putting Bun's 5,358 on the same axis as Encore's
+ * is what survives comparison. Putting Bun's 2,717 on the same axis as Encore's
  * 438 would imply a shared baseline that does not exist.
  *
  * Filled in by hand from `python pair-report.py`. A build step that silently
@@ -59,6 +59,13 @@ export interface Framework {
    * which would be someone else's trademark redrawn by us.
    */
   invertOnDark?: boolean
+  /**
+   * Set while a pair still carries figures measured before v3.134.0, which cut
+   * a generated write from seven statements to one. Those runs understate Grit
+   * and say so on the page until they are re-run. Delete the flag with the
+   * numbers, never before.
+   */
+  preV3134?: boolean
   results: Record<ScenarioId, ScenarioResult>
 }
 
@@ -127,26 +134,33 @@ export const FRAMEWORKS: Framework[] = [
     orm: 'Drizzle',
     tagline: 'Bun.serve with reusePort workers, Drizzle over Bun’s native SQL client',
     /*
-     * Re-measured after v3.133.0 turned GORM's prepared-statement cache on. The
-     * original run predated it and had Grit at 1,568 req/s on inserts against
-     * Bun's 3,274, a bit over twice as slow. Planning each statement once per
-     * connection instead of on every request took Grit to 2,686 and cut the
-     * gap to 1.23x. Bun still wins that scenario.
+     * Re-measured on v3.134.0, which cut a generated write from seven statements
+     * to one. The write scenario reversed: Grit was losing it 0.81x and now wins
+     * it 2.23x, going from 2,686 to 4,959 req/s on a machine that was slower
+     * overall (its single-row read fell from 10,655 to 4,536 across the same
+     * two runs).
      *
-     * Note what saturated: on the single-row read Bun pinned its container at
-     * 407% of a 400% allowance while Grit sat at 306% with Postgres at 262%.
-     * Bun's figure there is its ceiling; Grit's is not.
+     * What changed: an audit row written for unauthenticated requests, a SELECT
+     * re-reading the row that had just been inserted, and a transaction wrapped
+     * around a single INSERT that Postgres already makes atomic.
+     *
+     * Note what saturated. On both read and write Bun pins its container near
+     * 400% of a 400% allowance while Grit sits at 294-311%, so Bun is at its
+     * ceiling there and Grit is not. On list and mixed neither is: Postgres runs
+     * at 764-825% and both sides queue behind it, which is why those two ratios
+     * sit near 1 and why mixed can land either side of it between runs.
      */
     stack: 'Bun 1.3, Bun.serve, Drizzle ORM',
     results: {
-      show:  { rps: 5358, gritRps: 10655, median: '8.4 ms',  gritMedian: '3.7 ms',  appCpu: 407, dbCpu: 157, gritAppCpu: 306, gritDbCpu: 262 },
-      write: { rps: 3311, gritRps: 2686,  median: '12.8 ms', gritMedian: '17.1 ms', appCpu: 386, dbCpu: 202, gritAppCpu: 312, gritDbCpu: 504 },
-      list:  { rps: 1048, gritRps: 1206,  median: '41.8 ms', gritMedian: '34.6 ms', appCpu: 244, dbCpu: 809, gritAppCpu: 117, gritDbCpu: 801 },
-      mixed: { rps: 1111, gritRps: 1206,  median: '39.4 ms', gritMedian: '36.1 ms', appCpu: 246, dbCpu: 801, gritAppCpu: 109, gritDbCpu: 808 },
+      show:  { rps: 2717, gritRps: 4536, median: '16.2 ms', gritMedian: '8.2 ms',  appCpu: 399, dbCpu: 153, gritAppCpu: 294, gritDbCpu: 249 },
+      write: { rps: 2224, gritRps: 4959, median: '18.0 ms', gritMedian: '7.7 ms',  appCpu: 412, dbCpu: 195, gritAppCpu: 311, gritDbCpu: 249 },
+      list:  { rps: 590,  gritRps: 615,  median: '70.8 ms', gritMedian: '65.6 ms', appCpu: 267, dbCpu: 798, gritAppCpu: 125, gritDbCpu: 803 },
+      mixed: { rps: 621,  gritRps: 568,  median: '65.8 ms', gritMedian: '70.9 ms', appCpu: 327, dbCpu: 825, gritAppCpu: 125, gritDbCpu: 764 },
     },
   },
   {
     slug: 'encore',
+    preV3134: true,
     logo: '/logos/encore.png',
     color: '#EEEBE0',
     name: 'Encore.ts',
@@ -171,6 +185,7 @@ export const FRAMEWORKS: Framework[] = [
   },
   {
     slug: 'express',
+    preV3134: true,
     logo: '/logos/express.png',
     color: '#5FA04E',
     name: 'Express',
@@ -187,6 +202,7 @@ export const FRAMEWORKS: Framework[] = [
   },
   {
     slug: 'nextjs',
+    preV3134: true,
     logo: '/logos/nextjs.png',
     color: '#ffffff',
     // Near-black on transparent, so it needs a light backing on this theme.
@@ -197,7 +213,7 @@ export const FRAMEWORKS: Framework[] = [
     tagline: 'App Router route handlers, standalone production build, Prisma over Postgres',
     /*
      * Measured a day after the other pairs, on a machine that had drifted: Grit's
-     * single-row read came in at 1,911 here against 10,655 in the Bun pair, from
+     * single-row read came in at 1,911 here against 4,536 in the Bun pair, from
      * the same binary. Next.js saturated its own container in all four scenarios
      * (406-412% of a 400% allowance), so its figures are genuine ceilings.
      */
@@ -211,6 +227,7 @@ export const FRAMEWORKS: Framework[] = [
   },
   {
     slug: 'django',
+    preV3134: true,
     logo: '/logos/django.svg',
     color: '#44B78B',
     name: 'Django',
@@ -232,6 +249,7 @@ export const FRAMEWORKS: Framework[] = [
   },
   {
     slug: 'laravel',
+    preV3134: true,
     logo: '/logos/laravel.png',
     color: '#FF2D20',
     name: 'Laravel',

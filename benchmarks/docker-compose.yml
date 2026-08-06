@@ -87,6 +87,10 @@ services:
       # defaults here match what the scaffold ships.
       DB_PREPARED_STATEMENTS: "${DB_PREPARED_STATEMENTS:-true}"
       DB_SKIP_DEFAULT_TRANSACTION: "${DB_SKIP_DEFAULT_TRANSACTION:-false}"
+      # info makes GORM print the file:line that issued each statement, which is
+      # how the stray user_activities write was traced. Never leave it on for a
+      # measurement: the logging itself costs more than what it is measuring.
+      DB_LOG_LEVEL: "${DB_LOG_LEVEL:-warn}"
     ports:
       - "8091:8080"
     depends_on:
