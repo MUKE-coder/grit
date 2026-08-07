@@ -240,6 +240,72 @@ databases:
 
   /* ── Self-hosted PaaS ──────────────────────────────────────────────── */
   {
+    slug: 'orbita',
+    name: 'Orbita',
+    tagline:
+      'A self-hosted PaaS that already knows what a Grit app is. It reads grit.json and derives the rest.',
+    kind: 'self-hosted',
+    costFrom: 'Cost of the VPS (~$5)',
+    effort: 'Low',
+    bestFor:
+      'Grit apps specifically. It is the only target that reads grit.json, so a three-service deploy is about ten lines of orbita.yaml rather than a Compose file, a Blueprint or three TOMLs. Multi-tenant, so one box can host several clients in isolated organisations.',
+    notFor:
+      'Non-Grit apps that need the fast path — those fall back to the Compose route, where only one service per app is routable. Also not for anyone who does not want to own an operating system.',
+    managedPostgres: true,
+    managedRedis: true,
+    persistentDisk: true,
+    docsUrl: 'https://github.com/MUKE-coder/orbita',
+    steps: [
+      {
+        title: 'Install it once on a fresh VPS',
+        body: 'The installer brings Docker, Swarm, Postgres, Redis and Traefik with it, so there is nothing to set up beforehand. Give it 2 vCPU and 4 GB: Orbita idles around 50 MB, but building three services does not.',
+        code: {
+          language: 'bash',
+          code: `curl -sSL https://raw.githubusercontent.com/MUKE-coder/orbita/main/install.sh \\
+  | sudo ORBITA_DOMAIN=orbita.example.com ORBITA_ACME_EMAIL=you@example.com bash -s -- --yes`,
+        },
+      },
+      {
+        title: 'Register first, immediately',
+        body: 'The first account to register becomes super-admin, and public sign-up closes the moment it exists. Leaving that gap open on a public IP is the one genuinely dangerous minute in the install.',
+      },
+      {
+        title: 'Write orbita.yaml',
+        body: 'This is the whole deploy config. Addons replace the Postgres and Redis services you would declare in Compose, domains replace the Traefik labels, and migrate replaces the one-shot migrate container.',
+        code: {
+          language: 'yaml',
+          code: `app: storefront
+repo: your-org/storefront
+branch: main
+
+addons: [postgres, redis]
+
+domains:
+  web:   example.com
+  admin: admin.example.com
+  api:   api.example.com
+
+migrate: true`,
+        },
+      },
+      {
+        title: 'Deploy, and look at the plan first',
+        body: 'The dry run prints exactly what it will create before anything happens, which is the cheapest way to catch a wrong domain.',
+        code: {
+          language: 'bash',
+          code: `orbita deploy --plan --host prod
+orbita deploy --host prod`,
+        },
+      },
+    ],
+    gotchas: [
+      'Back up /opt/orbita/.env. It holds ENCRYPTION_MASTER_KEY, from which every organisation key is derived — lose it and every stored secret is unrecoverable.',
+      'Migrations run before cutover under a Postgres advisory lock, and a non-zero exit aborts the deploy. The usual cause of a failure there is go.sum not being committed, so the one-off container cannot resolve modules.',
+      'On the Compose path only one service per app is routable, which is why a three-domain app wants the Grit fast path instead.',
+      'If your DNS is behind Cloudflare, set the records to DNS only for the first certificate — the proxy interferes with the ACME handshake.',
+    ],
+  },
+  {
     slug: 'dokploy',
     name: 'Dokploy',
     tagline: 'A Heroku-like panel on your own server. Grit’s own sites run on it.',
@@ -324,64 +390,6 @@ Compose Type:   docker-compose`,
     ],
   },
   {
-    slug: 'orbita',
-    name: 'Orbita',
-    tagline: 'A multi-tenant PaaS for your own VPS, with zero-config deploys for Grit apps.',
-    kind: 'self-hosted',
-    costFrom: 'Cost of the VPS (~$5)',
-    effort: 'Medium',
-    bestFor:
-      'Freelancers and agencies hosting several clients on one server. Every organisation gets its own Docker network, its own encryption keys, its own resource quota and its own dashboard, which is the part general-purpose panels do not do.',
-    notFor:
-      'Anything where you need a large community to have hit your problem first. Orbita is early: it is built by the same author as Grit, which is why Grit apps deploy with no configuration, and it has nothing like the operational history of Dokploy or Coolify.',
-    managedPostgres: false,
-    managedRedis: false,
-    persistentDisk: true,
-    docsUrl: 'https://github.com/MUKE-coder/orbita',
-    steps: [
-      {
-        title: 'Point a domain at a fresh Ubuntu server',
-        body: 'Orbita expects Ubuntu 24.04 with ports 80, 443 and 8080 open, and an A record already resolving to the box. It provisions TLS on first boot, so the DNS has to be in place before you start rather than after.',
-      },
-      {
-        title: 'Initialise the server',
-        body: 'One interactive command does the whole server setup: it hardens the box, creates a deploy user with SSH keys, disables root and password login, installs Docker with Swarm and Traefik, and creates your admin credentials. It is a single binary of about 30 MB that idles under 50 MB of RAM, which is why it fits on the same small VPS as the apps it runs.',
-        code: { language: 'bash', code: 'orbita init' },
-      },
-      {
-        title: 'Describe the deployment once',
-        body: 'orbita.yaml names the repository, the add-ons to provision and the domains to route. Postgres, Redis and MinIO are created for you rather than being services you write into a compose file, which is the difference between this and pointing Dokploy at docker-compose.prod.yml.',
-        code: {
-          language: 'yaml',
-          code: `app: my-app
-repo: you/my-app
-addons: [postgres, redis]
-domains:
-  web: app.example.com
-  api: api.app.example.com
-migrate: true
-env:
-  from: .env.production`,
-        },
-      },
-      {
-        title: 'Deploy',
-        body: 'Run from a directory containing grit.json. Orbita reads the Grit project layout directly, so there is no build configuration to fill in: it knows where the API is, where the web app is, and which one needs the database. ' + MIGRATE_NOTE,
-        code: { language: 'bash', code: 'orbita deploy' },
-      },
-      {
-        title: 'Deploy on push',
-        body: 'Add a GitHub token and Orbita will deploy from a webhook on every push to the tracked branch, the same way the other panels here do.',
-      },
-    ],
-    gotchas: [
-      'Early software. At the time of writing the repository is around a hundred commits old with a handful of stars, so you are an early adopter rather than a user of a settled product. That is a reasonable trade for the multi-tenancy and a bad one if this is a client deadline.',
-      'It is the control plane behind Grit Cloud, so its Grit support is genuinely first class and its support for everything else is younger. Deploying a non-Grit app is possible via Dockerfile, Compose or Nixpacks, but you are on the less-travelled path.',
-      'Ubuntu 24.04 specifically. The init script hardens and configures a known base; running it on a different distribution is not a supported combination.',
-      'Postgres, Redis and MinIO run as add-ons on your box. Backups and upgrades are yours exactly as they are on Dokploy or Coolify: see the backup page.',
-    ],
-  },
-  {
     slug: 'coolify',
     name: 'Coolify',
     tagline: 'Open-source self-hosted PaaS. Similar shape to Dokploy, larger ecosystem.',
@@ -422,73 +430,116 @@ Ports exposed:    8080`,
       'Coolify runs the real Compose engine, which is why it needs the fewest edits: depends_on with condition: service_healthy behaves exactly as it does locally, and services still resolve each other by compose service name.',
     ],
   },
-
-  /* ── Plain servers ─────────────────────────────────────────────────── */
   {
-    slug: 'vps',
-    name: 'VPS (systemd + Caddy)',
-    tagline: 'No platform at all. `grit deploy` builds, uploads and runs it as a service.',
+    slug: 'aws-ec2',
+    name: 'AWS EC2',
+    tagline:
+      'A bare Linux box plus an Application Load Balancer doing TLS and host-based routing.',
     kind: 'vps',
-    costFrom: '~$5',
-    effort: 'Medium',
+    costFrom: '~$30 (t3.medium + ALB)',
+    effort: 'High',
     bestFor:
-      'The cheapest and fastest production setup for a single-binary Grit app. No Docker, no daemon, no control plane: one binary under systemd behind Caddy.',
+      'Teams already on AWS who want the standard production pattern there: ACM certificates, ALB routing, and everything inside a VPC they control.',
     notFor:
-      'Teams that need rollbacks, several environments, or more than one machine without building that themselves.',
+      'A first deploy, or a solo project. You are assembling the load balancer, the certificate, three target groups and the DNS yourself, and the ALB alone costs more per month than most of the PaaS options.',
     managedPostgres: false,
     managedRedis: false,
     persistentDisk: true,
-    docsUrl: '/docs/infrastructure/deployment',
+    docsUrl: 'https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html',
     steps: [
       {
-        title: 'Let the CLI do it',
-        body: '`grit deploy` cross-compiles for linux/amd64, uploads over SSH, writes a systemd unit and configures Caddy with automatic TLS. It is the shortest path from a laptop to a live URL that Grit has.',
-        code: { language: 'bash', code: 'grit deploy --host deploy@your-server.com --domain app.example.com' },
+        title: 'Two security groups, not one',
+        body: 'The instance group allows 8080/3000/3001 only from the ALB group — as a source, not an IP range. That is the single control keeping your containers off the public internet.',
       },
       {
-        title: 'Or do it by hand',
-        body: 'The full manual walkthrough (user creation, hardening, Postgres, systemd unit, Caddyfile, log rotation) is its own page.',
-      },
-    ],
-    gotchas: [
-      'A cross-compiled binary that uses cgo will not run on the server. Grit’s default SQLite driver is pure Go for exactly this reason; adding a cgo dependency breaks the build silently until it fails on the box.',
-      'There is no rollback. Keep the previous binary next to the current one and know how to swap it back before you need to.',
-    ],
-  },
-  {
-    slug: 'docker-compose',
-    name: 'Docker Compose',
-    tagline: 'The whole stack (API, Postgres, Redis, MinIO) on one machine.',
-    kind: 'container',
-    costFrom: 'Cost of the host',
-    effort: 'Medium',
-    bestFor:
-      'Staging environments, on-premise installs, and anywhere you need the whole stack reproduced exactly as it runs locally.',
-    notFor: 'Zero-downtime deploys. `compose up` stops the old container before the new one is ready.',
-    managedPostgres: false,
-    managedRedis: false,
-    persistentDisk: true,
-    docsUrl: '/docs/infrastructure/docker',
-    steps: [
-      {
-        title: 'Use the production compose file',
-        body: 'Every Grit project ships `docker-compose.prod.yml` alongside the development one. It differs in the ways that matter: no bind mounts, no exposed database ports, restart policies on.',
+        title: 'Size the instance for the build, not the traffic',
+        body: 'Building two Next.js apps and a Go API back to back OOMs on t3.micro and t3.small. Start at t3.medium with 40 GB of gp3, and add swap.',
         code: {
           language: 'bash',
-          code: 'docker compose -f docker-compose.prod.yml up -d --build',
+          code: `sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile && sudo swapon /swapfile`,
         },
       },
       {
-        title: 'Run migrations in the running container',
-        body: MIGRATE_NOTE,
-        code: { language: 'bash', code: 'docker compose -f docker-compose.prod.yml exec api /app/migrate' },
+        title: 'Adjust the Compose file for a bare VM',
+        body: 'Drop the Traefik labels and the dokploy-network, then add host port mappings so the ALB target groups have something to reach. Postgres and Redis get no ports at all.',
+        code: {
+          language: 'yaml',
+          code: `services:
+  api:
+    ports: ["8080:8080"]
+  admin:
+    ports: ["3001:3000"]
+  web:
+    ports: ["3000:3000"]`,
+        },
+      },
+      {
+        title: 'One certificate, three hostnames',
+        body: 'Request a single ACM certificate with all three hosts as subject alternative names, validated by DNS so it renews itself.',
       },
     ],
     gotchas: [
-      'The development compose file publishes Postgres on a host port so you can connect a GUI. The production one must not: that is how a database ends up on the public internet.',
-      'Named volumes survive `down`, but not `down -v`. That single flag is the difference between a restart and losing the database.',
-      'Use expose rather than ports for anything a reverse proxy fronts. Publishing a host port on a PaaS bypasses its router and its TLS, and on a plain server it puts the service straight on the public internet.',
-      'CapRover cannot deploy this stack. Its compose support covers image, environment, ports, volumes, depends_on and hostname, and deliberately not build, so a file that builds the API from a Dockerfile needs rewriting around prebuilt registry images first.',
+      'An unhealthy target group is almost always the health check path returning non-2xx, or the instance security group not allowing the ALB security group on that port.',
+      'depends_on: condition: service_completed_successfully works here unchanged — this is real Docker Compose on a real VM, so the migrate job needs no pre-deploy workaround.',
+      'There is no GitHub webhook on a bare instance. Either redeploy over SSH by hand or add a GitHub Actions workflow that does it for you.',
+      'If you do not need ALB features, a Caddy container on the instance does host routing and automatic certificates for nothing — see the Lightsail guide.',
+    ],
+  },
+  {
+    slug: 'aws-lightsail',
+    name: 'AWS Lightsail',
+    tagline:
+      'AWS at a flat monthly price, with a static IP and snapshots, fronted by Caddy for automatic HTTPS.',
+    kind: 'vps',
+    costFrom: '~$24 (4 GB plan)',
+    effort: 'Medium',
+    bestFor:
+      'A predictable AWS bill without the VPC and ALB assembly. Automatic daily snapshots of the whole instance disk are the lowest-effort backup baseline of any target here.',
+    notFor:
+      'Anyone needing host-based routing from an AWS load balancer: Lightsail’s own balancer cannot do it, which is why this runs Caddy on the instance instead.',
+    managedPostgres: false,
+    managedRedis: false,
+    persistentDisk: true,
+    docsUrl: 'https://docs.aws.amazon.com/lightsail/',
+    steps: [
+      {
+        title: 'Take the 4 GB plan',
+        body: 'The 2 GB plan OOMs building two Next.js apps and a Go API in one compose build. Add 2 GB of swap on top.',
+      },
+      {
+        title: 'Static IP, then firewall',
+        body: 'Attach a static IP so DNS does not break on restart, then open only 22 (from your IP), 80 and 443. The app ports stay closed — traffic reaches them through Caddy.',
+      },
+      {
+        title: 'Add a Caddy service and a Caddyfile',
+        body: 'Caddy does the host-based routing the Lightsail load balancer cannot, and fetches and renews Let’s Encrypt certificates on its own. No certbot, no renewal cron, no ACM console.',
+        code: {
+          language: 'text',
+          code: `api.example.com {
+    reverse_proxy api:8080
+}
+
+admin.example.com {
+    reverse_proxy admin:3000
+}
+
+example.com {
+    reverse_proxy web:3000
+}`,
+        },
+      },
+      {
+        title: 'Point DNS before the first deploy',
+        body: 'Caddy validates over HTTP-01 on port 80, so the records must already resolve when the container starts. Deploy first and the certificate request fails and backs off.',
+      },
+    ],
+    gotchas: [
+      'If Caddy never issues a certificate, DNS was not resolving to the static IP when it first started. Fix the records, then restart the caddy container.',
+      'Automatic snapshots restore the whole instance to a point in time, not just the database. Keep pg_dump backups as well for anything you would hate to roll back wholesale.',
+      'A 502 from Caddy means the upstream container is not listening yet or has crashed — check the app container logs, not Caddy’s.',
+      'Lightsail Container Service is a different product entirely: it runs images rather than a Compose file, and is closer to Railway than to this guide.',
     ],
   },
 ]
