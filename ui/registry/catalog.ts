@@ -827,6 +827,14 @@ export const CATALOG: Category[] = [
                 dependencies: ['lucide-react'],
               },
               {
+                slug: 'bundle-picker-with-sticky-buy-bar',
+                name: 'Bundle picker with sticky buy bar',
+                description:
+                  'Frequently-bought-together checkboxes with a running total, and a buy bar that appears when the real button scrolls away. The hidden bar leaves the tab order.',
+                previewHeight: 760,
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'product-tabs-with-reviews',
                 name: 'Product tabs with reviews',
                 description:
