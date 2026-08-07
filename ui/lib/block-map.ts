@@ -6,6 +6,7 @@ import type { ComponentType } from 'react'
 
 /** Keyed by the flat registry name: <category>-<subcategory>-<slug>. */
 export const BLOCK_MAP: Record<string, ComponentType> = {
+  "application-ui-authentication-forgot-password-with-sent-state": dynamic(() => import('@/registry/application-ui/authentication/forgot-password-with-sent-state').then((m) => ({ default: m.default }))),
   "application-ui-authentication-register-card-with-password-rules": dynamic(() => import('@/registry/application-ui/authentication/register-card-with-password-rules').then((m) => ({ default: m.default }))),
   "application-ui-authentication-sign-in-card-with-oauth": dynamic(() => import('@/registry/application-ui/authentication/sign-in-card-with-oauth').then((m) => ({ default: m.default }))),
   "application-ui-buttons-glow-ring": dynamic(() => import('@/registry/application-ui/buttons/glow-ring').then((m) => ({ default: m.default }))),
@@ -118,5 +119,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-team-sections-timeline-journey": dynamic(() => import('@/registry/marketing/team-sections/timeline-journey').then((m) => ({ default: m.default }))),
 }
 
-/** 110 blocks at generation time. */
-export const BLOCK_COUNT: number = 110
+/** 111 blocks at generation time. */
+export const BLOCK_COUNT: number = 111
