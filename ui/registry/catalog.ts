@@ -1095,6 +1095,23 @@ export const CATALOG: Category[] = [
         name: 'Forms',
         subcategories: [
           {
+            slug: 'forms',
+            name: 'Resource Forms',
+            description:
+              'Create and edit forms for a single record. Number fields hand up undefined rather than coercing an empty box to zero, and an invalid submit raises a summary that focuses the field it names.',
+            blocks: [
+              {
+                slug: 'resource-form-with-error-summary',
+                name: 'Resource form with error summary',
+                description:
+                  'Text, paired prices, a described character counter, a native select and a role=switch checkbox. Submitting invalid moves focus to a list of what is wrong.',
+                previewHeight: 900,
+                dependencies: ['react-hook-form', 'zod', '@hookform/resolvers', 'lucide-react'],
+                registryDependencies: ['button', 'input', 'form'],
+              },
+            ],
+          },
+          {
             slug: 'authentication',
             name: 'Authentication',
             description:
