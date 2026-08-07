@@ -902,6 +902,14 @@ export const CATALOG: Category[] = [
               'Full-width promotional bands and single-product spotlights, for the top of a storefront.',
             blocks: [
               {
+                slug: 'category-rail-with-featured-promo',
+                name: 'Category rail with featured promo',
+                description:
+                  'A department rail beside one featured promotion. The promo holds still until asked, the rail is a nav of links, and the discount is derived from the prices rather than stored beside them.',
+                previewHeight: 620,
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'department-hero-with-overlap-cards',
                 name: 'Department hero with overlap cards',
                 description:
