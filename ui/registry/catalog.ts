@@ -852,6 +852,14 @@ export const CATALOG: Category[] = [
               'Category grids and department navigation for the top of a storefront.',
             blocks: [
               {
+                slug: 'bento-category-grid',
+                name: 'Bento category grid',
+                description:
+                  'A hero tile, two tall ones and a run of squares. The spans tile the grid exactly and the row height is declared, without which a two-row tile is not actually taller.',
+                previewHeight: 1000,
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'tile-grid-with-overlays',
                 name: 'Tile grid with overlays',
                 description:
