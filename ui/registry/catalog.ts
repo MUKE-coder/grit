@@ -843,6 +843,15 @@ export const CATALOG: Category[] = [
               'Storefront headers with search, account and departments. These declare the shadcn dropdown, because a menu has to trap focus, close on Escape and move with the arrow keys — a hand-rolled one a keyboard user can open and never leave is worse than none.',
             blocks: [
               {
+                slug: 'sticky-header-with-drawer',
+                name: 'Sticky header with drawer',
+                description:
+                  'A header that shrinks on scroll, with a mobile drawer that is a real dialog: focus moves in, is trapped, Escape closes it, and focus returns to the trigger.',
+                previewHeight: 520,
+                dependencies: ['lucide-react'],
+                registryDependencies: ['button', 'sheet'],
+              },
+              {
                 slug: 'three-tier-storefront-header',
                 name: 'Three tier storefront header',
                 description:
