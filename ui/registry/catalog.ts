@@ -1118,15 +1118,6 @@ export const CATALOG: Category[] = [
               'Sign in, register, reset and verify. These declare the shadcn form primitives rather than hand-rolling inputs, so every field gets a label tied to it, an error tied to it, and aria-invalid that actually flips.',
             blocks: [
               {
-                slug: 'signup-with-country-and-fingerprint',
-                name: 'Sign-up with country and device signals',
-                description:
-                  'Orange theme checked against WCAG AA, a searchable ISO 3166 country combobox driven entirely by the keyboard, and a coarse device signature for duplicate-account detection.',
-                previewHeight: 960,
-                dependencies: ['react-hook-form', 'zod', '@hookform/resolvers', 'lucide-react'],
-                registryDependencies: ['button', 'input', 'form'],
-              },
-              {
                 slug: 'forgot-password-with-sent-state',
                 name: 'Forgot password with sent state',
                 description:
