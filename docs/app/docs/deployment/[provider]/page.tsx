@@ -9,6 +9,9 @@ import {
   PROVIDER_KIND_LABEL,
   getProvider,
 } from '@/config/deployment-providers'
+import { getGuide } from '@/config/deployment-guides'
+import { DeploymentGuideBody } from '@/components/deployment-guide'
+import { GuideText } from '@/components/guide-text'
 
 /**
  * One page per hosting provider, rendered from config/deployment-providers.ts.
@@ -46,6 +49,7 @@ export default async function ProviderPage({
   const index = DEPLOYMENT_PROVIDERS.findIndex((p) => p.slug === slug)
   const next = DEPLOYMENT_PROVIDERS[index + 1]
   const external = provider.docsUrl.startsWith('http')
+  const guide = getGuide(slug)
 
   return (
     <div className="min-h-screen bg-background isolate">
@@ -117,7 +121,7 @@ export default async function ProviderPage({
               </div>
             </div>
 
-            <h2 className="text-2xl font-bold tracking-tight mb-6">Setup</h2>
+            <h2 className="text-2xl font-bold tracking-tight mb-4">Quick setup</h2>
             <ol className="space-y-8 mb-14">
               {provider.steps.map((step, i) => (
                 <li key={step.title} className="relative pl-11">
@@ -125,7 +129,9 @@ export default async function ProviderPage({
                     {i + 1}
                   </span>
                   <h3 className="font-semibold mb-2 leading-tight">{step.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-3">{step.body}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                    <GuideText text={step.body} />
+                  </p>
                   {step.code && <CodeBlock language={step.code.language} code={step.code.code} />}
                 </li>
               ))}
@@ -139,10 +145,38 @@ export default async function ProviderPage({
                   className="flex gap-3 rounded-xl border border-border/50 bg-card/40 p-4"
                 >
                   <AlertCircle className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
-                  <p className="text-sm text-muted-foreground leading-relaxed">{g}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    <GuideText text={g} />
+                  </p>
                 </div>
               ))}
             </div>
+
+            {/* The full walkthrough, transcribed from a deploy someone actually
+                did. It follows the quick setup rather than replacing it: the
+                summary is for deciding, this is for doing. */}
+            {guide && (
+              <div className="border-t border-border/40 pt-12 mb-14">
+                <span className="tag-mono text-primary/80 mb-3 block">Full walkthrough</span>
+                <h2 className="text-3xl font-bold tracking-tight mb-4">{guide.title}</h2>
+                <div className="rounded-xl border border-border/50 bg-card/40 p-5 mb-8">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    The example application below is called{' '}
+                    <code className="rounded bg-muted px-1.5 py-0.5 text-[0.85em] font-mono">
+                      sentex
+                    </code>{' '}
+                    and its domains are on{' '}
+                    <code className="rounded bg-muted px-1.5 py-0.5 text-[0.85em] font-mono">
+                      gritcms.com
+                    </code>
+                    . Substitute your own project name and hostnames as you go — every other
+                    detail, including the service layout and the Compose translation, applies
+                    unchanged to any Grit project.
+                  </p>
+                </div>
+                <DeploymentGuideBody guide={guide} />
+              </div>
+            )}
 
             <div className="rounded-xl border border-border/50 bg-card/40 p-5 mb-12">
               <p className="text-sm text-muted-foreground leading-relaxed">

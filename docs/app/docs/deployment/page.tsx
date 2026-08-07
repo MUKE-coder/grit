@@ -8,10 +8,22 @@ import {
   PROVIDER_KIND_LABEL,
   type ProviderKind,
 } from '@/config/deployment-providers'
+import { GUIDE_COMPARISON } from '@/config/deployment-guides'
 
 export const metadata = getDocMetadata('/docs/deployment')
 
 const ORDER: ProviderKind[] = ['paas', 'self-hosted', 'vps', 'container']
+
+/* The comparison table names providers in prose; this maps those names back to
+   the page they belong to, so the first column links rather than being inert
+   text next to four links. */
+const GUIDE_SLUG_BY_NAME: Record<string, string> = {
+  Dokploy: 'dokploy',
+  Coolify: 'coolify',
+  Render: 'render',
+  'Fly.io': 'fly-io',
+  Railway: 'railway',
+}
 
 export default function DeploymentIndexPage() {
   return (
@@ -49,11 +61,12 @@ export default function DeploymentIndexPage() {
                   . Managed database, no server to patch, running in under an hour.
                 </li>
                 <li>
-                  <strong className="text-foreground">Single-binary mode, and cost matters →</strong>{' '}
-                  <Link href="/docs/deployment/vps" className="text-primary hover:underline">
-                    a $5 VPS
+                  <strong className="text-foreground">You want a config file in the repo rather than a dashboard →</strong>{' '}
+                  <Link href="/docs/deployment/fly-io" className="text-primary hover:underline">
+                    Fly.io
                   </Link>
-                  . <code className="text-xs">grit deploy</code> handles the binary, systemd and TLS.
+                  . One <code className="text-xs">fly.toml</code> per app, deployed with{' '}
+                  <code className="text-xs">flyctl</code> and a GitHub Actions workflow.
                 </li>
                 <li>
                   <strong className="text-foreground">Several apps, one bill →</strong>{' '}
@@ -68,10 +81,11 @@ export default function DeploymentIndexPage() {
                 </li>
                 <li>
                   <strong className="text-foreground">On-premise, or the customer owns the hardware →</strong>{' '}
-                  <Link href="/docs/deployment/docker-compose" className="text-primary hover:underline">
-                    Docker Compose
-                  </Link>
-                  .
+                  <Link href="/docs/deployment/dokploy" className="text-primary hover:underline">
+                    Dokploy
+                  </Link>{' '}
+                  on their box. It runs your real{' '}
+                  <code className="text-xs">docker-compose.prod.yml</code> almost unmodified.
                 </li>
               </ul>
               <p className="mt-5 text-xs text-muted-foreground">
@@ -157,6 +171,54 @@ export default function DeploymentIndexPage() {
                           <Minus className="h-4 w-4 text-muted-foreground/50" />
                         )}
                       </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* The four questions that actually differ between these platforms.
+                Everything else is detail you can absorb after choosing. */}
+            <h2 className="text-2xl font-bold tracking-tight mb-2">How each one handles your Compose file</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+              Two of these run <code className="text-xs">docker-compose.prod.yml</code> nearly
+              as written. The other three do not run Compose at all and need it translated into
+              their own model, which changes how migrations are ordered and where domains are
+              configured.
+            </p>
+            <div className="overflow-x-auto mb-14 rounded-xl border border-border/50">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-card/60">
+                  <tr>
+                    {GUIDE_COMPARISON.headers.map((h, i) => (
+                      <th key={i} scope="col" className="px-4 py-3 font-semibold whitespace-nowrap">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {GUIDE_COMPARISON.rows.map((row) => (
+                    <tr key={row[0]} className="hover:bg-card/40">
+                      {row.map((cell, c) => (
+                        <td
+                          key={c}
+                          className={`px-4 py-3 align-top ${
+                            c === 0 ? 'font-medium whitespace-nowrap' : 'text-muted-foreground'
+                          }`}
+                        >
+                          {c === 0 ? (
+                            <Link
+                              href={`/docs/deployment/${GUIDE_SLUG_BY_NAME[cell] ?? ''}`}
+                              className="text-primary hover:underline"
+                            >
+                              {cell}
+                            </Link>
+                          ) : (
+                            cell
+                          )}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
