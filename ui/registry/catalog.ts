@@ -804,6 +804,50 @@ export const CATALOG: Category[] = [
     ],
   },
   {
+    slug: 'ecommerce',
+    name: 'Ecommerce',
+    description:
+      'Storefronts, product grids, category pages and checkout. Ported from the reactui-templates library and reworked to the standards the rest of this registry holds to: theme-aware, one file, and ratings and controls that report themselves to a screen reader rather than only looking right.',
+    groups: [
+      {
+        name: 'Products',
+        subcategories: [
+          {
+            slug: 'product-grids',
+            name: 'Product Grids',
+            description:
+              'Catalogue listings. Every one of these states its rating in text beside the stars, keeps one link per card rather than two, and names its buttons after the product they act on.',
+            blocks: [
+              {
+                slug: 'grid-with-ratings',
+                name: 'Grid with ratings',
+                description:
+                  'Prices, struck-through originals, ratings and an add button that says which product it adds.',
+                previewHeight: 720,
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'digital-goods-grid',
+                name: 'Digital goods grid',
+                description:
+                  'A wide crop and a visible file type, for things with no physical form. Badges stay readable over a dark photograph as well as a light one.',
+                previewHeight: 640,
+              },
+              {
+                slug: 'grid-with-wishlist',
+                name: 'Grid with wishlist',
+                description:
+                  'A save toggle that reports its state with aria-pressed and sits above the stretched card link rather than underneath it.',
+                previewHeight: 720,
+                dependencies: ['lucide-react'],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
     slug: 'application-ui',
     name: 'Application UI',
     description:
