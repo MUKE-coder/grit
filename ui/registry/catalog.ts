@@ -902,6 +902,14 @@ export const CATALOG: Category[] = [
               'Full-width promotional bands and single-product spotlights, for the top of a storefront.',
             blocks: [
               {
+                slug: 'department-hero-with-overlap-cards',
+                name: 'Department hero with overlap cards',
+                description:
+                  'A promo strip with department cards riding over its foot. Four card layouts share one component instead of four index checks, every tile is a link, and the strip waits to be asked rather than advancing on a timer.',
+                previewHeight: 760,
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'organic-hero-with-trust-strip',
                 name: 'Organic hero with trust strip',
                 description:
