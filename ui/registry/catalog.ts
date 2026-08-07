@@ -813,6 +813,22 @@ export const CATALOG: Category[] = [
         name: 'Storefront',
         subcategories: [
           {
+            slug: 'store-categories',
+            name: 'Store Categories',
+            description:
+              'Category grids and department navigation for the top of a storefront.',
+            blocks: [
+              {
+                slug: 'tile-grid-with-overlays',
+                name: 'Tile grid with overlays',
+                description:
+                  'Photographs with the category name laid over them. Renders complete on the server rather than fading itself in, so it is never invisible waiting for JavaScript.',
+                previewHeight: 900,
+                dependencies: ['lucide-react'],
+              },
+            ],
+          },
+          {
             slug: 'store-banners',
             name: 'Store Banners',
             description:
