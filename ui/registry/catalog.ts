@@ -819,6 +819,14 @@ export const CATALOG: Category[] = [
               'Single-product pages: galleries, specifications and the buy box.',
             blocks: [
               {
+                slug: 'physical-product-with-variants',
+                name: 'Physical product with variants',
+                description:
+                  'Gallery, colour and size. Both pickers are fieldsets of radios rather than rows of buttons, and out-of-stock options stay in place with the reason in their label.',
+                previewHeight: 1300,
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'digital-product-with-plans',
                 name: 'Digital product with plans',
                 description:
