@@ -868,6 +868,14 @@ export const CATALOG: Category[] = [
               'Full-width promotional bands and single-product spotlights, for the top of a storefront.',
             blocks: [
               {
+                slug: 'bento-hero-with-proof',
+                name: 'Bento hero with proof',
+                description:
+                  'The headline, the promise and the social proof as tiles. Every tile is either a link or a button, never one nested inside the other.',
+                previewHeight: 900,
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'product-spotlight-with-variants',
                 name: 'Product spotlight with variants',
                 description:
