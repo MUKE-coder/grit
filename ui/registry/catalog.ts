@@ -988,6 +988,14 @@ export const CATALOG: Category[] = [
               'Catalogue listings. Every one of these states its rating in text beside the stars, keeps one link per card rather than two, and names its buttons after the product they act on.',
             blocks: [
               {
+                slug: 'listing-with-sort-and-view-toggle',
+                name: 'Listing with sort and view toggle',
+                description:
+                  'Search, category, sort and a grid or list view. The result count is a live region, the view toggle carries aria-pressed, and newest sorts on a date rather than a boolean.',
+                previewHeight: 900,
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'grid-with-ratings',
                 name: 'Grid with ratings',
                 description:
