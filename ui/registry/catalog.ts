@@ -810,6 +810,27 @@ export const CATALOG: Category[] = [
       'Storefronts, product grids, category pages and checkout. Ported from the reactui-templates library and reworked to the standards the rest of this registry holds to: theme-aware, one file, and ratings and controls that report themselves to a screen reader rather than only looking right.',
     groups: [
       {
+        name: 'Storefront',
+        subcategories: [
+          {
+            slug: 'store-banners',
+            name: 'Store Banners',
+            description:
+              'Full-width promotional bands and single-product spotlights, for the top of a storefront.',
+            blocks: [
+              {
+                slug: 'product-spotlight-with-variants',
+                name: 'Product spotlight with variants',
+                description:
+                  'One product, a variant picker that actually swaps the photograph, and the numbers that make the case. The picker is a fieldset of radios, so arrow keys work and the choice is announced as checked.',
+                previewHeight: 1100,
+                dependencies: ['lucide-react'],
+              },
+            ],
+          },
+        ],
+      },
+      {
         name: 'Products',
         subcategories: [
           {
