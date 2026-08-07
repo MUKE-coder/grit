@@ -8,20 +8,16 @@ import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 /**
- * A preview stand-in for shadcn's Sheet. See components/ui/button.tsx for why
- * these are authored with stock Tailwind rather than shadcn's theme tokens.
+ * Preview stand-in for shadcn's Sheet. See components/ui/button.tsx for why
+ * these use stock Tailwind instead of shadcn's theme tokens.
  *
- * Blocks depend on this rather than rolling a drawer by hand because a panel
- * that merely *looks* modal is the most common lie in a mobile navigation. A
- * hand-rolled one usually has none of: focus moved into the panel on open,
- * focus trapped while it is open, Escape to close, focus returned to the
- * trigger afterwards, and the rest of the page marked `aria-hidden` so the
- * panel is the only thing a screen reader can reach. Radix does all five.
+ * Blocks use this instead of a hand-rolled drawer for the five things Radix
+ * handles: focus into the panel, focus trapped, Escape, focus back to the
+ * trigger, and aria-hidden on the rest of the page.
  *
- * Note it hides the background with `aria-hidden` on the sibling tree rather
- * than with `aria-modal` on the panel. That is deliberate on their part and
- * the stronger of the two: `aria-modal` support is uneven, whereas a hidden
- * subtree is simply not there.
+ * Radix hides the background with aria-hidden on the siblings rather than
+ * aria-modal on the panel. aria-modal support is uneven; a hidden subtree
+ * isn't there at all.
  */
 const Sheet = SheetPrimitive.Root
 const SheetTrigger = SheetPrimitive.Trigger

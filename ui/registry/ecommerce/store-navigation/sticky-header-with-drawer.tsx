@@ -14,33 +14,20 @@ import {
 } from '@/components/ui/sheet'
 
 /*
- * A storefront header that shrinks on scroll, with a mobile drawer.
+ * Storefront header that shrinks on scroll, with a mobile drawer.
  *
- * The drawer is the reason this block declares a primitive. The source
- * rendered a fixed panel and a click-catching overlay when a state flag went
- * true, which *looks* modal and is not: focus stayed on the trigger, tabbing
- * walked straight into the page behind, Escape did nothing, the content behind
- * was still announced, and closing left focus nowhere. shadcn's sheet is Radix
- * Dialog underneath, which moves focus in, traps it, closes on Escape, marks
- * the rest of the page `aria-hidden`, and puts focus back on the trigger
- * afterwards.
+ * The drawer uses the sheet primitive. The source rendered a fixed panel plus
+ * a click-catching overlay when a state flag went true, so focus stayed on the
+ * trigger, tab went straight into the page behind, and Escape did nothing.
  *
- * Two things the primitive cannot decide for you, both handled below. Opening
- * focuses the panel rather than the search field, because the first focusable
- * thing in a mobile drawer is usually an input and focusing it throws up the
- * on-screen keyboard over the menu the person just asked to see. And the
- * drawer closes when the viewport crosses to desktop, because its trigger is
- * `md:hidden` — resize with it open and you have a panel whose only visible
- * exit is the close button.
+ * Two things the primitive can't decide. Opening focuses the panel, not the
+ * search field, so the on-screen keyboard doesn't cover the menu. And the
+ * drawer closes when the viewport crosses to desktop, where its trigger is
+ * md:hidden.
  *
- * The header measures its own height and offsets the page by that, rather than
- * the source's hardcoded `h-[80px] md:h-[130px]` spacer. A fixed header with a
- * guessed spacer is correct only while the two numbers agree, and they stop
- * agreeing the first time someone adds a promo bar.
- *
- * Both search fields are real forms with real labels. A placeholder is not a
- * label: it disappears the moment someone types, and it is not reliably
- * announced.
+ * The page offset is measured from the header instead of the source's
+ * hardcoded h-[80px] md:h-[130px] spacer, which is only correct until someone
+ * adds a promo bar.
  */
 
 export interface NavLink {
@@ -83,9 +70,8 @@ export default function StickyHeaderWithDrawer({
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  /* The trigger is md:hidden, so past that breakpoint an open drawer has no
-     visible way back to it. Match the breakpoint here, not a resize handler
-     firing on every pixel. */
+  /* Trigger is md:hidden, so past that breakpoint an open drawer has no
+     visible way back to it. matchMedia rather than a resize handler. */
   useEffect(() => {
     const desktop = window.matchMedia('(min-width: 48rem)')
     const sync = () => desktop.matches && setOpen(false)
@@ -94,8 +80,8 @@ export default function StickyHeaderWithDrawer({
     return () => desktop.removeEventListener('change', sync)
   }, [])
 
-  /* Measured, not guessed. A hardcoded spacer is right until the header
-     changes height, and then it is silently wrong. */
+  /* Measured. A hardcoded spacer goes silently wrong the moment the header
+     changes height. */
   useEffect(() => {
     const el = document.getElementById('storefront-header')
     if (!el) return
@@ -127,16 +113,9 @@ export default function StickyHeaderWithDrawer({
               </Button>
             </SheetTrigger>
 
-            {/* Radix handles focus in, focus trapped, Escape, hidden
-                background and focus restored. None of that is free in a
-                hand-rolled drawer, and all of it is missing from most of them.
-
-                The override redirects the initial focus to the panel itself.
-                Left alone Radix focuses the first focusable descendant, which
-                here is the search box — and a keyboard sliding up over a menu
-                is not what "open the menu" asked for. preventDefault alone
-                would leave focus on the now-hidden trigger, so the focus() call
-                is not optional. */}
+            {/* Radix focuses the first focusable descendant by default, which
+                here is the search box. preventDefault alone would leave focus
+                on the now-hidden trigger, so the focus() call is required. */}
             <SheetContent
               ref={panel}
               side="left"
@@ -175,8 +154,8 @@ export default function StickyHeaderWithDrawer({
                 <ul role="list">
                   {links.map((link) => (
                     <li key={link.label}>
-                      {/* SheetClose closes the drawer AND restores focus, which
-                          a plain onClick handler does not. */}
+                      {/* SheetClose also restores focus. A plain onClick
+                          handler doesn't. */}
                       <SheetClose asChild>
                         <a
                           href={link.href ?? '#'}
@@ -296,7 +275,7 @@ export default function StickyHeaderWithDrawer({
         </div>
       </header>
 
-      {/* Offset by the header's real height, tracked as it changes. */}
+      {/* Offset by the header's real height. */}
       <div aria-hidden="true" style={{ height }} />
     </>
   )

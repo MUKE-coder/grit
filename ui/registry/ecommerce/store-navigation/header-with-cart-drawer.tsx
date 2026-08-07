@@ -22,34 +22,24 @@ import {
 } from '@/components/ui/sheet'
 
 /*
- * A storefront header whose cart is a real drawer: quantity steppers, a live
- * subtotal, and an empty state.
+ * Storefront header with a cart drawer: per-item steppers, a live subtotal,
+ * and an empty state.
  *
- * Money is integer cents. Floats are the wrong type for money and `0.1 + 0.2`
- * is the usual demonstration of why; a cart is exactly where that surfaces,
- * because it multiplies and sums. Formatting happens once, at the edge, with
- * Intl — which also gets the currency symbol and separators right for the
- * locale instead of hardcoding a dollar sign.
+ * Money is integer cents, formatted once with Intl. Floats are the wrong type
+ * for money and a cart multiplies and sums, so it's where that surfaces.
  *
- * Three things a cart drawer gets wrong more often than not, fixed here:
+ * Three fixes over the source:
  *
- * 1. The steppers are named per item. Six buttons all called "Increase
- *    quantity" are six identical entries in a screen reader's control list.
- *    Each one here says which product it belongs to.
+ * 1. Steppers are named per item. Six buttons all called "Increase quantity"
+ *    are six identical rows in a screen reader's control list.
+ * 2. Quantity and removal changes were silent. The role="status" region says
+ *    what changed and what the cart now totals.
+ * 3. Removing a line unmounts the button that had focus, dropping focus to the
+ *    body. Inside a dialog that means the next Tab starts from the top of the
+ *    document. Focus goes to the next line, or the heading if the cart empties.
  *
- * 2. Changing a quantity or removing a line updates the subtotal silently. A
- *    sighted user sees the number move; nobody else is told anything. The
- *    `role="status"` region below announces what changed and what the cart now
- *    totals.
- *
- * 3. Removing a line destroys the button that had focus, which drops focus to
- *    the body — and in a dialog that means the next Tab starts from the top of
- *    the document. Focus moves deliberately to the next line's remove button,
- *    or to the heading when the cart empties.
- *
- * The source's mobile nav links each carried a ChevronDown, which says "this
- * expands" to anyone who reads icons, and then navigated instead. They are
- * links, so they look like links.
+ * The source's mobile nav links each had a ChevronDown, which promises a
+ * submenu and then navigates.
  */
 
 export interface CartLine {
@@ -111,18 +101,17 @@ export default function HeaderWithCartDrawer({
   const subtotal = lines.reduce((sum, line) => sum + line.price * line.quantity, 0)
   const count = lines.reduce((sum, line) => sum + line.quantity, 0)
 
-  /* The status region is emptied between messages. Setting it to the same
-     string twice — two clicks on the same stepper — is not a change, so
-     assistive tech has nothing to announce the second time. */
+  /* Cleared between messages. Two clicks on the same stepper would set the
+     same string twice, which isn't a change, so nothing gets announced the
+     second time. */
   function announce(message: string) {
     setAnnouncementText('')
     requestAnimationFrame(() => setAnnouncementText(message))
   }
 
-  /* Both the new state and the announcement are derived from `lines` up here
-     rather than inside the updater. Calling setState from within another
-     updater is a rendering side effect, and React runs updaters twice in
-     development precisely to make that kind of thing show up. */
+  /* Derived from `lines` out here, not inside the updater. Calling setState
+     from within another updater is a render side effect, and React runs
+     updaters twice in dev to surface exactly that. */
   function setQuantity(id: string, delta: number) {
     const line = lines.find((item) => item.id === id)
     if (!line) return
@@ -146,8 +135,8 @@ export default function HeaderWithCartDrawer({
         : `${removed.name} removed. Your bag is empty.`,
     )
 
-    /* The button that had focus is about to unmount. Hand focus to the line
-       that takes its place, or to the heading if there is none. */
+    /* The focused button is about to unmount. Hand focus to the line that
+       takes its place, or the heading if there is none. */
     const successor = next[index] ?? next[index - 1]
     requestAnimationFrame(() => {
       if (successor) removeButtons.current.get(successor.id)?.focus()
@@ -231,8 +220,8 @@ export default function HeaderWithCartDrawer({
             </SheetTrigger>
 
             {/* Focus the panel, not its first focusable child. That child is
-                the first line's remove button, so the default behaviour hands
-                a keyboard user an armed delete the instant the cart opens. */}
+                the first line's remove button, so the default hands a keyboard
+                user an armed delete as soon as the cart opens. */}
             <SheetContent
               ref={cartPanel}
               side="right"
@@ -249,9 +238,9 @@ export default function HeaderWithCartDrawer({
                 </SheetTitle>
               </SheetHeader>
 
-              {/* Outside the conditional so it survives the cart emptying —
-                  a live region mounted at the same moment as its message is
-                  frequently missed. */}
+              {/* Outside the conditional so it survives the cart emptying. A
+                  live region that mounts at the same moment as its message is
+                  often missed. */}
               <p role="status" aria-live="polite" className="sr-only">
                 {announcementText}
               </p>
@@ -302,10 +291,9 @@ export default function HeaderWithCartDrawer({
                               onClick={() => remove(line.id)}
                               className="-m-2 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 dark:text-gray-400 dark:hover:bg-white/10"
                             >
-                              {/* A bin, not an X. The panel's own close is an
-                                  X in the corner directly above this one, and
-                                  two adjacent X buttons where one dismisses
-                                  and the other destroys is a trap. */}
+                              {/* A bin rather than an X. The panel's own
+                                  close is an X directly above this one, and
+                                  one of them destroys data. */}
                               <Trash2 aria-hidden="true" className="size-4" />
                               <span className="sr-only">Remove {line.name}</span>
                             </button>
@@ -326,9 +314,8 @@ export default function HeaderWithCartDrawer({
                                 <Minus aria-hidden="true" className="size-3" />
                                 <span className="sr-only">Decrease quantity of {line.name}</span>
                               </button>
-                              {/* The number is decoration for assistive tech —
-                                  the stepper announces the new value, and this
-                                  would otherwise be read as a bare digit. */}
+                              {/* The stepper announces the new value, so this
+                                  would just be a bare digit. */}
                               <span
                                 aria-hidden="true"
                                 className="w-8 text-center text-sm text-gray-900 dark:text-white"

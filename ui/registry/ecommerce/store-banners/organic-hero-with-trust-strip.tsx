@@ -1,31 +1,23 @@
 import { ArrowRight, ChevronRight, Leaf, Scale, Star, ThumbsUp, Truck } from 'lucide-react'
 
 /*
- * A product hero with a floating price tag, two category cards, and a strip of
- * trust claims across the foot.
+ * Product hero with a floating price tag, two category cards, and a strip of
+ * trust claims along the foot.
  *
- * No mount animation. The source set `opacity-0 translate-y-10` and only
- * cleared it from a `useEffect`, which means the entire banner — the headline,
- * the price, both buttons — is invisible until React hydrates. That is a
- * fade-in on a fast laptop and a blank hero on a slow phone, on a crawler, and
- * for anyone who blocks scripts. Anything worth showing should be in the HTML.
- * The source also registered a scroll listener with an empty handler, which
- * cost a re-render budget for nothing.
+ * No mount animation. The source set opacity-0 translate-y-10 and cleared it
+ * from a useEffect, so the headline, the price and both buttons were invisible
+ * until React hydrated: a fade-in on a fast laptop, a blank hero on a slow
+ * phone or a crawler. It also registered a scroll listener with an empty body.
  *
- * The headline is real text, not `bg-clip-text text-transparent`. Gradient
- * text disappears entirely under Windows High Contrast, takes the selection
- * highlight with it, and here the gradient ran gray-900 → gray-700 → gray-900:
- * an effect nobody can see, in exchange for a headline that some people
- * cannot.
+ * The headline is real text rather than bg-clip-text text-transparent.
+ * Gradient text disappears under Windows High Contrast and takes the selection
+ * highlight with it, and the gradient here ran gray-900 to gray-700.
  *
- * Each category card is one link. The source nested an "Explore" `<button>`
- * inside the card, giving a keyboard user two stops for one destination and
- * putting a control inside a thing that behaves like a link. The chevron here
- * is inside the same anchor and marked decorative.
+ * Each category card is one link. The source nested an "Explore" button inside
+ * the card, so a keyboard user got two stops for one destination.
  *
- * The trust strip uses icons rather than emoji. An emoji has a name, and screen
- * readers read it: "delivery truck, short supply chain" is the truck said
- * twice. These are `aria-hidden` next to real text.
+ * The trust strip uses lucide icons rather than emoji. Screen readers read an
+ * emoji's name, so a truck beside "short supply chain" is the truck twice.
  */
 
 export interface TrustPoint {
@@ -66,7 +58,7 @@ const CATEGORIES: CategoryCard[] = [
 export default function OrganicHeroWithTrustStrip({
   eyebrow = 'Premium organic pantry',
   title = 'Organic comes knocking',
-  description = 'Our new run of nuts is the best of this season, picked by the people who grew them and shipped the week it was packed.',
+  description = 'Nuts bought direct from the growers, shipped the week they were packed.',
   fromPrice = 4900,
   image = 'https://images.unsplash.com/photo-1608797178974-15b35a64ede9?w=900&h=900&fit=crop&q=80',
   categories = CATEGORIES,
@@ -98,9 +90,7 @@ export default function OrganicHeroWithTrustStrip({
         <div className="grid grid-cols-1 gap-8 px-4 py-12 sm:px-8 md:grid-cols-12 md:py-16">
           <div className="flex flex-col justify-center md:col-span-5">
             <p className="inline-flex w-fit items-center gap-2 rounded-full bg-sky-700/10 px-4 py-1.5 text-sm font-medium text-sky-900">
-              {/* The ping is decoration, so it is hidden and it stops for
-                  anyone who asked for less motion. A pulsing dot that never
-                  resolves is exactly what that setting is for. */}
+              {/* Decorative, and it stops under reduced motion. */}
               <span aria-hidden="true" className="relative flex size-2.5">
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-sky-400 opacity-75 motion-reduce:animate-none" />
                 <span className="relative inline-flex size-2.5 rounded-full bg-sky-600" />
@@ -133,9 +123,9 @@ export default function OrganicHeroWithTrustStrip({
             </div>
           </div>
 
-          {/* The top padding clears the Premium badge, which is pinned to the
-              same corner this column occupies — without it the badge sits on
-              the first category card. */}
+          {/* Clears the Premium badge, which is pinned to the same corner
+              this column occupies. Without it the badge sits on the first
+              category card. */}
           <div className="md:col-span-7 md:pt-14">
             <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start sm:justify-center">
               <div className="relative">
@@ -143,9 +133,7 @@ export default function OrganicHeroWithTrustStrip({
                   aria-hidden="true"
                   className="absolute -inset-4 rounded-full bg-gradient-to-br from-white/30 to-sky-200/40 blur-2xl"
                 />
-                {/* Empty alt: the heading two elements up already names the
-                    product, and "premium organic product" — the source's alt —
-                    describes nothing a person could act on. */}
+                {/* The heading two elements up already names the product. */}
                 <img
                   src={image}
                   alt=""
@@ -171,11 +159,9 @@ export default function OrganicHeroWithTrustStrip({
                           alt=""
                           className="size-full object-cover transition-transform duration-700 group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                         />
-                        {/* A bottom-weighted scrim, not a flat wash over the
-                            whole tile. The source tinted the entire photo at
-                            60% in the card's own colour, which left both
-                            products as brown shapes — the picture stopped
-                            doing the one job it had. */}
+                        {/* Bottom-weighted. The source tinted the whole photo
+                            at 60% in the card's own colour, which left both
+                            products as brown shapes. */}
                         <span
                           aria-hidden="true"
                           className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"
@@ -201,10 +187,9 @@ export default function OrganicHeroWithTrustStrip({
 
         <ul
           role="list"
-          /* A grid below sm, not wrap + justify-between. Wrapping leaves the
-             last row's items pushed to both edges with a gulf between them,
-             and on a narrow screen the right-hand label ends flush against
-             the padding. */
+          /* Grid below sm. wrap + justify-between pushes the last row's items
+             to both edges, and on a narrow screen the right-hand label ends up
+             flush against the padding. */
           className="grid grid-cols-2 gap-4 bg-white/80 px-4 py-6 backdrop-blur-md sm:flex sm:justify-between sm:gap-6 sm:px-8"
         >
           {trust.map(({ label, Icon, tone }) => (
