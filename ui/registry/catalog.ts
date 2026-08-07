@@ -878,6 +878,14 @@ export const CATALOG: Category[] = [
               'Category grids and department navigation for the top of a storefront.',
             blocks: [
               {
+                slug: 'icon-card-grid-with-counts',
+                name: 'Icon card grid with counts',
+                description:
+                  'Categories as icon cards with a description and an item count, for a catalogue with nothing to photograph. Renders without JavaScript.',
+                previewHeight: 620,
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'classifieds-directory-with-counts',
                 name: 'Classifieds directory with counts',
                 description:
