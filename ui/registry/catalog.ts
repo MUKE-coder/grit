@@ -1101,6 +1101,15 @@ export const CATALOG: Category[] = [
               'Sign in, register, reset and verify. These declare the shadcn form primitives rather than hand-rolling inputs, so every field gets a label tied to it, an error tied to it, and aria-invalid that actually flips.',
             blocks: [
               {
+                slug: 'register-card-with-password-rules',
+                name: 'Register card with password rules',
+                description:
+                  'Registration with a live requirements checklist described to the password field rather than shouted on every keystroke. No positive tabindex, and the schema enforces exactly what the checklist shows.',
+                previewHeight: 860,
+                dependencies: ['react-hook-form', 'zod', '@hookform/resolvers', 'lucide-react'],
+                registryDependencies: ['button', 'input', 'form'],
+              },
+              {
                 slug: 'sign-in-card-with-oauth',
                 name: 'Sign in card with OAuth',
                 description:
