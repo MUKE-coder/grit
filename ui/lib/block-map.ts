@@ -17,6 +17,7 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "ecommerce-product-grids-digital-goods-grid": dynamic(() => import('@/registry/ecommerce/product-grids/digital-goods-grid').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-grid-with-ratings": dynamic(() => import('@/registry/ecommerce/product-grids/grid-with-ratings').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-grid-with-wishlist": dynamic(() => import('@/registry/ecommerce/product-grids/grid-with-wishlist').then((m) => ({ default: m.default }))),
+  "ecommerce-product-grids-listing-with-sort-and-view-toggle": dynamic(() => import('@/registry/ecommerce/product-grids/listing-with-sort-and-view-toggle').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-marketplace-with-filter-tabs": dynamic(() => import('@/registry/ecommerce/product-grids/marketplace-with-filter-tabs').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-scrolling-product-carousel": dynamic(() => import('@/registry/ecommerce/product-grids/scrolling-product-carousel').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-stay-listings-with-galleries": dynamic(() => import('@/registry/ecommerce/product-grids/stay-listings-with-galleries').then((m) => ({ default: m.default }))),
@@ -114,5 +115,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-team-sections-timeline-journey": dynamic(() => import('@/registry/marketing/team-sections/timeline-journey').then((m) => ({ default: m.default }))),
 }
 
-/** 106 blocks at generation time. */
-export const BLOCK_COUNT: number = 106
+/** 107 blocks at generation time. */
+export const BLOCK_COUNT: number = 107
