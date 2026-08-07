@@ -846,7 +846,7 @@ export const CATALOG: Category[] = [
                 slug: 'header-with-cart-drawer',
                 name: 'Header with cart drawer',
                 description:
-                  'Announcement bar, search, account menu and a cart drawer with per-item steppers. Quantity and removal changes are announced, focus survives a removed line, and money is integer cents formatted with Intl.',
+                  'Announcement bar, search, account menu, and a cart drawer with per-item steppers. Quantity and removal changes are announced, focus survives a removed line, and money is integer cents.',
                 previewHeight: 560,
                 dependencies: ['lucide-react'],
                 registryDependencies: ['button', 'dropdown-menu', 'sheet'],
@@ -855,7 +855,7 @@ export const CATALOG: Category[] = [
                 slug: 'sticky-header-with-drawer',
                 name: 'Sticky header with drawer',
                 description:
-                  'A header that shrinks on scroll, with a mobile drawer that is a real dialog: focus moves in, is trapped, Escape closes it, and focus returns to the trigger.',
+                  'A header that shrinks on scroll. The mobile drawer is a real dialog: focus moves in, is trapped, Escape closes it, and focus goes back to the trigger.',
                 previewHeight: 520,
                 dependencies: ['lucide-react'],
                 registryDependencies: ['button', 'sheet'],
@@ -905,7 +905,7 @@ export const CATALOG: Category[] = [
                 slug: 'category-rail-with-featured-promo',
                 name: 'Category rail with featured promo',
                 description:
-                  'A department rail beside one featured promotion. The promo holds still until asked, the rail is a nav of links, and the discount is derived from the prices rather than stored beside them.',
+                  'A department rail beside one featured promotion. The promo holds still until asked, the rail is a nav of links that survives on mobile, and the discount is derived from the prices.',
                 previewHeight: 620,
                 dependencies: ['lucide-react'],
               },
@@ -913,7 +913,7 @@ export const CATALOG: Category[] = [
                 slug: 'department-hero-with-overlap-cards',
                 name: 'Department hero with overlap cards',
                 description:
-                  'A promo strip with department cards riding over its foot. Four card layouts share one component instead of four index checks, every tile is a link, and the strip waits to be asked rather than advancing on a timer.',
+                  'A promo strip with department cards riding over its foot. Four card layouts share one component, every tile is a link, and the strip waits to be asked rather than running on a timer.',
                 previewHeight: 760,
                 dependencies: ['lucide-react'],
               },
@@ -921,7 +921,7 @@ export const CATALOG: Category[] = [
                 slug: 'organic-hero-with-trust-strip',
                 name: 'Organic hero with trust strip',
                 description:
-                  'A product hero with a floating price tag, two category cards and a row of trust claims. Renders fully without JavaScript — no mount fade-in, no gradient-clipped headline.',
+                  'A product hero with a floating price tag, two category cards, and a row of trust claims. Renders fully without JavaScript: no mount fade-in, no gradient-clipped headline.',
                 previewHeight: 640,
                 dependencies: ['lucide-react'],
               },
@@ -929,7 +929,7 @@ export const CATALOG: Category[] = [
                 slug: 'hero-carousel-with-controls',
                 name: 'Hero carousel with controls',
                 description:
-                  'A full-bleed auto-advancing hero with the parts carousels usually skip: a real pause button, reduced-motion respect, off-screen slides removed from the tab order, and a live region that only speaks once you take control.',
+                  'A full-bleed auto-advancing hero with a real pause button, reduced-motion support, off-screen slides kept out of the tab order, and a live region that speaks once you take control.',
                 previewHeight: 720,
                 dependencies: ['lucide-react'],
                 registryDependencies: ['button'],

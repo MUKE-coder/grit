@@ -4,30 +4,24 @@ import { useId, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 /*
- * A wide promo carousel with department cards riding up over its foot.
+ * Wide promo carousel with department cards riding over its foot.
  *
- * The carousel does not advance on its own. That is a decision, not an
- * omission: the moment something moves by itself for more than five seconds
- * you owe the visitor a pause control, a live region, and a reduced-motion
- * path — see `hero-carousel-with-controls` in this same category, which pays
- * all of that. Here the cards below are the point of the block and the strip
- * is a header, so it waits to be asked. Arrows and dots, nothing on a timer.
+ * The strip does not advance on its own. Anything that moves for more than
+ * five seconds needs a pause control, a live region and a reduced-motion path;
+ * hero-carousel-with-controls in this category pays that bill. Here the cards
+ * are the point and the strip is a header, so it waits to be asked.
  *
- * Off-screen slides are `invisible`, not just translated out of frame. A slide
- * parked at translate-x-full is still a focusable link sitting somewhere off
- * to the right, and tabbing into one scrolls the page sideways to a thing
- * nobody can see. Visibility steps at the end of the transition, so the slide
- * still slides.
+ * Off-screen slides are invisible, not just translated out of frame. A slide
+ * parked at translate-x-full still holds a focusable link, and tabbing into it
+ * scrolls the page sideways to something nobody can see. Visibility steps at
+ * the end of the transition, so the slide still slides.
  *
- * The four department cards share one component driven by a `layout` field.
- * The source wrote the same card body four times behind `index === 0`,
- * `index === 1`, `index === 2`, `index === 3` — which means four places to fix
- * every time the card design changes, and a fifth department silently renders
- * an empty box.
+ * The four cards share one component driven by a layout field. The source
+ * wrote the same body four times behind index === 0 through index === 3, so a
+ * fifth department rendered an empty box.
  *
- * Every tile is a link. In the source the sub-category tiles were plain divs
- * with a single "See all" link underneath, so the twelve things that look most
- * clickable on the block were the twelve that were not.
+ * Every tile is a link. In the source they were divs with one "See all" link
+ * underneath, which made the twelve most clickable-looking things inert.
  */
 
 export interface Slide {
@@ -174,14 +168,12 @@ export default function DepartmentHeroWithOverlapCards({
         aria-label={label}
         className="relative h-[400px] w-full overflow-hidden"
       >
-        {/* Live is polite unconditionally: nothing here moves unless somebody
-            moved it, so every change is one they asked to hear about. */}
+        {/* Polite unconditionally. Nothing moves here unless somebody moved
+            it. */}
         <div id={slidesId} aria-live="polite" className="absolute inset-0">
           {slides.map((slide, position) => (
-            /* The group wraps the link rather than being the link. Putting
-               role="group" on the <a> itself would overwrite its link role,
-               and a slide you cannot tell is clickable is worse than a slide
-               without a roledescription. */
+            /* The group wraps the link rather than being it. role="group" on
+               the <a> would overwrite its link role. */
             <div
               key={slide.id}
               role="group"
@@ -196,9 +188,8 @@ export default function DepartmentHeroWithOverlapCards({
               } motion-reduce:transition-none`}
             >
               <a href={slide.href} className="block size-full">
-                {/* Empty alt: the headline below is inside the same link, so
-                    it already names the destination. Repeating it here would
-                    have the link read its own title twice. */}
+                {/* The headline below is inside the same link and already
+                    names the destination. */}
                 <img src={slide.image} alt="" className="size-full object-cover" />
                 <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-6 pb-28">
                   <span className="mx-auto block max-w-7xl px-4 text-2xl font-bold text-white md:text-3xl">
@@ -229,9 +220,8 @@ export default function DepartmentHeroWithOverlapCards({
           <span className="sr-only">Next promotion</span>
         </button>
 
-        {/* Above the overlap so the cards do not bury the dots, and on their
-            own scrim: white-on-white is what a bare dot row becomes the first
-            time somebody uploads a bright photograph. */}
+        {/* Above the overlap so the cards do not bury them, on a scrim so
+            they survive a bright photograph. */}
         <ul
           role="list"
           className="absolute inset-x-0 bottom-24 z-10 mx-auto flex w-fit items-center gap-2 rounded-full bg-black/40 px-3 backdrop-blur-sm"
@@ -258,9 +248,8 @@ export default function DepartmentHeroWithOverlapCards({
         </ul>
       </div>
 
-      {/* The overlap is the whole visual idea: the cards climb over the foot of
-          the promo strip. -mt-20 has to stay smaller than the strip's bottom
-          padding above, or the cards eat the slide's own headline. */}
+      {/* -mt-20 has to stay smaller than the strip's bottom padding above, or
+          the cards eat the slide headline. */}
       <div className="relative z-20 -mt-20 px-4">
         <ul
           role="list"
@@ -323,10 +312,8 @@ export default function DepartmentHeroWithOverlapCards({
                 </>
               )}
 
-              {/* mt-auto pins every card's link to its own foot. Grid makes
-                  the four cards equal height, and without this the link floats
-                  wherever its content happened to end — four links at four
-                  different heights across one row. */}
+              {/* Grid makes the cards equal height; mt-auto stops the links
+                  landing at four different heights across the row. */}
               <a
                 href={department.href}
                 className="mt-auto inline-block pt-3 text-sm font-medium text-blue-600 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:text-blue-400"

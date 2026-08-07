@@ -18,30 +18,25 @@ import {
 } from 'lucide-react'
 
 /*
- * The marketplace homepage layout: a department rail down the side, one
- * featured promotion beside it.
+ * Marketplace homepage layout: a department rail down the side, one featured
+ * promotion beside it.
  *
- * The promo does not run on a timer, and that is the single biggest change
- * from the source. It advanced every five seconds, and interacting with it —
- * clicking a dot, pressing an arrow — set a ten-second reprieve after which it
- * started moving again. So the visitor's own choice had a countdown attached
- * to it: pick the slide you want, read for ten seconds, watch it leave. If a
- * component is going to move on its own it needs a real stop, not a snooze;
- * `hero-carousel-with-controls` in this category shows what that costs. Here
- * the rail is the navigation and the promo is a poster, so it holds still.
+ * The promo does not run on a timer. The source advanced every five seconds
+ * and treated a click on a dot or an arrow as a ten-second reprieve, so
+ * choosing a slide came with a countdown attached. Moving on its own needs a
+ * real stop, not a snooze; hero-carousel-with-controls shows what that costs.
+ * Here the rail is the navigation and the promo is a poster.
  *
- * The department icons are a lucide component per entry. The source carried a
- * `getCategoryIcon` map from emoji string to hand-written inline SVG — about
- * two hundred lines to render twelve glyphs, keyed by the emoji it was
- * replacing, so adding a department meant writing a path.
+ * One lucide component per department. The source carried a getCategoryIcon
+ * map from emoji string to hand-written inline SVG, roughly two hundred lines
+ * for twelve glyphs, so adding a department meant writing a path.
  *
- * The rail is a `<nav>` of links, not a list of divs with hover styling. It is
- * the primary navigation of the page this block sits on.
+ * The rail is a nav of links rather than divs with hover styling. It is the
+ * primary navigation of whatever page this sits on.
  *
  * Prices are integer cents and the discount is derived. The source stored
- * "1,599", "1,799" and `discount: 11` as three independent strings, which is
- * three chances to disagree — and 1599 off 1799 is 11.1%, so it already
- * rounded in a direction nobody chose.
+ * "1,599", "1,799" and discount: 11 as three independent strings. 1599 off
+ * 1799 is 11.1%, so it had already rounded in a direction nobody chose.
  */
 
 export interface Department {
@@ -81,13 +76,10 @@ const DEPARTMENTS: Department[] = [
 ]
 
 /*
- * The products are described by what they are rather than by brand. The
- * source named three specific flagship devices and then paired every one with
- * the wrong photograph — the "iPhone 15 Pro Max" slide showed an Android
- * handset, the "Galaxy Z Fold" showed a slab that does not fold, and the
- * "MacBook Pro" showed a phone on a yellow background. A template that names
- * real hardware is a template that ships that mistake to everyone who
- * installs it.
+ * Named by category, not by brand. The source named three specific flagship
+ * devices and paired every one with the wrong photograph: the "iPhone 15 Pro
+ * Max" slide showed an Android handset, the "Galaxy Z Fold" showed a slab that
+ * does not fold, and the "MacBook Pro" showed a phone on a yellow background.
  */
 const PROMOS: Promo[] = [
   {
@@ -107,7 +99,7 @@ const PROMOS: Promo[] = [
     id: 'laptop',
     eyebrow: 'Featured product',
     title: 'Elite collection',
-    subtitle: 'Built for the long shift',
+    subtitle: 'Built for long sessions',
     product: 'Studio laptop',
     specs: '32GB · 2TB · XDR display',
     price: 349900,
@@ -156,11 +148,9 @@ export default function CategoryRailWithFeaturedPromo({
   return (
     <section className="mx-auto max-w-7xl overflow-hidden rounded-2xl border border-gray-200 shadow-xl dark:border-white/10">
       <div className="flex flex-col md:flex-row">
-        {/* The rail becomes a scrolling chip row below md rather than
-            disappearing. The source hid it outright at that breakpoint, which
-            deletes the block's entire navigation on the screen size most
-            people shop from — an easy thing to miss when you only ever look at
-            the wide layout. */}
+        {/* A scrolling chip row below md. The source hid the rail outright at
+            that breakpoint, which deletes the block's navigation on the screen
+            size most people shop from. */}
         <nav
           aria-label={railTitle}
           className="flex w-full shrink-0 flex-col bg-gradient-to-b from-gray-50 to-white md:w-1/4 dark:from-gray-900 dark:to-gray-950"
@@ -191,8 +181,8 @@ export default function CategoryRailWithFeaturedPromo({
                   </span>
                   <span className="group-hover:underline">{label}</span>
                   {featured && (
-                    /* The word, not just the amber tint. A colour is not a
-                       label, and "featured" is information. */
+                    /* The word, not just the amber tint. Colour alone is not
+                       a label. */
                     <span className="ml-auto hidden rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-800 uppercase md:inline dark:bg-amber-500/15 dark:text-amber-300">
                       Featured
                     </span>
@@ -215,7 +205,7 @@ export default function CategoryRailWithFeaturedPromo({
           <div
             id={panelId}
             /* px-16 is the arrows' gutter. At p-6 the previous arrow lands on
-               the product name and the first character of the spec line. */
+               the product name and the first character of the specs. */
             className={`relative flex min-h-[400px] flex-col items-center gap-8 overflow-hidden bg-gradient-to-br px-16 py-6 md:min-h-[550px] md:flex-row md:px-24 md:py-12 ${promo.tone}`}
           >
             <div aria-hidden="true" className="absolute inset-0 opacity-10">
@@ -230,9 +220,9 @@ export default function CategoryRailWithFeaturedPromo({
               </span>
             </p>
 
-            {/* Announced as a whole when it changes: the price, the specs and
-                the title all move together, and reading only the heading would
-                leave someone with last slide's price in their head. */}
+            {/* Announced as a whole. The title, specs and price all change
+                together, and reading only the heading would leave someone with
+                the previous slide's price. */}
             <div aria-live="polite" aria-atomic="true" className="z-10 w-full md:w-1/2">
               <p className="inline-block rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
                 {promo.eyebrow}
@@ -284,8 +274,7 @@ export default function CategoryRailWithFeaturedPromo({
                   aria-hidden="true"
                   className="absolute -inset-8 rounded-full bg-amber-500/20 blur-3xl"
                 />
-                {/* Empty alt: the product name and its specifications are two
-                    elements away in the same panel. */}
+                {/* Product name and specs are two elements away. */}
                 <img
                   src={promo.image}
                   alt=""
