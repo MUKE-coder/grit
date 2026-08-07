@@ -27,6 +27,7 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "ecommerce-store-banners-organic-hero-with-trust-strip": dynamic(() => import('@/registry/ecommerce/store-banners/organic-hero-with-trust-strip').then((m) => ({ default: m.default }))),
   "ecommerce-store-banners-product-spotlight-with-variants": dynamic(() => import('@/registry/ecommerce/store-banners/product-spotlight-with-variants').then((m) => ({ default: m.default }))),
   "ecommerce-store-categories-bento-category-grid": dynamic(() => import('@/registry/ecommerce/store-categories/bento-category-grid').then((m) => ({ default: m.default }))),
+  "ecommerce-store-categories-classifieds-directory-with-counts": dynamic(() => import('@/registry/ecommerce/store-categories/classifieds-directory-with-counts').then((m) => ({ default: m.default }))),
   "ecommerce-store-categories-tile-grid-with-overlays": dynamic(() => import('@/registry/ecommerce/store-categories/tile-grid-with-overlays').then((m) => ({ default: m.default }))),
   "ecommerce-store-navigation-header-with-cart-drawer": dynamic(() => import('@/registry/ecommerce/store-navigation/header-with-cart-drawer').then((m) => ({ default: m.default }))),
   "ecommerce-store-navigation-sticky-header-with-drawer": dynamic(() => import('@/registry/ecommerce/store-navigation/sticky-header-with-drawer').then((m) => ({ default: m.default }))),
@@ -111,5 +112,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-team-sections-timeline-journey": dynamic(() => import('@/registry/marketing/team-sections/timeline-journey').then((m) => ({ default: m.default }))),
 }
 
-/** 103 blocks at generation time. */
-export const BLOCK_COUNT: number = 103
+/** 104 blocks at generation time. */
+export const BLOCK_COUNT: number = 104

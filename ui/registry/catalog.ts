@@ -878,6 +878,14 @@ export const CATALOG: Category[] = [
               'Category grids and department navigation for the top of a storefront.',
             blocks: [
               {
+                slug: 'classifieds-directory-with-counts',
+                name: 'Classifieds directory with counts',
+                description:
+                  'Top-level categories beside their subcategories and listing counts. A real tablist: arrow keys move, Home and End jump, and the panel is reachable with Tab.',
+                previewHeight: 640,
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'bento-category-grid',
                 name: 'Bento category grid',
                 description:
