@@ -23,11 +23,37 @@ const Command = React.forwardRef<
 ))
 Command.displayName = CommandPrimitive.displayName
 
-const CommandDialog = ({ children, ...props }: DialogProps) => {
+/**
+ * Props that belong to the inner Command (filter, shouldFilter, loop, label)
+ * are forwarded rather than swallowed. Without this the dialog is stuck with
+ * cmdk's default filter, which scores by subsequence: every character of the
+ * query only has to appear somewhere in order, so "deplo" matches "errors fix
+ * debug issues problems help broken".
+ */
+type CommandDialogProps = DialogProps &
+  Pick<
+    React.ComponentPropsWithoutRef<typeof CommandPrimitive>,
+    'filter' | 'shouldFilter' | 'loop' | 'label'
+  >
+
+const CommandDialog = ({
+  children,
+  filter,
+  shouldFilter,
+  loop,
+  label,
+  ...props
+}: CommandDialogProps) => {
   return (
     <Dialog {...props}>
       <DialogContent className="overflow-hidden p-0 shadow-lg">
-        <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
+        <Command
+          filter={filter}
+          shouldFilter={shouldFilter}
+          loop={loop}
+          label={label}
+          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5"
+        >
           {children}
         </Command>
       </DialogContent>
