@@ -642,7 +642,7 @@ grit rm resource <Name>`} />
                 </h3>
                 <p className="text-muted-foreground leading-relaxed mb-4">
                   One-command production deployment. See the dedicated{' '}
-                  <Link href="/docs/infrastructure/deploy-command" className="text-primary hover:underline">
+                  <Link href="/docs/deployment/deploy-command" className="text-primary hover:underline">
                     Deploy Command
                   </Link>{' '}
                   guide for full details.

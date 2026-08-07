@@ -7,7 +7,7 @@ import { CodeBlock } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
-export const metadata = getDocMetadata('/docs/infrastructure/deployment')
+export const metadata = getDocMetadata('/docs/deployment/vps')
 
 export default function DeploymentPage() {
   return (
@@ -1093,7 +1093,7 @@ jobs:
                       name: 'Dokploy (Self-Hosted)',
                       desc: 'Open-source PaaS with Docker Compose support, web dashboard, auto SSL via Traefik, and GitHub auto-deploy. Free.',
                       fit: 'Best for Docker Compose-based monorepos like Grit. See our dedicated guide.',
-                      link: '/docs/infrastructure/dokploy',
+                      link: '/docs/deployment/dokploy',
                     },
                   ].map((platform: { name: string; desc: string; fit: string; link?: string }) => (
                     <div key={platform.name} className="p-4 rounded-lg border border-border/30 bg-card/30">

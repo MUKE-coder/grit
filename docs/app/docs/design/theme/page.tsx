@@ -458,7 +458,7 @@ export function ThemeToggle() {
               {/* Nav */}
               <div className="flex items-center justify-between pt-6 border-t border-border/30">
                 <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">
-                  <Link href="/docs/infrastructure/deployment" className="gap-1.5">
+                  <Link href="/docs/deployment/vps" className="gap-1.5">
                     <ArrowLeft className="h-3.5 w-3.5" />
                     Deployment
                   </Link>

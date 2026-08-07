@@ -210,10 +210,10 @@ AuthShield: sentinel.AuthShieldConfig{
             <p>
               For server access, the scaffold&apos;s deploy guide{' '}
               <Link
-                href="/docs/infrastructure/deployment"
+                href="/docs/deployment/vps"
                 className="text-primary hover:underline"
               >
-                (/docs/infrastructure/deployment)
+                (/docs/deployment/vps)
               </Link>{' '}
               defaults to SSH-key-only authentication, with password auth disabled
               in the recommended <code>sshd_config</code>.

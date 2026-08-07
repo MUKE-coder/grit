@@ -591,7 +591,7 @@ func ConnectSQLite(dbPath string) (*gorm.DB, error) {
                   </Link>
                 </Button>
                 <Button variant="ghost" size="sm" asChild className="text-muted-foreground/60 hover:text-foreground">
-                  <Link href="/docs/infrastructure/deployment" className="gap-1.5">
+                  <Link href="/docs/deployment/vps" className="gap-1.5">
                     Deployment
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Link>

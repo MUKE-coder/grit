@@ -7,7 +7,7 @@ import { CodeBlock, StepWithCode } from '@/components/code-block'
 import { LaneFlow } from '@/components/lane-flow'
 import { getDocMetadata } from '@/config/docs-metadata'
 
-export const metadata = getDocMetadata('/docs/infrastructure/deploy-command')
+export const metadata = getDocMetadata('/docs/deployment/deploy-command')
 
 export default function DeployCommandPage() {
   return (
@@ -153,13 +153,13 @@ WantedBy=multi-user.target`}
 
           <div className="flex items-center justify-between pt-8 border-t border-border/40">
             <Button variant="ghost" size="sm" asChild className="text-muted-foreground/70 hover:text-foreground">
-              <Link href="/docs/infrastructure/deployment" className="gap-1.5">
+              <Link href="/docs/deployment/vps" className="gap-1.5">
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Deployment
               </Link>
             </Button>
             <Button variant="ghost" size="sm" asChild className="text-muted-foreground/70 hover:text-foreground">
-              <Link href="/docs/infrastructure/dokploy" className="gap-1.5">
+              <Link href="/docs/deployment/dokploy" className="gap-1.5">
                 Deploy with Dokploy
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>

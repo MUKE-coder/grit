@@ -41,6 +41,29 @@ const nextConfig = {
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]
   },
+  // Deployment used to be split between /docs/infrastructure and
+  // /docs/deployment, which meant two places to look and a Dokploy guide in
+  // each. Everything about shipping now lives under /docs/deployment. These
+  // are permanent: the old URLs are indexed and linked from outside the site.
+  async redirects() {
+    return [
+      {
+        source: '/docs/infrastructure/deployment',
+        destination: '/docs/deployment/vps',
+        permanent: true,
+      },
+      {
+        source: '/docs/infrastructure/deploy-command',
+        destination: '/docs/deployment/deploy-command',
+        permanent: true,
+      },
+      {
+        source: '/docs/infrastructure/dokploy',
+        destination: '/docs/deployment/dokploy',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 export default nextConfig

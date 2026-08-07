@@ -663,7 +663,7 @@ export default function DockerCheatSheetPage() {
                   For full production deployment guides including cloud
                   providers and CI/CD, see the{" "}
                   <Link
-                    href="/docs/infrastructure/deployment"
+                    href="/docs/deployment/vps"
                     className="text-primary hover:underline"
                   >
                     Deployment
