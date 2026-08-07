@@ -944,6 +944,14 @@ export const CATALOG: Category[] = [
                 dependencies: ['lucide-react'],
               },
               {
+                slug: 'scrolling-product-carousel',
+                name: 'Scrolling product carousel',
+                description:
+                  'A horizontal row whose scroll region is focusable and keeps its scrollbar, so the content past the third card is actually reachable. Arrows step by a measured card and disable at each end.',
+                previewHeight: 900,
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'deals-grid-with-stock-meter',
                 name: 'Deals grid with stock meter',
                 description:
