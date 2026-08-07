@@ -878,6 +878,14 @@ export const CATALOG: Category[] = [
               'Category grids and department navigation for the top of a storefront.',
             blocks: [
               {
+                slug: 'circular-category-rail',
+                name: 'Circular category rail',
+                description:
+                  'Department tiles on a native scroll rail. CSS decides how many fit and the buttons scroll by what is visible, so there is no page count to keep in sync with the column count.',
+                previewHeight: 320,
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'icon-card-grid-with-counts',
                 name: 'Icon card grid with counts',
                 description:
