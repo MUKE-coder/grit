@@ -813,6 +813,22 @@ export const CATALOG: Category[] = [
         name: 'Storefront',
         subcategories: [
           {
+            slug: 'product-details',
+            name: 'Product Details',
+            description:
+              'Single-product pages: galleries, specifications and the buy box.',
+            blocks: [
+              {
+                slug: 'digital-product-with-plans',
+                name: 'Digital product with plans',
+                description:
+                  'Screenshots and prose beside a sticky package picker. The picker is a fieldset of radios, the breadcrumb is a list whose separators are not read aloud, and the price lives in one field rather than two.',
+                previewHeight: 1400,
+                dependencies: ['lucide-react'],
+              },
+            ],
+          },
+          {
             slug: 'store-navigation',
             name: 'Store Navigation',
             description:
