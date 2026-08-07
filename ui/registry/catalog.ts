@@ -1101,6 +1101,15 @@ export const CATALOG: Category[] = [
               'Sign in, register, reset and verify. These declare the shadcn form primitives rather than hand-rolling inputs, so every field gets a label tied to it, an error tied to it, and aria-invalid that actually flips.',
             blocks: [
               {
+                slug: 'forgot-password-with-sent-state',
+                name: 'Forgot password with sent state',
+                description:
+                  'Request a reset link, then the state after it: the form is replaced, focus moves to the confirmation, and resend is aria-disabled during its cooldown so the button keeps focus.',
+                previewHeight: 700,
+                dependencies: ['react-hook-form', 'zod', '@hookform/resolvers', 'lucide-react'],
+                registryDependencies: ['button', 'input', 'form'],
+              },
+              {
                 slug: 'register-card-with-password-rules',
                 name: 'Register card with password rules',
                 description:
