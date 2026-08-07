@@ -827,6 +827,14 @@ export const CATALOG: Category[] = [
                 dependencies: ['lucide-react'],
               },
               {
+                slug: 'product-tabs-with-reviews',
+                name: 'Product tabs with reviews',
+                description:
+                  'Description, reviews and shipping as a real tablist, with a rating distribution and verified-purchase badges. Arrow keys move between tabs and the review dates are machine readable.',
+                previewHeight: 720,
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'digital-product-with-plans',
                 name: 'Digital product with plans',
                 description:
