@@ -27,6 +27,7 @@ import {
   GraduationCap,
 } from 'lucide-react'
 import { COURSES } from '@/config/courses'
+import { DEPLOYMENT_PROVIDERS } from '@/config/deployment-providers'
 
 interface SearchItem {
   title: string
@@ -76,6 +77,21 @@ function buildCourseSearchItems(): SearchItem[] {
     }
   }
   return out
+}
+
+/*
+ * Every provider guide, generated from the same list the pages are generated
+ * from. Hand-maintaining these was why none of the eight existed in search:
+ * the pages shipped and the index was never touched, so "railway" and "fly"
+ * found nothing.
+ */
+function buildDeploymentSearchItems(): SearchItem[] {
+  return DEPLOYMENT_PROVIDERS.map((provider) => ({
+    title: provider.name,
+    href: `/docs/deployment/${provider.slug}`,
+    section: 'Deployment',
+    keywords: `deploy deployment host hosting ${provider.name} ${provider.slug} ${provider.tagline} ${provider.kind} ${provider.bestFor} ${provider.costFrom} production ship live`,
+  }))
 }
 
 const searchIndex: SearchItem[] = [
@@ -175,7 +191,6 @@ const searchIndex: SearchItem[] = [
   { title: 'Docker Setup', href: '/docs/infrastructure/docker', section: 'Infrastructure', keywords: 'docker compose container postgresql redis minio' },
   { title: 'Docker Cheat Sheet', href: '/docs/infrastructure/docker-cheatsheet', section: 'Infrastructure', keywords: 'docker commands cheat sheet reference' },
   { title: 'Database & Migrations', href: '/docs/infrastructure/database', section: 'Infrastructure', keywords: 'postgresql database connection pool config' },
-  { title: 'Deployment', href: '/docs/infrastructure/deployment', section: 'Infrastructure', keywords: 'deploy production hosting railway fly docker' },
 
   // Design System
   { title: 'Theme & Colors', href: '/docs/design/theme', section: 'Design System', keywords: 'theme dark light colors palette tailwind design' },
@@ -208,6 +223,17 @@ const searchIndex: SearchItem[] = [
   // Plugins
   { title: 'Plugins Overview', href: '/docs/plugins', section: 'Plugins', keywords: 'plugins extensions websockets stripe oauth grit-websockets grit-stripe grit-oauth packages' },
 
+  // Deployment — everything about getting a Grit app live, in one section.
+  { title: 'Choosing a host', href: '/docs/deployment', section: 'Deployment', keywords: 'deploy deployment hosting host provider compare comparison which where paas vps managed self-host pick choose railway render fly orbita dokploy coolify aws ec2 lightsail cost price' },
+  { title: 'Deploy from GitHub', href: '/docs/deployment/from-github', section: 'Deployment', keywords: 'deploy github repository push continuous ci cd actions auto deploy branch main pipeline' },
+  { title: 'Environment variables', href: '/docs/deployment/environment', section: 'Deployment', keywords: 'env environment variables secrets config production database url redis s3 smtp jwt secret dotenv' },
+  { title: 'Test the build locally', href: '/docs/deployment/build-locally', section: 'Deployment', keywords: 'build locally test docker image compile verify before deploy dry run production build' },
+  { title: 'Go-live checklist', href: '/docs/deployment/checklist', section: 'Deployment', keywords: 'checklist go live launch production ready pre-flight verify backups migrations health check domain tls' },
+  { title: 'Deploy command', href: '/docs/deployment/deploy-command', section: 'Deployment', keywords: 'grit deploy command cli one command ship push release' },
+  { title: 'VPS walkthrough', href: '/docs/deployment/vps', section: 'Deployment', keywords: 'vps server ubuntu linux nginx caddy systemd tls certbot ssh manual self host droplet hetzner digitalocean walkthrough' },
+  // One entry per provider, from the same config the pages use.
+  ...buildDeploymentSearchItems(),
+
   // Auto-generated learning-path entries (every course, chapter, lesson, assignment)
   ...buildCourseSearchItems(),
 ]
@@ -220,6 +246,7 @@ const sectionIcons: Record<string, React.ReactNode> = {
   'Frontend (Next.js)': <Layers className="h-3.5 w-3.5" />,
   'Batteries': <Database className="h-3.5 w-3.5" />,
   'Infrastructure': <Settings className="h-3.5 w-3.5" />,
+  'Deployment': <Rocket className="h-3.5 w-3.5" />,
   'Design System': <Palette className="h-3.5 w-3.5" />,
   'Tutorials': <BookOpen className="h-3.5 w-3.5" />,
   'For AI Assistants': <Lightbulb className="h-3.5 w-3.5" />,

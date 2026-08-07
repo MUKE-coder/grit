@@ -539,12 +539,12 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Secrets, access, data and operations checks to work through before a Grit app takes real traffic.',
   },
-  '/docs/infrastructure/deployment': {
+  '/docs/deployment/vps': {
     title: 'Deployment',
     description:
       'Deploy Grit projects: Docker production builds, environment configuration, database setup, and hosting options.',
   },
-  '/docs/infrastructure/dokploy': {
+  '/docs/deployment/dokploy': {
     title: 'Deploy with Dokploy',
     description:
       'Deploy your Grit application with Dokploy: self-hosted PaaS with Docker Compose, auto-SSL, GitHub integration, and a web dashboard on your own VPS.',

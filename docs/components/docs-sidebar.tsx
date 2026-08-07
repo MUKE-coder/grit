@@ -240,14 +240,16 @@ const navItems: NavItem[] = [
       { title: 'Docker Setup', href: '/docs/infrastructure/docker' },
       { title: 'Docker Cheat Sheet', href: '/docs/infrastructure/docker-cheatsheet' },
       { title: 'Database & Migrations', href: '/docs/infrastructure/database' },
-      { title: 'VPS Walkthrough', href: '/docs/infrastructure/deployment' },
-      { title: 'Deploy Command', href: '/docs/infrastructure/deploy-command' },
     ],
   },
   // Deployment is its own top-level section rather than a page under
   // Infrastructure. Nobody looking for "how do I get this on Fly.io" thinks to
   // open something called Infrastructure, and four independent reviews of the
   // site failed to find the deployment docs that already existed.
+  // Everything about shipping lives here, including the VPS walkthrough and
+  // the deploy command, which used to sit under Infrastructure and split the
+  // topic across two places. Infrastructure is now Docker and the database:
+  // what runs alongside the app, not how it gets there.
   // Trust questions — versioning, maintainer risk — deliberately in the nav
   // rather than buried. A team evaluating Grit will ask them regardless; the
   // only choice is whether they get our answer or a stranger's.
@@ -269,6 +271,8 @@ const navItems: NavItem[] = [
       { title: 'Environment variables', href: '/docs/deployment/environment' },
       { title: 'Test the build locally', href: '/docs/deployment/build-locally' },
       { title: 'Go-live checklist', href: '/docs/deployment/checklist' },
+      { title: 'Deploy command', href: '/docs/deployment/deploy-command' },
+      { title: 'VPS walkthrough', href: '/docs/deployment/vps' },
       { title: 'Orbita', href: '/docs/deployment/orbita' },
       { title: 'Railway', href: '/docs/deployment/railway' },
       { title: 'Render', href: '/docs/deployment/render' },

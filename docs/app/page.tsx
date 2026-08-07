@@ -982,7 +982,7 @@ export default function HomePage() {
                 ))}
               </ul>
               <Button variant="outline" className="border-border/60 text-foreground hover:bg-accent/30 rounded-full" asChild>
-                <Link href="/docs/infrastructure/deploy-command">
+                <Link href="/docs/deployment/deploy-command">
                   Deploy guide <ArrowRight className="ml-2 h-3.5 w-3.5" />
                 </Link>
               </Button>
