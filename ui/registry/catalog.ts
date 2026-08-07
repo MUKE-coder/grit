@@ -813,6 +813,23 @@ export const CATALOG: Category[] = [
         name: 'Storefront',
         subcategories: [
           {
+            slug: 'store-navigation',
+            name: 'Store Navigation',
+            description:
+              'Storefront headers with search, account and departments. These declare the shadcn dropdown, because a menu has to trap focus, close on Escape and move with the arrow keys — a hand-rolled one a keyboard user can open and never leave is worse than none.',
+            blocks: [
+              {
+                slug: 'three-tier-storefront-header',
+                name: 'Three tier storefront header',
+                description:
+                  'Utility strip, search and account row, then departments. The search is a real form with a real label, the icon links have names, and the counts are announced with their units.',
+                previewHeight: 420,
+                dependencies: ['lucide-react'],
+                registryDependencies: ['button', 'dropdown-menu'],
+              },
+            ],
+          },
+          {
             slug: 'store-categories',
             name: 'Store Categories',
             description:
