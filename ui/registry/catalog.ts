@@ -834,6 +834,22 @@ export const CATALOG: Category[] = [
                 previewHeight: 640,
               },
               {
+                slug: 'marketplace-with-filter-tabs',
+                name: 'Marketplace with filter tabs',
+                description:
+                  'Price first, then condition, then location. A real tablist with arrow keys, cards that are links rather than clickable divs, and a live region that says how many results the filter left.',
+                previewHeight: 1100,
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'deals-grid-with-stock-meter',
+                name: 'Deals grid with stock meter',
+                description:
+                  'Discount, saving, countdown and a stock meter that is a real progressbar. Hover actions reveal on focus as well, so they are not invisible-but-focusable.',
+                previewHeight: 1200,
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'grid-with-wishlist',
                 name: 'Grid with wishlist',
                 description:

@@ -11,9 +11,11 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "application-ui-buttons-solid-default": dynamic(() => import('@/registry/application-ui/buttons/solid-default').then((m) => ({ default: m.default }))),
   "application-ui-inputs-bordered-default": dynamic(() => import('@/registry/application-ui/inputs/bordered-default').then((m) => ({ default: m.default }))),
   "application-ui-inputs-soft-filled": dynamic(() => import('@/registry/application-ui/inputs/soft-filled').then((m) => ({ default: m.default }))),
+  "ecommerce-product-grids-deals-grid-with-stock-meter": dynamic(() => import('@/registry/ecommerce/product-grids/deals-grid-with-stock-meter').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-digital-goods-grid": dynamic(() => import('@/registry/ecommerce/product-grids/digital-goods-grid').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-grid-with-ratings": dynamic(() => import('@/registry/ecommerce/product-grids/grid-with-ratings').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-grid-with-wishlist": dynamic(() => import('@/registry/ecommerce/product-grids/grid-with-wishlist').then((m) => ({ default: m.default }))),
+  "ecommerce-product-grids-marketplace-with-filter-tabs": dynamic(() => import('@/registry/ecommerce/product-grids/marketplace-with-filter-tabs').then((m) => ({ default: m.default }))),
   "marketing-bento-grids-artifact-first": dynamic(() => import('@/registry/marketing/bento-grids/artifact-first').then((m) => ({ default: m.default }))),
   "marketing-bento-grids-divided-frame": dynamic(() => import('@/registry/marketing/bento-grids/divided-frame').then((m) => ({ default: m.default }))),
   "marketing-bento-grids-three-up-with-feature-row": dynamic(() => import('@/registry/marketing/bento-grids/three-up-with-feature-row').then((m) => ({ default: m.default }))),
@@ -94,5 +96,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-team-sections-timeline-journey": dynamic(() => import('@/registry/marketing/team-sections/timeline-journey').then((m) => ({ default: m.default }))),
 }
 
-/** 86 blocks at generation time. */
-export const BLOCK_COUNT: number = 86
+/** 88 blocks at generation time. */
+export const BLOCK_COUNT: number = 88
