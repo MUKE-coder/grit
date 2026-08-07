@@ -902,6 +902,14 @@ export const CATALOG: Category[] = [
               'Full-width promotional bands and single-product spotlights, for the top of a storefront.',
             blocks: [
               {
+                slug: 'organic-hero-with-trust-strip',
+                name: 'Organic hero with trust strip',
+                description:
+                  'A product hero with a floating price tag, two category cards and a row of trust claims. Renders fully without JavaScript — no mount fade-in, no gradient-clipped headline.',
+                previewHeight: 640,
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'hero-carousel-with-controls',
                 name: 'Hero carousel with controls',
                 description:
