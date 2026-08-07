@@ -1,12 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   CommandDialog,
   CommandInput,
   CommandList,
-  CommandEmpty,
   CommandGroup,
   CommandItem,
 } from '@/components/ui/command'
@@ -113,7 +112,7 @@ const searchIndex: SearchItem[] = [
   // Admin Panel
   { title: 'Admin Overview', href: '/docs/admin/overview', section: 'Admin Panel', keywords: 'admin panel dashboard overview filament' },
   { title: 'Resource Definitions', href: '/docs/admin/resources', section: 'Admin Panel', keywords: 'resource define crud table form config columns fields' },
-  { title: 'DataTable', href: '/docs/admin/datatable', section: 'Admin Panel', keywords: 'table list sort filter search pagination columns' },
+  { title: 'DataTable', href: '/docs/admin/datatable', section: 'Admin Panel', keywords: 'admin table list sort filter search pagination columns rows bulk actions' },
   { title: 'Form Builder', href: '/docs/admin/forms', section: 'Admin Panel', keywords: 'form create edit fields input select toggle checkbox' },
   { title: 'Relationships', href: '/docs/admin/relationships', section: 'Admin Panel', keywords: 'relationship belongs_to many_to_many foreign key association preload select' },
   { title: 'Dashboard & Widgets', href: '/docs/admin/widgets', section: 'Admin Panel', keywords: 'dashboard stats chart widget cards analytics' },
@@ -233,8 +232,67 @@ const sectionIcons: Record<string, React.ReactNode> = {
   ),
 }
 
+/*
+ * Search scoring.
+ *
+ * cmdk's default filter scores by subsequence: every character of the query
+ * has to appear in the value in order, with nothing in between mattering. Each
+ * item's value here was the title plus its whole keyword blob, so "deplo"
+ * matched Troubleshooting through "errors fix DEbug issues Problems heLp
+ * brOken", and the results looked random.
+ *
+ * This is a substring match instead, ranked. A term either appears in the
+ * title or the keywords or the item is gone, which makes results predictable:
+ * what you typed is in what you get back.
+ *
+ * Multiple words are AND, not OR. "deploy railway" has to hit both, which is
+ * what people expect from two words and the opposite of what a subsequence
+ * match does with them.
+ */
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/** True when the term starts a word, so "form" hits "Form Builder" but not "platform". */
+function startsWord(haystack: string, term: string) {
+  return new RegExp(`\\b${escapeRegExp(term)}`).test(haystack)
+}
+
+function scoreTerm(title: string, keywords: string, term: string) {
+  if (title === term) return 1
+  if (title.startsWith(term)) return 0.9
+  if (startsWord(title, term)) return 0.8
+  if (title.includes(term)) return 0.6
+  if (startsWord(keywords, term)) return 0.4
+  if (keywords.includes(term)) return 0.2
+  return 0
+}
+
+export function scoreItem(title: string, keywords: string, search: string) {
+  const query = search.trim().toLowerCase()
+  if (!query) return 1
+
+  const haystackTitle = title.toLowerCase()
+  const haystackKeywords = keywords.toLowerCase()
+  const terms = query.split(/\s+/).filter(Boolean)
+
+  let total = 0
+  for (const term of terms) {
+    const score = scoreTerm(haystackTitle, haystackKeywords, term)
+    // One unmatched word drops the item. Partial matches are how you end up
+    // with a list where only the first word did any work.
+    if (score === 0) return 0
+    total += score
+  }
+  return total / terms.length
+}
+
+/** Cap on a result list. Past this nobody is reading, they are retyping. */
+const MAX_RESULTS = 30
+
 export function SearchDialog() {
   const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -256,6 +314,30 @@ export function SearchDialog() {
 
   const sections = Array.from(new Set(searchIndex.map((item) => item.section)))
 
+  /*
+   * Ranking and filtering happen here rather than in cmdk, because cmdk sorts
+   * items inside a group but renders the groups themselves in source order.
+   * With the sections kept, a title match on "deploy" sat underneath two
+   * keyword-only matches purely because Tech Kits is declared above
+   * Infrastructure in the index. Searching wants one ranked list; the sections
+   * are for browsing, so they come back when the box is empty.
+   */
+  const results = useMemo(() => {
+    if (!query.trim()) return null
+    return searchIndex
+      .map((item) => ({ item, score: scoreItem(item.title, item.keywords, query) }))
+      .filter((entry) => entry.score > 0)
+      .sort((a, b) => b.score - a.score || a.item.title.localeCompare(b.item.title))
+      .slice(0, MAX_RESULTS)
+  }, [query])
+
+  /* Clearing on close so reopening starts from browse rather than from
+     whatever was typed last time. */
+  function onOpenChange(next: boolean) {
+    setOpen(next)
+    if (!next) setQuery('')
+  }
+
   return (
     <>
       <button
@@ -268,29 +350,63 @@ export function SearchDialog() {
           <span className="text-xs">⌘</span>K
         </kbd>
       </button>
-      <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Search documentation..." />
+      {/* shouldFilter={false}: the ranking above is the filter. Leaving cmdk's
+          own filter on as well would sort the already-sorted list again. */}
+      <CommandDialog open={open} onOpenChange={onOpenChange} shouldFilter={false}>
+        <CommandInput
+          placeholder="Search documentation..."
+          value={query}
+          onValueChange={setQuery}
+        />
         <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          {sections.map((section) => (
-            <CommandGroup key={section} heading={section}>
-              {searchIndex
-                .filter((item) => item.section === section)
-                .map((item) => (
-                  <CommandItem
-                    key={item.href}
-                    value={`${item.title} ${item.keywords}`}
-                    onSelect={() => onSelect(item.href)}
-                    className="cursor-pointer"
-                  >
-                    <span className="text-muted-foreground/60">
-                      {sectionIcons[item.section] || <FileText className="h-3.5 w-3.5" />}
-                    </span>
-                    <span>{item.title}</span>
-                  </CommandItem>
-                ))}
+          {results === null ? (
+            sections.map((section) => (
+              <CommandGroup key={section} heading={section}>
+                {searchIndex
+                  .filter((item) => item.section === section)
+                  .map((item) => (
+                    <CommandItem
+                      key={item.href}
+                      value={item.href}
+                      onSelect={() => onSelect(item.href)}
+                      className="cursor-pointer"
+                    >
+                      <span className="text-muted-foreground/60">
+                        {sectionIcons[item.section] || <FileText className="h-3.5 w-3.5" />}
+                      </span>
+                      <span>{item.title}</span>
+                    </CommandItem>
+                  ))}
+              </CommandGroup>
+            ))
+          ) : results.length === 0 ? (
+            /* Written out rather than using CommandEmpty, which keys off
+               cmdk's own filtering and never fires with it turned off. */
+            <div className="py-6 text-center text-sm text-muted-foreground">
+              No results for &ldquo;{query}&rdquo;.
+            </div>
+          ) : (
+            <CommandGroup heading={`${results.length} result${results.length === 1 ? '' : 's'}`}>
+              {results.map(({ item }) => (
+                <CommandItem
+                  key={item.href}
+                  value={item.href}
+                  onSelect={() => onSelect(item.href)}
+                  className="cursor-pointer"
+                >
+                  <span className="text-muted-foreground/60">
+                    {sectionIcons[item.section] || <FileText className="h-3.5 w-3.5" />}
+                  </span>
+                  <span>{item.title}</span>
+                  {/* The section is the only thing telling two similarly named
+                      pages apart once the grouping is gone. */}
+                  <span className="ml-auto shrink-0 pl-3 text-xs text-muted-foreground/70">
+                    {item.section}
+                  </span>
+                </CommandItem>
+              ))}
             </CommandGroup>
-          ))}
+          )}
         </CommandList>
       </CommandDialog>
     </>
