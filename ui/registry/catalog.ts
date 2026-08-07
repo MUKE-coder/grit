@@ -902,6 +902,15 @@ export const CATALOG: Category[] = [
               'Full-width promotional bands and single-product spotlights, for the top of a storefront.',
             blocks: [
               {
+                slug: 'hero-carousel-with-controls',
+                name: 'Hero carousel with controls',
+                description:
+                  'A full-bleed auto-advancing hero with the parts carousels usually skip: a real pause button, reduced-motion respect, off-screen slides removed from the tab order, and a live region that only speaks once you take control.',
+                previewHeight: 720,
+                dependencies: ['lucide-react'],
+                registryDependencies: ['button'],
+              },
+              {
                 slug: 'bento-hero-with-proof',
                 name: 'Bento hero with proof',
                 description:
