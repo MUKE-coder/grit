@@ -904,6 +904,14 @@ export const CATALOG: Category[] = [
                 previewHeight: 640,
               },
               {
+                slug: 'stay-listings-with-galleries',
+                name: 'Stay listings with galleries',
+                description:
+                  'Each card carries its own gallery. The controls are always in the document rather than appearing on hover, only the current slide is exposed, and moving between images is announced.',
+                previewHeight: 900,
+                dependencies: ['lucide-react'],
+              },
+              {
                 slug: 'marketplace-with-filter-tabs',
                 name: 'Marketplace with filter tabs',
                 description:
