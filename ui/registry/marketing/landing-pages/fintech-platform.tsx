@@ -291,7 +291,9 @@ function initials(name: string) {
 /* ── Page ───────────────────────────────────────────────────────────────── */
 
 export default function LandingPageFintechPlatform({
-  brand = 'Meridian',
+  /* Not one of LOGOS below: the default brand appearing in its own
+     customer logo cloud reads as a company citing itself as a reference. */
+  brand = 'Keystone',
   title = 'The financial layer powering businesses on your platform',
   subtitle = 'Take payments, move money and reconcile it, on one API that behaves the same in test as it does in production.',
 }: {
