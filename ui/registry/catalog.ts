@@ -1203,6 +1203,22 @@ export const CATALOG: Category[] = [
       {
         name: 'Data Display',
         subcategories: [
+          {
+            slug: 'tables',
+            name: 'Tables',
+            description:
+              'Sortable, selectable data tables. aria-sort on the header cell and a real button inside it are what separate a table you can operate from one you can only read.',
+            blocks: [
+              {
+                slug: 'sortable-table-with-selection',
+                name: 'Sortable table with selection',
+                description:
+                  'Sortable columns, row selection with an indeterminate select-all, and pagination. Self-contained: no table library and no primitives.',
+                previewHeight: 700,
+                dependencies: ['lucide-react'],
+              },
+            ],
+          },
           { slug: 'description-lists', name: 'Description Lists', description: 'Key/value detail views.', blocks: [] },
           { slug: 'stats', name: 'Stats', description: 'Metric tiles and trend indicators.', blocks: [] },
           { slug: 'calendars', name: 'Calendars', description: 'Month, week, and day views.', blocks: [] },

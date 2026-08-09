@@ -15,6 +15,7 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "application-ui-inputs-bordered-default": dynamic(() => import('@/registry/application-ui/inputs/bordered-default').then((m) => ({ default: m.default }))),
   "application-ui-inputs-soft-filled": dynamic(() => import('@/registry/application-ui/inputs/soft-filled').then((m) => ({ default: m.default }))),
   "application-ui-sidebar-layouts-collapsible-dashboard-shell": dynamic(() => import('@/registry/application-ui/sidebar-layouts/collapsible-dashboard-shell').then((m) => ({ default: m.default }))),
+  "application-ui-tables-sortable-table-with-selection": dynamic(() => import('@/registry/application-ui/tables/sortable-table-with-selection').then((m) => ({ default: m.default }))),
   "ecommerce-product-details-bundle-picker-with-sticky-buy-bar": dynamic(() => import('@/registry/ecommerce/product-details/bundle-picker-with-sticky-buy-bar').then((m) => ({ default: m.default }))),
   "ecommerce-product-details-digital-product-with-plans": dynamic(() => import('@/registry/ecommerce/product-details/digital-product-with-plans').then((m) => ({ default: m.default }))),
   "ecommerce-product-details-physical-product-with-variants": dynamic(() => import('@/registry/ecommerce/product-details/physical-product-with-variants').then((m) => ({ default: m.default }))),
@@ -125,5 +126,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-team-sections-timeline-journey": dynamic(() => import('@/registry/marketing/team-sections/timeline-journey').then((m) => ({ default: m.default }))),
 }
 
-/** 117 blocks at generation time. */
-export const BLOCK_COUNT: number = 117
+/** 118 blocks at generation time. */
+export const BLOCK_COUNT: number = 118
