@@ -789,6 +789,13 @@ export const CATALOG: Category[] = [
               'Complete pages assembled from the sections above. These install as a single file because the registry ships one file per block, so treat them as a starting point you own rather than a component to configure: the first thing to do is split it into the sections you actually want.',
             blocks: [
               {
+                slug: 'fintech-platform',
+                name: 'Fintech platform',
+                description:
+                  'Collage hero rather than one screenshot, an integrations split with editor tiles, and a testimonial carrying its metrics inside the same figure so the numbers are attributed rather than floating.',
+                previewHeight: 3200,
+              },
+              {
                 slug: 'ai-pricing-tool',
                 name: 'AI pricing tool',
                 description:
