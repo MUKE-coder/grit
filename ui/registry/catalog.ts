@@ -789,6 +789,13 @@ export const CATALOG: Category[] = [
               'Complete pages assembled from the sections above. These install as a single file because the registry ships one file per block, so treat them as a starting point you own rather than a component to configure: the first thing to do is split it into the sections you actually want.',
             blocks: [
               {
+                slug: 'task-management-saas',
+                name: 'Task management SaaS',
+                description:
+                  'Light product page whose two interactive controls are built honestly for a static block: the billing period is a fieldset of two radios rather than a switch, and the feature browser is a list and a panel rather than ARIA tabs with no keyboard behaviour behind them.',
+                previewHeight: 4600,
+              },
+              {
                 slug: 'animation-library-docs',
                 name: 'Animation library (docs marketing)',
                 description:
