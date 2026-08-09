@@ -1220,7 +1220,22 @@ export const CATALOG: Category[] = [
             ],
           },
           { slug: 'description-lists', name: 'Description Lists', description: 'Key/value detail views.', blocks: [] },
-          { slug: 'stats', name: 'Stats', description: 'Metric tiles and trend indicators.', blocks: [] },
+          {
+            slug: 'stats',
+            name: 'Stats',
+            description:
+              'Metric tiles and trend indicators. These are description lists, and the trend is a sentence rather than a coloured arrow, which carries no direction to anyone not looking at it.',
+            blocks: [
+              {
+                slug: 'metric-tiles-with-trend',
+                name: 'Metric tiles with trend',
+                description:
+                  'Value, direction and a sparkline per metric, as a dl. The trend says up or down in words, and each detail link names its metric instead of four reading View details.',
+                previewHeight: 420,
+                dependencies: ['lucide-react'],
+              },
+            ],
+          },
           { slug: 'calendars', name: 'Calendars', description: 'Month, week, and day views.', blocks: [] },
         ],
       },
