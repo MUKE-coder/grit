@@ -153,7 +153,7 @@ export default function WithAiChat({
               <div className="max-w-[85%] rounded-2xl rounded-br-md bg-gray-100 px-4 py-3 text-sm text-gray-800 dark:bg-white/10 dark:text-gray-200">
                 Which of my resources are missing an owner check?
               </div>
-              <span className="mt-1 text-[11px] text-gray-400 dark:text-gray-600">Now</span>
+              <span className="mt-1 text-[11px] text-gray-600 dark:text-gray-400">Now</span>
             </div>
 
             <div className="flex gap-2.5">
@@ -219,14 +219,14 @@ export default function WithAiChat({
 
       {/* Logos */}
       <div className="px-6 pb-20 text-center">
-        <p className="text-sm font-medium text-gray-500 dark:text-gray-500">
+        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
           Trusted by teams at
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-14 gap-y-6">
           {LOGOS.map((logo) => (
             <span
               key={logo}
-              className="font-mono text-sm tracking-[0.15em] text-gray-400 dark:text-gray-600"
+              className="font-mono text-sm tracking-[0.15em] text-gray-600 dark:text-gray-400"
             >
               {logo}
             </span>

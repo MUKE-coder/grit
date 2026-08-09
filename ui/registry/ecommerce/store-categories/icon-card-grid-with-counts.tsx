@@ -175,7 +175,7 @@ export default function IconCardGridWithCounts({
                   </span>
 
                   <span className="mt-auto flex items-center justify-between gap-2 pt-3">
-                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
                       {counts.format(category.itemCount)} items
                     </span>
                     <ArrowRight

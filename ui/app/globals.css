@@ -27,8 +27,18 @@
     --accent: #2563eb;
     --accent-hover: #1d4ed8;
     --success: #10b981;
-    --danger: #ef4444;
+    /* red-600, not red-500. White on #ef4444 measures 3.76:1, so the danger
+       button shipped a label below AA in both themes. */
+    --danger: #dc2626;
     --warning: #f59e0b;
+
+    /* What goes ON the accent and danger fills. These exist because the fills
+       are not the same lightness in both themes: the dark theme lifts the
+       accent to a pale blue so it reads against near-black, and white text on
+       a pale blue is 2.54:1. The fill has to suit its background and the label
+       has to suit the fill, which is two decisions and therefore two tokens. */
+    --accent-fg: #ffffff;
+    --danger-fg: #ffffff;
   }
 
   /* Admin tokens (atlas dark). The preview frame sets .dark from its theme
@@ -45,6 +55,11 @@
     --text-muted: #606078;
     --accent: #60a5fa;
     --accent-hover: #93c5fd;
+    --danger: #ef4444;
+    /* Dark text on the pale fills. White would be 2.54:1 on the accent and
+       3.76:1 on the danger; near-black is 8.6:1 and 5.2:1. */
+    --accent-fg: #0a0a0f;
+    --danger-fg: #0a0a0f;
   }
 
   html {

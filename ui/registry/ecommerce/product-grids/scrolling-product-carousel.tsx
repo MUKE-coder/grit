@@ -208,12 +208,12 @@ export default function ScrollingProductCarousel({
 
                   <span className="absolute top-3 left-3 flex flex-col items-start gap-1">
                     {product.isNew && (
-                      <span className="rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white">
+                      <span className="rounded-full bg-emerald-700 px-2.5 py-1 text-xs font-bold text-white">
                         New
                       </span>
                     )}
                     {product.isBestseller && (
-                      <span className="rounded-full bg-amber-500 px-2.5 py-1 text-xs font-bold text-white">
+                      <span className="rounded-full bg-amber-500 px-2.5 py-1 text-xs font-bold text-gray-950">
                         Bestseller
                       </span>
                     )}

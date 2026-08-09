@@ -96,7 +96,7 @@ export default function DarkWithEmailCapture({
             </a>
             <a
               href="#"
-              className="rounded-lg bg-indigo-500 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-400"
+              className="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
             >
               Sign up
             </a>
@@ -137,7 +137,7 @@ export default function DarkWithEmailCapture({
           />
           <button
             type="submit"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-500 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-indigo-400"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-indigo-500"
           >
             {submitted ? (
               <>
@@ -150,7 +150,7 @@ export default function DarkWithEmailCapture({
           </button>
         </form>
 
-        <p className="mt-5 text-sm text-gray-500">
+        <p className="mt-5 text-sm text-gray-400">
           {footnote}{' '}
           <a href="#" className="text-gray-300 underline underline-offset-4">
             {footnoteLink}
@@ -164,7 +164,7 @@ export default function DarkWithEmailCapture({
           {LOGOS.map((logo) => (
             <span
               key={logo}
-              className="font-mono text-sm tracking-[0.15em] text-gray-600"
+              className="font-mono text-sm tracking-[0.15em] text-gray-400"
             >
               {logo}
             </span>

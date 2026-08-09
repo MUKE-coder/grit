@@ -192,7 +192,7 @@ export default function ProductGridWithRatings({
                       {CURRENCY.format(product.price)}
                     </span>
                     {product.originalPrice && (
-                      <span className="text-sm text-gray-400 line-through tabular-nums dark:text-gray-500">
+                      <span className="text-sm text-gray-500 line-through tabular-nums dark:text-gray-400">
                         <span className="sr-only">Was </span>
                         {CURRENCY.format(product.originalPrice)}
                       </span>
