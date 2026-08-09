@@ -789,6 +789,13 @@ export const CATALOG: Category[] = [
               'Complete pages assembled from the sections above. These install as a single file because the registry ships one file per block, so treat them as a starting point you own rather than a component to configure: the first thing to do is split it into the sections you actually want.',
             blocks: [
               {
+                slug: 'animation-library-docs',
+                name: 'Animation library (docs marketing)',
+                description:
+                  'Open-source library page in yellow and black: identifiers marked up as <code> rather than styled spans, a changelog whose release kind is a word as well as a colour, dates as <time>, and a horizontal showcase every card of which is focusable.',
+                previewHeight: 5400,
+              },
+              {
                 slug: 'ai-agency-dark-bento',
                 name: 'AI agency (dark bento)',
                 description:
