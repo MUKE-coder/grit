@@ -103,6 +103,7 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-landing-pages-ai-agency-dark-bento": dynamic(() => import('@/registry/marketing/landing-pages/ai-agency-dark-bento').then((m) => ({ default: m.default }))),
   "marketing-landing-pages-ai-pricing-tool": dynamic(() => import('@/registry/marketing/landing-pages/ai-pricing-tool').then((m) => ({ default: m.default }))),
   "marketing-landing-pages-ai-workflow-product": dynamic(() => import('@/registry/marketing/landing-pages/ai-workflow-product').then((m) => ({ default: m.default }))),
+  "marketing-landing-pages-animation-library-docs": dynamic(() => import('@/registry/marketing/landing-pages/animation-library-docs').then((m) => ({ default: m.default }))),
   "marketing-landing-pages-automation-agency-editorial": dynamic(() => import('@/registry/marketing/landing-pages/automation-agency-editorial').then((m) => ({ default: m.default }))),
   "marketing-landing-pages-call-scheduling-app": dynamic(() => import('@/registry/marketing/landing-pages/call-scheduling-app').then((m) => ({ default: m.default }))),
   "marketing-landing-pages-dark-agency-with-comparison": dynamic(() => import('@/registry/marketing/landing-pages/dark-agency-with-comparison').then((m) => ({ default: m.default }))),
@@ -135,5 +136,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-team-sections-timeline-journey": dynamic(() => import('@/registry/marketing/team-sections/timeline-journey').then((m) => ({ default: m.default }))),
 }
 
-/** 127 blocks at generation time. */
-export const BLOCK_COUNT: number = 127
+/** 128 blocks at generation time. */
+export const BLOCK_COUNT: number = 128
