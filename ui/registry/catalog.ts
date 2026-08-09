@@ -789,6 +789,13 @@ export const CATALOG: Category[] = [
               'Complete pages assembled from the sections above. These install as a single file because the registry ships one file per block, so treat them as a starting point you own rather than a component to configure: the first thing to do is split it into the sections you actually want.',
             blocks: [
               {
+                slug: 'ai-workflow-product',
+                name: 'AI workflow product',
+                description:
+                  'Automation product page whose pricing period is a radio group rather than a switch, with the price change announced. Photography on the industry cards, markup for the product surfaces.',
+                previewHeight: 3600,
+              },
+              {
                 slug: 'dark-agency-with-comparison',
                 name: 'Dark agency with comparison',
                 description:
