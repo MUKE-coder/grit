@@ -789,6 +789,13 @@ export const CATALOG: Category[] = [
               'Complete pages assembled from the sections above. These install as a single file because the registry ships one file per block, so treat them as a starting point you own rather than a component to configure: the first thing to do is split it into the sections you actually want.',
             blocks: [
               {
+                slug: 'ai-agency-dark-bento',
+                name: 'AI agency (dark bento)',
+                description:
+                  'Dark agency page with a real comparison table, a six-tile colour bento whose foregrounds were measured rather than picked, and a statement that steps its emphasis down to gray-600 instead of fading the end of the sentence off the page.',
+                previewHeight: 6000,
+              },
+              {
                 slug: 'finance-ai-platform',
                 name: 'Finance AI platform',
                 description:
