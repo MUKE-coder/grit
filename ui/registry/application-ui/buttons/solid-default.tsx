@@ -14,13 +14,13 @@ export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'dan
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon'
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-accent text-white hover:bg-accent-hover focus-visible:ring-accent',
+  primary: 'bg-accent text-accent-fg hover:bg-accent-hover focus-visible:ring-accent',
   secondary: 'bg-bg-tertiary text-foreground hover:bg-bg-hover focus-visible:ring-border',
   outline:
     'border border-border bg-transparent text-foreground hover:bg-bg-hover focus-visible:ring-border',
   ghost:
     'bg-transparent text-text-secondary hover:bg-bg-hover hover:text-foreground focus-visible:ring-border',
-  danger: 'bg-danger text-white hover:opacity-90 focus-visible:ring-danger',
+  danger: 'bg-danger text-danger-fg hover:opacity-90 focus-visible:ring-danger',
 }
 
 const SIZES: Record<ButtonSize, string> = {

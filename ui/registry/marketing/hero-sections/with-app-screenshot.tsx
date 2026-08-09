@@ -77,8 +77,13 @@ export default function WithAppScreenshot({
           </div>
         </div>
 
-        {/* Browser frame */}
-        <div className="mt-16 flow-root sm:mt-24">
+        {/* Browser frame. aria-hidden because it is a drawing of an app, not
+            an app: the chrome, the URL and the table below are structure with
+            no real data behind them. Left exposed, a screen reader reads out
+            "app.example.com/admin/products" and a grid of empty cells as
+            though they were content on this page. Nothing inside is focusable,
+            which is what makes hiding it safe rather than a new bug. */}
+        <div aria-hidden="true" className="mt-16 flow-root sm:mt-24">
           <div className="-m-2 rounded-xl bg-gray-900/5 p-2 ring-1 ring-gray-900/10 ring-inset lg:-m-4 lg:rounded-2xl lg:p-4 dark:bg-white/5 dark:ring-white/10">
             <div className="overflow-hidden rounded-lg bg-white shadow-2xl ring-1 ring-gray-900/10 dark:bg-gray-950 dark:ring-white/10">
               <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-white/10 dark:bg-gray-900">
@@ -141,14 +146,14 @@ export default function WithAppScreenshot({
 
         {/* Logo cloud */}
         <div className="mx-auto mt-16 max-w-lg sm:mt-20">
-          <p className="text-center font-mono text-xs uppercase tracking-wider text-gray-500 dark:text-gray-500">
+          <p className="text-center font-mono text-xs uppercase tracking-wider text-gray-600 dark:text-gray-400">
             Trusted by teams at
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
             {LOGOS.map((logo) => (
               <span
                 key={logo}
-                className="text-sm font-semibold text-gray-400 dark:text-gray-600"
+                className="text-sm font-semibold text-gray-600 dark:text-gray-400"
               >
                 {logo}
               </span>

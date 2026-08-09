@@ -28,7 +28,7 @@ const config: Config = {
          compile fine and render as unstyled boxes, which is the failure mode
          that looks like nothing is wrong. */
       colors: {
-        accent: { DEFAULT: 'var(--accent)', hover: 'var(--accent-hover)' },
+        accent: { DEFAULT: 'var(--accent)', hover: 'var(--accent-hover)', fg: 'var(--accent-fg)' },
         foreground: 'var(--text-primary)',
         'text-secondary': 'var(--text-secondary)',
         'text-muted': 'var(--text-muted)',
@@ -38,7 +38,7 @@ const config: Config = {
         'bg-elevated': 'var(--bg-elevated)',
         'bg-hover': 'var(--bg-hover)',
         border: 'var(--border)',
-        danger: 'var(--danger)',
+        danger: { DEFAULT: 'var(--danger)', fg: 'var(--danger-fg)' },
         success: 'var(--success)',
         warning: 'var(--warning)',
       },

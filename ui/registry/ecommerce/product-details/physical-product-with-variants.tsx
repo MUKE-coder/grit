@@ -207,7 +207,7 @@ export default function PhysicalProductWithVariants({
                 {CURRENCY.format(price)}
               </span>
               {wasPrice > price && (
-                <span className="text-lg text-gray-400 line-through tabular-nums dark:text-gray-500">
+                <span className="text-lg text-gray-500 line-through tabular-nums dark:text-gray-400">
                   <span className="sr-only">Was </span>
                   {CURRENCY.format(wasPrice)}
                 </span>
