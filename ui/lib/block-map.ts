@@ -97,6 +97,7 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-integrations-grouped-by-category": dynamic(() => import('@/registry/marketing/integrations/grouped-by-category').then((m) => ({ default: m.default }))),
   "marketing-integrations-orbit-ring": dynamic(() => import('@/registry/marketing/integrations/orbit-ring').then((m) => ({ default: m.default }))),
   "marketing-integrations-split-with-logo-cluster": dynamic(() => import('@/registry/marketing/integrations/split-with-logo-cluster').then((m) => ({ default: m.default }))),
+  "marketing-landing-pages-design-studio": dynamic(() => import('@/registry/marketing/landing-pages/design-studio').then((m) => ({ default: m.default }))),
   "marketing-landing-pages-saas-product": dynamic(() => import('@/registry/marketing/landing-pages/saas-product').then((m) => ({ default: m.default }))),
   "marketing-pricing-sections-comparison-table": dynamic(() => import('@/registry/marketing/pricing-sections/comparison-table').then((m) => ({ default: m.default }))),
   "marketing-pricing-sections-dark-cards-over-comparison": dynamic(() => import('@/registry/marketing/pricing-sections/dark-cards-over-comparison').then((m) => ({ default: m.default }))),
@@ -120,5 +121,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-team-sections-timeline-journey": dynamic(() => import('@/registry/marketing/team-sections/timeline-journey').then((m) => ({ default: m.default }))),
 }
 
-/** 112 blocks at generation time. */
-export const BLOCK_COUNT: number = 112
+/** 113 blocks at generation time. */
+export const BLOCK_COUNT: number = 113

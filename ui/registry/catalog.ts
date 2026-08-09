@@ -789,6 +789,13 @@ export const CATALOG: Category[] = [
               'Complete pages assembled from the sections above. These install as a single file because the registry ships one file per block, so treat them as a starting point you own rather than a component to configure: the first thing to do is split it into the sections you actually want.',
             blocks: [
               {
+                slug: 'design-studio',
+                name: 'Design studio',
+                description:
+                  'A studio site: process, testimonial wall, services, two-tier pricing and an FAQ. Every visual is markup rather than photography, so there is nothing external to strip before you use it.',
+                previewHeight: 3200,
+              },
+              {
                 slug: 'saas-product',
                 name: 'SaaS product',
                 description:
