@@ -789,6 +789,13 @@ export const CATALOG: Category[] = [
               'Complete pages assembled from the sections above. These install as a single file because the registry ships one file per block, so treat them as a starting point you own rather than a component to configure: the first thing to do is split it into the sections you actually want.',
             blocks: [
               {
+                slug: 'startup-platform',
+                name: 'Startup platform',
+                description:
+                  'Payments-platform page with capability tiles, a bento of small proofs and an FAQ grouped under real headings, so someone after a payouts answer can jump straight to Payouts.',
+                previewHeight: 3400,
+              },
+              {
                 slug: 'design-studio',
                 name: 'Design studio',
                 description:
