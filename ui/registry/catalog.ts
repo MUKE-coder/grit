@@ -789,6 +789,13 @@ export const CATALOG: Category[] = [
               'Complete pages assembled from the sections above. These install as a single file because the registry ships one file per block, so treat them as a starting point you own rather than a component to configure: the first thing to do is split it into the sections you actually want.',
             blocks: [
               {
+                slug: 'dark-agency-with-comparison',
+                name: 'Dark agency with comparison',
+                description:
+                  'Dark studio page whose centrepiece is a real us-versus-them comparison table: criteria as row headers, providers as column headers, and every tick carrying a yes or no in text.',
+                previewHeight: 3600,
+              },
+              {
                 slug: 'fintech-platform',
                 name: 'Fintech platform',
                 description:
