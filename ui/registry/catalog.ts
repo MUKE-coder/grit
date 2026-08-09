@@ -789,6 +789,13 @@ export const CATALOG: Category[] = [
               'Complete pages assembled from the sections above. These install as a single file because the registry ships one file per block, so treat them as a starting point you own rather than a component to configure: the first thing to do is split it into the sections you actually want.',
             blocks: [
               {
+                slug: 'recruiting-platform',
+                name: 'Recruiting platform',
+                description:
+                  'Interview and hiring page in a green chosen by measurement: emerald-500 and 600 both fail AA against white text, so the fills are emerald-700 and dark-mode links flip to emerald-500.',
+                previewHeight: 3400,
+              },
+              {
                 slug: 'hosting-platform',
                 name: 'Hosting platform',
                 description:
