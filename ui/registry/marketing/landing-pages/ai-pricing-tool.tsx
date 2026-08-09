@@ -511,7 +511,15 @@ export default function LandingPageAiPricingTool({
                   >
                     {index + 1}
                   </span>
-                  <div className="mt-6">{MOCKS[step.mock]}</div>
+                  {/* Fixed height, contents centred. The three mocks have
+                      different natural heights (106, 74 and 82px), so without
+                      a common well the step headings land at three different
+                      vertical positions and the row reads as misaligned. */}
+                  {/* grid, not flex: grid items stretch on the inline axis by
+                      default, so the mock keeps its full width while
+                      items-center handles the vertical centring. flex would
+                      shrink each panel to its content width. */}
+                  <div className="mt-6 grid h-28 items-center">{MOCKS[step.mock]}</div>
                   <h3 className="mt-5 font-semibold text-gray-900 dark:text-white">{step.title}</h3>
                   <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{step.body}</p>
                 </li>
