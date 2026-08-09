@@ -789,6 +789,13 @@ export const CATALOG: Category[] = [
               'Complete pages assembled from the sections above. These install as a single file because the registry ships one file per block, so treat them as a starting point you own rather than a component to configure: the first thing to do is split it into the sections you actually want.',
             blocks: [
               {
+                slug: 'automation-agency-editorial',
+                name: 'Automation agency (editorial)',
+                description:
+                  'Brutalist agency page with numbered section markers built as real text rather than pseudo-element content, monospaced labels, hairline rules and two inverted sections. Photography is halftoned with filters; the diagram places real list items rather than a picture of text.',
+                previewHeight: 5200,
+              },
+              {
                 slug: 'call-scheduling-app',
                 name: 'Call scheduling app',
                 description:
