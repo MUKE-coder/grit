@@ -9,10 +9,15 @@
  * how you work, who trusted you, what it costs, what you are still worried
  * about. Pricing before proof reads as a quote from a stranger.
  *
- * Everything visual here is markup and aria-hidden, not photography. That is
- * partly so the block has no external image dependency, and partly because a
- * studio template full of someone else's screenshots is a template you have to
- * strip before you can use it.
+ * Product surfaces are markup, never photography. A stock photo cannot be a
+ * screenshot of your product, and a studio template full of someone else's
+ * screenshots is a template you have to strip before you can use it.
+ *
+ * People and places are photographed, because the opposite trade applies: a
+ * drawn avatar is a worse likeness of a person than a photograph of one, and a
+ * studio selling taste cannot open on a grey rectangle. Every photograph here
+ * is decorative — alt="" and aria-hidden — since the caption already names the
+ * person and the headline already says what the band is for.
  *
  * The highlight behind "earn trust" and "start to finish" is a background on a
  * <mark>, not a coloured <span>. mark carries the meaning; several screen
@@ -33,6 +38,30 @@
  */
 
 import type { ReactNode } from 'react'
+
+/* Verified on a contact sheet at the size they are shown before being used
+   here. Three candidates across this set turned out to be something other than
+   their description — a "lavender field" that was a scoop of soil, a "globe"
+   that was a porthole — which is the whole reason the sheet exists. */
+const PHOTO = {
+  ocean: '1505142468610-359e7d316be0',
+  earth: '1451187580459-43490279c0fa',
+  consult: '1556740738-b6a63e27c4df',
+}
+
+const FACES = [
+  '1500648767791-00dcc994a43e',
+  '1531427186611-ecfd6d936c79',
+  '1494790108377-be9c29b29330',
+  '1580489944761-15a19d654956',
+  '1528892952291-009c663ce843',
+  '1534528741775-53994a69daeb',
+]
+
+const photo = (id: string, w: number, h: number) =>
+  `https://images.unsplash.com/photo-${id}?w=${w}&h=${h}&fit=crop&q=80`
+const face = (id: string, size: number) =>
+  `https://images.unsplash.com/photo-${id}?w=${size * 2}&h=${size * 2}&fit=crop&crop=faces&q=75`
 
 const NAV = ['Work', 'Services', 'Pricing', 'About']
 
@@ -80,7 +109,7 @@ const SERVICES = [
   {
     title: 'Strategy and review',
     body: 'A read on what you have, what is costing you conversions, and what to do in what order.',
-    mock: 'chart',
+    mock: 'consult',
   },
 ]
 
@@ -235,19 +264,24 @@ function ChartMock() {
   )
 }
 
+function ConsultPhoto() {
+  return (
+    <img
+      src={photo(PHOTO.consult, 800, 500)}
+      alt=""
+      aria-hidden="true"
+      loading="lazy"
+      className="h-44 w-full rounded-xl object-cover"
+    />
+  )
+}
+
 const MOCKS: Record<string, ReactNode> = {
   browser: <BrowserMock />,
   phone: <PhoneMock />,
   copy: <CopyMock />,
   chart: <ChartMock />,
-}
-
-function initials(name: string) {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join('')
+  consult: <ConsultPhoto />,
 }
 
 /* ── Page ───────────────────────────────────────────────────────────────── */
@@ -296,11 +330,24 @@ export default function LandingPageDesignStudio({
       <main>
         {/* Hero */}
         <section className="relative overflow-hidden border-b border-gray-200 dark:border-white/10">
+          {/* The photograph is a band above the headline, and no text sits on
+              it. The design this follows runs the navigation across the wave,
+              which is the one arrangement that cannot be made safe: contrast
+              against a photograph is a different number per pixel, so a link
+              that reads over the foam disappears over the water two hundred
+              pixels along. Below the band the gradient takes over and the type
+              sits on a colour that can be measured. */}
+          <img
+            src={photo(PHOTO.ocean, 1600, 500)}
+            alt=""
+            aria-hidden="true"
+            className="h-44 w-full object-cover sm:h-56"
+          />
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-b from-sky-100 via-white to-white dark:from-sky-500/10 dark:via-gray-950 dark:to-gray-950"
+            className="absolute inset-x-0 top-44 bottom-0 bg-gradient-to-b from-sky-100 via-white to-white sm:top-56 dark:from-sky-500/10 dark:via-gray-950 dark:to-gray-950"
           />
-          <div className="relative mx-auto max-w-3xl px-6 py-24 text-center">
+          <div className="relative mx-auto max-w-3xl px-6 py-20 text-center">
             <h1 className="text-4xl font-bold tracking-tight text-balance text-gray-900 sm:text-5xl dark:text-white">
               Design-led websites that{' '}
               {/* mark, not a span: the highlight is meaning, and the default
@@ -344,7 +391,11 @@ export default function LandingPageDesignStudio({
               {CLIENTS.map((client) => (
                 <li
                   key={client}
-                  className="text-sm font-semibold tracking-tight text-gray-400 dark:text-gray-500"
+                  /* gray-600 on paper and gray-400 on the dark theme. The
+                      gray-400/gray-500 pair this started as measured 2.54:1 and
+                      4.16:1 — a logo cloud is quiet by design, but quiet is not
+                      the same as unreadable. */
+                  className="text-sm font-semibold tracking-tight text-gray-600 dark:text-gray-400"
                 >
                   {/* Wordmarks, not logo files. A template shipping real marks
                       is a template shipping someone else's trademark. */}
@@ -429,16 +480,13 @@ export default function LandingPageDesignStudio({
                         {item.quote}
                       </blockquote>
                       <figcaption className="mt-4 flex items-center gap-3">
-                        <span
+                        <img
+                          src={face(FACES[index % FACES.length], 36)}
+                          alt=""
                           aria-hidden="true"
-                          className={`flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                            featured
-                              ? 'bg-white/20 text-white'
-                              : 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
-                          }`}
-                        >
-                          {initials(item.name)}
-                        </span>
+                          loading="lazy"
+                          className="size-9 shrink-0 rounded-full object-cover"
+                        />
                         <span>
                           <span
                             className={`block text-sm font-medium ${
@@ -496,6 +544,30 @@ export default function LandingPageDesignStudio({
               ))}
             </ul>
 
+            {/* Everything-else band. The earth is scenery, so it carries a
+                scrim and the text on it is white — the same treatment every
+                photograph on every other block in this set gets, for the same
+                reason. */}
+            <div className="relative isolate mt-12 overflow-hidden rounded-2xl">
+              <img
+                src={photo(PHOTO.earth, 1600, 600)}
+                alt=""
+                aria-hidden="true"
+                loading="lazy"
+                className="absolute inset-0 -z-10 size-full object-cover"
+              />
+              <span aria-hidden="true" className="absolute inset-0 -z-10 bg-gray-950/65" />
+              <div className="px-6 py-14 text-center">
+                <h3 className="text-2xl font-bold tracking-tight text-balance text-white">
+                  Anything and everything web
+                </h3>
+                <p className="mx-auto mt-3 max-w-md text-pretty text-gray-100">
+                  Deployments, hosting, maintenance, revisions, design systems — and everything else
+                  in between.
+                </p>
+              </div>
+            </div>
+
             <ul role="list" className="mt-12 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
               {CAPABILITIES.map((item) => (
                 <li key={item.title}>
@@ -544,7 +616,11 @@ export default function LandingPageDesignStudio({
                     {/* In words, because "the blue one" is not something a
                         screen reader can report. */}
                     {tier.featured && (
-                      <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-medium text-white">
+                      /* Solid white with blue-800 text. Over the blue tier a
+                          white label on bg-white/20 measured 4.42:1: a
+                          translucent white lifts the surface just enough to
+                          sink the text sitting on it. */
+                      <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-blue-800">
                         Most popular
                       </span>
                     )}
