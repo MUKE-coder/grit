@@ -30,6 +30,21 @@
 
 import type { ReactNode } from 'react'
 
+/* Verified on a contact sheet at the size they are shown. Photographs of
+   people, markup for product surfaces: a drawn avatar is a worse likeness of a
+   person than a photograph, and a stock photo is a worse screenshot of your
+   product than a drawing of one. Decorative either way — the caption beside
+   each one already names the person. */
+const FACES = [
+  '1500648767791-00dcc994a43e',
+  '1494790108377-be9c29b29330',
+  '1531427186611-ecfd6d936c79',
+  '1580489944761-15a19d654956',
+]
+
+const face = (id: string, size: number) =>
+  `https://images.unsplash.com/photo-${id}?w=${size * 2}&h=${size * 2}&fit=crop&crop=faces&q=75`
+
 const NAV = ['Product', 'Solutions', 'Pricing', 'Company']
 
 const LOGOS = ['Northwind', 'Meridian', 'Kestrel', 'Lumen', 'Atlas', 'Verdant']
@@ -281,14 +296,6 @@ const MOCKS: Record<string, ReactNode> = {
   speed: <SpeedMock />,
 }
 
-function initials(name: string) {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join('')
-}
-
 /* ── Page ───────────────────────────────────────────────────────────────── */
 
 export default function LandingPageStartupPlatform({
@@ -385,7 +392,11 @@ export default function LandingPageStartupPlatform({
               {LOGOS.map((logo) => (
                 <li
                   key={logo}
-                  className="text-sm font-semibold tracking-tight text-gray-400 dark:text-gray-500"
+                  /* gray-600 on paper, gray-400 on the dark theme. The
+                     gray-400/gray-500 pair this started as measured 2.54:1 and
+                     4.16:1 — a logo cloud is quiet by design, but quiet is not
+                     the same as unreadable. */
+                  className="text-sm font-semibold tracking-tight text-gray-600 dark:text-gray-400"
                 >
                   {logo}
                 </li>
@@ -521,19 +532,20 @@ export default function LandingPageStartupPlatform({
             </div>
 
             <ul role="list" className="mt-12 gap-5 sm:columns-2">
-              {TESTIMONIALS.map((item) => (
+              {TESTIMONIALS.map((item, index) => (
                 <li key={item.name} className="mb-5 break-inside-avoid">
                   <figure className="rounded-xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-gray-900">
                     <blockquote className="text-sm text-pretty text-gray-700 dark:text-gray-200">
                       {item.quote}
                     </blockquote>
                     <figcaption className="mt-4 flex items-center gap-3">
-                      <span
+                      <img
+                        src={face(FACES[index % FACES.length], 36)}
+                        alt=""
                         aria-hidden="true"
-                        className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-600 dark:bg-white/10 dark:text-gray-300"
-                      >
-                        {initials(item.name)}
-                      </span>
+                        loading="lazy"
+                        className="size-9 shrink-0 rounded-full object-cover"
+                      />
                       <span>
                         <span className="block text-sm font-medium text-gray-900 dark:text-white">
                           {item.name}
