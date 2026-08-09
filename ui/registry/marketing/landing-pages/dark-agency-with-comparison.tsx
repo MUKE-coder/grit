@@ -24,10 +24,25 @@
  * The watermark words behind two sections are aria-hidden. They are texture,
  * and read aloud "Projects" twice in a row is a stutter with no meaning.
  *
+ * Photography covers people and work; product surfaces stay as markup, because
+ * a stock photo cannot be a screenshot of your product. Every photograph is
+ * decorative — alt="" and aria-hidden — since the caption beside it already
+ * names the person and the tile already names the project. On the work tiles
+ * the brand gradient sits over the photograph rather than beside it, which
+ * tints the image into the palette and doubles as the scrim keeping the label
+ * legible over whatever the photograph is doing underneath.
+ *
  * One <h1>, an <h2> per section, <h3> inside.
  */
 
 import type { ReactNode } from 'react'
+
+/* Verified on a contact sheet at the size they are shown. */
+const FOUNDER = '1573497019940-1c28c88b4f3e'
+const FACES = ['1500648767791-00dcc994a43e', '1494790108377-be9c29b29330', '1531427186611-ecfd6d936c79']
+
+const photo = (id: string, w: number, h: number, faces = false) =>
+  `https://images.unsplash.com/photo-${id}?w=${w}&h=${h}&fit=crop${faces ? '&crop=faces' : ''}&q=80`
 
 const NAV = ['Work', 'Services', 'Pricing', 'Blog']
 
@@ -55,15 +70,15 @@ const CAPABILITIES = [
 ]
 
 const PROJECTS = [
-  { name: 'Kitchen commerce', tone: 'from-orange-500/30 to-amber-500/10', span: 'lg:col-span-2 lg:row-span-2' },
-  { name: 'Transit app', tone: 'from-yellow-400/30 to-yellow-500/5', span: '' },
-  { name: 'Analytics console', tone: 'from-emerald-500/25 to-teal-500/5', span: '' },
+  { name: 'Kitchen commerce', tone: 'from-orange-500/50 to-amber-500/25', span: 'lg:col-span-2 lg:row-span-2', photo: '1556740738-b6a63e27c4df' },
+  { name: 'Transit app', tone: 'from-yellow-400/50 to-yellow-500/25', span: '', photo: '1512941937669-90a1b58e7e9c' },
+  { name: 'Analytics console', tone: 'from-emerald-500/50 to-teal-500/25', span: '', photo: '1547658719-da2b51169166' },
   /* col-span-3, not 2. Across three columns the first tile takes two of them
      for two rows, so rows one and two are full. A two-column tile on row three
      leaves the third cell empty, and CSS grid renders that as a visible hole
      rather than stretching anything to cover it. The spans have to tile
      exactly: 4 + 1 + 1 + 3 = 9 cells over three rows. */
-  { name: 'Field reports', tone: 'from-sky-500/25 to-indigo-500/5', span: 'lg:col-span-3' },
+  { name: 'Field reports', tone: 'from-sky-500/50 to-indigo-500/25', span: 'lg:col-span-3', photo: '1498050108023-c5249f4df085' },
 ]
 
 const TESTIMONIALS = [
@@ -190,14 +205,6 @@ const MOCKS: Record<string, ReactNode> = {
   stack: <StackMock />,
 }
 
-function initials(name: string) {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join('')
-}
-
 /* ── Page ───────────────────────────────────────────────────────────────── */
 
 export default function LandingPageDarkAgencyWithComparison({
@@ -279,7 +286,10 @@ export default function LandingPageDarkAgencyWithComparison({
               {CLIENTS.map((client) => (
                 /* Wordmarks, not logo files: a template shipping real marks
                    ships someone else's trademark. */
-                <li key={client} className="text-sm font-semibold tracking-tight text-white/40">
+                /* white/60, not white/40. A logo cloud is meant to be quiet,
+                   but white/40 on this background measured 3.73:1, and quiet is
+                   not the same as unreadable. */
+                <li key={client} className="text-sm font-semibold tracking-tight text-white/60">
                   {client}
                 </li>
               ))}
@@ -327,8 +337,35 @@ export default function LandingPageDarkAgencyWithComparison({
                 <li key={project.name} className={project.span}>
                   <a
                     href="#"
-                    className={`flex size-full min-h-44 items-end rounded-2xl border border-white/10 bg-gradient-to-br p-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${project.tone}`}
+                    className="relative isolate flex size-full min-h-44 items-end overflow-hidden rounded-2xl border border-white/10 p-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
                   >
+                    <img
+                      src={photo(project.photo, 900, 700)}
+                      alt=""
+                      aria-hidden="true"
+                      loading="lazy"
+                      className="absolute inset-0 -z-20 size-full object-cover"
+                    />
+                    {/* Two layers, both decoration: a near-black floor so the
+                        label has a known background whatever the photograph
+                        does, and the brand gradient over it so the tile belongs
+                        to the palette rather than to the stock library. */}
+                    <span aria-hidden="true" className="absolute inset-0 -z-10 bg-gray-950/70" />
+                    <span
+                      aria-hidden="true"
+                      className={`absolute inset-0 -z-10 bg-gradient-to-br ${project.tone}`}
+                    />
+                    {/* A third layer, anchored to the bottom, purely so the
+                        label has a floor. The brand tint sits above the dark
+                        one and lightens it — measured against the brightest
+                        pixel of each photograph the yellow tile came out at
+                        3.24:1 and the emerald at 4.46:1. Tinting for looks and
+                        scrimming for legibility are two jobs, and one layer
+                        doing both does neither reliably. */}
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-x-0 bottom-0 -z-10 h-2/3 bg-gradient-to-t from-gray-950 via-gray-950/80 to-transparent"
+                    />
                     <span className="text-sm font-medium">{project.name}</span>
                   </a>
                 </li>
@@ -344,19 +381,20 @@ export default function LandingPageDarkAgencyWithComparison({
               Insights straight from our users
             </h2>
             <ul role="list" className="mt-10 grid gap-6 md:grid-cols-3">
-              {TESTIMONIALS.map((item) => (
+              {TESTIMONIALS.map((item, index) => (
                 <li key={item.name}>
                   <figure className="h-full rounded-2xl border border-white/10 bg-white/[0.03] p-6">
                     <blockquote className="text-sm text-pretty text-white/80">
                       {item.quote}
                     </blockquote>
                     <figcaption className="mt-5 flex items-center gap-3">
-                      <span
+                      <img
+                        src={photo(FACES[index % FACES.length], 72, 72, true)}
+                        alt=""
                         aria-hidden="true"
-                        className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold"
-                      >
-                        {initials(item.name)}
-                      </span>
+                        loading="lazy"
+                        className="size-9 shrink-0 rounded-full object-cover"
+                      />
                       <span>
                         <span className="block text-sm font-medium">{item.name}</span>
                         <span className="block text-xs text-white/50">{item.role}</span>
@@ -487,7 +525,12 @@ export default function LandingPageDarkAgencyWithComparison({
                           : 'border border-white/15 hover:bg-white/5 focus-visible:outline-white'
                       }`}
                     >
-                      Get started
+                      {/* Named, because the two tiers otherwise produce two
+                          links both called "Get started". A screen reader's
+                          link list is just the names, without the card each one
+                          sits in, so identical names make the choice
+                          unanswerable from that list. */}
+                      Get started with {tier.name}
                     </a>
                   </div>
                 </li>
@@ -499,9 +542,12 @@ export default function LandingPageDarkAgencyWithComparison({
         {/* Founder's note */}
         <section aria-labelledby="founder" className="border-b border-white/10">
           <div className="mx-auto grid max-w-5xl gap-10 px-6 py-20 lg:grid-cols-[1fr_1.4fr] lg:items-center">
-            <div
+            <img
+              src={photo(FOUNDER, 700, 875, true)}
+              alt=""
               aria-hidden="true"
-              className="aspect-4/5 rounded-2xl bg-gradient-to-br from-white/15 to-white/5"
+              loading="lazy"
+              className="aspect-4/5 w-full rounded-2xl object-cover"
             />
             <div>
               <h2 id="founder" className="text-3xl font-bold tracking-tight text-balance">
