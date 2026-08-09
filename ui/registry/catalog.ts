@@ -789,6 +789,13 @@ export const CATALOG: Category[] = [
               'Complete pages assembled from the sections above. These install as a single file because the registry ships one file per block, so treat them as a starting point you own rather than a component to configure: the first thing to do is split it into the sections you actually want.',
             blocks: [
               {
+                slug: 'call-scheduling-app',
+                name: 'Call scheduling app',
+                description:
+                  'Scheduling product page in an orange picked by measurement: white on orange-500 is 2.80:1 and orange-600 3.56:1, so every filled control is orange-700 and dark mode flips to orange-400. Figures are a description list; the avatar scatter is hidden from assistive tech because it is texture.',
+                previewHeight: 3800,
+              },
+              {
                 slug: 'recruiting-platform',
                 name: 'Recruiting platform',
                 description:
