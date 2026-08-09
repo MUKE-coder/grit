@@ -789,6 +789,13 @@ export const CATALOG: Category[] = [
               'Complete pages assembled from the sections above. These install as a single file because the registry ships one file per block, so treat them as a starting point you own rather than a component to configure: the first thing to do is split it into the sections you actually want.',
             blocks: [
               {
+                slug: 'finance-ai-platform',
+                name: 'Finance AI platform',
+                description:
+                  'Photography-led finance page where no text sits directly on an image: every band carries a scrim of known opacity so the effective background is a measurable colour rather than whatever the photograph is doing at that pixel.',
+                previewHeight: 5600,
+              },
+              {
                 slug: 'automation-agency-editorial',
                 name: 'Automation agency (editorial)',
                 description:
