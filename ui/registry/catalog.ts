@@ -1110,7 +1110,23 @@ export const CATALOG: Category[] = [
         name: 'Application Shells',
         subcategories: [
           { slug: 'stacked-layouts', name: 'Stacked Layouts', description: 'Top navigation with the content below it.', blocks: [] },
-          { slug: 'sidebar-layouts', name: 'Sidebar Layouts', description: 'Persistent left navigation.', blocks: [] },
+          {
+            slug: 'sidebar-layouts',
+            name: 'Sidebar Layouts',
+            description:
+              'Persistent left navigation. These mark the current page with aria-current and open with a skip link, which is what separates a shell you can navigate from one you can only look at.',
+            blocks: [
+              {
+                slug: 'collapsible-dashboard-shell',
+                name: 'Collapsible dashboard shell',
+                description:
+                  'Sidebar that collapses to icons, a drawer below lg, aria-current on the active item and a skip link ahead of twenty nav links. Collapsing hides labels with sr-only rather than deleting them.',
+                previewHeight: 900,
+                dependencies: ['lucide-react'],
+                registryDependencies: ['button', 'sheet'],
+              },
+            ],
+          },
           { slug: 'multi-column-layouts', name: 'Multi-Column Layouts', description: 'Sidebar, content, and a secondary column.', blocks: [] },
         ],
       },
