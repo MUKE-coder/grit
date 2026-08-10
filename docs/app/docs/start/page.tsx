@@ -21,6 +21,41 @@ export const metadata = getDocMetadata('/docs/start')
  * each step says what you will have when it is done.
  */
 
+/**
+ * The primers, ahead of the path rather than inside it.
+ *
+ * These are not step zero. Somebody arriving with Go and Docker already in hand
+ * should walk straight past them, and somebody who has never written Go should
+ * not discover that four steps in. Putting them first and marking them optional
+ * is what lets both readers do the right thing without reading the other's
+ * instructions.
+ *
+ * The playground is the odd one out and lives at /playground rather than under
+ * /docs/prerequisites — it is a place to run Go, not a page about it.
+ */
+const PREREQS: { title: string; href: string; body: string }[] = [
+  {
+    title: 'Go',
+    href: '/docs/prerequisites/golang',
+    body: 'Variables, structs, pointers, slices, maps, interfaces and goroutines, written for people who already know another language.',
+  },
+  {
+    title: 'Next.js and React',
+    href: '/docs/prerequisites/nextjs',
+    body: 'App Router, server versus client components, data fetching and routing — the parts the web app and admin panel are built on.',
+  },
+  {
+    title: 'Docker',
+    href: '/docs/prerequisites/docker',
+    body: 'Enough to start and stop the Postgres, Redis and MinIO services behind a Grit project. You do not need to be an expert.',
+  },
+  {
+    title: 'Go playground',
+    href: '/playground',
+    body: 'Run Go in the browser without installing anything. Useful for trying a snippet from the primer before it matters.',
+  },
+]
+
 interface Step {
   n: number
   title: string
@@ -115,6 +150,34 @@ export default function StartPage() {
                 reference you can reach for later — this is the part to read in order.
               </p>
             </div>
+
+            <section aria-labelledby="prerequisites" className="mb-12">
+              <h2 id="prerequisites" className="text-2xl font-bold tracking-tight mb-2">
+                Prerequisites
+              </h2>
+              <p className="text-muted-foreground leading-relaxed mb-5">
+                Optional, and only the ones you need. Grit is Go on the back and Next.js on the
+                front, running against Postgres and Redis in Docker — if any of those are new,
+                these primers cover exactly the parts the rest of this path assumes.
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {PREREQS.map((p) => (
+                  <Link
+                    key={p.href}
+                    href={p.href}
+                    className="group rounded-xl border border-border/50 bg-card/40 p-5 transition-colors hover:border-border hover:bg-card/70"
+                  >
+                    <div className="flex items-center gap-1.5 font-semibold text-sm">
+                      {p.title}
+                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                    </div>
+                    <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed">
+                      {p.body}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </section>
 
             {/* The golden path. Grit supports five architectures and three
                 frontends; that flexibility is a feature and a liability, because
