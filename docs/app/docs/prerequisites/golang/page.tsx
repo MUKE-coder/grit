@@ -99,6 +99,72 @@ func main() {
     fmt.Println("Hello, Grit!")
 }`} />
 
+            <div className="prose-grit mb-10">
+              <p>
+                The other half of the basics is control flow. Go has three keywords for it and no
+                more: <code>if</code>, <code>for</code> and <code>switch</code>. There is no
+                <code>while</code> — <code>for</code> covers every loop shape — and no ternary
+                operator, so a conditional value is written as an ordinary <code>if</code>.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="control_flow.go" code={`package main
+
+import "fmt"
+
+func main() {
+    // if — no parentheses, braces always required
+    port := 8080
+    if port < 1024 {
+        fmt.Println("privileged port")
+    } else if port > 49151 {
+        fmt.Println("ephemeral port")
+    } else {
+        fmt.Println("user port")
+    }
+
+    // if with a short statement: limit and ok exist only inside the if
+    if limit, ok := lookup("page_size"); ok {
+        fmt.Println("limit:", limit)
+    }
+
+    // for — the classic three-part form
+    for i := 1; i <= 3; i++ {
+        fmt.Println("attempt", i)
+    }
+
+    // for as a while loop
+    n := 1
+    for n < 10 {
+        n *= 2
+    }
+    fmt.Println("n:", n)
+
+    // for range over a slice
+    for i, env := range []string{"dev", "staging", "prod"} {
+        fmt.Printf("%d=%s ", i, env)
+    }
+    fmt.Println()
+
+    // switch — no fallthrough by default, so no break needed
+    status := 404
+    switch {
+    case status >= 500:
+        fmt.Println("server error")
+    case status >= 400:
+        fmt.Println("client error")
+    default:
+        fmt.Println("ok")
+    }
+}
+
+func lookup(key string) (int, bool) {
+    values := map[string]int{"page_size": 20}
+    v, ok := values[key]
+    return v, ok
+}`} />
+
+
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
@@ -124,6 +190,7 @@ func main() {
 	//    Hint: use %s for strings and %d for integers
 	// 4. Bonus: Print the type of each variable using %T
 
+	fmt.Println("replace me")
 }`}
               solution={`package main
 
@@ -139,6 +206,56 @@ func main() {
 	fmt.Printf("name is %T, year is %T\\n", name, year)
 }`}
             />
+
+            <PlaygroundChallenge
+              title="Loops and Switch"
+              description="Loop over a slice of HTTP status codes and classify each one with a switch. No break statements — Go does not fall through."
+              challenge={`package main
+
+import "fmt"
+
+func main() {
+	codes := []int{200, 301, 404, 500, 204}
+
+	// Challenge: classify every status code
+	// 1. Loop over codes with "for _, code := range codes"
+	// 2. Use a switch to print one line per code:
+	//      2xx -> "<code> success"
+	//      3xx -> "<code> redirect"
+	//      4xx -> "<code> client error"
+	//      5xx -> "<code> server error"
+	//    Hint: "switch { case code >= 500: ... }" tests conditions, not a value
+	// 3. Bonus: count how many were errors (>= 400) and print the total
+
+	fmt.Println(codes)
+}`}
+              solution={`package main
+
+import "fmt"
+
+func main() {
+	codes := []int{200, 301, 404, 500, 204}
+	errorCount := 0
+
+	for _, code := range codes {
+		switch {
+		case code >= 500:
+			fmt.Printf("%d server error\n", code)
+			errorCount++
+		case code >= 400:
+			fmt.Printf("%d client error\n", code)
+			errorCount++
+		case code >= 300:
+			fmt.Printf("%d redirect\n", code)
+		default:
+			fmt.Printf("%d success\n", code)
+		}
+	}
+
+	fmt.Printf("\n%d of %d were errors\n", errorCount, len(codes))
+}`}
+            />
+
 
             {/* ─────────────────────────────────────────────────── */}
             {/* 2. Variables & Types */}
@@ -182,6 +299,60 @@ func main() {
     fmt.Println(name, host, port, debug, price, width, height)
     fmt.Println("App:", AppName)
 }`} />
+
+            <div className="prose-grit mb-10">
+              <p>
+                Two things surprise people arriving from JavaScript or Python. Every type has a
+                <strong> zero value</strong> — declare a variable without assigning one and it is
+                <code>0</code>, <code>&quot;&quot;</code>, <code>false</code> or <code>nil</code>,
+                never undefined. And Go never converts implicitly: adding an <code>int</code> to a
+                <code>float64</code> is a compile error until you convert one of them yourself.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="conversion.go" code={`package main
+
+import (
+    "fmt"
+    "strconv"
+)
+
+func main() {
+    // Zero values — declared but not assigned
+    var count int    // 0
+    var name string  // "" (empty, not nil)
+    var active bool  // false
+    var user *string // nil
+    fmt.Printf("%d %q %t %v\n", count, name, active, user)
+
+    // Numeric conversion is always explicit
+    total := 10   // int
+    price := 2.5  // float64
+    // fmt.Println(total * price)        // compile error: mismatched types
+    fmt.Println(float64(total) * price)  // 25
+
+    // Integer division truncates — convert BEFORE dividing
+    fmt.Println(7 / 2)                   // 3
+    fmt.Println(float64(7) / float64(2)) // 3.5
+
+    // Strings are not numbers: strconv returns a value AND an error
+    port, err := strconv.Atoi("8080")
+    if err != nil {
+        fmt.Println("bad port:", err)
+        return
+    }
+    fmt.Println("port + 1 =", port+1)
+
+    // The other direction
+    fmt.Println("as string: " + strconv.Itoa(port))
+    fmt.Println("as float:  " + strconv.FormatFloat(price, 'f', 2, 64))
+
+    // Something that is not a number gives you an error, not a panic
+    if _, err := strconv.Atoi("not-a-port"); err != nil {
+        fmt.Println("expected failure:", err)
+    }
+}`} />
+
 
             <div className="prose-grit mb-10">
               <h3 id="format-specifiers">Format Specifiers</h3>
@@ -274,6 +445,7 @@ func main() {
 	// 5. Convert age to float64 and add it to score, store in "total"
 	// 6. Print each variable with its value and type using %v and %T
 
+	fmt.Println("replace me")
 }`}
               solution={`package main
 
@@ -294,6 +466,76 @@ func main() {
 	fmt.Printf("passed: %v (%T)\\n", passed, passed)
 }`}
             />
+
+            <PlaygroundChallenge
+              title="Parsing Config Values"
+              description="Environment variables always arrive as strings. Convert them to the types you need and handle the failure, which is exactly what config loading does in a real API."
+              challenge={`package main
+
+import (
+	"fmt"
+	"strconv"
+)
+
+func main() {
+	// These arrive as strings, the way os.Getenv would hand them to you
+	rawPort := "8080"
+	rawDebug := "true"
+	rawRate := "2.5"
+	rawBroken := "eight thousand"
+
+	// Challenge: convert each one and print it with its type
+	// 1. strconv.Atoi(rawPort)            -> int
+	// 2. strconv.ParseBool(rawDebug)      -> bool
+	// 3. strconv.ParseFloat(rawRate, 64)  -> float64
+	// 4. Each returns (value, error) — check err before using the value
+	// 5. Print each with %v and %T so you can see the type you got
+	// 6. Convert rawBroken too, and print the error instead of the value
+
+	fmt.Println(rawPort, rawDebug, rawRate, rawBroken)
+	fmt.Println("quoted:", strconv.Quote(rawPort))
+}`}
+              solution={`package main
+
+import (
+	"fmt"
+	"strconv"
+)
+
+func main() {
+	rawPort := "8080"
+	rawDebug := "true"
+	rawRate := "2.5"
+	rawBroken := "eight thousand"
+
+	port, err := strconv.Atoi(rawPort)
+	if err != nil {
+		fmt.Println("bad port:", err)
+		return
+	}
+	fmt.Printf("port  = %v (%T)\n", port, port)
+
+	debug, err := strconv.ParseBool(rawDebug)
+	if err != nil {
+		fmt.Println("bad debug:", err)
+		return
+	}
+	fmt.Printf("debug = %v (%T)\n", debug, debug)
+
+	rate, err := strconv.ParseFloat(rawRate, 64)
+	if err != nil {
+		fmt.Println("bad rate:", err)
+		return
+	}
+	fmt.Printf("rate  = %v (%T)\n", rate, rate)
+
+	// The failure path is the point: a bad value is an error, never a panic
+	if _, err := strconv.Atoi(rawBroken); err != nil {
+		fmt.Println("broken:", err)
+	}
+}`}
+            />
+
 
             {/* ─────────────────────────────────────────────────── */}
             {/* 3. Structs & Tags */}
@@ -335,6 +577,54 @@ type User struct {
     DeletedAt gorm.DeletedAt \`gorm:"index" json:"-"\`
 }`} />
 
+            <div className="prose-grit mb-10">
+              <p>
+                That struct is not runnable on its own — it imports GORM. This one is, and it shows
+                the tags doing their job: <code>json:&quot;-&quot;</code> keeps the password out of
+                every response, and <code>json:&quot;created_at&quot;</code> renames the field on the
+                way out. Embedding a struct promotes its fields, which is how a project shares
+                <code> ID</code> and timestamps across every model without repeating them.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="struct_json.go" code={`package main
+
+import (
+    "encoding/json"
+    "fmt"
+)
+
+// Embedded into every model — the common fields, declared once
+type Base struct {
+    ID        uint   \`json:"id"\`
+    CreatedAt string \`json:"created_at"\`
+}
+
+type User struct {
+    Base            // embedded: User gets ID and CreatedAt for free
+    Name     string \`json:"name"\`
+    Email    string \`json:"email"\`
+    Password string \`json:"-"\`                    // never serialised
+    Nickname string \`json:"nickname,omitempty"\`   // dropped when empty
+}
+
+func main() {
+    u := User{
+        Base:     Base{ID: 1, CreatedAt: "2026-01-15"},
+        Name:     "Ada Lovelace",
+        Email:    "ada@example.com",
+        Password: "super-secret",
+    }
+
+    // Promoted fields are read as if they were declared on User itself
+    fmt.Println("id:", u.ID, "created:", u.CreatedAt)
+
+    out, _ := json.MarshalIndent(u, "", "  ")
+    fmt.Println(string(out))
+    // No "password" key, and no "nickname" because it is empty
+}`} />
+
+
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
@@ -360,7 +650,7 @@ import "fmt"
 // 5. Check if a product is out of stock using an if statement
 
 func main() {
-
+	fmt.Println("replace me")
 }`}
               solution={`package main
 
@@ -385,6 +675,68 @@ func main() {
 	}
 }`}
             />
+
+            <PlaygroundChallenge
+              title="Struct Tags and Embedding"
+              description="Build an Order that embeds a shared Base and uses json tags to rename one field, hide another, and drop an empty one. Then marshal it and read the output."
+              challenge={`package main
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+// Challenge: struct tags and embedding
+// 1. Declare a Base struct with:  ID uint  -> json key "id"
+// 2. Declare an Order struct that embeds Base and adds:
+//      Total        float64 -> json key "total"
+//      CustomerID   uint    -> json key "customer_id"
+//      InternalNote string  -> never serialised        (json:"-")
+//      Coupon       string  -> omitted when empty      (json:"coupon,omitempty")
+// 3. Build one Order WITHOUT a coupon, marshal it with json.MarshalIndent
+// 4. Print the JSON — there should be no internal note and no coupon key
+// 5. Bonus: set a coupon, marshal again, and watch the key appear
+
+func main() {
+	fmt.Println(json.Valid([]byte("{}")))
+}`}
+              solution={`package main
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+type Base struct {
+	ID uint \`json:"id"\`
+}
+
+type Order struct {
+	Base
+	Total        float64 \`json:"total"\`
+	CustomerID   uint    \`json:"customer_id"\`
+	InternalNote string  \`json:"-"\`
+	Coupon       string  \`json:"coupon,omitempty"\`
+}
+
+func main() {
+	o := Order{
+		Base:         Base{ID: 42},
+		Total:        99.5,
+		CustomerID:   7,
+		InternalNote: "flagged for review",
+	}
+
+	out, _ := json.MarshalIndent(o, "", "  ")
+	fmt.Println(string(out))
+
+	// Bonus: with a coupon set, omitempty stops dropping the key
+	o.Coupon = "LAUNCH10"
+	out, _ = json.MarshalIndent(o, "", "  ")
+	fmt.Println(string(out))
+}`}
+            />
+
 
             {/* ─────────────────────────────────────────────────── */}
             {/* 4. Functions & Error Handling */}
@@ -438,6 +790,68 @@ func main() {
     fmt.Println("Discount:", discount) // 20.0
 }`} />
 
+            <div className="prose-grit mb-10">
+              <p>
+                Wrapping with <code>%w</code> is only half the pattern. The other half is asking what
+                an error <em>was</em>, further up the stack. A <strong>sentinel</strong> is a
+                package-level error value you compare with <code>errors.Is</code>; a
+                <strong> custom error type</strong> carries fields you pull back out with
+                <code>errors.As</code>. Both see through any number of <code>%w</code> wraps, which
+                is what lets a handler map a failure from deep in a service onto the right status code.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="sentinel_errors.go" code={`package main
+
+import (
+    "errors"
+    "fmt"
+)
+
+// A sentinel: one value, compared by identity rather than by message
+var ErrNotFound = errors.New("record not found")
+
+// A custom error type: carries data the caller can read
+type ValidationError struct {
+    Field   string
+    Message string
+}
+
+func (e *ValidationError) Error() string {
+    return fmt.Sprintf("%s: %s", e.Field, e.Message)
+}
+
+func findUser(id int) error {
+    if id != 1 {
+        // Wrapped, so the caller still finds ErrNotFound underneath
+        return fmt.Errorf("findUser %d: %w", id, ErrNotFound)
+    }
+    return nil
+}
+
+func validate(email string) error {
+    if email == "" {
+        return &ValidationError{Field: "email", Message: "is required"}
+    }
+    return nil
+}
+
+func main() {
+    // errors.Is — matches through the wrapping
+    err := findUser(99)
+    fmt.Println("error:", err)
+    if errors.Is(err, ErrNotFound) {
+        fmt.Println("-> respond 404")
+    }
+
+    // errors.As — pulls the concrete type back out, fields and all
+    var ve *ValidationError
+    if err := validate(""); errors.As(err, &ve) {
+        fmt.Printf("-> respond 422 on field %q (%s)\n", ve.Field, ve.Message)
+    }
+}`} />
+
+
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
@@ -470,7 +884,7 @@ import (
 //   Error: cannot take square root of negative number
 
 func main() {
-
+	fmt.Println("replace me")
 }`}
               solution={`package main
 
@@ -503,6 +917,65 @@ func main() {
 	}
 }`}
             />
+
+            <PlaygroundChallenge
+              title="Sentinel Errors"
+              description="Define a sentinel error, wrap it with context, then match it with errors.Is — the pattern a handler uses to choose between 409 and 500."
+              challenge={`package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+// Challenge: sentinel errors and errors.Is
+// 1. Declare a package-level sentinel:
+//      var ErrInsufficientStock = errors.New("insufficient stock")
+// 2. Write reserve(requested, available int) error that:
+//      - wraps ErrInsufficientStock with %w when requested > available,
+//        putting both numbers in the message
+//      - returns nil otherwise
+// 3. In main, call reserve(5, 2) and print the error
+// 4. Use errors.Is to detect it and print "-> respond 409"
+// 5. Bonus: build an unrelated error and confirm errors.Is says false
+
+func main() {
+	fmt.Println(errors.New("start here"))
+}`}
+              solution={`package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+var ErrInsufficientStock = errors.New("insufficient stock")
+
+func reserve(requested, available int) error {
+	if requested > available {
+		return fmt.Errorf("reserve %d of %d: %w", requested, available, ErrInsufficientStock)
+	}
+	return nil
+}
+
+func main() {
+	err := reserve(5, 2)
+	fmt.Println("error:", err)
+
+	// Matches through the wrapping, so nobody has to parse the message
+	if errors.Is(err, ErrInsufficientStock) {
+		fmt.Println("-> respond 409")
+	}
+
+	// Bonus: an unrelated error does not match
+	other := fmt.Errorf("db down: %w", errors.New("timeout"))
+	fmt.Println("other matches?", errors.Is(other, ErrInsufficientStock))
+
+	// The happy path returns nil
+	fmt.Println("reserve(1, 2) =", reserve(1, 2))
+}`}
+            />
+
 
             {/* ─────────────────────────────────────────────────── */}
             {/* 5. Methods */}
@@ -567,6 +1040,80 @@ func main() {
     user.SetEmail("john@example.com")
     fmt.Println(user.Email) // "john@example.com"
 }`} />
+
+            <div className="prose-grit mb-10">
+              <p>
+                Methods are not limited to structs. You can attach them to any type you declare in
+                your own package, including one built on <code>string</code> or a slice. That is how
+                a bare string becomes a <code>Role</code> that knows what it is allowed to do, and it
+                is how <code>String()</code> works: implement that one method and every
+                <code> fmt</code> function starts printing your type the way you want.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="named_types.go" code={`package main
+
+import (
+    "fmt"
+    "strings"
+)
+
+// A named type built on string — now it can carry behaviour
+type Role string
+
+const (
+    RoleAdmin  Role = "ADMIN"
+    RoleEditor Role = "EDITOR"
+    RoleUser   Role = "USER"
+)
+
+// Methods on a named string type
+func (r Role) CanPublish() bool {
+    return r == RoleAdmin || r == RoleEditor
+}
+
+func (r Role) Label() string {
+    lower := strings.ToLower(string(r))
+    return strings.ToUpper(lower[:1]) + lower[1:]
+}
+
+// A named slice type, with a method that reads it
+type Cart []float64
+
+func (c Cart) Total() float64 {
+    sum := 0.0
+    for _, price := range c {
+        sum += price
+    }
+    return sum
+}
+
+// Pointer receiver, because this one replaces the slice
+func (c *Cart) Add(price float64) {
+    *c = append(*c, price)
+}
+
+type Money struct {
+    Cents int
+}
+
+// String() satisfies fmt.Stringer — fmt calls it for you
+func (m Money) String() string {
+    return fmt.Sprintf("$%d.%02d", m.Cents/100, m.Cents%100)
+}
+
+func main() {
+    fmt.Println(RoleEditor.CanPublish(), RoleUser.CanPublish()) // true false
+    fmt.Println(RoleAdmin.Label())                              // Admin
+
+    cart := Cart{19.99, 5.00}
+    cart.Add(3.50)
+    fmt.Printf("%d items, total %.2f\\n", len(cart), cart.Total())
+
+    // No .String() call anywhere — fmt finds it
+    fmt.Println("price:", Money{Cents: 2599})
+}`} />
+
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -640,6 +1187,59 @@ func main() {
 }`}
             />
 
+            <PlaygroundChallenge
+              title="Stringer and Named Types"
+              description="Give a named type its own methods, then implement String() so fmt prints it your way without anyone calling a formatter."
+              challenge={`package main
+
+import "fmt"
+
+// Challenge: named types and the Stringer interface
+// 1. Declare "type Status string" with constants:
+//      StatusDraft Status = "DRAFT", StatusLive Status = "LIVE"
+// 2. Add a method: func (s Status) IsPublic() bool  -> true only for StatusLive
+// 3. Declare "type Temperature float64"
+// 4. Give Temperature a String() method returning e.g. "21.5 C"
+//    Hint: fmt.Sprintf("%.1f C", float64(t))
+// 5. In main, print IsPublic() for both statuses
+// 6. Print a Temperature with fmt.Println — String() should be used automatically
+
+func main() {
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import "fmt"
+
+type Status string
+
+const (
+	StatusDraft Status = "DRAFT"
+	StatusLive  Status = "LIVE"
+)
+
+func (s Status) IsPublic() bool {
+	return s == StatusLive
+}
+
+type Temperature float64
+
+// Implementing String() is all it takes — fmt looks for it
+func (t Temperature) String() string {
+	return fmt.Sprintf("%.1f C", float64(t))
+}
+
+func main() {
+	fmt.Println("draft public?", StatusDraft.IsPublic())
+	fmt.Println("live public? ", StatusLive.IsPublic())
+
+	temp := Temperature(21.5)
+	fmt.Println("today:", temp) // String() used automatically
+	fmt.Printf("also:  %v\\n", temp)
+}`}
+            />
+
+
             {/* ─────────────────────────────────────────────────── */}
             {/* 6. Slices & Maps */}
             {/* ─────────────────────────────────────────────────── */}
@@ -689,6 +1289,65 @@ func main() {
     // Access a single value
     fmt.Println("Name:", user["name"])
 }`} />
+
+            <div className="prose-grit mb-10">
+              <p>
+                A slice is a view onto an array: a pointer, a length and a capacity. That is worth
+                knowing because it explains the one behaviour that catches everybody — two slices can
+                share the same backing array, so writing through one changes the other. Maps have
+                their own rule: reading a missing key returns the zero value rather than an error,
+                and iteration order is deliberately random, so sort the keys when output has to be
+                stable.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="slice_mechanics.go" code={`package main
+
+import (
+    "fmt"
+    "sort"
+)
+
+func main() {
+    // len is what is there; cap is how much room before a reallocation
+    s := make([]int, 0, 4)
+    fmt.Println(len(s), cap(s)) // 0 4
+
+    // Sub-slicing shares the SAME underlying array
+    nums := []int{1, 2, 3, 4, 5}
+    view := nums[1:3] // [2 3]
+    view[0] = 99
+    fmt.Println(nums) // [1 99 3 4 5] — nums changed too
+
+    // copy() when you want an independent slice
+    safe := make([]int, len(view))
+    copy(safe, view)
+    safe[0] = 0
+    fmt.Println(view, safe) // [99 3] [0 3] — separate now
+
+    // Comma-ok tells "missing" apart from "present but zero"
+    stock := map[string]int{"apples": 0}
+    n, ok := stock["apples"]
+    fmt.Println(n, ok) // 0 true  — present, and genuinely zero
+    n, ok = stock["pears"]
+    fmt.Println(n, ok) // 0 false — absent
+
+    delete(stock, "apples")
+    fmt.Println("size:", len(stock))
+
+    // Map iteration order is random — sort the keys for stable output
+    scores := map[string]int{"carol": 9, "alice": 7, "bob": 8}
+    keys := make([]string, 0, len(scores))
+    for k := range scores {
+        keys = append(keys, k)
+    }
+    sort.Strings(keys)
+    for _, k := range keys {
+        fmt.Printf("%s=%d ", k, scores[k])
+    }
+    fmt.Println()
+}`} />
+
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -751,6 +1410,81 @@ func main() {
 	fmt.Printf("\\nUnique words: %d\\n", len(freq))
 }`}
             />
+
+            <PlaygroundChallenge
+              title="Grouping With a Map of Slices"
+              description="Group records by a key into a map of slices, then sort the keys so the output is identical on every run — the shape of almost every reporting query."
+              challenge={`package main
+
+import "fmt"
+
+type Product struct {
+	Name     string
+	Category string
+}
+
+func main() {
+	products := []Product{
+		{"Laptop", "electronics"},
+		{"Desk", "furniture"},
+		{"Phone", "electronics"},
+		{"Chair", "furniture"},
+		{"Cable", "electronics"},
+	}
+
+	// Challenge: group the product NAMES by category
+	// 1. Build a map[string][]string
+	// 2. Loop the products, appending each Name to byCategory[p.Category]
+	//    (appending to a missing key works: the zero value is a nil slice)
+	// 3. Collect the keys into a []string and sort.Strings them
+	// 4. Print one line per category, e.g.
+	//      electronics (3): Laptop, Phone, Cable
+	//    Hint: strings.Join(names, ", ")
+
+	fmt.Println(products)
+}`}
+              solution={`package main
+
+import (
+	"fmt"
+	"sort"
+	"strings"
+)
+
+type Product struct {
+	Name     string
+	Category string
+}
+
+func main() {
+	products := []Product{
+		{"Laptop", "electronics"},
+		{"Desk", "furniture"},
+		{"Phone", "electronics"},
+		{"Chair", "furniture"},
+		{"Cable", "electronics"},
+	}
+
+	// Appending to a missing key is fine — it starts life as a nil slice
+	byCategory := map[string][]string{}
+	for _, p := range products {
+		byCategory[p.Category] = append(byCategory[p.Category], p.Name)
+	}
+
+	// Sort the keys, because map iteration order is deliberately random
+	categories := make([]string, 0, len(byCategory))
+	for c := range byCategory {
+		categories = append(categories, c)
+	}
+	sort.Strings(categories)
+
+	for _, c := range categories {
+		names := byCategory[c]
+		fmt.Printf("%s (%d): %s\\n", c, len(names), strings.Join(names, ", "))
+	}
+}`}
+            />
+
 
             {/* ─────────────────────────────────────────────────── */}
             {/* 7. Interfaces */}
@@ -1414,6 +2148,85 @@ func main() {
 }`}
             />
 
+            <PlaygroundChallenge
+              title="Swapping Implementations"
+              description="Write one function against an interface and hand it two different implementations. This is the whole argument for interfaces: the caller stops caring which one it got."
+              challenge={`package main
+
+import "fmt"
+
+// Challenge: one interface, two implementations
+// 1. Declare an interface:
+//      type Notifier interface { Send(to, message string) error }
+// 2. Implement it twice:
+//      type EmailNotifier struct{}  -> prints "email to <to>: <message>"
+//      type SMSNotifier struct{}    -> prints "sms to <to>: <message>"
+//    Both Send methods return nil.
+// 3. Write: func notifyAll(n Notifier, recipients []string, msg string) error
+//      - loops the recipients, calls n.Send, returns early on any error
+// 4. Call notifyAll twice — once with each implementation — and note that
+//    the function never changes
+// 5. Bonus: add a FailingNotifier whose Send returns an error, and check
+//    that notifyAll stops at the first failure
+
+func main() {
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+type Notifier interface {
+	Send(to, message string) error
+}
+
+type EmailNotifier struct{}
+
+func (EmailNotifier) Send(to, message string) error {
+	fmt.Printf("email to %s: %s\\n", to, message)
+	return nil
+}
+
+type SMSNotifier struct{}
+
+func (SMSNotifier) Send(to, message string) error {
+	fmt.Printf("sms to %s: %s\\n", to, message)
+	return nil
+}
+
+type FailingNotifier struct{}
+
+func (FailingNotifier) Send(to, message string) error {
+	return errors.New("transport unavailable")
+}
+
+// Written against the interface, so it never needs to change
+func notifyAll(n Notifier, recipients []string, msg string) error {
+	for _, r := range recipients {
+		if err := n.Send(r, msg); err != nil {
+			return fmt.Errorf("notify %s: %w", r, err)
+		}
+	}
+	return nil
+}
+
+func main() {
+	people := []string{"ada@example.com", "grace@example.com"}
+
+	_ = notifyAll(EmailNotifier{}, people, "Build passed")
+	_ = notifyAll(SMSNotifier{}, []string{"+15550100"}, "Build passed")
+
+	// Bonus: the first failure stops the loop and is reported with context
+	if err := notifyAll(FailingNotifier{}, people, "Build passed"); err != nil {
+		fmt.Println("failed:", err)
+	}
+}`}
+            />
+
+
             {/* ─────────────────────────────────────────────────── */}
             {/* 8. Pointers */}
             {/* ─────────────────────────────────────────────────── */}
@@ -1460,6 +2273,71 @@ func main() {
         fmt.Println("Name is not set")
     }
 }`} />
+
+            <div className="prose-grit mb-10">
+              <p>
+                The place pointers stop being academic is <code>for ... range</code>. The loop
+                variable is a <em>copy</em> of the element, so assigning to it changes nothing — a
+                bug that produces no error and no output, just a slice that stubbornly refuses to
+                update. Reach for the index, or a slice of pointers. The same copying rule explains
+                why a method that mutates needs a pointer receiver.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="pointer_gotchas.go" code={`package main
+
+import "fmt"
+
+type Product struct {
+    Name  string
+    Price float64
+}
+
+// Value receiver: works on a copy, so this discount goes nowhere
+func (p Product) DiscountBroken(pct float64) {
+    p.Price = p.Price * (1 - pct/100)
+}
+
+// Pointer receiver: changes the original
+func (p *Product) Discount(pct float64) {
+    p.Price = p.Price * (1 - pct/100)
+}
+
+func main() {
+    items := []Product{
+        {Name: "Laptop", Price: 1000},
+        {Name: "Mouse", Price: 50},
+    }
+
+    // WRONG: item is a copy of the element
+    for _, item := range items {
+        item.Price = 0
+    }
+    fmt.Println("after range-copy:", items) // unchanged
+
+    // RIGHT: address the element through its index
+    for i := range items {
+        items[i].Discount(10)
+    }
+    fmt.Println("after discount:  ", items)
+
+    // A value receiver silently does nothing
+    items[0].DiscountBroken(50)
+    fmt.Println("after broken:    ", items)
+
+    // Pointers also let you say "no value" — but check before dereferencing
+    var missing *Product
+    fmt.Println("missing == nil?", missing == nil)
+    if missing != nil {
+        fmt.Println(missing.Name) // would panic if reached with nil
+    }
+
+    // A pointer into the slice: one element, shared
+    first := &items[0]
+    first.Price = 1.23
+    fmt.Println("via pointer:     ", items)
+}`} />
+
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -1518,6 +2396,83 @@ func main() {
 	fmt.Printf("After swap: a=%d, b=%d\\n", a, b)
 }`}
             />
+
+            <PlaygroundChallenge
+              title="Mutating Through a Pointer"
+              description="Fix the classic range-copy bug: a loop that looks like it updates a slice and quietly does nothing. Then write the pointer-receiver method that does work."
+              challenge={`package main
+
+import "fmt"
+
+type User struct {
+	Name   string
+	Visits int
+	Active bool
+}
+
+func main() {
+	users := []User{
+		{Name: "Ada", Visits: 0, Active: false},
+		{Name: "Grace", Visits: 0, Active: false},
+	}
+
+	// Challenge: make these changes actually stick
+	// 1. Write a method with a POINTER receiver:
+	//      func (u *User) RecordVisit()  -> Visits++ and Active = true
+	// 2. Loop the users with "for i := range users" and call users[i].RecordVisit()
+	// 3. Print users and confirm both were updated
+	// 4. Now try the same with "for _, u := range users { u.RecordVisit() }"
+	//    on a fresh copy and show that nothing changes — explain why in a comment
+	// 5. Bonus: write func deactivate(u *User) that sets Active = false,
+	//    and call it as deactivate(&users[0])
+
+	fmt.Println(users)
+}`}
+              solution={`package main
+
+import "fmt"
+
+type User struct {
+	Name   string
+	Visits int
+	Active bool
+}
+
+// Pointer receiver: operates on the original, not a copy
+func (u *User) RecordVisit() {
+	u.Visits++
+	u.Active = true
+}
+
+func deactivate(u *User) {
+	u.Active = false
+}
+
+func main() {
+	users := []User{
+		{Name: "Ada"},
+		{Name: "Grace"},
+	}
+
+	// Indexing gives us the real element to take the address of
+	for i := range users {
+		users[i].RecordVisit()
+	}
+	fmt.Println("updated:", users)
+
+	// The range copy: u is a fresh User each iteration, so this is discarded
+	fresh := []User{{Name: "Alan"}}
+	for _, u := range fresh {
+		u.RecordVisit()
+	}
+	fmt.Println("range copy:", fresh) // Visits still 0
+
+	// Bonus: pass the address explicitly
+	deactivate(&users[0])
+	fmt.Println("deactivated:", users[0])
+}`}
+            />
+
 
             {/* ─────────────────────────────────────────────────── */}
             {/* 9. Goroutines & Channels */}
@@ -2149,6 +3104,75 @@ func main() {
 }`}
             />
 
+            <PlaygroundChallenge
+              title="A Worker Pool"
+              description="Fan work out to a fixed number of workers over a channel and collect the results. Sort before printing, because concurrent work never finishes in a predictable order."
+              challenge={`package main
+
+import "fmt"
+
+// Challenge: a worker pool
+// 1. Make two buffered channels:
+//      jobs := make(chan int, 9)     and     results := make(chan string, 9)
+// 2. Start 3 workers with "go func(id int) { ... }(w)". Each worker:
+//      - ranges over jobs
+//      - sends fmt.Sprintf("job %d squared = %d", j, j*j) to results
+// 3. Send jobs 1..9 into jobs, then close(jobs)
+//    (closing is what lets the workers' range loops end)
+// 4. Read exactly 9 values from results into a slice
+// 5. sort.Strings the slice and print it, so the output is stable
+//    Hint: a sync.WaitGroup is another way to know when the workers are done
+
+func main() {
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import (
+	"fmt"
+	"sort"
+	"sync"
+)
+
+func main() {
+	const jobCount = 9
+	jobs := make(chan int, jobCount)
+	results := make(chan string, jobCount)
+
+	var wg sync.WaitGroup
+	for w := 1; w <= 3; w++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			// Ends when jobs is closed and drained
+			for j := range jobs {
+				results <- fmt.Sprintf("job %d squared = %d", j, j*j)
+			}
+		}(w)
+	}
+
+	for j := 1; j <= jobCount; j++ {
+		jobs <- j
+	}
+	close(jobs) // without this the workers block forever
+
+	wg.Wait()
+	close(results)
+
+	out := make([]string, 0, jobCount)
+	for r := range results {
+		out = append(out, r)
+	}
+
+	// Workers finish in whatever order they finish — sort for a stable read
+	sort.Strings(out)
+	for _, line := range out {
+		fmt.Println(line)
+	}
+}`}
+            />
+
+
             {/* ─────────────────────────────────────────────────── */}
             {/* 10. Packages & Project Structure */}
             {/* ─────────────────────────────────────────────────── */}
@@ -2197,6 +3221,190 @@ func main() {
 │   └── routes/
 │       └── routes.go    # package routes — Setup() wires everything
 └── go.mod               # Module definition`} />
+
+            <div className="prose-grit mb-10">
+              <p>
+                Go has no <code>public</code> or <code>private</code> keyword. Visibility is decided
+                by the first letter: capitalised identifiers are exported from the package,
+                lowercase ones are not. That single rule is why service structs expose
+                <code> CreateProduct</code> while their helpers stay lowercase — the compiler
+                enforces the boundary for you.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="visibility.go" code={`package main
+
+import "fmt"
+
+// Exported — callable from another package as models.Product
+type Product struct {
+    Name  string  // exported field: appears in JSON, visible everywhere
+    Price float64 // exported
+    sku   string  // unexported: invisible outside this package
+}
+
+// Exported constructor — the usual way to set unexported fields
+func NewProduct(name string, price float64, sku string) *Product {
+    return &Product{Name: name, Price: price, sku: sku}
+}
+
+// Exported method
+func (p *Product) SKU() string {
+    return p.normalisedSKU()
+}
+
+// unexported helper — an implementation detail, free to change
+func (p *Product) normalisedSKU() string {
+    if p.sku == "" {
+        return "UNSET"
+    }
+    return p.sku
+}
+
+// Package-level state and init(), which runs before main()
+var registry = map[string]*Product{}
+
+func init() {
+    p := NewProduct("Laptop", 999.00, "LAP-1")
+    registry[p.SKU()] = p
+    fmt.Println("init: registry seeded")
+}
+
+func main() {
+    fmt.Println("main: registry has", len(registry))
+
+    p := NewProduct("Mouse", 25.00, "")
+    fmt.Println(p.Name, p.SKU()) // Mouse UNSET
+
+    // p.sku works here because main is in the same package.
+    // From another package it would not compile — that is the whole mechanism.
+    fmt.Println("internal sku value:", p.sku)
+}`} />
+
+            <PlaygroundChallenge
+              title="Exported and Unexported"
+              description="Use capitalisation to draw the boundary of a package: an exported constructor and method, with the field and helper behind them kept private."
+              challenge={`package main
+
+import "fmt"
+
+// Challenge: visibility by capitalisation
+// 1. Declare a struct "Account" with:
+//      Owner   string  (exported)
+//      balance float64 (unexported — nobody outside may set it directly)
+// 2. Write an exported constructor:
+//      func NewAccount(owner string, opening float64) *Account
+// 3. Write exported methods:
+//      func (a *Account) Deposit(amount float64) error  -> reject amounts <= 0
+//      func (a *Account) Balance() float64              -> read-only access
+// 4. Write an unexported helper: func (a *Account) canWithdraw(n float64) bool
+// 5. In main, build an account, deposit twice (once with a bad amount),
+//    and print the balance through the method rather than the field
+
+func main() {
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+type Account struct {
+	Owner   string  // exported
+	balance float64 // unexported: only this package can touch it
+}
+
+func NewAccount(owner string, opening float64) *Account {
+	return &Account{Owner: owner, balance: opening}
+}
+
+func (a *Account) Deposit(amount float64) error {
+	if amount <= 0 {
+		return errors.New("deposit must be positive")
+	}
+	a.balance += amount
+	return nil
+}
+
+func (a *Account) Balance() float64 {
+	return a.balance
+}
+
+// unexported: an implementation detail, safe to change later
+func (a *Account) canWithdraw(n float64) bool {
+	return n > 0 && n <= a.balance
+}
+
+func main() {
+	acct := NewAccount("Ada", 100)
+
+	if err := acct.Deposit(50); err != nil {
+		fmt.Println("error:", err)
+	}
+	if err := acct.Deposit(-5); err != nil {
+		fmt.Println("rejected:", err)
+	}
+
+	fmt.Printf("%s balance: %.2f\\n", acct.Owner, acct.Balance())
+	fmt.Println("can withdraw 120?", acct.canWithdraw(120))
+	fmt.Println("can withdraw 200?", acct.canWithdraw(200))
+}`}
+            />
+
+            <PlaygroundChallenge
+              title="init() and Package State"
+              description="Package-level variables and init() run before main. Use them to build a lookup table once, which is how registries and default configs get set up."
+              challenge={`package main
+
+import "fmt"
+
+// Challenge: package state and init()
+// 1. Declare a package-level variable:
+//      var statusNames = map[int]string{}
+// 2. Write func init() that fills it with:
+//      200 "OK", 404 "Not Found", 500 "Internal Server Error"
+//    and prints how many entries it added
+// 3. Write func describe(code int) string that returns
+//      "<code> <name>" if known, or "<code> Unknown" if not
+// 4. In main, describe 200, 404 and 418
+// 5. Note the ordering: init() output appears BEFORE anything in main
+
+func main() {
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import "fmt"
+
+// Package-level state — exists before main starts
+var statusNames = map[int]string{}
+
+// init() runs automatically, after variable declarations, before main()
+func init() {
+	statusNames[200] = "OK"
+	statusNames[404] = "Not Found"
+	statusNames[500] = "Internal Server Error"
+	fmt.Println("init: loaded", len(statusNames), "status names")
+}
+
+func describe(code int) string {
+	name, ok := statusNames[code]
+	if !ok {
+		return fmt.Sprintf("%d Unknown", code)
+	}
+	return fmt.Sprintf("%d %s", code, name)
+}
+
+func main() {
+	fmt.Println("main starts")
+	fmt.Println(describe(200))
+	fmt.Println(describe(404))
+	fmt.Println(describe(418))
+}`}
+            />
+
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -2271,6 +3479,253 @@ func getEnv(key, fallback string) string {
     }
     return fallback
 }`} />
+
+            <div className="prose-grit mb-10">
+              <p>
+                <code>os.Getenv</code> has one weakness: an unset variable and one set to the empty
+                string look identical, and both give you <code>&quot;&quot;</code>. That is fine for
+                optional values and dangerous for required ones. The fix is two small helpers — one
+                that falls back to a default, one that fails loudly — plus typed parsing for
+                anything that is not a string.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="env_helpers.go" code={`package main
+
+import (
+    "fmt"
+    "os"
+    "strconv"
+    "time"
+)
+
+// Optional: fall back when unset or empty
+func getEnv(key, fallback string) string {
+    if v, ok := os.LookupEnv(key); ok && v != "" {
+        return v
+    }
+    return fallback
+}
+
+// Required: fail at start-up rather than at 3am
+func mustEnv(key string) (string, error) {
+    v, ok := os.LookupEnv(key)
+    if !ok || v == "" {
+        return "", fmt.Errorf("required env var %s is not set", key)
+    }
+    return v, nil
+}
+
+// Typed, with a fallback when the value is missing or unparseable
+func getEnvInt(key string, fallback int) int {
+    v, err := strconv.Atoi(os.Getenv(key))
+    if err != nil {
+        return fallback
+    }
+    return v
+}
+
+func getEnvDuration(key string, fallback time.Duration) time.Duration {
+    d, err := time.ParseDuration(os.Getenv(key))
+    if err != nil {
+        return fallback
+    }
+    return d
+}
+
+func main() {
+    // Set a couple so the example is self-contained
+    os.Setenv("PORT", "9090")
+    os.Setenv("TIMEOUT", "45s")
+    os.Setenv("EMPTY", "")
+
+    fmt.Println("PORT:      ", getEnvInt("PORT", 8080))       // 9090
+    fmt.Println("MAX_CONNS: ", getEnvInt("MAX_CONNS", 25))    // 25 (unset)
+    fmt.Println("TIMEOUT:   ", getEnvDuration("TIMEOUT", 30*time.Second))
+    fmt.Println("EMPTY:     ", getEnv("EMPTY", "fallback"))   // fallback
+
+    // LookupEnv distinguishes "set to empty" from "not set at all"
+    if v, ok := os.LookupEnv("EMPTY"); ok {
+        fmt.Printf("EMPTY is set, value = %q\\n", v)
+    }
+
+    if _, err := mustEnv("JWT_SECRET"); err != nil {
+        fmt.Println("startup error:", err)
+    }
+}`} />
+
+            <PlaygroundChallenge
+              title="Config With Defaults"
+              description="Write the two helpers every Go service ends up with: one that falls back to a default, one that refuses to start without a value."
+              challenge={`package main
+
+import (
+	"fmt"
+	"os"
+)
+
+// Challenge: environment helpers
+// 1. Write func getEnv(key, fallback string) string
+//      - use os.LookupEnv so "set but empty" counts as missing
+// 2. Write func mustEnv(key string) (string, error)
+//      - return an error naming the missing key
+// 3. Write func getEnvBool(key string, fallback bool) bool
+//      - use strconv.ParseBool, fall back when it errors
+// 4. In main: os.Setenv("APP_ENV", "production") and os.Setenv("DEBUG", "false")
+// 5. Print getEnv("APP_ENV", "development"), getEnv("REGION", "eu-west-1"),
+//    getEnvBool("DEBUG", true), and the error from mustEnv("DATABASE_URL")
+
+func main() {
+	fmt.Println(os.Getenv("HOME"))
+}`}
+              solution={`package main
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+)
+
+func getEnv(key, fallback string) string {
+	// LookupEnv tells "unset" apart from "set to empty"
+	if v, ok := os.LookupEnv(key); ok && v != "" {
+		return v
+	}
+	return fallback
+}
+
+func mustEnv(key string) (string, error) {
+	v, ok := os.LookupEnv(key)
+	if !ok || v == "" {
+		return "", fmt.Errorf("required env var %s is not set", key)
+	}
+	return v, nil
+}
+
+func getEnvBool(key string, fallback bool) bool {
+	b, err := strconv.ParseBool(os.Getenv(key))
+	if err != nil {
+		return fallback
+	}
+	return b
+}
+
+func main() {
+	os.Setenv("APP_ENV", "production")
+	os.Setenv("DEBUG", "false")
+
+	fmt.Println("env:    ", getEnv("APP_ENV", "development"))
+	fmt.Println("region: ", getEnv("REGION", "eu-west-1")) // unset -> fallback
+	fmt.Println("debug:  ", getEnvBool("DEBUG", true))     // parsed -> false
+
+	// Required values fail at start-up, where the error is cheap to fix
+	if _, err := mustEnv("DATABASE_URL"); err != nil {
+		fmt.Println("startup error:", err)
+	}
+}`}
+            />
+
+            <PlaygroundChallenge
+              title="Validating Config at Start-up"
+              description="Load a whole config struct, collect every problem at once, and report them together — far kinder than failing on one missing variable at a time."
+              challenge={`package main
+
+import (
+	"fmt"
+	"os"
+)
+
+type Config struct {
+	Port        int
+	DatabaseURL string
+	JWTSecret   string
+	Environment string
+}
+
+// Challenge: load and validate config in one pass
+// 1. Write func Load() (*Config, []string)
+//      - read PORT (default 8080), DATABASE_URL, JWT_SECRET,
+//        APP_ENV (default "development")
+//      - collect a message into the []string for each problem:
+//          * DATABASE_URL missing
+//          * JWT_SECRET missing or shorter than 16 characters
+//          * PORT set but not a number
+// 2. In main, set only APP_ENV and PORT, then call Load()
+// 3. If there are problems, print each one and stop; otherwise print the config
+// 4. Bonus: set the missing variables and run again to see it succeed
+
+func main() {
+	fmt.Println(os.Getenv("PORT"))
+}`}
+              solution={`package main
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+)
+
+type Config struct {
+	Port        int
+	DatabaseURL string
+	JWTSecret   string
+	Environment string
+}
+
+func Load() (*Config, []string) {
+	var problems []string
+	cfg := &Config{Port: 8080, Environment: "development"}
+
+	if raw, ok := os.LookupEnv("PORT"); ok && raw != "" {
+		p, err := strconv.Atoi(raw)
+		if err != nil {
+			problems = append(problems, fmt.Sprintf("PORT is not a number: %q", raw))
+		} else {
+			cfg.Port = p
+		}
+	}
+
+	cfg.DatabaseURL = os.Getenv("DATABASE_URL")
+	if cfg.DatabaseURL == "" {
+		problems = append(problems, "DATABASE_URL is required")
+	}
+
+	cfg.JWTSecret = os.Getenv("JWT_SECRET")
+	switch {
+	case cfg.JWTSecret == "":
+		problems = append(problems, "JWT_SECRET is required")
+	case len(cfg.JWTSecret) < 16:
+		problems = append(problems, "JWT_SECRET must be at least 16 characters")
+	}
+
+	if v := os.Getenv("APP_ENV"); v != "" {
+		cfg.Environment = v
+	}
+	return cfg, problems
+}
+
+func main() {
+	os.Setenv("APP_ENV", "production")
+	os.Setenv("PORT", "9090")
+
+	cfg, problems := Load()
+	if len(problems) > 0 {
+		fmt.Println("cannot start:")
+		for _, p := range problems {
+			fmt.Println("  -", p)
+		}
+	}
+
+	// Bonus: supply the rest and it loads cleanly
+	os.Setenv("DATABASE_URL", "postgres://localhost:5432/app")
+	os.Setenv("JWT_SECRET", "a-long-enough-secret")
+
+	cfg, problems = Load()
+	fmt.Println("\\nproblems:", len(problems))
+	fmt.Printf("%+v\\n", *cfg)
+}`}
+            />
+
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -2446,6 +3901,182 @@ func createUser(c *gin.Context) {
               </p>
             </div>
 
+            <div className="rounded-xl border border-sky-500/20 bg-sky-500/[0.04] p-5 mb-8">
+              <h4 className="text-sm font-semibold text-sky-400 uppercase tracking-wider mb-2">About these challenges</h4>
+              <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
+                The playground compiles against the standard library only, so Gin itself will not
+                run there. These challenges use <code>net/http</code> and <code>httptest</code>
+                instead, which is what Gin is built on — the router, the handler signature and the
+                context are conveniences over exactly this. Everything you practise here is the same
+                shape you will write in <code>internal/handlers/</code>, minus the helper methods.
+              </p>
+            </div>
+
+            <PlaygroundChallenge
+              title="Routing and Path Parameters"
+              description="Register routes, pull an id out of the path, and return JSON with the right status code. This is what c.Param and c.JSON are doing underneath."
+              challenge={`package main
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+// Challenge: a tiny router
+// 1. Make a mux:  mux := http.NewServeMux()
+// 2. Handle "GET /products/{id}" (Go 1.22+ patterns support this)
+//      - read the id with r.PathValue("id")
+//      - look it up in the products map below
+//      - found:   w.WriteHeader(200) and write {"id":1,"name":"Laptop"}
+//      - missing: w.WriteHeader(404) and write {"error":"not found"}
+//      - always set Content-Type: application/json
+// 3. Handle "GET /health" returning 200 and {"status":"ok"}
+// 4. Use httptest to call /products/1, /products/99 and /health,
+//    printing the status and body of each
+//    In Gin this is r.GET("/products/:id", handler) and c.Param("id")
+
+var products = map[string]string{"1": "Laptop", "2": "Mouse"}
+
+func main() {
+	fmt.Println(products, http.StatusOK, httptest.NewRecorder().Code)
+}`}
+              solution={`package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+var products = map[string]string{"1": "Laptop", "2": "Mouse"}
+
+func writeJSON(w http.ResponseWriter, status int, body any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(body)
+}
+
+func main() {
+	mux := http.NewServeMux()
+
+	// Gin: r.GET("/products/:id", ...) with c.Param("id")
+	mux.HandleFunc("GET /products/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		name, ok := products[id]
+		if !ok {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"id": id, "name": name})
+	})
+
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	})
+
+	for _, path := range []string{"/products/1", "/products/99", "/health"} {
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+		fmt.Printf("%-14s %d %s", path, rec.Code, rec.Body.String())
+	}
+}`}
+            />
+
+            <PlaygroundChallenge
+              title="Binding and Validating JSON"
+              description="Decode a request body into a struct, reject what is invalid with 422 and a field-by-field message, and accept what is valid with 201 — the job c.ShouldBindJSON does for you."
+              challenge={`package main
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+)
+
+type CreateProductRequest struct {
+	Name  string  \`json:"name"\`
+	Price float64 \`json:"price"\`
+}
+
+// Challenge: bind and validate
+// 1. Write a handler that decodes the JSON body into CreateProductRequest
+//      json.NewDecoder(r.Body).Decode(&req)
+// 2. On a decode error, respond 400 with {"error":"invalid JSON"}
+// 3. Validate: Name must not be empty, Price must be > 0.
+//    Collect problems into map[string]string, e.g. {"name":"is required"}
+// 4. If there are problems, respond 422 with {"errors": <that map>}
+// 5. Otherwise respond 201 with the created product
+// 6. Test it three times with httptest.NewRequest("POST", "/products", strings.NewReader(...)):
+//      a valid body, an invalid body, and a body that is not JSON at all
+//    In Gin: c.ShouldBindJSON(&req) plus binding:"required" tags
+
+func main() {
+	fmt.Println(http.StatusCreated, strings.ToUpper("post"), httptest.NewRecorder().Code)
+}`}
+              solution={`package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+)
+
+type CreateProductRequest struct {
+	Name  string  \`json:"name"\`
+	Price float64 \`json:"price"\`
+}
+
+func writeJSON(w http.ResponseWriter, status int, body any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(body)
+}
+
+func createProduct(w http.ResponseWriter, r *http.Request) {
+	var req CreateProductRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+
+	problems := map[string]string{}
+	if strings.TrimSpace(req.Name) == "" {
+		problems["name"] = "is required"
+	}
+	if req.Price <= 0 {
+		problems["price"] = "must be greater than zero"
+	}
+	if len(problems) > 0 {
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{"errors": problems})
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"id": 1, "name": req.Name, "price": req.Price,
+	})
+}
+
+func main() {
+	bodies := []string{
+		\`{"name":"Laptop","price":999}\`,
+		\`{"name":"","price":0}\`,
+		\`not json at all\`,
+	}
+	for _, b := range bodies {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest("POST", "/products", strings.NewReader(b))
+		createProduct(rec, req)
+		fmt.Printf("%d %s", rec.Code, rec.Body.String())
+	}
+}`}
+            />
+
+
             {/* ─────────────────────────────────────────────────── */}
             {/* 13. Middleware */}
             {/* ─────────────────────────────────────────────────── */}
@@ -2540,6 +4171,162 @@ admin.Use(middleware.RequireRole("ADMIN"))          // AND must be admin
               </p>
             </div>
 
+            <PlaygroundChallenge
+              title="Writing a Middleware"
+              description="A middleware is a function that takes a handler and returns a handler. Write one that runs before and after the request, which is what c.Next() splits in Gin."
+              challenge={`package main
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+// Challenge: your first middleware
+// 1. Write: func Logger(next http.Handler) http.Handler
+//      - return http.HandlerFunc(func(w, r) { ... })
+//      - print "-> METHOD PATH" BEFORE calling next.ServeHTTP(w, r)
+//      - print "<- done" AFTER it returns
+//    The code before next is Gin's "before c.Next()"; after it is the rest.
+// 2. Write a handler that writes "hello" with status 200
+// 3. Wrap it:  wrapped := Logger(handler)
+// 4. Call it with httptest and print the status and body
+// 5. Bonus: write RequestID(next) that sets w.Header().Set("X-Request-ID", "abc123")
+//    and wrap with both
+
+func main() {
+	fmt.Println(http.StatusOK, httptest.NewRecorder().Code)
+}`}
+              solution={`package main
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+// Takes a handler, returns a handler — the whole middleware contract
+func Logger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("-> %s %s\\n", r.Method, r.URL.Path) // before c.Next()
+		next.ServeHTTP(w, r)
+		fmt.Println("<- done") // after c.Next()
+	})
+}
+
+func RequestID(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Request-ID", "abc123")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func main() {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "hello")
+	})
+
+	wrapped := Logger(RequestID(handler))
+
+	rec := httptest.NewRecorder()
+	wrapped.ServeHTTP(rec, httptest.NewRequest("GET", "/products", nil))
+
+	fmt.Println("status:", rec.Code)
+	fmt.Println("body:  ", rec.Body.String())
+	fmt.Println("id:    ", rec.Header().Get("X-Request-ID"))
+}`}
+            />
+
+            <PlaygroundChallenge
+              title="Chaining and Short-Circuiting"
+              description="Compose several middleware into one chain, then write one that refuses to call the next handler — which is exactly what c.Abort() does when auth fails."
+              challenge={`package main
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+// Challenge: chains and aborts
+// 1. Write func Chain(h http.Handler, mw ...func(http.Handler) http.Handler) http.Handler
+//      - apply the middleware in REVERSE so the first listed runs first
+// 2. Write three middleware that print "A start"/"A end", "B start"/"B end",
+//    and RequireToken:
+//      - if r.Header.Get("Authorization") is empty, respond 401 and RETURN
+//        WITHOUT calling next (this is c.Abort())
+//      - otherwise call next
+// 3. Build the chain: Chain(handler, A, RequireToken, B)
+// 4. Call it once WITHOUT the header and once WITH it, printing the status
+// 5. Notice the nesting: A start, B start, handler, B end, A end
+
+func main() {
+	fmt.Println(http.StatusUnauthorized, httptest.NewRecorder().Code)
+}`}
+              solution={`package main
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+type middleware func(http.Handler) http.Handler
+
+// Applied in reverse so the first one listed is the outermost
+func Chain(h http.Handler, mw ...middleware) http.Handler {
+	for i := len(mw) - 1; i >= 0; i-- {
+		h = mw[i](h)
+	}
+	return h
+}
+
+func tag(name string) middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Println(name, "start")
+			next.ServeHTTP(w, r)
+			fmt.Println(name, "end")
+		})
+	}
+}
+
+// Never calls next when the check fails — the equivalent of c.Abort()
+func RequireToken(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") == "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Fprint(w, "unauthorized")
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func main() {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("handler")
+		fmt.Fprint(w, "ok")
+	})
+
+	chain := Chain(handler, tag("A"), RequireToken, tag("B"))
+
+	fmt.Println("--- no token ---")
+	rec := httptest.NewRecorder()
+	chain.ServeHTTP(rec, httptest.NewRequest("GET", "/", nil))
+	fmt.Println("status:", rec.Code, rec.Body.String())
+
+	fmt.Println("--- with token ---")
+	rec = httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Authorization", "Bearer x")
+	chain.ServeHTTP(rec, req)
+	fmt.Println("status:", rec.Code, rec.Body.String())
+}`}
+            />
+
+
             {/* ─────────────────────────────────────────────────── */}
             {/* 14. CORS */}
             {/* ─────────────────────────────────────────────────── */}
@@ -2615,6 +4402,175 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001`} />
                 endpoint is accessible from the frontend.
               </p>
             </div>
+
+            <PlaygroundChallenge
+              title="An Origin Allowlist"
+              description="Decide the Access-Control-Allow-Origin header from a list of permitted origins. Echo the caller's origin when it is allowed, and send nothing at all when it is not."
+              challenge={`package main
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+// Challenge: allowlist logic
+// 1. Write func allowOrigin(origin string, allowed []string) string
+//      - return origin when it appears in allowed
+//      - return "" otherwise (send NO header rather than a wrong one)
+// 2. Write a CORS middleware that:
+//      - reads r.Header.Get("Origin")
+//      - sets Access-Control-Allow-Origin only when allowOrigin returns non-empty
+//      - also sets Access-Control-Allow-Credentials: true in that case
+//      - always calls next
+// 3. Test with an allowed origin, a disallowed one, and no Origin header,
+//    printing the response header each time
+//
+// Never reflect an arbitrary origin back with credentials enabled — that
+// hands any site on the internet an authenticated session.
+
+func main() {
+	fmt.Println(http.StatusOK, httptest.NewRecorder().Code)
+}`}
+              solution={`package main
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+func allowOrigin(origin string, allowed []string) string {
+	for _, a := range allowed {
+		if a == origin {
+			return origin
+		}
+	}
+	return "" // not allowed: send no header at all
+}
+
+func CORS(allowed []string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if o := allowOrigin(r.Header.Get("Origin"), allowed); o != "" {
+				w.Header().Set("Access-Control-Allow-Origin", o)
+				w.Header().Set("Access-Control-Allow-Credentials", "true")
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func main() {
+	allowed := []string{"https://app.example.com", "http://localhost:3000"}
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "ok")
+	})
+	wrapped := CORS(allowed)(handler)
+
+	for _, origin := range []string{"http://localhost:3000", "https://evil.example", ""} {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", "/api/products", nil)
+		if origin != "" {
+			req.Header.Set("Origin", origin)
+		}
+		wrapped.ServeHTTP(rec, req)
+		fmt.Printf("origin=%-28q allow=%q\\n", origin, rec.Header().Get("Access-Control-Allow-Origin"))
+	}
+}`}
+            />
+
+            <PlaygroundChallenge
+              title="Handling the Preflight"
+              description="Answer the browser's OPTIONS request before it will send the real one. Get this wrong and every non-trivial request fails before your handler is ever called."
+              challenge={`package main
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+// Challenge: preflight handling
+// 1. Extend a CORS middleware so that when r.Method == http.MethodOptions it:
+//      - sets Access-Control-Allow-Origin (allowed origins only)
+//      - sets Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
+//      - sets Access-Control-Allow-Headers: Content-Type, Authorization
+//      - sets Access-Control-Max-Age: 86400
+//      - responds 204 and RETURNS WITHOUT calling next
+// 2. For every other method, set the origin header and call next as usual
+// 3. Test three requests and print status plus the relevant headers:
+//      - OPTIONS from an allowed origin       -> 204 with the headers
+//      - OPTIONS from a disallowed origin     -> 204, no allow-origin header
+//      - GET from an allowed origin           -> 200 from the handler
+
+func main() {
+	fmt.Println(http.StatusNoContent, httptest.NewRecorder().Code)
+}`}
+              solution={`package main
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+func allowOrigin(origin string, allowed []string) string {
+	for _, a := range allowed {
+		if a == origin {
+			return origin
+		}
+	}
+	return ""
+}
+
+func CORS(allowed []string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			origin := allowOrigin(r.Header.Get("Origin"), allowed)
+			if origin != "" {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+			}
+
+			// The preflight never reaches your handler
+			if r.Method == http.MethodOptions {
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+				w.Header().Set("Access-Control-Max-Age", "86400")
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func main() {
+	allowed := []string{"https://app.example.com"}
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "real response")
+	})
+	wrapped := CORS(allowed)(handler)
+
+	cases := []struct{ method, origin string }{
+		{"OPTIONS", "https://app.example.com"},
+		{"OPTIONS", "https://evil.example"},
+		{"GET", "https://app.example.com"},
+	}
+	for _, c := range cases {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(c.method, "/api/products", nil)
+		req.Header.Set("Origin", c.origin)
+		wrapped.ServeHTTP(rec, req)
+		fmt.Printf("%-8s %-26s -> %d allow=%q methods=%q\\n",
+			c.method, c.origin, rec.Code,
+			rec.Header().Get("Access-Control-Allow-Origin"),
+			rec.Header().Get("Access-Control-Allow-Methods"))
+	}
+}`}
+            />
+
 
             {/* ─────────────────────────────────────────────────── */}
             {/* 15. Handlers */}
@@ -2722,6 +4678,103 @@ func (h *AuthHandler) Login(c *gin.Context) {
     })
 }`} />
 
+            <div className="prose-grit mb-10">
+              <p>
+                Strip Gin away and a handler is four steps in a fixed order: read the input, validate
+                it, call the service, write the response. The version below is the same shape written
+                against <code>net/http</code> so it runs anywhere, including the playground. The part
+                worth copying is the last step — one place that turns a service error into a status
+                code, so no handler ever invents its own mapping.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="handler_shape.go" code={`package main
+
+import (
+    "encoding/json"
+    "errors"
+    "fmt"
+    "net/http"
+    "net/http/httptest"
+    "strings"
+)
+
+// Sentinels the service returns; the handler maps them to status codes
+var (
+    ErrNotFound  = errors.New("not found")
+    ErrDuplicate = errors.New("already exists")
+)
+
+type Product struct {
+    ID    int     \`json:"id"\`
+    Name  string  \`json:"name"\`
+    Price float64 \`json:"price"\`
+}
+
+// The service knows nothing about HTTP
+type ProductService struct{ items map[int]Product }
+
+func (s *ProductService) Get(id int) (Product, error) {
+    p, ok := s.items[id]
+    if !ok {
+        return Product{}, fmt.Errorf("get %d: %w", id, ErrNotFound)
+    }
+    return p, nil
+}
+
+func writeJSON(w http.ResponseWriter, status int, body any) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    json.NewEncoder(w).Encode(body)
+}
+
+// One place that decides which error becomes which status
+func writeError(w http.ResponseWriter, err error) {
+    switch {
+    case errors.Is(err, ErrNotFound):
+        writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+    case errors.Is(err, ErrDuplicate):
+        writeJSON(w, http.StatusConflict, map[string]string{"error": "already exists"})
+    default:
+        // Log the real error server-side; never leak it to the client
+        fmt.Println("internal:", err)
+        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+    }
+}
+
+func main() {
+    svc := &ProductService{items: map[int]Product{
+        1: {ID: 1, Name: "Laptop", Price: 999},
+    }}
+
+    handler := func(w http.ResponseWriter, r *http.Request) {
+        // 1. read input
+        id := strings.TrimPrefix(r.URL.Path, "/products/")
+        // 2. validate
+        if id == "" {
+            writeJSON(w, http.StatusBadRequest, map[string]string{"error": "id required"})
+            return
+        }
+        // 3. call the service
+        var n int
+        fmt.Sscanf(id, "%d", &n)
+        p, err := svc.Get(n)
+        if err != nil {
+            writeError(w, err)
+            return
+        }
+        // 4. write the response
+        writeJSON(w, http.StatusOK, p)
+    }
+
+    for _, path := range []string{"/products/1", "/products/42"} {
+        rec := httptest.NewRecorder()
+        handler(rec, httptest.NewRequest("GET", path, nil))
+        fmt.Printf("%-14s %d %s", path, rec.Code, rec.Body.String())
+    }
+}`} />
+
+
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
@@ -2732,6 +4785,192 @@ func (h *AuthHandler) Login(c *gin.Context) {
                 all following the same thin pattern.
               </p>
             </div>
+
+            <PlaygroundChallenge
+              title="The Four Steps of a Handler"
+              description="Read, validate, call the service, respond — in that order, every time. Build one end to end and prove it with httptest."
+              challenge={`package main
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+)
+
+type CreateUserRequest struct {
+	Name  string \`json:"name"\`
+	Email string \`json:"email"\`
+}
+
+// Challenge: a complete handler
+// 1. Decode the body into CreateUserRequest; on failure respond 400
+// 2. Validate:
+//      - Name must not be blank
+//      - Email must contain "@"
+//    Collect problems into map[string]string and respond 422 if any
+// 3. "Call the service": if Email is "taken@example.com", respond 409
+//    with {"error":"email already registered"}
+// 4. Otherwise respond 201 with {"id":1,"name":...,"email":...}
+// 5. Exercise all four paths with httptest and print status + body
+//
+// Keep the order. Validating after calling the service is how you end up
+// writing a row you were about to reject.
+
+func main() {
+	fmt.Println(http.StatusCreated, strings.TrimSpace(" x "), httptest.NewRecorder().Code)
+}`}
+              solution={`package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+)
+
+type CreateUserRequest struct {
+	Name  string \`json:"name"\`
+	Email string \`json:"email"\`
+}
+
+func writeJSON(w http.ResponseWriter, status int, body any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(body)
+}
+
+func createUser(w http.ResponseWriter, r *http.Request) {
+	// 1. read
+	var req CreateUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+
+	// 2. validate
+	problems := map[string]string{}
+	if strings.TrimSpace(req.Name) == "" {
+		problems["name"] = "is required"
+	}
+	if !strings.Contains(req.Email, "@") {
+		problems["email"] = "must be a valid email address"
+	}
+	if len(problems) > 0 {
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{"errors": problems})
+		return
+	}
+
+	// 3. call the service
+	if req.Email == "taken@example.com" {
+		writeJSON(w, http.StatusConflict, map[string]string{"error": "email already registered"})
+		return
+	}
+
+	// 4. respond
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"id": 1, "name": req.Name, "email": req.Email,
+	})
+}
+
+func main() {
+	bodies := []string{
+		\`{"name":"Ada","email":"ada@example.com"}\`,
+		\`{"name":"","email":"nope"}\`,
+		\`{"name":"Bob","email":"taken@example.com"}\`,
+		\`{{{\`,
+	}
+	for _, b := range bodies {
+		rec := httptest.NewRecorder()
+		createUser(rec, httptest.NewRequest("POST", "/users", strings.NewReader(b)))
+		fmt.Printf("%d %s", rec.Code, rec.Body.String())
+	}
+}`}
+            />
+
+            <PlaygroundChallenge
+              title="Mapping Errors to Status Codes"
+              description="Write the one function that turns a service error into an HTTP status, so no handler has to guess and no internal message leaks to the client."
+              challenge={`package main
+
+import (
+	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+// Challenge: a single error mapper
+// 1. Declare sentinels:
+//      ErrNotFound, ErrForbidden, ErrConflict
+// 2. Write func writeError(w http.ResponseWriter, err error) that maps:
+//      ErrNotFound  -> 404 {"error":"not found"}
+//      ErrForbidden -> 403 {"error":"forbidden"}
+//      ErrConflict  -> 409 {"error":"already exists"}
+//      anything else -> 500 {"error":"internal error"}
+//                       and print the real error to the server log only
+//    Use errors.Is so wrapped errors still match.
+// 3. Build four errors — three wrapped sentinels and one raw database error —
+//    pass each to writeError with a fresh httptest.NewRecorder()
+// 4. Print status and body, and confirm the database error's text never
+//    appears in the response body
+
+func main() {
+	fmt.Println(errors.New("x"), http.StatusNotFound, httptest.NewRecorder().Code)
+}`}
+              solution={`package main
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+var (
+	ErrNotFound  = errors.New("not found")
+	ErrForbidden = errors.New("forbidden")
+	ErrConflict  = errors.New("already exists")
+)
+
+func writeJSON(w http.ResponseWriter, status int, body any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(body)
+}
+
+func writeError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, ErrNotFound):
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+	case errors.Is(err, ErrForbidden):
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "forbidden"})
+	case errors.Is(err, ErrConflict):
+		writeJSON(w, http.StatusConflict, map[string]string{"error": "already exists"})
+	default:
+		// Logged here, never sent: the client learns nothing about the schema
+		fmt.Println("[log] internal:", err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+	}
+}
+
+func main() {
+	errs := []error{
+		fmt.Errorf("products.Get 42: %w", ErrNotFound),
+		fmt.Errorf("products.Delete: %w", ErrForbidden),
+		fmt.Errorf("users.Create: %w", ErrConflict),
+		errors.New(\`pq: duplicate key value violates unique constraint "users_email_key"\`),
+	}
+	for _, err := range errs {
+		rec := httptest.NewRecorder()
+		writeError(rec, err)
+		fmt.Printf("%d %s", rec.Code, rec.Body.String())
+	}
+}`}
+            />
+
 
             {/* ─────────────────────────────────────────────────── */}
             {/* 16. Services & The Service Pattern */}
@@ -2859,6 +5098,220 @@ func (h *ProductHandler) GetByID(c *gin.Context) {
                 or an async job worker.
               </p>
             </div>
+
+            <PlaygroundChallenge
+              title="A Service That Owns the Rules"
+              description="Put the business rules in a service that knows nothing about HTTP, then prove it by calling the same service from ordinary code."
+              challenge={`package main
+
+import "fmt"
+
+type Product struct {
+	ID    int
+	Name  string
+	Price float64
+	Stock int
+}
+
+// Challenge: a service with real rules
+// 1. Declare: type ProductService struct { items map[int]*Product; nextID int }
+// 2. Write a constructor NewProductService() *ProductService
+// 3. Add methods that return (result, error):
+//      Create(name string, price float64) (*Product, error)
+//        - reject a blank name or a price <= 0
+//        - assign the next id and store it
+//      Reserve(id, qty int) error
+//        - error if the product does not exist
+//        - error if qty > Stock
+//        - otherwise decrement Stock
+// 4. In main: create two products, reserve some stock, and trigger every
+//    error path, printing what happened each time
+//
+// Notice there is no http anywhere in the service — that is the point.
+
+func main() {
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import (
+	"errors"
+	"fmt"
+	"strings"
+)
+
+var (
+	ErrInvalidInput = errors.New("invalid input")
+	ErrNotFound     = errors.New("not found")
+	ErrNoStock      = errors.New("insufficient stock")
+)
+
+type Product struct {
+	ID    int
+	Name  string
+	Price float64
+	Stock int
+}
+
+type ProductService struct {
+	items  map[int]*Product
+	nextID int
+}
+
+func NewProductService() *ProductService {
+	return &ProductService{items: map[int]*Product{}, nextID: 1}
+}
+
+func (s *ProductService) Create(name string, price float64) (*Product, error) {
+	if strings.TrimSpace(name) == "" {
+		return nil, fmt.Errorf("name is required: %w", ErrInvalidInput)
+	}
+	if price <= 0 {
+		return nil, fmt.Errorf("price must be positive: %w", ErrInvalidInput)
+	}
+	p := &Product{ID: s.nextID, Name: name, Price: price, Stock: 10}
+	s.items[p.ID] = p
+	s.nextID++
+	return p, nil
+}
+
+func (s *ProductService) Reserve(id, qty int) error {
+	p, ok := s.items[id]
+	if !ok {
+		return fmt.Errorf("product %d: %w", id, ErrNotFound)
+	}
+	if qty > p.Stock {
+		return fmt.Errorf("want %d, have %d: %w", qty, p.Stock, ErrNoStock)
+	}
+	p.Stock -= qty
+	return nil
+}
+
+func main() {
+	svc := NewProductService()
+
+	laptop, _ := svc.Create("Laptop", 999)
+	fmt.Printf("created %+v\\n", *laptop)
+
+	if _, err := svc.Create("", 10); err != nil {
+		fmt.Println("rejected:", err)
+	}
+	if _, err := svc.Create("Mouse", -1); err != nil {
+		fmt.Println("rejected:", err)
+	}
+
+	fmt.Println("reserve 3:", svc.Reserve(laptop.ID, 3))
+	fmt.Println("stock now:", svc.items[laptop.ID].Stock)
+	fmt.Println("reserve 99:", svc.Reserve(laptop.ID, 99))
+	fmt.Println("reserve missing:", svc.Reserve(404, 1))
+}`}
+            />
+
+            <PlaygroundChallenge
+              title="Depending on an Interface"
+              description="Have the service depend on a repository interface rather than a concrete database. That is what makes it testable without a running Postgres."
+              challenge={`package main
+
+import "fmt"
+
+type User struct {
+	ID    int
+	Email string
+}
+
+// Challenge: dependency injection through an interface
+// 1. Declare: type UserRepo interface {
+//      FindByEmail(email string) (*User, error)
+//      Create(u *User) error
+//    }
+// 2. Write an in-memory implementation: type MemoryRepo struct { users []*User }
+//      - FindByEmail returns a "not found" error when absent
+//      - Create appends and assigns an ID
+// 3. Write: type UserService struct { repo UserRepo }
+//      - Register(email string) (*User, error) that refuses a duplicate email
+// 4. In main, build the service with a MemoryRepo, register twice with the
+//    same email, and show the second attempt failing
+// 5. Bonus: write a FailingRepo whose Create always errors, hand it to the
+//    SAME service, and confirm the error surfaces — no database required
+
+func main() {
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+var ErrNotFound = errors.New("not found")
+
+type User struct {
+	ID    int
+	Email string
+}
+
+// The service depends on this, not on a database
+type UserRepo interface {
+	FindByEmail(email string) (*User, error)
+	Create(u *User) error
+}
+
+type MemoryRepo struct{ users []*User }
+
+func (r *MemoryRepo) FindByEmail(email string) (*User, error) {
+	for _, u := range r.users {
+		if u.Email == email {
+			return u, nil
+		}
+	}
+	return nil, ErrNotFound
+}
+
+func (r *MemoryRepo) Create(u *User) error {
+	u.ID = len(r.users) + 1
+	r.users = append(r.users, u)
+	return nil
+}
+
+type FailingRepo struct{ MemoryRepo }
+
+func (r *FailingRepo) Create(u *User) error {
+	return errors.New("connection refused")
+}
+
+type UserService struct{ repo UserRepo }
+
+func (s *UserService) Register(email string) (*User, error) {
+	if _, err := s.repo.FindByEmail(email); err == nil {
+		return nil, fmt.Errorf("register %s: already registered", email)
+	} else if !errors.Is(err, ErrNotFound) {
+		return nil, fmt.Errorf("register %s: %w", email, err)
+	}
+
+	u := &User{Email: email}
+	if err := s.repo.Create(u); err != nil {
+		return nil, fmt.Errorf("register %s: %w", email, err)
+	}
+	return u, nil
+}
+
+func main() {
+	svc := &UserService{repo: &MemoryRepo{}}
+
+	u, err := svc.Register("ada@example.com")
+	fmt.Println("first: ", u, err)
+
+	_, err = svc.Register("ada@example.com")
+	fmt.Println("second:", err)
+
+	// Same service, different repo — no database needed to test the failure
+	failing := &UserService{repo: &FailingRepo{}}
+	_, err = failing.Register("grace@example.com")
+	fmt.Println("failing repo:", err)
+}`}
+            />
+
 
             {/* ─────────────────────────────────────────────────── */}
             {/* 17. GORM In Depth */}
@@ -3037,6 +5490,225 @@ db.Create(&user) // BeforeCreate hashes it before INSERT`} />
               </p>
             </div>
 
+            <PlaygroundChallenge
+              title="Why Preloading Exists"
+              description="Reproduce the N+1 query problem with an in-memory store, count the lookups, then fix it the way Preload does — one query for the children instead of one per parent."
+              challenge={`package main
+
+import "fmt"
+
+type Author struct {
+	ID   int
+	Name string
+}
+
+type Book struct {
+	ID       int
+	Title    string
+	AuthorID int
+}
+
+// Challenge: N+1 and how Preload fixes it
+// 1. Write findAuthor(id int) *Author that increments a global queryCount
+//    and returns the matching author (this stands in for a database round trip)
+// 2. Loop the books calling findAuthor for each — print the count.
+//    With 5 books that is 1 + 5 = 6 "queries": the N+1 problem.
+// 3. Now do it the Preload way:
+//      - collect the distinct author ids
+//      - fetch them in ONE call (findAuthorsIn(ids []int) map[int]*Author)
+//      - join in memory from the map
+// 4. Print the query count for both approaches and the joined output
+//
+// GORM: db.Find(&books) then db.Preload("Author").Find(&books)
+
+var queryCount int
+
+func main() {
+	fmt.Println(queryCount)
+}`}
+              solution={`package main
+
+import "fmt"
+
+type Author struct {
+	ID   int
+	Name string
+}
+
+type Book struct {
+	ID       int
+	Title    string
+	AuthorID int
+}
+
+var (
+	authors = map[int]*Author{
+		1: {ID: 1, Name: "Ada"},
+		2: {ID: 2, Name: "Grace"},
+	}
+	books = []Book{
+		{1, "Go in Practice", 1},
+		{2, "Concurrency", 1},
+		{3, "Compilers", 2},
+		{4, "Databases", 2},
+		{5, "Networks", 1},
+	}
+	queryCount int
+)
+
+func findAuthor(id int) *Author {
+	queryCount++ // one round trip
+	return authors[id]
+}
+
+func findAuthorsIn(ids []int) map[int]*Author {
+	queryCount++ // still one round trip, however many ids
+	out := map[int]*Author{}
+	for _, id := range ids {
+		if a, ok := authors[id]; ok {
+			out[id] = a
+		}
+	}
+	return out
+}
+
+func main() {
+	// N+1: one query for the books, then one per book
+	queryCount = 1
+	for _, b := range books {
+		_ = findAuthor(b.AuthorID)
+	}
+	fmt.Println("N+1 queries:", queryCount) // 6
+
+	// Preload: one query for the books, one for all the authors
+	queryCount = 1
+	seen := map[int]bool{}
+	ids := []int{}
+	for _, b := range books {
+		if !seen[b.AuthorID] {
+			seen[b.AuthorID] = true
+			ids = append(ids, b.AuthorID)
+		}
+	}
+	byID := findAuthorsIn(ids)
+	fmt.Println("preload queries:", queryCount) // 2
+
+	for _, b := range books {
+		fmt.Printf("  %-16s by %s\\n", b.Title, byID[b.AuthorID].Name)
+	}
+}`}
+            />
+
+            <PlaygroundChallenge
+              title="Hooks and Soft Deletes"
+              description="Model two GORM behaviours that surprise people: a BeforeCreate hook that rewrites the record on the way in, and a soft delete that hides rows without removing them."
+              challenge={`package main
+
+import "fmt"
+
+type User struct {
+	ID       int
+	Email    string
+	Password string
+	Deleted  bool
+}
+
+// Challenge: hooks and soft deletes
+// 1. Write func (u *User) BeforeCreate() error that:
+//      - lowercases and trims the Email
+//      - refuses to continue if Password is shorter than 8 (return an error)
+//      - replaces Password with "hashed:" + the original
+// 2. Write a Store with Create(u *User) error that calls BeforeCreate first
+//    and only stores the user if it returns nil
+// 3. Add SoftDelete(id int) and List() []User where List SKIPS deleted rows
+//    (GORM does this automatically for models with gorm.DeletedAt)
+// 4. Create two users (one with a short password), soft delete one,
+//    then print List() and the raw slice so the difference is visible
+
+func main() {
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import (
+	"errors"
+	"fmt"
+	"strings"
+)
+
+type User struct {
+	ID       int
+	Email    string
+	Password string
+	Deleted  bool
+}
+
+// GORM calls this automatically; here we call it from Create
+func (u *User) BeforeCreate() error {
+	u.Email = strings.ToLower(strings.TrimSpace(u.Email))
+	if len(u.Password) < 8 {
+		return errors.New("password must be at least 8 characters")
+	}
+	u.Password = "hashed:" + u.Password
+	return nil
+}
+
+type Store struct {
+	rows   []User
+	nextID int
+}
+
+func (s *Store) Create(u *User) error {
+	if err := u.BeforeCreate(); err != nil {
+		return fmt.Errorf("create user: %w", err)
+	}
+	s.nextID++
+	u.ID = s.nextID
+	s.rows = append(s.rows, *u)
+	return nil
+}
+
+func (s *Store) SoftDelete(id int) {
+	for i := range s.rows {
+		if s.rows[i].ID == id {
+			s.rows[i].Deleted = true // the row stays, it is just hidden
+		}
+	}
+}
+
+// The default query excludes soft-deleted rows
+func (s *Store) List() []User {
+	out := []User{}
+	for _, u := range s.rows {
+		if !u.Deleted {
+			out = append(out, u)
+		}
+	}
+	return out
+}
+
+func main() {
+	store := &Store{}
+
+	ada := &User{Email: "  ADA@Example.com ", Password: "correct-horse"}
+	fmt.Println("create ada:", store.Create(ada))
+	fmt.Printf("stored as: %+v\\n", *ada)
+
+	short := &User{Email: "bob@example.com", Password: "abc"}
+	fmt.Println("create bob:", store.Create(short))
+
+	grace := &User{Email: "grace@example.com", Password: "another-long-one"}
+	store.Create(grace)
+
+	store.SoftDelete(ada.ID)
+	fmt.Println("List() returns:", len(store.List()), "of", len(store.rows), "rows")
+	for _, u := range store.List() {
+		fmt.Println("  visible:", u.Email)
+	}
+}`}
+            />
+
+
             {/* ─────────────────────────────────────────────────── */}
             {/* 18. Migrations & Seeding */}
             {/* ─────────────────────────────────────────────────── */}
@@ -3174,6 +5846,192 @@ grit seed`} />
                 and <code>grit seed</code> CLI commands.
               </p>
             </div>
+
+            <PlaygroundChallenge
+              title="Idempotent Seeding"
+              description="A seeder has to be safe to run twice. Write find-or-create so a second run changes nothing, which is the difference between a seeder and a duplicate-row generator."
+              challenge={`package main
+
+import "fmt"
+
+type User struct {
+	ID    int
+	Email string
+	Role  string
+}
+
+// Challenge: seed without duplicating
+// 1. Build a Store with rows []User and nextID int
+// 2. Write FirstOrCreate(email, role string) (*User, bool):
+//      - if a user with that email exists, return it and false (not created)
+//      - otherwise append a new one and return it with true
+// 3. Write Seed(s *Store) that seeds three users:
+//      admin@example.com ADMIN, editor@example.com EDITOR, user@example.com USER
+//    printing "created" or "exists" for each
+// 4. Call Seed TWICE and print the row count after each run —
+//    it must be 3 both times
+// 5. Bonus: make the second run update the role of an existing user
+//    without adding a row
+
+func main() {
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import "fmt"
+
+type User struct {
+	ID    int
+	Email string
+	Role  string
+}
+
+type Store struct {
+	rows   []User
+	nextID int
+}
+
+// The seeding primitive: find it, or create it — never blindly insert
+func (s *Store) FirstOrCreate(email, role string) (*User, bool) {
+	for i := range s.rows {
+		if s.rows[i].Email == email {
+			return &s.rows[i], false
+		}
+	}
+	s.nextID++
+	s.rows = append(s.rows, User{ID: s.nextID, Email: email, Role: role})
+	return &s.rows[len(s.rows)-1], true
+}
+
+func Seed(s *Store) {
+	seeds := []struct{ email, role string }{
+		{"admin@example.com", "ADMIN"},
+		{"editor@example.com", "EDITOR"},
+		{"user@example.com", "USER"},
+	}
+	for _, sd := range seeds {
+		u, created := s.FirstOrCreate(sd.email, sd.role)
+		if created {
+			fmt.Printf("  created %s (%s)\\n", u.Email, u.Role)
+		} else {
+			fmt.Printf("  exists  %s (%s)\\n", u.Email, u.Role)
+		}
+	}
+}
+
+func main() {
+	store := &Store{}
+
+	fmt.Println("first run:")
+	Seed(store)
+	fmt.Println("rows:", len(store.rows))
+
+	fmt.Println("second run:")
+	Seed(store)
+	fmt.Println("rows:", len(store.rows)) // still 3
+
+	// Bonus: update in place, no new row
+	if u, created := store.FirstOrCreate("user@example.com", "USER"); !created {
+		u.Role = "EDITOR"
+	}
+	fmt.Println("after promotion:", store.rows[2], "rows:", len(store.rows))
+}`}
+            />
+
+            <PlaygroundChallenge
+              title="Migration Order and Dependencies"
+              description="AutoMigrate has to create a table before anything references it. Sort a set of migrations by their dependencies and detect the cycle that would make the order impossible."
+              challenge={`package main
+
+import "fmt"
+
+// Challenge: order migrations by dependency
+// 1. Given: migrations = map[string][]string where the value lists what a
+//    table depends on, e.g. "orders": {"users", "products"}
+// 2. Write Resolve(m map[string][]string) ([]string, error) that returns the
+//    tables in an order where every dependency comes first
+//    Hint: repeatedly take any table whose dependencies are all already placed
+// 3. If no progress can be made and tables remain, return an error naming
+//    them — that is a dependency cycle
+// 4. Print the resolved order for the valid set
+// 5. Then add a cycle ("a" needs "b", "b" needs "a") and print the error
+//
+// Sort the names at each step so the output is the same on every run.
+
+func main() {
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import (
+	"errors"
+	"fmt"
+	"sort"
+)
+
+func Resolve(m map[string][]string) ([]string, error) {
+	placed := map[string]bool{}
+	var order []string
+
+	for len(placed) < len(m) {
+		// Collect everything whose dependencies are already satisfied
+		var ready []string
+		for table, deps := range m {
+			if placed[table] {
+				continue
+			}
+			ok := true
+			for _, d := range deps {
+				if _, known := m[d]; known && !placed[d] {
+					ok = false
+					break
+				}
+			}
+			if ok {
+				ready = append(ready, table)
+			}
+		}
+
+		if len(ready) == 0 {
+			var stuck []string
+			for t := range m {
+				if !placed[t] {
+					stuck = append(stuck, t)
+				}
+			}
+			sort.Strings(stuck)
+			return nil, fmt.Errorf("dependency cycle among %v: %w", stuck, errors.New("cannot order migrations"))
+		}
+
+		sort.Strings(ready) // stable output
+		for _, t := range ready {
+			placed[t] = true
+			order = append(order, t)
+		}
+	}
+	return order, nil
+}
+
+func main() {
+	valid := map[string][]string{
+		"users":       {},
+		"products":    {},
+		"orders":      {"users", "products"},
+		"order_items": {"orders", "products"},
+		"reviews":     {"users", "products"},
+	}
+	order, err := Resolve(valid)
+	fmt.Println("order:", order, "err:", err)
+
+	cyclic := map[string][]string{
+		"a": {"b"},
+		"b": {"a"},
+	}
+	_, err = Resolve(cyclic)
+	fmt.Println("cycle:", err)
+}`}
+            />
+
 
             {/* ─────────────────────────────────────────────────── */}
             {/* 19. JWT & Authentication */}
@@ -3362,6 +6220,208 @@ func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
               </p>
             </div>
 
+            <PlaygroundChallenge
+              title="Build a JWT by Hand"
+              description="A JWT is three base64 segments joined by dots, the third being an HMAC of the first two. Build and verify one with nothing but the standard library and it stops being magic."
+              challenge={`package main
+
+import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"fmt"
+)
+
+// Challenge: sign and verify a token yourself
+// 1. Write encodeSegment(b []byte) string using base64.RawURLEncoding
+// 2. Build the header  {"alg":"HS256","typ":"JWT"}  and a claims payload
+//    {"sub":"42","role":"ADMIN","exp":1893456000}  as JSON, then encode both
+// 3. signingInput := header + "." + payload
+// 4. Sign it: hmac.New(sha256.New, secret), write signingInput, Sum(nil),
+//    then encode the result. The token is signingInput + "." + signature
+// 5. Write verify(token string, secret []byte) bool that recomputes the
+//    signature and compares with hmac.Equal — NOT with ==
+// 6. Print the token, verify it, then flip one character in the payload
+//    and verify again to watch it fail
+//
+// Note the payload is only encoded, never encrypted: anyone can read it.
+
+func main() {
+	fmt.Println(base64.RawURLEncoding.EncodeToString([]byte("hi")), hmac.Equal(nil, nil), sha256.Size)
+}`}
+              solution={`package main
+
+import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"fmt"
+	"strings"
+)
+
+func encodeSegment(b []byte) string {
+	return base64.RawURLEncoding.EncodeToString(b)
+}
+
+func sign(signingInput string, secret []byte) string {
+	m := hmac.New(sha256.New, secret)
+	m.Write([]byte(signingInput))
+	return encodeSegment(m.Sum(nil))
+}
+
+func makeToken(secret []byte) string {
+	header := encodeSegment([]byte(\`{"alg":"HS256","typ":"JWT"}\`))
+	payload := encodeSegment([]byte(\`{"sub":"42","role":"ADMIN","exp":1893456000}\`))
+	signingInput := header + "." + payload
+	return signingInput + "." + sign(signingInput, secret)
+}
+
+func verify(token string, secret []byte) bool {
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return false
+	}
+	expected := sign(parts[0]+"."+parts[1], secret)
+	// Constant-time compare: == would leak timing information
+	return hmac.Equal([]byte(expected), []byte(parts[2]))
+}
+
+func main() {
+	secret := []byte("a-long-secret-from-the-environment")
+
+	token := makeToken(secret)
+	fmt.Println("token:", token)
+	fmt.Println("valid:", verify(token, secret))
+
+	// The payload is encoded, not encrypted — anyone can read it
+	parts := strings.Split(token, ".")
+	claims, _ := base64.RawURLEncoding.DecodeString(parts[1])
+	fmt.Println("claims:", string(claims))
+
+	// Tamper with the claims and the signature no longer matches
+	forged := parts[0] + "." + encodeSegment([]byte(\`{"sub":"42","role":"SUPERADMIN"}\`)) + "." + parts[2]
+	fmt.Println("forged valid:", verify(forged, secret))
+
+	// The wrong secret fails too
+	fmt.Println("wrong secret:", verify(token, []byte("guess")))
+}`}
+            />
+
+            <PlaygroundChallenge
+              title="Expiry and the Auth Middleware"
+              description="Parse a token, reject it when the claims say it has expired, and put the user on the request context so handlers downstream can read it."
+              challenge={`package main
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+// Challenge: an auth middleware
+// 1. Write parseToken(token string, now int64) (userID string, role string, err error)
+//    Tokens here are the simple form "userID:role:expiry", e.g. "42:ADMIN:2000"
+//      - error if the token does not have three parts
+//      - error if expiry <= now  (say "token expired")
+// 2. Write Auth(next http.Handler) http.Handler that:
+//      - reads the Authorization header, requiring the "Bearer " prefix
+//      - responds 401 when it is missing or invalid
+//      - on success stores the user id and role on the request context
+//        with context.WithValue and calls next with r.WithContext(ctx)
+// 3. Write a handler that reads them back from the context and prints them
+// 4. Test: no header, a malformed header, an expired token, a valid one
+//
+// Use your own key type for the context (type ctxKey string) so it cannot
+// collide with a key set by another package.
+
+func main() {
+	fmt.Println(http.StatusUnauthorized, httptest.NewRecorder().Code)
+}`}
+              solution={`package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
+	"strings"
+)
+
+type ctxKey string
+
+const (
+	ctxUserID ctxKey = "userID"
+	ctxRole   ctxKey = "role"
+)
+
+func parseToken(token string, now int64) (string, string, error) {
+	parts := strings.Split(token, ":")
+	if len(parts) != 3 {
+		return "", "", errors.New("malformed token")
+	}
+	exp, err := strconv.ParseInt(parts[2], 10, 64)
+	if err != nil {
+		return "", "", errors.New("malformed expiry")
+	}
+	if exp <= now {
+		return "", "", errors.New("token expired")
+	}
+	return parts[0], parts[1], nil
+}
+
+func Auth(now int64) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			header := r.Header.Get("Authorization")
+			if !strings.HasPrefix(header, "Bearer ") {
+				http.Error(w, "missing bearer token", http.StatusUnauthorized)
+				return
+			}
+
+			id, role, err := parseToken(strings.TrimPrefix(header, "Bearer "), now)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusUnauthorized)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), ctxUserID, id)
+			ctx = context.WithValue(ctx, ctxRole, role)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+func main() {
+	const now int64 = 1500
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id, _ := r.Context().Value(ctxUserID).(string)
+		role, _ := r.Context().Value(ctxRole).(string)
+		fmt.Fprintf(w, "user=%s role=%s", id, role)
+	})
+	wrapped := Auth(now)(handler)
+
+	cases := []struct{ name, header string }{
+		{"no header", ""},
+		{"malformed", "Bearer nonsense"},
+		{"expired", "Bearer 42:ADMIN:1000"},
+		{"valid", "Bearer 42:ADMIN:2000"},
+	}
+	for _, c := range cases {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", "/me", nil)
+		if c.header != "" {
+			req.Header.Set("Authorization", c.header)
+		}
+		wrapped.ServeHTTP(rec, req)
+		fmt.Printf("%-10s %d %s\\n", c.name, rec.Code, strings.TrimSpace(rec.Body.String()))
+	}
+}`}
+            />
+
+
             {/* ─────────────────────────────────────────────────── */}
             {/* 20. RBAC & Middleware */}
             {/* ─────────────────────────────────────────────────── */}
@@ -3503,6 +6563,182 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
               </p>
             </div>
 
+            <PlaygroundChallenge
+              title="Role Checks as Middleware"
+              description="Write RequireRole once and apply it per route. The check belongs in one place, not repeated at the top of every handler where one omission becomes a hole."
+              challenge={`package main
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+// Challenge: RequireRole
+// 1. Assume an earlier middleware has put a role on the context.
+//    For this exercise read it from the X-Role header instead.
+// 2. Write RequireRole(allowed ...string) func(http.Handler) http.Handler
+//      - 401 when no role is present at all
+//      - 403 when a role is present but not in allowed
+//      - otherwise call next
+// 3. Build a mux with:
+//      GET  /products         -> open to everyone
+//      POST /products         -> RequireRole("ADMIN", "EDITOR")
+//      DELETE /products/{id}  -> RequireRole("ADMIN")
+// 4. Exercise every combination and print method, role and status
+// 5. Note which failures are 401 (who are you?) and which are 403
+//    (I know who you are, and no)
+
+func main() {
+	fmt.Println(http.StatusForbidden, httptest.NewRecorder().Code)
+}`}
+              solution={`package main
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+func RequireRole(allowed ...string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			role := r.Header.Get("X-Role")
+			if role == "" {
+				http.Error(w, "unauthenticated", http.StatusUnauthorized)
+				return
+			}
+			for _, a := range allowed {
+				if a == role {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+			http.Error(w, "forbidden", http.StatusForbidden)
+		})
+	}
+}
+
+func ok(msg string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, msg)
+	})
+}
+
+func main() {
+	mux := http.NewServeMux()
+	mux.Handle("GET /products", ok("list"))
+	mux.Handle("POST /products", RequireRole("ADMIN", "EDITOR")(ok("created")))
+	mux.Handle("DELETE /products/{id}", RequireRole("ADMIN")(ok("deleted")))
+
+	cases := []struct{ method, path, role string }{
+		{"GET", "/products", ""},
+		{"POST", "/products", ""},
+		{"POST", "/products", "USER"},
+		{"POST", "/products", "EDITOR"},
+		{"DELETE", "/products/1", "EDITOR"},
+		{"DELETE", "/products/1", "ADMIN"},
+	}
+	for _, c := range cases {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(c.method, c.path, nil)
+		if c.role != "" {
+			req.Header.Set("X-Role", c.role)
+		}
+		mux.ServeHTTP(rec, req)
+		fmt.Printf("%-7s %-14s role=%-7q %d\\n", c.method, c.path, c.role, rec.Code)
+	}
+}`}
+            />
+
+            <PlaygroundChallenge
+              title="Ownership Beats Roles"
+              description="Some rules cannot be expressed as a role: a user may edit their own post but not someone else's. Combine a role check with an ownership check and get the order right."
+              challenge={`package main
+
+import "fmt"
+
+type Post struct {
+	ID       int
+	AuthorID int
+	Title    string
+}
+
+// Challenge: role plus ownership
+// 1. Write canEdit(userID int, role string, p Post) (bool, string)
+//    returning whether the edit is allowed and a short reason:
+//      - role "ADMIN"                     -> true, "admin override"
+//      - p.AuthorID == userID             -> true, "owner"
+//      - role "EDITOR" and p is a draft   -> true, "editor on draft"
+//        (treat a Title starting with "DRAFT:" as a draft)
+//      - otherwise                        -> false, "not permitted"
+// 2. Check ownership BEFORE the editor rule so an owner is never refused
+// 3. Run the table below and print user, role, post and the decision
+// 4. Bonus: add a locked post nobody but an admin may edit
+
+func main() {
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import (
+	"fmt"
+	"strings"
+)
+
+type Post struct {
+	ID       int
+	AuthorID int
+	Title    string
+	Locked   bool
+}
+
+func canEdit(userID int, role string, p Post) (bool, string) {
+	// Admin first: the override that beats every other rule
+	if role == "ADMIN" {
+		return true, "admin override"
+	}
+	// Locked posts stop here for everyone else
+	if p.Locked {
+		return false, "post is locked"
+	}
+	// Ownership before role, so an owner is never turned away
+	if p.AuthorID == userID {
+		return true, "owner"
+	}
+	if role == "EDITOR" && strings.HasPrefix(p.Title, "DRAFT:") {
+		return true, "editor on draft"
+	}
+	return false, "not permitted"
+}
+
+func main() {
+	published := Post{ID: 1, AuthorID: 7, Title: "Shipping Go"}
+	draft := Post{ID: 2, AuthorID: 7, Title: "DRAFT: Generics"}
+	locked := Post{ID: 3, AuthorID: 7, Title: "Policy", Locked: true}
+
+	cases := []struct {
+		userID int
+		role   string
+		post   Post
+	}{
+		{7, "USER", published},
+		{9, "USER", published},
+		{9, "EDITOR", published},
+		{9, "EDITOR", draft},
+		{9, "ADMIN", locked},
+		{7, "USER", locked},
+	}
+
+	for _, c := range cases {
+		allowed, reason := canEdit(c.userID, c.role, c.post)
+		fmt.Printf("user=%d role=%-7s post=%-2d -> %-5t (%s)\\n",
+			c.userID, c.role, c.post.ID, allowed, reason)
+	}
+}`}
+            />
+
+
             {/* ─────────────────────────────────────────────────── */}
             {/* 21. Important Packages */}
             {/* ─────────────────────────────────────────────────── */}
@@ -3568,6 +6804,254 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
                 </tbody>
               </table>
             </div>
+
+            <div className="prose-grit mb-10">
+              <p>
+                Reading the list is one thing; the two programs below actually use them. The first
+                covers the text and number packages you reach for on nearly every request, the second
+                the time and encoding ones that show up the moment you touch a database or return
+                JSON.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="stdlib_text.go" code={`package main
+
+import (
+    "fmt"
+    "sort"
+    "strconv"
+    "strings"
+)
+
+func main() {
+    // strings — the workhorse for anything user-supplied
+    raw := "  Laptop, Mouse , Keyboard,  "
+    parts := strings.Split(strings.TrimSpace(raw), ",")
+    var items []string
+    for _, p := range parts {
+        if p = strings.TrimSpace(p); p != "" {
+            items = append(items, p)
+        }
+    }
+    fmt.Println(items, len(items))
+
+    fmt.Println(strings.ToLower("ADA@Example.com"))
+    fmt.Println(strings.Contains("ada@example.com", "@"))
+    fmt.Println(strings.HasPrefix("Bearer abc123", "Bearer "))
+    fmt.Println(strings.TrimPrefix("Bearer abc123", "Bearer "))
+    fmt.Println(strings.Join(items, " | "))
+    fmt.Println(strings.ReplaceAll("a/b/c", "/", "-"))
+
+    // strings.Builder — the efficient way to assemble a string in a loop
+    var b strings.Builder
+    for i, item := range items {
+        if i > 0 {
+            b.WriteString(", ")
+        }
+        b.WriteString(item)
+    }
+    fmt.Println(b.String())
+
+    // strconv — string <-> number, always with an error to check
+    n, err := strconv.Atoi("42")
+    fmt.Println(n, err)
+    fmt.Println(strconv.Itoa(99) + "!")
+    fmt.Println(strconv.FormatFloat(3.14159, 'f', 2, 64))
+    fmt.Println(strconv.Quote(\`he said "hi"\`))
+
+    // sort — for deterministic output
+    prices := []float64{29.99, 5.00, 12.50}
+    sort.Float64s(prices)
+    fmt.Println(prices)
+
+    sort.Slice(items, func(i, j int) bool { return items[i] < items[j] })
+    fmt.Println(items)
+}`} />
+
+            <CodeBlock language="go" filename="stdlib_time_json.go" code={`package main
+
+import (
+    "encoding/json"
+    "errors"
+    "fmt"
+    "time"
+)
+
+type Event struct {
+    Name      string        \`json:"name"\`
+    StartsAt  time.Time     \`json:"starts_at"\`
+    Duration  time.Duration \`json:"duration_ns"\`
+    Cancelled bool          \`json:"cancelled"\`
+}
+
+func main() {
+    // time — parsing uses a reference layout, not format codes
+    start, err := time.Parse(time.RFC3339, "2026-03-01T09:30:00Z")
+    if err != nil {
+        fmt.Println("parse error:", err)
+        return
+    }
+    fmt.Println("start:", start.Format("Mon 2 Jan 2006 15:04"))
+
+    end := start.Add(90 * time.Minute)
+    fmt.Println("end:  ", end.Format(time.RFC3339))
+    fmt.Println("lasts:", end.Sub(start))
+    fmt.Println("after?", end.After(start))
+
+    // Durations are typed, so this reads as what it is
+    deadline := 30 * time.Second
+    fmt.Println("deadline:", deadline, "in ms:", deadline.Milliseconds())
+
+    // encoding/json — marshal, then unmarshal back
+    ev := Event{Name: "Launch", StartsAt: start, Duration: 90 * time.Minute}
+    out, _ := json.MarshalIndent(ev, "", "  ")
+    fmt.Println(string(out))
+
+    var back Event
+    if err := json.Unmarshal(out, &back); err != nil {
+        fmt.Println("unmarshal error:", err)
+        return
+    }
+    fmt.Println("round trip:", back.Name, back.StartsAt.Year())
+
+    // Bad JSON gives you a typed error, not a panic
+    var broken Event
+    err = json.Unmarshal([]byte(\`{"starts_at": 12345}\`), &broken)
+    var typeErr *json.UnmarshalTypeError
+    if errors.As(err, &typeErr) {
+        fmt.Printf("field %q wanted %s\\n", typeErr.Field, typeErr.Type)
+    }
+}`} />
+
+            <PlaygroundChallenge
+              title="Cleaning User Input"
+              description="Normalise a messy list of tags with strings and sort — trimming, lowercasing, dropping blanks and removing duplicates, which is most of what validation does in practice."
+              challenge={`package main
+
+import "fmt"
+
+// Challenge: normalise a tag list
+// 1. Start from: "  Go, backend ,GO,  , API,api , go "
+// 2. Split on ",", then for each part:
+//      - strings.TrimSpace it
+//      - skip it if empty
+//      - strings.ToLower it
+// 3. Remove duplicates using a map[string]bool as a set
+// 4. sort.Strings the result
+// 5. Print the count and strings.Join(tags, ", ")
+//    Expect: 3 tags -> api, backend, go
+// 6. Bonus: reject any tag longer than 20 characters and report it
+
+func main() {
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import (
+	"fmt"
+	"sort"
+	"strings"
+)
+
+func normaliseTags(raw string) ([]string, []string) {
+	seen := map[string]bool{}
+	var tags, rejected []string
+
+	for _, part := range strings.Split(raw, ",") {
+		t := strings.ToLower(strings.TrimSpace(part))
+		if t == "" {
+			continue
+		}
+		if len(t) > 20 {
+			rejected = append(rejected, t)
+			continue
+		}
+		if seen[t] {
+			continue // duplicate
+		}
+		seen[t] = true
+		tags = append(tags, t)
+	}
+
+	sort.Strings(tags)
+	return tags, rejected
+}
+
+func main() {
+	raw := "  Go, backend ,GO,  , API,api , go , a-very-long-tag-that-is-too-long"
+
+	tags, rejected := normaliseTags(raw)
+	fmt.Printf("%d tags -> %s\\n", len(tags), strings.Join(tags, ", "))
+	fmt.Println("rejected:", rejected)
+}`}
+            />
+
+            <PlaygroundChallenge
+              title="Times and Durations"
+              description="Parse a timestamp, do arithmetic on it, and format it for a response. Getting the reference layout right is the one piece of Go time that trips everybody up."
+              challenge={`package main
+
+import "fmt"
+
+// Challenge: time arithmetic
+// 1. Parse "2026-03-01T09:30:00Z" with time.Parse(time.RFC3339, ...)
+// 2. Build a []time.Time of three sessions: start, +45m, +2h30m
+// 3. For each, print the RFC3339 form and a human form using the
+//    reference layout "Mon 2 Jan 2006 15:04"
+//    (Go formats by example: 01/02 03:04:05PM '06 -0700, not %Y-%m-%d)
+// 4. Compute and print the gap between the first and last with Sub()
+// 5. Write func isExpired(exp time.Time, now time.Time) bool and test it
+//    with a time before and after
+// 6. Bonus: parse "45m" with time.ParseDuration and add it as well
+//
+// Do not use time.Now() here — the playground clock is fixed at 2009,
+// which makes any test against "now" confusing.
+
+func main() {
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func isExpired(exp, now time.Time) bool {
+	return !now.Before(exp)
+}
+
+func main() {
+	start, err := time.Parse(time.RFC3339, "2026-03-01T09:30:00Z")
+	if err != nil {
+		fmt.Println("parse error:", err)
+		return
+	}
+
+	sessions := []time.Time{
+		start,
+		start.Add(45 * time.Minute),
+		start.Add(2*time.Hour + 30*time.Minute),
+	}
+
+	for i, s := range sessions {
+		// Go formats by example, using the reference date
+		fmt.Printf("%d %s  %s\\n", i+1, s.Format(time.RFC3339), s.Format("Mon 2 Jan 2006 15:04"))
+	}
+
+	gap := sessions[len(sessions)-1].Sub(sessions[0])
+	fmt.Println("first to last:", gap)
+
+	// Expiry checks compare two explicit times, never a hidden "now"
+	fmt.Println("expired at +1h? ", isExpired(sessions[2], start.Add(time.Hour)))
+	fmt.Println("expired at +3h? ", isExpired(sessions[2], start.Add(3*time.Hour)))
+
+	// Bonus
+	d, _ := time.ParseDuration("45m")
+	fmt.Println("start + 45m:", start.Add(d).Format(time.RFC3339))
+}`}
+            />
+
 
             {/* ─────────────────────────────────────────────────── */}
             {/* 22. Putting It Together */}
@@ -3645,6 +7129,378 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
                 generated code and build features beyond basic CRUD.
               </p>
             </div>
+
+            <div className="prose-grit mb-10">
+              <p>
+                The diagram above is the Gin version. Here is the same pipeline as a program you can
+                actually run: middleware, a handler, a service and a store, wired together and
+                exercised with four requests. Strip the framework away and the whole architecture is
+                about a hundred lines — which is the point. Gin and GORM save you typing; they do
+                not change the shape.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="pipeline.go" code={`package main
+
+import (
+    "context"
+    "encoding/json"
+    "errors"
+    "fmt"
+    "net/http"
+    "net/http/httptest"
+    "strconv"
+    "strings"
+)
+
+// ── models ──────────────────────────────────────────────────────────────
+type Product struct {
+    ID       int     \`json:"id"\`
+    Name     string  \`json:"name"\`
+    Price    float64 \`json:"price"\`
+    Category string  \`json:"category"\`
+}
+
+var ErrNotFound = errors.New("not found")
+
+// ── store (stands in for GORM) ──────────────────────────────────────────
+type Store struct{ rows map[int]Product }
+
+func (s *Store) First(id int) (Product, error) {
+    p, ok := s.rows[id]
+    if !ok {
+        return Product{}, fmt.Errorf("product %d: %w", id, ErrNotFound)
+    }
+    return p, nil
+}
+
+// ── service: business rules, no HTTP ────────────────────────────────────
+type ProductService struct{ store *Store }
+
+func (svc *ProductService) GetByID(id int) (Product, error) {
+    if id <= 0 {
+        return Product{}, fmt.Errorf("id must be positive: %w", ErrNotFound)
+    }
+    return svc.store.First(id)
+}
+
+// ── transport helpers ───────────────────────────────────────────────────
+func writeJSON(w http.ResponseWriter, status int, body any) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    json.NewEncoder(w).Encode(body)
+}
+
+// ── middleware ──────────────────────────────────────────────────────────
+type ctxKey string
+
+const ctxRole ctxKey = "role"
+
+func Auth(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        token := r.Header.Get("Authorization")
+        if !strings.HasPrefix(token, "Bearer ") {
+            writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthenticated"})
+            return
+        }
+        // A real system decodes claims here; this keeps the shape
+        role := strings.TrimPrefix(token, "Bearer ")
+        ctx := context.WithValue(r.Context(), ctxRole, role)
+        next.ServeHTTP(w, r.WithContext(ctx))
+    })
+}
+
+func RequireRole(allowed string) func(http.Handler) http.Handler {
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            if roleFrom(r) != allowed {
+                writeJSON(w, http.StatusForbidden, map[string]string{"error": "forbidden"})
+                return
+            }
+            next.ServeHTTP(w, r)
+        })
+    }
+}
+
+// ── handler: read, validate, call the service, respond ──────────────────
+type ProductHandler struct{ svc *ProductService }
+
+func (h *ProductHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+    id, err := strconv.Atoi(r.PathValue("id"))
+    if err != nil {
+        writeJSON(w, http.StatusBadRequest, map[string]string{"error": "id must be a number"})
+        return
+    }
+
+    product, err := h.svc.GetByID(id)
+    if err != nil {
+        if errors.Is(err, ErrNotFound) {
+            writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+            return
+        }
+        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+        return
+    }
+
+    writeJSON(w, http.StatusOK, map[string]any{"data": product})
+}
+
+func main() {
+    store := &Store{rows: map[int]Product{
+        42: {ID: 42, Name: "Laptop", Price: 999, Category: "electronics"},
+    }}
+    h := &ProductHandler{svc: &ProductService{store: store}}
+
+    mux := http.NewServeMux()
+    mux.Handle("GET /api/products/{id}", Auth(RequireRole("ADMIN")(http.HandlerFunc(h.GetByID))))
+
+    requests := []struct{ path, token string }{
+        {"/api/products/42", ""},          // no token   -> 401
+        {"/api/products/42", "USER"},      // wrong role -> 403
+        {"/api/products/42", "ADMIN"},     // found      -> 200
+        {"/api/products/999", "ADMIN"},    // missing    -> 404
+    }
+    for _, req := range requests {
+        rec := httptest.NewRecorder()
+        r := httptest.NewRequest("GET", req.path, nil)
+        if req.token != "" {
+            r.Header.Set("Authorization", "Bearer "+req.token)
+        }
+        mux.ServeHTTP(rec, r)
+        fmt.Printf("%-20s token=%-6q %d %s", req.path, req.token, rec.Code, rec.Body.String())
+    }
+}
+
+// Kept at the bottom so the pipeline above reads top to bottom
+func roleFrom(r *http.Request) string {
+    v, _ := r.Context().Value(ctxRole).(string)
+    return v
+}`} />
+
+            <PlaygroundChallenge
+              title="Wire the Whole Pipeline"
+              description="Build the full request path yourself — middleware, handler, service, store — and prove each layer with a request that exercises it."
+              challenge={`package main
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+)
+
+// Challenge: assemble the pipeline end to end
+// 1. Store:   map[int]Order with First(id) (Order, error) returning ErrNotFound
+// 2. Service: OrderService.GetByID(id) rejecting id <= 0, otherwise the store
+// 3. Handler: read r.PathValue("id"), 400 on a non-number, 404 on ErrNotFound,
+//             200 with {"data": order} otherwise
+// 4. Middleware: Auth requiring "Bearer " on Authorization, else 401
+// 5. Register "GET /api/orders/{id}" with the middleware wrapped around it
+// 6. Fire four requests and print the status for each:
+//      no token -> 401, bad id -> 400, missing order -> 404, real order -> 200
+//
+// Keep the layers apart: no http in the service, no business rules in the
+// handler. That separation is the entire lesson of this page.
+
+type Order struct {
+	ID    int     \`json:"id"\`
+	Total float64 \`json:"total"\`
+}
+
+func main() {
+	fmt.Println(http.StatusOK, httptest.NewRecorder().Code)
+}`}
+              solution={`package main
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
+	"strings"
+)
+
+type Order struct {
+	ID    int     \`json:"id"\`
+	Total float64 \`json:"total"\`
+}
+
+var ErrNotFound = errors.New("not found")
+
+// ── store ───────────────────────────────────────────────────────────────
+type Store struct{ rows map[int]Order }
+
+func (s *Store) First(id int) (Order, error) {
+	o, ok := s.rows[id]
+	if !ok {
+		return Order{}, fmt.Errorf("order %d: %w", id, ErrNotFound)
+	}
+	return o, nil
+}
+
+// ── service: rules only, no HTTP ────────────────────────────────────────
+type OrderService struct{ store *Store }
+
+func (svc *OrderService) GetByID(id int) (Order, error) {
+	if id <= 0 {
+		return Order{}, fmt.Errorf("id must be positive: %w", ErrNotFound)
+	}
+	return svc.store.First(id)
+}
+
+// ── transport ───────────────────────────────────────────────────────────
+func writeJSON(w http.ResponseWriter, status int, body any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(body)
+}
+
+func Auth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ") {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthenticated"})
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+type OrderHandler struct{ svc *OrderService }
+
+func (h *OrderHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "id must be a number"})
+		return
+	}
+	order, err := h.svc.GetByID(id)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+			return
+		}
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": order})
+}
+
+func main() {
+	store := &Store{rows: map[int]Order{7: {ID: 7, Total: 129.99}}}
+	h := &OrderHandler{svc: &OrderService{store: store}}
+
+	mux := http.NewServeMux()
+	mux.Handle("GET /api/orders/{id}", Auth(http.HandlerFunc(h.GetByID)))
+
+	cases := []struct{ path, token string }{
+		{"/api/orders/7", ""},
+		{"/api/orders/abc", "x"},
+		{"/api/orders/999", "x"},
+		{"/api/orders/7", "x"},
+	}
+	for _, c := range cases {
+		rec := httptest.NewRecorder()
+		r := httptest.NewRequest("GET", c.path, nil)
+		if c.token != "" {
+			r.Header.Set("Authorization", "Bearer "+c.token)
+		}
+		mux.ServeHTTP(rec, r)
+		fmt.Printf("%-18s token=%-3q %d %s", c.path, c.token, rec.Code, rec.Body.String())
+	}
+}`}
+            />
+
+            <PlaygroundChallenge
+              title="Trace a Request Through the Layers"
+              description="Instrument every layer so one request prints the path it took. Seeing the order once is worth more than reading the diagram five times."
+              challenge={`package main
+
+import "fmt"
+
+// Challenge: make the flow visible
+// 1. Build the same four layers, but have each one append to a []string trace:
+//      "cors" -> "logger" -> "auth" -> "handler" -> "service" -> "store"
+// 2. Run one successful request and print the trace in order
+// 3. Run one that fails auth and print that trace — it should stop at "auth"
+//    and never reach the handler
+// 4. Print both traces side by side so the short-circuit is obvious
+//
+// This is what c.Abort() means in practice: the layers after it never run.
+
+func main() {
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import (
+	"fmt"
+	"strings"
+)
+
+type request struct {
+	token string
+	trace []string
+}
+
+func (r *request) mark(layer string) { r.trace = append(r.trace, layer) }
+
+// Each layer either passes the request on, or stops the chain
+func cors(r *request, next func(*request) int) int {
+	r.mark("cors")
+	return next(r)
+}
+
+func logger(r *request, next func(*request) int) int {
+	r.mark("logger")
+	return next(r)
+}
+
+func auth(r *request, next func(*request) int) int {
+	r.mark("auth")
+	if r.token == "" {
+		return 401 // abort: nothing below this line runs
+	}
+	return next(r)
+}
+
+func handler(r *request) int {
+	r.mark("handler")
+	return service(r)
+}
+
+func service(r *request) int {
+	r.mark("service")
+	return store(r)
+}
+
+func store(r *request) int {
+	r.mark("store")
+	return 200
+}
+
+func serve(r *request) int {
+	return cors(r, func(r *request) int {
+		return logger(r, func(r *request) int {
+			return auth(r, handler)
+		})
+	})
+}
+
+func main() {
+	ok := &request{token: "abc"}
+	status := serve(ok)
+	fmt.Printf("%d  %s\\n", status, strings.Join(ok.trace, " -> "))
+
+	denied := &request{token: ""}
+	status = serve(denied)
+	fmt.Printf("%d  %s\\n", status, strings.Join(denied.trace, " -> "))
+
+	fmt.Println("\\nthe denied request never reached:",
+		len(ok.trace)-len(denied.trace), "layers")
+}`}
+            />
+
 
             {/* Navigation footer */}
             <div className="mt-16 pt-8 border-t border-border/40 flex items-center justify-between">
