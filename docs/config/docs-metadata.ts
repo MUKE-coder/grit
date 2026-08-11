@@ -413,6 +413,11 @@ export const docsMetadata: Record<string, DocPage> = {
     description:
       'Advanced DataTable in Grit admin: sorting, filtering, search, pagination, column visibility, row selection, and custom cell renderers.',
   },
+  '/docs/admin/custom-pages': {
+    title: 'Custom Pages & Tables',
+    description:
+      'Replace the Grit admin table, form or whole page with your own components using useResourceController, and keep URL-synced sorting, filters, paging, selection and bulk delete.',
+  },
   '/docs/admin/forms': {
     title: 'Forms',
     description:
