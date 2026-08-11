@@ -226,7 +226,7 @@ export default function ClassifiedsDirectoryWithCounts({
                 <category.Icon aria-hidden="true" className="size-6 shrink-0" />
                 <span className="flex-1">
                   <span className="block font-medium">{category.name}</span>
-                  <span className="block text-sm text-gray-500 dark:text-gray-400">
+                  <span className="block text-sm text-gray-600 dark:text-gray-400">
                     {counts.format(category.count)} ads
                   </span>
                 </span>

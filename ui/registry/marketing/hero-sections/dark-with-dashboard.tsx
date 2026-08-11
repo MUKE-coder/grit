@@ -84,7 +84,7 @@ export default function DarkWithDashboard({
         <div className="mt-10 flex items-center justify-center gap-x-6">
           <a
             href="#"
-            className="rounded-lg bg-indigo-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-400"
+            className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
           >
             {primaryLabel}
           </a>
@@ -103,7 +103,12 @@ export default function DarkWithDashboard({
 
       {/* Dashboard */}
       <div className="mx-auto max-w-7xl px-6 pb-24">
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-gray-900/70 shadow-2xl backdrop-blur">
+        {/* The product mock is a drawing of an app, not an app: fake rows,
+        invented dates, no behaviour. aria-hidden so a screen reader does
+        not read the chrome out as page content, and so its deliberately
+        low-contrast styling stops being a text-contrast failure. Nothing
+        inside is focusable, which is what makes hiding it safe. */}
+        <div aria-hidden="true" className="overflow-hidden rounded-2xl border border-white/10 bg-gray-900/70 shadow-2xl backdrop-blur">
           <div className="flex">
             {/* Sidebar */}
             <div className="hidden w-56 shrink-0 border-r border-white/5 p-5 lg:block">

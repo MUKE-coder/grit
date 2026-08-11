@@ -126,7 +126,7 @@ export default function HowItWorksNumberedWithArtifacts({
           {steps.map((step, i) => (
             <li key={step.title}>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                <span className="text-gray-400 tabular-nums dark:text-gray-500">{i + 1}.</span>{' '}
+                <span className="text-gray-500 tabular-nums dark:text-gray-400">{i + 1}.</span>{' '}
                 {step.title}
               </h3>
               <p className="mt-2 text-sm/6 text-gray-600 dark:text-gray-400">{step.body}</p>

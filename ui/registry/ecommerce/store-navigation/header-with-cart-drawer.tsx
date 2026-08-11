@@ -148,7 +148,7 @@ export default function HeaderWithCartDrawer({
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white dark:border-white/10 dark:bg-gray-950">
-      <p className="bg-orange-600 px-4 py-2 text-center text-sm font-medium text-white">
+      <p className="bg-orange-700 px-4 py-2 text-center text-sm font-medium text-white">
         {announcement}
       </p>
 
@@ -177,7 +177,7 @@ export default function HeaderWithCartDrawer({
             placeholder="Search products, brands and categories"
             className="min-h-11 w-full min-w-0 flex-1 rounded-l-md border border-gray-300 px-3 text-sm text-gray-900 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-orange-600 dark:border-white/15 dark:bg-transparent dark:text-white"
           />
-          <Button type="submit" className="rounded-l-none bg-orange-600 hover:bg-orange-700">
+          <Button type="submit" className="rounded-l-none bg-orange-700 hover:bg-orange-800">
             Search
           </Button>
         </form>

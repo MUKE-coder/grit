@@ -94,7 +94,7 @@ export default function BentoHeroWithProof({
             <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-2">
               <a
                 href={bestSelling.href ?? '#'}
-                className="group relative flex flex-col overflow-hidden rounded-3xl bg-pink-400 p-6 text-white transition-shadow hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-600"
+                className="group relative flex flex-col overflow-hidden rounded-3xl bg-pink-700 p-6 text-white transition-shadow hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-500"
               >
                 <h3 className="text-2xl font-bold">{bestSelling.title}</h3>
                 {bestSelling.body && <p className="mt-1">{bestSelling.body}</p>}

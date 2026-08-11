@@ -40,9 +40,17 @@ function Concept({
   )
 }
 
+/**
+ * A drawing of a compose window. aria-hidden because it is scenery: the
+ * addresses and field labels are invented, and read aloud they arrive as if
+ * this page were an inbox. Hiding it also settles the contrast question — the
+ * faint field labels are decoration, not text someone has to read.
+ */
 function ComposeMock() {
   return (
-    <div className="w-full max-w-[23rem] rounded-2xl bg-white/95 p-4 shadow-[0_24px_60px_-20px_rgb(15_23_42_/_0.4)] backdrop-blur-sm dark:bg-gray-900/95">
+    <div
+      aria-hidden="true"
+      className="w-full max-w-[23rem] rounded-2xl bg-white/95 p-4 shadow-[0_24px_60px_-20px_rgb(15_23_42_/_0.4)] backdrop-blur-sm dark:bg-gray-900/95">
       <div className="flex items-center justify-between gap-3 border-b border-gray-200 pb-3 dark:border-white/10">
         <span className="flex items-center gap-1.5 text-[13px] text-gray-500 dark:text-gray-400">
           To:
@@ -118,11 +126,11 @@ export default function HeadlineWithInlineIcons({
       </div>
 
       <div className="relative mx-auto max-w-7xl px-6">
-        <p className="font-mono text-[11.5px] tracking-wider text-gray-400 uppercase dark:text-gray-500">
+        <p className="font-mono text-[11.5px] tracking-wider text-gray-600 uppercase dark:text-gray-400">
           {eyebrow}
         </p>
 
-        <h2 className="mt-8 max-w-5xl text-[2.25rem] leading-[1.18] font-semibold tracking-[-0.025em] text-gray-400 sm:text-[3.25rem] sm:leading-[1.16] dark:text-gray-500">
+        <h2 className="mt-8 max-w-5xl text-[2.25rem] leading-[1.18] font-semibold tracking-[-0.025em] text-gray-500 sm:text-[3.25rem] sm:leading-[1.16] dark:text-gray-400">
           Build faster with{' '}
           <Concept icon={Brain} tint="text-pink-500 dark:text-pink-400">
             LLMs

@@ -117,7 +117,7 @@ export default function CenteredEditorial({
           >
             <Download aria-hidden="true" className="size-4" />
             {primaryLabel}
-            <kbd className="ml-1 rounded bg-white/20 px-1.5 py-0.5 font-mono text-[11px]">
+            <kbd className="ml-1 rounded bg-blue-800 px-1.5 py-0.5 font-mono text-[11px]">
               D
             </kbd>
           </a>
@@ -133,7 +133,7 @@ export default function CenteredEditorial({
           </a>
         </div>
 
-        <p className="mt-6 font-mono text-xs text-gray-500 dark:text-gray-500">
+        <p className="mt-6 font-mono text-xs text-gray-500 dark:text-gray-400">
           {availability}
         </p>
       </div>
@@ -158,7 +158,12 @@ export default function CenteredEditorial({
           under the claim — an editorial hero with nothing beneath it is just a
           headline. */}
       <div className="border-t border-gray-900/[0.07] px-6 pt-14 pb-20 dark:border-white/10">
-        <div className="mx-auto max-w-6xl overflow-hidden rounded-xl border border-gray-900/10 bg-white shadow-[0_24px_70px_-24px_rgb(15_23_42_/_0.28)] dark:border-white/10 dark:bg-gray-900">
+        {/* The product mock is a drawing of an app, not an app: fake rows,
+        invented dates, no behaviour. aria-hidden so a screen reader does
+        not read the chrome out as page content, and so its deliberately
+        low-contrast styling stops being a text-contrast failure. Nothing
+        inside is focusable, which is what makes hiding it safe. */}
+        <div aria-hidden="true" className="mx-auto max-w-6xl overflow-hidden rounded-xl border border-gray-900/10 bg-white shadow-[0_24px_70px_-24px_rgb(15_23_42_/_0.28)] dark:border-white/10 dark:bg-gray-900">
           {/* Window chrome */}
           <div className="flex items-center gap-2 border-b border-gray-900/[0.07] bg-gray-50 px-4 py-2.5 dark:border-white/10 dark:bg-gray-800/60">
             <span className="size-3 rounded-full bg-[#ff5f57]" />

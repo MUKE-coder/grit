@@ -214,8 +214,8 @@ export default function CategoryRailWithFeaturedPromo({
             </div>
 
             <p className="absolute top-6 right-6 z-20 inline-flex items-center gap-1 rounded-full bg-amber-500 px-4 py-1 shadow-lg">
-              <Star aria-hidden="true" className="size-3 fill-white text-white" />
-              <span className="text-xs font-bold tracking-widest text-white uppercase">
+              <Star aria-hidden="true" className="size-3 fill-gray-950 text-gray-950" />
+              <span className="text-xs font-bold tracking-widest text-gray-950 uppercase">
                 {promo.badge}
               </span>
             </p>
@@ -247,7 +247,7 @@ export default function CategoryRailWithFeaturedPromo({
                     <span className="sr-only">was </span>
                     <s>{money.format(promo.wasPrice / 100)}</s>
                   </span>
-                  <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-white">
+                  <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-gray-950">
                     Save {saved}%
                   </span>
                 </span>
