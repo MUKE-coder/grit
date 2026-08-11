@@ -385,9 +385,11 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "resource", "view-modal.tsx"):           adminViewModal(),
 
 		// Resource definitions
-		filepath.Join(adminRoot, "resources", "index.ts"): adminResourceRegistry(),
-		filepath.Join(adminRoot, "resources", "users.ts"): adminUsersResource(),
-		filepath.Join(adminRoot, "resources", "blogs.ts"): adminBlogsResource(),
+		filepath.Join(adminRoot, "resources", "index.ts"):         adminResourceRegistry(),
+		filepath.Join(adminRoot, "resources", "users.ts"):         adminUsersResource(),
+		filepath.Join(adminRoot, "resources", "users.custom.tsx"): AdminResourceCustomStub("User"),
+		filepath.Join(adminRoot, "resources", "blogs.ts"):         adminBlogsResource(),
+		filepath.Join(adminRoot, "resources", "blogs.custom.tsx"): AdminResourceCustomStub("Blog"),
 
 		// Profile components
 		filepath.Join(adminRoot, "components", "profile", "delete-account-dialog.tsx"): adminDeleteAccountDialog(),

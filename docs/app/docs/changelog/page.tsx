@@ -28,6 +28,76 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.139.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.139.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    Custom tables, forms and pages, registered once and safe from the generator.
+                  </strong>
+                </p>
+                <p>
+                  A resource has always been able to declare a custom cell renderer. Almost nobody
+                  could use it. <code>resources/products.ts</code> is a <code>.ts</code> file, so
+                  JSX will not compile in it, and <code>grit generate</code> rewrites that file
+                  whole — so anything you did put there was one command away from being deleted.
+                </p>
+                <p>
+                  Resources are now two files. The generator owns one and never touches the other:
+                </p>
+                <pre>
+                  <code>{`apps/admin/resources/
+  products.ts          # generated — rewritten on every grit generate
+  products.custom.tsx  # yours — created once, never touched again`}</code>
+                </pre>
+                <p>
+                  The custom half holds components, and <code>defineResource</code> merges the two:
+                </p>
+                <pre>
+                  <code>{`import type { ResourceCustomisation } from "@/lib/resource";
+
+const custom: ResourceCustomisation = {
+  columns: {
+    status: { cell: (row) => <StatusPill value={String(row.status)} /> },
+  },
+  components: {
+    Table: (props) => <TemplateTable rows={props.data} onSort={props.onSort} />,
+  },
+};
+
+export default custom;`}</code>
+                </pre>
+                <p>
+                  There are four slots — <code>Table</code>, <code>Form</code>,{' '}
+                  <code>EmptyState</code> and <code>Page</code> — and each receives exactly the
+                  props of the component it replaces. Because <code>Table</code> takes{' '}
+                  <code>DataTable</code>&apos;s own props, a replacement is a drop-in and you can
+                  also wrap the original rather than reimplement it:{' '}
+                  <code>{`(props) => <Card><DataTable {...props} /></Card>`}</code>. A{' '}
+                  <code>Page</code> slot replaces the whole list view and can call{' '}
+                  <code>useResourceController</code> for the data and behaviour.
+                </p>
+                <p>
+                  Columns and fields are patched <strong>by key</strong> rather than replaced
+                  wholesale, which is what lets <code>grit sync</code> keep adding columns as the Go
+                  model grows without discarding your renderers.
+                </p>
+                <p>
+                  Verified the way it needs to be: customise an overlay, regenerate the same
+                  resource with an extra field, and the config half picks up the new column while
+                  the custom half is left exactly as it was. Nothing changes for existing projects —
+                  a resource with no overlay behaves as it always did.
+                </p>
+              </div>
+            </div>
+
             {/* v3.138.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

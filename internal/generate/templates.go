@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // writeGoModel creates the GORM model file for the resource.
@@ -1837,6 +1839,7 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 	}
 
 	content := fmt.Sprintf(`import { defineResource } from "@/lib/resource";%s
+import custom from "./%s.custom";
 
 export const %sResource = defineResource({
   name: "%s",
@@ -1872,9 +1875,10 @@ export const %sResource = defineResource({
       },
     ],
   },
-});
+}, custom);
 `,
 		stackedCellImport,
+		names.PluralKebab,
 		names.Camel,
 		names.Pascal,
 		names.PluralKebab,
@@ -1895,8 +1899,29 @@ export const %sResource = defineResource({
 
 // writeResourceDefinition writes the resource definition for the Next.js admin.
 func (g *Generator) writeResourceDefinition(names Names) error {
-	path := filepath.Join(g.Root, "apps", "admin", "resources", names.PluralKebab+".ts")
-	return writeFileWithDirs(path, g.resourceDefinitionFileContent(names))
+	dir := filepath.Join(g.Root, "apps", "admin", "resources")
+	path := filepath.Join(dir, names.PluralKebab+".ts")
+	if err := writeFileWithDirs(path, g.resourceDefinitionFileContent(names)); err != nil {
+		return err
+	}
+	return writeResourceCustomStub(dir, names)
+}
+
+// writeResourceCustomStub drops resources/<slug>.custom.tsx next to the
+// generated definition, and refuses to touch it if it is already there.
+//
+// That refusal is the whole point. The .ts half is rewritten on every generate;
+// this half is where components live precisely because it never is. Overwriting
+// it would delete the custom table someone spent an afternoon on, silently, as
+// a side effect of adding a field to an unrelated model.
+func writeResourceCustomStub(dir string, names Names) error {
+	path := filepath.Join(dir, names.PluralKebab+".custom.tsx")
+	if _, err := os.Stat(path); err == nil {
+		return nil // already exists — yours, not ours
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("checking %s: %w", path, err)
+	}
+	return writeFileWithDirs(path, scaffold.AdminResourceCustomStub(names.Pascal))
 }
 
 // writeResourcePage creates a thin admin page wrapper for the resource.
