@@ -83,36 +83,49 @@ function ClickableCell({
   );
 }
 
-interface DataTableProps {
-  columns: ColumnDefinition[];
-  data: Record<string, unknown>[];
+// Generic in the row type so a typed customisation can wrap it. A
+// ResourceCustomisation<Product> hands its Table slot Product[], and without
+// the type parameter (props) => <Card><DataTable {...props} /></Card> would not
+// compile — Product has no index signature.
+interface DataTableProps<T extends object = Record<string, unknown>> {
+  columns: ColumnDefinition<T>[];
+  data: T[];
   isLoading?: boolean;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   onSort?: (key: string) => void;
   selectedRows?: string[];
   onSelectRows?: (rows: string[]) => void;
-  onView?: (item: Record<string, unknown>) => void;
-  onEdit?: (item: Record<string, unknown>) => void;
+  onView?: (item: T) => void;
+  onEdit?: (item: T) => void;
   onDelete?: (id: string) => void;
   /** Extra per-row actions from the resource's table.rowActions. */
   rowActions?: RowActionDefinition[];
 }
 
-export function DataTable({
-  columns,
-  data,
+export function DataTable<T extends object = Record<string, unknown>>({
+  columns: columnsProp,
+  data: dataProp,
   isLoading,
   sortBy,
   sortOrder,
   onSort,
   selectedRows = [],
   onSelectRows,
-  onView,
-  onEdit,
+  onView: onViewProp,
+  onEdit: onEditProp,
   onDelete,
   rowActions,
-}: DataTableProps) {
+}: DataTableProps<T>) {
+  // The row type is erased once, here. Everything below reads cells by string
+  // key, and a concrete interface has no index signature to read them through.
+  // Doing it at the boundary keeps the cast in one place instead of scattering
+  // it through the render.
+  const columns = columnsProp as unknown as ColumnDefinition[];
+  const data = dataProp as unknown as Record<string, unknown>[];
+  const onView = onViewProp as ((item: Record<string, unknown>) => void) | undefined;
+  const onEdit = onEditProp as ((item: Record<string, unknown>) => void) | undefined;
+
   if (isLoading) {
     return <TableSkeleton columns={columns.length + (onSelectRows ? 1 : 0) + (onView || onEdit || onDelete || (rowActions && rowActions.length) ? 1 : 0)} />;
   }

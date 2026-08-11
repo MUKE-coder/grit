@@ -399,9 +399,12 @@ import { FormBuilder } from "./form-builder";
 import { useCreateResource, useUpdateResource } from "@/hooks/use-resource";
 import { X } from "@/lib/icons";
 
-interface FormModalProps {
+// Generic in the row type for the same reason DataTable is: a typed
+// customisation hands its Form slot a Product | null, and a wrapper around the
+// stock modal has to accept it.
+interface FormModalProps<T extends object = Record<string, unknown>> {
   resource: ResourceDefinition;
-  item: Record<string, unknown> | null;
+  item: T | null;
   // Pre-fill values for CREATE mode (item === null). Used to scope a new child
   // to its parent — e.g. { customer_id: "…" } when adding an invoice from a
   // customer's detail page.
@@ -409,7 +412,14 @@ interface FormModalProps {
   onClose: () => void;
 }
 
-export function FormModal({ resource, item, defaults, onClose }: FormModalProps) {
+export function FormModal<T extends object = Record<string, unknown>>({
+  resource,
+  item: itemProp,
+  defaults,
+  onClose,
+}: FormModalProps<T>) {
+  // Erased once at the boundary — the body reads values by string key.
+  const item = itemProp as Record<string, unknown> | null;
   const isEdit = item !== null;
   const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint, resource.label?.singular ?? resource.name);
   const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint, resource.label?.singular ?? resource.name);
@@ -473,16 +483,22 @@ import { FormBuilder } from "./form-builder";
 import { useCreateResource, useUpdateResource } from "@/hooks/use-resource";
 import { X, Maximize2, Minimize2 } from "@/lib/icons";
 
-interface FormSheetProps {
+interface FormSheetProps<T extends object = Record<string, unknown>> {
   resource: ResourceDefinition;
-  item: Record<string, unknown> | null;
+  item: T | null;
   // Pre-fill values for CREATE mode (item === null) — scopes a new child to its
   // parent (e.g. { customer_id: "…" }).
   defaults?: Record<string, unknown>;
   onClose: () => void;
 }
 
-export function FormSheet({ resource, item, defaults, onClose }: FormSheetProps) {
+export function FormSheet<T extends object = Record<string, unknown>>({
+  resource,
+  item: itemProp,
+  defaults,
+  onClose,
+}: FormSheetProps<T>) {
+  const item = itemProp as Record<string, unknown> | null;
   const isEdit = item !== null;
   // The drawer opens at half the viewport width; the maximize toggle widens it
   // to 80% for forms with wide content (inline line-item tables, two-column
@@ -1124,13 +1140,18 @@ import { FormStepper } from "./form-stepper";
 import { useCreateResource, useUpdateResource, usePatchResource } from "@/hooks/use-resource";
 import { X } from "@/lib/icons";
 
-interface FormModalStepsProps {
+interface FormModalStepsProps<T extends object = Record<string, unknown>> {
   resource: ResourceDefinition;
-  item: Record<string, unknown> | null;
+  item: T | null;
   onClose: () => void;
 }
 
-export function FormModalSteps({ resource, item, onClose }: FormModalStepsProps) {
+export function FormModalSteps<T extends object = Record<string, unknown>>({
+  resource,
+  item: itemProp,
+  onClose,
+}: FormModalStepsProps<T>) {
+  const item = itemProp as Record<string, unknown> | null;
   const isEdit = item !== null;
   const { mutate: create, isPending: isCreating } = useCreateResource(resource.endpoint, resource.label?.singular ?? resource.name);
   const { mutate: update, isPending: isUpdating } = useUpdateResource(resource.endpoint, resource.label?.singular ?? resource.name);

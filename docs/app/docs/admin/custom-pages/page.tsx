@@ -332,6 +332,83 @@ components: {
             />
 
             <div className="prose-grit mb-10">
+              <h2 id="a-page-slot-owns-its-dialogs">A Page slot owns its dialogs</h2>
+              <p>
+                The stock page renders the form container and the two confirm dialogs for you.
+                Replace the page and that goes with it — but the state driving them does not, because
+                it lives in the controller. So keep calling <code>c.create</code>,{' '}
+                <code>c.edit</code> and <code>c.remove</code> from your own buttons, and render the
+                stock dialogs off the controller&apos;s flags:
+              </p>
+            </div>
+
+            <CodeBlock
+              language="tsx"
+              filename="the tail of a custom Page"
+              code={`{/* c.edit(row) opened this; the stock form still knows what to do with it */}
+{c.form.open && (
+  <FormSheet resource={resource} item={c.form.item} onClose={c.form.close} />
+)}
+
+{/* c.remove(id) opened this; confirm runs the delete and the toast */}
+<ConfirmModal
+  open={c.confirmDelete.open}
+  onConfirm={c.confirmDelete.confirm}
+  onCancel={c.confirmDelete.cancel}
+  title="Delete Deal"
+  description="Are you sure? This cannot be undone."
+  confirmLabel="Delete"
+  variant="danger"
+  loading={c.isDeleting}
+/>`}
+            />
+
+            <div className="prose-grit mb-10">
+              <h2 id="two-things-that-bite">Two things that will bite you</h2>
+              <p>
+                <strong>Tailwind has to be looking at your overlay.</strong> Projects scaffolded on
+                v3.141.0 or later already are — <code>./resources/**/*.&#123;ts,tsx&#125;</code> is in
+                the admin&apos;s <code>content</code> array. Anything older is not, and the failure is
+                a quiet one: the component renders, the DOM is correct, and the class simply does not
+                exist in the stylesheet, so you get white text on a background that was never
+                painted. Run <code>grit upgrade</code>, or add the glob by hand.
+              </p>
+              <p>
+                <strong>A typed row is a promise about the API, not a guarantee.</strong>{' '}
+                <code>row.status</code> is typed{' '}
+                <code>&quot;active&quot; | &quot;draft&quot; | &quot;archived&quot;</code> because
+                that is what the Go struct declares — but the value arriving at your renderer is
+                whatever the database actually holds, which after an import, a migration or a
+                hand-written <code>UPDATE</code> may be none of them. Indexing a lookup table with it
+                then returns <code>undefined</code> and takes the page down. Give the lookup a
+                fallback:
+              </p>
+            </div>
+
+            <CodeBlock
+              language="tsx"
+              filename="defensive by one line"
+              code={`const STATUS = {
+  active: { label: "Active", className: "bg-emerald-700 text-white" },
+  draft: { label: "Draft", className: "bg-gray-600 text-white" },
+  archived: { label: "Archived", className: "bg-amber-700 text-white" },
+};
+
+const UNKNOWN = { label: "—", className: "bg-gray-500 text-white" };
+
+columns: {
+  status: {
+    cell: (row) => {
+      // Not STATUS[row.status].className — one unexpected value and the
+      // whole table throws, in front of whoever opened the page.
+      const s = STATUS[row.status] ?? UNKNOWN;
+      return <span className={s.className}>{s.label}</span>;
+    },
+  },
+}`}
+            />
+
+            <div className="prose-grit mb-10">
               <h2 id="pages-that-are-not-resources">Pages that are not resources</h2>
               <p>
                 Porting a whole template means analytics, settings and billing screens that are not
@@ -367,6 +444,21 @@ export default function RevenuePage() {
                 the resource definition — and <code>grit sync</code> only ever inserts into it,
                 between the <code>grit:cols:auto-start</code> and <code>grit:fields:auto-start</code>{' '}
                 fences, so hand-edited labels and formats survive.
+              </p>
+              <p>
+                Re-running the generator for the <em>same</em> resource is the interesting case, and
+                it is the one this design exists for: <code>resources/products.ts</code> is rewritten
+                from scratch — every column back to its generated form — while{' '}
+                <code>products.custom.tsx</code> is not opened at all. Your cell renderers, your
+                table, your page are still there and still applied, because they were never in the
+                file that got replaced.
+              </p>
+              <p>
+                Deleting a resource is the one case where the overlay does move.{' '}
+                <code>grit remove resource</code> deletes an untouched stub, and renames one you have
+                written in to <code>&lt;name&gt;.custom.tsx.bak</code> — leaving it in place would
+                break the build, since it imports a type the shared package no longer exports, and
+                deleting it outright would throw away work the generator never owned.
               </p>
             </div>
 

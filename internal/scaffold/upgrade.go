@@ -180,7 +180,7 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 		// Config files
 		filepath.Join(adminRoot, "package.json"):       adminPackageJSON(opts),
 		filepath.Join(adminRoot, "tailwind.config.ts"): adminTailwindConfig(),
-		filepath.Join(adminRoot, "postcss.config.mjs"): adminPostCSSConfig(),
+		filepath.Join(adminRoot, "postcss.config.js"):  adminPostCSSConfig(),
 		filepath.Join(adminRoot, "next.config.ts"):     adminNextConfig(),
 		filepath.Join(adminRoot, "tsconfig.json"):      adminTSConfig(),
 
@@ -213,58 +213,63 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 		filepath.Join(adminRoot, "lib", "icons.ts"):        adminIconMap(),
 
 		// Hooks
-		filepath.Join(adminRoot, "hooks", "use-auth.ts"):     adminUseAuth(),
-		filepath.Join(adminRoot, "hooks", "use-resource.ts"): adminUseResource(),
-		filepath.Join(adminRoot, "hooks", "use-system.ts"):   adminUseSystem(),
+		filepath.Join(adminRoot, "hooks", "use-auth.ts"):                adminUseAuth(),
+		filepath.Join(adminRoot, "hooks", "use-resource.ts"):            adminUseResource(),
+		filepath.Join(adminRoot, "hooks", "use-resource-controller.ts"): adminUseResourceController(),
+		filepath.Join(adminRoot, "hooks", "use-system.ts"):              adminUseSystem(),
 
 		// Layout components
-		filepath.Join(adminRoot, "components", "layout", "AdminLayout.tsx"):   adminLayoutComponent(),
-		filepath.Join(adminRoot, "components", "layout", "Sidebar.tsx"):       adminSidebar(),
-		filepath.Join(adminRoot, "components", "layout", "Navbar.tsx"):        adminNavbar(),
-		filepath.Join(adminRoot, "components", "layout", "ThemeProvider.tsx"): adminThemeProvider(),
-		filepath.Join(adminRoot, "components", "shared", "Providers.tsx"):     adminProviders(),
+		filepath.Join(adminRoot, "components", "layout", "admin-layout.tsx"):   adminLayoutComponent(),
+		filepath.Join(adminRoot, "components", "layout", "sidebar.tsx"):        adminSidebar(),
+		filepath.Join(adminRoot, "components", "layout", "navbar.tsx"):         adminNavbar(),
+		filepath.Join(adminRoot, "components", "shared", "theme-provider.tsx"): adminThemeProvider(),
+		filepath.Join(adminRoot, "components", "shared", "providers.tsx"):      adminProviders(),
 
 		// Table components
-		filepath.Join(adminRoot, "components", "tables", "DataTable.tsx"):       adminDataTable(),
-		filepath.Join(adminRoot, "components", "tables", "ColumnHeader.tsx"):    adminColumnHeader(),
-		filepath.Join(adminRoot, "components", "tables", "CellRenderers.tsx"):   adminCellRenderers(),
-		filepath.Join(adminRoot, "components", "tables", "TableFilters.tsx"):    adminTableFilters(),
-		filepath.Join(adminRoot, "components", "tables", "TableToolbar.tsx"):    adminTableToolbar(),
-		filepath.Join(adminRoot, "components", "tables", "TablePagination.tsx"): adminTablePagination(),
-		filepath.Join(adminRoot, "components", "tables", "Skeleton.tsx"):        adminTableSkeleton(),
-		filepath.Join(adminRoot, "components", "tables", "EmptyState.tsx"):      adminTableEmptyState(),
-		filepath.Join(adminRoot, "components", "tables", "Formatters.ts"):       adminFormatters(),
+		filepath.Join(adminRoot, "components", "tables", "data-table.tsx"):        adminDataTable(),
+		filepath.Join(adminRoot, "components", "tables", "column-header.tsx"):     adminColumnHeader(),
+		filepath.Join(adminRoot, "components", "tables", "cell-renderers.tsx"):    adminCellRenderers(),
+		filepath.Join(adminRoot, "components", "tables", "table-filters.tsx"):     adminTableFilters(),
+		filepath.Join(adminRoot, "components", "tables", "table-toolbar.tsx"):     adminTableToolbar(),
+		filepath.Join(adminRoot, "components", "tables", "table-pagination.tsx"):  adminTablePagination(),
+		filepath.Join(adminRoot, "components", "tables", "table-skeleton.tsx"):    adminTableSkeleton(),
+		filepath.Join(adminRoot, "components", "tables", "table-empty-state.tsx"): adminTableEmptyState(),
+		filepath.Join(adminRoot, "lib", "formatters.ts"):                          adminFormatters(),
 
 		// Form components
-		filepath.Join(adminRoot, "components", "forms", "FormBuilder.tsx"):             adminFormBuilder(),
-		filepath.Join(adminRoot, "components", "forms", "FormModal.tsx"):               adminFormModal(),
-		filepath.Join(adminRoot, "components", "forms", "form-page.tsx"):               adminFormPage(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "TextField.tsx"):     adminTextField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "TextAreaField.tsx"): adminTextareaField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "NumberField.tsx"):   adminNumberField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "SelectField.tsx"):   adminSelectField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "DateField.tsx"):     adminDateField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "ToggleField.tsx"):   adminToggleField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "CheckboxField.tsx"): adminCheckboxField(),
-		filepath.Join(adminRoot, "components", "forms", "fields", "RadioField.tsx"):    adminRadioField(),
+		filepath.Join(adminRoot, "components", "forms", "form-builder.tsx"):             adminFormBuilder(),
+		filepath.Join(adminRoot, "components", "forms", "form-modal.tsx"):               adminFormModal(),
+		filepath.Join(adminRoot, "components", "forms", "form-page.tsx"):                adminFormPage(),
+		filepath.Join(adminRoot, "components", "forms", "form-sheet.tsx"):               adminFormSheet(),
+		filepath.Join(adminRoot, "components", "forms", "form-modal-steps.tsx"):         adminFormModalSteps(),
+		filepath.Join(adminRoot, "components", "forms", "form-page-steps.tsx"):          adminFormPageSteps(),
+		filepath.Join(adminRoot, "components", "forms", "update-groups.tsx"):            adminUpdateGroups(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "text-field.tsx"):     adminTextField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "textarea-field.tsx"): adminTextareaField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "number-field.tsx"):   adminNumberField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "select-field.tsx"):   adminSelectField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "date-field.tsx"):     adminDateField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "toggle-field.tsx"):   adminToggleField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "checkbox-field.tsx"): adminCheckboxField(),
+		filepath.Join(adminRoot, "components", "forms", "fields", "radio-field.tsx"):    adminRadioField(),
 
 		// Widget components
-		filepath.Join(adminRoot, "components", "widgets", "StatsCard.tsx"):      adminStatsCard(),
-		filepath.Join(adminRoot, "components", "widgets", "ChartWidget.tsx"):    adminChartWidget(),
-		filepath.Join(adminRoot, "components", "widgets", "ActivityWidget.tsx"): adminActivityWidget(),
-		filepath.Join(adminRoot, "components", "widgets", "WidgetGrid.tsx"):     adminWidgetGrid(),
+		filepath.Join(adminRoot, "components", "widgets", "stats-card.tsx"):      adminStatsCard(),
+		filepath.Join(adminRoot, "components", "widgets", "chart-widget.tsx"):    adminChartWidget(),
+		filepath.Join(adminRoot, "components", "widgets", "activity-widget.tsx"): adminActivityWidget(),
+		filepath.Join(adminRoot, "components", "widgets", "widget-grid.tsx"):     adminWidgetGrid(),
 
 		// Resource components
-		filepath.Join(adminRoot, "components", "resource", "ResourcePage.tsx"): adminResourcePage(),
-		filepath.Join(adminRoot, "components", "resource", "view-modal.tsx"):   adminViewModal(),
-		filepath.Join(adminRoot, "components", "ui", "confirm-modal.tsx"):      adminConfirmModal(),
+		filepath.Join(adminRoot, "components", "resource", "resource-page.tsx"):        adminResourcePage(),
+		filepath.Join(adminRoot, "components", "resource", "view-modal.tsx"):           adminViewModal(),
+		filepath.Join(adminRoot, "components", "resource", "resource-detail-page.tsx"): adminResourceDetailPage(),
+		filepath.Join(adminRoot, "components", "ui", "confirm-modal.tsx"):              adminConfirmModal(),
 
 		// Dropzone
 		filepath.Join(adminRoot, "components", "ui", "dropzone.tsx"): adminDropzone(),
 
 		// Resource definitions (only the built-in users one)
-		filepath.Join(adminRoot, "resources", "users.ts"):    adminUsersResource(),
-		filepath.Join(adminRoot, "resources", "registry.ts"): adminResourceRegistry(),
+		filepath.Join(adminRoot, "resources", "users.ts"): adminUsersResource(),
 	}
 
 	n, err := writeUpgradeFiles(files, uOpts.Force)
@@ -287,8 +292,134 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 		n++
 	}
 
+	n += pruneAdminStrays(adminRoot)
+	n += pruneUnwiredI18n(adminRoot)
+
 	green.Printf("  ✓ Admin panel updated (%d files)\n", n)
 	return n, nil
+}
+
+// Files earlier upgrades wrote to paths the scaffold does not use.
+//
+// The admin components were renamed to kebab-case a long time ago, but this
+// command's path list was not, so every `grit upgrade` since has written
+// components/tables/DataTable.tsx next to the real data-table.tsx and left it
+// there. Nothing imported them. The visible symptom was the opposite of an
+// error: upgrade reported dozens of files updated while the components the app
+// actually renders were never touched, so no fix shipped in one ever arrived.
+//
+// They are safe to delete precisely because nothing ever imported them — but
+// only when the real file is present, so a half-finished rename cannot take the
+// last copy with it.
+var adminStrayFiles = map[string]string{
+	"components/tables/DataTable.tsx":           "components/tables/data-table.tsx",
+	"components/tables/ColumnHeader.tsx":        "components/tables/column-header.tsx",
+	"components/tables/CellRenderers.tsx":       "components/tables/cell-renderers.tsx",
+	"components/tables/TableFilters.tsx":        "components/tables/table-filters.tsx",
+	"components/tables/TableToolbar.tsx":        "components/tables/table-toolbar.tsx",
+	"components/tables/TablePagination.tsx":     "components/tables/table-pagination.tsx",
+	"components/tables/Skeleton.tsx":            "components/tables/table-skeleton.tsx",
+	"components/tables/EmptyState.tsx":          "components/tables/table-empty-state.tsx",
+	"components/tables/Formatters.ts":           "lib/formatters.ts",
+	"components/forms/FormBuilder.tsx":          "components/forms/form-builder.tsx",
+	"components/forms/FormModal.tsx":            "components/forms/form-modal.tsx",
+	"components/forms/fields/TextField.tsx":     "components/forms/fields/text-field.tsx",
+	"components/forms/fields/TextAreaField.tsx": "components/forms/fields/textarea-field.tsx",
+	"components/forms/fields/NumberField.tsx":   "components/forms/fields/number-field.tsx",
+	"components/forms/fields/SelectField.tsx":   "components/forms/fields/select-field.tsx",
+	"components/forms/fields/DateField.tsx":     "components/forms/fields/date-field.tsx",
+	"components/forms/fields/ToggleField.tsx":   "components/forms/fields/toggle-field.tsx",
+	"components/forms/fields/CheckboxField.tsx": "components/forms/fields/checkbox-field.tsx",
+	"components/forms/fields/RadioField.tsx":    "components/forms/fields/radio-field.tsx",
+	"components/layout/AdminLayout.tsx":         "components/layout/admin-layout.tsx",
+	"components/layout/Sidebar.tsx":             "components/layout/sidebar.tsx",
+	"components/layout/Navbar.tsx":              "components/layout/navbar.tsx",
+	"components/layout/ThemeProvider.tsx":       "components/shared/theme-provider.tsx",
+	"components/shared/Providers.tsx":           "components/shared/providers.tsx",
+	"components/widgets/StatsCard.tsx":          "components/widgets/stats-card.tsx",
+	"components/widgets/ChartWidget.tsx":        "components/widgets/chart-widget.tsx",
+	"components/widgets/ActivityWidget.tsx":     "components/widgets/activity-widget.tsx",
+	"components/widgets/WidgetGrid.tsx":         "components/widgets/widget-grid.tsx",
+	"components/resource/ResourcePage.tsx":      "components/resource/resource-page.tsx",
+	"resources/registry.ts":                     "resources/index.ts",
+	"postcss.config.mjs":                        "postcss.config.js",
+}
+
+// i18n files the scaffold used to write without the dependency that makes them
+// compile. `grit add i18n` writes the same six files AND adds next-intl, wraps
+// the layout and registers the plugin — and it skips files that already exist,
+// so these copies did not merely fail to type-check, they blocked the command
+// that would have fixed them. Removed only when next-intl is absent, which is
+// exactly the case where they cannot be doing anything useful.
+func pruneUnwiredI18n(adminRoot string) int {
+	pkg, err := os.ReadFile(filepath.Join(adminRoot, "package.json"))
+	if err != nil || strings.Contains(string(pkg), `"next-intl"`) {
+		return 0
+	}
+	removed := 0
+	for _, dead := range []string{
+		"i18n/request.ts",
+		"lib/locale.ts",
+		"components/language-switcher.tsx",
+		"messages/en.json",
+		"messages/fr.json",
+		"messages/sw.json",
+	} {
+		if err := os.Remove(filepath.Join(adminRoot, filepath.FromSlash(dead))); err == nil {
+			removed++
+		}
+	}
+	if removed > 0 {
+		fmt.Printf("  ✓ Removed %d unwired i18n file(s) — run `grit add i18n` to set it up properly\n", removed)
+	}
+	return removed
+}
+
+// existsExact reports whether path exists with exactly this spelling.
+//
+// os.Stat is not good enough here. Windows and macOS match file names without
+// regard to case, so Stat("providers.tsx") happily returns the entry for
+// "Providers.tsx" — and a prune that trusts it deletes the only copy while
+// believing it kept one. Reading the directory and comparing names byte for
+// byte is the only answer that means the same thing on every platform.
+func existsExact(path string) bool {
+	entries, err := os.ReadDir(filepath.Dir(path))
+	if err != nil {
+		return false
+	}
+	want := filepath.Base(path)
+	for _, e := range entries {
+		if e.Name() == want {
+			return true
+		}
+	}
+	return false
+}
+
+func pruneAdminStrays(adminRoot string) int {
+	removed := 0
+	for stray, real := range adminStrayFiles {
+		// Pairs that differ only in case (Providers.tsx / providers.tsx) need
+		// no special handling once existsExact is doing the looking: on a
+		// case-insensitive filesystem only one of the two spellings is really
+		// there, so the "is the real one present?" check below fails and the
+		// single copy survives. On a case-sensitive one both exist and the
+		// stray is genuinely a stray.
+		strayPath := filepath.Join(adminRoot, filepath.FromSlash(stray))
+		if !existsExact(strayPath) {
+			continue
+		}
+		if !existsExact(filepath.Join(adminRoot, filepath.FromSlash(real))) {
+			continue // the real one is missing — leave the copy alone
+		}
+		if err := os.Remove(strayPath); err == nil {
+			removed++
+		}
+	}
+	if removed > 0 {
+		fmt.Printf("  ✓ Removed %d stale duplicate component file(s) from earlier upgrades\n", removed)
+	}
+	return removed
 }
 
 // createIfMissing writes a file only when it is absent, and reports whether it
