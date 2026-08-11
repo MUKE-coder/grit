@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // SyncAdminResource walks one Go struct → its admin resource file and
@@ -43,15 +45,37 @@ func SyncAdminResource(root string, s GoStruct) (added int, warnings []string, e
 
 	content := string(data)
 
+	// The overlay migration runs first and independently of the fences below.
+	// It has to: the resources that most need it are the hand-written ones that
+	// never had fences at all.
+	overlayCreated, overlayErr := ensureCustomOverlayFile(filepath.Dir(path), kebab, s.Name)
+	if overlayErr != nil {
+		return 0, nil, overlayErr
+	}
+	if overlayCreated {
+		warnings = append(warnings, fmt.Sprintf(
+			"  + apps/admin/resources/%s.custom.tsx created — custom tables, forms and cells go here",
+			kebab,
+		))
+	}
+
+	if wired, changed := ensureCustomOverlayImport(content, kebab); changed {
+		if err := os.WriteFile(path, []byte(wired), 0644); err != nil {
+			return 0, warnings, fmt.Errorf("writing %s: %w", path, err)
+		}
+		content = wired
+	}
+
 	// Markers came in at v3.31.16. Older files don't have them; fall
 	// back to a warning so the operator knows the auto-add can't help
 	// them on this resource without a small one-time edit.
 	if !strings.Contains(content, "// grit:cols:auto-end") ||
 		!strings.Contains(content, "// grit:fields:auto-end") {
-		return 0, []string{fmt.Sprintf(
+		warnings = append(warnings, fmt.Sprintf(
 			"  ⚠ %s: missing grit:cols:auto-end / grit:fields:auto-end markers — auto-add skipped.\n     Re-run `grit generate` to regenerate the resource file, or add the markers by hand to enable sync auto-add.",
 			path,
-		)}, nil
+		))
+		return 0, warnings, nil
 	}
 
 	updated := content
@@ -86,6 +110,51 @@ func SyncAdminResource(root string, s GoStruct) (added int, warnings []string, e
 		}
 	}
 	return added, warnings, nil
+}
+
+// ensureCustomOverlayImport adds the overlay import and threads it into the
+// defineResource call, for resource files generated before overlays existed.
+//
+// Both edits are guarded, and the function is a no-op when either is already
+// present — running grit sync twice must not produce two imports or a
+// defineResource with the overlay passed twice.
+func ensureCustomOverlayImport(content, kebab string) (string, bool) {
+	importLine := fmt.Sprintf("import custom from \"./%s.custom\";", kebab)
+	if strings.Contains(content, importLine) {
+		return content, false
+	}
+
+	// Anchor on the defineResource import, which every resource file has.
+	const anchor = "import { defineResource } from \"@/lib/resource\";"
+	idx := strings.Index(content, anchor)
+	if idx < 0 {
+		return content, false // unrecognisable file — leave it alone
+	}
+	insertAt := idx + len(anchor)
+	content = content[:insertAt] + "\n" + importLine + content[insertAt:]
+
+	// Pass it to defineResource. The generated files close with "});" on its
+	// own line at column zero; anything else has been hand-restructured and is
+	// safer left as it is.
+	if strings.Contains(content, "\n});\n") {
+		content = strings.Replace(content, "\n});\n", "\n}, custom);\n", 1)
+	}
+	return content, true
+}
+
+// ensureCustomOverlayFile creates resources/<kebab>.custom.tsx when it is
+// absent, and never touches it when it is there. Reports whether it created one.
+func ensureCustomOverlayFile(dir, kebab, pascal string) (bool, error) {
+	path := filepath.Join(dir, kebab+".custom.tsx")
+	if _, err := os.Stat(path); err == nil {
+		return false, nil
+	} else if !os.IsNotExist(err) {
+		return false, fmt.Errorf("checking %s: %w", path, err)
+	}
+	if err := os.WriteFile(path, []byte(scaffold.AdminResourceCustomStub(pascal, pascal)), 0644); err != nil {
+		return false, fmt.Errorf("writing %s: %w", path, err)
+	}
+	return true, nil
 }
 
 // insertBeforeMarker injects a new line above the given marker comment,

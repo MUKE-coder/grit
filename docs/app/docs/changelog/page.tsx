@@ -28,6 +28,66 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.140.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.140.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Typed rows in resource customisations.</strong>
+                </p>
+                <p>
+                  A cell renderer used to receive <code>Record&lt;string, unknown&gt;</code>, so
+                  every custom cell started with a cast and a renamed column failed at runtime in
+                  front of whoever opened the page. The customisation surface is now generic over
+                  the row, and the generated overlay wires it up for you:
+                </p>
+                <pre>
+                  <code>{`import type { ResourceCustomisation } from "@/lib/resource";
+import type { Product } from "@repo/shared/types";
+
+const custom: ResourceCustomisation<Product> = {
+  columns: {
+    // row is a Product — price is a number, so toFixed exists
+    price: { cell: (row) => <b>{"$" + row.price.toFixed(2)}</b> },
+  },
+};
+
+export default custom;`}</code>
+                </pre>
+                <p>
+                  Write <code>row.prise</code> instead and TypeScript stops you with{' '}
+                  <em>Property &apos;prise&apos; does not exist on type &apos;Product&apos;. Did you
+                  mean &apos;price&apos;?</em> — which is the entire point of the change.
+                </p>
+                <p>
+                  The row type comes from <code>@repo/shared/types</code>, the same interfaces{' '}
+                  <code>grit sync</code> already generates from your Go structs, so there is no
+                  second definition to keep in step. <code>ColumnDefinition</code>,{' '}
+                  <code>ColumnClick</code>, <code>ResourceTableProps</code> and{' '}
+                  <code>ResourceComponents</code> are all generic now; the registry stays untyped so
+                  it can still hold every resource in one array.
+                </p>
+                <p>
+                  <strong>Existing projects are migrated for you.</strong> <code>grit sync</code>{' '}
+                  creates the overlay for any resource that predates it and threads the import into
+                  the definition, skipping anything already wired. Both operations are guarded, so
+                  running it twice does nothing the second time.
+                </p>
+                <p>
+                  One bug fixed on the way: <code>grit update</code> refreshes{' '}
+                  <code>resources/users.ts</code>, which now imports its overlay — so an upgrade
+                  would have left the admin importing a file that did not exist. The upgrade creates
+                  it when missing and never overwrites one that is already there.
+                </p>
+              </div>
+            </div>
+
             {/* v3.139.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

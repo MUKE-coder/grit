@@ -266,6 +266,15 @@ export default custom;`}
             />
 
             <div className="prose-grit mb-10">
+              <h3 id="typed-rows">Typed rows</h3>
+              <p>
+                The overlay is generic over the row type, and the generated stub imports it from{' '}
+                <code>@repo/shared/types</code> — the same interfaces <code>grit sync</code>{' '}
+                produces from your Go structs. So <code>row</code> in a cell renderer is a{' '}
+                <code>Product</code>, not <code>Record&lt;string, unknown&gt;</code>: fields
+                autocomplete, and renaming a column in Go turns every stale renderer into a compile
+                error instead of a blank cell.
+              </p>
               <p>
                 <code>columns</code> and <code>fields</code> are patched <strong>by key</strong>,
                 not replaced wholesale. That is deliberate: <code>grit sync</code> keeps adding new

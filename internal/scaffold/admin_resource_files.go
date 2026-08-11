@@ -17,7 +17,7 @@ export interface BadgeConfig {
   [value: string]: { color: string; label: string };
 }
 
-export interface ColumnDefinition {
+export interface ColumnDefinition<T = Record<string, unknown>> {
   key: string;
   label: string;
   sortable?: boolean;
@@ -33,7 +33,7 @@ export interface ColumnDefinition {
   // badge, status pill + relative date) without dropping out to a
   // hand-written page. Receives the full row so dotted keys aren't
   // necessary. When defined, takes precedence over format / badge.
-  cell?: (row: Record<string, unknown>) => ReactNode;
+  cell?: (row: T) => ReactNode;
   // v3.101.0: make a cell's value clickable. Two behaviors are built in —
   // "link" opens the row's detail page, "copy" copies the cell value to the
   // clipboard (with a brief check-mark) — or pass your own function to do
@@ -41,15 +41,15 @@ export interface ColumnDefinition {
   // cell value and the full row. The click never triggers the row's other
   // actions. Generated resources set onClick: "link" on their first column so
   // the primary identifier is click-to-open out of the box.
-  onClick?: ColumnClick;
+  onClick?: ColumnClick<T>;
 }
 
 // ColumnClick is a table cell's click behavior: a built-in ("link" → open the
 // detail page, "copy" → copy the value) or a custom handler.
-export type ColumnClick =
+export type ColumnClick<T = Record<string, unknown>> =
   | "link"
   | "copy"
-  | ((value: unknown, row: Record<string, unknown>) => void);
+  | ((value: unknown, row: T) => void);
 
 // ─── Filter Definitions ─────────────────────────────────────────────
 
@@ -322,7 +322,7 @@ export interface DashboardDefinition {
 
 /** Props a replacement table receives. Identical to DataTable's own props. */
 export interface ResourceTableProps<T = Record<string, unknown>> {
-  columns: ColumnDefinition[];
+  columns: ColumnDefinition<T>[];
   data: T[];
   isLoading?: boolean;
   sortBy?: string;
@@ -372,8 +372,14 @@ export interface ResourceComponents<T = Record<string, unknown>> {
  */
 export interface ResourceCustomisation<T = Record<string, unknown>> {
   components?: ResourceComponents<T>;
-  /** Per-column overrides, keyed by column key. Merged over the generated column. */
-  columns?: Record<string, Partial<ColumnDefinition>>;
+  /**
+   * Per-column overrides, keyed by column key. Merged over the generated column.
+   *
+   * Typed against T, so a cell renderer gets the real row:
+   *   columns: { total: { cell: (row) => <b>{row.total.toFixed(2)}</b> } }
+   * with row.total known to be a number rather than unknown.
+   */
+  columns?: Record<string, Partial<ColumnDefinition<T>>>;
   /** Per-field overrides, keyed by field key. Merged over the generated field. */
   fields?: Record<string, Partial<FieldDefinition>>;
 }
@@ -454,9 +460,14 @@ export function defineResource<T = Record<string, unknown>>(
   const columnPatches = custom?.columns ?? {};
   const fieldPatches = custom?.fields ?? {};
 
-  const columns = config.table.columns.map((col) =>
-    columnPatches[col.key] ? { ...col, ...columnPatches[col.key] } : col,
-  );
+  // The patches are typed against the caller's row type; the registry stores
+  // the erased form, and a (row: Product) => ReactNode is not assignable to a
+  // (row: Record<string, unknown>) => ReactNode under strictFunctionTypes. One
+  // cast here is what buys a typed authoring surface everywhere else.
+  const columns = config.table.columns.map((col) => {
+    const patch = columnPatches[col.key] as Partial<ColumnDefinition> | undefined;
+    return patch ? { ...col, ...patch } : col;
+  });
 
   const fields = config.form.fields.map((field) =>
     fieldPatches[field.key] ? { ...field, ...fieldPatches[field.key] } : field,
@@ -493,14 +504,29 @@ export function defineResource<T = Record<string, unknown>>(
 // is a .ts file, so JSX will not compile in it, and grit generate rewrites it
 // whole. Anything with a component in it — a custom cell, a replacement table,
 // a whole page — goes here instead and survives every regeneration.
-func AdminResourceCustomStub(pascal string) string {
-	return fmt.Sprintf(`import type { ResourceCustomisation } from "@/lib/resource";
+//
+// typeName is the shared row type (e.g. "Product", exported from
+// @repo/shared/types by grit sync). Pass "" when there is no matching type and
+// the stub falls back to the untyped form, which still compiles.
+func AdminResourceCustomStub(pascal, typeName string) string {
+	typeImport := ""
+	generic := ""
+	rowNote := "Rows are Record<string, unknown> here. Generate or sync the resource to\n * pick up a typed row from @repo/shared/types."
+	if typeName != "" {
+		typeImport = fmt.Sprintf("import type { %s } from \"@repo/shared/types\";\n", typeName)
+		generic = fmt.Sprintf("<%s>", typeName)
+		rowNote = fmt.Sprintf("Rows are typed as %s, so row.id and friends autocomplete and a renamed\n * column fails at compile time rather than at runtime.", typeName)
+	}
 
+	return fmt.Sprintf(`import type { ResourceCustomisation } from "@/lib/resource";
+%s
 /**
  * Customisations for the %s resource.
  *
  * This file is yours. The generator creates it once and never writes to it
  * again, so anything you put here survives grit generate and grit sync.
+ *
+ * %s
  *
  * Three things you can do:
  *
@@ -524,10 +550,10 @@ func AdminResourceCustomStub(pascal string) string {
  *
  * See /docs/admin/custom-pages for the full list of props.
  */
-const custom: ResourceCustomisation = {};
+const custom: ResourceCustomisation%s = {};
 
 export default custom;
-`, pascal)
+`, typeImport, pascal, rowNote, generic)
 }
 
 // adminResourceRegistry returns the resource registry (resources/index.ts).
