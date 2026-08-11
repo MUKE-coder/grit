@@ -1921,7 +1921,9 @@ func writeResourceCustomStub(dir string, names Names) error {
 	} else if !os.IsNotExist(err) {
 		return fmt.Errorf("checking %s: %w", path, err)
 	}
-	return writeFileWithDirs(path, scaffold.AdminResourceCustomStub(names.Pascal))
+	// names.Pascal is also the shared row type: grit emits
+	// packages/shared/types/<name>.ts with an interface of the same name.
+	return writeFileWithDirs(path, scaffold.AdminResourceCustomStub(names.Pascal, names.Pascal))
 }
 
 // writeResourcePage creates a thin admin page wrapper for the resource.

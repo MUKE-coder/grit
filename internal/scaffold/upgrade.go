@@ -272,8 +272,38 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 		return 0, err
 	}
 
+	// resources/users.ts now imports ./users.custom, so the overlay has to be
+	// there or the admin will not compile after an upgrade. createIfMissing,
+	// never write: the whole promise of that file is that it is never
+	// overwritten, and an upgrade is exactly when someone would lose work.
+	created, err := createIfMissing(
+		filepath.Join(adminRoot, "resources", "users.custom.tsx"),
+		AdminResourceCustomStub("User", "User"),
+	)
+	if err != nil {
+		return n, err
+	}
+	if created {
+		n++
+	}
+
 	green.Printf("  ✓ Admin panel updated (%d files)\n", n)
 	return n, nil
+}
+
+// createIfMissing writes a file only when it is absent, and reports whether it
+// did. Used for the files an upgrade must guarantee exist without ever
+// clobbering their contents.
+func createIfMissing(path, content string) (bool, error) {
+	if _, err := os.Stat(path); err == nil {
+		return false, nil
+	} else if !os.IsNotExist(err) {
+		return false, fmt.Errorf("checking %s: %w", path, err)
+	}
+	if err := writeFile(path, content); err != nil {
+		return false, fmt.Errorf("writing %s: %w", path, err)
+	}
+	return true, nil
 }
 
 // writeUpgradeFiles writes files, creating directories as needed.
