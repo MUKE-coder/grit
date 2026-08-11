@@ -13,12 +13,13 @@ export const metadata = getDocMetadata('/docs/prerequisites/golang')
 const tocItems = [
   { id: 'go-basics', label: 'Go Basics' },
   { id: 'variables-types', label: 'Variables & Types' },
-  { id: 'structs-tags', label: 'Structs & Tags' },
+  { id: 'control-flow', label: 'Control Flow' },
   { id: 'functions-errors', label: 'Functions & Error Handling' },
-  { id: 'methods', label: 'Methods' },
+  { id: 'structs-tags', label: 'Structs & Tags' },
   { id: 'slices-maps', label: 'Slices & Maps' },
-  { id: 'interfaces', label: 'Interfaces' },
   { id: 'pointers', label: 'Pointers' },
+  { id: 'methods', label: 'Methods' },
+  { id: 'interfaces', label: 'Interfaces' },
   { id: 'goroutines-channels', label: 'Goroutines & Channels' },
   { id: 'packages-structure', label: 'Packages & Project Structure' },
   { id: 'env-variables', label: 'Environment Variables' },
@@ -68,7 +69,6 @@ export default function GoForGritPage() {
                 <Link href="/playground">Open Playground</Link>
               </Button>
             </div>
-
             {/* ─────────────────────────────────────────────────── */}
             {/* 1. Go Basics */}
             {/* ─────────────────────────────────────────────────── */}
@@ -101,69 +101,40 @@ func main() {
 
             <div className="prose-grit mb-10">
               <p>
-                The other half of the basics is control flow. Go has three keywords for it and no
-                more: <code>if</code>, <code>for</code> and <code>switch</code>. There is no
-                <code>while</code> — <code>for</code> covers every loop shape — and no ternary
-                operator, so a conditional value is written as an ordinary <code>if</code>.
+                Four things in that file are worth naming, because every Go program has them. The
+                <code> package</code> line comes first. The <code>import</code> block lists what the
+                file uses. <code>func main()</code> is where execution starts. Anything after
+                <code> //</code> is a comment. Here is the same program with a little more in it —
+                still no variables, which arrive in the next section.
               </p>
             </div>
 
-            <CodeBlock language="go" filename="control_flow.go" code={`package main
+            <CodeBlock language="go" filename="anatomy.go" code={`package main
 
+// One import here; several are grouped in parentheses.
 import "fmt"
 
+/*
+   A block comment. Handy for a paragraph, though most
+   Go code uses // for everything.
+*/
+
 func main() {
-    // if — no parentheses, braces always required
-    port := 8080
-    if port < 1024 {
-        fmt.Println("privileged port")
-    } else if port > 49151 {
-        fmt.Println("ephemeral port")
-    } else {
-        fmt.Println("user port")
-    }
+    // Print writes exactly what you give it: no spaces, no newline
+    fmt.Print("Starting")
+    fmt.Print("...")
+    fmt.Println("ready")
 
-    // if with a short statement: limit and ok exist only inside the if
-    if limit, ok := lookup("page_size"); ok {
-        fmt.Println("limit:", limit)
-    }
+    // Println puts a space between arguments and ends the line
+    fmt.Println("Grit", "API", 2026)
 
-    // for — the classic three-part form
-    for i := 1; i <= 3; i++ {
-        fmt.Println("attempt", i)
-    }
+    // Strings are joined with +
+    fmt.Println("Hello, " + "Grit" + "!")
 
-    // for as a while loop
-    n := 1
-    for n < 10 {
-        n *= 2
-    }
-    fmt.Println("n:", n)
-
-    // for range over a slice
-    for i, env := range []string{"dev", "staging", "prod"} {
-        fmt.Printf("%d=%s ", i, env)
-    }
-    fmt.Println()
-
-    // switch — no fallthrough by default, so no break needed
-    status := 404
-    switch {
-    case status >= 500:
-        fmt.Println("server error")
-    case status >= 400:
-        fmt.Println("client error")
-    default:
-        fmt.Println("ok")
-    }
-}
-
-func lookup(key string) (int, bool) {
-    values := map[string]int{"page_size": 20}
-    v, ok := values[key]
-    return v, ok
+    // A raw string literal keeps line breaks exactly as typed
+    fmt.Println(\`usage:
+  go run .\`)
 }`} />
-
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
@@ -176,19 +147,20 @@ func lookup(key string) (int, bool) {
             </div>
 
             <PlaygroundChallenge
-              title="Go Basics"
-              description="Print your name and the current year using fmt.Printf with format verbs (%s and %d)."
+              title="Your First Program"
+              description="Write a program from scratch: the package line, the import, and a main function that prints. No variables yet — just the shape of a Go program."
               challenge={`package main
 
 import "fmt"
 
 func main() {
-	// Challenge: Print your name and the current year
-	// 1. Create a string variable "name" with your name
-	// 2. Create an int variable "year" with 2026
-	// 3. Use fmt.Printf to print: "Hi, I'm <name> and it's <year>!"
-	//    Hint: use %s for strings and %d for integers
-	// 4. Bonus: Print the type of each variable using %T
+	// Challenge: print a three-line banner
+	// 1. Print "=== Grit API ===" on its own line
+	// 2. Print "Starting up" on the next line
+	// 3. Print "Ready" on the third line
+	//    One fmt.Println per line.
+	// 4. Bonus: join two strings with + and print the result,
+	//    for example "Hello, " + "Grit"
 
 	fmt.Println("replace me")
 }`}
@@ -197,66 +169,54 @@ func main() {
 import "fmt"
 
 func main() {
-	name := "Alice"
-	year := 2026
+	fmt.Println("=== Grit API ===")
+	fmt.Println("Starting up")
+	fmt.Println("Ready")
 
-	fmt.Printf("Hi, I'm %s and it's %d!\\n", name, year)
-
-	// Bonus: Print the type of each variable using %T
-	fmt.Printf("name is %T, year is %T\\n", name, year)
+	// Strings join with +
+	fmt.Println("Hello, " + "Grit")
 }`}
             />
 
             <PlaygroundChallenge
-              title="Loops and Switch"
-              description="Loop over a slice of HTTP status codes and classify each one with a switch. No break statements — Go does not fall through."
+              title="Print, Println and Raw Strings"
+              description="Control where the line breaks fall. Println adds a newline and spaces out its arguments; Print does neither, and a raw string keeps exactly what you typed."
               challenge={`package main
 
 import "fmt"
 
 func main() {
-	codes := []int{200, 301, 404, 500, 204}
+	// Challenge: get the output exactly right
+	// 1. Use fmt.Print three times to build "Loading... done" on ONE line,
+	//    then end the line with fmt.Println()
+	// 2. Use a single fmt.Println with three arguments to print
+	//    "Grit API 2026" — it inserts the spaces for you
+	// 3. Print this two-line block with ONE raw string literal
+	//    (backticks, not quotes):
+	//      usage:
+	//        go run .
 
-	// Challenge: classify every status code
-	// 1. Loop over codes with "for _, code := range codes"
-	// 2. Use a switch to print one line per code:
-	//      2xx -> "<code> success"
-	//      3xx -> "<code> redirect"
-	//      4xx -> "<code> client error"
-	//      5xx -> "<code> server error"
-	//    Hint: "switch { case code >= 500: ... }" tests conditions, not a value
-	// 3. Bonus: count how many were errors (>= 400) and print the total
-
-	fmt.Println(codes)
+	fmt.Println("replace me")
 }`}
               solution={`package main
 
 import "fmt"
 
 func main() {
-	codes := []int{200, 301, 404, 500, 204}
-	errorCount := 0
+	// Print adds nothing: no spaces, no newline
+	fmt.Print("Loading")
+	fmt.Print("...")
+	fmt.Print(" done")
+	fmt.Println()
 
-	for _, code := range codes {
-		switch {
-		case code >= 500:
-			fmt.Printf("%d server error\n", code)
-			errorCount++
-		case code >= 400:
-			fmt.Printf("%d client error\n", code)
-			errorCount++
-		case code >= 300:
-			fmt.Printf("%d redirect\n", code)
-		default:
-			fmt.Printf("%d success\n", code)
-		}
-	}
+	// Println spaces the arguments and ends the line
+	fmt.Println("Grit", "API", 2026)
 
-	fmt.Printf("\n%d of %d were errors\n", errorCount, len(codes))
+	// A raw string literal keeps its line breaks and ignores escapes
+	fmt.Println(\`usage:
+  go run .\`)
 }`}
             />
-
-
             {/* ─────────────────────────────────────────────────── */}
             {/* 2. Variables & Types */}
             {/* ─────────────────────────────────────────────────── */}
@@ -307,6 +267,13 @@ func main() {
                 <code>0</code>, <code>&quot;&quot;</code>, <code>false</code> or <code>nil</code>,
                 never undefined. And Go never converts implicitly: adding an <code>int</code> to a
                 <code>float64</code> is a compile error until you convert one of them yourself.
+              </p>
+              <p>
+                One thing in the next example runs ahead of itself. Turning a string into a number
+                can fail, so <code>strconv.Atoi</code> hands back <em>two</em> values: the number and
+                an error. Read <code>if err != nil</code> as &quot;if something went wrong&quot; for
+                now — section 4 covers errors properly, and this is the only place before then that
+                needs them.
               </p>
             </div>
 
@@ -535,13 +502,493 @@ func main() {
 	}
 }`}
             />
-
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 3. Structs & Tags */}
+            {/* 3. Control Flow */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="structs-tags">3. Structs & Tags</h2>
+              <h2 id="control-flow">3. Control Flow</h2>
+              <p>
+                Go has three keywords for control flow and no more: <code>if</code>,
+                <code> for</code> and <code>switch</code>. There is no <code>while</code> — the
+                <code> for</code> keyword covers every loop shape — and no ternary operator, so a
+                conditional value is written as an ordinary <code>if</code>.
+              </p>
+              <p>
+                Two details catch people out. Parentheses around a condition are not used, but braces
+                are always required, even for a single statement. And <code>switch</code> does not
+                fall through: each case ends by itself, so there is no <code>break</code> to forget.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="control_flow.go" code={`package main
+
+import "fmt"
+
+func main() {
+    // if — no parentheses, braces always required
+    port := 8080
+    if port < 1024 {
+        fmt.Println("privileged port")
+    } else if port > 49151 {
+        fmt.Println("ephemeral port")
+    } else {
+        fmt.Println("user port")
+    }
+
+    // for — the classic three-part form
+    for i := 1; i <= 3; i++ {
+        fmt.Println("attempt", i)
+    }
+
+    // for as a while loop: one condition, nothing else
+    n := 1
+    for n < 10 {
+        n *= 2
+    }
+    fmt.Println("n:", n)
+
+    // switch on a value
+    env := "staging"
+    switch env {
+    case "production":
+        fmt.Println("be careful")
+    case "staging", "qa":
+        fmt.Println("safe to experiment")
+    default:
+        fmt.Println("unknown environment")
+    }
+
+    // switch with no value tests conditions instead — often clearer
+    // than a chain of else-ifs
+    status := 404
+    switch {
+    case status >= 500:
+        fmt.Println("server error")
+    case status >= 400:
+        fmt.Println("client error")
+    default:
+        fmt.Println("ok")
+    }
+}`} />
+
+            <div className="prose-grit mb-10">
+              <p>
+                <code>break</code> leaves a loop entirely and <code>continue</code> skips to the next
+                iteration. An <code>if</code> can also carry a short statement before its condition,
+                which is where most Go code puts the variable it is about to test — it keeps that
+                variable scoped to the branch that uses it.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="loops.go" code={`package main
+
+import "fmt"
+
+func main() {
+    // continue skips the rest of this iteration
+    for i := 1; i <= 6; i++ {
+        if i%2 != 0 {
+            continue // odd numbers are skipped
+        }
+        fmt.Print(i, " ")
+    }
+    fmt.Println()
+
+    // break leaves the loop
+    total := 0
+    for i := 1; ; i++ { // no condition: loops until something breaks it
+        total += i
+        if total > 20 {
+            fmt.Println("stopped at i =", i, "total =", total)
+            break
+        }
+    }
+
+    // A short statement inside if: remainder exists only in these branches
+    if remainder := 17 % 5; remainder == 0 {
+        fmt.Println("divides evenly")
+    } else {
+        fmt.Println("remainder is", remainder)
+    }
+
+    // Nested loops, and a label to break out of both at once
+outer:
+    for row := 1; row <= 3; row++ {
+        for col := 1; col <= 3; col++ {
+            if row*col > 4 {
+                fmt.Println("stopping at", row, col)
+                break outer
+            }
+            fmt.Print(row*col, " ")
+        }
+    }
+    fmt.Println()
+}`} />
+
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+              <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
+                The shape you will write most often is the guard clause: an <code>if</code> that
+                checks one thing and returns early. Handlers are a stack of them — reject the bad
+                request, reject the unauthorised user, then do the work — which keeps the happy path
+                at the left margin instead of nested four levels deep.
+              </p>
+            </div>
+
+            <PlaygroundChallenge
+              title="Classify With a Switch"
+              description="Loop over a range of numbers and classify each one with a switch. No break statements — Go does not fall through."
+              challenge={`package main
+
+import "fmt"
+
+func main() {
+	// Challenge: classify the numbers 1 to 15
+	// 1. Loop with "for i := 1; i <= 15; i++"
+	// 2. Use a switch with no value (switch { case ... }) to print one
+	//    line per number:
+	//      divisible by 3 and 5 -> "<i> both"
+	//      divisible by 3       -> "<i> three"
+	//      divisible by 5       -> "<i> five"
+	//      otherwise            -> "<i>"
+	//    Hint: i%3 == 0 tests divisibility
+	// 3. Order matters — check "both" first, or it never matches
+	// 4. Bonus: count how many were divisible by neither and print the total
+
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import "fmt"
+
+func main() {
+	plain := 0
+
+	for i := 1; i <= 15; i++ {
+		switch {
+		// The most specific case has to come first
+		case i%3 == 0 && i%5 == 0:
+			fmt.Println(i, "both")
+		case i%3 == 0:
+			fmt.Println(i, "three")
+		case i%5 == 0:
+			fmt.Println(i, "five")
+		default:
+			fmt.Println(i)
+			plain++
+		}
+	}
+
+	fmt.Println("divisible by neither:", plain)
+}`}
+            />
+
+            <PlaygroundChallenge
+              title="break, continue and Guard Clauses"
+              description="Skip what you do not want, stop when you have enough, and write the early-return shape that every request handler is built from."
+              challenge={`package main
+
+import "fmt"
+
+func main() {
+	// Challenge, part one: loop from 1 to 20
+	// 1. continue past any number that is not divisible by 4
+	// 2. add the rest to a running total
+	// 3. break as soon as the total goes above 30, printing where it stopped
+	//
+	// Challenge, part two: guard clauses
+	// 4. Write func describe(age int) string that returns early:
+	//      age < 0   -> "invalid"
+	//      age < 13  -> "child"
+	//      age < 20  -> "teenager"
+	//      otherwise -> "adult"
+	//    Use four separate returns, not one nested if/else chain.
+	// 5. Print describe for -1, 8, 15 and 42
+
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import "fmt"
+
+// Guard clauses: handle each rejection and return, so the normal
+// answer stays at the bottom instead of nested inside four elses
+func describe(age int) string {
+	if age < 0 {
+		return "invalid"
+	}
+	if age < 13 {
+		return "child"
+	}
+	if age < 20 {
+		return "teenager"
+	}
+	return "adult"
+}
+
+func main() {
+	total := 0
+	for i := 1; i <= 20; i++ {
+		if i%4 != 0 {
+			continue // not interested
+		}
+		total += i
+		if total > 30 {
+			fmt.Println("stopped at", i, "with total", total)
+			break
+		}
+	}
+
+	// Four plain calls: ranging over a collection arrives with slices
+	fmt.Printf("%3d -> %s\n", -1, describe(-1))
+	fmt.Printf("%3d -> %s\n", 8, describe(8))
+	fmt.Printf("%3d -> %s\n", 15, describe(15))
+	fmt.Printf("%3d -> %s\n", 42, describe(42))
+}`}
+            />
+            {/* ─────────────────────────────────────────────────── */}
+            {/* 4. Functions & Error Handling */}
+            {/* ─────────────────────────────────────────────────── */}
+            <div className="prose-grit mb-10">
+              <h2 id="functions-errors">4. Functions & Error Handling</h2>
+              <p>
+                Go functions can return <strong>multiple values</strong>. This is fundamental
+                to Go&apos;s error handling: instead of throwing exceptions, functions return an
+                <code>error</code> value as the last return. If the error is <code>nil</code>,
+                the operation succeeded. If not, you handle it immediately.
+              </p>
+              <p>
+                The <code>if err != nil</code> pattern appears on nearly every line that calls
+                another function. It may look verbose at first, but it makes error flow explicit
+                and easy to trace. Use <code>fmt.Errorf(&quot;context: %w&quot;, err)</code> to wrap errors
+                with additional context as they bubble up the call stack.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="errors.go" code={`package main
+
+import (
+    "errors"
+    "fmt"
+)
+
+// Functions return (result, error)
+func divide(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, errors.New("cannot divide by zero")
+    }
+    return a / b, nil
+}
+
+func calculateDiscount(price, percent float64) (float64, error) {
+    result, err := divide(price * percent, 100)
+    if err != nil {
+        // Wrap the error with context
+        return 0, fmt.Errorf("calculating discount: %w", err)
+    }
+    return result, nil
+}
+
+func main() {
+    discount, err := calculateDiscount(100.0, 20.0)
+    if err != nil {
+        fmt.Println("Error:", err)
+        return
+    }
+    fmt.Println("Discount:", discount) // 20.0
+}`} />
+
+            <div className="prose-grit mb-10">
+              <p>
+                Wrapping with <code>%w</code> is only half the pattern. The other half is asking what
+                an error <em>was</em>, further up the stack. A <strong>sentinel</strong> is a
+                package-level error value you compare with <code>errors.Is</code>; a
+                package-level error value you compare with <code>errors.Is</code>, and it sees
+                through any number of <code>%w</code> wraps. That is what lets a handler map a
+                failure raised deep in a service onto the right status code without ever reading the
+                message. (Errors that also carry <em>fields</em> need a struct and a method, so they
+                wait until after those sections.)
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="sentinel_errors.go" code={`package main
+
+import (
+    "errors"
+    "fmt"
+)
+
+// Sentinels: single values, compared by identity rather than by message
+var (
+    ErrNotFound  = errors.New("record not found")
+    ErrForbidden = errors.New("not allowed")
+)
+
+func findUser(id int) error {
+    if id != 1 {
+        // Wrapped, so the caller still finds ErrNotFound underneath
+        return fmt.Errorf("findUser %d: %w", id, ErrNotFound)
+    }
+    return nil
+}
+
+func deletePost(role string) error {
+    if role != "ADMIN" {
+        return fmt.Errorf("deletePost as %s: %w", role, ErrForbidden)
+    }
+    return nil
+}
+
+func main() {
+    // errors.Is matches through the wrapping, however deep it goes
+    err := findUser(99)
+    fmt.Println("error:", err)
+    if errors.Is(err, ErrNotFound) {
+        fmt.Println("-> respond 404")
+    }
+
+    err = deletePost("USER")
+    fmt.Println("error:", err)
+    if errors.Is(err, ErrForbidden) {
+        fmt.Println("-> respond 403")
+    }
+
+    // One sentinel never matches another
+    fmt.Println("forbidden is not-found?", errors.Is(err, ErrNotFound))
+
+    // The happy path
+    fmt.Println("as admin:", deletePost("ADMIN"))
+}`} />
+
+
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+              <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
+                Every service function in <code>internal/services/</code> returns <code>(result, error)</code>.
+                Handlers call services, check for errors, and return the appropriate HTTP response.
+                For example, <code>user, err := service.GetUserByID(id)</code> followed by
+                an <code>if err != nil</code> block that sends a 404 or 500 JSON response.
+              </p>
+            </div>
+
+            <PlaygroundChallenge
+              title="Functions & Errors"
+              description="Write a sqrt function that returns an error for negative numbers. Test it with both positive and negative inputs."
+              challenge={`package main
+
+import (
+	"fmt"
+)
+
+// Challenge: Functions & Error Handling
+// 1. Write a function: func sqrt(n float64) (float64, error)
+//    - If n is negative, return 0 and an error: "cannot take square root of negative number"
+//    - Otherwise return math.Sqrt(n) and nil
+//    Hint: use errors.New() to create errors, import "errors" and "math"
+// 2. In main, call sqrt(16) and sqrt(-4)
+// 3. Handle both cases: print the result on success, print the error on failure
+//
+// Expected output:
+//   sqrt(16) = 4.0
+//   Error: cannot take square root of negative number
+
+func main() {
+	fmt.Println("replace me")
+}`}
+              solution={`package main
+
+import (
+	"errors"
+	"fmt"
+	"math"
+)
+
+func sqrt(n float64) (float64, error) {
+	if n < 0 {
+		return 0, errors.New("cannot take square root of negative number")
+	}
+	return math.Sqrt(n), nil
+}
+
+func main() {
+	result, err := sqrt(16)
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		fmt.Printf("sqrt(16) = %.1f\\n", result)
+	}
+
+	result, err = sqrt(-4)
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		fmt.Printf("sqrt(-4) = %.1f\\n", result)
+	}
+}`}
+            />
+
+            <PlaygroundChallenge
+              title="Sentinel Errors"
+              description="Define a sentinel error, wrap it with context, then match it with errors.Is — the pattern a handler uses to choose between 409 and 500."
+              challenge={`package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+// Challenge: sentinel errors and errors.Is
+// 1. Declare a package-level sentinel:
+//      var ErrInsufficientStock = errors.New("insufficient stock")
+// 2. Write reserve(requested, available int) error that:
+//      - wraps ErrInsufficientStock with %w when requested > available,
+//        putting both numbers in the message
+//      - returns nil otherwise
+// 3. In main, call reserve(5, 2) and print the error
+// 4. Use errors.Is to detect it and print "-> respond 409"
+// 5. Bonus: build an unrelated error and confirm errors.Is says false
+
+func main() {
+	fmt.Println(errors.New("start here"))
+}`}
+              solution={`package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+var ErrInsufficientStock = errors.New("insufficient stock")
+
+func reserve(requested, available int) error {
+	if requested > available {
+		return fmt.Errorf("reserve %d of %d: %w", requested, available, ErrInsufficientStock)
+	}
+	return nil
+}
+
+func main() {
+	err := reserve(5, 2)
+	fmt.Println("error:", err)
+
+	// Matches through the wrapping, so nobody has to parse the message
+	if errors.Is(err, ErrInsufficientStock) {
+		fmt.Println("-> respond 409")
+	}
+
+	// Bonus: an unrelated error does not match
+	other := fmt.Errorf("db down: %w", errors.New("timeout"))
+	fmt.Println("other matches?", errors.Is(other, ErrInsufficientStock))
+
+	// The happy path returns nil
+	fmt.Println("reserve(1, 2) =", reserve(1, 2))
+}`}
+            />
+            {/* ─────────────────────────────────────────────────── */}
+            {/* 5. Structs & Tags */}
+            {/* ─────────────────────────────────────────────────── */}
+            <div className="prose-grit mb-10">
+              <h2 id="structs-tags">5. Structs & Tags</h2>
               <p>
                 A struct is Go&apos;s way of defining a custom data type -- similar to a class in other
                 languages, but without inheritance. Structs group related fields together. Each field
@@ -698,7 +1145,8 @@ import (
 // 5. Bonus: set a coupon, marshal again, and watch the key appear
 
 func main() {
-	fmt.Println(json.Valid([]byte("{}")))
+	var _ = json.Marshal // the import is here ready for step 3
+	fmt.Println("replace me")
 }`}
               solution={`package main
 
@@ -736,252 +1184,506 @@ func main() {
 	fmt.Println(string(out))
 }`}
             />
-
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 4. Functions & Error Handling */}
+            {/* 6. Slices & Maps */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="functions-errors">4. Functions & Error Handling</h2>
+              <h2 id="slices-maps">6. Slices & Maps</h2>
               <p>
-                Go functions can return <strong>multiple values</strong>. This is fundamental
-                to Go&apos;s error handling: instead of throwing exceptions, functions return an
-                <code>error</code> value as the last return. If the error is <code>nil</code>,
-                the operation succeeded. If not, you handle it immediately.
+                A <strong>slice</strong> is Go&apos;s dynamic array. Unlike arrays (which have a fixed
+                size), slices can grow and shrink. You create them with <code>[]Type{"{}"}</code> or
+                <code>make([]Type, length)</code> and add items with <code>append()</code>.
               </p>
               <p>
-                The <code>if err != nil</code> pattern appears on nearly every line that calls
-                another function. It may look verbose at first, but it makes error flow explicit
-                and easy to trace. Use <code>fmt.Errorf(&quot;context: %w&quot;, err)</code> to wrap errors
-                with additional context as they bubble up the call stack.
+                A <strong>map</strong> is a key-value data structure (like a JavaScript object or
+                Python dictionary). The type <code>map[string]interface{"{}"}</code> (or the modern
+                alias <code>map[string]any</code>) can hold any value type -- this is what Gin uses
+                for JSON responses.
+              </p>
+              <p>
+                The <code>range</code> keyword iterates over slices and maps, giving you
+                both the index/key and value on each iteration.
               </p>
             </div>
 
-            <CodeBlock language="go" filename="errors.go" code={`package main
+            <CodeBlock language="go" filename="collections.go" code={`package main
 
-import (
-    "errors"
-    "fmt"
-)
-
-// Functions return (result, error)
-func divide(a, b float64) (float64, error) {
-    if b == 0 {
-        return 0, errors.New("cannot divide by zero")
-    }
-    return a / b, nil
-}
-
-func calculateDiscount(price, percent float64) (float64, error) {
-    result, err := divide(price * percent, 100)
-    if err != nil {
-        // Wrap the error with context
-        return 0, fmt.Errorf("calculating discount: %w", err)
-    }
-    return result, nil
-}
+import "fmt"
 
 func main() {
-    discount, err := calculateDiscount(100.0, 20.0)
-    if err != nil {
-        fmt.Println("Error:", err)
-        return
+    // Slices
+    names := []string{"Alice", "Bob", "Charlie"}
+    names = append(names, "Diana")
+
+    for i, name := range names {
+        fmt.Printf("%d: %s\\n", i, name)
     }
-    fmt.Println("Discount:", discount) // 20.0
+
+    // Maps — every value has the same type here; mixed-type maps need
+    // "any", which arrives with interfaces
+    user := map[string]string{
+        "name":  "Alice",
+        "email": "alice@example.com",
+    }
+
+    for key, value := range user {
+        fmt.Printf("%s = %v\\n", key, value)
+    }
+
+    // Access a single value
+    fmt.Println("Name:", user["name"])
 }`} />
 
             <div className="prose-grit mb-10">
               <p>
-                Wrapping with <code>%w</code> is only half the pattern. The other half is asking what
-                an error <em>was</em>, further up the stack. A <strong>sentinel</strong> is a
-                package-level error value you compare with <code>errors.Is</code>; a
-                <strong> custom error type</strong> carries fields you pull back out with
-                <code>errors.As</code>. Both see through any number of <code>%w</code> wraps, which
-                is what lets a handler map a failure from deep in a service onto the right status code.
+                A slice is a view onto an array: a pointer, a length and a capacity. That is worth
+                knowing because it explains the one behaviour that catches everybody — two slices can
+                share the same backing array, so writing through one changes the other. Maps have
+                their own rule: reading a missing key returns the zero value rather than an error,
+                and iteration order is deliberately random, so sort the keys when output has to be
+                stable.
               </p>
             </div>
 
-            <CodeBlock language="go" filename="sentinel_errors.go" code={`package main
+            <CodeBlock language="go" filename="slice_mechanics.go" code={`package main
 
 import (
-    "errors"
     "fmt"
+    "sort"
 )
 
-// A sentinel: one value, compared by identity rather than by message
-var ErrNotFound = errors.New("record not found")
-
-// A custom error type: carries data the caller can read
-type ValidationError struct {
-    Field   string
-    Message string
-}
-
-func (e *ValidationError) Error() string {
-    return fmt.Sprintf("%s: %s", e.Field, e.Message)
-}
-
-func findUser(id int) error {
-    if id != 1 {
-        // Wrapped, so the caller still finds ErrNotFound underneath
-        return fmt.Errorf("findUser %d: %w", id, ErrNotFound)
-    }
-    return nil
-}
-
-func validate(email string) error {
-    if email == "" {
-        return &ValidationError{Field: "email", Message: "is required"}
-    }
-    return nil
-}
-
 func main() {
-    // errors.Is — matches through the wrapping
-    err := findUser(99)
-    fmt.Println("error:", err)
-    if errors.Is(err, ErrNotFound) {
-        fmt.Println("-> respond 404")
-    }
+    // len is what is there; cap is how much room before a reallocation
+    s := make([]int, 0, 4)
+    fmt.Println(len(s), cap(s)) // 0 4
 
-    // errors.As — pulls the concrete type back out, fields and all
-    var ve *ValidationError
-    if err := validate(""); errors.As(err, &ve) {
-        fmt.Printf("-> respond 422 on field %q (%s)\n", ve.Field, ve.Message)
+    // Sub-slicing shares the SAME underlying array
+    nums := []int{1, 2, 3, 4, 5}
+    view := nums[1:3] // [2 3]
+    view[0] = 99
+    fmt.Println(nums) // [1 99 3 4 5] — nums changed too
+
+    // copy() when you want an independent slice
+    safe := make([]int, len(view))
+    copy(safe, view)
+    safe[0] = 0
+    fmt.Println(view, safe) // [99 3] [0 3] — separate now
+
+    // Comma-ok tells "missing" apart from "present but zero"
+    stock := map[string]int{"apples": 0}
+    n, ok := stock["apples"]
+    fmt.Println(n, ok) // 0 true  — present, and genuinely zero
+    n, ok = stock["pears"]
+    fmt.Println(n, ok) // 0 false — absent
+
+    delete(stock, "apples")
+    fmt.Println("size:", len(stock))
+
+    // Map iteration order is random — sort the keys for stable output
+    scores := map[string]int{"carol": 9, "alice": 7, "bob": 8}
+    keys := make([]string, 0, len(scores))
+    for k := range scores {
+        keys = append(keys, k)
     }
+    sort.Strings(keys)
+    for _, k := range keys {
+        fmt.Printf("%s=%d ", k, scores[k])
+    }
+    fmt.Println()
 }`} />
 
 
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
               <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
-                Every service function in <code>internal/services/</code> returns <code>(result, error)</code>.
-                Handlers call services, check for errors, and return the appropriate HTTP response.
-                For example, <code>user, err := service.GetUserByID(id)</code> followed by
-                an <code>if err != nil</code> block that sends a 404 or 500 JSON response.
+                GORM query results are always slices: <code>var users []models.User</code>. Gin JSON
+                responses use <code>gin.H{"{}"}</code> which is just a shortcut for <code>map[string]any</code>.
+                For example, <code>c.JSON(200, gin.H{"{"}&quot;data&quot;: users, &quot;message&quot;: &quot;success&quot;{"}"})</code>.
               </p>
             </div>
 
             <PlaygroundChallenge
-              title="Functions & Errors"
-              description="Write a sqrt function that returns an error for negative numbers. Test it with both positive and negative inputs."
+              title="Slices & Maps"
+              description="Build a word frequency counter: split a sentence into words, count how many times each word appears using a map, and print the results."
               challenge={`package main
 
 import (
 	"fmt"
+	"strings"
 )
 
-// Challenge: Functions & Error Handling
-// 1. Write a function: func sqrt(n float64) (float64, error)
-//    - If n is negative, return 0 and an error: "cannot take square root of negative number"
-//    - Otherwise return math.Sqrt(n) and nil
-//    Hint: use errors.New() to create errors, import "errors" and "math"
-// 2. In main, call sqrt(16) and sqrt(-4)
-// 3. Handle both cases: print the result on success, print the error on failure
-//
-// Expected output:
-//   sqrt(16) = 4.0
-//   Error: cannot take square root of negative number
+// Challenge: Word Frequency Counter
+// 1. Write a function: func wordFrequency(sentence string) map[string]int
+//    - Split the sentence into words using strings.Fields()
+//    - Create a map[string]int to count occurrences
+//    - Loop through words, lowercase each with strings.ToLower(), increment count
+//    - Return the map
+// 2. In main, call it with: "the quick brown fox jumps over the lazy dog the fox"
+// 3. Print each word and its count
+// 4. Print the total number of unique words using len()
 
 func main() {
-	fmt.Println("replace me")
+	_ = fmt.Sprintf // remove this line when you start
+	_ = strings.ToLower
 }`}
               solution={`package main
 
 import (
-	"errors"
 	"fmt"
-	"math"
+	"strings"
 )
 
-func sqrt(n float64) (float64, error) {
-	if n < 0 {
-		return 0, errors.New("cannot take square root of negative number")
+func wordFrequency(sentence string) map[string]int {
+	words := strings.Fields(sentence)
+	freq := make(map[string]int)
+	for _, word := range words {
+		freq[strings.ToLower(word)]++
 	}
-	return math.Sqrt(n), nil
+	return freq
 }
 
 func main() {
-	result, err := sqrt(16)
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		fmt.Printf("sqrt(16) = %.1f\\n", result)
+	text := "the quick brown fox jumps over the lazy dog the fox"
+
+	freq := wordFrequency(text)
+
+	for word, count := range freq {
+		fmt.Printf("%-10s %d\\n", word, count)
 	}
 
-	result, err = sqrt(-4)
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		fmt.Printf("sqrt(-4) = %.1f\\n", result)
-	}
+	fmt.Printf("\\nUnique words: %d\\n", len(freq))
 }`}
             />
 
             <PlaygroundChallenge
-              title="Sentinel Errors"
-              description="Define a sentinel error, wrap it with context, then match it with errors.Is — the pattern a handler uses to choose between 409 and 500."
+              title="Grouping With a Map of Slices"
+              description="Group records by a key into a map of slices, then sort the keys so the output is identical on every run — the shape of almost every reporting query."
               challenge={`package main
 
-import (
-	"errors"
-	"fmt"
-)
+import "fmt"
 
-// Challenge: sentinel errors and errors.Is
-// 1. Declare a package-level sentinel:
-//      var ErrInsufficientStock = errors.New("insufficient stock")
-// 2. Write reserve(requested, available int) error that:
-//      - wraps ErrInsufficientStock with %w when requested > available,
-//        putting both numbers in the message
-//      - returns nil otherwise
-// 3. In main, call reserve(5, 2) and print the error
-// 4. Use errors.Is to detect it and print "-> respond 409"
-// 5. Bonus: build an unrelated error and confirm errors.Is says false
+type Product struct {
+	Name     string
+	Category string
+}
 
 func main() {
-	fmt.Println(errors.New("start here"))
+	products := []Product{
+		{"Laptop", "electronics"},
+		{"Desk", "furniture"},
+		{"Phone", "electronics"},
+		{"Chair", "furniture"},
+		{"Cable", "electronics"},
+	}
+
+	// Challenge: group the product NAMES by category
+	// 1. Build a map[string][]string
+	// 2. Loop the products, appending each Name to byCategory[p.Category]
+	//    (appending to a missing key works: the zero value is a nil slice)
+	// 3. Collect the keys into a []string and sort.Strings them
+	// 4. Print one line per category, e.g.
+	//      electronics (3): Laptop, Phone, Cable
+	//    Hint: strings.Join(names, ", ")
+
+	fmt.Println(products)
 }`}
               solution={`package main
 
 import (
-	"errors"
 	"fmt"
+	"sort"
+	"strings"
 )
 
-var ErrInsufficientStock = errors.New("insufficient stock")
-
-func reserve(requested, available int) error {
-	if requested > available {
-		return fmt.Errorf("reserve %d of %d: %w", requested, available, ErrInsufficientStock)
-	}
-	return nil
+type Product struct {
+	Name     string
+	Category string
 }
 
 func main() {
-	err := reserve(5, 2)
-	fmt.Println("error:", err)
-
-	// Matches through the wrapping, so nobody has to parse the message
-	if errors.Is(err, ErrInsufficientStock) {
-		fmt.Println("-> respond 409")
+	products := []Product{
+		{"Laptop", "electronics"},
+		{"Desk", "furniture"},
+		{"Phone", "electronics"},
+		{"Chair", "furniture"},
+		{"Cable", "electronics"},
 	}
 
-	// Bonus: an unrelated error does not match
-	other := fmt.Errorf("db down: %w", errors.New("timeout"))
-	fmt.Println("other matches?", errors.Is(other, ErrInsufficientStock))
+	// Appending to a missing key is fine — it starts life as a nil slice
+	byCategory := map[string][]string{}
+	for _, p := range products {
+		byCategory[p.Category] = append(byCategory[p.Category], p.Name)
+	}
 
-	// The happy path returns nil
-	fmt.Println("reserve(1, 2) =", reserve(1, 2))
+	// Sort the keys, because map iteration order is deliberately random
+	categories := make([]string, 0, len(byCategory))
+	for c := range byCategory {
+		categories = append(categories, c)
+	}
+	sort.Strings(categories)
+
+	for _, c := range categories {
+		names := byCategory[c]
+		fmt.Printf("%s (%d): %s\\n", c, len(names), strings.Join(names, ", "))
+	}
+}`}
+            />
+            {/* ─────────────────────────────────────────────────── */}
+            {/* 7. Pointers */}
+            {/* ─────────────────────────────────────────────────── */}
+            <div className="prose-grit mb-10">
+              <h2 id="pointers">7. Pointers</h2>
+              <p>
+                A pointer holds the memory address of a value. Use <code>&amp;</code> to get the
+                address of a variable and <code>*</code> to read the value at that address
+                (dereference). Pointers let you modify a value in place without copying it, and they
+                indicate that a value might be <code>nil</code> (absent).
+              </p>
+              <p>
+                In Go, function arguments are passed by value (copied). If you want a function
+                to modify the original value, pass a pointer. This is also why GORM methods take
+                pointers to structs: <code>db.Create(&amp;user)</code> writes the new ID back into
+                your <code>user</code> variable.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="pointers.go" code={`package main
+
+import "fmt"
+
+func doubleValue(n int) {
+    n = n * 2 // Modifies the COPY, not the original
+}
+
+func doublePointer(n *int) {
+    *n = *n * 2 // Modifies the ORIGINAL via pointer
+}
+
+func main() {
+    x := 10
+
+    doubleValue(x)
+    fmt.Println(x) // Still 10 — the copy was doubled
+
+    doublePointer(&x)
+    fmt.Println(x) // Now 20 — modified through pointer
+
+    // Nil pointer: indicates "no value"
+    var name *string = nil
+    if name == nil {
+        fmt.Println("Name is not set")
+    }
+}`} />
+
+            <div className="prose-grit mb-10">
+              <p>
+                The place pointers stop being academic is <code>for ... range</code>. The loop
+                variable is a <em>copy</em> of the element, so assigning to it changes nothing — a
+                bug that produces no error and no output, just a slice that stubbornly refuses to
+                update. Reach for the index instead. The same copying rule is why the next section&apos;s
+                methods need a pointer receiver whenever they change anything.
+              </p>
+            </div>
+
+            <CodeBlock language="go" filename="pointer_gotchas.go" code={`package main
+
+import "fmt"
+
+type Product struct {
+    Name  string
+    Price float64
+}
+
+// Takes a copy: this discount goes nowhere
+func discountBroken(p Product, pct float64) {
+    p.Price = p.Price * (1 - pct/100)
+}
+
+// Takes a pointer: changes the original
+func discount(p *Product, pct float64) {
+    p.Price = p.Price * (1 - pct/100)
+}
+
+func main() {
+    items := []Product{
+        {Name: "Laptop", Price: 1000},
+        {Name: "Mouse", Price: 50},
+    }
+
+    // WRONG: item is a copy of the element
+    for _, item := range items {
+        item.Price = 0
+    }
+    fmt.Println("after range-copy:", items) // unchanged
+
+    // RIGHT: address the element through its index
+    for i := range items {
+        discount(&items[i], 10)
+    }
+    fmt.Println("after discount:  ", items)
+
+    // Passing a copy silently does nothing
+    discountBroken(items[0], 50)
+    fmt.Println("after broken:    ", items)
+
+    // Pointers also let you say "no value" — but check before dereferencing
+    var missing *Product
+    fmt.Println("missing == nil?", missing == nil)
+    if missing != nil {
+        fmt.Println(missing.Name) // would panic if reached with nil
+    }
+
+    // A pointer into the slice: one element, shared
+    first := &items[0]
+    first.Price = 1.23
+    fmt.Println("via pointer:     ", items)
+}`} />
+
+
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
+              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
+              <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
+                GORM uses pointers for nullable database fields. A regular <code>string</code> defaults
+                to <code>&quot;&quot;</code> (empty), but <code>*string</code> can be <code>nil</code> -- meaning the
+                database column is NULL. You will see <code>*time.Time</code> for optional timestamps
+                like <code>EmailVerifiedAt</code> and <code>gorm.DeletedAt</code> for soft deletes.
+                All GORM operations take pointers: <code>db.Create(&amp;user)</code>, <code>db.First(&amp;user, id)</code>.
+              </p>
+            </div>
+
+            <PlaygroundChallenge
+              title="Pointers"
+              description="Write a tripleValue function that uses a pointer to modify the original variable, and a swap function that swaps two integers using pointers."
+              challenge={`package main
+
+import "fmt"
+
+// Challenge: Pointers
+// 1. Write a function: func tripleValue(n *int)
+//    - It takes a pointer to int and multiplies the value by 3
+//    - Use *n to dereference (read/write the value the pointer points to)
+// 2. Write a function: func swap(a, b *int)
+//    - Swap the values using: *a, *b = *b, *a
+// 3. In main:
+//    - Create x := 10, call tripleValue(&x), print x (should be 30)
+//    - Create a, b := 5, 15, call swap(&a, &b), print (should be a=15, b=5)
+
+func main() {
+	_ = fmt.Sprintf // remove this line when you start
+}`}
+              solution={`package main
+
+import "fmt"
+
+func tripleValue(n *int) {
+	*n = *n * 3
+}
+
+func swap(a, b *int) {
+	*a, *b = *b, *a
+}
+
+func main() {
+	x := 10
+	fmt.Println("Before triple:", x)
+
+	tripleValue(&x)
+	fmt.Println("After triple:", x)
+
+	a, b := 5, 15
+	fmt.Printf("Before swap: a=%d, b=%d\\n", a, b)
+
+	swap(&a, &b)
+	fmt.Printf("After swap: a=%d, b=%d\\n", a, b)
 }`}
             />
 
+            <PlaygroundChallenge
+              title="Mutating Through a Pointer"
+              description="Fix the classic range-copy bug: a loop that looks like it updates a slice and quietly does nothing. Then write the pointer-receiver method that does work."
+              challenge={`package main
 
+import "fmt"
+
+type User struct {
+	Name   string
+	Visits int
+	Active bool
+}
+
+func main() {
+	users := []User{
+		{Name: "Ada", Visits: 0, Active: false},
+		{Name: "Grace", Visits: 0, Active: false},
+	}
+
+	// Challenge: make these changes actually stick
+	// 1. Write a function that takes a POINTER:
+	//      func recordVisit(u *User)  -> Visits++ and Active = true
+	// 2. Loop with "for i := range users" and call recordVisit(&users[i])
+	// 3. Print users and confirm both were updated
+	// 4. Now write takesCopy(u User) that does the same thing, call it inside
+	//    "for _, u := range users", and show that nothing changes
+	// 5. Bonus: write func deactivate(u *User) setting Active = false,
+	//    and call it as deactivate(&users[0])
+
+	fmt.Println(users)
+}`}
+              solution={`package main
+
+import "fmt"
+
+type User struct {
+	Name   string
+	Visits int
+	Active bool
+}
+
+// Takes a pointer: operates on the original, not a copy
+func recordVisit(u *User) {
+	u.Visits++
+	u.Active = true
+}
+
+// Takes a copy: every change is thrown away when it returns
+func takesCopy(u User) {
+	u.Visits++
+	u.Active = true
+}
+
+func deactivate(u *User) {
+	u.Active = false
+}
+
+func main() {
+	users := []User{
+		{Name: "Ada"},
+		{Name: "Grace"},
+	}
+
+	// Indexing gives us the real element to take the address of
+	for i := range users {
+		recordVisit(&users[i])
+	}
+	fmt.Println("updated:", users)
+
+	// The range copy: u is a fresh User each iteration, so this is discarded
+	fresh := []User{{Name: "Alan"}}
+	for _, u := range fresh {
+		takesCopy(u)
+	}
+	fmt.Println("range copy:", fresh) // Visits still 0
+
+	// Bonus: pass the address explicitly
+	deactivate(&users[0])
+	fmt.Println("deactivated:", users[0])
+}`}
+            />
             {/* ─────────────────────────────────────────────────── */}
-            {/* 5. Methods */}
+            {/* 8. Methods */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="methods">5. Methods</h2>
+              <h2 id="methods">8. Methods</h2>
               <p>
                 A <strong>method</strong> is a function attached to a type. The difference between
                 a function and a method is one thing: <strong>the receiver</strong>. A function
@@ -1238,259 +1940,11 @@ func main() {
 	fmt.Printf("also:  %v\\n", temp)
 }`}
             />
-
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 6. Slices & Maps */}
+            {/* 9. Interfaces */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="slices-maps">6. Slices & Maps</h2>
-              <p>
-                A <strong>slice</strong> is Go&apos;s dynamic array. Unlike arrays (which have a fixed
-                size), slices can grow and shrink. You create them with <code>[]Type{"{}"}</code> or
-                <code>make([]Type, length)</code> and add items with <code>append()</code>.
-              </p>
-              <p>
-                A <strong>map</strong> is a key-value data structure (like a JavaScript object or
-                Python dictionary). The type <code>map[string]interface{"{}"}</code> (or the modern
-                alias <code>map[string]any</code>) can hold any value type -- this is what Gin uses
-                for JSON responses.
-              </p>
-              <p>
-                The <code>range</code> keyword iterates over slices and maps, giving you
-                both the index/key and value on each iteration.
-              </p>
-            </div>
-
-            <CodeBlock language="go" filename="collections.go" code={`package main
-
-import "fmt"
-
-func main() {
-    // Slices
-    names := []string{"Alice", "Bob", "Charlie"}
-    names = append(names, "Diana")
-
-    for i, name := range names {
-        fmt.Printf("%d: %s\\n", i, name)
-    }
-
-    // Maps
-    user := map[string]any{
-        "id":    1,
-        "name":  "Alice",
-        "email": "alice@example.com",
-    }
-
-    for key, value := range user {
-        fmt.Printf("%s = %v\\n", key, value)
-    }
-
-    // Access a single value
-    fmt.Println("Name:", user["name"])
-}`} />
-
-            <div className="prose-grit mb-10">
-              <p>
-                A slice is a view onto an array: a pointer, a length and a capacity. That is worth
-                knowing because it explains the one behaviour that catches everybody — two slices can
-                share the same backing array, so writing through one changes the other. Maps have
-                their own rule: reading a missing key returns the zero value rather than an error,
-                and iteration order is deliberately random, so sort the keys when output has to be
-                stable.
-              </p>
-            </div>
-
-            <CodeBlock language="go" filename="slice_mechanics.go" code={`package main
-
-import (
-    "fmt"
-    "sort"
-)
-
-func main() {
-    // len is what is there; cap is how much room before a reallocation
-    s := make([]int, 0, 4)
-    fmt.Println(len(s), cap(s)) // 0 4
-
-    // Sub-slicing shares the SAME underlying array
-    nums := []int{1, 2, 3, 4, 5}
-    view := nums[1:3] // [2 3]
-    view[0] = 99
-    fmt.Println(nums) // [1 99 3 4 5] — nums changed too
-
-    // copy() when you want an independent slice
-    safe := make([]int, len(view))
-    copy(safe, view)
-    safe[0] = 0
-    fmt.Println(view, safe) // [99 3] [0 3] — separate now
-
-    // Comma-ok tells "missing" apart from "present but zero"
-    stock := map[string]int{"apples": 0}
-    n, ok := stock["apples"]
-    fmt.Println(n, ok) // 0 true  — present, and genuinely zero
-    n, ok = stock["pears"]
-    fmt.Println(n, ok) // 0 false — absent
-
-    delete(stock, "apples")
-    fmt.Println("size:", len(stock))
-
-    // Map iteration order is random — sort the keys for stable output
-    scores := map[string]int{"carol": 9, "alice": 7, "bob": 8}
-    keys := make([]string, 0, len(scores))
-    for k := range scores {
-        keys = append(keys, k)
-    }
-    sort.Strings(keys)
-    for _, k := range keys {
-        fmt.Printf("%s=%d ", k, scores[k])
-    }
-    fmt.Println()
-}`} />
-
-
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
-              <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
-                GORM query results are always slices: <code>var users []models.User</code>. Gin JSON
-                responses use <code>gin.H{"{}"}</code> which is just a shortcut for <code>map[string]any</code>.
-                For example, <code>c.JSON(200, gin.H{"{"}&quot;data&quot;: users, &quot;message&quot;: &quot;success&quot;{"}"})</code>.
-              </p>
-            </div>
-
-            <PlaygroundChallenge
-              title="Slices & Maps"
-              description="Build a word frequency counter: split a sentence into words, count how many times each word appears using a map, and print the results."
-              challenge={`package main
-
-import (
-	"fmt"
-	"strings"
-)
-
-// Challenge: Word Frequency Counter
-// 1. Write a function: func wordFrequency(sentence string) map[string]int
-//    - Split the sentence into words using strings.Fields()
-//    - Create a map[string]int to count occurrences
-//    - Loop through words, lowercase each with strings.ToLower(), increment count
-//    - Return the map
-// 2. In main, call it with: "the quick brown fox jumps over the lazy dog the fox"
-// 3. Print each word and its count
-// 4. Print the total number of unique words using len()
-
-func main() {
-	_ = fmt.Sprintf // remove this line when you start
-	_ = strings.ToLower
-}`}
-              solution={`package main
-
-import (
-	"fmt"
-	"strings"
-)
-
-func wordFrequency(sentence string) map[string]int {
-	words := strings.Fields(sentence)
-	freq := make(map[string]int)
-	for _, word := range words {
-		freq[strings.ToLower(word)]++
-	}
-	return freq
-}
-
-func main() {
-	text := "the quick brown fox jumps over the lazy dog the fox"
-
-	freq := wordFrequency(text)
-
-	for word, count := range freq {
-		fmt.Printf("%-10s %d\\n", word, count)
-	}
-
-	fmt.Printf("\\nUnique words: %d\\n", len(freq))
-}`}
-            />
-
-            <PlaygroundChallenge
-              title="Grouping With a Map of Slices"
-              description="Group records by a key into a map of slices, then sort the keys so the output is identical on every run — the shape of almost every reporting query."
-              challenge={`package main
-
-import "fmt"
-
-type Product struct {
-	Name     string
-	Category string
-}
-
-func main() {
-	products := []Product{
-		{"Laptop", "electronics"},
-		{"Desk", "furniture"},
-		{"Phone", "electronics"},
-		{"Chair", "furniture"},
-		{"Cable", "electronics"},
-	}
-
-	// Challenge: group the product NAMES by category
-	// 1. Build a map[string][]string
-	// 2. Loop the products, appending each Name to byCategory[p.Category]
-	//    (appending to a missing key works: the zero value is a nil slice)
-	// 3. Collect the keys into a []string and sort.Strings them
-	// 4. Print one line per category, e.g.
-	//      electronics (3): Laptop, Phone, Cable
-	//    Hint: strings.Join(names, ", ")
-
-	fmt.Println(products)
-}`}
-              solution={`package main
-
-import (
-	"fmt"
-	"sort"
-	"strings"
-)
-
-type Product struct {
-	Name     string
-	Category string
-}
-
-func main() {
-	products := []Product{
-		{"Laptop", "electronics"},
-		{"Desk", "furniture"},
-		{"Phone", "electronics"},
-		{"Chair", "furniture"},
-		{"Cable", "electronics"},
-	}
-
-	// Appending to a missing key is fine — it starts life as a nil slice
-	byCategory := map[string][]string{}
-	for _, p := range products {
-		byCategory[p.Category] = append(byCategory[p.Category], p.Name)
-	}
-
-	// Sort the keys, because map iteration order is deliberately random
-	categories := make([]string, 0, len(byCategory))
-	for c := range byCategory {
-		categories = append(categories, c)
-	}
-	sort.Strings(categories)
-
-	for _, c := range categories {
-		names := byCategory[c]
-		fmt.Printf("%s (%d): %s\\n", c, len(names), strings.Join(names, ", "))
-	}
-}`}
-            />
-
-
-            {/* ─────────────────────────────────────────────────── */}
-            {/* 7. Interfaces */}
-            {/* ─────────────────────────────────────────────────── */}
-            <div className="prose-grit mb-10">
-              <h2 id="interfaces">7. Interfaces</h2>
+              <h2 id="interfaces">9. Interfaces</h2>
               <p>
                 An interface defines a set of method signatures. Any type that implements all those
                 methods <strong>automatically</strong> satisfies the interface &mdash; there is no
@@ -2225,260 +2679,11 @@ func main() {
 	}
 }`}
             />
-
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 8. Pointers */}
+            {/* 10. Goroutines & Channels */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="pointers">8. Pointers</h2>
-              <p>
-                A pointer holds the memory address of a value. Use <code>&amp;</code> to get the
-                address of a variable and <code>*</code> to read the value at that address
-                (dereference). Pointers let you modify a value in place without copying it, and they
-                indicate that a value might be <code>nil</code> (absent).
-              </p>
-              <p>
-                In Go, function arguments are passed by value (copied). If you want a function
-                to modify the original value, pass a pointer. This is also why GORM methods take
-                pointers to structs: <code>db.Create(&amp;user)</code> writes the new ID back into
-                your <code>user</code> variable.
-              </p>
-            </div>
-
-            <CodeBlock language="go" filename="pointers.go" code={`package main
-
-import "fmt"
-
-func doubleValue(n int) {
-    n = n * 2 // Modifies the COPY, not the original
-}
-
-func doublePointer(n *int) {
-    *n = *n * 2 // Modifies the ORIGINAL via pointer
-}
-
-func main() {
-    x := 10
-
-    doubleValue(x)
-    fmt.Println(x) // Still 10 — the copy was doubled
-
-    doublePointer(&x)
-    fmt.Println(x) // Now 20 — modified through pointer
-
-    // Nil pointer: indicates "no value"
-    var name *string = nil
-    if name == nil {
-        fmt.Println("Name is not set")
-    }
-}`} />
-
-            <div className="prose-grit mb-10">
-              <p>
-                The place pointers stop being academic is <code>for ... range</code>. The loop
-                variable is a <em>copy</em> of the element, so assigning to it changes nothing — a
-                bug that produces no error and no output, just a slice that stubbornly refuses to
-                update. Reach for the index, or a slice of pointers. The same copying rule explains
-                why a method that mutates needs a pointer receiver.
-              </p>
-            </div>
-
-            <CodeBlock language="go" filename="pointer_gotchas.go" code={`package main
-
-import "fmt"
-
-type Product struct {
-    Name  string
-    Price float64
-}
-
-// Value receiver: works on a copy, so this discount goes nowhere
-func (p Product) DiscountBroken(pct float64) {
-    p.Price = p.Price * (1 - pct/100)
-}
-
-// Pointer receiver: changes the original
-func (p *Product) Discount(pct float64) {
-    p.Price = p.Price * (1 - pct/100)
-}
-
-func main() {
-    items := []Product{
-        {Name: "Laptop", Price: 1000},
-        {Name: "Mouse", Price: 50},
-    }
-
-    // WRONG: item is a copy of the element
-    for _, item := range items {
-        item.Price = 0
-    }
-    fmt.Println("after range-copy:", items) // unchanged
-
-    // RIGHT: address the element through its index
-    for i := range items {
-        items[i].Discount(10)
-    }
-    fmt.Println("after discount:  ", items)
-
-    // A value receiver silently does nothing
-    items[0].DiscountBroken(50)
-    fmt.Println("after broken:    ", items)
-
-    // Pointers also let you say "no value" — but check before dereferencing
-    var missing *Product
-    fmt.Println("missing == nil?", missing == nil)
-    if missing != nil {
-        fmt.Println(missing.Name) // would panic if reached with nil
-    }
-
-    // A pointer into the slice: one element, shared
-    first := &items[0]
-    first.Price = 1.23
-    fmt.Println("via pointer:     ", items)
-}`} />
-
-
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-8">
-              <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider mb-2">In Grit</h4>
-              <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
-                GORM uses pointers for nullable database fields. A regular <code>string</code> defaults
-                to <code>&quot;&quot;</code> (empty), but <code>*string</code> can be <code>nil</code> -- meaning the
-                database column is NULL. You will see <code>*time.Time</code> for optional timestamps
-                like <code>EmailVerifiedAt</code> and <code>gorm.DeletedAt</code> for soft deletes.
-                All GORM operations take pointers: <code>db.Create(&amp;user)</code>, <code>db.First(&amp;user, id)</code>.
-              </p>
-            </div>
-
-            <PlaygroundChallenge
-              title="Pointers"
-              description="Write a tripleValue function that uses a pointer to modify the original variable, and a swap function that swaps two integers using pointers."
-              challenge={`package main
-
-import "fmt"
-
-// Challenge: Pointers
-// 1. Write a function: func tripleValue(n *int)
-//    - It takes a pointer to int and multiplies the value by 3
-//    - Use *n to dereference (read/write the value the pointer points to)
-// 2. Write a function: func swap(a, b *int)
-//    - Swap the values using: *a, *b = *b, *a
-// 3. In main:
-//    - Create x := 10, call tripleValue(&x), print x (should be 30)
-//    - Create a, b := 5, 15, call swap(&a, &b), print (should be a=15, b=5)
-
-func main() {
-	_ = fmt.Sprintf // remove this line when you start
-}`}
-              solution={`package main
-
-import "fmt"
-
-func tripleValue(n *int) {
-	*n = *n * 3
-}
-
-func swap(a, b *int) {
-	*a, *b = *b, *a
-}
-
-func main() {
-	x := 10
-	fmt.Println("Before triple:", x)
-
-	tripleValue(&x)
-	fmt.Println("After triple:", x)
-
-	a, b := 5, 15
-	fmt.Printf("Before swap: a=%d, b=%d\\n", a, b)
-
-	swap(&a, &b)
-	fmt.Printf("After swap: a=%d, b=%d\\n", a, b)
-}`}
-            />
-
-            <PlaygroundChallenge
-              title="Mutating Through a Pointer"
-              description="Fix the classic range-copy bug: a loop that looks like it updates a slice and quietly does nothing. Then write the pointer-receiver method that does work."
-              challenge={`package main
-
-import "fmt"
-
-type User struct {
-	Name   string
-	Visits int
-	Active bool
-}
-
-func main() {
-	users := []User{
-		{Name: "Ada", Visits: 0, Active: false},
-		{Name: "Grace", Visits: 0, Active: false},
-	}
-
-	// Challenge: make these changes actually stick
-	// 1. Write a method with a POINTER receiver:
-	//      func (u *User) RecordVisit()  -> Visits++ and Active = true
-	// 2. Loop the users with "for i := range users" and call users[i].RecordVisit()
-	// 3. Print users and confirm both were updated
-	// 4. Now try the same with "for _, u := range users { u.RecordVisit() }"
-	//    on a fresh copy and show that nothing changes — explain why in a comment
-	// 5. Bonus: write func deactivate(u *User) that sets Active = false,
-	//    and call it as deactivate(&users[0])
-
-	fmt.Println(users)
-}`}
-              solution={`package main
-
-import "fmt"
-
-type User struct {
-	Name   string
-	Visits int
-	Active bool
-}
-
-// Pointer receiver: operates on the original, not a copy
-func (u *User) RecordVisit() {
-	u.Visits++
-	u.Active = true
-}
-
-func deactivate(u *User) {
-	u.Active = false
-}
-
-func main() {
-	users := []User{
-		{Name: "Ada"},
-		{Name: "Grace"},
-	}
-
-	// Indexing gives us the real element to take the address of
-	for i := range users {
-		users[i].RecordVisit()
-	}
-	fmt.Println("updated:", users)
-
-	// The range copy: u is a fresh User each iteration, so this is discarded
-	fresh := []User{{Name: "Alan"}}
-	for _, u := range fresh {
-		u.RecordVisit()
-	}
-	fmt.Println("range copy:", fresh) // Visits still 0
-
-	// Bonus: pass the address explicitly
-	deactivate(&users[0])
-	fmt.Println("deactivated:", users[0])
-}`}
-            />
-
-
-            {/* ─────────────────────────────────────────────────── */}
-            {/* 9. Goroutines & Channels */}
-            {/* ─────────────────────────────────────────────────── */}
-            <div className="prose-grit mb-10">
-              <h2 id="goroutines-channels">9. Goroutines & Channels</h2>
+              <h2 id="goroutines-channels">10. Goroutines & Channels</h2>
               <p>
                 Concurrency is one of Go&apos;s most powerful features. Go achieves concurrency through
                 two key primitives: <strong>goroutines</strong> and <strong>channels</strong>.
@@ -3171,13 +3376,11 @@ func main() {
 	}
 }`}
             />
-
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 10. Packages & Project Structure */}
+            {/* 11. Packages & Project Structure */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="packages-structure">10. Packages & Project Structure</h2>
+              <h2 id="packages-structure">11. Packages & Project Structure</h2>
               <p>
                 Go organizes code into packages. Each directory is a package, and the package name
                 matches the directory name. A name that starts with an <strong>uppercase letter</strong>
@@ -3417,12 +3620,11 @@ func main() {
                 <code>import &quot;my-app/apps/api/internal/models&quot;</code>.
               </p>
             </div>
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 11. Environment Variables */}
+            {/* 12. Environment Variables */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="env-variables">11. Environment Variables</h2>
+              <h2 id="env-variables">12. Environment Variables</h2>
               <p>
                 Go reads environment variables with <code>os.Getenv(&quot;KEY&quot;)</code>. For local
                 development, you store variables in a <code>.env</code> file and load them
@@ -3737,12 +3939,11 @@ func main() {
                 with every project to document all available variables.
               </p>
             </div>
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 12. Gin Framework */}
+            {/* 13. Gin Framework */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="gin-framework">12. Gin Framework</h2>
+              <h2 id="gin-framework">13. Gin Framework</h2>
               <p>
                 Gin is Go&apos;s most popular HTTP framework. It provides a fast router, middleware support,
                 JSON binding, validation, and route groups. Understanding Gin is essential because
@@ -4075,13 +4276,11 @@ func main() {
 	}
 }`}
             />
-
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 13. Middleware */}
+            {/* 14. Middleware */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="middleware">13. Middleware</h2>
+              <h2 id="middleware">14. Middleware</h2>
               <p>
                 Middleware is a function that runs <strong>before</strong> (or after) your handler.
                 It sits in the request chain and can inspect, modify, or reject requests. Think of it
@@ -4325,13 +4524,11 @@ func main() {
 	fmt.Println("status:", rec.Code, rec.Body.String())
 }`}
             />
-
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 14. CORS */}
+            {/* 15. CORS */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="cors">14. CORS</h2>
+              <h2 id="cors">15. CORS</h2>
               <p>
                 <strong>CORS</strong> (Cross-Origin Resource Sharing) is a browser security feature
                 that blocks web pages from making requests to a different domain than the one
@@ -4570,13 +4767,11 @@ func main() {
 	}
 }`}
             />
-
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 15. Handlers */}
+            {/* 16. Handlers */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="handlers">15. Handlers</h2>
+              <h2 id="handlers">16. Handlers</h2>
               <p>
                 A handler is the function that runs when an HTTP request matches a route. In Grit,
                 handlers follow the <strong>thin handler</strong> pattern: they do four things and
@@ -4970,13 +5165,11 @@ func main() {
 	}
 }`}
             />
-
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 16. Services & The Service Pattern */}
+            {/* 17. Services & The Service Pattern */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="services">16. Services & The Service Pattern</h2>
+              <h2 id="services">17. Services & The Service Pattern</h2>
               <p>
                 A <strong>service</strong> is a struct with methods that contain your business logic.
                 It sits between the handler (HTTP layer) and the database (data layer). But why not
@@ -5311,13 +5504,11 @@ func main() {
 	fmt.Println("failing repo:", err)
 }`}
             />
-
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 17. GORM In Depth */}
+            {/* 18. GORM In Depth */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="gorm-in-depth">17. GORM In Depth</h2>
+              <h2 id="gorm-in-depth">18. GORM In Depth</h2>
               <p>
                 GORM is Go&apos;s most popular ORM. It maps Go structs to database tables and provides
                 a chainable API for queries. Let&apos;s cover the key operations you&apos;ll use daily.
@@ -5707,13 +5898,11 @@ func main() {
 	}
 }`}
             />
-
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 18. Migrations & Seeding */}
+            {/* 19. Migrations & Seeding */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="migrations-seeding">18. Migrations & Seeding</h2>
+              <h2 id="migrations-seeding">19. Migrations & Seeding</h2>
               <p>
                 <strong>Migrations</strong> create database tables from your Go structs.
                 <strong>Seeding</strong> populates tables with initial data for development.
@@ -6031,13 +6220,11 @@ func main() {
 	fmt.Println("cycle:", err)
 }`}
             />
-
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 19. JWT & Authentication */}
+            {/* 20. JWT & Authentication */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="jwt-auth">19. JWT & Authentication</h2>
+              <h2 id="jwt-auth">20. JWT & Authentication</h2>
               <p>
                 JWT (JSON Web Token) is how Grit authenticates users. Understanding this flow
                 is critical because it connects the frontend, the API, the middleware, and the database.
@@ -6420,13 +6607,11 @@ func main() {
 	}
 }`}
             />
-
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 20. RBAC & Middleware */}
+            {/* 21. RBAC & Middleware */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="rbac-middleware">20. RBAC & Middleware</h2>
+              <h2 id="rbac-middleware">21. RBAC & Middleware</h2>
               <p>
                 <strong>RBAC</strong> (Role-Based Access Control) controls who can do what. Grit uses
                 three default roles: <code>ADMIN</code>, <code>EDITOR</code>, and <code>USER</code>.
@@ -6737,13 +6922,11 @@ func main() {
 	}
 }`}
             />
-
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 21. Important Packages */}
+            {/* 22. Important Packages */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="important-packages">21. Important Packages</h2>
+              <h2 id="important-packages">22. Important Packages</h2>
               <p>
                 These are the Go packages used in every Grit backend. You don&apos;t need to memorize them --
                 they are all pre-configured when you scaffold a project. But knowing what they do helps
@@ -7051,13 +7234,11 @@ func main() {
 	fmt.Println("start + 45m:", start.Add(d).Format(time.RFC3339))
 }`}
             />
-
-
             {/* ─────────────────────────────────────────────────── */}
-            {/* 22. Putting It Together */}
+            {/* 23. Putting It Together */}
             {/* ─────────────────────────────────────────────────── */}
             <div className="prose-grit mb-10">
-              <h2 id="putting-it-together">22. Putting It Together</h2>
+              <h2 id="putting-it-together">23. Putting It Together</h2>
               <p>
                 Now you understand all the Go concepts that power a Grit backend. Here is how they
                 connect in the request lifecycle. When an HTTP request hits your API, it flows
@@ -7512,6 +7693,7 @@ func main() {
                 </Link>
               </Button>
             </div>
+
           </div>
         </div>
       </main>
