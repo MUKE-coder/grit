@@ -3,6 +3,7 @@ package generate
 import (
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -291,6 +292,22 @@ func (g *Generator) seederFieldLines(mode string) (lines, preamble string, needs
 				val = "gofakeit.Date()"
 			} else {
 				val = "time.Now()"
+			}
+		// A choice field has to be seeded from its own choices. Falling through
+		// to the string branch below put gofakeit.Word() in a status column, so
+		// a freshly seeded app opened on rows reading "moreover" and "ouch" —
+		// values the form's own dropdown cannot offer and the API's validation
+		// would reject. Anything rendering a status badge then has to cope with
+		// a value that is not in the union its own generated type declares.
+		case (ft == FieldSelect || ft == FieldRadio) && len(f.Options) > 0:
+			values := make([]string, 0, len(f.Options))
+			for _, o := range f.Options {
+				values = append(values, strconv.Quote(o.Value))
+			}
+			if faker {
+				val = "gofakeit.RandomString([]string{" + strings.Join(values, ", ") + "})"
+			} else {
+				val = values[0]
 			}
 		case ft == FieldText || ft == FieldRichtext:
 			if faker {

@@ -209,19 +209,19 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "package.json"):   adminPackageJSON(opts),
 		filepath.Join(adminRoot, "next.config.ts"): adminNextConfig(),
 
-		// v3.136 — i18n. Cookie-based with no locale prefix, so routes stay the
-		// same in every language and the cookie travels to the Go API too.
-		filepath.Join(adminRoot, "i18n", "request.ts"):                  i18nRequestTS(),
-		filepath.Join(adminRoot, "lib", "locale.ts"):                    i18nLocaleLibTS(),
-		filepath.Join(adminRoot, "components", "language-switcher.tsx"): i18nSwitcherTSX(),
-		filepath.Join(adminRoot, "messages", "en.json"):                 i18nMessagesEN(),
-		filepath.Join(adminRoot, "messages", "fr.json"):                 i18nMessagesFR(),
-		filepath.Join(adminRoot, "messages", "sw.json"):                 i18nMessagesSW(),
-		filepath.Join(adminRoot, "tailwind.config.ts"):                  adminTailwindConfig(),
-		filepath.Join(adminRoot, "postcss.config.js"):                   adminPostCSSConfig(),
-		filepath.Join(adminRoot, "tsconfig.json"):                       adminTSConfig(),
-		filepath.Join(adminRoot, "app", "globals.css"):                  adminGlobalCSS(),
-		filepath.Join(adminRoot, "app", "layout.tsx"):                   adminRootLayout(opts),
+		// i18n is NOT scaffolded here. `grit add i18n` writes these same six
+		// files and does the three things the scaffold cannot: add the
+		// next-intl dependency, wrap the root layout in NextIntlClientProvider,
+		// and register the plugin in next.config. Emitting them unconditionally
+		// shipped a language switcher importing a package that was not
+		// installed — three type errors in every fresh admin — and, because
+		// `add i18n` skips files that already exist, the broken copies then
+		// blocked the command that would have fixed them.
+		filepath.Join(adminRoot, "tailwind.config.ts"): adminTailwindConfig(),
+		filepath.Join(adminRoot, "postcss.config.js"):  adminPostCSSConfig(),
+		filepath.Join(adminRoot, "tsconfig.json"):      adminTSConfig(),
+		filepath.Join(adminRoot, "app", "globals.css"): adminGlobalCSS(),
+		filepath.Join(adminRoot, "app", "layout.tsx"):  adminRootLayout(opts),
 
 		// Root redirect page
 		filepath.Join(adminRoot, "app", "page.tsx"): adminRedirectPage(),
@@ -588,6 +588,13 @@ const config: Config = {
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
     "./lib/**/*.{ts,tsx}",
+    // resources/ holds the .custom.tsx overlays — real JSX, and the one place
+    // people are invited to write their own markup. Leaving it out meant every
+    // class written there was dropped from the build: the DOM was correct, the
+    // component was correct, and the screen showed white text on nothing. Only
+    // a browser catches that, so the glob has to be right up front.
+    "./resources/**/*.{ts,tsx}",
+    "./hooks/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {

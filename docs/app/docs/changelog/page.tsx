@@ -28,6 +28,115 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.141.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.141.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    Seven fixes found by building an app with the customisation feature instead of
+                    reading it.
+                  </strong>
+                </p>
+                <p>
+                  The three releases before this one shipped a way to replace a resource&apos;s
+                  table, form, empty state or whole page from a{' '}
+                  <code>resources/&lt;name&gt;.custom.tsx</code> file. Everything compiled and every
+                  test passed. Then we built a small admin with it — a product list with custom
+                  cells, a deal pipeline as a kanban board, an enquiry inbox with its own list and
+                  composer — and found this.
+                </p>
+
+                <p>
+                  <strong>Tailwind never looked at your overlay.</strong> The admin&apos;s{' '}
+                  <code>content</code> globs covered <code>app/</code>, <code>components/</code> and{' '}
+                  <code>lib/</code> — not <code>resources/</code>, which is the one directory the
+                  feature invites you to write markup in. Every class in an overlay was dropped from
+                  the stylesheet. The component was right, the DOM was right, and the screen showed
+                  a white status pill on a white background. Nothing but a browser could have caught
+                  it. Fixed in the scaffold and in <code>grit upgrade</code>.
+                </p>
+
+                <p>
+                  <strong>You could not wrap the component you were replacing.</strong> The docs
+                  said a slot receives the stock component&apos;s own props, so{' '}
+                  <code>{'(props) => <Card><DataTable {...props} /></Card>'}</code> would work. It
+                  did not: <code>DataTable</code> and the form components took{' '}
+                  <code>Record&lt;string, unknown&gt;</code> while a typed overlay hands them{' '}
+                  <code>Product</code>, which has no index signature. <code>DataTable</code>,{' '}
+                  <code>FormSheet</code>, <code>FormModal</code> and <code>FormModalSteps</code> are
+                  generic over the row now, so wrapping works and so does passing{' '}
+                  <code>controller.form.item</code> to the stock form from inside a custom page.
+                </p>
+
+                <p>
+                  <strong>
+                    <code>grit upgrade</code> was updating 31 files nothing imported.
+                  </strong>{' '}
+                  Its path list still used the PascalCase component names from before the kebab-case
+                  rename, so every upgrade wrote{' '}
+                  <code>components/tables/DataTable.tsx</code> next to the real{' '}
+                  <code>data-table.tsx</code> and left it there. The symptom was the opposite of an
+                  error: it reported dozens of files updated while the components your app actually
+                  renders were never touched — meaning no component fix shipped in an upgrade had
+                  arrived since the rename. Paths corrected, the duplicates are cleaned up on the
+                  next upgrade, and <code>form-sheet</code>, <code>form-modal-steps</code>,{' '}
+                  <code>update-groups</code>, <code>resource-detail-page</code> and{' '}
+                  <code>use-resource-controller</code> are now refreshed too.
+                </p>
+
+                <p>
+                  <strong>
+                    <code>grit generate resource Ticket</code> deleted the support desk.
+                  </strong>{' '}
+                  It overwrote <code>internal/models/ticket.go</code>, taking{' '}
+                  <code>TicketReply</code> with it, reported success, and the build then failed with
+                  an undefined symbol in a different file. Thirty-odd built-in model names are
+                  reserved now, with an error that says which feature owns the name and suggests one
+                  that is free. <code>--force</code> is there if you mean it. A test scaffolds a
+                  project and compares the list against what is actually emitted, so a new built-in
+                  model cannot quietly go unprotected.
+                </p>
+
+                <p>
+                  <strong>
+                    <code>grit remove resource</code> left the overlay behind.
+                  </strong>{' '}
+                  It imports a type the shared package no longer exports, so removing a resource
+                  stopped the admin from type-checking. An untouched stub is deleted; one you have
+                  written in is renamed to <code>.custom.tsx.bak</code>, which keeps it out of the
+                  TypeScript build without throwing your work away.
+                </p>
+
+                <p>
+                  <strong>
+                    <code>--faker</code> seeded choice fields with dictionary words.
+                  </strong>{' '}
+                  A <code>status:select:active|draft|archived</code> column came back full of
+                  &quot;moreover&quot; and &quot;ouch&quot; — values the form&apos;s own dropdown
+                  cannot offer, the API&apos;s validation would reject, and the generated TypeScript
+                  union says are impossible. Choice fields are now seeded from their own options.
+                </p>
+
+                <p>
+                  <strong>The admin ships type-clean.</strong> The scaffold was writing an i18n
+                  layer — <code>language-switcher.tsx</code>, <code>i18n/request.ts</code> and four
+                  more files — without the <code>next-intl</code> dependency that makes them
+                  compile, so every new Next.js admin started life with three type errors. Worse,{' '}
+                  <code>grit add i18n</code> skips files that already exist, so the broken copies
+                  blocked the command that would have fixed them. They are gone from the scaffold
+                  and pruned on upgrade when <code>next-intl</code> is absent. A fresh admin now
+                  reports zero errors from <code>tsc --noEmit</code>.
+                </p>
+              </div>
+            </div>
+
             {/* v3.140.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

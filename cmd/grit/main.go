@@ -29,7 +29,7 @@ import (
 	"github.com/MUKE-coder/grit/v3/internal/selfupdate"
 )
 
-var version = "3.140.0"
+var version = "3.141.0"
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -764,6 +764,7 @@ func generateResourceCmd() *cobra.Command {
 	var faker bool
 	var seedCount int
 	var items string
+	var force bool
 
 	cmd := &cobra.Command{
 		Use:   "resource <Name>",
@@ -772,6 +773,20 @@ func generateResourceCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
+
+			// Before anything is written: a name the scaffold already owns
+			// silently overwrites that model and breaks the build somewhere
+			// else entirely. Checked here rather than in Run() so nothing has
+			// been touched by the time we refuse.
+			if !force {
+				if err := generate.CheckReservedName(name); err != nil {
+					// Not a usage mistake — the flags were fine, the name was
+					// not. Dumping the flag list underneath would bury the
+					// sentence that says what to do instead.
+					cmd.SilenceUsage = true
+					return err
+				}
+			}
 
 			printLogo()
 
@@ -859,6 +874,7 @@ func generateResourceCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&seed, "seed", false, "Also generate a seeder file with one example record")
 	cmd.Flags().BoolVar(&faker, "faker", false, "Also generate a seeder that fills many rows with gofakeit (implies --seed)")
 	cmd.Flags().IntVar(&seedCount, "count", 10, "Number of rows for the faker seeder")
+	cmd.Flags().BoolVar(&force, "force", false, "Generate even when the name collides with a built-in model (overwrites it)")
 
 	return cmd
 }

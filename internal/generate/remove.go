@@ -78,6 +78,36 @@ func RemoveResource(name string) error {
 		}
 	}
 
+	// The customisation overlay, which is hand-written and so gets different
+	// treatment from everything above. Left in place it does not merely go
+	// stale — it imports a type the shared package no longer exports, and the
+	// admin stops type-checking over a resource that is supposed to be gone.
+	// An untouched stub is deleted; anything with real work in it is set aside
+	// as .bak, which keeps it off the TypeScript build without throwing it away.
+	for _, overlay := range []string{
+		filepath.Join(adminRoot, "resources", names.PluralKebab+".custom.tsx"),
+		filepath.Join(adminRoot, "src", "resources", names.PluralKebab+".custom.tsx"),
+	} {
+		body, err := os.ReadFile(overlay)
+		if err != nil {
+			continue
+		}
+		rel, _ := filepath.Rel(root, overlay)
+		// The stub's only statement is an empty object literal. Anything else
+		// means someone wrote something here.
+		if strings.Contains(string(body), "= {};") {
+			if err := os.Remove(overlay); err != nil {
+				return fmt.Errorf("deleting %s: %w", overlay, err)
+			}
+			fmt.Printf("  ✗ %s\n", rel)
+			continue
+		}
+		if err := os.Rename(overlay, overlay+".bak"); err != nil {
+			return fmt.Errorf("archiving %s: %w", overlay, err)
+		}
+		fmt.Printf("  → %s.bak (your customisations, kept out of the build)\n", rel)
+	}
+
 	// Whole directories owned by the resource. RemoveAll (not Remove) because
 	// these contain nested dynamic routes — admin's [id]/page.tsx and web's
 	// [slug]/page.tsx — so an empty-dir check would never fire.
