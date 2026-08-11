@@ -109,7 +109,10 @@ func (g *Generator) writeResourceDefinitionTanStack(names Names) error {
 	content := g.resourceDefinitionFileContent(names)
 	dir := filepath.Join(g.Root, "apps", "admin", "src", "resources")
 	os.MkdirAll(dir, 0755)
-	return os.WriteFile(filepath.Join(dir, names.PluralKebab+".ts"), []byte(content), 0644)
+	if err := os.WriteFile(filepath.Join(dir, names.PluralKebab+".ts"), []byte(content), 0644); err != nil {
+		return err
+	}
+	return writeResourceCustomStub(dir, names)
 }
 
 // writeResourcePageTanStack writes a TanStack Router resource list page. It uses
@@ -153,4 +156,3 @@ function RouteComponent() {
 	os.MkdirAll(dir, 0755)
 	return os.WriteFile(filepath.Join(dir, "$id.tsx"), []byte(content), 0644)
 }
-

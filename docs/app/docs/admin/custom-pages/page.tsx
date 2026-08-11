@@ -210,6 +210,119 @@ return (
             />
 
             <div className="prose-grit mb-10">
+              <h2 id="the-custom-file">Registering it once: the .custom.tsx file</h2>
+              <p>
+                Editing the route file works, but it only customises that one route. The detail
+                page, a relationship picker and anything else rendering the resource still get the
+                stock components. To set it once and have every route pick it up, use the
+                customisation file that sits next to the resource:
+              </p>
+            </div>
+
+            <CodeBlock
+              language="bash"
+              filename="apps/admin/resources/"
+              code={`products.ts          # generated — rewritten on every grit generate
+products.custom.tsx  # yours — created once, never touched again`}
+            />
+
+            <div className="prose-grit mb-10">
+              <p>
+                The split is what makes both halves safe. The config half can be regenerated freely
+                because nothing of yours is in it. The custom half can hold components because it is
+                a <code>.tsx</code> file and the generator will not overwrite it — it checks whether
+                the file exists and leaves it alone if it does.
+              </p>
+            </div>
+
+            <CodeBlock
+              language="tsx"
+              filename="apps/admin/resources/products.custom.tsx"
+              code={`import type { ResourceCustomisation } from "@/lib/resource";
+import { DataTable } from "@/components/tables/data-table";
+import { StatusPill, TemplateTable } from "@/components/template";
+
+const custom: ResourceCustomisation = {
+  // 1. Override a single cell, keep everything else
+  columns: {
+    status: { cell: (row) => <StatusPill value={String(row.status)} /> },
+    price: { cell: (row) => <b>{"$" + Number(row.price).toFixed(2)}</b> },
+  },
+
+  components: {
+    // 2. Replace the table. Same props DataTable takes, so this is a drop-in —
+    //    header, toolbar, filters and pagination all keep working.
+    Table: (props) => <TemplateTable rows={props.data} onSort={props.onSort} />,
+
+    // 3. Or wrap the original instead of replacing it
+    // Table: (props) => <TemplateCard><DataTable {...props} /></TemplateCard>,
+
+    // 4. Replace the whole page — call useResourceController inside it
+    // Page: MyProductsPage,
+  },
+};
+
+export default custom;`}
+            />
+
+            <div className="prose-grit mb-10">
+              <p>
+                <code>columns</code> and <code>fields</code> are patched <strong>by key</strong>,
+                not replaced wholesale. That is deliberate: <code>grit sync</code> keeps adding new
+                columns as you add fields to the Go model, and your renderers survive it. A key that
+                does not match any generated column is simply ignored.
+              </p>
+
+              <h3 id="the-slots">The slots</h3>
+              <ul>
+                <li>
+                  <code>Table</code> — receives exactly <code>DataTable</code>&apos;s props:{' '}
+                  <code>columns</code>, <code>data</code>, <code>isLoading</code>,{' '}
+                  <code>sortBy</code>, <code>sortOrder</code>, <code>onSort</code>,{' '}
+                  <code>selectedRows</code>, <code>onSelectRows</code>, <code>onView</code>,{' '}
+                  <code>onEdit</code>, <code>onDelete</code>, <code>rowActions</code>.
+                </li>
+                <li>
+                  <code>Form</code> — receives <code>resource</code>, <code>item</code> (the record
+                  being edited, or <code>null</code> for create) and <code>onClose</code>. Replaces
+                  whichever container <code>formView</code> would have opened.
+                </li>
+                <li>
+                  <code>EmptyState</code> — rendered instead of the table when the query has
+                  finished and returned nothing.
+                </li>
+                <li>
+                  <code>Page</code> — replaces the entire list view. Checked before anything else,
+                  so a page slot owns its own routing.
+                </li>
+              </ul>
+
+              <h3 id="wrapping">Wrapping instead of replacing</h3>
+              <p>
+                Because a slot receives the stock component&apos;s own props, you can render the
+                original inside yours. That is the cheap way to restyle a shell or add something
+                around a table without reimplementing sorting and selection:
+              </p>
+            </div>
+
+            <CodeBlock
+              language="tsx"
+              filename="wrapping the default"
+              code={`import { DataTable } from "@/components/tables/data-table";
+
+components: {
+  Table: (props) => (
+    <div className="rounded-2xl border border-dashed p-2">
+      <p className="mb-2 text-xs text-muted-foreground">
+        {props.data.length} rows on this page
+      </p>
+      <DataTable {...props} />
+    </div>
+  ),
+}`}
+            />
+
+            <div className="prose-grit mb-10">
               <h2 id="pages-that-are-not-resources">Pages that are not resources</h2>
               <p>
                 Porting a whole template means analytics, settings and billing screens that are not

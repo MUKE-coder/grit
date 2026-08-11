@@ -32,9 +32,9 @@ func (g *Generator) writeDesktopClientResourceFiles(names Names) error {
 	files := map[string]string{
 		filepath.Join(root, "frontend", "src", "hooks", "use-"+names.PluralKebab+".ts"):                       g.desktopClientHook(names),
 		filepath.Join(root, "frontend", "src", "components", "resource-forms", names.PluralKebab+"-form.tsx"): g.desktopClientForm(names),
-		filepath.Join(root, "frontend", "src", "routes", "app", names.Plural+".index.tsx"):                   g.desktopClientListRoute(names),
-		filepath.Join(root, "frontend", "src", "routes", "app", names.Plural+".new.tsx"):                     g.desktopClientNewRoute(names),
-		filepath.Join(root, "frontend", "src", "routes", "app", names.Plural+".$id.edit.tsx"):                g.desktopClientEditRoute(names),
+		filepath.Join(root, "frontend", "src", "routes", "app", names.Plural+".index.tsx"):                    g.desktopClientListRoute(names),
+		filepath.Join(root, "frontend", "src", "routes", "app", names.Plural+".new.tsx"):                      g.desktopClientNewRoute(names),
+		filepath.Join(root, "frontend", "src", "routes", "app", names.Plural+".$id.edit.tsx"):                 g.desktopClientEditRoute(names),
 	}
 	for path, content := range files {
 		if err := writeFileWithDirs(path, content); err != nil {
@@ -358,7 +358,7 @@ func (g *Generator) desktopClientListRoute(names Names) string {
 	var colLines []string
 	var searchKeys []string
 	var relImports []string
-	var relMaps []string    // e.g. const categoryMap = new Map(...)
+	var relMaps []string      // e.g. const categoryMap = new Map(...)
 	var relRowFields []string // e.g. category: categoryMap.get(String((r as any).category_id)) ?? ""
 	seenRelHook := map[string]bool{}
 	for _, f := range g.Definition.Fields {

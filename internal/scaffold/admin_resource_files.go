@@ -7,7 +7,7 @@ func adminResourceTypes() string {
 	return `// Resource Definition Types — The foundation of Grit Admin Panel
 // Define resources with defineResource() and get full CRUD pages automatically.
 
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 
 // ─── Column Definitions ─────────────────────────────────────────────
 
@@ -308,9 +308,81 @@ export interface DashboardDefinition {
   widgets?: WidgetDefinition[];
 }
 
+// ─── Custom Components ──────────────────────────────────────────────
+//
+// A resource is config, and config cannot hold JSX: resources/<name>.ts is a
+// .ts file, and the generator rewrites it. So anything with a component in it
+// lives next door in resources/<name>.custom.tsx, which is written once and
+// never touched again. defineResource() merges the two.
+//
+// The props below are deliberately the same shape as the components they
+// replace. DataTable already satisfies ResourceTableProps, which means a swap
+// is a swap — no adapter, and you can wrap the original by rendering it inside
+// your own component.
+
+/** Props a replacement table receives. Identical to DataTable's own props. */
+export interface ResourceTableProps<T = Record<string, unknown>> {
+  columns: ColumnDefinition[];
+  data: T[];
+  isLoading?: boolean;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  onSort?: (key: string) => void;
+  selectedRows?: string[];
+  onSelectRows?: (rows: string[]) => void;
+  onView?: (item: T) => void;
+  onEdit?: (item: T) => void;
+  onDelete?: (id: string) => void;
+  rowActions?: RowActionDefinition[];
+}
+
+/** Props a replacement form receives. Identical to FormSheet / FormModal. */
+export interface ResourceFormProps<T = Record<string, unknown>> {
+  resource: ResourceDefinition;
+  item: T | null;
+  onClose: () => void;
+}
+
+/**
+ * Props a replacement page receives. It gets only the resource — call
+ * useResourceController(resource) inside to get the rest, exactly as the
+ * stock page does.
+ */
+export interface ResourcePageSlotProps {
+  resource: ResourceDefinition;
+}
+
+export interface ResourceComponents<T = Record<string, unknown>> {
+  /** Replaces the whole list view. The last resort, and the most freedom. */
+  Page?: ComponentType<ResourcePageSlotProps>;
+  /** Replaces the table, keeping the header, toolbar, filters and pagination. */
+  Table?: ComponentType<ResourceTableProps<T>>;
+  /** Replaces the create / edit form in whichever container it opens in. */
+  Form?: ComponentType<ResourceFormProps<T>>;
+  /** Rendered instead of the table when there are no rows and none are loading. */
+  EmptyState?: ComponentType<ResourcePageSlotProps>;
+}
+
+/**
+ * The contents of resources/<name>.custom.tsx.
+ *
+ * columns and fields are patched by key rather than replaced wholesale, so
+ * grit sync can keep adding new columns from the Go model without wiping
+ * your renderers.
+ */
+export interface ResourceCustomisation<T = Record<string, unknown>> {
+  components?: ResourceComponents<T>;
+  /** Per-column overrides, keyed by column key. Merged over the generated column. */
+  columns?: Record<string, Partial<ColumnDefinition>>;
+  /** Per-field overrides, keyed by field key. Merged over the generated field. */
+  fields?: Record<string, Partial<FieldDefinition>>;
+}
+
 // ─── Resource Definition ────────────────────────────────────────────
 
 export interface ResourceDefinition {
+  /** Set by defineResource() from resources/<name>.custom.tsx. */
+  components?: ResourceComponents;
   name: string;
   slug: string;
   endpoint: string;
@@ -364,26 +436,98 @@ export interface StatCardConfig {
 
 // ─── defineResource Helper ──────────────────────────────────────────
 
-export function defineResource(config: ResourceDefinition): ResourceDefinition {
+/**
+ * Build a resource, optionally merged with the customisation sitting next to it.
+ *
+ * The second argument is the default export of resources/<name>.custom.tsx.
+ * Splitting them is what makes both halves safe: the generator owns the config
+ * file and rewrites it freely, while the custom file is written once and never
+ * touched again.
+ *
+ * Columns and fields are patched per key rather than replaced, so grit sync can
+ * go on adding new ones from the Go model without discarding your renderers.
+ */
+export function defineResource<T = Record<string, unknown>>(
+  config: ResourceDefinition,
+  custom?: ResourceCustomisation<T>,
+): ResourceDefinition {
+  const columnPatches = custom?.columns ?? {};
+  const fieldPatches = custom?.fields ?? {};
+
+  const columns = config.table.columns.map((col) =>
+    columnPatches[col.key] ? { ...col, ...columnPatches[col.key] } : col,
+  );
+
+  const fields = config.form.fields.map((field) =>
+    fieldPatches[field.key] ? { ...field, ...fieldPatches[field.key] } : field,
+  );
+
   return {
     ...config,
     label: config.label ?? {
       singular: config.name,
       plural: config.slug.charAt(0).toUpperCase() + config.slug.slice(1),
     },
+    components: custom?.components as ResourceComponents | undefined,
     table: {
       ...config.table,
+      columns,
       pageSize: config.table.pageSize ?? 20,
       actions: config.table.actions ?? ["create", "view", "edit", "delete"],
       searchable: config.table.searchable ?? true,
     },
     form: {
       ...config.form,
+      fields,
       layout: config.form.layout ?? "single",
     },
   };
 }
 `
+}
+
+// AdminResourceCustomStub returns resources/<slug>.custom.tsx — the half of a
+// resource that the generator writes once and never touches again.
+//
+// It exists because the config half cannot hold components. resources/<slug>.ts
+// is a .ts file, so JSX will not compile in it, and grit generate rewrites it
+// whole. Anything with a component in it — a custom cell, a replacement table,
+// a whole page — goes here instead and survives every regeneration.
+func AdminResourceCustomStub(pascal string) string {
+	return fmt.Sprintf(`import type { ResourceCustomisation } from "@/lib/resource";
+
+/**
+ * Customisations for the %s resource.
+ *
+ * This file is yours. The generator creates it once and never writes to it
+ * again, so anything you put here survives grit generate and grit sync.
+ *
+ * Three things you can do:
+ *
+ *   1. Override a single cell, keeping everything else
+ *
+ *      columns: {
+ *        status: { cell: (row) => <StatusPill value={String(row.status)} /> },
+ *      }
+ *
+ *   2. Replace the table, keeping the header, toolbar, filters and pagination.
+ *      The props are the same ones DataTable takes, so you can also wrap it:
+ *
+ *      components: {
+ *        Table: (props) => <MyTemplateTable rows={props.data} onSort={props.onSort} />,
+ *      }
+ *
+ *   3. Replace the whole page. Call useResourceController(resource) inside to
+ *      get rows, sorting, paging, filters, selection and the CRUD actions:
+ *
+ *      components: { Page: MyProductsPage }
+ *
+ * See /docs/admin/custom-pages for the full list of props.
+ */
+const custom: ResourceCustomisation = {};
+
+export default custom;
+`, pascal)
 }
 
 // adminResourceRegistry returns the resource registry (resources/index.ts).
@@ -413,6 +557,7 @@ export function getResourceByEndpoint(endpoint: string): ResourceDefinition | un
 // adminUsersResource returns the users resource definition (resources/users.ts).
 func adminUsersResource() string {
 	return `import { defineResource } from "@/lib/resource";
+import custom from "./users.custom";
 
 export const usersResource = defineResource({
   name: "User",
@@ -596,7 +741,7 @@ export const usersResource = defineResource({
       },
     ],
   },
-});
+}, custom);
 `
 }
 
@@ -657,6 +802,11 @@ interface ResourcePageProps {
 // components keeps each function\'s hook list stable.
 export function ResourcePage({ resource }: ResourcePageProps) {
   const searchParams = useSearchParams();
+
+  // A Page slot replaces this entire component. It is checked first and
+  // unconditionally: someone who has supplied a whole page owns the routing
+  // inside it too, including whatever it wants to do with ?action=create.
+  const CustomPage = resource.components?.Page;
   const isFormPage = resource.formView === "page" || resource.formView === "page-steps";
   const isSteps = resource.formView === "modal-steps" || resource.formView === "page-steps";
   const formAction = searchParams.get("action");
@@ -668,6 +818,10 @@ export function ResourcePage({ resource }: ResourcePageProps) {
   const hasUpdateGroups = (resource.form.groups ?? []).some(
     (g) => !g.scope || g.scope === "update" || g.scope === "both"
   );
+
+  if (CustomPage) {
+    return <CustomPage resource={resource} />;
+  }
   if (isFormPage && formAction === "edit" && editId && hasUpdateGroups) {
     return <UpdateGroups resource={resource} id={editId} />;
   }
@@ -689,6 +843,14 @@ export function ResourcePage({ resource }: ResourcePageProps) {
 // line, and replace the JSX.
 function ResourceListView({ resource }: ResourcePageProps) {
   const c = useResourceController(resource);
+
+  // Slots, each falling back to the stock component. The props handed to a
+  // custom Table are exactly DataTable's, so a replacement can also wrap the
+  // original: (props) => <Card><DataTable {...props} /></Card>.
+  const Table = resource.components?.Table ?? DataTable;
+  const CustomForm = resource.components?.Form;
+  const EmptyState = resource.components?.EmptyState;
+  const showEmptyState = Boolean(EmptyState) && !c.isLoading && c.rows.length === 0;
 
   const headerActions = c.can("create") ? (
     <button onClick={c.create} className={buttonClasses({ size: "sm" })}>
@@ -734,20 +896,24 @@ function ResourceListView({ resource }: ResourcePageProps) {
           />
         )}
 
-        <DataTable
-          columns={c.columns}
-          data={c.rows}
-          isLoading={c.isLoading}
-          sortBy={c.sortBy}
-          sortOrder={c.sortOrder}
-          onSort={c.setSort}
-          selectedRows={c.selection}
-          onSelectRows={c.setSelection}
-          onView={c.can("view") ? c.view : undefined}
-          onEdit={c.can("edit") ? c.edit : undefined}
-          onDelete={c.can("delete") ? c.remove : undefined}
-          rowActions={resource.table.rowActions}
-        />
+        {showEmptyState && EmptyState ? (
+          <EmptyState resource={resource} />
+        ) : (
+          <Table
+            columns={c.columns}
+            data={c.rows}
+            isLoading={c.isLoading}
+            sortBy={c.sortBy}
+            sortOrder={c.sortOrder}
+            onSort={c.setSort}
+            selectedRows={c.selection}
+            onSelectRows={c.setSelection}
+            onView={c.can("view") ? c.view : undefined}
+            onEdit={c.can("edit") ? c.edit : undefined}
+            onDelete={c.can("delete") ? c.remove : undefined}
+            rowActions={resource.table.rowActions}
+          />
+        )}
 
         <TablePagination
           page={c.page}
@@ -759,7 +925,11 @@ function ResourceListView({ resource }: ResourcePageProps) {
         />
       </div>
 
-      {!c.isFormPage && c.form.open && (
+      {!c.isFormPage && c.form.open && CustomForm && (
+        <CustomForm resource={resource} item={c.form.item} onClose={c.form.close} />
+      )}
+
+      {!c.isFormPage && c.form.open && !CustomForm && (
         c.isSteps ? (
           <FormModalSteps
             resource={resource}
@@ -1808,6 +1978,7 @@ export function ViewModal({ resource, item, onClose, onEdit }: ViewModalProps) {
 // adminBlogsResource returns the blogs resource definition (resources/blogs.ts).
 func adminBlogsResource() string {
 	return `import { defineResource } from "@/lib/resource";
+import custom from "./blogs.custom";
 
 export const blogsResource = defineResource({
   name: "Blog",
@@ -1888,7 +2059,7 @@ export const blogsResource = defineResource({
       },
     ],
   },
-});
+}, custom);
 `
 }
 

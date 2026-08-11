@@ -18,8 +18,8 @@ import (
 //     the file — so an operator who hand-edited a row to change its
 //     label or format never has their changes overwritten.
 //   - Insertion happens inside the marker fences:
-//        // grit:cols:auto-start ... // grit:cols:auto-end
-//        // grit:fields:auto-start ... // grit:fields:auto-end
+//     // grit:cols:auto-start ... // grit:cols:auto-end
+//     // grit:fields:auto-start ... // grit:fields:auto-end
 //     If those markers are absent (file was generated before v3.31.16),
 //     this function gives up gracefully and the operator is told what
 //     to add by hand. No silent corruption.

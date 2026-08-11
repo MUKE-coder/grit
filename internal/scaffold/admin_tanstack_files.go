@@ -521,9 +521,11 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "components", "resource", "view-modal.tsx"):           nextToTanStack(adminViewModal()),
 
 		// Resource definitions (same as Next.js)
-		filepath.Join(adminRoot, "src", "resources", "index.ts"): adminResourceRegistry(),
-		filepath.Join(adminRoot, "src", "resources", "users.ts"): adminUsersResource(),
-		filepath.Join(adminRoot, "src", "resources", "blogs.ts"): adminBlogsResource(),
+		filepath.Join(adminRoot, "src", "resources", "index.ts"):         adminResourceRegistry(),
+		filepath.Join(adminRoot, "src", "resources", "users.ts"):         adminUsersResource(),
+		filepath.Join(adminRoot, "src", "resources", "users.custom.tsx"): nextToTanStack(AdminResourceCustomStub("User")),
+		filepath.Join(adminRoot, "src", "resources", "blogs.ts"):         adminBlogsResource(),
+		filepath.Join(adminRoot, "src", "resources", "blogs.custom.tsx"): nextToTanStack(AdminResourceCustomStub("Blog")),
 
 		// Profile
 		filepath.Join(adminRoot, "src", "components", "profile", "delete-account-dialog.tsx"): nextToTanStack(adminDeleteAccountDialog()),

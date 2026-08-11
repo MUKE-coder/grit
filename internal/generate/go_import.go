@@ -25,6 +25,7 @@ import (
 //     the related record is looked up by name and created if it doesn't exist.
 //   - rows that violate a unique constraint are skipped (ON CONFLICT DO NOTHING),
 //     so re-importing the same file is safe. Other failures are reported per-row.
+//
 // belongsToLookup describes how a CSV column resolves a belongs_to relation.
 // When ByName is true the related record is matched (and created if missing)
 // on the NaturalKeyJSON/NaturalKeyGo string column; otherwise the CSV cell is
@@ -33,7 +34,7 @@ import (
 // what stops `belongs_to:User` (no Name field) from emitting an uncompilable
 // `models.User{Name: v}`.
 type belongsToLookup struct {
-	ByName        bool
+	ByName         bool
 	NaturalKeyJSON string
 	NaturalKeyGo   string
 }
@@ -424,7 +425,7 @@ func (h *{{Pascal}}Handler) runImport{{Pascal}}(jobID, tmpPath string) {
 // its id column ("<relation>_id") when the related model has no natural key.
 func (h *{{Pascal}}Handler) Template(c *gin.Context) {
 	c.Header("Content-Type", "text/csv")
-	c.Header("Content-Disposition", `+"`"+`attachment; filename="{{PluralKebab}}-template.csv"`+"`"+`)
+	c.Header("Content-Disposition", ` + "`" + `attachment; filename="{{PluralKebab}}-template.csv"` + "`" + `)
 	c.String(http.StatusOK, "{{HEADERS}}\n")
 }
 `)
