@@ -139,6 +139,7 @@ const navItems: NavItem[] = [
       { title: 'Admin Overview', href: '/docs/admin/overview' },
       { title: 'Resource Definitions', href: '/docs/admin/resources' },
       { title: 'DataTable', href: '/docs/admin/datatable' },
+      { title: 'Custom Pages & Tables', href: '/docs/admin/custom-pages' },
       { title: 'Form Builder', href: '/docs/admin/forms' },
       { title: 'Multi-Step Forms', href: '/docs/admin/multi-step-forms' },
       { title: 'Standalone Usage', href: '/docs/admin/standalone-usage' },

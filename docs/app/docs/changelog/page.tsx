@@ -28,6 +28,92 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.138.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.138.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 11, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>
+                    <code>useResourceController()</code> — the admin list page, minus the markup.
+                  </strong>
+                </p>
+                <p>
+                  If you have bought an admin template and want to port its pages into Grit, the
+                  data was never the hard part. <code>useResource</code>, <code>useCreateResource</code>{' '}
+                  and friends have always been plain hooks that take an endpoint. The hard part was
+                  everything else the list page does: keeping search, sort, page and filters in the
+                  address bar so a refresh or a shared link rehydrates the same view; row selection;
+                  bulk delete behind a confirm; toasts; cache invalidation; and stat cards that
+                  follow the active date range instead of contradicting the table underneath them.
+                </p>
+                <p>
+                  All of that lived inside <code>ResourcePage</code>, welded to Grit&apos;s{' '}
+                  <code>DataTable</code>. Swapping in your own table meant rebuilding it. Now it is
+                  a hook:
+                </p>
+                <pre>
+                  <code>{`"use client";
+
+import { useResourceController } from "@/hooks/use-resource-controller";
+import { productsResource } from "@/resources/products";
+
+export default function ProductsPage() {
+  const c = useResourceController(productsResource);
+
+  return (
+    <TemplateShell title={c.pluralName} onAdd={c.create}>
+      <TemplateTable
+        rows={c.rows}
+        columns={c.columns}
+        loading={c.isLoading}
+        sortKey={c.sortBy}
+        sortDir={c.sortOrder}
+        onSort={c.setSort}
+        selected={c.selection}
+        onSelect={c.setSelection}
+        onRowClick={c.edit}
+      />
+      <TemplatePager
+        page={c.page}
+        pages={c.totalPages}
+        total={c.total}
+        onChange={c.setPage}
+      />
+    </TemplateShell>
+  );
+}`}</code>
+                </pre>
+                <p>
+                  The controller hands back the data (<code>rows</code>, <code>meta</code>,{' '}
+                  <code>isLoading</code>), the query state and its setters — where{' '}
+                  <code>setSort</code> toggles direction and every setter that changes the query
+                  resets to page one — plus selection, visible columns, the create/edit/view/delete
+                  actions, dialog state for anyone rendering their own modals, and the same{' '}
+                  <code>apiSearchParams</code> the table queried with, so an export matches what is
+                  on screen.
+                </p>
+                <p>
+                  Nothing changes for existing projects. <code>ResourcePage</code> was rewritten to
+                  consume the hook and render only markup, which is the point: if the stock page
+                  could not be rebuilt on the controller, the controller would be missing something.
+                  Every resource page keeps behaving exactly as it did.
+                </p>
+                <p>
+                  Also fixed while in here: the Vite admin&apos;s <code>next/navigation</code> shim
+                  declared <code>router.replace(to)</code> with one parameter, so the{' '}
+                  <code>{`{ scroll: false }`}</code> that Next.js callers pass was a type error in
+                  the TanStack admin and compiled fine in the Next.js one. The shim now accepts and
+                  ignores the options bag.
+                </p>
+              </div>
+            </div>
+
             {/* v3.137.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

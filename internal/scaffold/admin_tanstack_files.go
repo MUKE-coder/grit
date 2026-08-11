@@ -228,8 +228,14 @@ export function Image({
 export function useRouter() {
   const navigate = useNavigate();
   return {
-    push: (to: string) => navigate({ to: to as string }),
-    replace: (to: string) => navigate({ to: to as string, replace: true }),
+    // The options bag is accepted and ignored. Next.js callers pass
+    // { scroll: false } when updating the address bar for a filter change;
+    // TanStack does not scroll on navigate anyway, so the behaviour matches.
+    // Without this parameter those call sites are a type error in the Vite
+    // admin while compiling fine in the Next.js one.
+    push: (to: string, _options?: { scroll?: boolean }) => navigate({ to: to as string }),
+    replace: (to: string, _options?: { scroll?: boolean }) =>
+      navigate({ to: to as string, replace: true }),
     back: () => window.history.back(),
     forward: () => window.history.forward(),
     refresh: () => {},
@@ -384,16 +390,17 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "lib", "file-accepts.ts"): adminFileAcceptsLib(),
 
 		// Hooks (same as Next.js versions)
-		filepath.Join(adminRoot, "src", "hooks", "use-auth.ts"):             adminTanStackUseAuth(),
-		filepath.Join(adminRoot, "src", "hooks", "use-resource.ts"):         nextToTanStack(adminUseResource()),
-		filepath.Join(adminRoot, "src", "hooks", "use-system.ts"):           nextToTanStack(adminUseSystem()),
-		filepath.Join(adminRoot, "src", "hooks", "use-profile.ts"):          nextToTanStack(adminUseProfile()),
-		filepath.Join(adminRoot, "src", "hooks", "use-roles.ts"):            nextToTanStack(adminUseRoles()),
-		filepath.Join(adminRoot, "src", "hooks", "use-permissions.ts"):      nextToTanStack(adminUsePermissions()),
-		filepath.Join(adminRoot, "src", "hooks", "use-modules.ts"):          nextToTanStack(adminUseModules()),
-		filepath.Join(adminRoot, "src", "hooks", "use-backups.ts"):          nextToTanStack(adminUseBackups()),
-		filepath.Join(adminRoot, "src", "hooks", "use-dashboard-layout.ts"): nextToTanStack(adminUseDashboardLayoutTS()),
-		filepath.Join(adminRoot, "src", "hooks", "use-toasted-mutation.ts"): nextToTanStack(adminToastHook()),
+		filepath.Join(adminRoot, "src", "hooks", "use-auth.ts"):                adminTanStackUseAuth(),
+		filepath.Join(adminRoot, "src", "hooks", "use-resource.ts"):            nextToTanStack(adminUseResource()),
+		filepath.Join(adminRoot, "src", "hooks", "use-resource-controller.ts"): nextToTanStack(adminUseResourceController()),
+		filepath.Join(adminRoot, "src", "hooks", "use-system.ts"):              nextToTanStack(adminUseSystem()),
+		filepath.Join(adminRoot, "src", "hooks", "use-profile.ts"):             nextToTanStack(adminUseProfile()),
+		filepath.Join(adminRoot, "src", "hooks", "use-roles.ts"):               nextToTanStack(adminUseRoles()),
+		filepath.Join(adminRoot, "src", "hooks", "use-permissions.ts"):         nextToTanStack(adminUsePermissions()),
+		filepath.Join(adminRoot, "src", "hooks", "use-modules.ts"):             nextToTanStack(adminUseModules()),
+		filepath.Join(adminRoot, "src", "hooks", "use-backups.ts"):             nextToTanStack(adminUseBackups()),
+		filepath.Join(adminRoot, "src", "hooks", "use-dashboard-layout.ts"):    nextToTanStack(adminUseDashboardLayoutTS()),
+		filepath.Join(adminRoot, "src", "hooks", "use-toasted-mutation.ts"):    nextToTanStack(adminToastHook()),
 
 		// Lib modules the reused pages import.
 		filepath.Join(adminRoot, "src", "lib", "dashboard-catalog.ts"): nextToTanStack(adminDashboardCatalogTS()),

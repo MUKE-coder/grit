@@ -395,10 +395,11 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "profile", "two-factor-card.tsx"):       adminTwoFactorCard(),
 
 		// Hooks
-		filepath.Join(adminRoot, "hooks", "use-auth.ts"):     adminUseAuth(),
-		filepath.Join(adminRoot, "hooks", "use-resource.ts"): adminUseResource(),
-		filepath.Join(adminRoot, "hooks", "use-system.ts"):   adminUseSystem(),
-		filepath.Join(adminRoot, "hooks", "use-profile.ts"):  adminUseProfile(),
+		filepath.Join(adminRoot, "hooks", "use-auth.ts"):                adminUseAuth(),
+		filepath.Join(adminRoot, "hooks", "use-resource.ts"):            adminUseResource(),
+		filepath.Join(adminRoot, "hooks", "use-resource-controller.ts"): adminUseResourceController(),
+		filepath.Join(adminRoot, "hooks", "use-system.ts"):              adminUseSystem(),
+		filepath.Join(adminRoot, "hooks", "use-profile.ts"):             adminUseProfile(),
 		// v3.31.40 — per-user dashboard customisation
 		filepath.Join(adminRoot, "hooks", "use-dashboard-layout.ts"):                        adminUseDashboardLayoutTS(),
 		filepath.Join(adminRoot, "lib", "dashboard-catalog.ts"):                             adminDashboardCatalogTS(),
