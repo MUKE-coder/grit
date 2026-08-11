@@ -22,9 +22,17 @@ const COMPLIANCE = [
   { icon: Hourglass, label: '99.9%', muted: 'uptime' },
 ]
 
+/**
+ * A drawing of a compose window. aria-hidden because it is scenery: the
+ * addresses and field labels are invented, and read aloud they arrive as if
+ * this page were an inbox. Hiding it also settles the contrast question — the
+ * faint field labels are decoration, not text someone has to read.
+ */
 function ComposeMock() {
   return (
-    <div className="w-full max-w-[23rem] rounded-2xl bg-white/95 p-4 shadow-[0_24px_60px_-20px_rgb(15_23_42_/_0.45)] backdrop-blur-sm dark:bg-gray-900/95">
+    <div
+      aria-hidden="true"
+      className="w-full max-w-[23rem] rounded-2xl bg-white/95 p-4 shadow-[0_24px_60px_-20px_rgb(15_23_42_/_0.45)] backdrop-blur-sm dark:bg-gray-900/95">
       <div className="flex items-center justify-between gap-3 border-b border-gray-200 pb-3 dark:border-white/10">
         <span className="flex items-center gap-1.5 text-[13px] text-gray-500 dark:text-gray-400">
           To:
@@ -202,7 +210,7 @@ export default function TabbedSplitPanels({
                 className={`-mb-px inline-flex items-center gap-2 border-b-2 py-5 text-[15px] font-semibold transition-colors duration-200 ${
                   isActive
                     ? 'border-gray-900 text-gray-900 dark:border-white dark:text-white'
-                    : 'border-transparent text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                    : 'border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100'
                 }`}
               >
                 <tab.icon aria-hidden="true" className="size-[18px]" />
@@ -250,7 +258,7 @@ export default function TabbedSplitPanels({
                   {item.label}
                 </span>
                 {item.muted && (
-                  <span className="text-gray-400 dark:text-gray-500">{item.muted}</span>
+                  <span className="text-gray-500 dark:text-gray-400">{item.muted}</span>
                 )}
               </li>
             ))}

@@ -157,7 +157,7 @@ export default function BentoCategoryGrid({
                 <span className="absolute inset-0 flex flex-col justify-between p-5 md:p-6">
                   <span className="flex flex-wrap gap-2">
                     {category.isNew && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white shadow-md">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-700 px-2.5 py-1 text-xs font-bold text-white shadow-md">
                         <Zap aria-hidden="true" className="size-3" />
                         New
                       </span>

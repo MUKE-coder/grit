@@ -30,10 +30,18 @@ function useReducedMotion() {
   return reduce
 }
 
-/** The atmospheric card backdrop. Warm haze above, cool depth below. */
+/**
+ * The atmospheric card backdrop. Warm haze above, cool depth below.
+ *
+ * aria-hidden: everything inside is a drawing of an app — fake rows,
+ * invented dates, no behaviour. Exposed, a screen reader reads the chrome
+ * out as page content, and the deliberately faint styling also counts as a
+ * text-contrast failure. Nothing in here is focusable, which is what makes
+ * hiding it safe rather than a new bug.
+ */
 function Canvas({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative aspect-[4/3.4] overflow-hidden rounded-3xl bg-[linear-gradient(180deg,#eae5db_0%,#e6e3dd_42%,#cdd6e0_74%,#b2c1cf_100%)] dark:bg-[linear-gradient(180deg,#1c2430_0%,#1a222c_42%,#16202b_74%,#111a24_100%)]">
+    <div aria-hidden="true" className="relative aspect-[4/3.4] overflow-hidden rounded-3xl bg-[linear-gradient(180deg,#eae5db_0%,#e6e3dd_42%,#cdd6e0_74%,#b2c1cf_100%)] dark:bg-[linear-gradient(180deg,#1c2430_0%,#1a222c_42%,#16202b_74%,#111a24_100%)]">
       {/* Two soft blooms stand in for a horizon. Cheap, and it never 404s. */}
       <div
         aria-hidden

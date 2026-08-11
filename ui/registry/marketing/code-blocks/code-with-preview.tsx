@@ -31,12 +31,12 @@ const KEYWORDS = new Set([
 
 const TONE: Record<Kind, string> = {
   plain: 'text-gray-800 dark:text-gray-200',
-  keyword: 'text-rose-600 dark:text-rose-400',
-  string: 'text-emerald-600 dark:text-emerald-400',
-  tag: 'text-sky-600 dark:text-sky-400',
-  attr: 'text-violet-600 dark:text-violet-400',
-  comment: 'text-gray-400 dark:text-gray-500',
-  punct: 'text-gray-400 dark:text-gray-500',
+  keyword: 'text-rose-700 dark:text-rose-400',
+  string: 'text-emerald-700 dark:text-emerald-400',
+  tag: 'text-sky-700 dark:text-sky-400',
+  attr: 'text-violet-700 dark:text-violet-400',
+  comment: 'text-gray-500 dark:text-gray-400',
+  punct: 'text-gray-500 dark:text-gray-400',
 }
 
 function tokenize(line: string): { text: string; kind: Kind }[] {

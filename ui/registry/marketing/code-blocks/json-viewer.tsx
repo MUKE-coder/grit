@@ -45,11 +45,11 @@ const RESPONSE = `{
 type Kind = 'key' | 'string' | 'number' | 'literal' | 'punct'
 
 const TONE: Record<Kind, string> = {
-  key: 'text-sky-600 dark:text-sky-400',
-  string: 'text-emerald-600 dark:text-emerald-400',
-  number: 'text-amber-600 dark:text-amber-400',
-  literal: 'text-rose-600 dark:text-rose-400',
-  punct: 'text-gray-400 dark:text-gray-500',
+  key: 'text-sky-700 dark:text-sky-400',
+  string: 'text-emerald-700 dark:text-emerald-400',
+  number: 'text-amber-700 dark:text-amber-400',
+  literal: 'text-rose-700 dark:text-rose-400',
+  punct: 'text-gray-500 dark:text-gray-400',
 }
 
 /* A key is a string followed by a colon; everything else is a value. */

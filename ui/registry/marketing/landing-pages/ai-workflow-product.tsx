@@ -337,7 +337,7 @@ export default function LandingPageAiWorkflowProduct({
               className="grid grid-cols-2 items-center justify-items-center gap-6 sm:grid-cols-4"
             >
               {LOGOS.map((logo) => (
-                <li key={logo} className="text-sm font-semibold tracking-tight text-gray-400 dark:text-gray-500">
+                <li key={logo} className="text-sm font-semibold tracking-tight text-gray-600 dark:text-gray-400">
                   {logo}
                 </li>
               ))}

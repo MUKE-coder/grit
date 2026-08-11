@@ -446,7 +446,7 @@ export default function ListingWithSortAndViewToggle({
                 </div>
 
                 {product.isNew && (
-                  <p className="absolute top-3 left-3 z-10 rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white">
+                  <p className="absolute top-3 left-3 z-10 rounded-full bg-emerald-700 px-2.5 py-1 text-xs font-semibold text-white">
                     New
                   </p>
                 )}

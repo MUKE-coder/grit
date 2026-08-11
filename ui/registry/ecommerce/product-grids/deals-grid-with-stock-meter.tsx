@@ -166,7 +166,7 @@ export default function DealsGridWithStockMeter({
                 >
                   <div className="absolute top-3 left-3 z-10 flex flex-col items-start gap-1">
                     {deal.isNew && (
-                      <span className="flex items-center gap-1 rounded bg-emerald-600 px-2 py-1 text-xs font-bold text-white">
+                      <span className="flex items-center gap-1 rounded bg-emerald-700 px-2 py-1 text-xs font-bold text-white">
                         <Zap aria-hidden="true" className="size-3" />
                         New
                       </span>
@@ -211,7 +211,7 @@ export default function DealsGridWithStockMeter({
                       className="size-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
                     {deal.timeLeft && (
-                      <span className="absolute top-40 right-3 flex items-center gap-1 rounded bg-orange-500 px-2 py-1 text-xs font-bold text-white">
+                      <span className="absolute top-40 right-3 flex items-center gap-1 rounded bg-orange-700 px-2 py-1 text-xs font-bold text-white">
                         <Timer aria-hidden="true" className="size-3" />
                         <span className="sr-only">Ends in </span>
                         {deal.timeLeft}
@@ -234,12 +234,12 @@ export default function DealsGridWithStockMeter({
                         <span className="text-xl font-bold text-gray-900 tabular-nums dark:text-white">
                           {CURRENCY.format(deal.currentPrice)}
                         </span>
-                        <span className="text-sm text-gray-500 line-through tabular-nums">
+                        <span className="text-sm text-gray-600 line-through tabular-nums dark:text-gray-400">
                           <span className="sr-only">Was </span>
                           {CURRENCY.format(deal.originalPrice)}
                         </span>
                       </p>
-                      <p className="mt-0.5 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                      <p className="mt-0.5 text-sm font-medium text-emerald-700 dark:text-emerald-400">
                         You save {CURRENCY.format(deal.originalPrice - deal.currentPrice)}
                       </p>
                     </div>
@@ -248,7 +248,7 @@ export default function DealsGridWithStockMeter({
                       <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
                         <span>{deal.sold} sold</span>
                         {remaining <= 20 && remaining > 0 && (
-                          <span className="font-medium text-orange-600 dark:text-orange-400">
+                          <span className="font-medium text-orange-700 dark:text-orange-400">
                             Only {remaining} left
                           </span>
                         )}

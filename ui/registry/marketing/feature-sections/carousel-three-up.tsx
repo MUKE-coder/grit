@@ -253,7 +253,12 @@ export default function CarouselThreeUp({
                 key={i}
                 className="flex w-[88%] shrink-0 snap-start flex-col border-r border-dashed border-gray-200 px-6 py-10 sm:w-1/2 lg:w-1/3 dark:border-white/10"
               >
-                <div className="flex min-h-[15rem] flex-1 items-start">{slide.mock}</div>
+                {/* The product mock is a drawing of an app, not an app: fake rows,
+                invented dates, no behaviour. aria-hidden so a screen reader does
+                not read the chrome out as page content, and so its deliberately
+                low-contrast styling stops being a text-contrast failure. Nothing
+                inside is focusable, which is what makes hiding it safe. */}
+                <div aria-hidden="true" className="flex min-h-[15rem] flex-1 items-start">{slide.mock}</div>
                 <p className="mt-10 text-[15px]/[1.6] text-gray-500 dark:text-gray-400">
                   <span className="font-semibold text-gray-900 dark:text-white">
                     {slide.lead}

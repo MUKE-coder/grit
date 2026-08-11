@@ -182,7 +182,7 @@ export default function ExpandableWithTabbedCard({
                   {item.label}
                 </span>
                 {item.muted && (
-                  <span className="text-gray-400 dark:text-gray-500">{item.muted}</span>
+                  <span className="text-gray-500 dark:text-gray-400">{item.muted}</span>
                 )}
               </li>
             ))}

@@ -92,7 +92,12 @@ export default function MinimalWithProductCard({
 
         {/* Product card */}
         <div className="relative pt-14 pb-16">
-          <div className="mx-auto max-w-3xl rounded-2xl bg-white/70 p-3 shadow-[0_24px_70px_-20px_rgba(15,23,42,0.25)] backdrop-blur dark:bg-white/5">
+          {/* The product mock is a drawing of an app, not an app: fake rows,
+          invented dates, no behaviour. aria-hidden so a screen reader does
+          not read the chrome out as page content, and so its deliberately
+          low-contrast styling stops being a text-contrast failure. Nothing
+          inside is focusable, which is what makes hiding it safe. */}
+          <div aria-hidden="true" className="mx-auto max-w-3xl rounded-2xl bg-white/70 p-3 shadow-[0_24px_70px_-20px_rgba(15,23,42,0.25)] backdrop-blur dark:bg-white/5">
             <div className="rounded-xl bg-white p-5 dark:bg-gray-900">
               <div className="mb-5 flex items-center justify-between">
                 <p className="flex items-center gap-2 text-sm">

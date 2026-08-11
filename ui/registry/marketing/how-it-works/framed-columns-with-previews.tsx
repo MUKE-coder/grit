@@ -124,7 +124,7 @@ export default function HowItWorksFramedColumnsWithPreviews({
         >
           {steps.map((step, i) => (
             <li key={step.title} className="flex flex-col p-8">
-              <span className="text-sm font-semibold text-gray-400 tabular-nums dark:text-gray-600">
+              <span className="text-sm font-semibold text-gray-500 tabular-nums dark:text-gray-400">
                 {String(i + 1).padStart(2, '0')}
               </span>
               <div aria-hidden="true" className="mt-6 flex min-h-40 items-center select-none">
