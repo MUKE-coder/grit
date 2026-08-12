@@ -203,7 +203,7 @@ func Write(appDir string, c *Component, force bool) (string, error) {
 	}
 	if !force {
 		if _, err := os.Stat(out); err == nil {
-			return "", fmt.Errorf("%s already exists — pass --force to overwrite", out)
+			return "", fmt.Errorf("%s already exists: pass --force to overwrite", out)
 		}
 	}
 	if err := os.WriteFile(out, []byte(c.Files[0].Content), 0o644); err != nil {

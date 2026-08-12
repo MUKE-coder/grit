@@ -110,7 +110,7 @@ func AddRole(roleName string) error {
 	}
 
 	if count == 0 {
-		return fmt.Errorf("no files were updated — make sure role markers exist (run `grit upgrade` to add them)")
+		return fmt.Errorf("no files were updated: make sure role markers exist (run `grit upgrade` to add them)")
 	}
 
 	fmt.Println()

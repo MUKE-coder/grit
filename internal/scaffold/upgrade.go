@@ -370,7 +370,7 @@ func pruneUnwiredI18n(adminRoot string) int {
 		}
 	}
 	if removed > 0 {
-		fmt.Printf("  ✓ Removed %d unwired i18n file(s) — run `grit add i18n` to set it up properly\n", removed)
+		fmt.Printf("  ✓ Removed %d unwired i18n file(s): run `grit add i18n` to set it up properly\n", removed)
 	}
 	return removed
 }

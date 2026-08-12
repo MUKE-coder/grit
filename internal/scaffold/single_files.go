@@ -219,7 +219,7 @@ func main() {
 		var userCount int64
 		db.Model(&models.User{}).Count(&userCount)
 		if userCount == 0 {
-			log.Println("Empty database detected — running first-boot seed...")
+			log.Println("Empty database detected: running first-boot seed...")
 			if err := database.Seed(db); err != nil {
 				log.Printf("Warning: first-boot seed failed: %v", err)
 			} else {
@@ -542,7 +542,7 @@ export default defineConfig({
 }
 
 func singleMakefile(opts Options) string {
-	return fmt.Sprintf(`# %s — Single App Makefile
+	return fmt.Sprintf(`# %s: Single App Makefile
 
 .PHONY: dev build migrate seed run clean
 

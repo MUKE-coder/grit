@@ -1,6 +1,6 @@
 ---
 title: "Build a full offline-first POS with Grit: products, stock, clients, purchases & a real checkout"
-subtitle: "One command scaffolds a Wails desktop app that works online AND offline. grit generate resource fans out to the desktop too now — full CRUD screens backed by a local SQLite mirror that syncs to your server when you're connected. We build a real Point of Sale: categories, products, stock, clients, suppliers, purchases, and a custom checkout screen that completes sales and decrements stock even with no internet."
+subtitle: "One command scaffolds a Wails desktop app that works online AND offline. grit generate resource fans out to the desktop too now: full CRUD screens backed by a local SQLite mirror that syncs to your server when you're connected. We build a real Point of Sale: categories, products, stock, clients, suppliers, purchases, and a custom checkout screen that completes sales and decrements stock even with no internet."
 series: "The Daily Grit"
 edition: 9
 date: 2026-07-09
@@ -13,12 +13,12 @@ canonical: "https://gritframework.dev/blog/build-desktop-app-with-grit"
 Most "build a POS" tutorials stop at a pretty product grid. Real shops need more:
 a product catalogue with **stock**, **clients**, **suppliers**, **purchases**
 that restock you, and a checkout that **keeps working when the internet
-doesn't** — then quietly syncs everything up when it comes back.
+doesn't**, then quietly syncs everything up when it comes back.
 
 That last part is the hard part, and it's exactly what Grit's desktop stack does
 for you now. In **v3.33.0**, `grit generate resource` fans out to the **desktop
 app** too: every resource gets full CRUD screens wired to an **offline-first sync
-engine** — a local SQLite mirror plus an outbox that pushes to your server the
+engine**: a local SQLite mirror plus an outbox that pushes to your server the
 moment you're back online. So the plumbing that usually eats a week (two
 databases, a sync protocol, conflict handling, an offline toggle) is already in
 the box.
@@ -28,7 +28,7 @@ We'll build a genuinely useful **Point of Sale**:
 - **Categories & Products** with prices and **stock counts**
 - **Clients** (customers) and **Suppliers**
 - **Purchases** that restock your inventory
-- **Sales** with a real **checkout screen** — product grid, cart, discount,
+- **Sales** with a real **checkout screen**: product grid, cart, discount,
   payment method, change due
 - **Stock** that goes down on a sale and up on a purchase
 - All of it **online by default, offline when you flip a switch**, syncing both ways
@@ -37,9 +37,9 @@ Let's build it.
 
 ## What you'll need
 
-- **Grit v3.54.0+** — `grit update`, then `grit version` to confirm
+- **Grit v3.54.0+**: `grit update`, then `grit version` to confirm
 - The [Wails](https://wails.io) toolchain (`wails doctor` green), **Go 1.21+**, **Node 18+**, **pnpm**
-- **Docker** (for Postgres — the "online" database the desktop app syncs to)
+- **Docker** (for Postgres: the "online" database the desktop app syncs to)
 - For the installer at the end: **NSIS** on Windows (`winget install NSIS.NSIS`)
 
 ```bash
@@ -66,7 +66,7 @@ cd gritpos
 ```
 gritpos/
 ├── apps/
-│   ├── api/        # Go + Gin + GORM, Postgres — the shared server (source of truth)
+│   ├── api/        # Go + Gin + GORM, Postgres. The shared server (source of truth)
 │   ├── web/        # Next.js storefront (not used here, but there if you want it)
 │   ├── admin/      # Filament-like admin panel
 │   ├── expo/       # React Native app (same resources, for free)
@@ -78,14 +78,14 @@ gritpos/
 ### The idea: two databases, one command
 
 The desktop app (`apps/desktop`) is a native Wails window with a **local SQLite
-database** baked in. Your **server** (`apps/api`) owns a **Postgres** database —
+database** baked in. Your **server** (`apps/api`) owns a **Postgres** database:
 the shared source of truth. The desktop app:
 
-1. **Online by default** — it continuously **mirrors** server data into its local
+1. **Online by default**: it continuously **mirrors** server data into its local
    SQLite copy in the background (every ~30s).
-2. **A dashboard toggle** flips it to **offline** — now every read comes from the
+2. **A dashboard toggle** flips it to **offline**, now every read comes from the
    local copy and every write **queues locally**. The cashier keeps selling.
-3. **Back online**, it **auto-reconciles** — pushes the queued changes up and
+3. **Back online**, it **auto-reconciles**: pushes the queued changes up and
    pulls anything new down, with optimistic-locking conflict handling.
 
 You don't wire any of that. It's what `--full` scaffolds.
@@ -100,7 +100,7 @@ docker compose up -d           # Postgres (+ Redis, MinIO) on localhost
 pnpm i                         # install all deps: web, admin, desktop, expo
 ```
 
-No `.env` juggling — `grit new` already wrote a populated `.env` at the project
+No `.env` juggling: `grit new` already wrote a populated `.env` at the project
 root with a per-scaffold Postgres password, and both `docker compose` and the
 Go API read it. So `grit migrate` and `grit start server` work out of the box.
 
@@ -108,33 +108,33 @@ Go API read it. So `grit migrate` and `grit start server` work out of the box.
 > keychain. When it's online it syncs against Postgres; when it's offline it
 > serves the local mirror.
 
-## 3. Model the shop — one `generate` per resource
+## 3. Model the shop: one `generate` per resource
 
 Here's the money moment. Each `grit generate resource` now creates, in one shot:
 
 - the **Go model + service + handler** (API, with the sync `Version` column baked in),
 - **shared Zod types**, **web** hooks, **admin** resource + page,
 - **Expo** mobile screens,
-- **and the desktop screens** — list, create/edit forms, a hook, a sidebar entry —
+- **and the desktop screens**: list, create/edit forms, a hook, a sidebar entry:
   all reading/writing through the offline sync engine,
 - plus it **registers the resource for offline sync** automatically.
 
-Order matters for relationships — create parents first.
+Order matters for relationships: create parents first.
 
-**Categories** (products belong to one) — with a cover **image**:
+**Categories** (products belong to one), with a cover **image**:
 
 ```bash
 grit generate resource Category --fields "name:string,slug:slug,image:file:image"
 ```
 
-**Products** — price, stock, a category link, a **thumbnail** and a **gallery**:
+**Products**: price, stock, a category link, a **thumbnail** and a **gallery**:
 
 ```bash
 grit generate resource Product --fields "name:string,sku:string,price:float,stock:int,category:belongs_to:Category,thumbnail:file:image,images:files:image"
 ```
 
 Those `file:image` / `files:image` fields are the reason we're here. On the
-desktop they generate a **dropzone** that works offline — more on that in a
+desktop they generate a **dropzone** that works offline: more on that in a
 second. In the table they render as **thumbnails**; in the form they're a
 drag-and-drop upload.
 
@@ -150,21 +150,21 @@ grit generate resource Client --fields "name:string,phone:string,email:string"
 grit generate resource Supplier --fields "name:string,phone:string"
 ```
 
-**Purchases** — a restock event. We store the line items as JSON in a `text`
+**Purchases**: a restock event. We store the line items as JSON in a `text`
 field so a whole purchase is one record (simple and offline-friendly):
 
 ```bash
 grit generate resource Purchase --fields "supplier:belongs_to:Supplier,reference:string,total:float,status:string,items:text"
 ```
 
-**Sales** — the checkout record. Same idea: line items as JSON, plus the money
+**Sales**: the checkout record. Same idea: line items as JSON, plus the money
 fields the POS captures:
 
 ```bash
 grit generate resource Sale --fields "client:belongs_to:Client,total:float,discount:float,payment_method:string,amount_received:float,items:text"
 ```
 
-Watch the output on the Product one — notice the **desktop** lines:
+Watch the output on the Product one, notice the **desktop** lines:
 
 ```
 ✓ apps/api/internal/models/product.go
@@ -178,13 +178,13 @@ Watch the output on the Product one — notice the **desktop** lines:
 ✓ apps/desktop: registered "products" for offline sync
 ```
 
-That last line is the important one — `products` is now in the desktop app's
+That last line is the important one: `products` is now in the desktop app's
 `syncTables`, so the background mirror and the offline toggle cover it.
 
 ### What the desktop screens actually look like
 
 Every generated desktop screen is **local-first**. Here's the generated hook
-(`apps/desktop/frontend/src/hooks/use-products.ts`) — it reads and writes the
+(`apps/desktop/frontend/src/hooks/use-products.ts`), it reads and writes the
 **local mirror** via the sync engine's `Local*` bindings, never the network
 directly:
 
@@ -216,12 +216,12 @@ That's why the generated CRUD works with the network unplugged.
 
 ### Images, offline
 
-A binary can't ride the JSON sync outbox, so images get special handling — and
+A binary can't ride the JSON sync outbox, so images get special handling: and
 you don't have to write any of it. The generated dropzone does the right thing:
 
 - **Online**, dropping a file uploads it to the API's `/uploads` endpoint and
   stores the returned file reference on the record.
-- **Offline**, the file is kept **inline as a `data:` URL** — so the product
+- **Offline**, the file is kept **inline as a `data:` URL**, so the product
   saves and its thumbnail shows *immediately*, tagged **Pending**.
 - **On reconnect**, a background reconciler (`usePendingUploads`) walks the local
   mirror, finds those pending images, uploads each, swaps in the real file URL,
@@ -233,10 +233,10 @@ connection returns. No lost uploads, no blocked workflow. In the table, the
 `thumbnail` column renders the image (with a `+N` badge for the gallery); an
 empty image is just a dash.
 
-## 4. Migrate, seed & run — all Grit commands
+## 4. Migrate, seed & run: all Grit commands
 
 Now that the models exist, create their tables and seed a login. Run these from
-anywhere inside the project — `grit` finds `apps/api` for you:
+anywhere inside the project, `grit` finds `apps/api` for you:
 
 ```bash
 grit migrate                   # AutoMigrate every model into Postgres
@@ -245,7 +245,7 @@ grit seed                      # admin@example.com / admin123 (dev only)
 
 **Want a shop full of stock to play with?** Give any resource a seeder. Each
 resource seeder lives in its own `internal/database/<name>_seeder.go` file, and
-`--faker` fills it with realistic rows — including **sample images** for
+`--faker` fills it with realistic rows, including **sample images** for
 `file:image` fields:
 
 ```bash
@@ -267,7 +267,7 @@ grit start                     # API + web + admin + the desktop app, in paralle
 ```
 
 `grit start` boots the Go API (hot-reloading with `air` if it's installed), the
-Next.js apps, and — because this project has `apps/desktop` — the **Wails
+Next.js apps, and, because this project has `apps/desktop`, the **Wails
 desktop window** too. Ctrl+C stops them all.
 
 **Want just one app?** Every app has its own starter you can run from the
@@ -286,13 +286,13 @@ project root, exactly like `grit start server`:
 Wails compiles the desktop binary, generates its TypeScript bindings and route
 tree, and opens the window. Log in with **admin@example.com / admin123**. In the
 sidebar under **Manage** you'll see **Categories, Products, Clients, Suppliers,
-Purchases, Sales** — all generated, all working.
+Purchases, Sales**: all generated, all working.
 
 Add a category ("Electronics"), then a couple of products with stock. Notice
-there's no spinner waiting on the server — reads and writes hit the local mirror
+there's no spinner waiting on the server: reads and writes hit the local mirror
 instantly. In the background, the engine is pushing them to Postgres.
 
-## 5. Offline / online — the switch
+## 5. Offline / online: the switch
 
 Open **Settings** in the sidebar. There's a **Sync & Offline** card with a
 **Work offline** toggle and a live status pill (online / pending changes / last
@@ -300,16 +300,16 @@ synced).
 
 - **Online (default):** every ~30s the app pulls fresh server data into the
   mirror and pushes anything you've queued. Server-side deletes reach you as
-  tombstones. The status pill shows "Online — all changes synced."
+  tombstones. The status pill shows "Online: all changes synced."
 - **Flip to Work offline:** pull the ethernet, close the laptop, walk to a
   market stall. Keep adding products and making sales. The pill shows "Working
-  offline — N changes waiting."
-- **Flip back / reconnect:** the app immediately reconciles — pushes your queued
+  offline: N changes waiting."
+- **Flip back / reconnect:** the app immediately reconciles, pushes your queued
   sales and product edits, pulls anything new. Conflicts (the same row edited in
   two places) surface a per-field merge dialog; everything else just flows.
 
 You can prove it right now: toggle Work offline, create a product, quit the app,
-reopen it — the product is still there (persisted locally), and the toggle is
+reopen it: the product is still there (persisted locally), and the toggle is
 still on (it survives restarts). Toggle back online and watch the pending count
 drop to zero as it pushes.
 
@@ -320,19 +320,19 @@ drop to zero as it pushes.
 
 Real shops sell in two modes, and a good POS gives you both:
 
-- **New Sale** — for a *registered* customer or a credit sale. You pick the
+- **New Sale**: for a *registered* customer or a credit sale. You pick the
   client, choose a payment method, and capture amounts (so a balance-due > 0
-  becomes a credit sale). This is exactly the **generated Sales screen** — the
+  becomes a credit sale). This is exactly the **generated Sales screen**, the
   `client:belongs_to`, `payment_method`, `total`, `discount` and
   `amount_received` fields we generated give you a create/edit **drawer** and a
   searchable client picker for free. Click **New Sale**, fill the form, save. No
   custom code.
-- **POS lane** — for fast, walk-in cash sales. No forms, no client required:
+- **POS lane**: for fast, walk-in cash sales. No forms, no client required:
   a **product grid + a cart** where you tap items, adjust quantities, take
   payment and print. This is the one screen we hand-write, on top of the same
   generated hooks.
 
-That split mirrors how a real counter works — the invoiced/credit path runs
+That split mirrors how a real counter works: the invoiced/credit path runs
 through the generated CRUD, the rapid cash path runs through the POS lane. Both
 write through the **same offline sync engine**, so both keep working with the
 network unplugged.
@@ -396,7 +396,7 @@ function POSPage() {
   async function completeSale() {
     if (cart.length === 0) return;
 
-    // 1) Record the sale — one local write, works offline.
+    // 1) Record the sale: one local write, works offline.
     await createSale.mutateAsync({
       total,
       discount,
@@ -407,7 +407,7 @@ function POSPage() {
       ),
     });
 
-    // 2) Decrement stock for each line — also local-first.
+    // 2) Decrement stock for each line, also local-first.
     await Promise.all(
       cart.map((l) =>
         updateProduct.mutateAsync({ id: l.id, data: { stock: l.stock - l.qty } }),
@@ -523,7 +523,7 @@ function POSPage() {
             disabled={cart.length === 0 || createSale.isPending}
             className="mt-4 rounded-lg bg-accent py-3 text-[15px] font-bold text-white hover:bg-accent-hover disabled:opacity-50"
           >
-            Complete Sale — UGX {total.toLocaleString()}
+            Complete Sale &middot; UGX {total.toLocaleString()}
           </button>
         </div>
       </div>
@@ -552,15 +552,14 @@ export const NAV_SECTIONS: NavSection[] = [
 
 The still-running `grit start` hot-reloads it. You now have a real checkout: tap
 products, adjust quantities, take a discount, pick cash or mobile money, enter
-the amount received, see the change, hit **Complete Sale**. Every part of that —
-`createSale`, the stock decrements — goes through the local-first engine, so it
+the amount received, see the change, hit **Complete Sale**. Every part of that (`createSale`, the stock decrements) goes through the local-first engine, so it
 **works with no connection** and syncs the sale (and the new stock levels) to
 Postgres when you're back online.
 
 ### Why the sale is offline-safe
 
 Look at `completeSale`: it's `createSale.mutateAsync(...)` (one local write) plus
-a `updateProduct.mutateAsync(...)` per line. All of those are `Local*` calls —
+a `updateProduct.mutateAsync(...)` per line. All of those are `Local*` calls:
 they hit the SQLite mirror and the outbox, never the network. So a sale rung up
 in a basement with zero bars is durable the instant you tap the button. When
 connectivity returns, the background loop replays the outbox to the server in
@@ -570,7 +569,7 @@ you were offline, you get a conflict prompt instead of a silent overwrite.
 
 ## 7. Purchases that restock
 
-Purchases are the mirror image of sales — they **increase** stock. You already
+Purchases are the mirror image of sales: they **increase** stock. You already
 have a generated **Purchases** CRUD screen; to make one actually restock, add a
 tiny "receive" action. The pattern is identical to checkout, reversed:
 
@@ -585,7 +584,7 @@ await Promise.all(
 
 Same offline guarantees: receive a delivery in a stockroom with no wifi, and the
 new stock levels sync up later. For a first version you can even skip a custom
-screen — use the generated Purchase form to record the purchase, and bump each
+screen: use the generated Purchase form to record the purchase, and bump each
 product's stock from the generated Product edit screen. Everything's already
 there; the custom screen is just polish.
 
@@ -607,18 +606,18 @@ works on the shop floor whether or not the wifi does.
 
 A POS is the perfect stress test for a desktop framework: it needs real data
 modelling (categories, products, stock, clients, suppliers, purchases, sales), a
-custom high-interaction screen (checkout), and — non-negotiably — it has to work
+custom high-interaction screen (checkout), and, non-negotiably, it has to work
 when the network doesn't. With Grit v3.33.0:
 
 - `grit generate resource` gave us **CRUD screens for six resources across web,
-  admin, mobile, and desktop** — and registered each for offline sync — from six
+  admin, mobile, and desktop**, and registered each for offline sync, from six
   one-line commands.
 - The **offline-first engine** (local SQLite mirror + outbox + background
   reconcile + a Work-offline toggle) came for free with `--full`.
 - The only hand-written screen was the **checkout**, and even that is ~150 lines
   because it stands on generated, offline-safe hooks.
 
-That's a shippable, offline-capable Point of Sale that's mostly generated code —
+That's a shippable, offline-capable Point of Sale that's mostly generated code,
 and the same recipe builds an inventory manager, a field-service app, or a
 clinic front desk. Describe your models, write the one screen that's genuinely
 yours, and let the framework carry the rest.

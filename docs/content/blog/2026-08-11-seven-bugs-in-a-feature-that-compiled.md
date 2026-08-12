@@ -1,6 +1,6 @@
 ---
 title: "Seven bugs in a feature that compiled"
-subtitle: "Grit shipped a way to replace any admin table, form or page with your own. Tests passed, types checked, docs were accurate. Then we built a real app with it and found seven bugs — including one where the component was correct, the DOM was correct, and the screen was blank. A tour of the customisation system, told through everything that was wrong with it."
+subtitle: "Grit shipped a way to replace any admin table, form or page with your own. Tests passed, types checked, docs were accurate. Then we built a real app with it and found seven bugs, including one where the component was correct, the DOM was correct, and the screen was blank. A tour of the customisation system, told through everything that was wrong with it."
 series: "The Daily Grit"
 edition: 14
 date: 2026-08-11
@@ -17,12 +17,12 @@ the generated page already has. So a resource grew a sibling file:
 
 ```
 apps/admin/resources/
-  products.ts          # generated — rewritten on every grit generate
-  products.custom.tsx  # yours — created once, never touched again
+  products.ts          # generated: rewritten on every grit generate
+  products.custom.tsx  # yours: created once, never touched again
 ```
 
 Put a component in the second file and it replaces the corresponding piece of the
-first. Four slots — `Table`, `Form`, `EmptyState`, `Page` — plus per-column and
+first. Four slots (`Table`, `Form`, `EmptyState`, `Page`) plus per-column and
 per-field patches. Everything else keeps working.
 
 It compiled. The Go tests passed. `tsc --noEmit` was clean. The docs described it
@@ -36,7 +36,7 @@ of them was wrong.
 
 ## The app
 
-`portkit` — a small ops console, scaffolded fresh, three resources, each one
+`portkit`: a small ops console, scaffolded fresh, three resources, each one
 exercising a different part of the system:
 
 ```bash
@@ -68,7 +68,7 @@ internal/models/user.go:129:4: undefined: TicketReply
 
 Grit ships a support desk. It has a `Ticket` model and a `TicketReply` model, in
 `internal/models/ticket.go`. The generator wrote its own `ticket.go` over the top
-of it. `TicketReply` went with it, and the build broke in `user.go` — a file I had
+of it. `TicketReply` went with it, and the build broke in `user.go`: a file I had
 never touched, naming a symbol I had never heard of.
 
 Note the shape of this failure. The command reported success. The error surfaced
@@ -80,7 +80,7 @@ because as far as it knew they were mine.
 Thirty-odd built-in model names are reserved now:
 
 ```
-"Ticket" is a built-in model — it belongs to the support desk
+"Ticket" is a built-in model: it belongs to the support desk
 
 Generating over it would overwrite apps/api/internal/models/ticket.go and
 break the build, and `grit remove resource Ticket` would then delete the
@@ -156,7 +156,7 @@ TypeError: Cannot read properties of undefined (reading 'className')
 
 Fixing the seeder made the crash go away, and that is exactly why it is worth
 writing down. The type came from the Go struct. The *value* came from the
-database — and a database picks up values from imports, migrations and
+database, and a database picks up values from imports, migrations and
 hand-written `UPDATE`s that no type ever saw. A cell renderer runs against
 whatever actually arrived.
 
@@ -164,8 +164,8 @@ whatever actually arrived.
 const s = STATUS[row.status] ?? UNKNOWN;
 ```
 
-One `??`, and an unexpected value renders a grey dash instead of taking down the
-table in front of whoever opened the page.
+One `??`, and an unexpected value renders a grey "Unknown" pill instead of taking
+down the table in front of whoever opened the page.
 
 ## Bug 4: you could not wrap the thing you were replacing
 
@@ -185,14 +185,14 @@ error TS2322: Type '{ columns: ColumnDefinition<Product>[]; data: Product[]; ...
 is not assignable to type 'DataTableProps'.
 ```
 
-The customisation surface had been made generic over the row — that was the whole
+The customisation surface had been made generic over the row: that was the whole
 of the previous release. The components it hands rows to had not. `DataTable`
 took `Record<string, unknown>`, a typed overlay gives it `Product[]`, and a
 `Product` has no index signature. Same story for `FormSheet`, which meant a custom
 page could not pass `controller.form.item` to the stock form either.
 
-So the two most-recommended patterns in the documentation — wrap the default,
-reuse the default dialogs — did not compile. Both are now generic over the row,
+So the two most-recommended patterns in the documentation (wrap the default,
+reuse the default dialogs) did not compile. Both are now generic over the row,
 with the erasure done once at each component's boundary instead of scattered
 through its render.
 
@@ -210,21 +210,21 @@ project to pick them up.
 
 Same type error. The components had not changed.
 
-The admin's components were renamed to kebab-case a long time ago —
+The admin's components were renamed to kebab-case a long time ago:
 `data-table.tsx`, `form-sheet.tsx`. The upgrade command's path list still had the
 old PascalCase names. So every upgrade for however long had been writing
 `components/tables/DataTable.tsx` next to the real `data-table.tsx` and leaving it
 there. Thirty-one files, none of them imported by anything.
 
 The symptom was the opposite of an error. The command reported dozens of files
-updated and exited zero. It just updated the wrong ones — which means **no
+updated and exited zero. It just updated the wrong ones, which means **no
 component fix shipped in an upgrade had reached anybody since the rename.** That
 is the most consequential bug in this post, and I only found it because a fix I
 had just written failed to appear.
 
 The paths are correct now, the strays are cleaned up on the next upgrade, and
-five components that were never in the list at all — including
-`use-resource-controller`, the hook this entire feature is built on — are
+five components that were never in the list at all (including
+`use-resource-controller`, the hook this entire feature is built on) are
 refreshed too.
 
 ### A footnote from Windows
@@ -232,7 +232,7 @@ refreshed too.
 The cleanup deletes a stray only when the real file is present, so a half-finished
 rename cannot take the last copy. One pair differs only in case:
 `Providers.tsx` and `providers.tsx`. On Windows and macOS,
-`os.Stat("providers.tsx")` cheerfully returns the entry for `Providers.tsx` — so
+`os.Stat("providers.tsx")` cheerfully returns the entry for `Providers.tsx`: so
 the guard passed, and the delete took the only copy. I watched the admin lose its
 provider.
 
@@ -254,7 +254,7 @@ i18n/request.ts(1,34): Cannot find module 'next-intl/server'
 
 The scaffold was writing six i18n files without the `next-intl` dependency that
 compiles them. Nothing imported them. And the kicker: `grit add i18n` writes those
-same six files properly — with the dependency, the provider and the plugin — but
+same six files properly (with the dependency, the provider and the plugin) but
 it skips files that already exist. The broken copies were blocking the command
 that would have fixed them.
 
@@ -269,7 +269,7 @@ Everything compiled. Zero type errors. I opened the page.
 ![The status column, empty](/blog/portkit-blank-status.png)
 
 The `STATUS` column is blank. The stock bars have no fill. Every other column is
-perfect — the price is formatted, the numbers are there.
+perfect: the price is formatted, the numbers are there.
 
 The DOM was correct:
 
@@ -279,8 +279,7 @@ The DOM was correct:
 ```
 
 The right element, the right classes, the right text. And nothing on screen,
-because `bg-emerald-700` did not exist in the stylesheet. `text-white` did —
-inherited from elsewhere in the app — so I was looking at white text on a
+because `bg-emerald-700` did not exist in the stylesheet. `text-white` did, inherited from elsewhere in the app, so I was looking at white text on a
 background that was never painted.
 
 ```ts
@@ -343,7 +342,7 @@ const custom: ResourceCustomisation<Deal> = {
 ```
 
 Rows, loading, search, the create/edit/delete actions and both confirm dialogs
-still come from the controller. There is no second copy of the fetching logic —
+still come from the controller. There is no second copy of the fetching logic:
 the stock page is built on the same hook, which is what makes it safe to claim
 your page can do anything the default one can.
 
@@ -370,7 +369,7 @@ components: {
 Everything around them is still the generated page: the search box, the date
 filter, the exporter, the column picker, the pagination. Create a row in the
 custom composer and the empty state gives way to the custom list, the stat cards
-tick to 1, and the pager reads "Showing 1–1 of 1" — none of which is code anybody
+tick to 1, and the pager reads "Showing 1, 1 of 1", none of which is code anybody
 wrote twice.
 
 ## And it survives regeneration
@@ -383,7 +382,7 @@ grit g resource Product --fields "name:string,sku:string,price:float,..."
   ✅ Resource Product generated successfully!
 ```
 
-`products.ts` was rewritten from scratch — every column back to its generated
+`products.ts` was rewritten from scratch: every column back to its generated
 form. `products.custom.tsx` was not opened. The cells still render, because they
 were never in the file that got replaced.
 
@@ -399,8 +398,7 @@ stub, and renames one you have written in:
 ## The through-line
 
 Seven bugs. One found by a compiler, two by a test I wrote to check a sentence in
-my own documentation, three by running a command and reading what it did, and one
-— the one that made the feature useless — by looking at a screen.
+my own documentation, three by running a command and reading what it did, and one, the one that made the feature useless, by looking at a screen.
 
 The feature was not badly built. It was *unexercised*. Every one of these bugs
 lived in the gap between "the code is correct" and "a person can use this," and

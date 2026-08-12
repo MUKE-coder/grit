@@ -26,7 +26,7 @@ export async function generateMetadata({
   const ogImage = post.thumbnail ? `${siteConfig.url}${post.thumbnail}` : siteConfig.ogImage
   const url = `${siteConfig.url}/blog/${post.slug}`
   return {
-    title: `${post.title} — The Daily Grit`,
+    title: `${post.title} · The Daily Grit`,
     description: post.subtitle,
     alternates: { canonical: url },
     openGraph: {

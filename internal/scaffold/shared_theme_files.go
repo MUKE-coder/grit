@@ -11,7 +11,7 @@ import "fmt"
 // The shape is intentionally a plain object (not a function or factory) so
 // IDE autocomplete works and Next.js can tree-shake unused fields.
 func sharedBrandConfig(opts Options) string {
-	return fmt.Sprintf(`// brand.config.ts — single source of truth for your app's identity.
+	return fmt.Sprintf(`// brand.config.ts: single source of truth for your app's identity.
 //
 // Imported across apps/admin and apps/web by auth pages, dashboards,
 // emails, and metadata. Edit this file once to rebrand the entire app:

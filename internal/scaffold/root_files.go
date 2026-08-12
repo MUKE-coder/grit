@@ -76,7 +76,7 @@ func envFile(opts Options) string {
 	pulsePassword := randomHex(16)
 	postgresPassword := randomHex(24) // strong default; new project just works
 
-	return fmt.Sprintf(`# %s — Environment Variables
+	return fmt.Sprintf(`# %s: Environment Variables
 
 # App
 APP_NAME=%s
@@ -455,7 +455,7 @@ SENTINEL_SECRET_KEY=change-me        # Secret for dashboard JWT sessions
 }
 
 func envCloudExampleFile(opts Options) string {
-	return fmt.Sprintf(`# %s — Cloud Environment Variables
+	return fmt.Sprintf(`# %s: Cloud Environment Variables
 #
 # Use this file if you DON'T have Docker and want to use cloud services instead.
 # Copy this to .env and fill in your keys:

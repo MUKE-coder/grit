@@ -192,7 +192,7 @@ func VerifyExports(contract, src string) error {
 		}
 	}
 	if len(missing) > 0 {
-		return fmt.Errorf("variant does not satisfy %s — missing export(s): %s",
+		return fmt.Errorf("variant does not satisfy %s: missing export(s): %s",
 			contract, strings.Join(missing, ", "))
 	}
 	return nil
@@ -221,7 +221,7 @@ func Apply(ctx context.Context, p *Project, slot, variant string, opts Options) 
 	slotPath := p.SlotPath(slot)
 	current, err := os.ReadFile(slotPath)
 	if err != nil {
-		return nil, fmt.Errorf("no %s slot in %s\n\nExpected %s.\nSlots arrived in v3.115.0 — a project scaffolded before that needs its admin regenerating",
+		return nil, fmt.Errorf("no %s slot in %s\n\nExpected %s.\nSlots arrived in v3.115.0: a project scaffolded before that needs its admin regenerating",
 			slot, p.Label, filepath.ToSlash(strings.TrimPrefix(slotPath, p.Root+string(filepath.Separator))))
 	}
 
@@ -251,7 +251,7 @@ func Apply(ctx context.Context, p *Project, slot, variant string, opts Options) 
 	incomingContract := ContractOf(incoming)
 
 	if incomingContract == "" {
-		return nil, fmt.Errorf("%q is not a swappable variant — it declares no grit:slot contract", variant)
+		return nil, fmt.Errorf("%q is not a swappable variant: it declares no grit:slot contract", variant)
 	}
 	if want := slot + "@"; !strings.HasPrefix(incomingContract, want) {
 		return nil, fmt.Errorf("%q implements %s, which is not the %s slot", variant, incomingContract, slot)
@@ -289,7 +289,7 @@ func Apply(ctx context.Context, p *Project, slot, variant string, opts Options) 
 			// Put it back. A swap that leaves the app not compiling is worse
 			// than one that refuses.
 			_ = os.WriteFile(slotPath, current, 0o644)
-			return nil, fmt.Errorf("%s does not type-check against your admin — reverted\n\n%v", variant, err)
+			return nil, fmt.Errorf("%s does not type-check against your admin: reverted\n\n%v", variant, err)
 		}
 		res.Checked = true
 	}
@@ -323,7 +323,7 @@ func Revert(p *Project, slot string) (string, error) {
 	dir := filepath.Join(p.Root, stateDir, backupDir)
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return "", fmt.Errorf("nothing to revert — no backups in %s/%s", stateDir, backupDir)
+		return "", fmt.Errorf("nothing to revert: no backups in %s/%s", stateDir, backupDir)
 	}
 	var candidates []string
 	for _, e := range entries {
@@ -332,7 +332,7 @@ func Revert(p *Project, slot string) (string, error) {
 		}
 	}
 	if len(candidates) == 0 {
-		return "", fmt.Errorf("nothing to revert — no backup for slot %q", slot)
+		return "", fmt.Errorf("nothing to revert: no backup for slot %q", slot)
 	}
 	// Names embed a sortable UTC timestamp, so lexical order is chronological.
 	sort.Strings(candidates)
@@ -362,7 +362,7 @@ func Revert(p *Project, slot string) (string, error) {
 // of.
 func TypeCheck(ctx context.Context, p *Project) error {
 	if _, err := os.Stat(filepath.Join(p.AdminDir, "node_modules")); err != nil {
-		return fmt.Errorf("dependencies are not installed in %s — run your package manager there first, or pass --skip-check", p.Label)
+		return fmt.Errorf("dependencies are not installed in %s: run your package manager there first, or pass --skip-check", p.Label)
 	}
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()

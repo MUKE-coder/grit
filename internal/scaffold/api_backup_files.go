@@ -1068,7 +1068,7 @@ func main() {
 		if fi, err := os.Stat(*out); err == nil {
 			sizeKB = float64(fi.Size()) / 1024
 		}
-		fmt.Printf("Backup written to %s — %d tables, %d rows, %.1f KB\n",
+		fmt.Printf("Backup written to %s: %d tables, %d rows, %.1f KB\n",
 			*out, len(man.Tables), man.TotalRows, sizeKB)
 		return
 	}
@@ -1083,7 +1083,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Backup failed: %v", err)
 	}
-	fmt.Printf("Backup %s uploaded — %d tables, %d rows, %.1f KB\n",
+	fmt.Printf("Backup %s uploaded: %d tables, %d rows, %.1f KB\n",
 		rec.ID, rec.TableCount, rec.RowCount, float64(rec.SizeBytes)/1024)
 }
 `

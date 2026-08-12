@@ -48,15 +48,15 @@ export default function ChangelogPage() {
                   The three releases before this one shipped a way to replace a resource&apos;s
                   table, form, empty state or whole page from a{' '}
                   <code>resources/&lt;name&gt;.custom.tsx</code> file. Everything compiled and every
-                  test passed. Then we built a small admin with it — a product list with custom
+                  test passed. Then we built a small admin with it: a product list with custom
                   cells, a deal pipeline as a kanban board, an enquiry inbox with its own list and
-                  composer — and found this.
+                  composer, and found this.
                 </p>
 
                 <p>
                   <strong>Tailwind never looked at your overlay.</strong> The admin&apos;s{' '}
                   <code>content</code> globs covered <code>app/</code>, <code>components/</code> and{' '}
-                  <code>lib/</code> — not <code>resources/</code>, which is the one directory the
+                  <code>lib/</code>, not <code>resources/</code>, which is the one directory the
                   feature invites you to write markup in. Every class in an overlay was dropped from
                   the stylesheet. The component was right, the DOM was right, and the screen showed
                   a white status pill on a white background. Nothing but a browser could have caught
@@ -84,7 +84,7 @@ export default function ChangelogPage() {
                   <code>components/tables/DataTable.tsx</code> next to the real{' '}
                   <code>data-table.tsx</code> and left it there. The symptom was the opposite of an
                   error: it reported dozens of files updated while the components your app actually
-                  renders were never touched — meaning no component fix shipped in an upgrade had
+                  renders were never touched, meaning no component fix shipped in an upgrade had
                   arrived since the rename. Paths corrected, the duplicates are cleaned up on the
                   next upgrade, and <code>form-sheet</code>, <code>form-modal-steps</code>,{' '}
                   <code>update-groups</code>, <code>resource-detail-page</code> and{' '}
@@ -119,15 +119,15 @@ export default function ChangelogPage() {
                     <code>--faker</code> seeded choice fields with dictionary words.
                   </strong>{' '}
                   A <code>status:select:active|draft|archived</code> column came back full of
-                  &quot;moreover&quot; and &quot;ouch&quot; — values the form&apos;s own dropdown
+                  &quot;moreover&quot; and &quot;ouch&quot;: values the form&apos;s own dropdown
                   cannot offer, the API&apos;s validation would reject, and the generated TypeScript
                   union says are impossible. Choice fields are now seeded from their own options.
                 </p>
 
                 <p>
                   <strong>The admin ships type-clean.</strong> The scaffold was writing an i18n
-                  layer — <code>language-switcher.tsx</code>, <code>i18n/request.ts</code> and four
-                  more files — without the <code>next-intl</code> dependency that makes them
+                  layer: <code>language-switcher.tsx</code>, <code>i18n/request.ts</code> and four
+                  more files, without the <code>next-intl</code> dependency that makes them
                   compile, so every new Next.js admin started life with three type errors. Worse,{' '}
                   <code>grit add i18n</code> skips files that already exist, so the broken copies
                   blocked the command that would have fixed them. They are gone from the scaffold

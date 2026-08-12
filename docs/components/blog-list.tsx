@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 
 // Client-side category filter for the blog index. Posts are passed in from the
-// server (read at build), so the page stays fully static — no runtime fs, which
+// server (read at build), so the page stays fully static: no runtime fs, which
 // matters for the standalone build output.
 export interface BlogCard {
   slug: string

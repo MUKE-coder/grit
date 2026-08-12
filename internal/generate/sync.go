@@ -24,7 +24,7 @@ func Sync() error {
 
 	sharedRoot := filepath.Join(root, "packages", "shared")
 	if !dirExists(sharedRoot) {
-		return fmt.Errorf("shared package not found at %s — sync requires a monorepo project", sharedRoot)
+		return fmt.Errorf("shared package not found at %s: sync requires a monorepo project", sharedRoot)
 	}
 
 	fmt.Print("\n  Syncing Go types → TypeScript...\n\n")

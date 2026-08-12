@@ -109,7 +109,7 @@ after a major framework upgrade to refresh the rules.`,
 				return err
 			}
 			if len(written) == 0 {
-				fmt.Println("\n  CLAUDE.md and AGENTS.md already exist — re-run with --force to overwrite.")
+				fmt.Println("\n  CLAUDE.md and AGENTS.md already exist: re-run with --force to overwrite.")
 				return nil
 			}
 			fmt.Println()
@@ -688,7 +688,7 @@ func exposeFormCmd() *cobra.Command {
 			if publicShare && token == "" {
 				fmt.Println()
 				fmt.Println("  ⚠  --token was not provided. The generated page reads")
-				fmt.Println("     NEXT_PUBLIC_FORM_TOKEN from your web app's .env — set it before")
+				fmt.Println("     NEXT_PUBLIC_FORM_TOKEN from your web app's .env: set it before")
 				fmt.Println("     the page will work. Create the share in admin → System → Public")
 				fmt.Println("     form sharing if you haven't already.")
 			}
@@ -1047,19 +1047,19 @@ func packageCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			info, err := project.DetectProject()
 			if err != nil || info.Type != project.ProjectDesktop {
-				return fmt.Errorf("not inside a desktop project — run this from a `grit new-desktop` app")
+				return fmt.Errorf("not inside a desktop project: run this from a `grit new-desktop` app")
 			}
 
 			// wails is required; makensis is required for the Windows installer.
 			if _, err := exec.LookPath("wails"); err != nil {
-				return fmt.Errorf("wails is not installed or not on PATH — see https://wails.io/docs/gettingstarted/installation")
+				return fmt.Errorf("wails is not installed or not on PATH: see https://wails.io/docs/gettingstarted/installation")
 			}
 			targetsWindows := strings.HasPrefix(platform, "windows") ||
 				(platform == "" && runtime.GOOS == "windows")
 			buildInstaller := targetsWindows && !noInstaller
 			if buildInstaller {
 				if _, err := exec.LookPath("makensis"); err != nil {
-					return fmt.Errorf("makensis (NSIS) is not installed or not on PATH — needed to build the Windows installer.\n\n" +
+					return fmt.Errorf("makensis (NSIS) is not installed or not on PATH: needed to build the Windows installer.\n\n" +
 						"  Install it:\n" +
 						"    winget install NSIS.NSIS   (or)   choco install nsis   (or)   scoop install nsis\n" +
 						"    Then add the NSIS folder (usually C:\\Program Files (x86)\\NSIS) to your PATH so 'makensis' resolves.\n" +
@@ -1488,7 +1488,7 @@ func startAppCmd(use, short, appSubdir, bin string, args []string, requiresWails
 			}
 			if requiresWails {
 				if _, err := exec.LookPath("wails"); err != nil {
-					return fmt.Errorf("the Wails toolchain isn't on PATH — install it from https://wails.io, then run 'grit start %s'", use)
+					return fmt.Errorf("the Wails toolchain isn't on PATH: install it from https://wails.io, then run 'grit start %s'", use)
 				}
 			}
 

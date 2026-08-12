@@ -34,7 +34,7 @@ import (
 func AddWebAuth(root string, force bool) error {
 	webRoot := filepath.Join(root, "apps", "web")
 	if _, err := os.Stat(webRoot); err != nil {
-		return fmt.Errorf("apps/web not found at %s — this command needs a project with a web frontend", webRoot)
+		return fmt.Errorf("apps/web not found at %s: this command needs a project with a web frontend", webRoot)
 	}
 
 	// Project name is used by the auth-aware navbar's logo. We derive
@@ -46,7 +46,7 @@ func AddWebAuth(root string, force bool) error {
 		rel, _ := filepath.Rel(root, f.path)
 
 		if _, err := os.Stat(f.path); err == nil && !force {
-			fmt.Printf("  • skipped %s (already exists — pass --force to overwrite)\n", rel)
+			fmt.Printf("  • skipped %s (already exists: pass --force to overwrite)\n", rel)
 			continue
 		}
 

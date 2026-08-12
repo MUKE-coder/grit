@@ -145,7 +145,7 @@ func DefinitionFromModel(name string) (*ResourceDefinition, error) {
 			return definitionFromModelFile(apiRoot, name)
 		}
 	}
-	return nil, fmt.Errorf("no model found for %q — generate the resource first (looked in apps/api/internal/models and internal/models)", names.Pascal)
+	return nil, fmt.Errorf("no model found for %q: generate the resource first (looked in apps/api/internal/models and internal/models)", names.Pascal)
 }
 
 // definitionFromModelFile parses a specific model file into a definition.

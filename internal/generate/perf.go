@@ -134,7 +134,7 @@ func perfReadme(opts PerfOptions) string {
 
 	resourceLine := ""
 	if opts.Resource != "" {
-		resourceLine = fmt.Sprintf("- `GET /api/%s` — %s collection under load\n",
+		resourceLine = fmt.Sprintf("- `GET /api/%s`: %s collection under load\n",
 			Pluralize(strings.ToLower(opts.Resource)), opts.Resource)
 	}
 

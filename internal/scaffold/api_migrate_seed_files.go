@@ -250,7 +250,7 @@ func seedAdminUser(db *gorm.DB) error {
 	if os.Getenv("SEED_ADMIN_PASSWORD") != "" {
 		log.Println("Created admin user: admin@example.com (password from SEED_ADMIN_PASSWORD)")
 	} else {
-		log.Println("Created admin user: admin@example.com / admin123 (dev default — change before production)")
+		log.Println("Created admin user: admin@example.com / admin123 (dev default: change before production)")
 	}
 	return nil
 }
