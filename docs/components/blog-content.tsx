@@ -36,6 +36,30 @@ export function BlogContent({ content }: { content: string }) {
             // inline code — styled by prose-grit
             return <code>{children}</code>
           },
+          // Inline images are nearly always screenshots. A border and a radius
+          // stop a light UI capture from bleeding into a light page, and the
+          // caption comes free from the alt text you already had to write.
+          //
+          // Spans, not <figure>/<figcaption>: react-markdown wraps a lone image
+          // in a <p>, and a <figure> inside a <p> is invalid, so the browser
+          // hoists it out during parsing and React reports a hydration mismatch
+          // against the server HTML it never had a chance to match.
+          img: ({ src, alt }) => (
+            <span className="my-8 block">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={typeof src === 'string' ? src : ''}
+                alt={alt ?? ''}
+                loading="lazy"
+                className="block w-full rounded-xl border border-border/60"
+              />
+              {alt && (
+                <span className="mt-2 block text-center text-[13px] text-muted-foreground/70">
+                  {alt}
+                </span>
+              )}
+            </span>
+          ),
         }}
       >
         {content}
