@@ -2,7 +2,7 @@
 title: "Your table, our machinery"
 subtitle: "You bought a dashboard template and you want its pages in your admin, without giving up URL-synced sorting, paging, filters, selection, bulk delete, toasts and cache invalidation. Grit's customisation system in six levels. For each one: what you get by default, why you would want to change it, and exactly how."
 series: "The Daily Grit"
-edition: 15
+edition: 14
 date: 2026-08-12
 readingTime: "18 min"
 author: "Muke JohnBaptist"
@@ -740,9 +740,9 @@ components: {
 ```
 
 The cheap way to restyle a shell, add a summary bar, or drop something above a
-table without touching sorting or selection. (This is generic over the row type
-as of v3.141.0. Before that the spread did not compile, which is a story told in
-[the last post](/blog/seven-bugs-in-a-feature-that-compiled).)
+table without touching sorting or selection. Requires v3.141.0 or later: before
+that, `DataTable` was not generic over the row type, so spreading a typed
+overlay's props into it did not compile.
 
 ## Pages that are not resources
 
