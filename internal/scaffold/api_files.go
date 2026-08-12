@@ -981,7 +981,7 @@ func resolveRedisURL() string {
 		return "redis://localhost:6380"
 	}
 	if strings.TrimSpace(v) == "" {
-		log.Println("REDIS_URL is empty — cache, background jobs and cron are disabled")
+		log.Println("REDIS_URL is empty: cache, background jobs and cron are disabled")
 		return ""
 	}
 	return v
@@ -1440,7 +1440,7 @@ func Migrate(db *gorm.DB) error {
 	thinSep := strings.Repeat("-", 64)
 
 	log.Println(separator)
-	log.Printf("DATABASE MIGRATION — %d model(s) registered", len(models))
+	log.Printf("DATABASE MIGRATION: %d model(s) registered", len(models))
 	log.Println(separator)
 
 	// Silent logger keeps the schema-inspection SQL noise out of the diff log.
@@ -1492,13 +1492,13 @@ func Migrate(db *gorm.DB) error {
 			unchanged++
 			continue
 		}
-		log.Printf("  ~ %T — added %d column(s): %s", model, len(added), strings.Join(added, ", "))
+		log.Printf("  ~ %T: added %d column(s): %s", model, len(added), strings.Join(added, ", "))
 		altered++
 		columnsAdded += len(added)
 	}
 
 	log.Println(thinSep)
-	log.Printf("Migration done — %d table(s) created, %d altered (+%d column(s)), %d unchanged.",
+	log.Printf("Migration done: %d table(s) created, %d altered (+%d column(s)), %d unchanged.",
 		created, altered, columnsAdded, unchanged)
 
 	// Seed the default roles here rather than in database.Seed(): authorization
@@ -2352,7 +2352,7 @@ func (h *AuthHandler) deliverPasswordReset(user models.User, clientIP string) {
 		// No mailer in production means nobody can complete a reset. Say so
 		// loudly rather than printing a working token into the log — a live
 		// reset link in a log file is a credential.
-		log.Printf("password reset: NO MAILER CONFIGURED — %s cannot receive a reset link. Set RESEND_API_KEY.", user.Email)
+		log.Printf("password reset: NO MAILER CONFIGURED: %s cannot receive a reset link. Set RESEND_API_KEY.", user.Email)
 		return
 	}
 
@@ -2530,7 +2530,7 @@ func (h *AuthHandler) deliverVerificationEmail(user models.User) {
 	}
 
 	if h.Config.AppEnv == "production" {
-		log.Printf("email verification: NO MAILER CONFIGURED — %s cannot receive a link. Set RESEND_API_KEY.", user.Email)
+		log.Printf("email verification: NO MAILER CONFIGURED: %s cannot receive a link. Set RESEND_API_KEY.", user.Email)
 		return
 	}
 

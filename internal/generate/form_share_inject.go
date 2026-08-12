@@ -67,7 +67,7 @@ func ensureDispatchImports(path, module string) error {
 	const openMarker = "import ("
 	openIdx := strings.Index(content, openMarker)
 	if openIdx < 0 {
-		return fmt.Errorf("import ( not found in %s — file structure unexpected", path)
+		return fmt.Errorf("import ( not found in %s: file structure unexpected", path)
 	}
 	closeIdx := strings.Index(content[openIdx:], ")")
 	if closeIdx < 0 {

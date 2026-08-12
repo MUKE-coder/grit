@@ -6,9 +6,9 @@ import { AuthorCard } from '@/components/author-card'
 import { getAllPosts, formatDate } from '@/lib/blog'
 
 export const metadata: Metadata = {
-  title: 'Blog — The Daily Grit',
+  title: 'Blog · The Daily Grit',
   description:
-    'Short, practical reads on building full-stack apps with Grit — getting started, CRUD in one command, framework comparisons, and production tips.',
+    'Short, practical reads on building full-stack apps with Grit: getting started, CRUD in one command, framework comparisons, and production tips.',
   alternates: { canonical: 'https://gritframework.dev/blog' },
 }
 
@@ -39,7 +39,7 @@ export default function BlogPage() {
             What you build.
           </h1>
           <p className="mt-5 text-lg text-muted-foreground max-w-2xl leading-relaxed">
-            Short, practical reads on building full-stack apps with Grit — a new one most
+            Short, practical reads on building full-stack apps with Grit, a new one most
             mornings. Getting started, CRUD in one command, framework comparisons, and
             production tips.
           </p>
@@ -51,7 +51,7 @@ export default function BlogPage() {
           <div className="rounded-2xl border border-border/50 bg-card/30 p-12 text-center">
             <p className="font-display text-xl font-bold text-foreground mb-2">First edition, coming soon</p>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              The Daily Grit is warming up — short, practical build guides land here most
+              The Daily Grit is warming up. Short, practical build guides land here most
               mornings. Follow the newsletter on LinkedIn to catch edition one.
             </p>
           </div>

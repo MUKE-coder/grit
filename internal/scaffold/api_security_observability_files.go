@@ -719,7 +719,7 @@ func (p *SecObsPoller) tick() {
 			p.upsert(&models.Notification{
 				Source:   "sentinel",
 				Severity: sev,
-				Title:    fmt.Sprintf("Threat — %s (CVSS %.1f)", t.Type, t.CVSS),
+				Title:    fmt.Sprintf("Threat: %s (CVSS %.1f)", t.Type, t.CVSS),
 				Body:     fmt.Sprintf("Source %s · route %s", t.SourceIP, t.Route),
 				Link:     "/sentinel/ui/threats?focus=" + t.ID,
 				Dedup:    dedup("sentinel", "threat", t.ID),

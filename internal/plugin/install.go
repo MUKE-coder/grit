@@ -26,14 +26,14 @@ func Install(ctx Context, p Plugin) (*InstalledPlugin, error) {
 	}
 
 	if _, already := lock.Find(p.Name); already {
-		return nil, fmt.Errorf("%s is already installed — run `grit plugin remove %s` first to reinstall", p.Name, p.Name)
+		return nil, fmt.Errorf("%s is already installed: run `grit plugin remove %s` first to reinstall", p.Name, p.Name)
 	}
 
 	// Dependencies between plugins are checked up front so a half-applied
 	// install can't leave a project referencing something that isn't there.
 	for _, req := range p.Requires {
 		if _, ok := lock.Find(req); !ok {
-			return nil, fmt.Errorf("%s requires the %q plugin — install it first: grit plugin add %s", p.Name, req, req)
+			return nil, fmt.Errorf("%s requires the %q plugin: install it first: grit plugin add %s", p.Name, req, req)
 		}
 	}
 
@@ -89,7 +89,7 @@ func Install(ctx Context, p Plugin) (*InstalledPlugin, error) {
 			// a data-loss bug, and removal would then delete something the
 			// plugin didn't create.
 			if _, err := os.Stat(abs); err == nil {
-				return nil, fmt.Errorf("refusing to overwrite existing file %s — move it aside and retry", rel)
+				return nil, fmt.Errorf("refusing to overwrite existing file %s: move it aside and retry", rel)
 			}
 			if err := os.MkdirAll(filepath.Dir(abs), 0755); err != nil {
 				return nil, fmt.Errorf("creating dir for %s: %w", rel, err)
@@ -164,7 +164,7 @@ func Remove(root, name string) ([]string, error) {
 		}
 		for _, req := range other.Requires {
 			if req == name {
-				return nil, fmt.Errorf("%s is required by %s — remove that first", name, other.Name)
+				return nil, fmt.Errorf("%s is required by %s: remove that first", name, other.Name)
 			}
 		}
 	}

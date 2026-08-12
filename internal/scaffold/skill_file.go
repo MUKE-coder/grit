@@ -662,7 +662,7 @@ export function usePosts({ page = 1, pageSize = 20, search = "" } = {}) {
 `, bt)
 	}
 
-	return fmt.Sprintf(`# Grit Framework — Detailed Reference
+	return fmt.Sprintf(`# Grit Framework: Detailed Reference
 
 ## API Conventions
 

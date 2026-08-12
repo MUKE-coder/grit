@@ -34,7 +34,7 @@ func AddField(resourceName, spec string) error {
 	f := def.Fields[len(def.Fields)-1]
 
 	if !addFieldSupported[FieldType(f.Type)] {
-		return fmt.Errorf("grit g field can't add a %q field yet — regenerate the resource "+
+		return fmt.Errorf("grit g field can't add a %q field yet: regenerate the resource "+
 			"for relationship, file, slug, or array fields", f.Type)
 	}
 

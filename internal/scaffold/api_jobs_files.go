@@ -570,7 +570,7 @@ func handleBackupWeekly(deps WorkerDeps) func(ctx context.Context, task *asynq.T
 		if err != nil {
 			return fmt.Errorf("weekly backup: %w", err)
 		}
-		log.Printf("Weekly backup %s complete — %d tables, %d rows, %.1f KB",
+		log.Printf("Weekly backup %s complete: %d tables, %d rows, %.1f KB",
 			rec.ID, rec.TableCount, rec.RowCount, float64(rec.SizeBytes)/1024)
 		return nil
 	}
@@ -597,12 +597,12 @@ func handleBackupScheduled(deps WorkerDeps) func(ctx context.Context, task *asyn
 		if !due {
 			return nil
 		}
-		log.Println("Scheduled backup is due — running full-database backup...")
+		log.Println("Scheduled backup is due: running full-database backup...")
 		rec, err := svc.Generate(ctx, "SCHEDULED")
 		if err != nil {
 			return fmt.Errorf("scheduled backup: %w", err)
 		}
-		log.Printf("Scheduled backup %s complete — %d tables, %d rows, %.1f KB",
+		log.Printf("Scheduled backup %s complete: %d tables, %d rows, %.1f KB",
 			rec.ID, rec.TableCount, rec.RowCount, float64(rec.SizeBytes)/1024)
 		return nil
 	}

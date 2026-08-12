@@ -10,7 +10,7 @@ export const metadata = getDocMetadata('/docs/admin/custom-pages')
 
 /**
  * The porting page. Written for the person who has bought an admin template and
- * wants its pages inside Grit — which is a different job from "customising the
+ * wants its pages inside Grit, which is a different job from "customising the
  * admin", and the docs previously only answered the second one.
  */
 export default function CustomPagesPage() {
@@ -28,7 +28,7 @@ export default function CustomPagesPage() {
                 Custom pages and tables
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Bring your own table, your own form, your own page shell — and keep the URL-synced
+                Bring your own table, your own form, your own page shell, and keep the URL-synced
                 sorting, paging, filters, selection, bulk delete and toasts that the stock page
                 already has.
               </p>
@@ -57,7 +57,7 @@ export default function ProductsPage() {
             <div className="prose-grit mb-10">
               <p>
                 The reason people did not replace it was everything they would lose by doing so. The
-                data was never the problem — <code>useResource</code> has always been a plain hook
+                data was never the problem: <code>useResource</code> has always been a plain hook
                 that takes an endpoint. The problem was the rest of the page: search, sort, page and
                 filters kept in the address bar so a refresh or a shared link rehydrates the same
                 view, row selection, bulk delete behind a confirm, toasts, cache invalidation, and
@@ -113,7 +113,7 @@ export default function ProductsPage() {
               <p className="text-[13px] text-muted-foreground/80 leading-relaxed">
                 The stock <code>ResourcePage</code> is built on the same hook and contains no state
                 of its own. If the controller could not rebuild the default page, it would be
-                missing something — so anything the default page can do, yours can too.
+                missing something, so anything the default page can do, yours can too.
               </p>
             </div>
 
@@ -138,7 +138,7 @@ c.total         // number
 c.totalPages    // number
 c.isLoading     // boolean
 
-// query state — sort/page/filters, and the date range round-trips through the URL
+// query state: sort/page/filters, and the date range round-trips through the URL
 c.page          c.setPage(n)
 c.pageSize      c.setPageSize(n)
 c.search        c.setSearch(value)
@@ -146,7 +146,7 @@ c.sortBy        c.sortOrder      c.setSort(key)    // toggles direction
 c.filters       c.setFilter(key, value)
 c.dateRange     c.setDateRange(range)
 
-// columns — visible ones, ready to render
+// columns: visible ones, ready to render
 c.columns       c.allColumns     c.hiddenColumns    c.toggleColumn(key)
 
 // selection
@@ -166,7 +166,7 @@ c.confirmBulkDelete // { open, confirm(), cancel() }
 c.importer          // { open, setOpen(open) }
 
 // odds and ends
-c.apiSearchParams   // the same query the table ran — use it for exports
+c.apiSearchParams   // the same query the table ran: use it for exports
 c.stats             // stat cards, already scoped to the active date range
 c.singularName      c.pluralName`}
             />
@@ -222,15 +222,15 @@ return (
             <CodeBlock
               language="bash"
               filename="apps/admin/resources/"
-              code={`products.ts          # generated — rewritten on every grit generate
-products.custom.tsx  # yours — created once, never touched again`}
+              code={`products.ts          # generated: rewritten on every grit generate
+products.custom.tsx  # yours, created once, never touched again`}
             />
 
             <div className="prose-grit mb-10">
               <p>
                 The split is what makes both halves safe. The config half can be regenerated freely
                 because nothing of yours is in it. The custom half can hold components because it is
-                a <code>.tsx</code> file and the generator will not overwrite it — it checks whether
+                a <code>.tsx</code> file and the generator will not overwrite it: it checks whether
                 the file exists and leaves it alone if it does.
               </p>
             </div>
@@ -250,14 +250,14 @@ const custom: ResourceCustomisation = {
   },
 
   components: {
-    // 2. Replace the table. Same props DataTable takes, so this is a drop-in —
+    // 2. Replace the table. Same props DataTable takes, so this is a drop-in:
     //    header, toolbar, filters and pagination all keep working.
     Table: (props) => <TemplateTable rows={props.data} onSort={props.onSort} />,
 
     // 3. Or wrap the original instead of replacing it
     // Table: (props) => <TemplateCard><DataTable {...props} /></TemplateCard>,
 
-    // 4. Replace the whole page — call useResourceController inside it
+    // 4. Replace the whole page: call useResourceController inside it
     // Page: MyProductsPage,
   },
 };
@@ -269,7 +269,7 @@ export default custom;`}
               <h3 id="typed-rows">Typed rows</h3>
               <p>
                 The overlay is generic over the row type, and the generated stub imports it from{' '}
-                <code>@repo/shared/types</code> — the same interfaces <code>grit sync</code>{' '}
+                <code>@repo/shared/types</code>: the same interfaces <code>grit sync</code>{' '}
                 produces from your Go structs. So <code>row</code> in a cell renderer is a{' '}
                 <code>Product</code>, not <code>Record&lt;string, unknown&gt;</code>: fields
                 autocomplete, and renaming a column in Go turns every stale renderer into a compile
@@ -285,23 +285,23 @@ export default custom;`}
               <h3 id="the-slots">The slots</h3>
               <ul>
                 <li>
-                  <code>Table</code> — receives exactly <code>DataTable</code>&apos;s props:{' '}
+                  <code>Table</code>: receives exactly <code>DataTable</code>&apos;s props:{' '}
                   <code>columns</code>, <code>data</code>, <code>isLoading</code>,{' '}
                   <code>sortBy</code>, <code>sortOrder</code>, <code>onSort</code>,{' '}
                   <code>selectedRows</code>, <code>onSelectRows</code>, <code>onView</code>,{' '}
                   <code>onEdit</code>, <code>onDelete</code>, <code>rowActions</code>.
                 </li>
                 <li>
-                  <code>Form</code> — receives <code>resource</code>, <code>item</code> (the record
+                  <code>Form</code>: receives <code>resource</code>, <code>item</code> (the record
                   being edited, or <code>null</code> for create) and <code>onClose</code>. Replaces
                   whichever container <code>formView</code> would have opened.
                 </li>
                 <li>
-                  <code>EmptyState</code> — rendered instead of the table when the query has
+                  <code>EmptyState</code>: rendered instead of the table when the query has
                   finished and returned nothing.
                 </li>
                 <li>
-                  <code>Page</code> — replaces the entire list view. Checked before anything else,
+                  <code>Page</code>: replaces the entire list view. Checked before anything else,
                   so a page slot owns its own routing.
                 </li>
               </ul>
@@ -335,7 +335,7 @@ components: {
               <h2 id="a-page-slot-owns-its-dialogs">A Page slot owns its dialogs</h2>
               <p>
                 The stock page renders the form container and the two confirm dialogs for you.
-                Replace the page and that goes with it — but the state driving them does not, because
+                Replace the page and that goes with it, but the state driving them does not, because
                 it lives in the controller. So keep calling <code>c.create</code>,{' '}
                 <code>c.edit</code> and <code>c.remove</code> from your own buttons, and render the
                 stock dialogs off the controller&apos;s flags:
@@ -367,7 +367,7 @@ components: {
               <h2 id="two-things-that-bite">Two things that will bite you</h2>
               <p>
                 <strong>Tailwind has to be looking at your overlay.</strong> Projects scaffolded on
-                v3.141.0 or later already are — <code>./resources/**/*.&#123;ts,tsx&#125;</code> is in
+                v3.141.0 or later already are: <code>./resources/**/*.&#123;ts,tsx&#125;</code> is in
                 the admin&apos;s <code>content</code> array. Anything older is not, and the failure is
                 a quiet one: the component renders, the DOM is correct, and the class simply does not
                 exist in the stylesheet, so you get white text on a background that was never
@@ -377,7 +377,7 @@ components: {
                 <strong>A typed row is a promise about the API, not a guarantee.</strong>{' '}
                 <code>row.status</code> is typed{' '}
                 <code>&quot;active&quot; | &quot;draft&quot; | &quot;archived&quot;</code> because
-                that is what the Go struct declares — but the value arriving at your renderer is
+                that is what the Go struct declares, but the value arriving at your renderer is
                 whatever the database actually holds, which after an import, a migration or a
                 hand-written <code>UPDATE</code> may be none of them. Indexing a lookup table with it
                 then returns <code>undefined</code> and takes the page down. Give the lookup a
@@ -394,12 +394,12 @@ components: {
   archived: { label: "Archived", className: "bg-amber-700 text-white" },
 };
 
-const UNKNOWN = { label: "—", className: "bg-gray-500 text-white" };
+const UNKNOWN = { label: "Unknown", className: "bg-gray-500 text-white" };
 
 columns: {
   status: {
     cell: (row) => {
-      // Not STATUS[row.status].className — one unexpected value and the
+      // Not STATUS[row.status].className: one unexpected value and the
       // whole table throws, in front of whoever opened the page.
       const s = STATUS[row.status] ?? UNKNOWN;
       return <span className={s.className}>{s.label}</span>;
@@ -412,7 +412,7 @@ columns: {
               <h2 id="pages-that-are-not-resources">Pages that are not resources</h2>
               <p>
                 Porting a whole template means analytics, settings and billing screens that are not
-                CRUD over a table. Those do not need the controller at all — use the data hooks
+                CRUD over a table. Those do not need the controller at all: use the data hooks
                 directly against any endpoint your API exposes:
               </p>
             </div>
@@ -441,14 +441,14 @@ export default function RevenuePage() {
                 <code>resources/&lt;name&gt;.ts</code> and the thin page wrapper. Once you have
                 replaced the wrapper with your own component, re-running the generator for a{' '}
                 <em>new</em> resource does not touch it. What the generator does keep maintaining is
-                the resource definition — and <code>grit sync</code> only ever inserts into it,
+                the resource definition, and <code>grit sync</code> only ever inserts into it,
                 between the <code>grit:cols:auto-start</code> and <code>grit:fields:auto-start</code>{' '}
                 fences, so hand-edited labels and formats survive.
               </p>
               <p>
                 Re-running the generator for the <em>same</em> resource is the interesting case, and
                 it is the one this design exists for: <code>resources/products.ts</code> is rewritten
-                from scratch — every column back to its generated form — while{' '}
+                from scratch, every column back to its generated form, while{' '}
                 <code>products.custom.tsx</code> is not opened at all. Your cell renderers, your
                 table, your page are still there and still applied, because they were never in the
                 file that got replaced.
@@ -456,7 +456,7 @@ export default function RevenuePage() {
               <p>
                 Deleting a resource is the one case where the overlay does move.{' '}
                 <code>grit remove resource</code> deletes an untouched stub, and renames one you have
-                written in to <code>&lt;name&gt;.custom.tsx.bak</code> — leaving it in place would
+                written in to <code>&lt;name&gt;.custom.tsx.bak</code>, leaving it in place would
                 break the build, since it imports a type the shared package no longer exports, and
                 deleting it outright would throw away work the generator never owned.
               </p>

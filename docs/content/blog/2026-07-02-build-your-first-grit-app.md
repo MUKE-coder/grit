@@ -10,8 +10,8 @@ tags: [grit, tutorial, getting-started, crud, code-generation, relationships, fi
 canonical: "https://gritframework.dev/blog/build-your-first-grit-app"
 ---
 
-Yesterday I told you *why* I built Grit. Today we build something real with it — a
-small store — and you'll see the whole point in action: **describe your data, and
+Yesterday I told you *why* I built Grit. Today we build something real with it, a
+small store, and you'll see the whole point in action: **describe your data, and
 Grit writes the backend, the frontend hooks, and an admin panel to manage it.**
 
 We'll create two models, **Category** and **Product**, with a **one-to-many**
@@ -44,14 +44,14 @@ cd my-store
 ```
 
 `--triple` scaffolds the full monorepo: a **Go API**, a customer-facing **web app**,
-and an **admin panel** — all sharing one types package.
+and an **admin panel**: all sharing one types package.
 
 ## 3. Start the infrastructure
 
 Make sure **Docker Desktop is running**, then from the project root:
 
 ```bash
-docker compose up -d --wait   # Postgres, Redis, MinIO, Mailhog — waits until healthy
+docker compose up -d --wait   # Postgres, Redis, MinIO, Mailhog (waits until healthy)
 pnpm i                        # install dependencies
 ```
 
@@ -69,7 +69,7 @@ first** so the relationship has something to point at.
 grit generate resource Category --fields "name:string,slug:slug,image:file:image"
 ```
 
-**Product** — linked to Category:
+**Product**: linked to Category:
 
 ```bash
 grit generate resource Product --fields "name:string,slug:slug,price:int,description:text,thumbnail:file:image,images:files:image,category:belongs_to:Category"
@@ -78,7 +78,7 @@ grit generate resource Product --fields "name:string,slug:slug,price:int,descrip
 ### What those field types mean
 
 Each `field:type` tells Grit how to build the column, the validation, and the admin
-input — front to back.
+input: front to back.
 
 | Field | Type | What it does |
 |-------|------|--------------|
@@ -87,12 +87,12 @@ input — front to back.
 | `price:int` | whole number | An integer column. **Tip:** store money in the smallest unit (cents) to dodge float rounding. |
 | `description:text` | long text | A `TEXT` column + a textarea in the admin. |
 | `thumbnail:file:image` | one image | A single image **upload**. The file goes to object storage (MinIO in dev, S3/R2 in prod) and the record keeps its URL. The admin shows an image picker restricted to images. |
-| `images:files:image` | many images | A **gallery** — multiple image uploads stored as a list of URLs, with a multi-image uploader in the admin. |
+| `images:files:image` | many images | A **gallery**, multiple image uploads stored as a list of URLs, with a multi-image uploader in the admin. |
 | `category:belongs_to:Category` | relationship | The one-to-many link. Adds a `CategoryID` foreign key on Product + a `Category` relation, renders a **Category dropdown** in the admin, and lets the API preload the category with each product. |
 
 ### What each command generated
 
-One command, the whole vertical slice — for **both** models:
+One command, the whole vertical slice, for **both** models:
 
 ```
 ✓ apps/api/internal/models/<name>.go       # GORM model
@@ -113,7 +113,7 @@ grit migrate
 ```
 
 **What migrations do:** Grit reads your Go models and runs GORM's AutoMigrate to
-create or update the matching tables — here, `categories` and `products`, including
+create or update the matching tables: here, `categories` and `products`, including
 the `category_id` foreign key that wires the relationship. It's idempotent, so
 re-run it any time you add a field. (`grit migrate --fresh` drops everything and
 starts clean.)
@@ -124,7 +124,7 @@ starts clean.)
 grit seed
 ```
 
-**What seeding does:** it populates the database with starter data — most
+**What seeding does:** it populates the database with starter data, most
 importantly an **admin user** you can log in with. Seeders live in your project, so
 you can add your own demo categories/products later.
 
@@ -135,12 +135,12 @@ grit start
 ```
 
 **What `grit start` does:** it boots the **Go API + web app + admin panel together**,
-in parallel, with hot reload — colour-prefixed logs so you can tell who said what.
+in parallel, with hot reload, colour-prefixed logs so you can tell who said what.
 `Ctrl+C` stops them all.
 
 ## 8. Open it in the browser
 
-- Go to **http://localhost:3000** — your brand-new Grit web app.
+- Go to **http://localhost:3000**, your brand-new Grit web app.
 - Click **Admin** in the navbar → the admin panel opens at **http://localhost:3001**.
 - Log in with the seeded admin:
 
@@ -151,18 +151,18 @@ in parallel, with hot reload — colour-prefixed logs so you can tell who said w
 
 ## 9. Add a few categories
 
-Open **Categories → New** and add at least three — for example **Apparel**,
+Open **Categories → New** and add at least three, for example **Apparel**,
 **Footwear**, **Accessories**. Type a name (the **slug fills itself in**), upload an
 image, save. You just used file storage without configuring a thing.
 
-## 10. Add products — watch the magic
+## 10. Add products: watch the magic
 
 Open **Products → New**. Notice two things Grit set up for you:
 
-1. A **thumbnail** image picker **and** a **multi-image gallery** uploader — file
+1. A **thumbnail** image picker **and** a **multi-image gallery** uploader: file
    handling, done.
 2. A **Category** dropdown that's **already populated** with the categories you just
-   created. The relationship is wired end to end — no join tables to hand-write, no
+   created. The relationship is wired end to end: no join tables to hand-write, no
    foreign keys to remember.
 
 Add a few products, each linked to a category. That "wait, it just works" feeling?
@@ -171,12 +171,12 @@ That's the whole reason Grit exists.
 ## 11. Keep exploring
 
 The generated admin ships more than tables and forms. Poke around the **Audit trail**
-(who changed what, tamper-evident), the system pages, and the dashboard — all there,
+(who changed what, tamper-evident), the system pages, and the dashboard: all there,
 all working.
 
 ## Next up
 
-You now have a real store with real data, managed from a real admin panel — and you
+You now have a real store with real data, managed from a real admin panel, and you
 wrote zero backend or frontend plumbing to get it. In the **next edition of The Daily
 Grit**, we'll take these products and **render them on the customer-facing web app**,
 using the generated, type-safe React Query hooks so the frontend and backend never

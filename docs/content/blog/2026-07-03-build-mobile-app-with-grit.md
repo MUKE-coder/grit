@@ -10,25 +10,25 @@ tags: [grit, mobile, expo, react-native, code-generation, ecommerce, tutorial]
 canonical: "https://gritframework.dev/blog/build-mobile-app-with-grit"
 ---
 
-A while back we built a full-stack **web** store with Grit — describe your data, and
+A while back we built a full-stack **web** store with Grit: describe your data, and
 `grit generate resource` wrote the Go API, the React Query hooks, and an admin panel.
 
 Today we do it on **mobile**. Same command, same models, but now `grit generate
-resource` also scaffolds your **Expo** app — and it does far more than a list. For
+resource` also scaffolds your **Expo** app, and it does far more than a list. For
 every resource you get a typed hook, a searchable/sortable list **table with image
 thumbnails**, a detail screen, and full **create/edit forms** with a native image
 picker, a searchable relationship select, and CSV import. We'll take all of that and
-build a curated storefront on top — **browse categories → tap a category → see its
-products → open a product → scroll its similar products** — writing almost none of
+build a curated storefront on top, **browse categories → tap a category → see its
+products → open a product → scroll its similar products**, writing almost none of
 the plumbing.
 
 Let's build.
 
 ## 1. Install or update Grit
 
-The mobile generator has grown a lot since it landed — working image uploads,
+The mobile generator has grown a lot since it landed (working image uploads,
 in-form previews, a permission-aware picker, searchable relationship selects,
-multi-image fields, and CSV import all arrived in the **v3.31.6x–v3.31.75** line.
+multi-image fields, and CSV import all arrived in the **v3.31.6x)v3.31.75** line.
 Grab the latest before you scaffold.
 
 ```bash
@@ -72,13 +72,13 @@ A product **belongs to** a category, so we create the parent first.
 grit generate resource Category --fields "name:string,slug:slug,image:file:image"
 ```
 
-**Product** — linked to Category:
+**Product**: linked to Category:
 
 ```bash
 grit generate resource Product --fields "name:string,slug:slug,price:int,description:text,thumbnail:file:image,category:belongs_to:Category"
 ```
 
-> **Money tip:** `price:int` stores exactly what you type — enter `1000` and the
+> **Money tip:** `price:int` stores exactly what you type, enter `1000` and the
 > record holds `1000`. The generated form formats the input with thousands
 > separators as you type (`1,000`), and submits the plain number. Use
 > `toLocaleString()` to render it the same way.
@@ -100,12 +100,12 @@ into `apps/expo`:
 ✓ internal/handlers/<name>_import.go         # CSV bulk import (backend, all architectures)
 ```
 
-expo-router is file-based, so those files **are** the routes — `/products`,
+expo-router is file-based, so those files **are** the routes, `/products`,
 `/products/new`, `/products/:id` all exist now, no registration step. Every resource
 is reachable from the app's **More → Resources** tab, so you get an admin-style
-list/create/edit/detail flow — with working image uploads, in-form previews, a
+list/create/edit/detail flow (with working image uploads, in-form previews, a
 searchable relationship picker, multi-image (`files`) fields, CSV export/import, and
-filters — **before you write a line of UI**.
+filters) **before you write a line of UI**.
 
 Open `apps/expo/hooks/use-products.ts` and you'll find exactly what you need:
 
@@ -115,12 +115,12 @@ export function useProduct(id: string) { … }                                  
 export function useCreateProduct() { … }  // + update / delete mutations
 ```
 
-The list hook uses `useInfiniteQuery` — pagination for free — and takes **equality
+The list hook uses `useInfiniteQuery`, pagination for free, and takes **equality
 filters**. That second argument is the whole reason the store works, and it leans on
 one nice generator detail.
 
-> **Tip:** For a product gallery, make the images field a **`files`** (array) type —
-> `images:files:image` — and the form gives you multi-select from the gallery with a
+> **Tip:** For a product gallery, make the images field a **`files`** (array) type:
+> `images:files:image`, and the form gives you multi-select from the gallery with a
 > grid of removable thumbnails. A single `file` field stays single-select.
 
 ## 4. Get it running
@@ -144,7 +144,7 @@ pnpm start              # press a for Android, i for iOS, or scan the QR in Expo
 ```
 
 Log in with **admin@example.com / admin123**. You now have a running mobile app
-talking to a running API — time to turn it into a store.
+talking to a running API: time to turn it into a store.
 
 ## 5. The one thing that turns a list into a store
 
@@ -155,7 +155,7 @@ filterable by their foreign key:
 GET /products?category_id=<id>   →  only that category's products
 ```
 
-You don't write that — `grit generate resource` wires it for every `belongs_to`
+You don't write that: `grit generate resource` wires it for every `belongs_to`
 field. On the client, that's just:
 
 ```ts
@@ -165,7 +165,7 @@ useProducts("", { category_id: id })
 That's the spine of the entire shopping flow. Everything below is UI on top of the
 generated hooks.
 
-## 6. The Shop tab — a grid of categories
+## 6. The Shop tab: a grid of categories
 
 Create `apps/expo/app/(tabs)/shop.tsx`:
 
@@ -241,12 +241,12 @@ Then add it to the tab bar in `apps/expo/app/(tabs)/_layout.tsx`:
 />
 ```
 
-`ScreenHeader` (shipped by the scaffold) gives you a safe-area title bar — and a back
+`ScreenHeader` (shipped by the scaffold) gives you a safe-area title bar, and a back
 button on any screen that passes `showBack`.
 
 > **Why `resolveImageUrl`?** In dev, MinIO hands back URLs like
 > `http://localhost:9002/…`, and on a phone/emulator `localhost` means *the device
-> itself* — so images silently fail to load. `resolveImageUrl` (in `lib/images.ts`,
+> itself*, so images silently fail to load. `resolveImageUrl` (in `lib/images.ts`,
 > generated for you) rewrites that host to the same dev machine the app already uses
 > for the API. Wrap **every** stored image URL with it. Real S3/R2 public URLs pass
 > through untouched. The scaffold's `docker-compose.yml` also publishes MinIO on all
@@ -317,13 +317,12 @@ export default function CategoryProductsScreen() {
 }
 ```
 
-Infinite scroll, pull-free pagination, and a category-scoped list — all from
+Infinite scroll, pull-free pagination, and a category-scoped list, all from
 `useProducts("", { category_id: id })`.
 
 ## 8. Product detail + similar products
 
-Create `apps/expo/app/shop/product/[id].tsx`. "Similar" is just the same filter again
-— other products in this product's category, minus itself:
+Create `apps/expo/app/shop/product/[id].tsx`. "Similar" is just the same filter again, other products in this product's category, minus itself:
 
 ```tsx
 import { View, Text, ScrollView, Pressable, ActivityIndicator, FlatList } from "react-native";
@@ -417,7 +416,7 @@ renders the category chip with zero extra requests.
 
 ## 9. Add a few products and shop
 
-The API and app are already running from step 4 — and you don't need Postman or an
+The API and app are already running from step 4, and you don't need Postman or an
 admin panel to add data, because the **generated screens are a full CRUD app**. Open
 the **More → Resources** tab, pick **Categories → +**, and the create form gives you
 a text input plus a native **image picker** (permission prompt → pick from gallery or
@@ -425,18 +424,18 @@ camera → instant preview). Add a couple of categories, then do the same under
 **Products**, using the **searchable Category select** to link each product to its
 category.
 
-Everything you upload shows up immediately — the local preview in the form, a
-thumbnail in the list table, the hero image on the detail screen — thanks to the
+Everything you upload shows up immediately (the local preview in the form, a
+thumbnail in the list table, the hero image on the detail screen) thanks to the
 upload + `resolveImageUrl` plumbing you got for free.
 
 Now open the **Shop** tab and tap through: category → products → product → similar.
-That whole loop — pagination, relationship filtering, image handling, navigation — is
+That whole loop (pagination, relationship filtering, image handling, navigation) is
 running on generated hooks plus the three screens above.
 
 ## The takeaway
 
 `grit generate resource` isn't a backend-only tool anymore. Describe a model once and
-you get a Go API, an admin panel, web hooks — **and** a complete mobile CRUD app:
+you get a Go API, an admin panel, web hooks, **and** a complete mobile CRUD app:
 searchable list tables with thumbnails, detail screens, create/edit forms with a real
 image picker, searchable relationship selects, multi-image fields, and CSV import,
 all talking to your API over typed hooks. The store you just built is mostly your

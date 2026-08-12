@@ -121,7 +121,7 @@ func Register(p Plugin) {
 func Get(name string) (Plugin, error) {
 	p, ok := registry[strings.ToLower(strings.TrimSpace(name))]
 	if !ok {
-		return Plugin{}, fmt.Errorf("unknown plugin %q — run `grit plugin list` to see what's available", name)
+		return Plugin{}, fmt.Errorf("unknown plugin %q: run `grit plugin list` to see what's available", name)
 	}
 	return p, nil
 }

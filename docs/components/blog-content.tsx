@@ -33,7 +33,7 @@ export function BlogContent({ content }: { content: string }) {
               const lang = match ? LANG_ALIAS[match[1]] || match[1] : 'bash'
               return <CodeBlock code={text} language={lang} className="my-5" />
             }
-            // inline code — styled by prose-grit
+            // inline code, styled by prose-grit
             return <code>{children}</code>
           },
           // Inline images are nearly always screenshots. A border and a radius

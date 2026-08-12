@@ -126,7 +126,7 @@ func loadStruct(opts Opts) (*generate.GoStruct, error) {
 	snake := pascalToSnake(opts.Resource)
 	modelFile := filepath.Join(opts.Root, "apps", "api", "internal", "models", snake+".go")
 	if _, err := os.Stat(modelFile); err != nil {
-		return nil, fmt.Errorf("resource %q not found at %s — run `grit generate resource %s` first",
+		return nil, fmt.Errorf("resource %q not found at %s: run `grit generate resource %s` first",
 			opts.Resource, modelFile, opts.Resource)
 	}
 
@@ -140,7 +140,7 @@ func loadStruct(opts Opts) (*generate.GoStruct, error) {
 			return &s, nil
 		}
 	}
-	return nil, fmt.Errorf("struct %s not found in %s — generator output may be stale; run `grit sync`",
+	return nil, fmt.Errorf("struct %s not found in %s: generator output may be stale; run `grit sync`",
 		opts.Resource, modelFile)
 }
 
@@ -165,7 +165,7 @@ func resolveTarget(opts Opts) (string, error) {
 // blow away a hand-customised page.
 func writeOnce(path, content string, force bool) error {
 	if _, err := os.Stat(path); err == nil && !force {
-		return fmt.Errorf("refusing to overwrite %s — pass --force to replace", path)
+		return fmt.Errorf("refusing to overwrite %s: pass --force to replace", path)
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return fmt.Errorf("creating directory: %w", err)
