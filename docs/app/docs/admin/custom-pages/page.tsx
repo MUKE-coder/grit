@@ -539,6 +539,101 @@ columns: {
             />
 
             <div className="prose-grit mb-10">
+              <h2 id="the-detail-page">The detail page</h2>
+              <p>
+                Everything above is the list view. The record page has the same three tiers and its
+                own controller, <code>useResourceDetailController(resource, id)</code>, which returns
+                the record, the resolved related resources, the line-item fields, and the edit,
+                delete, print and PDF actions with their dialogs.
+              </p>
+              <p>
+                <strong>Replace the whole page</strong> when the record is not a field list. An
+                order with a fulfilment timeline, a customer with a billing history, a ticket with a
+                thread:
+              </p>
+            </div>
+
+            <CodeBlock
+              language="tsx"
+              filename="apps/admin/resources/shipments/shipments.custom.tsx"
+              code={`function ShipmentDetail({ resource, id }: ResourceDetailSlotProps) {
+  const c = useResourceDetailController<Shipment>(resource, id);
+
+  if (c.isLoading) return <Spinner />;
+  if (c.notFound) return <p>No such shipment.</p>;
+
+  return (
+    <div>
+      <button onClick={c.back}>Back</button>
+      <h1>{c.record?.reference}</h1>
+      <TrackingTimeline status={c.record?.status} />
+
+      <button onClick={c.edit}>Edit</button>
+      <button onClick={c.remove}>Delete</button>
+
+      {/* Owning the page means owning these. The state is still the
+          controller's, so they are two lines rather than two dialogs. */}
+      {c.form.open && (
+        <FormSheet resource={resource} item={c.form.item} onClose={c.form.close} />
+      )}
+      <ConfirmModal
+        open={c.confirmDelete.open}
+        onConfirm={c.confirmDelete.confirm}
+        onCancel={c.confirmDelete.cancel}
+        title="Delete this shipment?"
+        variant="danger"
+        loading={c.isDeleting}
+      />
+    </div>
+  );
+}
+
+const custom: ResourceCustomisation<Shipment> = {
+  components: { DetailPage: ShipmentDetail },
+};`}
+            />
+
+            <div className="prose-grit mb-10">
+              <p>
+                <strong>Or replace one part of it</strong> and keep the rest.{' '}
+                <code>DetailHeader</code> takes the title block and its actions,{' '}
+                <code>DetailFields</code> takes the field list, and <code>DetailAside</code> is a
+                slot between the fields and the related tables, for a timeline or an activity feed.
+              </p>
+              <p>
+                These three receive the controller as a prop rather than calling the hook
+                themselves, and that difference matters. Every call to{' '}
+                <code>useResourceDetailController</code> builds its own state, so a header that made
+                its own would open an edit sheet the page around it never reads: you would press
+                Edit and nothing would happen. Sharing one controller is what lets a part drive the
+                page it sits in.
+              </p>
+            </div>
+
+            <CodeBlock
+              language="tsx"
+              filename="apps/admin/resources/shipments/shipments.custom.tsx"
+              code={`function ShipmentHeader({ controller: c }: ResourceDetailPartProps<Shipment>) {
+  return (
+    <header>
+      <h1>Shipment {c.title}</h1>
+      <p>{c.record?.carrier}</p>
+      <button onClick={c.edit}>Edit</button>
+      <button onClick={() => void c.downloadPdf()} disabled={c.isPdfBusy}>PDF</button>
+    </header>
+  );
+}
+
+components: { DetailHeader: ShipmentHeader }`}
+            />
+
+            <div className="prose-grit mb-10">
+              <p>
+                Column patches apply here too. A <code>cell</code> renderer defined in{' '}
+                <code>columns</code> is used for the detail page&apos;s field list as well as the
+                table, so a status pill written once shows up in both.
+              </p>
+
               <h2 id="pages-that-are-not-resources">Pages that are not resources</h2>
               <p>
                 Porting a whole template means analytics, settings and billing screens that are not

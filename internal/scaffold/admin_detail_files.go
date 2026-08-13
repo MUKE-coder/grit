@@ -8,15 +8,159 @@ import "strings"
 // part — fetches every RELATED table (a resource's own inline line-items, plus
 // any registry resource that belongs_to this one) so an Invoice shows its items
 // and payments without a hand-written page.
+// adminUseResourceDetailController emits hooks/use-resource-detail-controller.ts.
+func adminUseResourceDetailController() string {
+	return `"use client";
+
+import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import type {
+  RelatedResource,
+  ResourceDefinition,
+  ResourceDetailController,
+} from "@/lib/resource";
+import { useResourceItem, useDeleteResource } from "@/hooks/use-resource";
+import { apiClient } from "@/lib/api-client";
+import { resources } from "@/resources";
+
+/*
+ * Everything a resource DETAIL page needs except the markup.
+ *
+ * The list page got this treatment first, and the reasoning is the same: the
+ * data was never the hard part, the rest of the page was. Loading one record
+ * is a hook call. Working out which other resources point at this one, pulling
+ * the inline line-item fields out of the form definition, fetching a
+ * server-rendered PDF through the auth interceptor rather than a bare link,
+ * and routing back to the list after a delete are not.
+ *
+ * const c = useResourceDetailController(resource, id)
+ * <MyDetail record={c.record} onEdit={c.edit} sections={c.related} />
+ */
+
+/** The first present human-readable field, else the resource's own label. */
+function titleOf(resource: ResourceDefinition, record: Record<string, unknown> | undefined): string {
+  if (!record) return resource.label?.singular ?? resource.name;
+  for (const key of ["number", "title", "name", "label", "reference", "slug", "email"]) {
+    const value = record[key];
+    if (typeof value === "string" && value) return value;
+  }
+  return resource.label?.singular ?? resource.name;
+}
+
+export function useResourceDetailController<T = Record<string, unknown>>(
+  resource: ResourceDefinition,
+  id: string,
+): ResourceDetailController<T> {
+  const router = useRouter();
+  const { data, isLoading } = useResourceItem<T>(resource.endpoint, id);
+  const record = data?.data;
+
+  const [editing, setEditing] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isPdfBusy, setPdfBusy] = useState(false);
+
+  const singular = resource.label?.singular ?? resource.name;
+  const { mutate: deleteItem, isPending: isDeleting } = useDeleteResource(resource.endpoint, singular);
+
+  // Through apiClient, not a bare <a href>: that way the auth cookies, the
+  // CSRF header and the 401-refresh interceptor all apply. A link gets none
+  // of them and silently downloads a login page.
+  const downloadPdf = useCallback(async () => {
+    setPdfBusy(true);
+    try {
+      const res = await apiClient.get(resource.endpoint + "/" + id + "/pdf", {
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+      window.open(url, "_blank", "noopener,noreferrer");
+      // Revoked late: revoking straight away can race the new tab's load.
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } finally {
+      setPdfBusy(false);
+    }
+  }, [resource.endpoint, id]);
+
+  const lineItemFields = useMemo(
+    () => (resource.form?.fields ?? []).filter((f) => f.type === "line-items"),
+    [resource.form?.fields],
+  );
+
+  // Other resources in the registry that belong to this one, found by a
+  // relationship-select whose relatedEndpoint is this endpoint. Anything
+  // already rendered inline as line items is skipped, so it is not shown twice.
+  const related = useMemo<RelatedResource[]>(() => {
+    const inlineEndpoints = new Set(
+      (resource.form?.fields ?? [])
+        .filter((f) => f.type === "line-items" && f.itemEndpoint)
+        .map((f) => f.itemEndpoint as string),
+    );
+    const out: RelatedResource[] = [];
+    for (const other of resources) {
+      if (other.slug === resource.slug || other.hidden || inlineEndpoints.has(other.endpoint)) continue;
+      const fkField = (other.form?.fields ?? []).find(
+        (f) => f.type === "relationship-select" && f.relatedEndpoint === resource.endpoint,
+      );
+      if (fkField) out.push({ resource: other, fk: fkField.key });
+    }
+    return out;
+  }, [resource]);
+
+  const columns = useMemo(
+    () => resource.table.columns.filter((col) => !col.hidden),
+    [resource.table.columns],
+  );
+
+  const back = useCallback(() => {
+    router.push("/resources/" + resource.slug);
+  }, [router, resource.slug]);
+
+  return {
+    resource,
+    id,
+
+    record,
+    isLoading,
+    notFound: !isLoading && !record,
+    title: titleOf(resource, record as Record<string, unknown> | undefined),
+
+    columns,
+    lineItemFields,
+    related,
+
+    edit: () => setEditing(true),
+    remove: () => setConfirmOpen(true),
+    print: () => window.print(),
+    downloadPdf,
+    back,
+    isPdfBusy,
+    isDeleting,
+
+    form: { open: editing, item: (record ?? null) as T | null, close: () => setEditing(false) },
+    confirmDelete: {
+      open: confirmOpen,
+      confirm: () => {
+        setConfirmOpen(false);
+        // Back to the list: staying on the detail page of a record that no
+        // longer exists shows "could not be found", which reads as an error
+        // rather than as the delete having worked.
+        deleteItem(id, { onSuccess: back });
+      },
+      cancel: () => setConfirmOpen(false),
+    },
+  };
+}
+`
+}
+
 func adminResourceDetailPage() string {
 	return `"use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ResourceDefinition, ColumnDefinition, FieldDefinition } from "@/lib/resource";
-import { resources } from "@/resources";
-import { useResourceItem, useResource, useDeleteResource } from "@/hooks/use-resource";
+import { useResource } from "@/hooks/use-resource";
+import { useResourceDetailController } from "@/hooks/use-resource-detail-controller";
 import { renderCell } from "@/components/tables/cell-renderers";
 import { DataTable } from "@/components/tables/data-table";
 import { FormSheet } from "@/components/forms/form-sheet";
@@ -30,72 +174,43 @@ interface ResourceDetailPageProps {
   id: string;
 }
 
-// A readable title for the record — the first present human field, else the
-// resource's singular label.
-function titleOf(resource: ResourceDefinition, record: Record<string, unknown>): string {
-  for (const k of ["number", "title", "name", "label", "reference", "slug", "email"]) {
-    const v = record[k];
-    if (typeof v === "string" && v) return v;
-  }
-  return resource.label?.singular ?? resource.name;
-}
-
 // Convert a line-items field's itemFields into table columns for the detail
 // view (read-only). renderCell handles the value formatting.
 function itemColumns(itemFields: FieldDefinition[]): ColumnDefinition[] {
   return itemFields.map((f) => ({ key: f.key, label: f.label }));
 }
 
+// v3.145.0: a thin router, the same split ResourcePage has. A DetailPage slot
+// replaces everything below, so it is checked first and unconditionally:
+// somebody who has supplied a whole page owns its header and its dialogs too.
 export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
+  const CustomPage = resource.components?.DetailPage;
+  if (CustomPage) return <CustomPage resource={resource} id={id} />;
+  return <ResourceDetailView resource={resource} id={id} />;
+}
+
+// The default detail view. Every piece of state it uses comes from
+// useResourceDetailController, so this component is markup and nothing else.
+// That is the proof the hook is complete enough to build your own on.
+function ResourceDetailView({ resource, id }: ResourceDetailPageProps) {
+  const c = useResourceDetailController(resource, id);
   const router = useRouter();
-  const { data, isLoading } = useResourceItem<Record<string, unknown>>(resource.endpoint, id);
-  const record = data?.data;
-  const [editing, setEditing] = useState(false);
-  const [pdfBusy, setPdfBusy] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const { mutate: deleteItem, isPending: isDeleting } = useDeleteResource(resource.endpoint, resource.label?.singular ?? resource.name);
 
-  // Ask the API for the rendered PDF and hand the blob to the browser's
-  // viewer. Going through apiClient means the auth cookies, CSRF header and
-  // 401-refresh interceptor all apply, which a bare <a href> would miss.
-  const downloadPdf = async () => {
-    setPdfBusy(true);
-    try {
-      const res = await apiClient.get(resource.endpoint + "/" + id + "/pdf", {
-        responseType: "blob",
-      });
-      const url = URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
-      window.open(url, "_blank", "noopener,noreferrer");
-      // Revoke late — revoking immediately can race the new tab's load.
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-    } finally {
-      setPdfBusy(false);
-    }
-  };
+  const CustomHeader = resource.components?.DetailHeader;
+  const CustomFields = resource.components?.DetailFields;
+  const CustomAside = resource.components?.DetailAside;
 
-  // Inline line-items declared on THIS resource (rendered from the field's own
-  // itemEndpoint + itemFields).
-  const lineItemFields = (resource.form?.fields ?? []).filter((f) => f.type === "line-items");
-
-  // Other registry resources that belongs_to this one — discovered by a
-  // relationship-select field whose relatedEndpoint matches this endpoint.
-  const related = useMemo(() => {
-    const out: { resource: ResourceDefinition; fk: string }[] = [];
-    // Endpoints already rendered as inline line-items — don't show them twice.
-    const inlineEndpoints = new Set(
-      (resource.form?.fields ?? [])
-        .filter((f) => f.type === "line-items" && f.itemEndpoint)
-        .map((f) => f.itemEndpoint as string)
-    );
-    for (const r of resources) {
-      if (r.slug === resource.slug || r.hidden || inlineEndpoints.has(r.endpoint)) continue;
-      const fkField = (r.form?.fields ?? []).find(
-        (f) => f.type === "relationship-select" && f.relatedEndpoint === resource.endpoint
-      );
-      if (fkField) out.push({ resource: r, fk: fkField.key });
-    }
-    return out;
-  }, [resource]);
+  const record = c.record;
+  const isLoading = c.isLoading;
+  const lineItemFields = c.lineItemFields;
+  const related = c.related;
+  const pdfBusy = c.isPdfBusy;
+  const isDeleting = c.isDeleting;
+  const downloadPdf = c.downloadPdf;
+  const setEditing = (open: boolean) => (open ? c.edit() : c.form.close());
+  const setConfirmDelete = (open: boolean) => (open ? c.remove() : c.confirmDelete.cancel());
+  const editing = c.form.open;
+  const confirmDelete = c.confirmDelete.open;
 
   if (isLoading) {
     return (
@@ -115,11 +230,14 @@ export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
     );
   }
 
-  const cols = resource.table.columns.filter((c) => !c.hidden);
+  const cols = c.columns;
 
   return (
     <div id="print-area">
       {/* Header */}
+      {CustomHeader ? (
+        <CustomHeader resource={resource} id={id} controller={c} />
+      ) : (
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link
@@ -128,7 +246,7 @@ export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back to {resource.label?.plural ?? resource.name}
           </Link>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{titleOf(resource, record)}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{c.title}</h1>
           <p className="text-sm text-text-muted">{resource.label?.singular ?? resource.name} details</p>
         </div>
         <div className="no-print flex items-center gap-2">
@@ -169,7 +287,12 @@ export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
         </div>
       </div>
 
+      )}
+
       {/* Details */}
+      {CustomFields ? (
+        <CustomFields resource={resource} id={id} controller={c} />
+      ) : (
       <div className="rounded-xl border border-border bg-bg-elevated p-6">
         <h2 className="mb-5 text-sm font-semibold text-foreground">Details</h2>
         <dl className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -183,6 +306,11 @@ export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
           ))}
         </dl>
       </div>
+      )}
+
+      {/* Anything of your own that belongs between the fields and the related
+          records: a status timeline, an activity feed, a map. */}
+      {CustomAside && <CustomAside resource={resource} id={id} controller={c} />}
 
       {/* Inline line-items on this resource */}
       {lineItemFields.map((f) =>
@@ -221,11 +349,8 @@ export function ResourceDetailPage({ resource, id }: ResourceDetailPageProps) {
         confirmLabel="Delete"
         variant="danger"
         loading={isDeleting}
-        onCancel={() => setConfirmDelete(false)}
-        onConfirm={() => {
-          setConfirmDelete(false);
-          deleteItem(id, { onSuccess: () => router.push("/resources/" + resource.slug) });
-        }}
+        onCancel={c.confirmDelete.cancel}
+        onConfirm={c.confirmDelete.confirm}
       />
 
       {editing && <FormSheet resource={resource} item={record} onClose={() => setEditing(false)} />}

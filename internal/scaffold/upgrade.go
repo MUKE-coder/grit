@@ -241,10 +241,11 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 		filepath.Join(adminRoot, "lib", "icons.ts"):        adminIconMap(),
 
 		// Hooks
-		filepath.Join(adminRoot, "hooks", "use-auth.ts"):                adminUseAuth(),
-		filepath.Join(adminRoot, "hooks", "use-resource.ts"):            adminUseResource(),
-		filepath.Join(adminRoot, "hooks", "use-resource-controller.ts"): adminUseResourceController(),
-		filepath.Join(adminRoot, "hooks", "use-system.ts"):              adminUseSystem(),
+		filepath.Join(adminRoot, "hooks", "use-auth.ts"):                       adminUseAuth(),
+		filepath.Join(adminRoot, "hooks", "use-resource.ts"):                   adminUseResource(),
+		filepath.Join(adminRoot, "hooks", "use-resource-controller.ts"):        adminUseResourceController(),
+		filepath.Join(adminRoot, "hooks", "use-resource-detail-controller.ts"): adminUseResourceDetailController(),
+		filepath.Join(adminRoot, "hooks", "use-system.ts"):                     adminUseSystem(),
 
 		// Layout components
 		filepath.Join(adminRoot, "components", "layout", "admin-layout.tsx"):   adminLayoutComponent(),

@@ -28,6 +28,53 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.145.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.145.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>The detail page is customisable the same way the list page is.</strong>
+                </p>
+                <p>
+                  Every customisation so far applied to the list view. The record page was a
+                  monolith with all its state inline, which is exactly the shape{' '}
+                  <code>ResourcePage</code> was in before its controller was extracted, so it got
+                  the same treatment. <code>useResourceDetailController(resource, id)</code> returns
+                  the record, the visible columns, the inline line-item fields, the related
+                  resources resolved out of the registry, and the edit, delete, print and PDF
+                  actions with their dialogs. The stock page is markup and nothing else now, which
+                  is the proof the hook is complete enough to build your own on.
+                </p>
+                <p>
+                  Four slots. <code>DetailPage</code> replaces the whole thing, for a record that is
+                  not a field list: an order with a fulfilment timeline, a ticket with a thread.{' '}
+                  <code>DetailHeader</code>, <code>DetailFields</code> and <code>DetailAside</code>{' '}
+                  each take one part and leave the rest.
+                </p>
+                <p>
+                  The three part slots receive the controller as a prop instead of calling the hook,
+                  and that was a bug before it was a design. Built as they first were, each slot
+                  made its own controller, so pressing Edit in a custom header opened a sheet the
+                  page around it never read and nothing happened. Caught by clicking the button.
+                  They share one controller now, which is what lets a part drive the page it sits
+                  in, and it matches how the list slots already worked.
+                </p>
+                <p>
+                  <code>form</code> on the detail controller carries the record as well as the flag,
+                  mirroring the list controller. Without it every caller reaches for{' '}
+                  <code>c.record</code> and meets the difference between undefined, meaning still
+                  loading, and null, meaning creating, which the stock form distinguishes and a
+                  query result does not.
+                </p>
+              </div>
+            </div>
+
             {/* v3.144.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">
