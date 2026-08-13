@@ -521,7 +521,7 @@ func writeAdminTanStackFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "src", "components", "resource", "view-modal.tsx"):           nextToTanStack(adminViewModal()),
 
 		// Resource definitions (same as Next.js)
-		filepath.Join(adminRoot, "src", "resources", "index.ts"):         adminResourceRegistry(),
+		filepath.Join(adminRoot, "src", "resources", "index.ts"):                  adminResourceRegistry(),
 		filepath.Join(adminRoot, "src", "resources", "users", "users.ts"):         adminUsersResource(),
 		filepath.Join(adminRoot, "src", "resources", "users", "users.custom.tsx"): nextToTanStack(AdminResourceCustomStub("User", "User")),
 		filepath.Join(adminRoot, "src", "resources", "blogs", "blogs.ts"):         adminBlogsResource(),

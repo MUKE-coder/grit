@@ -3800,6 +3800,10 @@ type Params struct {
 	SortOrder string
 	Cursor    string // opaque base64 from a previous Result.Meta.NextCursor
 	Filters   map[string]any
+	// QueryFilters are raw query-string params that are NOT reserved words.
+	// Untrusted: kept apart from Filters (which handlers set in Go) so the
+	// whitelist can be applied to these and only these.
+	QueryFilters map[string]string
 
 	// v3.31.34 — date filter. DateField is the column (default
 	// "created_at"); DateFrom/DateTo are inclusive bounds. When both
@@ -3841,6 +3845,15 @@ func (p Params) With(key string, value any) Params {
 type Config struct {
 	Searchable   []string        // columns included in case-insensitive search
 	Sortable     map[string]bool // whitelist for sort_by values
+
+	// Filterable whitelists columns that may be filtered from the query
+	// string, so ?status=pending becomes WHERE status = 'pending'.
+	//
+	// A whitelist and not a free-for-all, because the column name is
+	// interpolated into the SQL: without it, ?"1=1 OR x"= would be a query
+	// the caller wrote. Anything not listed here is ignored rather than
+	// rejected, so an unknown param is never an error.
+	Filterable map[string]bool
 	DefaultSort  string          // fallback sort column (defaults to "created_at")
 	DefaultOrder string          // fallback sort order (defaults to "desc")
 
@@ -3906,16 +3919,42 @@ func Bind(c *gin.Context) Params {
 	dateFrom, dateTo := parseDateRange(c)
 
 	return Params{
-		Page:      page,
-		PageSize:  pageSize,
-		Search:    c.Query("search"),
-		SortBy:    c.Query("sort_by"),
-		SortOrder: c.Query("sort_order"),
-		Cursor:    c.Query("cursor"),
-		DateField: dateField,
-		DateFrom:  dateFrom,
-		DateTo:    dateTo,
+		Page:         page,
+		PageSize:     pageSize,
+		Search:       c.Query("search"),
+		SortBy:       c.Query("sort_by"),
+		SortOrder:    c.Query("sort_order"),
+		Cursor:       c.Query("cursor"),
+		DateField:    dateField,
+		DateFrom:     dateFrom,
+		DateTo:       dateTo,
+		QueryFilters: collectQueryFilters(c),
 	}
+}
+
+// reservedParams are the query keys pagination owns. Everything else is a
+// candidate column filter, to be checked against Config.Filterable before it
+// is used.
+var reservedParams = map[string]bool{
+	"page": true, "page_size": true, "search": true,
+	"sort_by": true, "sort_order": true, "cursor": true,
+	"date_field": true, "date_from": true, "date_to": true,
+	"created_since": true, "created_from": true, "created_to": true,
+	"updated_since": true, "archived": true, "format": true,
+}
+
+func collectQueryFilters(c *gin.Context) map[string]string {
+	out := map[string]string{}
+	for key, values := range c.Request.URL.Query() {
+		if reservedParams[key] || len(values) == 0 || values[0] == "" {
+			continue
+		}
+		out[key] = values[0]
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 // parseDateRange reads the three supported date-window query params and
@@ -4039,9 +4078,21 @@ func List[T any](query *gorm.DB, p Params, cfg Config) (Result[T], error) {
 		}
 	}
 
-	// Apply equality filters (e.g. ?status=active&building_id=...).
+	// Equality filters set by the handler in Go. Trusted: the column names
+	// are literals in our own source.
 	for col, val := range p.Filters {
 		query = query.Where(col+" = ?", val)
+	}
+
+	// Equality filters from the query string (?status=pending). Untrusted, so
+	// every column is checked against the whitelist before it reaches the SQL.
+	// This is what makes the admin's filter dropdowns and tab strips work:
+	// before it existed, Bind never collected them and the comment above
+	// promised a feature the code did not have.
+	for col, val := range p.QueryFilters {
+		if cfg.Filterable[col] {
+			query = query.Where(col+" = ?", val)
+		}
 	}
 
 	// v3.31.34 — date-window filter. DateField defaults to "created_at"

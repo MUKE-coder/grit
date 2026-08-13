@@ -328,6 +328,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "tables", "stacked-cell.tsx"):    adminStackedCell(),
 		filepath.Join(adminRoot, "components", "tables", "table-filters.tsx"):   adminTableFilters(),
 		filepath.Join(adminRoot, "components", "tables", "bulk-action-bar.tsx"): adminBulkActionBar(),
+		filepath.Join(adminRoot, "components", "tables", "table-tabs.tsx"):      adminTableTabs(),
 		filepath.Join(adminRoot, "components", "tables", "bulk-edit-modal.tsx"): adminBulkEditModal(),
 		filepath.Join(adminRoot, "components", "tables", "table-toolbar.tsx"):   adminTableToolbar(),
 		filepath.Join(adminRoot, "components", "tables", "date-filter.tsx"):     adminDateFilter(),
@@ -387,7 +388,7 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "resource", "view-modal.tsx"):           adminViewModal(),
 
 		// Resource definitions
-		filepath.Join(adminRoot, "resources", "index.ts"):         adminResourceRegistry(),
+		filepath.Join(adminRoot, "resources", "index.ts"):                  adminResourceRegistry(),
 		filepath.Join(adminRoot, "resources", "users", "users.ts"):         adminUsersResource(),
 		filepath.Join(adminRoot, "resources", "users", "users.custom.tsx"): AdminResourceCustomStub("User", "User"),
 		filepath.Join(adminRoot, "resources", "blogs", "blogs.ts"):         adminBlogsResource(),

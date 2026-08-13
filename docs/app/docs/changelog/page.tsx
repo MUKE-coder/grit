@@ -28,6 +28,85 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.144.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.144.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Filter presets as tabs, and query filters that actually filter.</strong>
+                </p>
+                <p>
+                  A tab is a named set of query parameters. &quot;Unpaid&quot; is not a different
+                  page, it is this page with <code>status=pending</code>, and a tab says that more
+                  plainly than a dropdown somebody has to open to discover:
+                </p>
+                <pre>
+                  <code>{`// apps/admin/resources/orders/orders.ts
+table: {
+  tabs: [
+    { key: "all",     label: "All",     count: true },
+    { key: "unpaid",  label: "Unpaid",  filters: { status: "pending" }, count: true },
+    { key: "shipped", label: "Shipped", filters: { status: "shipped" }, count: true },
+  ],
+}`}</code>
+                </pre>
+                <p>
+                  A real tablist, so arrow keys move between tabs and Tab leaves the group. Without
+                  roving focus a keyboard user walks through every filter on the way to the table,
+                  which with six tabs is six stops before reaching the thing being filtered. The
+                  table carries the matching <code>tabpanel</code> role and is labelled by the
+                  active tab, so a reader hearing a tablist also learns what it controls.
+                </p>
+                <p>
+                  Counts are opt-in per tab, because each one is a request. The badge appears when
+                  its number arrives rather than showing a zero first: a tab that says 0 and then
+                  says 47 is worse than a tab that said nothing for a moment.
+                </p>
+
+                <p>
+                  <strong>The filters they depend on were never wired up.</strong> Building this
+                  turned up that <code>paginate.Bind</code> never collected column filters from the
+                  query string. The code that applies them was there, with a comment promising{' '}
+                  <code>?status=active&amp;building_id=...</code>, and nothing ever populated it, so
+                  the admin&apos;s existing filter dropdowns sent parameters the API discarded. It
+                  went unnoticed because generated resources ship with an empty{' '}
+                  <code>filters: []</code>.
+                </p>
+                <p>
+                  Query parameters that are not reserved pagination keys are collected now, and
+                  applied only where the handler whitelists them:
+                </p>
+                <pre>
+                  <code>{`// apps/api/internal/handlers/shipment.go, generated
+paginate.Config{
+  Searchable: []string{"reference", "carrier"},
+  Sortable:   map[string]bool{"id": true, "created_at": true, ...},
+  Filterable: map[string]bool{"id": true, "reference": true, "status": true, ...},
+}`}</code>
+                </pre>
+                <p>
+                  The whitelist is not optional: the column name is interpolated into the WHERE
+                  clause, so an unfiltered version of this would let a caller write the query.
+                  Values were always parameterised. An unknown column is ignored rather than
+                  rejected, so a stray parameter is never an error. Verified against a running
+                  server: the three status tabs return 4, 1 and 5 of 10 rows, an unknown column
+                  changes nothing, and a quoted injection in the value matches zero rows because it
+                  is treated as a value.
+                </p>
+                <p>
+                  <code>grit upgrade</code> does not touch API code, so an existing project needs{' '}
+                  <code>grit generate resource</code> to pick up the whitelist, and its tabs render
+                  unfiltered until it does.
+                </p>
+              </div>
+            </div>
+
             {/* v3.143.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

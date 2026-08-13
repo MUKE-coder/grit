@@ -259,6 +259,7 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 		filepath.Join(adminRoot, "components", "tables", "cell-renderers.tsx"):    adminCellRenderers(),
 		filepath.Join(adminRoot, "components", "tables", "table-filters.tsx"):     adminTableFilters(),
 		filepath.Join(adminRoot, "components", "tables", "bulk-action-bar.tsx"):   adminBulkActionBar(),
+		filepath.Join(adminRoot, "components", "tables", "table-tabs.tsx"):        adminTableTabs(),
 		filepath.Join(adminRoot, "components", "tables", "bulk-edit-modal.tsx"):   adminBulkEditModal(),
 		filepath.Join(adminRoot, "components", "tables", "table-toolbar.tsx"):     adminTableToolbar(),
 		filepath.Join(adminRoot, "components", "tables", "table-pagination.tsx"):  adminTablePagination(),

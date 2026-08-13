@@ -334,6 +334,55 @@ components: {
             />
 
             <div className="prose-grit mb-10">
+              <h2 id="table-tabs">Filter presets as tabs</h2>
+              <p>
+                A tab is a named set of query parameters. &quot;Unpaid&quot; is not a different
+                page, it is this page with <code>status=pending</code>, and a tab says that more
+                plainly than a dropdown someone has to open to discover what is in it.
+              </p>
+            </div>
+
+            <CodeBlock
+              language="ts"
+              filename="apps/admin/resources/orders/orders.ts"
+              code={`table: {
+  tabs: [
+    { key: "all",     label: "All",     count: true },
+    { key: "unpaid",  label: "Unpaid",  filters: { status: "pending" }, count: true },
+    { key: "shipped", label: "Shipped", filters: { status: "shipped" }, count: true },
+    { key: "refunds", label: "Refunds", filters: { status: "refunded" }, icon: "Undo2" },
+  ],
+}`}
+            />
+
+            <div className="prose-grit mb-10">
+              <p>
+                The first tab is selected on load, and a tab with no <code>filters</code> clears
+                them, which is what makes &quot;All&quot; work without a special case. Choosing a
+                tab resets to page one and clears the selection, because the rows underneath are
+                not the same rows any more.
+              </p>
+              <p>
+                Tab filters are merged <em>under</em> the operator&apos;s own: picking Unpaid and
+                then filtering by customer narrows the tab rather than silently replacing it.
+              </p>
+              <p>
+                <code>count: true</code> fetches that tab&apos;s total. It is per tab because each
+                one is a request, and the badge appears when the number arrives rather than showing
+                a zero that turns into 47 a moment later.
+              </p>
+              <p>
+                This is config, so it lives in the resource definition. It needs the API to accept
+                the filter, which generated handlers do through a whitelist; if your tabs render
+                but do not filter, the resource predates v3.144.0 and needs{' '}
+                <code>grit generate resource</code> to regenerate its handler.
+              </p>
+              <p>
+                Need something a config array cannot express, like a tab whose filter depends on
+                the signed-in user? Use the <code>Page</code> slot and read{' '}
+                <code>c.activeTab</code> / <code>c.setActiveTab</code> from the controller.
+              </p>
+
               <h2 id="bulk-actions">Bulk actions</h2>
               <p>
                 Tick some rows and a bar appears at the foot of the table. Five actions are built

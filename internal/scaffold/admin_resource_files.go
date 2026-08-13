@@ -150,6 +150,26 @@ export interface CustomBulkAction<T = Record<string, unknown>> {
   visible?: (rows: T[]) => boolean;
 }
 
+/** One filter preset in the tab strip above a table. */
+export interface TableTab {
+  /** Stable key. Also the value written to the URL, so keep it URL-safe. */
+  key: string;
+  label: string;
+  /**
+   * Query parameters this tab applies. Merged over the resource's own filters,
+   * and cleared when another tab is chosen, so tabs never accumulate.
+   * Omit for an "All" tab.
+   */
+  filters?: Record<string, string>;
+  /**
+   * Fetch and show a count on this tab. One extra request per tab that asks
+   * for it, which is why it is not the default.
+   */
+  count?: boolean;
+  /** Any name from lib/icons, rendered before the label. */
+  icon?: string;
+}
+
 export interface TableDefinition {
   columns: ColumnDefinition[];
   filters?: FilterDefinition[];
@@ -161,6 +181,31 @@ export interface TableDefinition {
   bulkActions?: BulkAction[];
   defaultSort?: { key: string; direction: "asc" | "desc" };
   pageSize?: number;
+  /**
+   * Filter presets shown as a tab strip above the table.
+   *
+   * A tab is a named set of query parameters. "Unpaid" is not a different
+   * page, it is this page with status=pending, and a tab says that more
+   * plainly than a dropdown someone has to open to discover.
+   *
+   *   tabs: [
+   *     { key: "all", label: "All" },
+   *     { key: "unpaid", label: "Unpaid", filters: { status: "pending" } },
+   *     { key: "overdue", label: "Overdue", filters: { status: "pending", overdue: "true" } },
+   *   ]
+   *
+   * The first tab is selected on load, and a tab with no filters clears them,
+   * which is what makes "All" work without a special case.
+   *
+   * Counts are opt-in per tab because each one costs a request. Set
+   * count: true and the tab fetches its own total with page_size=1; the badge
+   * appears when it arrives rather than reserving space for a number that may
+   * never come.
+   *
+   * These are config, so they live in the resource definition. Anything that
+   * needs a function or JSX belongs in the overlay instead.
+   */
+  tabs?: TableTab[];
   // v3.31.34 — date-window filter on this resource's list page.
   // Defaults to enabled with field="created_at", label="Created".
   // Set enabled:false to hide; override field to filter on a domain
@@ -869,6 +914,7 @@ import { DataTable } from "@/components/tables/data-table";
 import { TableToolbar } from "@/components/tables/table-toolbar";
 import { TablePagination } from "@/components/tables/table-pagination";
 import { TableFilters } from "@/components/tables/table-filters";
+import { TableTabs } from "@/components/tables/table-tabs";
 import { BulkActionBar } from "@/components/tables/bulk-action-bar";
 import { BulkEditModal } from "@/components/tables/bulk-edit-modal";
 import { exportToFile } from "@/lib/excel-utils";
@@ -1030,6 +1076,14 @@ function ResourceListView({ resource }: ResourcePageProps) {
       )}
 
       <div className="rounded-xl border border-border bg-bg-secondary">
+        <TableTabs
+          tabs={c.tabs}
+          active={c.activeTab}
+          onChange={c.setActiveTab}
+          endpoint={resource.endpoint}
+          baseFilters={c.filters}
+        />
+
         <TableToolbar
           resource={resource}
           search={c.search}
@@ -1057,6 +1111,13 @@ function ResourceListView({ resource }: ResourcePageProps) {
           />
         )}
 
+        {/* The tabs control this region, so it is their panel. Without the
+            pairing a reader hears a tablist and never learns what it filters. */}
+        <div
+          id="table-panel"
+          role={c.tabs.length > 0 ? "tabpanel" : undefined}
+          aria-labelledby={c.activeTab ? "table-tab-" + c.activeTab : undefined}
+        >
         {showEmptyState && EmptyState ? (
           <EmptyState resource={resource} />
         ) : (
@@ -1075,6 +1136,7 @@ function ResourceListView({ resource }: ResourcePageProps) {
             rowActions={resource.table.rowActions}
           />
         )}
+        </div>
 
         {/* Room under the table for the floating pill, only while it is there.
             Without it the last row sits behind the bar with nowhere to scroll,
@@ -1251,6 +1313,7 @@ import type {
   CustomBulkAction,
   ResourceDefinition,
   TableAction,
+  TableTab,
 } from "@/lib/resource";
 import {
   useBulkResource,
@@ -1383,6 +1446,13 @@ export interface ResourceController<T = Record<string, unknown>> {
   announce: (message: string) => void;
   liveMessage: string;
 
+  // ── tabs ────────────────────────────────────────────────────────────
+  /** The resource's filter presets, or an empty array when it has none. */
+  tabs: TableTab[];
+  /** Key of the tab currently applied. "" when the resource has no tabs. */
+  activeTab: string;
+  setActiveTab: (key: string) => void;
+
   // ── archived view ───────────────────────────────────────────────────
   /** True while the Archived tab is open. */
   showArchived: boolean;
@@ -1465,6 +1535,10 @@ export function useResourceController<T = Record<string, unknown>>(
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [pendingCustom, setPendingCustom] = useState<CustomBulkAction<T> | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const tabs = useMemo(() => resource.table.tabs ?? [], [resource.table.tabs]);
+  // First tab on load. A tab strip where nothing is selected reads as broken,
+  // and the first tab is conventionally the unfiltered one.
+  const [activeTab, setActiveTabState] = useState(() => tabs[0]?.key ?? "");
   const [showArchived, setShowArchivedState] = useState(false);
   const [liveMessage, setLiveMessage] = useState("");
 
@@ -1496,9 +1570,14 @@ export function useResourceController<T = Record<string, unknown>>(
     search,
     sortBy,
     sortOrder,
-    // The archived view is a filter like any other, so it travels with the
-    // rest of them and the query key changes when it flips.
-    filters: showArchived ? { ...filters, archived: "true" } : filters,
+    // Tab filters, then the operator's own, then the archived flag. The
+    // operator's win: picking "Unpaid" and then filtering by customer should
+    // narrow the tab, not silently leave it.
+    filters: {
+      ...(tabs.find((t) => t.key === activeTab)?.filters ?? {}),
+      ...filters,
+      ...(showArchived ? { archived: "true" } : {}),
+    },
     dateParams,
     dateField: resource.table.dateFilter?.field,
   });
@@ -1508,6 +1587,14 @@ export function useResourceController<T = Record<string, unknown>>(
   // Switching views changes which rows exist, so a selection made in the
   // other one is stale. Keeping it is how you archive something you cannot
   // see.
+  // Switching tabs changes which rows exist, so a selection made under the
+  // other one is stale, the same reasoning as the archived view.
+  const setActiveTab = useCallback((key: string) => {
+    setActiveTabState(key);
+    setSelection([]);
+    setPage(1);
+  }, []);
+
   const setShowArchived = useCallback((value: boolean) => {
     setShowArchivedState(value);
     setSelection([]);
@@ -1863,6 +1950,10 @@ export function useResourceController<T = Record<string, unknown>>(
     refresh,
     announce,
     liveMessage,
+
+    tabs,
+    activeTab,
+    setActiveTab,
 
     showArchived,
     setShowArchived,
@@ -2345,6 +2436,154 @@ export default function AdminDashboard() {
 }
 
 // adminConfirmModal returns the reusable confirm modal component.
+// adminTableTabs emits components/tables/table-tabs.tsx.
+func adminTableTabs() string {
+	return `"use client";
+
+import { useEffect, useRef, useState } from "react";
+import type { TableTab } from "@/lib/resource";
+import { apiClient } from "@/lib/api-client";
+import { getIcon } from "@/lib/icons";
+
+/*
+ * Filter presets as a tab strip.
+ *
+ * A real tablist, not a row of buttons that happen to filter. That means
+ * arrow keys move between tabs and Tab leaves the group, which matters here
+ * more than it looks: without roving focus a keyboard user walks through every
+ * filter on the way to the table, and with six tabs that is six stops before
+ * reaching the thing being filtered.
+ *
+ * The panel these control is the table, so the table carries the tabpanel role
+ * and is labelled by the active tab.
+ *
+ * Counts are opt-in and arrive late. The badge is rendered only once its number
+ * is known rather than showing a spinner or a zero, because a tab that says 0
+ * and then says 47 is worse than a tab that said nothing for a moment. Each
+ * count is one request with page_size=1, reading meta.total.
+ */
+
+export interface TableTabsProps {
+  tabs: TableTab[];
+  active: string;
+  onChange: (key: string) => void;
+  /** Endpoint the counts are fetched from, when a tab asks for one. */
+  endpoint: string;
+  /** Filters already applied outside the tabs, so a count matches the table. */
+  baseFilters?: Record<string, string>;
+}
+
+export function TableTabs({ tabs, active, onChange, endpoint, baseFilters }: TableTabsProps) {
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [counts, setCounts] = useState<Record<string, number>>({});
+
+  const wanted = tabs.filter((tab) => tab.count).map((tab) => tab.key).join(",");
+  const base = JSON.stringify(baseFilters ?? {});
+
+  useEffect(() => {
+    if (!wanted) return;
+    let cancelled = false;
+
+    const load = async () => {
+      const results = await Promise.all(
+        tabs
+          .filter((tab) => tab.count)
+          .map(async (tab) => {
+            const params = new URLSearchParams({
+              ...(JSON.parse(base) as Record<string, string>),
+              ...(tab.filters ?? {}),
+              page_size: "1",
+            });
+            try {
+              const { data } = await apiClient.get(endpoint + "?" + params.toString());
+              return [tab.key, Number(data?.meta?.total ?? 0)] as const;
+            } catch {
+              // A count that fails is a missing badge, not a broken page.
+              return null;
+            }
+          }),
+      );
+      if (cancelled) return;
+      setCounts(Object.fromEntries(results.filter(Boolean) as (readonly [string, number])[]));
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [wanted, endpoint, base, tabs]);
+
+  if (tabs.length === 0) return null;
+
+  // Roving focus: Left and Right move between tabs, Home and End jump to the
+  // ends, and Tab leaves the strip entirely.
+  function onKeyDown(event: React.KeyboardEvent, index: number) {
+    const last = tabs.length - 1;
+    let next = index;
+    if (event.key === "ArrowRight") next = index === last ? 0 : index + 1;
+    else if (event.key === "ArrowLeft") next = index === 0 ? last : index - 1;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = last;
+    else return;
+    event.preventDefault();
+    onChange(tabs[next].key);
+    refs.current[next]?.focus();
+  }
+
+  return (
+    <div
+      role="tablist"
+      aria-label="Filter presets"
+      className="flex flex-wrap gap-1 border-b border-border px-3 pt-3"
+    >
+      {tabs.map((tab, index) => {
+        const selected = tab.key === active;
+        const Icon = tab.icon ? getIcon(tab.icon) : null;
+        const count = counts[tab.key];
+        return (
+          <button
+            key={tab.key}
+            ref={(node) => {
+              refs.current[index] = node;
+            }}
+            type="button"
+            role="tab"
+            id={"table-tab-" + tab.key}
+            aria-selected={selected}
+            aria-controls="table-panel"
+            tabIndex={selected ? 0 : -1}
+            onClick={() => onChange(tab.key)}
+            onKeyDown={(event) => onKeyDown(event, index)}
+            className={
+              "inline-flex min-h-10 items-center gap-2 rounded-t-lg border-b-2 px-3 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent " +
+              (selected
+                ? "border-accent font-medium text-accent"
+                : "border-transparent text-text-secondary hover:bg-bg-hover hover:text-text-primary")
+            }
+          >
+            {Icon && <Icon className="h-3.5 w-3.5" aria-hidden="true" />}
+            {tab.label}
+            {typeof count === "number" && (
+              <span
+                className={
+                  "rounded-full px-1.5 py-0.5 text-xs tabular-nums " +
+                  (selected ? "bg-accent/15 text-accent" : "bg-bg-tertiary text-text-secondary")
+                }
+              >
+                {count}
+                {/* The number alone is ambiguous next to a label. */}
+                <span className="sr-only"> matching</span>
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+`
+}
+
 // adminBulkActionBar emits components/tables/bulk-action-bar.tsx.
 func adminBulkActionBar() string {
 	return `"use client";
