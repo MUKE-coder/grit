@@ -640,6 +640,22 @@ func (g *Generator) writeGoHandler(names Names) error {
 		}
 	}
 
+	// Columns the admin may filter on from the query string. Wider than the
+	// sortable set: a bool or a foreign key is worth filtering by and pointless
+	// to sort by. Whitelisted rather than open, because the column name goes
+	// into the WHERE clause.
+	filterCols := `"id": true`
+	for _, f := range g.Definition.Fields {
+		if f.IsManyToMany() {
+			continue
+		}
+		col := toSnakeCase(f.Name)
+		if f.IsBelongsTo() {
+			col = f.FKColumnName()
+		}
+		filterCols += fmt.Sprintf(`, "%s": true`, col)
+	}
+
 	searchCols := g.buildHandlerSearchCols()
 
 	// Build export columns from the field list. Skips relationships
@@ -810,6 +826,7 @@ func (g *Generator) writeGoHandler(names Names) error {
 		"{{plural}}", names.Plural,
 		"{{Plural}}", names.PluralPascal,
 		"{{SORT_COLS}}", sortCols,
+		"{{FILTER_COLS}}", filterCols,
 		"{{SEARCH_COLS}}", searchCols,
 		"{{EXPORT_COLS}}", exportCols,
 		"{{CREATE_FIELDS}}", createFields,
@@ -886,6 +903,7 @@ func (h *{{Pascal}}Handler) List(c *gin.Context) {
 		paginate.Config{
 			Searchable: []string{{{SEARCH_COLS}}},
 			Sortable:   map[string]bool{{{SORT_COLS}}},
+			Filterable: map[string]bool{{{FILTER_COLS}}},
 		},
 	)
 	if err != nil {
