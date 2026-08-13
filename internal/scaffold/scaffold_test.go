@@ -624,7 +624,7 @@ func TestWriteAdminTanStackFiles(t *testing.T) {
 		filepath.Join(root, "apps", "admin", "src", "components", "widgets", "stats-card.tsx"),
 		filepath.Join(root, "apps", "admin", "src", "lib", "api-client.ts"),
 		filepath.Join(root, "apps", "admin", "src", "hooks", "use-auth.ts"),
-		filepath.Join(root, "apps", "admin", "src", "resources", "users.ts"),
+		filepath.Join(root, "apps", "admin", "src", "resources", "users", "users.ts"),
 	}
 	for _, f := range files {
 		if _, err := os.Stat(f); err != nil {

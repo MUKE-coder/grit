@@ -31,7 +31,13 @@ import (
 func SyncAdminResource(root string, s GoStruct) (added int, warnings []string, err error) {
 	plural := Pluralize(toSnakeCase(s.Name))
 	kebab := strings.ReplaceAll(plural, "_", "-")
-	path := filepath.Join(root, "apps", "admin", "resources", kebab+".ts")
+	resourcesRoot := filepath.Join(root, "apps", "admin", "resources")
+	path := scaffold.FindResourceDef(resourcesRoot, kebab)
+	if path == "" {
+		// No definition in either layout. Not an error: the operator may have
+		// a Go model with no admin resource behind it.
+		return 0, nil, nil
+	}
 
 	data, statErr := os.ReadFile(path)
 	if os.IsNotExist(statErr) {

@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/MUKE-coder/grit/v3/internal/scaffold"
 )
 
 // injectAll injects code into all existing files that have markers.
@@ -395,8 +397,15 @@ func (g *Generator) injectAll(names Names) error {
 		registryFile = filepath.Join(adminRoot, "src", "resources", "index.ts")
 	}
 	if fileExists(registryFile) {
-		resourceImport := fmt.Sprintf(`import { %sResource } from "./%s";`,
-			names.Camel, names.PluralKebab)
+		// The path depends on the layout this project is in: a flat project
+		// imports "./products", a foldered one "./products/products". Reading
+		// the disk rather than assuming keeps generate working on both.
+		importFrom := scaffold.RegistryImportPath(names.PluralKebab)
+		if fileExists(filepath.Join(filepath.Dir(registryFile), names.PluralKebab+".ts")) {
+			importFrom = "./" + names.PluralKebab
+		}
+		resourceImport := fmt.Sprintf(`import { %sResource } from "%s";`,
+			names.Camel, importFrom)
 		if err := injectBefore(registryFile, "// grit:resources", resourceImport); err != nil {
 			return fmt.Errorf("injecting resource import: %w", err)
 		}

@@ -28,6 +28,88 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.143.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.143.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>One folder per resource.</strong>
+                </p>
+                <p>
+                  Adding the <code>.custom.tsx</code> overlay doubled the number of files in{' '}
+                  <code>resources/</code>, and the flat layout stopped scaling: with twenty
+                  resources it is forty files in one directory, and the two halves of a single
+                  resource sort apart from each other whenever another name falls between them.
+                </p>
+                <pre>
+                  <code>{`resources/
+  index.ts
+  products/
+    products.ts          generated, rewritten freely
+    products.custom.tsx  yours, written once
+  users/
+    users.ts
+    users.custom.tsx`}</code>
+                </pre>
+                <p>
+                  The overlay import inside the definition is unchanged. It was always{' '}
+                  <code>./products.custom</code> and the two files are still siblings. What changed
+                  is the registry, which now imports <code>./products/products</code>, and the route
+                  pages, which import <code>@/resources/products/products</code>.
+                </p>
+
+                <p>
+                  <strong>Existing projects are moved for you.</strong> <code>grit upgrade</code>{' '}
+                  gives each resource its folder, carries the overlay across with it, and rewrites
+                  both the registry imports and the alias imports in the route pages. It runs before
+                  anything is written, because dropping a new <code>users/users.ts</code> into a
+                  project still holding a flat <code>users.ts</code> would leave two definitions and
+                  a registry pointing at the stale one.
+                </p>
+                <p>
+                  Nothing is deleted, only moved, and the whole thing is safe to run repeatedly: the
+                  import patterns refuse a path that is already nested, so a second pass cannot
+                  produce <code>products/products/products</code>. There are tests for exactly that,
+                  and for the registry surviving untouched, since <code>index.ts</code> is not a
+                  resource and moving it would break every import at once.
+                </p>
+                <p>
+                  <code>generate</code>, <code>sync</code>, <code>grit g field</code> and{' '}
+                  <code>remove resource</code> all read both layouts, so a project that has not
+                  upgraded yet keeps working. Writes always use folders.
+                </p>
+
+                <p>
+                  <strong>Two fixes to yesterday's bulk actions.</strong> The bar is fixed to the
+                  bottom of the viewport now rather than sitting at the foot of the table. The
+                  original reasoning, that a floating bar covers the rows it acts on, only holds
+                  for a table that fits on screen: with twenty rows you tick something near the top
+                  and the bar appears below the fold, so as far as the operator can tell nothing
+                  happened. It is a centred pill rather than a full-width bar, and the page
+                  reserves space underneath while it is shown, so the last rows can still be
+                  scrolled clear of it.
+                </p>
+                <p>
+                  And the bulk hook falls back to one request per row when{' '}
+                  <code>POST /&lt;resource&gt;/bulk</code> returns 404. That is the normal state of
+                  an upgraded project: <code>grit upgrade</code> replaces the admin but never
+                  regenerates API handlers, so the browser gets the new code while the server keeps
+                  the old routes, and without the fallback every existing install would 404 the
+                  moment somebody ticked a row. The fallback is genuinely worse, N requests and a
+                  partial result if one fails, so run <code>grit generate resource</code> for the
+                  real endpoint. Resources with no declared{' '}
+                  <code>bulkActions</code> now default to edit, export and delete rather than
+                  delete alone, since those three work against any API.
+                </p>
+              </div>
+            </div>
+
             {/* v3.142.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

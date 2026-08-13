@@ -307,7 +307,7 @@ func adminResourceDetailRoute(camelName, pluralKebab, pascalName string) string 
 
 import { use } from "react";
 import { ResourceDetailPage } from "@/components/resource/resource-detail-page";
-import { {{CAMEL}}Resource } from "@/resources/{{KEBAB}}";
+import { {{CAMEL}}Resource } from "@/resources/{{KEBAB}}/{{KEBAB}}";
 
 export default function {{PASCAL}}DetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -325,7 +325,7 @@ export default function {{PASCAL}}DetailPage({ params }: { params: Promise<{ id:
 func adminResourceDetailRouteTanStack(camelName, pluralKebab string) string {
 	src := `import { createFileRoute } from '@tanstack/react-router'
 import { ResourceDetailPage } from '@/components/resource/resource-detail-page'
-import { {{CAMEL}}Resource } from '@/resources/{{KEBAB}}'
+import { {{CAMEL}}Resource } from '@/resources/{{KEBAB}}/{{KEBAB}}'
 
 export const Route = createFileRoute('/_dashboard/resources/{{KEBAB}}/$id')({
   component: RouteComponent,

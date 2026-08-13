@@ -640,8 +640,8 @@ export default custom;
 
 // adminResourceRegistry returns the resource registry (resources/index.ts).
 func adminResourceRegistry() string {
-	return `import { usersResource } from "./users";
-import { blogsResource } from "./blogs";
+	return `import { usersResource } from "./users/users";
+import { blogsResource } from "./blogs/blogs";
 // grit:resources
 
 import type { ResourceDefinition } from "@/lib/resource";
@@ -1076,6 +1076,12 @@ function ResourceListView({ resource }: ResourcePageProps) {
           />
         )}
 
+        {/* Room under the table for the floating pill, only while it is there.
+            Without it the last row sits behind the bar with nowhere to scroll,
+            which is the objection that kept the bar in the flow to begin
+            with. */}
+        {c.selection.length > 0 && <div aria-hidden="true" className="h-20" />}
+
         {CustomBulkBar ? (
           <CustomBulkBar resource={resource} />
         ) : (
@@ -1205,7 +1211,7 @@ func adminUsersPage() string {
 	return `"use client";
 
 import { ResourcePage } from "@/components/resource/resource-page";
-import { usersResource } from "@/resources/users";
+import { usersResource } from "@/resources/users/users";
 
 export default function UsersPage() {
   return <ResourcePage resource={usersResource} />;
@@ -1735,7 +1741,11 @@ export function useResourceController<T = Record<string, unknown>>(
   // rows that are not, so the two never appear together. Offering both is how
   // an operator ends up archiving what they meant to bring back.
   const bulkActions = useMemo(() => {
-    const configured = resource.table.bulkActions ?? ["delete"];
+    // ["edit", "export", "delete"] rather than ["delete"] alone: a resource
+    // that predates bulkActions still gets the three that work against any
+    // API. Archive and restore are opt-in because they need both the column
+    // and the endpoint.
+    const configured = resource.table.bulkActions ?? ["edit", "export", "delete"];
     return configured.filter((action) => {
       if (action === "restore") return showArchived;
       if (action === "archive") return !showArchived;
@@ -2112,11 +2122,39 @@ export function useBulkResource(endpoint: string, pluralLabel?: string, singular
   return useMutation({
     // ids are strings because Grit's models use UUID primary keys.
     mutationFn: async (payload: BulkPayload) => {
-      const { data } = await apiClient.post(` + "`" + `${endpoint}/bulk` + "`" + `, payload);
-      return { ...data, action: payload.action } as {
-        data?: { affected: number; requested: number };
-        action: BulkOperation;
-      };
+      try {
+        const { data } = await apiClient.post(` + "`" + `${endpoint}/bulk` + "`" + `, payload);
+        return { ...data, action: payload.action } as {
+          data?: { affected: number; requested: number };
+          action: BulkOperation;
+        };
+      } catch (err) {
+        // No /bulk route on this endpoint. That is the normal state of an
+        // upgraded project: grit upgrade replaces the admin but never
+        // regenerates API handlers, so the browser gets the new code and the
+        // server keeps the old routes. Falling back per row keeps the button
+        // working instead of 404ing on every existing install.
+        //
+        // The fallback is genuinely worse: N requests, N transactions, and a
+        // partial result if one fails. Run grit generate for the resource to
+        // get the real endpoint.
+        const status = (err as { response?: { status?: number } })?.response?.status;
+        if (status !== 404) throw err;
+
+        const results = await Promise.allSettled(
+          payload.ids.map((id) =>
+            payload.action === "delete"
+              ? apiClient.delete(` + "`" + `${endpoint}/${id}` + "`" + `)
+              : apiClient.patch(` + "`" + `${endpoint}/${id}` + "`" + `, payload.patch ?? {}),
+          ),
+        );
+        const affected = results.filter((r) => r.status === "fulfilled").length;
+        if (affected === 0) throw err;
+        return {
+          data: { affected, requested: payload.ids.length },
+          action: payload.action,
+        };
+      }
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: [endpoint] });
@@ -2318,9 +2356,18 @@ import { getIcon, Archive, ArchiveRestore, Download, Pencil, Trash2, X } from "@
 /*
  * The bar that appears once rows are ticked.
  *
- * It sits in the flow at the foot of the table rather than floating over the
- * rows. A floating bar covers the row you are working on, and on a short table
- * it covers the last two rows entirely.
+ * Fixed to the bottom of the viewport, centred. It sat in the flow at the foot
+ * of the table first, on the reasoning that a floating bar covers the rows it
+ * acts on. That reasoning only holds for a table that fits on screen: with
+ * twenty rows you tick something near the top, the bar appears eight hundred
+ * pixels below the fold, and as far as the operator can tell nothing happened.
+ * A control that responds to a selection has to be where the selection is
+ * being made.
+ *
+ * The original worry is answered rather than ignored. It is a centred pill
+ * rather than a full-width bar, so the table is visible either side of it, and
+ * the page reserves space underneath while it is shown, so the last rows can
+ * still be scrolled clear of it.
  *
  * It is a labelled region so it turns up in a landmark list, and its arrival is
  * announced through the page's live region, because ticking a checkbox does not
@@ -2373,7 +2420,7 @@ export function BulkActionBar({
   return (
     <section
       aria-label="Bulk actions"
-      className="flex flex-wrap items-center gap-3 border-t border-border bg-bg-tertiary/60 px-4 py-2.5"
+      className="fixed bottom-6 left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center gap-3 rounded-xl border border-border bg-bg-elevated px-4 py-2.5 shadow-2xl shadow-black/25"
     >
       <p className="text-sm font-medium text-text-primary">
         {count} {noun} selected
@@ -2441,7 +2488,7 @@ export function BulkActionBar({
       <button
         type="button"
         onClick={onClear}
-        className="ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         <X className="h-3.5 w-3.5" aria-hidden="true" />
         Clear selection
@@ -2899,7 +2946,7 @@ func adminBlogsPage() string {
 	return `"use client";
 
 import { ResourcePage } from "@/components/resource/resource-page";
-import { blogsResource } from "@/resources/blogs";
+import { blogsResource } from "@/resources/blogs/blogs";
 
 export default function BlogsPage() {
   return <ResourcePage resource={blogsResource} />;

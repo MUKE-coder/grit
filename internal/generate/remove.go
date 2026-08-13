@@ -59,10 +59,12 @@ func RemoveResource(name string) error {
 		filepath.Join(webRoot, "src", "hooks", "use-"+names.PluralKebab+".ts"),
 		// --- admin: Next.js ---
 		filepath.Join(adminRoot, "hooks", "use-"+names.PluralKebab+".ts"),
+		filepath.Join(adminRoot, "resources", names.PluralKebab, names.PluralKebab+".ts"),
 		filepath.Join(adminRoot, "resources", names.PluralKebab+".ts"),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", names.PluralKebab, "page.tsx"),
 		// --- admin: TanStack/Vite ---
 		filepath.Join(adminRoot, "src", "hooks", "use-"+names.PluralKebab+".ts"),
+		filepath.Join(adminRoot, "src", "resources", names.PluralKebab, names.PluralKebab+".ts"),
 		filepath.Join(adminRoot, "src", "resources", names.PluralKebab+".ts"),
 		filepath.Join(adminRoot, "src", "routes", "_dashboard", "resources", names.PluralKebab+".tsx"),
 		filepath.Join(adminRoot, "src", "pages", "resources", names.PluralKebab+".tsx"),
@@ -85,7 +87,9 @@ func RemoveResource(name string) error {
 	// An untouched stub is deleted; anything with real work in it is set aside
 	// as .bak, which keeps it off the TypeScript build without throwing it away.
 	for _, overlay := range []string{
+		filepath.Join(adminRoot, "resources", names.PluralKebab, names.PluralKebab+".custom.tsx"),
 		filepath.Join(adminRoot, "resources", names.PluralKebab+".custom.tsx"),
+		filepath.Join(adminRoot, "src", "resources", names.PluralKebab, names.PluralKebab+".custom.tsx"),
 		filepath.Join(adminRoot, "src", "resources", names.PluralKebab+".custom.tsx"),
 	} {
 		body, err := os.ReadFile(overlay)
@@ -112,6 +116,9 @@ func RemoveResource(name string) error {
 	// these contain nested dynamic routes — admin's [id]/page.tsx and web's
 	// [slug]/page.tsx — so an empty-dir check would never fire.
 	dirsToDelete := []string{
+		// Only if empty: a .bak the operator wanted kept lives in here.
+		filepath.Join(adminRoot, "resources", names.PluralKebab),
+		filepath.Join(adminRoot, "src", "resources", names.PluralKebab),
 		filepath.Join(adminRoot, "app", "(dashboard)", "resources", names.PluralKebab),
 		filepath.Join(webRoot, "app", names.Kebab),
 	}
@@ -246,7 +253,10 @@ func RemoveResource(name string) error {
 		if !fileExists(reg) {
 			continue
 		}
-		if removeLinesContaining(reg, fmt.Sprintf(`from "./%s"`, names.PluralKebab)) == nil {
+		// No closing quote in the needle: the import is "./carriers" in a flat
+		// project and "./carriers/carriers" in a foldered one, and matching the
+		// quote would only catch the first.
+		if removeLinesContaining(reg, fmt.Sprintf(`from "./%s`, names.PluralKebab)) == nil {
 			fmt.Println("  ✗ Removed resource import")
 		}
 	}

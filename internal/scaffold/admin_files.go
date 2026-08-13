@@ -388,10 +388,10 @@ func writeAdminFiles(root string, opts Options) error {
 
 		// Resource definitions
 		filepath.Join(adminRoot, "resources", "index.ts"):         adminResourceRegistry(),
-		filepath.Join(adminRoot, "resources", "users.ts"):         adminUsersResource(),
-		filepath.Join(adminRoot, "resources", "users.custom.tsx"): AdminResourceCustomStub("User", "User"),
-		filepath.Join(adminRoot, "resources", "blogs.ts"):         adminBlogsResource(),
-		filepath.Join(adminRoot, "resources", "blogs.custom.tsx"): AdminResourceCustomStub("Blog", "Blog"),
+		filepath.Join(adminRoot, "resources", "users", "users.ts"):         adminUsersResource(),
+		filepath.Join(adminRoot, "resources", "users", "users.custom.tsx"): AdminResourceCustomStub("User", "User"),
+		filepath.Join(adminRoot, "resources", "blogs", "blogs.ts"):         adminBlogsResource(),
+		filepath.Join(adminRoot, "resources", "blogs", "blogs.custom.tsx"): AdminResourceCustomStub("Blog", "Blog"),
 
 		// Profile components
 		filepath.Join(adminRoot, "components", "profile", "delete-account-dialog.tsx"): adminDeleteAccountDialog(),

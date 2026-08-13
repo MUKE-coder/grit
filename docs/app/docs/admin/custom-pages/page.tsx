@@ -47,7 +47,7 @@ export default function CustomPagesPage() {
               code={`"use client";
 
 import { ResourcePage } from "@/components/resource/resource-page";
-import { productsResource } from "@/resources/products";
+import { productsResource } from "@/resources/products/products";
 
 export default function ProductsPage() {
   return <ResourcePage resource={productsResource} />;
@@ -76,7 +76,7 @@ export default function ProductsPage() {
               code={`"use client";
 
 import { useResourceController } from "@/hooks/use-resource-controller";
-import { productsResource } from "@/resources/products";
+import { productsResource } from "@/resources/products/products";
 import { TemplateShell, TemplateTable, TemplatePager } from "@/components/template";
 
 export default function ProductsPage() {
@@ -222,8 +222,10 @@ return (
             <CodeBlock
               language="bash"
               filename="apps/admin/resources/"
-              code={`products.ts          # generated: rewritten on every grit generate
-products.custom.tsx  # yours, created once, never touched again`}
+              code={`index.ts               # the registry
+products/
+  products.ts          # generated: rewritten on every grit generate
+  products.custom.tsx  # yours, created once, never touched again`}
             />
 
             <div className="prose-grit mb-10">
@@ -237,7 +239,7 @@ products.custom.tsx  # yours, created once, never touched again`}
 
             <CodeBlock
               language="tsx"
-              filename="apps/admin/resources/products.custom.tsx"
+              filename="apps/admin/resources/products/products.custom.tsx"
               code={`import type { ResourceCustomisation } from "@/lib/resource";
 import { DataTable } from "@/components/tables/data-table";
 import { StatusPill, TemplateTable } from "@/components/template";
@@ -357,7 +359,7 @@ table: {
 
             <CodeBlock
               language="tsx"
-              filename="apps/admin/resources/shipments.custom.tsx"
+              filename="apps/admin/resources/shipments/shipments.custom.tsx"
               code={`const custom: ResourceCustomisation<Shipment> = {
   bulkActions: [
     {
