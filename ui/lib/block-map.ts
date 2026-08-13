@@ -15,12 +15,15 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "application-ui-inputs-bordered-default": dynamic(() => import('@/registry/application-ui/inputs/bordered-default').then((m) => ({ default: m.default }))),
   "application-ui-inputs-soft-filled": dynamic(() => import('@/registry/application-ui/inputs/soft-filled').then((m) => ({ default: m.default }))),
   "application-ui-sidebar-layouts-collapsible-dashboard-shell": dynamic(() => import('@/registry/application-ui/sidebar-layouts/collapsible-dashboard-shell').then((m) => ({ default: m.default }))),
+  "application-ui-sidebar-layouts-orders-console-with-metrics": dynamic(() => import('@/registry/application-ui/sidebar-layouts/orders-console-with-metrics').then((m) => ({ default: m.default }))),
   "application-ui-stats-metric-tiles-with-trend": dynamic(() => import('@/registry/application-ui/stats/metric-tiles-with-trend').then((m) => ({ default: m.default }))),
+  "application-ui-tables-product-table-with-bulk-actions": dynamic(() => import('@/registry/application-ui/tables/product-table-with-bulk-actions').then((m) => ({ default: m.default }))),
   "application-ui-tables-sortable-table-with-selection": dynamic(() => import('@/registry/application-ui/tables/sortable-table-with-selection').then((m) => ({ default: m.default }))),
   "ecommerce-product-details-bundle-picker-with-sticky-buy-bar": dynamic(() => import('@/registry/ecommerce/product-details/bundle-picker-with-sticky-buy-bar').then((m) => ({ default: m.default }))),
   "ecommerce-product-details-digital-product-with-plans": dynamic(() => import('@/registry/ecommerce/product-details/digital-product-with-plans').then((m) => ({ default: m.default }))),
   "ecommerce-product-details-physical-product-with-variants": dynamic(() => import('@/registry/ecommerce/product-details/physical-product-with-variants').then((m) => ({ default: m.default }))),
   "ecommerce-product-details-product-tabs-with-reviews": dynamic(() => import('@/registry/ecommerce/product-details/product-tabs-with-reviews').then((m) => ({ default: m.default }))),
+  "ecommerce-product-grids-catalog-with-filter-rail": dynamic(() => import('@/registry/ecommerce/product-grids/catalog-with-filter-rail').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-deals-grid-with-stock-meter": dynamic(() => import('@/registry/ecommerce/product-grids/deals-grid-with-stock-meter').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-digital-goods-grid": dynamic(() => import('@/registry/ecommerce/product-grids/digital-goods-grid').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-grid-with-ratings": dynamic(() => import('@/registry/ecommerce/product-grids/grid-with-ratings').then((m) => ({ default: m.default }))),
@@ -28,6 +31,7 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "ecommerce-product-grids-listing-with-sort-and-view-toggle": dynamic(() => import('@/registry/ecommerce/product-grids/listing-with-sort-and-view-toggle').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-marketplace-with-filter-tabs": dynamic(() => import('@/registry/ecommerce/product-grids/marketplace-with-filter-tabs').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-scrolling-product-carousel": dynamic(() => import('@/registry/ecommerce/product-grids/scrolling-product-carousel').then((m) => ({ default: m.default }))),
+  "ecommerce-product-grids-shop-with-cart-panel": dynamic(() => import('@/registry/ecommerce/product-grids/shop-with-cart-panel').then((m) => ({ default: m.default }))),
   "ecommerce-product-grids-stay-listings-with-galleries": dynamic(() => import('@/registry/ecommerce/product-grids/stay-listings-with-galleries').then((m) => ({ default: m.default }))),
   "ecommerce-store-banners-bento-hero-with-proof": dynamic(() => import('@/registry/ecommerce/store-banners/bento-hero-with-proof').then((m) => ({ default: m.default }))),
   "ecommerce-store-banners-category-rail-with-featured-promo": dynamic(() => import('@/registry/ecommerce/store-banners/category-rail-with-featured-promo').then((m) => ({ default: m.default }))),
@@ -106,6 +110,7 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-landing-pages-animation-library-docs": dynamic(() => import('@/registry/marketing/landing-pages/animation-library-docs').then((m) => ({ default: m.default }))),
   "marketing-landing-pages-automation-agency-editorial": dynamic(() => import('@/registry/marketing/landing-pages/automation-agency-editorial').then((m) => ({ default: m.default }))),
   "marketing-landing-pages-call-scheduling-app": dynamic(() => import('@/registry/marketing/landing-pages/call-scheduling-app').then((m) => ({ default: m.default }))),
+  "marketing-landing-pages-crm-pipeline-platform": dynamic(() => import('@/registry/marketing/landing-pages/crm-pipeline-platform').then((m) => ({ default: m.default }))),
   "marketing-landing-pages-dark-agency-with-comparison": dynamic(() => import('@/registry/marketing/landing-pages/dark-agency-with-comparison').then((m) => ({ default: m.default }))),
   "marketing-landing-pages-design-studio": dynamic(() => import('@/registry/marketing/landing-pages/design-studio').then((m) => ({ default: m.default }))),
   "marketing-landing-pages-finance-ai-platform": dynamic(() => import('@/registry/marketing/landing-pages/finance-ai-platform').then((m) => ({ default: m.default }))),
@@ -137,5 +142,5 @@ export const BLOCK_MAP: Record<string, ComponentType> = {
   "marketing-team-sections-timeline-journey": dynamic(() => import('@/registry/marketing/team-sections/timeline-journey').then((m) => ({ default: m.default }))),
 }
 
-/** 129 blocks at generation time. */
-export const BLOCK_COUNT: number = 129
+/** 134 blocks at generation time. */
+export const BLOCK_COUNT: number = 134

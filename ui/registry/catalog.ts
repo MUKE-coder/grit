@@ -789,6 +789,13 @@ export const CATALOG: Category[] = [
               'Complete pages assembled from the sections above. These install as a single file because the registry ships one file per block, so treat them as a starting point you own rather than a component to configure: the first thing to do is split it into the sections you actually want.',
             blocks: [
               {
+                slug: 'crm-pipeline-platform',
+                name: 'CRM pipeline platform',
+                description:
+                  'Hero with a product shot, logo cloud, figures, feature bento, an accordion and pricing. Every filled orange is orange-700, because white on orange-500 is 2.80:1; the product mocks are aria-hidden drawings with nothing focusable inside them.',
+                previewHeight: 1400,
+              },
+              {
                 slug: 'task-management-saas',
                 name: 'Task management SaaS',
                 description:
@@ -1164,6 +1171,22 @@ export const CATALOG: Category[] = [
                 previewHeight: 720,
                 dependencies: ['lucide-react'],
               },
+              {
+                slug: 'catalog-with-filter-rail',
+                name: 'Catalogue with filter rail',
+                description:
+                  'A working filter rail beside a grid. Each group is a fieldset with a real legend, the colour swatches are named checkboxes, and the price is two labelled inputs rather than a slider nobody can operate.',
+                previewHeight: 1100,
+                dependencies: ['lucide-react'],
+              },
+              {
+                slug: 'shop-with-cart-panel',
+                name: 'Shop with cart panel',
+                description:
+                  'The cart open beside the grid, and it works: quantities, line selection and totals all move. Every stepper button names its product instead of being one of six identical plus signs.',
+                previewHeight: 1100,
+                dependencies: ['lucide-react'],
+              },
             ],
           },
         ],
@@ -1186,6 +1209,14 @@ export const CATALOG: Category[] = [
             description:
               'Persistent left navigation. These mark the current page with aria-current and open with a skip link, which is what separates a shell you can navigate from one you can only look at.',
             blocks: [
+              {
+                slug: 'orders-console-with-metrics',
+                name: 'Orders console with metrics',
+                description:
+                  'Collapsible sidebar, a metric strip, a real tablist with arrow keys, and an orders table with selection. Each metric states its direction in words rather than leaving it to a coloured triangle.',
+                previewHeight: 900,
+                dependencies: ['lucide-react'],
+              },
               {
                 slug: 'collapsible-dashboard-shell',
                 name: 'Collapsible dashboard shell',
@@ -1279,6 +1310,14 @@ export const CATALOG: Category[] = [
             description:
               'Sortable, selectable data tables. aria-sort on the header cell and a real button inside it are what separate a table you can operate from one you can only read.',
             blocks: [
+              {
+                slug: 'product-table-with-bulk-actions',
+                name: 'Product table with bulk actions',
+                description:
+                  'A dense inventory table whose bulk bar sits in the flow rather than floating over the rows it acts on, is a labelled region, and announces itself when a selection makes it appear.',
+                previewHeight: 900,
+                dependencies: ['lucide-react'],
+              },
               {
                 slug: 'sortable-table-with-selection',
                 name: 'Sortable table with selection',
