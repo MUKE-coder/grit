@@ -28,6 +28,119 @@ export default function ChangelogPage() {
               </p>
             </div>
 
+            {/* v3.142.0 */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center rounded-lg bg-accent/15 px-3 py-1 text-sm font-semibold text-primary">
+                  v3.142.0
+                </span>
+                <span className="text-sm text-muted-foreground">August 13, 2026</span>
+              </div>
+
+              <div className="prose-grit">
+                <p>
+                  <strong>Bulk actions: edit, archive, restore, export and delete.</strong>
+                </p>
+                <p>
+                  Tick some rows and a bar appears at the foot of the table. Until now the only
+                  thing you could do with a selection was delete it, and that was two buttons
+                  squeezed into the toolbar between the search box and the column picker, which put
+                  a Delete one gap away from a text field.
+                </p>
+
+                <p>
+                  <strong>Archive is a real state, not a status field you have to invent.</strong>{' '}
+                  Every generated model gains <code>archived_at</code>, and it is deliberately not{' '}
+                  <code>deleted_at</code>: a soft-deleted row is gone as far as the app is
+                  concerned, while an archived one is still listable, still exportable and
+                  restorable in one click. The list endpoint hides archived rows unless{' '}
+                  <code>?archived=true</code> asks for them, and the resource page grows Published
+                  and Archived tabs. Archive and Restore never appear together, because offering
+                  both is how an operator archives what they meant to bring back.
+                </p>
+
+                <p>
+                  <strong>One request, one transaction.</strong> Bulk delete used to fire one DELETE
+                  per row from the browser: N transactions, N audit entries, and a half-applied
+                  result when the eleventh failed, with the operator told it failed while ten rows
+                  were already gone. There is a real endpoint now:
+                </p>
+                <pre>
+                  <code>{`POST /api/v1/products/bulk
+{ "action": "archive", "ids": ["...", "..."] }
+
+{ "data": { "affected": 9, "requested": 12 },
+  "message": "9 products archived" }`}</code>
+                </pre>
+                <p>
+                  It reports what it actually did rather than what was asked. Archiving twelve rows
+                  of which three were already archived says nine, and the toast says so too. The
+                  patch action reuses the same whitelist <code>PATCH</code> does, so a client
+                  sending <code>id</code> or <code>created_at</code> has them dropped rather than
+                  honoured, and the id list is capped at 500 because an unbounded{' '}
+                  <code>IN</code> clause is a way to lock a table by accident.
+                </p>
+
+                <p>
+                  <strong>Bulk edit is one field, on purpose.</strong> Editing every field at once
+                  means deciding what an empty input means, and there is no good answer: clearing
+                  destroys data nobody looked at, ignoring makes it impossible to clear anything.
+                  One field sidesteps it and is the actual job nine times in ten. Unique columns are
+                  left out of the list, because writing one SKU to forty rows is either a constraint
+                  violation or, worse, not one.
+                </p>
+
+                <p>
+                  <strong>All of it is customisable.</strong> Pick the built-ins per resource with{' '}
+                  <code>table.bulkActions</code>, and add your own from the overlay file, where they
+                  can hold functions:
+                </p>
+                <pre>
+                  <code>{`// resources/shipments.custom.tsx
+bulkActions: [
+  {
+    key: "mark-delivered",
+    label: "Mark delivered",
+    icon: "CheckCircle",
+    confirm: "Mark every selected shipment delivered?",
+    visible: (rows) => rows.every((r) => r.status !== "delivered"),
+    onSelect: async (ids, rows, { refresh, clearSelection, announce }) => {
+      await markDelivered(ids)
+      refresh()
+      clearSelection()
+      announce(rows.length + " marked delivered.")
+    },
+  },
+]`}</code>
+                </pre>
+                <p>
+                  The action gets the ids <em>and</em> the rows, so acting on what the operator
+                  ticked needs no second round trip for data already on screen. Replace the bar
+                  outright with the <code>BulkBar</code> component slot if the shape is wrong for
+                  you.
+                </p>
+
+                <p>
+                  The bar sits in the flow at the foot of the table rather than floating over it: a
+                  floating bar covers the rows it acts on, and on a short table it covers the last
+                  two entirely. It is a labelled region, so it appears in a landmark list, and its
+                  arrival is announced, because ticking a checkbox does not move focus and a bar
+                  that silently appears is a bar a keyboard user never learns about. Delete is the
+                  only red control in it.
+                </p>
+
+                <p>
+                  <strong>One pagination bug fixed on the way.</strong> <code>Meta.Total</code>,{' '}
+                  <code>Page</code> and <code>Pages</code> carried <code>omitempty</code>, so an
+                  empty result set came back as{' '}
+                  <code>{'{"page":1,"page_size":20}'}</code> with no total at all. Zero is an
+                  answer: every client reading <code>meta.total</code> got <code>undefined</code>,
+                  which renders as a blank stat card rather than a nought and turns arithmetic into
+                  NaN. It is the reason an empty resource showed a dash where a 0 belonged.
+                </p>
+              </div>
+            </div>
+
             {/* v3.141.0 */}
             <div className="mb-12">
               <div className="flex items-center gap-3 mb-4">

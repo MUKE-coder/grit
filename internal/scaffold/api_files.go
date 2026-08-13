@@ -3860,10 +3860,14 @@ type Config struct {
 // Page + Pages. Total is shared (always set in offset mode; opt-in in
 // cursor mode via Config.IncludeTotal).
 type Meta struct {
-	Total      int64  ` + "`" + `json:"total,omitempty"` + "`" + `
-	Page       int    ` + "`" + `json:"page,omitempty"` + "`" + `
+	// No omitempty on the counts. Zero is an answer: an empty result set that
+	// reports {"page":1,"page_size":20} and no total leaves every client doing
+	// meta.total with undefined, which renders as a blank stat card rather
+	// than a nought and turns arithmetic into NaN.
+	Total      int64  ` + "`" + `json:"total"` + "`" + `
+	Page       int    ` + "`" + `json:"page"` + "`" + `
 	PageSize   int    ` + "`" + `json:"page_size"` + "`" + `
-	Pages      int    ` + "`" + `json:"pages,omitempty"` + "`" + `
+	Pages      int    ` + "`" + `json:"pages"` + "`" + `
 	NextCursor string ` + "`" + `json:"next_cursor,omitempty"` + "`" + `
 	HasMore    bool   ` + "`" + `json:"has_more,omitempty"` + "`" + `
 }

@@ -182,6 +182,12 @@ type %s struct {
 	CreatedAt time.Time      `+"`"+`json:"created_at"`+"`"+`
 	UpdatedAt time.Time      `+"`"+`json:"updated_at"`+"`"+`
 	DeletedAt gorm.DeletedAt `+"`"+`gorm:"index" json:"-"`+"`"+`
+	// ArchivedAt is the "put this away without destroying it" state, and it is
+	// deliberately not DeletedAt. A soft delete is invisible to every query and
+	// means the row is gone as far as the app is concerned; an archived row is
+	// still listable, still exportable and still restorable in one click. The
+	// list endpoint hides archived rows unless ?archived=true asks for them.
+	ArchivedAt *time.Time  `+"`"+`gorm:"index" json:"archived_at,omitempty"`+"`"+`
 }
 `, imports, names.Pascal, names.Lower, names.Pascal, structFields)
 
@@ -681,7 +687,8 @@ func (g *Generator) writeGoHandler(names Names) error {
 	// needsTimeImport check below is kept only to document why other code
 	// paths wanted it.
 	_ = needsTimeImport
-	timeImport := "\n\t\"os\"\n\t\"time\""
+	// strconv joined the unconditional set with the Bulk handler.
+	timeImport := "\n\t\"os\"\n\t\"strconv\"\n\t\"time\""
 	datatypesImport := ""
 	if needsHandlerDatatypes {
 		datatypesImport = "\n\t\"gorm.io/datatypes\""
@@ -854,8 +861,24 @@ type {{Pascal}}Handler struct {
 }
 
 // List returns a paginated list of {{plural}}.
+//
+//	?archived=true   only archived rows
+//	?archived=all    both
+//	(default)        only live rows
 func (h *{{Pascal}}Handler) List(c *gin.Context) {
 	query := h.DB.Model(&models.{{Pascal}}{}){{PRELOADS}}
+
+	// Archived rows are excluded by default. Anything else means an operator
+	// archives twelve rows, sees the count go down, and finds them again the
+	// next time somebody sorts by a different column.
+	switch c.Query("archived") {
+	case "true", "1":
+		query = query.Where("archived_at IS NOT NULL")
+	case "all":
+		// no filter
+	default:
+		query = query.Where("archived_at IS NULL")
+	}
 
 	res, err := paginate.List[models.{{Pascal}}](
 		query,
@@ -1246,6 +1269,145 @@ func (h *{{Pascal}}Handler) Delete(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "{{Pascal}} deleted successfully",
+	})
+}
+
+// Bulk{{Pascal}}Request is one operation applied to a set of rows.
+//
+// One request rather than one per row. The admin used to fire N parallel
+// DELETEs, which means N transactions, N audit entries, and a half-applied
+// result when the eleventh fails: the operator sees "failed" while ten rows
+// are already gone.
+type Bulk{{Pascal}}Request struct {
+	// delete removes, archive puts away, restore brings back, patch writes the
+	// same field values to every selected row.
+	Action string `+"`"+`json:"action" binding:"required,oneof=delete archive restore patch"`+"`"+`
+	// Capped: an unbounded IN clause is a way to lock a table by accident.
+	IDs []string `+"`"+`json:"ids" binding:"required,min=1,max=500"`+"`"+`
+	// Only read when action is "patch". Whitelisted the same way Patch is.
+	Patch map[string]interface{} `+"`"+`json:"patch"`+"`"+`
+}
+
+// Bulk applies one action to many {{plural}} in a single transaction.
+func (h *{{Pascal}}Handler) Bulk(c *gin.Context) {
+	var req Bulk{{Pascal}}Request
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"error": gin.H{
+				"code":    "VALIDATION_ERROR",
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+
+	// Unarchived scope for archive, archived scope for restore: without it a
+	// mixed selection reports "12 archived" having changed three rows.
+	var items []models.{{Pascal}}
+	scope := h.DB.Where("id IN ?", req.IDs)
+	if req.Action == "restore" {
+		scope = scope.Where("archived_at IS NOT NULL")
+	} else if req.Action == "archive" {
+		scope = scope.Where("archived_at IS NULL")
+	}
+	if err := scope.Find(&items).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": "Failed to load {{plural}}"},
+		})
+		return
+	}
+	if len(items) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"data":    gin.H{"affected": 0, "requested": len(req.IDs)},
+			"message": "Nothing to do",
+		})
+		return
+	}
+
+	ids := make([]string, 0, len(items))
+	for _, item := range items {
+		ids = append(ids, item.ID)
+	}
+
+	var updates map[string]interface{}
+	if req.Action == "patch" {
+		// Same whitelist as Patch. Framework-owned columns are dropped rather
+		// than rejected, so a client sending the whole row is not an error.
+		allowed := map[string]bool{
+{{PATCH_ALLOWED}}		}
+		updates = map[string]interface{}{}
+		for k, v := range req.Patch {
+			if allowed[k] {
+				updates[k] = v
+			}
+		}
+		if len(updates) == 0 {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{
+				"error": gin.H{
+					"code":    "VALIDATION_ERROR",
+					"message": "No writable fields in patch",
+				},
+			})
+			return
+		}
+	}
+
+	// One transaction: all of it lands or none of it does.
+	err := h.DB.Transaction(func(tx *gorm.DB) error {
+		switch req.Action {
+		case "delete":
+			return tx.Where("id IN ?", ids).Delete(&models.{{Pascal}}{}).Error
+		case "archive":
+			now := time.Now()
+			return tx.Model(&models.{{Pascal}}{}).Where("id IN ?", ids).
+				Update("archived_at", now).Error
+		case "restore":
+			return tx.Model(&models.{{Pascal}}{}).Where("id IN ?", ids).
+				Update("archived_at", nil).Error
+		default:
+			return tx.Model(&models.{{Pascal}}{}).Where("id IN ?", ids).
+				Updates(updates).Error
+		}
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "INTERNAL_ERROR",
+				"message": "Failed to " + req.Action + " {{plural}}",
+			},
+		})
+		return
+	}
+
+	// One audit entry naming the action and the count, not N entries that bury
+	// everything else somebody did today.
+	// A local map, not a package-level helper: every resource gets its own
+	// handler file in package handlers, so a shared func would be redeclared
+	// once per resource.
+	past := map[string]string{
+		"delete":  "deleted",
+		"archive": "archived",
+		"restore": "restored",
+		"patch":   "updated",
+	}[req.Action]
+
+	noun := "{{plural}}"
+	if len(ids) == 1 {
+		noun = "{{lower}}"
+	}
+
+	summary := req.Action + " " + strconv.Itoa(len(ids)) + " " + noun
+	if req.Action == "patch" {
+		summary += ": " + services.DiffSummary(updates)
+	}
+	// resourceID holds ONE id, not all of them: it is a lookup key, and joining
+	// five hundred UUIDs into it makes the column unusable for the thing it is
+	// for. The count lives in the summary, where it can be read.
+	services.LogUpdate(h.DB, c, "{{Pascal}}", summary, ids[0], summary)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":    gin.H{"affected": len(ids), "requested": len(req.IDs)},
+		"message": strconv.Itoa(len(ids)) + " " + noun + " " + past,
 	})
 }
 `)
@@ -1729,6 +1891,11 @@ func (g *Generator) resourceDefinitionFileContent(names Names) string {
 		if f.Required {
 			parts = append(parts, `required: true`)
 		}
+		// Carried into the admin so bulk edit can skip it. A slug is unique
+		// too, but it is excluded by type rather than by this flag.
+		if f.Unique {
+			parts = append(parts, `unique: true`)
+		}
 		// v3.31.30: emit file/files accepts + size knobs so the runtime
 		// FileField can build the per-field upload URL without round-
 		// tripping to the API for field metadata.
@@ -1857,6 +2024,9 @@ export const %sResource = defineResource({
     defaultSort: { key: "created_at", direction: "desc" },
     searchable: true,
     pageSize: 20,
+    // Shown once rows are ticked. Drop "archive" here and the Archived tab
+    // goes with it; the model keeps its archived_at either way.
+    bulkActions: ["edit", "archive", "restore", "export", "delete"],
   },
   form: {
     fields: [
