@@ -24,14 +24,26 @@ export function BlogContent({ content }: { content: string }) {
         components={{
           // <CodeBlock> renders its own <pre>, so unwrap react-markdown's.
           pre: ({ children }) => <>{children}</>,
-          code({ className, children }) {
+          code({ className, children, node }) {
             const match = /language-(\w+)/.exec(className || '')
             const text = String(children).replace(/\n$/, '')
             const isBlock = Boolean(match) || text.includes('\n')
 
             if (isBlock) {
               const lang = match ? LANG_ALIAS[match[1]] || match[1] : 'bash'
-              return <CodeBlock code={text} language={lang} className="my-5" />
+              // Everything after the language on the fence line, so a block can
+              // say where it lives:
+              //
+              //   ```tsx title="apps/admin/resources/products/products.custom.tsx"
+              //
+              // Worth the parsing. A snippet with no path is a snippet the
+              // reader has to guess the home of, and in a post that touches
+              // four files in a section, that guess is usually wrong.
+              const meta = (node as { data?: { meta?: string } } | undefined)?.data?.meta ?? ''
+              const filename = /title="([^"]+)"/.exec(meta)?.[1]
+              return (
+                <CodeBlock code={text} language={lang} filename={filename} className="my-5" />
+              )
             }
             // inline code, styled by prose-grit
             return <code>{children}</code>
