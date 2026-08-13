@@ -576,6 +576,314 @@ That is the entire stock form with your chrome around it, in about fifteen lines
 and it keeps tracking your Go model as the model changes. Try this before writing
 inputs by hand.
 
+#### The whole file, assembled
+
+That is four slots' worth of decisions spread across three levels, so here is
+`enquiries.custom.tsx` in one piece. The list came from Level 3, the composer
+from this one, and the empty state is Level 5, three sections down: it is
+included here so the file is whole rather than correct-in-fragments.
+
+This is the real file out of a running app, not a sketch. It type-checks, it
+blocks an empty submit with two inline "Required" messages that come from the
+generated schema, and a valid submit saves, closes the dialog and appears in
+the list behind it.
+
+```tsx title="apps/admin/resources/enquiries/enquiries.custom.tsx"
+"use client";
+
+import { useState } from "react";
+import type {
+  ResourceCustomisation,
+  ResourceFormProps,
+  ResourcePageSlotProps,
+  ResourceTableProps,
+} from "@/lib/resource";
+import type { Enquiry } from "@repo/shared/types";
+import { CreateEnquirySchema, UpdateEnquirySchema } from "@repo/shared/schemas";
+import { useCreateResource, useUpdateResource } from "@/hooks/use-resource";
+import { buttonClasses } from "@/components/ui/button";
+import { Check, Inbox, Loader2, Mail } from "@/lib/icons";
+
+/**
+ * Enquiries: three slots at once, which is what porting a bought template
+ * actually looks like. Their list, their composer, their empty state.
+ *
+ * Note what is NOT here. No fetching, no paging, no search box, no sort state.
+ * The table below is handed rows and callbacks and returns markup; the page
+ * around it is still the stock one, so the toolbar, the date filter, the
+ * exporter, the bulk bar and the pagination all keep working.
+ */
+
+const PRIORITY: Record<Enquiry["priority"], string> = {
+  high: "bg-red-700 text-white",
+  normal: "bg-blue-700 text-white",
+  low: "bg-gray-600 text-white",
+};
+
+const UNKNOWN_PRIORITY = "bg-gray-500 text-white";
+
+// ── 1. The list ────────────────────────────────────────────────────────
+// Props are DataTable's, unchanged. `columns` is ignored here on purpose: an
+// inbox has a shape, not columns. Sorting still routes through onSort.
+
+function InboxList({
+  data,
+  isLoading,
+  onEdit,
+  onSort,
+  sortBy,
+  sortOrder,
+}: ResourceTableProps<Enquiry>) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-16 text-sm text-text-secondary">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Loading enquiries...
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between border-b border-border px-4 py-2">
+        <span className="text-xs uppercase tracking-wide text-text-muted">
+          {data.length} in view
+        </span>
+        <button
+          onClick={() => onSort?.("created_at")}
+          className="text-xs text-text-secondary hover:text-text-primary"
+        >
+          Newest {sortBy === "created_at" && sortOrder === "asc" ? "last" : "first"}
+        </button>
+      </div>
+
+      <ul className="divide-y divide-border">
+        {data.map((row) => (
+          <li key={row.id}>
+            <button
+              onClick={() => onEdit?.(row)}
+              className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-bg-hover"
+            >
+              <span
+                aria-hidden="true"
+                className={
+                  "mt-1 h-2 w-2 shrink-0 rounded-full " +
+                  (row.resolved ? "bg-emerald-600" : "bg-amber-600")
+                }
+              />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="truncate text-sm font-medium text-text-primary">{row.subject}</p>
+                  {/* ?? UNKNOWN_PRIORITY: the type says three values, the
+                      database says whatever an import put there. */}
+                  <span
+                    className={
+                      "rounded-full px-2 py-0.5 text-[11px] font-medium " +
+                      (PRIORITY[row.priority] ?? UNKNOWN_PRIORITY)
+                    }
+                  >
+                    {row.priority}
+                  </span>
+                </div>
+                <p className="truncate text-xs text-text-secondary">{row.requester}</p>
+                <p className="mt-1 line-clamp-1 text-xs text-text-muted">{row.body}</p>
+              </div>
+              {row.resolved && (
+                <span className="mt-1 flex shrink-0 items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
+                  <Check className="h-3.5 w-3.5" />
+                  Resolved
+                </span>
+              )}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// ── 2. The composer ────────────────────────────────────────────────────
+// A replacement form owns its own state, validation and saving. The hooks the
+// stock form uses are exported, so "owns its own saving" is four lines.
+
+function Composer({ resource, item, onClose }: ResourceFormProps<Enquiry>) {
+  // ?? on every line. This is buildDefaults by hand, and the same trap
+  // applies: `resolved: item?.resolved` alone is undefined on create, which
+  // makes the checkbox uncontrolled on first render and controlled after the
+  // first click.
+  const [form, setForm] = useState({
+    subject: item?.subject ?? "",
+    requester: item?.requester ?? "",
+    priority: item?.priority ?? ("normal" as Enquiry["priority"]),
+    body: item?.body ?? "",
+    resolved: item?.resolved ?? false,
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const create = useCreateResource(resource.endpoint, "Enquiry");
+  const update = useUpdateResource(resource.endpoint, "Enquiry");
+  const saving = create.isPending || update.isPending;
+
+  const save = (body: Record<string, unknown>) => {
+    const onError = (err: unknown) => {
+      // Generated handlers return one message for a 422 rather than a
+      // per-field map, so it belongs at the top of the form.
+      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response
+        ?.data?.error?.message;
+      if (msg) setErrors((prev) => ({ ...prev, _form: msg }));
+    };
+    // onSuccess, not before: onClose clears the controller's form state, and
+    // closing optimistically hides the dialog over a request that may fail.
+    if (item) update.mutate({ id: item.id, body }, { onSuccess: () => onClose(), onError });
+    else create.mutate(body, { onSuccess: () => onClose(), onError });
+  };
+
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    // The Zod schema generated from the Go struct, so these rules cannot drift
+    // from the ones the server enforces. Update marks everything optional,
+    // which is what an edit sending only what changed needs.
+    const schema = item ? UpdateEnquirySchema : CreateEnquirySchema;
+    const parsed = schema.safeParse(form);
+    if (!parsed.success) {
+      setErrors(
+        Object.fromEntries(parsed.error.issues.map((i) => [String(i.path[0]), i.message])),
+      );
+      return;
+    }
+    setErrors({});
+    save(parsed.data as Record<string, unknown>);
+  };
+
+  const field =
+    "w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <form
+        onSubmit={submit}
+        className="w-full max-w-lg rounded-xl border border-border bg-bg-secondary shadow-xl"
+      >
+        <header className="flex items-center gap-2 border-b border-border px-5 py-4">
+          <Mail className="h-4 w-4 text-accent" />
+          <h2 className="text-sm font-semibold text-text-primary">
+            {item ? "Edit enquiry" : "New enquiry"}
+          </h2>
+        </header>
+
+        <div className="space-y-4 px-5 py-4">
+          {errors._form && (
+            <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{errors._form}</p>
+          )}
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-text-secondary">Subject</span>
+            <input
+              value={form.subject}
+              onChange={(e) => setForm({ ...form, subject: e.target.value })}
+              className={field}
+            />
+            {errors.subject && <span className="text-xs text-danger">{errors.subject}</span>}
+          </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-text-secondary">Requester</span>
+              <input
+                value={form.requester}
+                onChange={(e) => setForm({ ...form, requester: e.target.value })}
+                className={field}
+              />
+              {errors.requester && <span className="text-xs text-danger">{errors.requester}</span>}
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-text-secondary">Priority</span>
+              <select
+                value={form.priority}
+                onChange={(e) =>
+                  setForm({ ...form, priority: e.target.value as Enquiry["priority"] })
+                }
+                className={field}
+              >
+                <option value="low">Low</option>
+                <option value="normal">Normal</option>
+                <option value="high">High</option>
+              </select>
+            </label>
+          </div>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-text-secondary">Message</span>
+            <textarea
+              rows={5}
+              value={form.body}
+              onChange={(e) => setForm({ ...form, body: e.target.value })}
+              className={field}
+            />
+          </label>
+
+          <label className="flex items-center gap-2 text-sm text-text-primary">
+            <input
+              type="checkbox"
+              checked={form.resolved}
+              onChange={(e) => setForm({ ...form, resolved: e.target.checked })}
+              className="h-4 w-4 rounded border-border accent-accent"
+            />
+            Mark as resolved
+          </label>
+        </div>
+
+        <footer className="flex justify-end gap-2 border-t border-border px-5 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className={buttonClasses({ variant: "secondary", size: "sm" })}
+          >
+            Cancel
+          </button>
+          {/* Disabled while pending: nothing else stops a double submit, and
+              two POSTs make two records. */}
+          <button type="submit" disabled={saving} className={buttonClasses({ size: "sm" })}>
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+            {item ? "Save changes" : "Create enquiry"}
+          </button>
+        </footer>
+      </form>
+    </div>
+  );
+}
+
+// ── 3. The empty state ─────────────────────────────────────────────────
+// Rendered instead of the list when the query has finished and returned
+// nothing. "And finished": a loading table is not an empty one.
+
+function EmptyInbox({ resource }: ResourcePageSlotProps) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
+      <span className="rounded-full bg-bg-tertiary p-4">
+        <Inbox className="h-6 w-6 text-text-secondary" />
+      </span>
+      <h2 className="text-base font-semibold text-text-primary">Inbox zero</h2>
+      <p className="max-w-sm text-sm text-text-secondary">
+        No one has written in. New {resource.label?.plural.toLowerCase()} land here the moment the
+        contact form is submitted.
+      </p>
+    </div>
+  );
+}
+
+const custom: ResourceCustomisation<Enquiry> = {
+  components: {
+    Table: InboxList,
+    Form: Composer,
+    EmptyState: EmptyInbox,
+  },
+};
+
+export default custom;
+```
+
 ---
 
 ## Level 5: replace the empty state
