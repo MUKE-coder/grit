@@ -1,10 +1,10 @@
 ---
 title: "Your table, our machinery"
-subtitle: "You bought a dashboard template and you want its pages in your admin, without giving up URL-synced sorting, paging, filters, selection, bulk delete, toasts and cache invalidation. Grit's customisation system in six levels. For each one: what you get by default, why you would want to change it, and exactly how."
+subtitle: "You bought a dashboard template and you want its pages in your admin, without giving up URL-synced sorting, paging, filters, selection, bulk actions, toasts and cache invalidation. Grit's customisation system in eight levels, from patching one cell to replacing the page. For each one: what you get by default, why you would want to change it, and exactly how, with every snippet labelled with the file it belongs in."
 series: "The Daily Grit"
 edition: 14
 date: 2026-08-12
-readingTime: "18 min"
+readingTime: "24 min"
 author: "Muke JohnBaptist"
 tags: [grit, admin, customisation, templates, react, typescript, forms, hooks]
 canonical: "https://gritframework.dev/blog/your-table-our-machinery"
@@ -24,8 +24,8 @@ page, and the URL sync was in the page, and the toast on a successful delete was
 in the page. You wanted to change the markup and the price was reimplementing
 the machinery.
 
-That is the thing this fixes. Six levels, each one bigger than the last, and you
-stop climbing the moment you have what you need. For each level: **what you get
+That is the thing this fixes. Eight levels, each one bigger than the last, and
+you stop climbing the moment you have what you need. For each level: **what you get
 by default**, **why you would change it**, and **how**.
 
 Everything below comes from a real app: `portkit`, three resources, built to
@@ -35,13 +35,24 @@ exercise every level. The code is copied from it, not written for the post.
 
 A generated resource is two files that sit next to each other:
 
-```
+```bash title="the shape of apps/admin/resources/"
 apps/admin/resources/
-  products.ts          # generated: rewritten on every grit generate
-  products.custom.tsx  # yours: created once, never touched again
+  index.ts               # the registry: every resource, in one array
+  products/
+    products.ts          # generated: rewritten on every grit generate
+    products.custom.tsx  # yours: created once, never touched again
+  users/
+    users.ts
+    users.custom.tsx
 ```
 
-The first is configuration: columns, form fields, filters, stats. It is a
+One folder per resource, which is newer than the split itself: the overlay
+doubled the number of files in `resources/`, and twenty resources flat is forty
+files in one directory with the two halves of each one sorted apart from each
+other. If your project predates v3.143.0, `grit upgrade` moves them and rewrites
+the imports.
+
+The first file is configuration: columns, form fields, filters, stats. It is a
 `.ts` file and the generator rewrites it freely, because nothing of yours is in
 it. The second is a `.tsx` file that the generator creates once and then never
 opens again.
@@ -50,7 +61,7 @@ That split is the whole trick. Configuration cannot hold a React component, and
 anything holding a React component cannot be safely regenerated. So they live
 apart, and `defineResource()` merges them:
 
-```ts
+```ts title="apps/admin/resources/products/products.ts"
 // products.ts, the last line
 }, custom);
 ```
@@ -66,7 +77,7 @@ Everything from here on goes in the second file.
 Every column runs through one renderer. If the column declares a `format`, that
 format decides the markup; otherwise the value is stringified:
 
-```tsx
+```tsx title="apps/admin/components/tables/cell-renderers.tsx"
 // components/tables/cell-renderers.tsx, roughly
 switch (column.format) {
   case "badge":    return <BadgeCell value={String(value)} config={column.badge} />
@@ -102,7 +113,7 @@ the framework cannot know. Your currency. Your thresholds. Your palette.
 
 ### How
 
-```tsx
+```tsx title="apps/admin/resources/products/products.custom.tsx"
 import type { ResourceCustomisation } from "@/lib/resource";
 import type { Product } from "@repo/shared/types";
 
@@ -150,7 +161,7 @@ Go struct declares. The *value* arriving at your renderer came out of a database
 which picks things up from CSV imports, migrations and hand-written `UPDATE`s
 that no type ever saw.
 
-```tsx
+```tsx title="apps/admin/resources/products/products.custom.tsx"
 const s = STATUS[row.status] ?? UNKNOWN;
 ```
 
@@ -170,7 +181,7 @@ becomes a number input with `numberKind: "float"`, and `select:a|b|c` becomes a
 dropdown carrying its own options. The label is the column name in title case.
 `required` comes from whether the Go field is non-pointer and non-optional.
 
-```ts
+```ts title="apps/admin/resources/products/products.ts"
 // products.ts, generated
 { key: "sku", label: "Sku", type: "text", required: true },
 { key: "stock", label: "Stock", type: "number", numberKind: "int" },
@@ -186,7 +197,7 @@ acronym gets you.
 
 ### How
 
-```tsx
+```tsx title="apps/admin/resources/products/products.custom.tsx"
 fields: {
   sku: {
     label: "SKU",
@@ -217,7 +228,7 @@ checkbox column, one cell per visible column, and a trailing actions column with
 view, edit and delete. It handles the loading skeleton and the built-in empty
 state. It receives everything as props and owns no state at all.
 
-```tsx
+```tsx title="apps/admin/components/resource/resource-page.tsx"
 <DataTable
   columns={c.columns}        data={c.rows}
   isLoading={c.isLoading}
@@ -242,7 +253,7 @@ calendar of bookings, a file browser.
 
 ### How
 
-```tsx
+```tsx title="apps/admin/resources/enquiries/enquiries.custom.tsx"
 components: {
   Table: InboxList,
 },
@@ -250,7 +261,7 @@ components: {
 
 `InboxList` receives exactly the props `DataTable` receives:
 
-```tsx
+```tsx title="apps/admin/resources/enquiries/enquiries.custom.tsx"
 function InboxList({ data, isLoading, onEdit, onSort, sortBy, sortOrder }: ResourceTableProps<Enquiry>) {
   if (isLoading) return <Spinner />;
 
@@ -299,7 +310,7 @@ component per entry. Here is what it actually does, piece by piece.
 **State** is [react-hook-form](https://react-hook-form.com), uncontrolled. One
 `useForm` call at the top, each field wrapped in a `Controller`:
 
-```tsx
+```tsx title="apps/admin/components/forms/form-builder.tsx"
 const { control, handleSubmit, formState: { errors } } = useForm({
   defaultValues: buildDefaults(formDef.fields, defaultValues),
 });
@@ -313,7 +324,7 @@ and one that stutters.
 each field it takes the value from the record if the key is present, then falls
 back to the field's `defaultValue`, then to a type-appropriate empty:
 
-```tsx
+```tsx title="apps/admin/components/forms/form-builder.tsx"
 if (field.key in existing)                 defaults[key] = existing[field.key]
 else if (field.defaultValue !== undefined) defaults[key] = field.defaultValue
 else if (toggle or checkbox)               defaults[key] = false
@@ -335,7 +346,7 @@ is no separate `mode` prop.
 
 **Validation** is deliberately thin. `FormBuilder` attaches exactly one rule:
 
-```tsx
+```tsx title="apps/admin/components/forms/form-builder.tsx"
 rules={field.required ? { required: `${field.label} is required` } : undefined}
 ```
 
@@ -346,7 +357,7 @@ The real validation is on the server, and that is on purpose, because an admin
 panel is not the only thing that talks to your API. The Go handler binds the
 request struct and returns 422 on failure:
 
-```json
+```json title="what the Go API returns"
 { "error": { "code": "VALIDATION_ERROR", "message": "Key: 'CreateEnquiryRequest.Subject' Error:..." } }
 ```
 
@@ -356,7 +367,7 @@ not use it. Hold that thought.
 
 **Submission** is two hooks and a callback:
 
-```tsx
+```tsx title="apps/admin/components/forms/form-builder.tsx"
 const { mutate: create } = useCreateResource(resource.endpoint, "Enquiry");
 const { mutate: update } = useUpdateResource(resource.endpoint, "Enquiry");
 
@@ -395,7 +406,7 @@ changing its behaviour.
 
 ### How
 
-```tsx
+```tsx title="apps/admin/resources/enquiries/enquiries.custom.tsx"
 components: {
   Form: Composer,
 },
@@ -403,7 +414,7 @@ components: {
 
 Your component receives three props and nothing else:
 
-```tsx
+```tsx title="apps/admin/lib/resource.ts"
 interface ResourceFormProps<T> {
   resource: ResourceDefinition;  // endpoint, labels, and the field config if you want it
   item: T | null;                // null = create, record = edit
@@ -420,7 +431,7 @@ Yours. `useState` is fine for a small form and is what the example below uses. I
 your template ships a form built on react-hook-form, keep it and pass `item` into
 `defaultValues`. The framework does not care which you pick.
 
-```tsx
+```tsx title="apps/admin/resources/enquiries/enquiries.custom.tsx"
 function Composer({ resource, item, onClose }: ResourceFormProps<Enquiry>) {
   const [form, setForm] = useState({
     subject: item?.subject ?? "",
@@ -445,7 +456,7 @@ for the row itself.
 If your form needs data the row does not carry, a list of assignable users for
 example, fetch it with the same hook the rest of the admin uses:
 
-```tsx
+```tsx title="apps/admin/resources/enquiries/enquiries.custom.tsx"
 const { data: users } = useResource<User>("/api/users", { pageSize: 100 });
 ```
 
@@ -460,7 +471,7 @@ often gets it wrong.
 Now you can do the thing the stock form does not: use the Zod schema that is
 already generated from your Go struct.
 
-```tsx
+```tsx title="apps/admin/resources/enquiries/enquiries.custom.tsx"
 import { CreateEnquirySchema } from "@repo/shared/schemas";
 
 const [errors, setErrors] = useState<Record<string, string>>({});
@@ -493,7 +504,7 @@ optional, which is what an edit that sends only what changed actually needs.
 
 The same two hooks the stock form uses, exported for exactly this:
 
-```tsx
+```tsx title="apps/admin/resources/enquiries/enquiries.custom.tsx"
 const create = useCreateResource(resource.endpoint, "Enquiry");
 const update = useUpdateResource(resource.endpoint, "Enquiry");
 const saving = create.isPending || update.isPending;
@@ -516,7 +527,7 @@ rather than in the form. Three details that matter:
 - **A server rejection already toasts.** If you want it inline instead, read it
   off the error in your own `onError` and merge it into your error state:
 
-```tsx
+```tsx title="apps/admin/resources/enquiries/enquiries.custom.tsx"
 update.mutate({ id: item.id, body }, {
   onSuccess: () => onClose(),
   onError: (err) => {
@@ -538,7 +549,7 @@ form. Import `FormBuilder` and hand it the resource's own field list. You keep
 every field type, the required rules, the layout engine and the nested-relation
 handling, and you supply the frame:
 
-```tsx
+```tsx title="apps/admin/resources/enquiries/enquiries.custom.tsx"
 function Composer({ resource, item, onClose }: ResourceFormProps<Enquiry>) {
   const create = useCreateResource(resource.endpoint, "Enquiry");
   const update = useUpdateResource(resource.endpoint, "Enquiry");
@@ -584,7 +595,7 @@ to explain how the data is supposed to arrive.
 
 ### How
 
-```tsx
+```tsx title="apps/admin/resources/enquiries/enquiries.custom.tsx"
 EmptyState: ({ resource }) => (
   <div className="flex flex-col items-center gap-3 py-20 text-center">
     <Inbox className="h-6 w-6 text-text-secondary" />
@@ -628,7 +639,7 @@ you wanted Level 3.
 
 ### How
 
-```tsx
+```tsx title="apps/admin/resources/deals/deals.custom.tsx"
 function PipelineBoard({ resource }: ResourcePageSlotProps) {
   const c = useResourceController<Deal>(resource, { initialPageSize: 100 });
   const { mutate: patch } = usePatchResource(resource.endpoint, "Deal");
@@ -686,7 +697,7 @@ two confirm modals; replace the page and that goes with it. The *state* does not
 it is still in the controller, so you keep calling `c.create`, `c.edit` and
 `c.remove` from your own buttons and render the stock dialogs off the flags:
 
-```tsx
+```tsx title="apps/admin/resources/deals/deals.custom.tsx"
 {c.form.open && (
   <FormSheet resource={resource} item={c.form.item} onClose={c.form.close} />
 )}
@@ -708,7 +719,7 @@ You wrote the card.
 For anything outside plain CRUD, reach for the mutation hooks directly. Moving a
 deal between stages is one field, so it is a PATCH:
 
-```tsx
+```tsx title="apps/admin/resources/deals/deals.custom.tsx"
 const move = (deal: Deal, delta: number) => {
   const next = STAGES[STAGES.findIndex((s) => s.key === deal.stage) + delta];
   if (next) patch({ id: deal.id, body: { stage: next.key } });
@@ -721,12 +732,158 @@ rest, which is what makes sending a one-key body safe.
 
 ---
 
+## Level 7: tabs above the table
+
+### What you get by default
+
+Nothing. A generated table has a search box, a date window and whatever
+`filters` you declared, which render as dropdowns above the rows.
+
+### Why you would change it
+
+Because the two or three views people actually use are not worth a dropdown.
+"Unpaid" is not a different page, it is this page with `status=pending`, and
+a tab says that where a dropdown hides it behind a click. The screenshot you
+were sent almost certainly has tabs across the top of the table, and now so can
+yours.
+
+### How
+
+Config, so it goes in the definition rather than the overlay:
+
+```ts title="apps/admin/resources/orders/orders.ts"
+table: {
+  tabs: [
+    { key: "all",     label: "All",     count: true },
+    { key: "unpaid",  label: "Unpaid",  filters: { status: "pending" }, count: true },
+    { key: "shipped", label: "Shipped", filters: { status: "shipped" }, count: true },
+    { key: "refunds", label: "Refunds", filters: { status: "refunded" }, icon: "Undo2" },
+  ],
+}
+```
+
+The first tab is selected on load, and a tab with no `filters` clears them,
+which is what makes "All" work without a special case. Choosing one resets to
+page one and clears the selection, because the rows underneath are not the same
+rows any more.
+
+Tab filters merge *under* the operator's own, so picking Unpaid and then
+filtering by customer narrows the tab instead of quietly replacing it.
+
+`count: true` fetches that tab's own total. It is opt-in per tab because each
+one is a request, and the badge appears only once the number arrives: a tab
+that says 0 and then says 47 is worse than a tab that said nothing for a
+moment.
+
+It is a real tablist, so Left and Right move between tabs and Tab leaves the
+group. That is not pedantry. Without roving focus a keyboard user stops at
+every tab on the way to the table, and with six tabs that is six stops before
+reaching the thing being filtered.
+
+If your tabs render but do not filter, the resource predates v3.144.0: the API
+whitelists which columns may be filtered from the query string, and
+`grit generate resource` regenerates the handler with that list.
+
+Need a tab a config array cannot express, like one scoped to the signed-in
+user? Use the `Page` slot and drive it from the controller:
+
+```tsx title="apps/admin/resources/orders/orders.custom.tsx"
+const c = useResourceController<Order>(resource);
+
+// c.tabs         the presets from the definition
+// c.activeTab    the key currently applied
+// c.setActiveTab(key)
+```
+
+---
+
+## Level 8: bulk actions
+
+### What you get by default
+
+Tick some rows and a bar appears, fixed to the bottom of the window. Five
+built-ins, and you choose which of them a resource offers:
+
+```ts title="apps/admin/resources/products/products.ts"
+table: {
+  bulkActions: ["edit", "archive", "restore", "export", "delete"],
+}
+```
+
+`edit` writes one field to every selected row. `archive` puts rows away without
+destroying them: they leave the list, keep their data, and come back with one
+click from the Archived tab that appears alongside Published. `delete` is the
+same soft delete as the per-row one.
+
+### Why you would change it
+
+Because the useful bulk action is almost always domain-shaped. "Send the
+invoices", "assign to a rep", "mark as shipped". Nobody's product is improved by
+a second Delete.
+
+### How
+
+In the overlay, because an action holds a function:
+
+```tsx title="apps/admin/resources/shipments/shipments.custom.tsx"
+const custom: ResourceCustomisation<Shipment> = {
+  bulkActions: [
+    {
+      key: "mark-delivered",
+      label: "Mark delivered",
+      icon: "CheckCircle",
+      // Omit for anything reversible. A confirm on everything trains
+      // people to dismiss confirms.
+      confirm: "Mark every selected shipment delivered?",
+      // Hide it when it makes no sense for this selection.
+      visible: (rows) => rows.some((row) => row.status !== "delivered"),
+      onSelect: async (ids, rows, { refresh, clearSelection, announce }) => {
+        await markDelivered(ids);
+        refresh();
+        clearSelection();
+        announce(rows.length + " marked delivered.");
+      },
+    },
+  ],
+};
+```
+
+Two things there are worth pointing at.
+
+The action gets the ids **and the rows**. Acting on what somebody ticked
+usually needs their data, and it is already on screen, so there is no reason to
+ask the server for it again.
+
+And `announce` is not decoration. Ticking a checkbox does not move focus, so
+nothing about a bulk action reaches a screen reader unless it is said out loud.
+The built-ins all announce themselves. Yours should too.
+
+If the whole bar is wrong for your app, replace it:
+
+```tsx title="apps/admin/resources/shipments/shipments.custom.tsx"
+components: {
+  // Gets the resource; call useResourceController(resource) inside for the
+  // selection, the actions and the pending state.
+  BulkBar: MyBulkBar,
+}
+```
+
+### One thing to know about the endpoint
+
+Bulk actions post once to `POST /api/<resource>/bulk`, which does the whole
+selection in one transaction. Older projects have no such route, so the hook
+falls back to one request per row on a 404 and everything keeps working. The
+fallback is genuinely worse, N requests and a partial result if one fails, so
+run `grit generate resource` to get the real endpoint.
+
+---
+
 ## Wrapping instead of replacing
 
 Every slot receives the stock component's own props, which means the stock
 component is a legal thing to render inside yours:
 
-```tsx
+```tsx title="apps/admin/resources/deals/deals.custom.tsx"
 components: {
   Table: (props) => (
     <div className="rounded-2xl border border-dashed p-2">
@@ -750,7 +907,7 @@ Porting a template means analytics, settings and billing screens that are not
 CRUD over a table. Those do not need any of the above. Use the data hooks
 directly against whatever your API exposes:
 
-```tsx
+```tsx title="apps/admin/app/(dashboard)/revenue/page.tsx"
 export default function RevenuePage() {
   const { data, isLoading } = useResource<Invoice>("/api/invoices", {
     pageSize: 100,
@@ -770,13 +927,13 @@ The reason for the two-file split, and the thing worth testing rather than
 believing. After building all of the above, I re-ran the generator over a
 resource that already had customisations:
 
-```bash
+```bash title="your terminal"
 grit g resource Product --fields "name:string,sku:string,price:float,..."
   ✅ Resource Product generated successfully!
 ```
 
-`products.ts` was rewritten from scratch, every column back to its generated
-form. `products.custom.tsx` was not opened. The money formatter, the stock bars
+`products/products.ts` was rewritten from scratch, every column back to its
+generated form. `products/products.custom.tsx` was not opened. The money formatter, the stock bars
 and the status pills were all still there and still applied, because they were
 never in the file that got replaced.
 
@@ -788,8 +945,8 @@ Deleting a resource is the one case where your overlay moves.
 `grit remove resource` deletes an untouched stub, and renames one you have
 written in:
 
-```
-→ apps/admin/resources/gadgets.custom.tsx.bak (your customisations, kept out of the build)
+```text title="what grit remove resource prints"
+→ apps/admin/resources/gadgets/gadgets.custom.tsx.bak (your customisations, kept out of the build)
 ```
 
 Leaving it would break the build, because it imports a type the shared package no
@@ -811,11 +968,19 @@ If you are moving a bought template into a Grit admin, roughly this order:
    calendar. Not when the styling differs.
 5. **Try `FormBuilder` in your own shell** before hand-writing inputs. You keep
    every field type and the Go model stays the source of truth.
-6. **Replace the page only when there is no table.** Kanban, split-pane inbox,
+6. **Add tabs before you add a filter dropdown.** If the template has a row of
+   views across the top of its table, that is `table.tabs` and it is four lines
+   of config.
+7. **Replace the page only when there is no table.** Kanban, split-pane inbox,
    canvas.
-7. **Non-CRUD screens skip all of it** and call `useResource` directly.
+8. **Non-CRUD screens skip all of it** and call `useResource` directly.
 
-And one setup note if your project predates v3.141.0: check that
+Three version notes, since these arrived recently. Resources live one to a
+folder from v3.143.0, and `grit upgrade` moves an older project. Bulk actions
+want v3.142.0, and table tabs need v3.144.0 on the API side, which means
+`grit generate resource` for the handler that whitelists the filter.
+
+And one if your project predates v3.141.0: check that
 `./resources/**/*.{ts,tsx}` is in your admin's Tailwind `content` array. It was
 not, for a while, and the failure is silent. The component renders, the DOM is
 right, and the class simply does not exist in the stylesheet. `grit upgrade`
@@ -823,7 +988,7 @@ fixes it, or add the glob by hand.
 
 ## The shape of the thing
 
-Six levels, and the honest summary is that most people need two of them. Patch a
+Eight levels, and the honest summary is that most people need two of them. Patch a
 few cells, maybe swap one table, done. The Page slot exists so that the one
 screen that genuinely does not fit is not a reason to abandon the other eleven
 that do.
