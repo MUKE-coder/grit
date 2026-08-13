@@ -134,7 +134,11 @@ func (g *Generator) injectTSField(names Names, f Field) error {
 // into whichever exists.
 func (g *Generator) injectAdminField(names Names, f Field) error {
 	candidates := []string{
+		// Both layouts, both frontends. Missing paths are skipped, so listing
+		// all four is cheaper than detecting which one this project uses.
+		filepath.Join(g.AdminRoot(), "resources", names.PluralKebab, names.PluralKebab+".ts"),
 		filepath.Join(g.AdminRoot(), "resources", names.PluralKebab+".ts"),
+		filepath.Join(g.AdminRoot(), "src", "resources", names.PluralKebab, names.PluralKebab+".ts"),
 		filepath.Join(g.AdminRoot(), "src", "resources", names.PluralKebab+".ts"),
 	}
 	label := strings.Join(splitPascal(toPascalCase(f.Name)), " ")

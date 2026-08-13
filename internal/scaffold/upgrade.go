@@ -122,6 +122,11 @@ func Upgrade(uOpts UpgradeOptions) error {
 
 	// --- Admin panel (generic components only — preserves resource definitions) ---
 	if hasAdmin {
+		// Before anything is written: resources moved from resources/<name>.ts
+		// to resources/<name>/<name>.ts in v3.143.0. Writing users/users.ts into
+		// a project still holding a flat users.ts would leave two definitions and
+		// a registry importing the stale one.
+		migrateResourceFolders(root, spinner, green)
 		spinner.Printf("  → Updating admin panel components...\n")
 		n, err := upgradeAdminFiles(root, opts, uOpts)
 		if err != nil {
@@ -166,6 +171,29 @@ func Upgrade(uOpts UpgradeOptions) error {
 	fmt.Println()
 
 	return nil
+}
+
+// migrateResourceFolders gives every resource its own folder, for both the
+// Next.js and the Vite admin. A failure is a warning rather than a stopped
+// upgrade, because the rest of it is still worth having.
+func migrateResourceFolders(root string, spinner, green *color.Color) {
+	for _, rel := range [][]string{
+		{"apps", "admin", "resources"},
+		{"apps", "admin", "src", "resources"},
+	} {
+		dir := filepath.Join(append([]string{root}, rel...)...)
+		if !dirExists(dir) {
+			continue
+		}
+		moved, err := MigrateResourceLayout(dir)
+		if err != nil {
+			spinner.Printf("  Could not reorganise %s: %v\n", filepath.Join(rel...), err)
+			continue
+		}
+		if moved > 0 {
+			green.Printf("  Moved %d resource(s) into their own folders\n", moved)
+		}
+	}
 }
 
 // upgradeAdminFiles regenerates admin panel generic files while preserving
@@ -271,7 +299,7 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 		filepath.Join(adminRoot, "components", "ui", "dropzone.tsx"): adminDropzone(),
 
 		// Resource definitions (only the built-in users one)
-		filepath.Join(adminRoot, "resources", "users.ts"): adminUsersResource(),
+		filepath.Join(adminRoot, "resources", "users", "users.ts"): adminUsersResource(),
 	}
 
 	n, err := writeUpgradeFiles(files, uOpts.Force)
@@ -284,7 +312,7 @@ func upgradeAdminFiles(root string, opts Options, uOpts UpgradeOptions) (int, er
 	// never write: the whole promise of that file is that it is never
 	// overwritten, and an upgrade is exactly when someone would lose work.
 	created, err := createIfMissing(
-		filepath.Join(adminRoot, "resources", "users.custom.tsx"),
+		filepath.Join(adminRoot, "resources", "users", "users.custom.tsx"),
 		AdminResourceCustomStub("User", "User"),
 	)
 	if err != nil {

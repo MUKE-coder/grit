@@ -110,7 +110,9 @@ func PromptInteractive(name string) (*ResourceDefinition, error) {
 //
 // v3.31.30: bracket-aware. File-field type lists use brackets to scope
 // commas so they don't collide with the top-level field separator:
-//   "image:file:image,attachments:files:[pdf,doc,image]"
+//
+//	"image:file:image,attachments:files:[pdf,doc,image]"
+//
 // Without bracket awareness, the `pdf,doc,image` would split across
 // three "fields" and produce nonsense.
 func ParseInlineFields(name string, fieldStr string) (*ResourceDefinition, error) {
@@ -216,10 +218,11 @@ func splitTopLevelCommas(s string) []string {
 //
 // v3.31.30: file/files type. Third part is the accept-list (single
 // alias or bracketed alias list):
-//   image:file:image
-//   attachment:file:all
-//   attachment:file:[pdf,doc,image,video,zip]
-//   gallery_images:files:image
+//
+//	image:file:image
+//	attachment:file:all
+//	attachment:file:[pdf,doc,image,video,zip]
+//	gallery_images:files:image
 func parseFieldInput(input string) (Field, error) {
 	parts := splitFieldParts(input)
 	if len(parts) < 2 {
@@ -413,7 +416,9 @@ func isValidType(t string) bool {
 // splitFieldParts splits a field definition on colons, BUT keeps anything
 // inside square brackets as a single token. Needed because file/files
 // types use brackets to scope accept-lists:
-//   "attachments:files:[pdf,doc,image]" → ["attachments", "files", "[pdf,doc,image]"]
+//
+//	"attachments:files:[pdf,doc,image]" → ["attachments", "files", "[pdf,doc,image]"]
+//
 // Without bracket awareness the third part would just be "[pdf" and the
 // rest of the accept-list would split into invalid parts.
 func splitFieldParts(input string) []string {

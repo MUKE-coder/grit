@@ -1160,7 +1160,7 @@ Each resource gets a thin page wrapper in app/(dashboard)/resources/plural/page.
 ` + "```typescript" + `
 "use client";
 import { ResourcePage } from "@/components/resource/ResourcePage";
-import { postsResource } from "@/resources/posts";
+import { postsResource } from "@/resources/posts/posts";
 
 export default function PostsPage() {
   return <ResourcePage resource={postsResource} />;

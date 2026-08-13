@@ -1281,11 +1281,11 @@ func (h *{{Pascal}}Handler) Delete(c *gin.Context) {
 type Bulk{{Pascal}}Request struct {
 	// delete removes, archive puts away, restore brings back, patch writes the
 	// same field values to every selected row.
-	Action string `+"`"+`json:"action" binding:"required,oneof=delete archive restore patch"`+"`"+`
+	Action string ` + "`" + `json:"action" binding:"required,oneof=delete archive restore patch"` + "`" + `
 	// Capped: an unbounded IN clause is a way to lock a table by accident.
-	IDs []string `+"`"+`json:"ids" binding:"required,min=1,max=500"`+"`"+`
+	IDs []string ` + "`" + `json:"ids" binding:"required,min=1,max=500"` + "`" + `
 	// Only read when action is "patch". Whitelisted the same way Patch is.
-	Patch map[string]interface{} `+"`"+`json:"patch"`+"`"+`
+	Patch map[string]interface{} ` + "`" + `json:"patch"` + "`" + `
 }
 
 // Bulk applies one action to many {{plural}} in a single transaction.
@@ -2069,8 +2069,18 @@ export const %sResource = defineResource({
 
 // writeResourceDefinition writes the resource definition for the Next.js admin.
 func (g *Generator) writeResourceDefinition(names Names) error {
-	dir := filepath.Join(g.Root, "apps", "admin", "resources")
-	path := filepath.Join(dir, names.PluralKebab+".ts")
+	root := filepath.Join(g.Root, "apps", "admin", "resources")
+	// One folder per resource. If this project is still flat, the definition
+	// that was there is left where it is and the migration in grit upgrade
+	// moves it: silently writing a second copy in a folder would leave two
+	// definitions and a registry pointing at the stale one.
+	if flat := filepath.Join(root, names.PluralKebab+".ts"); fileExists(flat) {
+		if err := writeFileWithDirs(flat, g.resourceDefinitionFileContent(names)); err != nil {
+			return err
+		}
+		return writeResourceCustomStub(root, names)
+	}
+	dir, path := scaffold.ResourceDefPath(root, names.PluralKebab)
 	if err := writeFileWithDirs(path, g.resourceDefinitionFileContent(names)); err != nil {
 		return err
 	}
@@ -2101,13 +2111,13 @@ func (g *Generator) writeResourcePage(names Names) error {
 	content := fmt.Sprintf(`"use client";
 
 import { ResourcePage } from "@/components/resource/resource-page";
-import { %sResource } from "@/resources/%s";
+import { %sResource } from "@/resources/%s/%s";
 
 export default function %sPage() {
   return <ResourcePage resource={%sResource} />;
 }
 `,
-		names.Camel, names.PluralKebab,
+		names.Camel, names.PluralKebab, names.PluralKebab,
 		names.PluralPascal,
 		names.Camel,
 	)
@@ -2123,14 +2133,14 @@ func (g *Generator) writeResourceDetailPage(names Names) error {
 
 import { use } from "react";
 import { ResourceDetailPage } from "@/components/resource/resource-detail-page";
-import { %sResource } from "@/resources/%s";
+import { %sResource } from "@/resources/%s/%s";
 
 export default function %sDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   return <ResourceDetailPage resource={%sResource} id={id} />;
 }
 `,
-		names.Camel, names.PluralKebab,
+		names.Camel, names.PluralKebab, names.PluralKebab,
 		names.PluralPascal,
 		names.Camel,
 	)

@@ -121,12 +121,12 @@ func (g *Generator) writeResourceDefinitionTanStack(names Names) error {
 func (g *Generator) writeResourcePageTanStack(names Names) error {
 	content := fmt.Sprintf(`import { createFileRoute } from '@tanstack/react-router'
 import { ResourcePage } from '@/components/resource/resource-page'
-import { %sResource } from '@/resources/%s'
+import { %sResource } from '@/resources/%s/%s'
 
 export const Route = createFileRoute('/_dashboard/resources/%s/')({
   component: () => <ResourcePage resource={%sResource} />,
 })
-`, names.Camel, names.PluralKebab, names.PluralKebab, names.Camel)
+`, names.Camel, names.PluralKebab, names.PluralKebab, names.PluralKebab, names.Camel)
 
 	dir := filepath.Join(g.Root, "apps", "admin", "src", "routes", "_dashboard", "resources", names.PluralKebab)
 	os.MkdirAll(dir, 0755)
@@ -140,7 +140,7 @@ export const Route = createFileRoute('/_dashboard/resources/%s/')({
 func (g *Generator) writeResourceDetailPageTanStack(names Names) error {
 	content := fmt.Sprintf(`import { createFileRoute } from '@tanstack/react-router'
 import { ResourceDetailPage } from '@/components/resource/resource-detail-page'
-import { %sResource } from '@/resources/%s'
+import { %sResource } from '@/resources/%s/%s'
 
 export const Route = createFileRoute('/_dashboard/resources/%s/$id')({
   component: RouteComponent,
@@ -150,7 +150,7 @@ function RouteComponent() {
   const { id } = Route.useParams()
   return <ResourceDetailPage resource={%sResource} id={id} />
 }
-`, names.Camel, names.PluralKebab, names.PluralKebab, names.Camel)
+`, names.Camel, names.PluralKebab, names.PluralKebab, names.PluralKebab, names.Camel)
 
 	dir := filepath.Join(g.Root, "apps", "admin", "src", "routes", "_dashboard", "resources", names.PluralKebab)
 	os.MkdirAll(dir, 0755)
