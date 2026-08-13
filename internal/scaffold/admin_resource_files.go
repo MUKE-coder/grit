@@ -461,6 +461,85 @@ export interface ResourcePageSlotProps {
   resource: ResourceDefinition;
 }
 
+/** A resource whose belongs_to points at the one being viewed. */
+export interface RelatedResource {
+  resource: ResourceDefinition;
+  /** Its foreign-key field, already resolved from the registry. */
+  fk: string;
+}
+
+/**
+ * What useResourceDetailController(resource, id) returns.
+ *
+ * Declared here rather than beside the hook so a slot's props can name it
+ * without the types file and the hooks file importing each other.
+ */
+export interface ResourceDetailController<T = Record<string, unknown>> {
+  resource: ResourceDefinition;
+  id: string;
+
+  // ── data ────────────────────────────────────────────────────────────
+  record: T | undefined;
+  isLoading: boolean;
+  /** True once loading has finished and there is still nothing. */
+  notFound: boolean;
+  /** The first human-readable field on the record, for a page title. */
+  title: string;
+
+  // ── what to show ────────────────────────────────────────────────────
+  /** Visible table columns, reused as the detail field list. */
+  columns: ColumnDefinition[];
+  /** line-items fields declared on this resource, rendered inline. */
+  lineItemFields: FieldDefinition[];
+  /** Resources whose belongs_to points here, discovered from the registry. */
+  related: RelatedResource[];
+
+  // ── actions ─────────────────────────────────────────────────────────
+  edit: () => void;
+  /** Opens the confirm dialog; deletion happens on confirm. */
+  remove: () => void;
+  print: () => void;
+  /** Fetches the server-rendered PDF and opens it. */
+  downloadPdf: () => Promise<void>;
+  back: () => void;
+  isPdfBusy: boolean;
+  isDeleting: boolean;
+
+  // ── dialog state, for anyone rendering their own ────────────────────
+  //
+  // form carries the item as well as the flag, mirroring the list
+  // controller. Without it every caller writes item={c.record} and hits the
+  // difference between "still loading" (undefined) and "creating" (null),
+  // which the stock form distinguishes and a query result does not.
+  form: { open: boolean; item: T | null; close: () => void };
+  confirmDelete: { open: boolean; confirm: () => void; cancel: () => void };
+}
+
+/**
+ * Props the whole-page detail slot receives. It gets only the resource and the
+ * id: call useResourceDetailController(resource, id) inside for the rest, as
+ * the stock page does. A page that replaces everything owns its dialogs too.
+ */
+export interface ResourceDetailSlotProps {
+  resource: ResourceDefinition;
+  id: string;
+}
+
+/**
+ * Props the PART slots receive: the controller itself, already built.
+ *
+ * This is the important difference from the whole-page slot, and it is not a
+ * convenience. Every call to useResourceDetailController creates its own
+ * state, so a header that built its own controller would open an edit sheet
+ * the page around it never reads: you press Edit and nothing happens. Sharing
+ * one controller is what makes the parts able to drive the page.
+ */
+export interface ResourceDetailPartProps<T = Record<string, unknown>> {
+  resource: ResourceDefinition;
+  id: string;
+  controller: ResourceDetailController<T>;
+}
+
 export interface ResourceComponents<T = Record<string, unknown>> {
   /** Replaces the whole list view. The last resort, and the most freedom. */
   Page?: ComponentType<ResourcePageSlotProps>;
@@ -476,6 +555,22 @@ export interface ResourceComponents<T = Record<string, unknown>> {
    * the actions and the pending state, exactly as the stock bar does.
    */
   BulkBar?: ComponentType<ResourcePageSlotProps>;
+
+  // ── the detail page ──────────────────────────────────────────────────
+  //
+  // Same three tiers as the list view: swap a piece, or take the whole page.
+  // These receive the resource and the record id, and call
+  // useResourceDetailController(resource, id) inside for the rest, exactly as
+  // the stock detail page does.
+
+  /** Replaces the entire detail view, including its header and dialogs. */
+  DetailPage?: ComponentType<ResourceDetailSlotProps>;
+  /** Replaces the title block and its actions, keeping the body below. */
+  DetailHeader?: ComponentType<ResourceDetailPartProps<T>>;
+  /** Replaces the field list, keeping the header and the related sections. */
+  DetailFields?: ComponentType<ResourceDetailPartProps<T>>;
+  /** Rendered after the fields and before the related tables. */
+  DetailAside?: ComponentType<ResourceDetailPartProps<T>>;
 }
 
 /**
