@@ -113,10 +113,12 @@ func (g *Generator) injectAll(names Names) error {
 		%sGroup.PUT("/:id", %sHandler.Update)
 		%sGroup.PATCH("/:id", %sHandler.Patch)
 		%sGroup.DELETE("/:id", %sHandler.Delete)
+		%sGroup.POST("/bulk", %sHandler.Bulk)
 	}`,
 				names.PluralPascal, strings.Join(g.Roles, ", "),
 				names.Camel, names.Plural,
 				names.Camel, rolesStr,
+				names.Camel, names.Camel,
 				names.Camel, names.Camel,
 				names.Camel, names.Camel,
 				names.Camel, names.Camel,
@@ -154,7 +156,11 @@ func (g *Generator) injectAll(names Names) error {
 			}
 			fmt.Println("  ✓ Injected protected routes")
 
-			adminRoutes := fmt.Sprintf(`		admin.DELETE("/%s/:id", %sHandler.Delete)`,
+			// Bulk lives with DELETE rather than with PATCH: it can delete, and
+			// a route is only as protected as its most destructive branch.
+			adminRoutes := fmt.Sprintf(`		admin.DELETE("/%s/:id", %sHandler.Delete)
+		admin.POST("/%s/bulk", %sHandler.Bulk)`,
+				names.Plural, names.Camel,
 				names.Plural, names.Camel)
 			if err := injectBefore(routesFile, "// grit:routes:admin", adminRoutes); err != nil {
 				return fmt.Errorf("injecting admin routes: %w", err)

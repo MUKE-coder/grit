@@ -332,6 +332,85 @@ components: {
             />
 
             <div className="prose-grit mb-10">
+              <h2 id="bulk-actions">Bulk actions</h2>
+              <p>
+                Tick some rows and a bar appears at the foot of the table. Five actions are built
+                in, and you choose which of them a resource offers:
+              </p>
+              <pre>
+                <code>{`// resources/products.ts
+table: {
+  bulkActions: ["edit", "archive", "restore", "export", "delete"],
+}`}</code>
+              </pre>
+              <p>
+                <code>archive</code> and <code>restore</code> need the model to carry{' '}
+                <code>archived_at</code>, which every generated resource has. They never appear
+                together: Archive shows on the Published tab, Restore on the Archived one, because
+                offering both is how somebody archives what they meant to bring back.
+              </p>
+              <p>
+                Anything domain-shaped is yours, and it goes in the overlay rather than the resource
+                definition, because it holds a function:
+              </p>
+            </div>
+
+            <CodeBlock
+              language="tsx"
+              filename="apps/admin/resources/shipments.custom.tsx"
+              code={`const custom: ResourceCustomisation<Shipment> = {
+  bulkActions: [
+    {
+      key: "mark-delivered",
+      label: "Mark delivered",
+      icon: "CheckCircle",
+      // Omit for actions that do not need it. A confirm on everything
+      // trains people to dismiss confirms.
+      confirm: "Mark every selected shipment delivered?",
+      // Hide it when it makes no sense for this selection.
+      visible: (rows) => rows.some((row) => row.status !== "delivered"),
+      onSelect: async (ids, rows, { refresh, clearSelection, announce }) => {
+        await markDelivered(ids);
+        refresh();
+        clearSelection();
+        announce(rows.length + " marked delivered.");
+      },
+    },
+  ],
+};`}
+            />
+
+            <div className="prose-grit mb-10">
+              <p>
+                The action receives the ids <strong>and the rows</strong>. Acting on what the
+                operator ticked usually needs the data, and it is already on screen, so there is no
+                reason to fetch it again. The third argument is what the page can do for you:
+                refresh the list, clear the selection, and speak to the live region.
+              </p>
+              <p>
+                <code>announce</code> matters more than it looks. Ticking a checkbox does not move
+                focus, so nothing about a bulk action is noticed by a screen reader unless it is
+                said. The built-in actions all announce themselves; yours should too.
+              </p>
+              <p>
+                If the whole bar is wrong for your app, replace it with the <code>BulkBar</code>{' '}
+                slot and call <code>useResourceController(resource)</code> inside for the selection,
+                the actions and the pending state.
+              </p>
+
+              <h3 id="bulk-edit">What bulk edit does</h3>
+              <p>
+                One field, one value, written to every selected row, through a single{' '}
+                <code>POST /api/&lt;resource&gt;/bulk</code> in one transaction. Not a whole form:
+                editing every field at once means deciding what an empty input means, and there is
+                no good answer, since clearing destroys data nobody looked at and ignoring makes it
+                impossible to clear anything.
+              </p>
+              <p>
+                Unique columns are left out of the field list. Writing one SKU to forty rows is
+                either a constraint violation or, worse, not one.
+              </p>
+
               <h2 id="a-page-slot-owns-its-dialogs">A Page slot owns its dialogs</h2>
               <p>
                 The stock page renders the form container and the two confirm dialogs for you.

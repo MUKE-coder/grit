@@ -322,13 +322,15 @@ func writeAdminFiles(root string, opts Options) error {
 		filepath.Join(adminRoot, "components", "layout", "page-header.tsx"):  adminPageHeader(),
 
 		// Table components
-		filepath.Join(adminRoot, "components", "tables", "data-table.tsx"):     adminDataTable(),
-		filepath.Join(adminRoot, "components", "tables", "column-header.tsx"):  adminColumnHeader(),
-		filepath.Join(adminRoot, "components", "tables", "cell-renderers.tsx"): adminCellRenderers(),
-		filepath.Join(adminRoot, "components", "tables", "stacked-cell.tsx"):   adminStackedCell(),
-		filepath.Join(adminRoot, "components", "tables", "table-filters.tsx"):  adminTableFilters(),
-		filepath.Join(adminRoot, "components", "tables", "table-toolbar.tsx"):  adminTableToolbar(),
-		filepath.Join(adminRoot, "components", "tables", "date-filter.tsx"):    adminDateFilter(),
+		filepath.Join(adminRoot, "components", "tables", "data-table.tsx"):      adminDataTable(),
+		filepath.Join(adminRoot, "components", "tables", "column-header.tsx"):   adminColumnHeader(),
+		filepath.Join(adminRoot, "components", "tables", "cell-renderers.tsx"):  adminCellRenderers(),
+		filepath.Join(adminRoot, "components", "tables", "stacked-cell.tsx"):    adminStackedCell(),
+		filepath.Join(adminRoot, "components", "tables", "table-filters.tsx"):   adminTableFilters(),
+		filepath.Join(adminRoot, "components", "tables", "bulk-action-bar.tsx"): adminBulkActionBar(),
+		filepath.Join(adminRoot, "components", "tables", "bulk-edit-modal.tsx"): adminBulkEditModal(),
+		filepath.Join(adminRoot, "components", "tables", "table-toolbar.tsx"):   adminTableToolbar(),
+		filepath.Join(adminRoot, "components", "tables", "date-filter.tsx"):     adminDateFilter(),
 		// v3.31.35 — export menu (CSV/Excel/JSON dropdown with
 		// all-pages fetch) + import modal (drop file -> preview ->
 		// batched POST). Both client-side via SheetJS.

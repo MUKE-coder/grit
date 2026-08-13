@@ -867,7 +867,7 @@ func adminTableToolbar() string {
 
 import { useState } from "react";
 import type { ResourceDefinition, ColumnDefinition } from "@/lib/resource";
-import { Search, Plus, Trash2, Download, Upload, Columns3 } from "@/lib/icons";
+import { Search, Plus, Download, Upload, Columns3 } from "@/lib/icons";
 import { DateFilter, type DateRange } from "./date-filter";
 import { ExportMenu } from "./export-menu";
 import { exportToFile } from "@/lib/excel-utils";
@@ -923,12 +923,6 @@ export function TableToolbar({
   // v3.31.35 — bulk Export still operates on the rows the user has
   // selected, which by definition fit on the current page. Uses the
   // visible columns so it matches the toolbar Export's behaviour.
-  const handleBulkExport = () => {
-    if (!data || data.length === 0) return;
-    const visible = allColumns.filter((c) => !hiddenColumns.includes(c.key));
-    exportToFile(data, visible, resource.slug, "csv");
-  };
-
   const visibleColumns = allColumns.filter((c) => !hiddenColumns.includes(c.key));
 
   return (
@@ -958,32 +952,11 @@ export function TableToolbar({
 
       <div className="flex-1" />
 
-      {/* Bulk actions */}
-      {selectedCount > 0 && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-text-secondary">
-            {selectedCount} selected
-          </span>
-          {resource.table.bulkActions?.includes("delete") && onBulkDelete && (
-            <button
-              onClick={onBulkDelete}
-              className="flex items-center gap-1.5 rounded-lg bg-danger/10 px-3 py-1.5 text-sm text-danger hover:bg-danger/20 transition-colors"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete
-            </button>
-          )}
-          {resource.table.bulkActions?.includes("export") && (
-            <button
-              onClick={handleBulkExport}
-              className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-hover transition-colors"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Export selection
-            </button>
-          )}
-        </div>
-      )}
+      {/* Bulk actions used to live here, squeezed between the search box and
+          the column picker. They are their own bar at the foot of the table
+          now: the toolbar is for changing what you are looking at, the bar is
+          for acting on what you picked, and mixing the two put a Delete button
+          one gap away from a Search field. */}
 
       {/* Column visibility */}
       <div className="relative">

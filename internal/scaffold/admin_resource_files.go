@@ -75,7 +75,22 @@ export interface FilterDefinition {
 // ─── Table Definitions ──────────────────────────────────────────────
 
 export type TableAction = "create" | "view" | "edit" | "delete" | "export";
-export type BulkAction = "delete" | "export";
+
+/**
+ * Built-in bulk actions, offered once rows are selected.
+ *
+ *   edit     one field, one value, written to every selected row
+ *   archive  put away without destroying: still listable under Archived,
+ *            still exportable, restorable in one click
+ *   restore  the inverse, shown only while the Archived view is open
+ *   delete   soft delete, the same as the per-row Delete
+ *   export   download the selection rather than the whole table
+ *
+ * archive and restore need the resource's model to carry archived_at, which
+ * every model from grit generate resource has since v3.142.0. A resource without
+ * the column should not list them.
+ */
+export type BulkAction = "edit" | "archive" | "restore" | "delete" | "export";
 
 // v3.104.0 — extra per-row actions rendered after the built-in view/edit/
 // delete controls. Either link somewhere (href) or run a handler (onClick);
@@ -90,6 +105,49 @@ export interface RowActionDefinition {
   variant?: "default" | "danger";
   /** Hide the action for rows where this returns false. */
   visible?: (row: Record<string, unknown>) => boolean;
+}
+
+/**
+ * A bulk action of your own, supplied from resources/<name>.custom.tsx.
+ *
+ * The built-in five cover put-away and delete. Everything domain-shaped is
+ * yours: "Send invoices", "Assign to rep", "Mark as shipped". It goes in the
+ * overlay rather than the resource definition because it holds a function,
+ * and the resource definition is a .ts file the generator rewrites.
+ */
+export interface CustomBulkAction<T = Record<string, unknown>> {
+  /** Stable key, used for the React key and for keeping order deterministic. */
+  key: string;
+  label: string;
+  /** Any name from lib/icons. Rendered before the label. */
+  icon?: string;
+  /** "danger" colours it red. Reserve it for the irreversible. */
+  variant?: "default" | "danger";
+  /**
+   * Ask first. A string is the dialog's body; the title and buttons come from
+   * the label. Omit for actions that do not need it: a confirm on everything
+   * trains people to dismiss confirms.
+   */
+  confirm?: string;
+  /**
+   * Runs the action. Receives the selected ids and the rows behind them, so
+   * you can act without refetching. Return a promise and the bar shows a
+   * pending state until it settles.
+   *
+   * The second argument carries what the page can do for you: refresh the
+   * list, clear the selection, and announce a result to screen readers.
+   */
+  onSelect: (
+    ids: string[],
+    rows: T[],
+    helpers: {
+      refresh: () => void;
+      clearSelection: () => void;
+      announce: (message: string) => void;
+    },
+  ) => void | Promise<unknown>;
+  /** Hide the action for some selections, e.g. only when exactly one row is on. */
+  visible?: (rows: T[]) => boolean;
 }
 
 export interface TableDefinition {
@@ -143,6 +201,12 @@ export interface FieldDefinition {
   label: string;
   type: FieldType;
   required?: boolean;
+  /**
+   * The column carries a unique constraint. Set by the generator from the
+   * :unique field modifier. Bulk edit reads it to leave the field out: writing
+   * one SKU to forty rows is either a constraint violation or, worse, not one.
+   */
+  unique?: boolean;
   placeholder?: string;
   description?: string;
   defaultValue?: unknown;
@@ -361,6 +425,12 @@ export interface ResourceComponents<T = Record<string, unknown>> {
   Form?: ComponentType<ResourceFormProps<T>>;
   /** Rendered instead of the table when there are no rows and none are loading. */
   EmptyState?: ComponentType<ResourcePageSlotProps>;
+  /**
+   * Replaces the bar that appears when rows are selected. It gets only the
+   * resource; call useResourceController(resource) inside for the selection,
+   * the actions and the pending state, exactly as the stock bar does.
+   */
+  BulkBar?: ComponentType<ResourcePageSlotProps>;
 }
 
 /**
@@ -382,6 +452,13 @@ export interface ResourceCustomisation<T = Record<string, unknown>> {
   columns?: Record<string, Partial<ColumnDefinition<T>>>;
   /** Per-field overrides, keyed by field key. Merged over the generated field. */
   fields?: Record<string, Partial<FieldDefinition>>;
+  /**
+   * Bulk actions of your own, appended after the built-in ones.
+   *
+   * Here rather than in the resource definition because they hold functions,
+   * and the definition is a .ts file the generator rewrites in full.
+   */
+  bulkActions?: CustomBulkAction<T>[];
 }
 
 // ─── Resource Definition ────────────────────────────────────────────
@@ -389,6 +466,8 @@ export interface ResourceCustomisation<T = Record<string, unknown>> {
 export interface ResourceDefinition {
   /** Set by defineResource() from resources/<name>.custom.tsx. */
   components?: ResourceComponents;
+  /** Set by defineResource() from resources/<name>.custom.tsx. */
+  customBulkActions?: CustomBulkAction[];
   name: string;
   slug: string;
   endpoint: string;
@@ -480,6 +559,9 @@ export function defineResource<T = Record<string, unknown>>(
       plural: config.slug.charAt(0).toUpperCase() + config.slug.slice(1),
     },
     components: custom?.components as ResourceComponents | undefined,
+    // Erased the same way the components are, and for the same reason: the
+    // registry holds every resource in one array, so it cannot be generic.
+    customBulkActions: custom?.bulkActions as CustomBulkAction[] | undefined,
     table: {
       ...config.table,
       columns,
@@ -662,7 +744,9 @@ export const usersResource = defineResource({
         href: (row) => "/system/gdpr?user=" + String(row.id),
       },
     ],
-    bulkActions: ["delete"],
+    // No "archive": the scaffold's own models predate archived_at. A
+    // generated resource gets the column and the full set.
+    bulkActions: ["edit", "export", "delete"],
     defaultSort: { key: "created_at", direction: "desc" },
     pageSize: 20,
   },
@@ -779,11 +863,15 @@ import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { ResourceDefinition } from "@/lib/resource";
 import { useResourceController } from "@/hooks/use-resource-controller";
+import type { ResourceController } from "@/hooks/use-resource-controller";
 import { PageHeader } from "@/components/layout/page-header";
 import { DataTable } from "@/components/tables/data-table";
 import { TableToolbar } from "@/components/tables/table-toolbar";
 import { TablePagination } from "@/components/tables/table-pagination";
 import { TableFilters } from "@/components/tables/table-filters";
+import { BulkActionBar } from "@/components/tables/bulk-action-bar";
+import { BulkEditModal } from "@/components/tables/bulk-edit-modal";
+import { exportToFile } from "@/lib/excel-utils";
 // grit:resource:imports
 import { buttonClasses } from "@/components/ui/button";
 
@@ -860,6 +948,15 @@ export function ResourcePage({ resource }: ResourcePageProps) {
   return <ResourceListView resource={resource} />;
 }
 
+// Exports the ticked rows rather than the page or the whole table. The rows
+// are already in memory, so this needs no request: the point of "export
+// selection" is the selection.
+function exportSelection(c: ResourceController) {
+  if (c.selectedRows.length === 0) return;
+  exportToFile(c.selectedRows, c.columns, c.resource.slug, "csv");
+  c.announce(c.selectedRows.length + " rows exported.");
+}
+
 // The default list view. Every piece of state and behaviour it uses comes from
 // useResourceController — this component is markup and nothing else. That is
 // deliberate: it is the proof that the hook is complete enough for someone to
@@ -876,7 +973,15 @@ function ResourceListView({ resource }: ResourcePageProps) {
   const Table = resource.components?.Table ?? DataTable;
   const CustomForm = resource.components?.Form;
   const EmptyState = resource.components?.EmptyState;
+  const CustomBulkBar = resource.components?.BulkBar;
   const showEmptyState = Boolean(EmptyState) && !c.isLoading && c.rows.length === 0;
+
+  // Archive is a view, not a filter chip: the rows in it cannot be edited the
+  // same way and the actions on them differ, so it gets its own tab. Shown
+  // only when the resource actually has somewhere to archive to.
+  const hasArchive =
+    (resource.table.bulkActions ?? []).includes("archive") ||
+    (resource.table.bulkActions ?? []).includes("restore");
 
   const headerActions = c.can("create") ? (
     <button onClick={c.create} className={buttonClasses({ size: "sm" })}>
@@ -893,6 +998,36 @@ function ResourceListView({ resource }: ResourcePageProps) {
         actions={headerActions}
         stats={c.stats}
       />
+
+      {/* Bulk actions change the table without moving focus, so every one of
+          them is spoken here. */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {c.liveMessage}
+      </p>
+
+      {hasArchive && (
+        <div className="mb-3 flex w-fit gap-1 rounded-lg border border-border bg-bg-secondary p-1">
+          {[
+            { label: "Published", archived: false },
+            { label: "Archived", archived: true },
+          ].map((tab) => (
+            <button
+              key={tab.label}
+              type="button"
+              onClick={() => c.setShowArchived(tab.archived)}
+              aria-pressed={c.showArchived === tab.archived}
+              className={
+                "min-h-9 rounded-md px-3 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent " +
+                (c.showArchived === tab.archived
+                  ? "bg-accent/15 font-medium text-accent"
+                  : "text-text-secondary hover:bg-bg-hover hover:text-text-primary")
+              }
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="rounded-xl border border-border bg-bg-secondary">
         <TableToolbar
@@ -938,6 +1073,26 @@ function ResourceListView({ resource }: ResourcePageProps) {
             onEdit={c.can("edit") ? c.edit : undefined}
             onDelete={c.can("delete") ? c.remove : undefined}
             rowActions={resource.table.rowActions}
+          />
+        )}
+
+        {CustomBulkBar ? (
+          <CustomBulkBar resource={resource} />
+        ) : (
+          <BulkActionBar
+            count={c.selection.length}
+            actions={c.bulkActions}
+            custom={c.customBulkActions}
+            pending={c.isBulkPending}
+            singularName={c.singularName}
+            pluralName={c.pluralName}
+            onEdit={c.bulkEdit}
+            onArchive={c.bulkArchive}
+            onRestore={c.bulkRestore}
+            onDelete={c.bulkRemove}
+            onExport={() => exportSelection(c)}
+            onCustom={c.runBulkAction}
+            onClear={c.clearSelection}
           />
         )}
 
@@ -1000,6 +1155,39 @@ function ResourceListView({ resource }: ResourcePageProps) {
         loading={c.isBulkDeleting}
       />
 
+      <ConfirmModal
+        open={c.confirmBulkArchive.open}
+        onConfirm={c.confirmBulkArchive.confirm}
+        onCancel={c.confirmBulkArchive.cancel}
+        title={"Archive " + c.selection.length + " " + c.pluralName.toLowerCase()}
+        description="Archived rows leave this list but keep their data. You can restore them from the Archived tab."
+        confirmLabel="Archive"
+        loading={c.isBulkPending}
+      />
+
+      {c.confirmCustom.open && c.confirmCustom.action && (
+        <ConfirmModal
+          open
+          onConfirm={c.confirmCustom.confirm}
+          onCancel={c.confirmCustom.cancel}
+          title={c.confirmCustom.action.label}
+          description={c.confirmCustom.action.confirm ?? ""}
+          confirmLabel={c.confirmCustom.action.label}
+          variant={c.confirmCustom.action.variant === "danger" ? "danger" : undefined}
+          loading={c.isBulkPending}
+        />
+      )}
+
+      {c.bulkEditor.open && (
+        <BulkEditModal
+          resource={resource}
+          count={c.selection.length}
+          pending={c.isBulkPending}
+          onApply={c.applyBulkEdit}
+          onClose={c.bulkEditor.close}
+        />
+      )}
+
       {c.importer.open && (
         <ImportModal
           resource={resource}
@@ -1050,9 +1238,16 @@ import {
   useSearchParams,
   type ReadonlyURLSearchParams,
 } from "next/navigation";
-import type { ColumnDefinition, ResourceDefinition, TableAction } from "@/lib/resource";
+import { useQueryClient } from "@tanstack/react-query";
+import type {
+  BulkAction,
+  ColumnDefinition,
+  CustomBulkAction,
+  ResourceDefinition,
+  TableAction,
+} from "@/lib/resource";
 import {
-  useBulkDeleteResource,
+  useBulkResource,
   useDeleteResource,
   useResource,
 } from "@/hooks/use-resource";
@@ -1157,10 +1352,49 @@ export interface ResourceController<T = Record<string, unknown>> {
   isDeleting: boolean;
   isBulkDeleting: boolean;
 
+  // ── bulk actions ────────────────────────────────────────────────────
+  /** Built-ins the resource has switched on, minus any that make no sense
+   *  in the current view (restore only appears while Archived is open). */
+  bulkActions: BulkAction[];
+  /** Custom ones from resources/<name>.custom.tsx, already filtered by visible(). */
+  customBulkActions: CustomBulkAction<T>[];
+  /** The rows behind the current selection, readable without a refetch. */
+  selectedRows: T[];
+  /** Opens the confirm dialog; archiving happens on confirm. */
+  bulkArchive: () => void;
+  /** Restores immediately: putting something back is not destructive. */
+  bulkRestore: () => void;
+  /** Opens the bulk edit dialog. */
+  bulkEdit: () => void;
+  /** Writes one field to every selected row and closes the dialog. */
+  applyBulkEdit: (patch: Record<string, unknown>) => void;
+  /** Runs a custom action, handing it the ids, the rows and the helpers. */
+  runBulkAction: (action: CustomBulkAction<T>) => void;
+  isBulkPending: boolean;
+  /** Re-runs the list query. Handed to custom actions so they can refresh. */
+  refresh: () => void;
+  /** Speaks to the page's live region. Bulk changes never move focus. */
+  announce: (message: string) => void;
+  liveMessage: string;
+
+  // ── archived view ───────────────────────────────────────────────────
+  /** True while the Archived tab is open. */
+  showArchived: boolean;
+  setShowArchived: (value: boolean) => void;
+
   // ── dialog state, for anyone rendering their own ────────────────────
   form: { open: boolean; item: T | null; close: () => void };
   confirmDelete: { open: boolean; confirm: () => void; cancel: () => void };
   confirmBulkDelete: { open: boolean; confirm: () => void; cancel: () => void };
+  confirmBulkArchive: { open: boolean; confirm: () => void; cancel: () => void };
+  bulkEditor: { open: boolean; close: () => void };
+  /** Set when a custom action asked to confirm first. */
+  confirmCustom: {
+    open: boolean;
+    action: CustomBulkAction<T> | null;
+    confirm: () => void;
+    cancel: () => void;
+  };
   importer: { open: boolean; setOpen: (open: boolean) => void };
 
   // ── odds and ends the default page needs ────────────────────────────
@@ -1221,7 +1455,14 @@ export function useResourceController<T = Record<string, unknown>>(
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [pendingCustom, setPendingCustom] = useState<CustomBulkAction<T> | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [showArchived, setShowArchivedState] = useState(false);
+  const [liveMessage, setLiveMessage] = useState("");
+
+  const queryClient = useQueryClient();
 
   // Mirrors the query useResource builds, so an export applies the same
   // filter and sort the operator is looking at.
@@ -1249,10 +1490,23 @@ export function useResourceController<T = Record<string, unknown>>(
     search,
     sortBy,
     sortOrder,
-    filters,
+    // The archived view is a filter like any other, so it travels with the
+    // rest of them and the query key changes when it flips.
+    filters: showArchived ? { ...filters, archived: "true" } : filters,
     dateParams,
     dateField: resource.table.dateFilter?.field,
   });
+
+  const rows = useMemo(() => data?.data ?? [], [data]);
+
+  // Switching views changes which rows exist, so a selection made in the
+  // other one is stale. Keeping it is how you archive something you cannot
+  // see.
+  const setShowArchived = useCallback((value: boolean) => {
+    setShowArchivedState(value);
+    setSelection([]);
+    setPage(1);
+  }, []);
 
   const singularName = resource.label?.singular ?? resource.name;
   const pluralName = resource.label?.plural ?? resource.slug;
@@ -1261,10 +1515,14 @@ export function useResourceController<T = Record<string, unknown>>(
     resource.endpoint,
     singularName,
   );
-  const { mutate: bulkDelete, isPending: isBulkDeleting } = useBulkDeleteResource(
+  const { mutate: runBulk, isPending: isBulkPending } = useBulkResource(
     resource.endpoint,
     pluralName,
+    singularName,
   );
+  // Kept as its own name because the delete confirm dialog shows a spinner
+  // for delete specifically, not for any bulk action in flight.
+  const isBulkDeleting = isBulkPending;
 
   const columns = useMemo(
     () => resource.table.columns.filter((col) => !col.hidden && !hiddenColumns.includes(col.key)),
@@ -1367,13 +1625,128 @@ export function useResourceController<T = Record<string, unknown>>(
   }, [selection]);
 
   const doBulkDelete = useCallback(() => {
-    bulkDelete(selection, {
-      onSuccess: () => {
-        setBulkConfirmOpen(false);
-        setSelection([]);
+    runBulk(
+      { action: "delete", ids: selection },
+      {
+        onSuccess: () => {
+          setBulkConfirmOpen(false);
+          setSelection([]);
+        },
       },
+    );
+  }, [runBulk, selection]);
+
+  // ── the rest of the bulk surface ──────────────────────────────────────
+
+  // The rows behind the selection. Custom actions get these so "email the
+  // people I ticked" does not need a second round trip for data already here.
+  const selectedRows = useMemo(
+    () => rows.filter((row) => selection.includes(String((row as Record<string, unknown>).id))),
+    [rows, selection],
+  );
+
+  const announce = useCallback((message: string) => {
+    // Cleared first: setting the same string twice is not a change, and a
+    // live region that has not changed says nothing. Two identical bulk
+    // actions in a row would be announced once.
+    setLiveMessage("");
+    requestAnimationFrame(() => setLiveMessage(message));
+  }, []);
+
+  const refresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: [resource.endpoint] });
+  }, [queryClient, resource.endpoint]);
+
+  const bulkArchive = useCallback(() => {
+    if (selection.length > 0) setBulkArchiveOpen(true);
+  }, [selection]);
+
+  const doBulkArchive = useCallback(() => {
+    runBulk(
+      { action: "archive", ids: selection },
+      {
+        onSuccess: () => {
+          setBulkArchiveOpen(false);
+          setSelection([]);
+          announce(selection.length + " archived.");
+        },
+      },
+    );
+  }, [runBulk, selection, announce]);
+
+  // No confirm: putting something back is not destructive, and a dialog in
+  // front of an undo is a dialog nobody reads.
+  const bulkRestore = useCallback(() => {
+    if (selection.length === 0) return;
+    runBulk(
+      { action: "restore", ids: selection },
+      {
+        onSuccess: () => {
+          setSelection([]);
+          announce(selection.length + " restored.");
+        },
+      },
+    );
+  }, [runBulk, selection, announce]);
+
+  const bulkEdit = useCallback(() => {
+    if (selection.length > 0) setBulkEditOpen(true);
+  }, [selection]);
+
+  const applyBulkEdit = useCallback(
+    (patch: Record<string, unknown>) => {
+      runBulk(
+        { action: "patch", ids: selection, patch },
+        {
+          onSuccess: () => {
+            setBulkEditOpen(false);
+            setSelection([]);
+            announce(selection.length + " updated.");
+          },
+        },
+      );
+    },
+    [runBulk, selection, announce],
+  );
+
+  const runCustom = useCallback(
+    (action: CustomBulkAction<T>) => {
+      void action.onSelect(selection, selectedRows, {
+        refresh,
+        clearSelection: () => setSelection([]),
+        announce,
+      });
+    },
+    [selection, selectedRows, refresh, announce],
+  );
+
+  const runBulkAction = useCallback(
+    (action: CustomBulkAction<T>) => {
+      if (action.confirm) {
+        setPendingCustom(action);
+        return;
+      }
+      runCustom(action);
+    },
+    [runCustom],
+  );
+
+  // Restore only makes sense on rows that are archived, and archive only on
+  // rows that are not, so the two never appear together. Offering both is how
+  // an operator ends up archiving what they meant to bring back.
+  const bulkActions = useMemo(() => {
+    const configured = resource.table.bulkActions ?? ["delete"];
+    return configured.filter((action) => {
+      if (action === "restore") return showArchived;
+      if (action === "archive") return !showArchived;
+      return true;
     });
-  }, [bulkDelete, selection]);
+  }, [resource.table.bulkActions, showArchived]);
+
+  const customBulkActions = useMemo(() => {
+    const all = (resource.customBulkActions ?? []) as CustomBulkAction<T>[];
+    return all.filter((action) => !action.visible || action.visible(selectedRows));
+  }, [resource.customBulkActions, selectedRows]);
 
   const closeForm = useCallback(() => {
     setFormOpen(false);
@@ -1392,14 +1765,17 @@ export function useResourceController<T = Record<string, unknown>>(
   const stats: StatCard[] | undefined = useMemo(() => {
     if (!statsEnabled) return undefined;
 
-    // When a date range is active, every stat endpoint gets it too —
-    // otherwise "Total: 10,000" sits above a table showing 142 matches.
-    const applyDateParams = (cards: StatCard[]): StatCard[] => {
-      if (Object.keys(dateParams).length === 0) return cards;
+    // Every stat endpoint gets whatever narrows the table, or "Total: 10,000"
+    // sits above a table showing 142 matches. The archived view counts as
+    // narrowing: without it the Archived tab reads "Total 9" over two rows.
+    const applyViewParams = (cards: StatCard[]): StatCard[] => {
+      const extra: Record<string, string> = { ...dateParams };
+      if (showArchived) extra.archived = "true";
+      if (Object.keys(extra).length === 0) return cards;
       return cards.map((card) => {
         if (!card.endpoint) return card;
         const sep = card.endpoint.includes("?") ? "&" : "?";
-        const qs = new URLSearchParams(dateParams).toString();
+        const qs = new URLSearchParams(extra).toString();
         return { ...card, endpoint: card.endpoint + sep + qs };
       });
     };
@@ -1410,7 +1786,7 @@ export function useResourceController<T = Record<string, unknown>>(
       Array.isArray(statsConfig.cards) &&
       statsConfig.cards.length > 0
     ) {
-      return applyDateParams(statsConfig.cards);
+      return applyViewParams(statsConfig.cards);
     }
 
     const ep = resource.endpoint;
@@ -1420,13 +1796,13 @@ export function useResourceController<T = Record<string, unknown>>(
       { label: "This Month", endpoint: ep + "?page_size=1&created_since=30d", field: "meta.total", icon: "Calendar", color: "info" },
       { label: "Updated Recently", endpoint: ep + "?page_size=1&updated_since=7d", field: "meta.total", icon: "RefreshCw" },
     ];
-    return applyDateParams(defaults);
-  }, [statsEnabled, statsConfig, resource.endpoint, resource.icon, dateParams]);
+    return applyViewParams(defaults);
+  }, [statsEnabled, statsConfig, resource.endpoint, resource.icon, dateParams, showArchived]);
 
   return {
     resource,
 
-    rows: data?.data ?? [],
+    rows,
     meta: data?.meta,
     total: data?.meta?.total ?? 0,
     totalPages: data?.meta?.pages ?? 1,
@@ -1465,6 +1841,22 @@ export function useResourceController<T = Record<string, unknown>>(
     isDeleting,
     isBulkDeleting,
 
+    bulkActions,
+    customBulkActions,
+    selectedRows,
+    bulkArchive,
+    bulkRestore,
+    bulkEdit,
+    applyBulkEdit,
+    runBulkAction,
+    isBulkPending,
+    refresh,
+    announce,
+    liveMessage,
+
+    showArchived,
+    setShowArchived,
+
     form: { open: formOpen, item: editingItem, close: closeForm },
     confirmDelete: {
       open: confirmOpen,
@@ -1478,6 +1870,24 @@ export function useResourceController<T = Record<string, unknown>>(
       open: bulkConfirmOpen,
       confirm: doBulkDelete,
       cancel: () => setBulkConfirmOpen(false),
+    },
+    confirmBulkArchive: {
+      open: bulkArchiveOpen,
+      confirm: doBulkArchive,
+      cancel: () => setBulkArchiveOpen(false),
+    },
+    bulkEditor: {
+      open: bulkEditOpen,
+      close: () => setBulkEditOpen(false),
+    },
+    confirmCustom: {
+      open: pendingCustom !== null,
+      action: pendingCustom,
+      confirm: () => {
+        if (pendingCustom) runCustom(pendingCustom);
+        setPendingCustom(null);
+      },
+      cancel: () => setPendingCustom(null),
     },
     importer: { open: importOpen, setOpen: setImportOpen },
 
@@ -1493,8 +1903,7 @@ export function useResourceController<T = Record<string, unknown>>(
 }
 
 func adminUseResource() string {
-	return `import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+	return `import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 
@@ -1669,32 +2078,87 @@ export function useDeleteResource(endpoint: string, label?: string) {
   });
 }
 
-// Bulk delete reports a count, so it takes the PLURAL label ("Invoices")
-// and names how many rows went — "3 Invoices deleted successfully".
-export function useBulkDeleteResource(endpoint: string, pluralLabel?: string) {
+export type BulkOperation = "delete" | "archive" | "restore" | "patch";
+
+export interface BulkPayload {
+  action: BulkOperation;
+  ids: string[];
+  /** Only read for "patch". */
+  patch?: Record<string, unknown>;
+}
+
+const BULK_PAST: Record<BulkOperation, string> = {
+  delete: "deleted",
+  archive: "archived",
+  restore: "restored",
+  patch: "updated",
+};
+
+/**
+ * One request for the whole selection, against POST <endpoint>/bulk.
+ *
+ * This used to be N parallel DELETEs, which is N transactions and N audit
+ * entries, and leaves a half-applied result when the eleventh fails: the
+ * operator is told it failed while ten rows are already gone. The server does
+ * it in one transaction now, so the answer is all or nothing.
+ *
+ * Takes the PLURAL label ("Invoices") because the message counts rows, and
+ * reports what the server actually did rather than what was asked: archiving
+ * twelve rows of which three were already archived says nine.
+ */
+export function useBulkResource(endpoint: string, pluralLabel?: string, singularLabel?: string) {
   const queryClient = useQueryClient();
-  const [count, setCount] = useState(0);
 
   return useMutation({
-    // ids are strings because Grit's models use UUID primary keys
-    // (the User.ID column in packages/shared/types/user.ts is 'string',
-    // and the same is true for every grit generate'd model).
-    mutationFn: async (ids: string[]) => {
-      setCount(ids.length);
-      await Promise.all(ids.map((id) => apiClient.delete(` + "`" + `${endpoint}/${id}` + "`" + `)));
+    // ids are strings because Grit's models use UUID primary keys.
+    mutationFn: async (payload: BulkPayload) => {
+      const { data } = await apiClient.post(` + "`" + `${endpoint}/bulk` + "`" + `, payload);
+      return { ...data, action: payload.action } as {
+        data?: { affected: number; requested: number };
+        action: BulkOperation;
+      };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: [endpoint] });
+      const affected = result?.data?.affected ?? 0;
+      const requested = result?.data?.requested ?? affected;
+      const noun = affected === 1 ? (singularLabel ?? "item") : (pluralLabel ?? "items");
+
+      if (affected === 0) {
+        // Not a success worth celebrating and not an error either. Saying
+        // "0 archived" beats a green tick over a table that did not change.
+        toast("Nothing to " + result.action + ": no matching rows");
+        return;
+      }
+      const skipped = requested - affected;
       toast.success(
-        pluralLabel ? count + " " + pluralLabel + " deleted successfully" : "Deleted successfully"
+        affected + " " + noun + " " + BULK_PAST[result.action] +
+          (skipped > 0 ? " (" + skipped + " already were)" : "")
       );
     },
-    onError: () => {
+    onError: (err: unknown) => {
+      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
       toast.error(
-        pluralLabel ? "Failed to delete some " + pluralLabel.toLowerCase() : "Failed to delete some items"
+        axiosErr?.response?.data?.error?.message ||
+          "Bulk action failed. Nothing was changed."
       );
     },
   });
+}
+
+/**
+ * Kept so existing call sites and hand-written pages keep working. Delegates
+ * to the bulk endpoint rather than firing one request per row.
+ *
+ * @deprecated Use useBulkResource, which also archives, restores and patches.
+ */
+export function useBulkDeleteResource(endpoint: string, pluralLabel?: string) {
+  const bulk = useBulkResource(endpoint, pluralLabel);
+  return {
+    ...bulk,
+    mutate: (ids: string[], options?: Parameters<typeof bulk.mutate>[1]) =>
+      bulk.mutate({ action: "delete", ids }, options),
+  };
 }
 `
 }
@@ -1843,6 +2307,345 @@ export default function AdminDashboard() {
 }
 
 // adminConfirmModal returns the reusable confirm modal component.
+// adminBulkActionBar emits components/tables/bulk-action-bar.tsx.
+func adminBulkActionBar() string {
+	return `"use client";
+
+import { useState } from "react";
+import type { ResourceDefinition, CustomBulkAction } from "@/lib/resource";
+import { getIcon, Archive, ArchiveRestore, Download, Pencil, Trash2, X } from "@/lib/icons";
+
+/*
+ * The bar that appears once rows are ticked.
+ *
+ * It sits in the flow at the foot of the table rather than floating over the
+ * rows. A floating bar covers the row you are working on, and on a short table
+ * it covers the last two rows entirely.
+ *
+ * It is a labelled region so it turns up in a landmark list, and its arrival is
+ * announced through the page's live region, because ticking a checkbox does not
+ * move focus and a bar that silently appears is a bar a keyboard user never
+ * learns about.
+ *
+ * Delete is the only red control. If everything is red then nothing is.
+ */
+
+export interface BulkActionBarProps {
+  count: number;
+  /** Built-ins the resource switched on, already filtered for the view. */
+  actions: string[];
+  custom: CustomBulkAction[];
+  pending: boolean;
+  singularName: string;
+  pluralName: string;
+  onEdit: () => void;
+  onArchive: () => void;
+  onRestore: () => void;
+  onDelete: () => void;
+  onExport: () => void;
+  onCustom: (action: CustomBulkAction) => void;
+  onClear: () => void;
+}
+
+export function BulkActionBar({
+  count,
+  actions,
+  custom,
+  pending,
+  singularName,
+  pluralName,
+  onEdit,
+  onArchive,
+  onRestore,
+  onDelete,
+  onExport,
+  onCustom,
+  onClear,
+}: BulkActionBarProps) {
+  if (count === 0) return null;
+
+  const noun = count === 1 ? singularName.toLowerCase() : pluralName.toLowerCase();
+  const base =
+    "inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+  const neutral = base + " border-border bg-bg-secondary text-text-primary hover:bg-bg-hover";
+  const danger = base + " border-danger/40 bg-transparent text-danger hover:bg-danger/10";
+
+  return (
+    <section
+      aria-label="Bulk actions"
+      className="flex flex-wrap items-center gap-3 border-t border-border bg-bg-tertiary/60 px-4 py-2.5"
+    >
+      <p className="text-sm font-medium text-text-primary">
+        {count} {noun} selected
+      </p>
+
+      <div className="flex flex-wrap items-center gap-2">
+        {actions.includes("edit") && (
+          <button type="button" onClick={onEdit} disabled={pending} className={neutral}>
+            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+            Edit
+            <span className="sr-only"> the {count} selected {noun}</span>
+          </button>
+        )}
+
+        {actions.includes("archive") && (
+          <button type="button" onClick={onArchive} disabled={pending} className={neutral}>
+            <Archive className="h-3.5 w-3.5" aria-hidden="true" />
+            Archive
+            <span className="sr-only"> the {count} selected {noun}</span>
+          </button>
+        )}
+
+        {actions.includes("restore") && (
+          <button type="button" onClick={onRestore} disabled={pending} className={neutral}>
+            <ArchiveRestore className="h-3.5 w-3.5" aria-hidden="true" />
+            Restore
+            <span className="sr-only"> the {count} selected {noun}</span>
+          </button>
+        )}
+
+        {actions.includes("export") && (
+          <button type="button" onClick={onExport} disabled={pending} className={neutral}>
+            <Download className="h-3.5 w-3.5" aria-hidden="true" />
+            Export
+            <span className="sr-only"> the {count} selected {noun}</span>
+          </button>
+        )}
+
+        {custom.map((action) => {
+          const Icon = action.icon ? getIcon(action.icon) : null;
+          return (
+            <button
+              key={action.key}
+              type="button"
+              onClick={() => onCustom(action)}
+              disabled={pending}
+              className={action.variant === "danger" ? danger : neutral}
+            >
+              {Icon && <Icon className="h-3.5 w-3.5" aria-hidden="true" />}
+              {action.label}
+              <span className="sr-only"> for the {count} selected {noun}</span>
+            </button>
+          );
+        })}
+
+        {actions.includes("delete") && (
+          <button type="button" onClick={onDelete} disabled={pending} className={danger}>
+            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+            Delete
+            <span className="sr-only"> the {count} selected {noun}</span>
+          </button>
+        )}
+      </div>
+
+      <button
+        type="button"
+        onClick={onClear}
+        className="ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      >
+        <X className="h-3.5 w-3.5" aria-hidden="true" />
+        Clear selection
+      </button>
+    </section>
+  );
+}
+`
+}
+
+// adminBulkEditModal emits components/tables/bulk-edit-modal.tsx.
+func adminBulkEditModal() string {
+	return `"use client";
+
+import { useMemo, useState } from "react";
+import type { FieldDefinition, ResourceDefinition } from "@/lib/resource";
+import { Loader2, X } from "@/lib/icons";
+
+/*
+ * Bulk edit: one field, one value, written to every selected row.
+ *
+ * Deliberately one field rather than a whole form. Bulk editing every field at
+ * once means deciding what an empty input means, and there is no good answer:
+ * "clear it" destroys data the operator never looked at, and "ignore it" makes
+ * it impossible to clear anything. One field sidesteps the question entirely,
+ * and it is what the job actually is nine times out of ten: set the status,
+ * change the owner, move the category.
+ *
+ * Only fields that can carry the same value for many rows are offered. A
+ * unique field is excluded, because writing one SKU to forty products is
+ * either a constraint violation or, worse, not one.
+ */
+
+const UNSUITABLE: FieldDefinition["type"][] = [
+  "file",
+  "files",
+  "image",
+  "images",
+  "video",
+  "videos",
+  "line-items",
+];
+
+export interface BulkEditModalProps {
+  resource: ResourceDefinition;
+  count: number;
+  pending: boolean;
+  onApply: (patch: Record<string, unknown>) => void;
+  onClose: () => void;
+}
+
+export function BulkEditModal({ resource, count, pending, onApply, onClose }: BulkEditModalProps) {
+  const fields = useMemo(
+    () =>
+      resource.form.fields.filter(
+        (field) => !UNSUITABLE.includes(field.type) && !field.unique,
+      ),
+    [resource.form.fields],
+  );
+
+  const [key, setKey] = useState(fields[0]?.key ?? "");
+  const [value, setValue] = useState<string>("");
+
+  const field = fields.find((f) => f.key === key);
+  const noun = count === 1 ? resource.label?.singular ?? resource.name : resource.label?.plural ?? resource.slug;
+
+  function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!field) return;
+    // Cast at the boundary: an <input> always hands back a string, and the
+    // API expects the column's real type.
+    let parsed: unknown = value;
+    if (field.type === "number") parsed = value === "" ? null : Number(value);
+    if (field.type === "toggle" || field.type === "checkbox") parsed = value === "true";
+    onApply({ [field.key]: parsed });
+  }
+
+  const inputClass =
+    "w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <form
+        onSubmit={submit}
+        className="relative w-full max-w-md rounded-xl border border-border bg-bg-secondary shadow-xl"
+      >
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <h2 className="text-sm font-semibold text-text-primary">
+            Edit {count} {noun.toLowerCase()}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md p-1 text-text-secondary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+            <span className="sr-only">Close</span>
+          </button>
+        </div>
+
+        <div className="space-y-4 px-5 py-4">
+          {fields.length === 0 ? (
+            <p className="text-sm text-text-secondary">
+              No fields on this resource can be set in bulk.
+            </p>
+          ) : (
+            <>
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-text-secondary">Field</span>
+                <select
+                  value={key}
+                  onChange={(e) => {
+                    setKey(e.target.value);
+                    setValue("");
+                  }}
+                  className={inputClass}
+                >
+                  {fields.map((f) => (
+                    <option key={f.key} value={f.key}>
+                      {f.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {field && (
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-text-secondary">
+                    {field.label}
+                  </span>
+                  {field.type === "select" || field.type === "radio" ? (
+                    <select
+                      value={value}
+                      onChange={(e) => setValue(e.target.value)}
+                      className={inputClass}
+                    >
+                      <option value="">Choose...</option>
+                      {(field.options ?? []).map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : field.type === "toggle" || field.type === "checkbox" ? (
+                    <select
+                      value={value}
+                      onChange={(e) => setValue(e.target.value)}
+                      className={inputClass}
+                    >
+                      <option value="">Choose...</option>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  ) : field.type === "textarea" || field.type === "richtext" ? (
+                    <textarea
+                      rows={4}
+                      value={value}
+                      onChange={(e) => setValue(e.target.value)}
+                      className={inputClass}
+                    />
+                  ) : (
+                    <input
+                      type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
+                      value={value}
+                      onChange={(e) => setValue(e.target.value)}
+                      className={inputClass}
+                    />
+                  )}
+                </label>
+              )}
+
+              <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-text-secondary">
+                This writes the same value to all {count} selected {noun.toLowerCase()}. It cannot be
+                undone in one step.
+              </p>
+            </>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex min-h-10 items-center rounded-lg border border-border px-4 text-sm font-medium text-text-secondary hover:bg-bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={pending || fields.length === 0 || value === ""}
+            className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-accent-fg hover:bg-accent-hover disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            {pending && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+            Apply to {count}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+`
+}
+
 func adminConfirmModal() string {
 	return `"use client";
 
@@ -2047,7 +2850,9 @@ export const blogsResource = defineResource({
     searchable: true,
     searchPlaceholder: "Search blogs by title...",
     actions: ["create", "view", "edit", "delete"],
-    bulkActions: ["delete"],
+    // No "archive": the scaffold's own models predate archived_at. A
+    // generated resource gets the column and the full set.
+    bulkActions: ["edit", "export", "delete"],
     defaultSort: { key: "created_at", direction: "desc" },
     pageSize: 20,
   },
